@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -7,14 +6,19 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Loader2, CheckCircle } from "lucide-react";
+import { Shield, Loader2, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-
 import { AuthGuard } from "@/components/AuthGuard";
 
-const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
+export default function Onboarding() {
+  return (
+    <AuthGuard requireAuth={true}>
+      <OnboardingContent />
+    </AuthGuard>
+  );
+}
 
 function OnboardingContent() {
   const navigate = useNavigate();
@@ -44,7 +48,6 @@ function OnboardingContent() {
     try {
       console.log('[Onboarding] Loading profile data...');
 
-      // AuthGuard already verified we're authenticated, so just load profile data
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
@@ -53,34 +56,29 @@ function OnboardingContent() {
 
       if (response.ok) {
         const state = await response.json();
-        console.log('[Onboarding] User state loaded:', {
-          authenticated: state.authenticated,
-          hasProfile: !!state.profile
-        });
+        console.log('[Onboarding] User state loaded:', state);
 
-        // Pre-fill form with existing data if available
         if (state.profile) {
+          console.log('[Onboarding] Pre-filling form with existing data');
           setFormData({
             full_name: state.profile.full_name || "",
             role: state.profile.user_type || "",
             company: state.profile.company || "",
-            markets: (state.profile.markets || []).join(", "),
+            markets: Array.isArray(state.profile.markets) ? state.profile.markets.join(", ") : "",
             phone: state.profile.phone || "",
             accreditation: state.profile.accreditation || "",
             goals: state.profile.goals || "",
-            agree_terms: false // Always require explicit agreement
+            agree_terms: false
           });
         }
       } else {
-        console.warn('[Onboarding] Failed to load profile data, starting with empty form');
+        console.warn('[Onboarding] Failed to load profile data');
       }
       
       setLoading(false);
 
     } catch (error) {
       console.error('[Onboarding] Load error:', error);
-      // Don't redirect on error - just show empty form
-      // User is already authenticated (AuthGuard checked this)
       setLoading(false);
     }
   };
@@ -88,9 +86,11 @@ function OnboardingContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log('[Onboarding] Form submitted');
+    console.log('[Onboarding] 🚀 Form submitted');
+    console.log('[Onboarding] Form data:', formData);
 
-    if (!formData.full_name.trim()) {
+    // Validation
+    if (!formData.full_name || !formData.full_name.trim()) {
       toast.error("Please enter your full name");
       return;
     }
@@ -100,12 +100,12 @@ function OnboardingContent() {
       return;
     }
 
-    if (!formData.markets.trim()) {
+    if (!formData.markets || !formData.markets.trim()) {
       toast.error("Please enter at least one target market");
       return;
     }
 
-    if (!formData.goals.trim()) {
+    if (!formData.goals || !formData.goals.trim()) {
       toast.error("Please tell us about your goals");
       return;
     }
@@ -115,12 +115,16 @@ function OnboardingContent() {
       return;
     }
 
-    if (submitting) return;
+    if (submitting) {
+      console.warn('[Onboarding] Already submitting, ignoring duplicate submit');
+      return;
+    }
 
     setSubmitting(true);
-    console.log('[Onboarding] Submitting profile...');
+    console.log('[Onboarding] ✅ Validation passed, submitting to backend...');
 
     try {
+      // Build payload
       const payload = {
         full_name: formData.full_name.trim(),
         role: formData.role,
@@ -132,8 +136,9 @@ function OnboardingContent() {
         complete: true // Mark onboarding as complete
       };
 
-      console.log('[Onboarding] Payload:', payload);
+      console.log('[Onboarding] 📤 Payload:', JSON.stringify(payload, null, 2));
 
+      // Call backend function
       const response = await fetch('/functions/onboardingComplete', {
         method: 'POST',
         credentials: 'include',
@@ -144,34 +149,64 @@ function OnboardingContent() {
         body: JSON.stringify(payload)
       });
       
-      console.log('[Onboarding] Response status:', response.status);
+      console.log('[Onboarding] 📥 Response status:', response.status);
+      console.log('[Onboarding] 📥 Response headers:', Object.fromEntries(response.headers.entries()));
+      
+      // Read response
+      const responseText = await response.text();
+      console.log('[Onboarding] 📥 Response text:', responseText);
+      
+      let result;
+      try {
+        result = JSON.parse(responseText);
+        console.log('[Onboarding] 📥 Parsed result:', result);
+      } catch (parseError) {
+        console.error('[Onboarding] ❌ Failed to parse response:', parseError);
+        throw new Error(`Server returned invalid response: ${responseText.substring(0, 100)}`);
+      }
 
+      // Check if request failed
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error('[Onboarding] Save failed:', response.status, errorText);
-        throw new Error(`Save failed (${response.status})`);
+        console.error('[Onboarding] ❌ Request failed with status:', response.status);
+        console.error('[Onboarding] Error details:', result);
+        throw new Error(result.message || result.error || `Save failed (${response.status})`);
       }
 
-      const result = await response.json();
-      console.log('[Onboarding] Save result:', result);
-
-      if (!result.ok) {
-        throw new Error(result.error || 'Save failed');
+      // Check if backend reported failure
+      if (!result.ok && !result.success) {
+        console.error('[Onboarding] ❌ Backend reported failure:', result);
+        throw new Error(result.message || result.error || 'Save failed');
       }
 
+      // Success!
+      console.log('[Onboarding] ✅ Save successful!');
+      console.log('[Onboarding] Profile data:', result.profile);
+      console.log('[Onboarding] Completed:', result.completed);
+      console.log('[Onboarding] Completed at:', result.completedAt);
+      
       // Show success with profile details
-      toast.success(`Profile saved! Welcome, ${result.profile?.full_name || 'there'}!`);
+      toast.success(`Profile saved! Welcome, ${result.profile?.full_name || 'there'}!`, {
+        duration: 3000
+      });
       
-      console.log('[Onboarding] ✅ Complete! Redirecting to Dashboard...');
+      console.log('[Onboarding] 🎉 Complete! Redirecting to Dashboard in 1 second...');
       
-      // Redirect to Dashboard after short delay
+      // Wait a moment then redirect
       setTimeout(() => {
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      }, 500);
+        console.log('[Onboarding] → Redirecting now...');
+        window.location.href = createPageUrl("Dashboard");
+      }, 1000);
 
     } catch (error) {
-      console.error('[Onboarding] Error:', error);
-      toast.error(error.message || "Failed to save profile. Please try again.");
+      console.error('[Onboarding] ❌ Error during submit:', error);
+      console.error('[Onboarding] Error name:', error.name);
+      console.error('[Onboarding] Error message:', error.message);
+      console.error('[Onboarding] Error stack:', error.stack);
+      
+      toast.error(error.message || "Failed to save profile. Please try again.", {
+        duration: 5000
+      });
+      
       setSubmitting(false);
     }
   };
@@ -339,6 +374,19 @@ function OnboardingContent() {
               </Label>
             </div>
 
+            {/* Debug Info */}
+            {process.env.NODE_ENV === 'development' && (
+              <div className="bg-slate-100 rounded-lg p-4 text-xs">
+                <div className="font-bold mb-2">Debug Info:</div>
+                <div>Full Name: {formData.full_name || '(empty)'}</div>
+                <div>Role: {formData.role || '(empty)'}</div>
+                <div>Markets: {formData.markets || '(empty)'}</div>
+                <div>Goals: {formData.goals ? `${formData.goals.substring(0, 30)}...` : '(empty)'}</div>
+                <div>Terms Agreed: {formData.agree_terms ? 'Yes' : 'No'}</div>
+                <div>Submitting: {submitting ? 'Yes' : 'No'}</div>
+              </div>
+            )}
+
             {/* Submit Button */}
             <Button
               type="submit"
@@ -357,17 +405,16 @@ function OnboardingContent() {
                 </>
               )}
             </Button>
+
+            {submitting && (
+              <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Please wait while we save your profile...</span>
+              </div>
+            )}
           </form>
         </div>
       </div>
     </div>
-  );
-}
-
-export default function Onboarding() {
-  return (
-    <AuthGuard requireAuth={true}>
-      <OnboardingContent />
-    </AuthGuard>
   );
 }
