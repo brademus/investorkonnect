@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -7,11 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { AuthGuard } from "@/components/AuthGuard";
 import { 
   User, Mail, Phone, Building, MapPin, Award, 
-  Target, CheckCircle, Edit, Loader2, Calendar
+  Target, CheckCircle, Edit, Loader2, Calendar, ArrowLeft
 } from "lucide-react";
 
 function ProfileContent() {
-  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
 
@@ -61,6 +60,13 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        {/* Back Button */}
+        <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-6">
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Link>
+
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
           <div className="flex items-start justify-between mb-6">
@@ -82,7 +88,7 @@ function ProfileContent() {
                 </Badge>
               )}
               <Link to={createPageUrl("AccountProfile")}>
-                <Button size="sm" className="gap-2">
+                <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
                   <Edit className="w-4 h-4" />
                   Edit Profile
                 </Button>
@@ -155,7 +161,7 @@ function ProfileContent() {
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
             <h2 className="text-xl font-bold text-slate-900 mb-6">Professional Details</h2>
             <div className="space-y-4">
-              {profile.company && (
+              {profile.company ? (
                 <div className="flex items-start gap-3">
                   <Building className="w-5 h-5 text-slate-400 mt-0.5" />
                   <div>
@@ -163,9 +169,11 @@ function ProfileContent() {
                     <p className="font-semibold text-slate-900">{profile.company}</p>
                   </div>
                 </div>
+              ) : (
+                <div className="text-slate-500 text-sm">No company listed</div>
               )}
 
-              {profile.accreditation && (
+              {profile.accreditation ? (
                 <div className="flex items-start gap-3">
                   <Award className="w-5 h-5 text-slate-400 mt-0.5" />
                   <div>
@@ -173,13 +181,15 @@ function ProfileContent() {
                     <p className="font-semibold text-slate-900">{profile.accreditation}</p>
                   </div>
                 </div>
+              ) : (
+                <div className="text-slate-500 text-sm">No accreditation listed</div>
               )}
 
               {!profile.company && !profile.accreditation && (
                 <div className="text-center py-8">
-                  <p className="text-slate-500 text-sm">No professional details added yet</p>
+                  <p className="text-slate-500 text-sm mb-3">No professional details added yet</p>
                   <Link to={createPageUrl("AccountProfile")}>
-                    <Button variant="outline" size="sm" className="mt-3">
+                    <Button variant="outline" size="sm">
                       Add Details
                     </Button>
                   </Link>
@@ -219,7 +229,7 @@ function ProfileContent() {
 
         {/* Incomplete Prompt */}
         {!hasCompletedOnboarding && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
             <div className="flex items-start gap-4">
               <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
