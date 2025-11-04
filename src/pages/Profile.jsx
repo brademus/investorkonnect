@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { AuthGuard } from "@/components/AuthGuard";
 import { 
   User, Mail, Phone, Building, MapPin, Award, 
-  Target, CheckCircle, Edit, Loader2, Calendar, ArrowLeft, RefreshCw
+  Target, CheckCircle, Edit, Loader2, Calendar, ArrowLeft, RefreshCw,
+  Shield, Star, DollarSign, FileText
 } from "lucide-react";
 
 function ProfileContent() {
@@ -37,15 +38,7 @@ function ProfileContent() {
       if (response.ok) {
         const state = await response.json();
         console.log('[Profile] ✅ Loaded fresh state:', state);
-        console.log('[Profile] Profile data:', {
-          full_name: state.profile?.full_name,
-          user_type: state.profile?.user_type,
-          markets: state.profile?.markets,
-          phone: state.profile?.phone,
-          company: state.profile?.company,
-          goals: state.profile?.goals,
-          completed: state.onboarding?.completed
-        });
+        console.log('[Profile] COMPLETE Profile data:', state.profile);
         setSession(state);
       } else {
         console.error('[Profile] ❌ Failed to load session:', response.status);
@@ -100,33 +93,77 @@ function ProfileContent() {
           </Button>
         </div>
 
-        {/* Header */}
+        {/* Header with Photo */}
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
-          <div className="flex items-start justify-between mb-6">
-            <div>
+          <div className="flex items-start gap-6 mb-6">
+            {/* Profile Photo */}
+            <div className="flex-shrink-0">
+              {profile.headshotUrl ? (
+                <img 
+                  src={profile.headshotUrl} 
+                  alt={profile.full_name || 'Profile'} 
+                  className="w-24 h-24 rounded-full object-cover border-4 border-slate-100"
+                />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-blue-600 to-emerald-500 flex items-center justify-center text-white text-3xl font-bold">
+                  {(profile.full_name || session?.email || 'U')[0].toUpperCase()}
+                </div>
+              )}
+            </div>
+
+            {/* Header Info */}
+            <div className="flex-1">
               <h1 className="text-3xl font-bold text-slate-900 mb-2">
                 {profile.full_name || 'Your Profile'}
               </h1>
-              <p className="text-slate-600">{session?.email || 'No email'}</p>
+              <p className="text-slate-600 mb-3">{session?.email || 'No email'}</p>
+              
+              <div className="flex gap-2 items-center flex-wrap">
+                {hasCompletedOnboarding ? (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Complete
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="text-orange-600 border-orange-200">
+                    Incomplete
+                  </Badge>
+                )}
+                
+                {profile.user_type && (
+                  <Badge variant="secondary" className="capitalize">
+                    {profile.user_type}
+                  </Badge>
+                )}
+                
+                {profile.vetted && (
+                  <Badge className="bg-blue-100 text-blue-800 border-blue-200">
+                    <Shield className="w-3 h-3 mr-1" />
+                    Verified
+                  </Badge>
+                )}
+                
+                {profile.status && (
+                  <Badge 
+                    className={
+                      profile.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      profile.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-yellow-100 text-yellow-800'
+                    }
+                  >
+                    {profile.status}
+                  </Badge>
+                )}
+              </div>
             </div>
-            <div className="flex gap-2 items-center flex-wrap">
-              {hasCompletedOnboarding ? (
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Complete
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-orange-600 border-orange-200">
-                  Incomplete
-                </Badge>
-              )}
-              <Link to={createPageUrl("AccountProfile")}>
-                <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
-                  <Edit className="w-4 h-4" />
-                  Edit Profile
-                </Button>
-              </Link>
-            </div>
+
+            {/* Edit Button */}
+            <Link to={createPageUrl("AccountProfile")}>
+              <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
+                <Edit className="w-4 h-4" />
+                Edit Profile
+              </Button>
+            </Link>
           </div>
 
           {/* Completion Date */}
@@ -141,6 +178,14 @@ function ProfileContent() {
             </div>
           )}
         </div>
+
+        {/* Bio Section */}
+        {profile.bio && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <h2 className="text-xl font-bold text-slate-900 mb-4">About</h2>
+            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
+          </div>
+        )}
 
         {/* Profile Information */}
         <div className="grid md:grid-cols-2 gap-6 mb-6">
@@ -163,7 +208,7 @@ function ProfileContent() {
                 <div className="flex-1">
                   <p className="text-sm text-slate-600">Email</p>
                   <p className="font-semibold text-slate-900 break-all">
-                    {session?.email || 'Not set'}
+                    {session?.email || profile.email || 'Not set'}
                   </p>
                 </div>
               </div>
@@ -187,6 +232,18 @@ function ProfileContent() {
                   </Badge>
                 </div>
               </div>
+
+              {profile.role && (
+                <div className="flex items-start gap-3">
+                  <Shield className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-600">Platform Role</p>
+                    <Badge variant="secondary" className="mt-1 capitalize">
+                      {profile.role}
+                    </Badge>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -202,9 +259,7 @@ function ProfileContent() {
                     <p className="font-semibold text-slate-900">{profile.company}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="text-slate-500 text-sm italic">No company listed</div>
-              )}
+              ) : null}
 
               {profile.accreditation ? (
                 <div className="flex items-start gap-3">
@@ -214,11 +269,49 @@ function ProfileContent() {
                     <p className="font-semibold text-slate-900">{profile.accreditation}</p>
                   </div>
                 </div>
-              ) : (
-                <div className="text-slate-500 text-sm italic">No accreditation listed</div>
+              ) : null}
+
+              {profile.licenseNumber && (
+                <div className="flex items-start gap-3">
+                  <FileText className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-600">License Number</p>
+                    <p className="font-semibold text-slate-900">{profile.licenseNumber}</p>
+                  </div>
+                </div>
               )}
 
-              {!profile.company && !profile.accreditation && (
+              {profile.licenseState && (
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-600">License State</p>
+                    <p className="font-semibold text-slate-900">{profile.licenseState}</p>
+                  </div>
+                </div>
+              )}
+
+              {profile.broker && (
+                <div className="flex items-start gap-3">
+                  <Building className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-600">Broker</p>
+                    <p className="font-semibold text-slate-900">{profile.broker}</p>
+                  </div>
+                </div>
+              )}
+
+              {profile.reputationScore !== undefined && profile.reputationScore !== null && (
+                <div className="flex items-start gap-3">
+                  <Star className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-600">Reputation Score</p>
+                    <p className="font-semibold text-slate-900">{profile.reputationScore}/100</p>
+                  </div>
+                </div>
+              )}
+
+              {!profile.company && !profile.accreditation && !profile.licenseNumber && !profile.broker && (
                 <div className="text-center py-8">
                   <p className="text-slate-500 text-sm mb-3">No professional details added yet</p>
                   <Link to={createPageUrl("AccountProfile")}>
@@ -231,6 +324,37 @@ function ProfileContent() {
             </div>
           </div>
         </div>
+
+        {/* Subscription Info */}
+        {(profile.subscription_tier && profile.subscription_tier !== 'none') && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <DollarSign className="w-5 h-5 text-slate-600" />
+              <h2 className="text-xl font-bold text-slate-900">Subscription</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-slate-600">Plan</p>
+                <Badge variant="secondary" className="mt-1 capitalize text-base">
+                  {profile.subscription_tier}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-sm text-slate-600">Status</p>
+                <Badge 
+                  className={`mt-1 ${
+                    profile.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                    profile.subscription_status === 'trialing' ? 'bg-blue-100 text-blue-800' :
+                    profile.subscription_status === 'cancelled' ? 'bg-orange-100 text-orange-800' :
+                    'bg-slate-100 text-slate-800'
+                  }`}
+                >
+                  {profile.subscription_status || 'None'}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Markets */}
         {profile.markets && profile.markets.length > 0 ? (
@@ -247,15 +371,7 @@ function ProfileContent() {
               ))}
             </div>
           </div>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-            <div className="flex items-center gap-2 mb-4">
-              <MapPin className="w-5 h-5 text-slate-600" />
-              <h2 className="text-xl font-bold text-slate-900">Target Markets</h2>
-            </div>
-            <p className="text-slate-500 text-sm italic">No markets listed yet</p>
-          </div>
-        )}
+        ) : null}
 
         {/* Goals */}
         {profile.goals ? (
@@ -264,15 +380,60 @@ function ProfileContent() {
               <Target className="w-5 h-5 text-slate-600" />
               <h2 className="text-xl font-bold text-slate-900">Goals</h2>
             </div>
-            <p className="text-slate-700 leading-relaxed">{profile.goals}</p>
+            <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{profile.goals}</p>
           </div>
-        ) : (
+        ) : null}
+
+        {/* Proof Links */}
+        {profile.proofLinks && profile.proofLinks.length > 0 && (
           <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
             <div className="flex items-center gap-2 mb-4">
-              <Target className="w-5 h-5 text-slate-600" />
-              <h2 className="text-xl font-bold text-slate-900">Goals</h2>
+              <FileText className="w-5 h-5 text-slate-600" />
+              <h2 className="text-xl font-bold text-slate-900">Verification Documents</h2>
             </div>
-            <p className="text-slate-500 text-sm italic">No goals listed yet</p>
+            <div className="space-y-2">
+              {profile.proofLinks.map((link, idx) => (
+                <a 
+                  key={idx} 
+                  href={link} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-blue-600 hover:text-blue-700 hover:underline text-sm break-all"
+                >
+                  {link}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* NDA Status */}
+        {profile.nda_accepted && (
+          <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            <div className="flex items-center gap-2 mb-4">
+              <Shield className="w-5 h-5 text-slate-600" />
+              <h2 className="text-xl font-bold text-slate-900">NDA Status</h2>
+            </div>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-emerald-600" />
+                <span className="text-slate-700">NDA Accepted</span>
+              </div>
+              {profile.nda_accepted_at && (
+                <p className="text-sm text-slate-600">
+                  Signed on {new Date(profile.nda_accepted_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </p>
+              )}
+              {profile.nda_version && (
+                <p className="text-xs text-slate-500">Version: {profile.nda_version}</p>
+              )}
+            </div>
           </div>
         )}
 
@@ -310,6 +471,10 @@ function ProfileContent() {
             </Button>
           </Link>
         </div>
+
+        {/* Debug Info (only shown in console) */}
+        {console.log('[Profile] All available fields:', Object.keys(profile))}
+        {console.log('[Profile] Complete profile object:', profile)}
       </div>
     </div>
   );
