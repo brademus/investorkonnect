@@ -36,6 +36,7 @@ import AgentProfile from './pages/AgentProfile';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
 import DashboardInvestor from './pages/DashboardInvestor';
+import DashboardAgent from './pages/DashboardAgent';
 import Layout from './Layout.jsx';
 
 
@@ -78,6 +79,7 @@ export const PAGES = {
     "Admin": Admin,
     "Profile": Profile,
     "DashboardInvestor": DashboardInvestor,
+    "DashboardAgent": DashboardAgent,
 }
 
 export const pagesConfig = {
