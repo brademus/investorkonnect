@@ -1,0 +1,91 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { ensureProfile } from './ensureProfile.js';
+import Stripe from 'npm:stripe@14.11.0';
+
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+  apiVersion: '2023-10-16'
+});
+
+const PUBLIC_APP_URL = Deno.env.get('PUBLIC_APP_URL') || 'https://agent-vault-da3d088b.base44.app';
+
+/**
+ * POST /functions/verifyCreateSession
+ * Creates a Stripe Identity Verification Session
+ */
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Check authentication
+    const user = await base44.auth.me();
+    if (!user || !user.id) {
+      return Response.json({
+        ok: false,
+        error: 'not_authenticated'
+      }, { status: 401 });
+    }
+
+    // Ensure profile exists
+    let profile;
+    try {
+      profile = await ensureProfile(base44, user);
+    } catch (err) {
+      console.error('[verifyCreateSession] Profile ensure failed:', err);
+      return Response.json({
+        ok: false,
+        error: 'profile_load_failed'
+      }, { status: 500 });
+    }
+
+    // If already verified, no need to create new session
+    if (profile.verified === true) {
+      return Response.json({
+        ok: true,
+        already_verified: true,
+        url: `${PUBLIC_APP_URL}/pages/Dashboard`
+      });
+    }
+
+    console.log('[verifyCreateSession] Creating Stripe Identity session for:', user.email);
+
+    // Create Stripe Identity Verification Session
+    const session = await stripe.identity.verificationSessions.create({
+      type: 'document',
+      options: {
+        document: {
+          require_matching_selfie: true,
+          require_id_number: true
+        }
+      },
+      metadata: {
+        user_id: user.id,
+        email: user.email,
+        profile_id: profile.id
+      },
+      return_url: `${PUBLIC_APP_URL}/pages/VerifyCallback`
+    });
+
+    console.log('[verifyCreateSession] Session created:', session.id);
+
+    // Update profile with session info
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
+      verification_session_id: session.id,
+      verification_status: 'processing',
+      verification_provider: 'stripe_identity'
+    });
+
+    // Return the hosted URL
+    return Response.json({
+      ok: true,
+      url: session.url,
+      session_id: session.id
+    });
+
+  } catch (error) {
+    console.error('[verifyCreateSession] Error:', error);
+    return Response.json({
+      ok: false,
+      error: error.message || 'Failed to create verification session'
+    }, { status: 500 });
+  }
+});
