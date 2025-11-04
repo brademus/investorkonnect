@@ -15,6 +15,7 @@ function DashboardContent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [session, setSession] = useState(null);
+  const [routeAttempts, setRouteAttempts] = useState(0);
 
   useEffect(() => {
     loadAndRoute();
@@ -39,36 +40,37 @@ function DashboardContent() {
         console.log('[Dashboard] Session state:', state);
         setSession(state);
 
-        // ROLE-BASED ROUTING
-        // Check both new 'user_role' and old 'user_type' fields for backward compatibility
-        const userRole = state.profile?.user_role || state.profile?.user_type; 
-        // Check both new 'completed' and old 'onboarding_completed_at' fields for backward compatibility
+        // CRITICAL FIX: More robust routing logic
+        const userRole = state.profile?.user_role || state.profile?.user_type;
         const onboardingCompleted = !!(state.onboarding?.completed || state.profile?.onboarding_completed_at);
 
         console.log('[Dashboard] Role:', userRole, 'Onboarding:', onboardingCompleted);
 
-        // Not onboarded - redirect to onboarding
-        if (!onboardingCompleted) {
+        // If not onboarded AND we haven't tried routing too many times
+        if (!onboardingCompleted && routeAttempts < 2) {
           console.log('[Dashboard] Redirecting to onboarding...');
-          navigate(createPageUrl("Onboarding"));
+          setRouteAttempts(prev => prev + 1);
+          navigate(createPageUrl("Onboarding"), { replace: true });
           return;
         }
 
-        // Route based on role
-        if (userRole === 'investor') {
-          console.log('[Dashboard] Redirecting to investor dashboard...');
-          navigate(createPageUrl("DashboardInvestor"));
-          return;
+        // If onboarded, route based on role
+        if (onboardingCompleted) {
+          if (userRole === 'investor') {
+            console.log('[Dashboard] Redirecting to investor dashboard...');
+            navigate(createPageUrl("DashboardInvestor"), { replace: true });
+            return;
+          }
+
+          if (userRole === 'agent') {
+            console.log('[Dashboard] Redirecting to agent dashboard...');
+            navigate(createPageUrl("DashboardAgent"), { replace: true });
+            return;
+          }
         }
 
-        if (userRole === 'agent') {
-          console.log('[Dashboard] Redirecting to agent dashboard...');
-          navigate(createPageUrl("DashboardAgent"));
-          return;
-        }
-
-        // No specific role or already onboarded, show generic dashboard (fallback)
-        console.log('[Dashboard] No specific role or already onboarded, showing generic dashboard');
+        // Fallback: show generic dashboard
+        console.log('[Dashboard] Showing generic dashboard (fallback)');
         setLoading(false);
       } else {
         console.error('[Dashboard] Failed to load session:', response.status);
@@ -96,7 +98,7 @@ function DashboardContent() {
   const isAdmin = user.role === 'admin';
   const subscription = session?.subscription || {};
 
-  // Generic dashboard fallback (if no role specific dashboard was routed)
+  // Generic dashboard fallback
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -105,7 +107,9 @@ function DashboardContent() {
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Welcome back{user.full_name ? `, ${user.full_name}` : ''}!
           </h1>
-          <p className="text-slate-600">Complete your profile to get started</p>
+          <p className="text-slate-600">
+            {hasCompletedOnboarding ? "Here's your dashboard" : "Complete your profile to get started"}
+          </p>
         </div>
 
         {/* Onboarding Reminder */}
@@ -130,13 +134,12 @@ function DashboardContent() {
 
         {/* Quick Stats */}
         <div className="grid md:grid-cols-4 gap-6 mb-8">
-          {/* Account Type */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <Shield className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-slate-900 mb-1 capitalize">
-              {user.user_type || "Member"}
+              {user.user_role || user.user_type || "Member"}
             </h3>
             <p className="text-slate-600 text-sm">Account Type</p>
             {isAdmin && (
@@ -147,7 +150,6 @@ function DashboardContent() {
             )}
           </div>
 
-          {/* Subscription */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
               <Star className="w-6 h-6 text-purple-600" />
@@ -158,7 +160,6 @@ function DashboardContent() {
             <p className="text-slate-600 text-sm">Subscription Plan</p>
           </div>
 
-          {/* Active Deals */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
               <FileText className="w-6 h-6 text-emerald-600" />
@@ -167,7 +168,6 @@ function DashboardContent() {
             <p className="text-slate-600 text-sm">Active Deals</p>
           </div>
 
-          {/* Connections */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <Users className="w-6 h-6 text-blue-600" />
