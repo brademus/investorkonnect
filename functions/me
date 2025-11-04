@@ -62,7 +62,7 @@ Deno.serve(async (req) => {
     const subStatus = profile.subscription_status || 'none';
     const hasActiveSub = subStatus === 'active' || subStatus === 'trialing';
 
-    // Build response
+    // Build response - RETURN ALL PROFILE FIELDS FROM DATABASE
     return Response.json({
       signedIn: true,
       authenticated: true,
@@ -82,19 +82,8 @@ Deno.serve(async (req) => {
         role: profile.user_type || profile.role || null,
         plan: profile.subscription_tier || null
       },
-      profile: {
-        id: profile.id,
-        user_id: profile.user_id,
-        email: profile.email,
-        full_name: profile.full_name,
-        user_type: profile.user_type,
-        company: profile.company,
-        phone: profile.phone,
-        markets: profile.markets,
-        accreditation: profile.accreditation,
-        goals: profile.goals,
-        onboarding_completed_at: profile.onboarding_completed_at
-      }
+      // RETURN COMPLETE PROFILE - ALL FIELDS FROM DATABASE
+      profile: profile
     }, { status: 200, headers });
 
   } catch (error) {
