@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -24,7 +23,6 @@ export default function Layout({ children, currentPageName }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     setupMeta();
@@ -32,18 +30,22 @@ export default function Layout({ children, currentPageName }) {
   }, [location.pathname]);
 
   const setupMeta = () => {
-    const metaRobots = document.querySelector('meta[name="robots"]') || document.createElement('meta');
-    metaRobots.name = "robots";
-    metaRobots.content = "noindex, nofollow";
-    if (!document.querySelector('meta[name="robots"]')) {
-      document.head.appendChild(metaRobots);
-    }
+    try {
+      const metaRobots = document.querySelector('meta[name="robots"]') || document.createElement('meta');
+      metaRobots.name = "robots";
+      metaRobots.content = "noindex, nofollow";
+      if (!document.querySelector('meta[name="robots"]')) {
+        document.head.appendChild(metaRobots);
+      }
 
-    const canonical = document.querySelector('link[rel="canonical"]') || document.createElement('link');
-    canonical.rel = "canonical";
-    canonical.href = `${PUBLIC_APP_URL}${location.pathname}`;
-    if (!document.querySelector('link[rel="canonical"]')) {
-      document.head.appendChild(canonical);
+      const canonical = document.querySelector('link[rel="canonical"]') || document.createElement('link');
+      canonical.rel = "canonical";
+      canonical.href = `${PUBLIC_APP_URL}${location.pathname}`;
+      if (!document.querySelector('link[rel="canonical"]')) {
+        document.head.appendChild(canonical);
+      }
+    } catch (error) {
+      console.error('[Layout] Meta setup error:', error);
     }
   };
 
@@ -53,7 +55,6 @@ export default function Layout({ children, currentPageName }) {
       if (authenticated) {
         const currentUser = await base44.auth.me();
         if (currentUser) {
-          // Fetch profile for additional info
           const response = await fetch('/functions/me', {
             method: 'POST',
             credentials: 'include',
@@ -63,23 +64,17 @@ export default function Layout({ children, currentPageName }) {
           if (response.ok) {
             const state = await response.json();
             
-            console.log('[Layout] User state loaded:', {
-              email: currentUser.email,
-              profileRole: state.profile?.role,
-              userRole: currentUser.role
-            });
-            
             setUser({
               email: currentUser.email,
               full_name: state.profile?.full_name || currentUser.full_name,
-              role: state.profile?.role || currentUser.role, // Check both profile and user role
+              role: state.profile?.role || currentUser.role,
               plan: state.subscription?.tier
             });
           } else {
             setUser({
               email: currentUser.email,
               full_name: currentUser.full_name,
-              role: currentUser.role // Fallback to user role
+              role: currentUser.role
             });
           }
         }
@@ -92,8 +87,12 @@ export default function Layout({ children, currentPageName }) {
   };
 
   const handleSignIn = () => {
-    console.log('[Layout] Redirecting to login');
-    base44.auth.redirectToLogin(window.location.pathname);
+    try {
+      base44.auth.redirectToLogin(window.location.pathname);
+    } catch (error) {
+      console.error('[Layout] Sign in error:', error);
+      window.location.href = "/";
+    }
   };
 
   const handleGetStarted = () => {
@@ -104,15 +103,26 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  const handleLogout = () => {
-    if (loggingOut) return;
-    
-    setLoggingOut(true);
-    console.log('[Layout] Signing out...');
-    
-    // Use Base44's built-in logout with redirect
-    // This will clear the session and redirect to home page
-    base44.auth.logout("/");
+  const handleLogout = async () => {
+    try {
+      console.log('[Layout] Logging out...');
+      // Clear user state immediately
+      setUser(null);
+      // Redirect to home
+      window.location.href = "/";
+      // Let Base44 handle the session cleanup in background
+      setTimeout(() => {
+        try {
+          base44.auth.logout();
+        } catch (e) {
+          console.error('[Layout] Logout error:', e);
+        }
+      }, 100);
+    } catch (error) {
+      console.error('[Layout] Logout error:', error);
+      // Force redirect even if logout fails
+      window.location.href = "/";
+    }
   };
 
   const publicNav = [
@@ -127,8 +137,6 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const isActive = (href) => location.pathname === href;
-  
-  // Check if user is admin (for showing admin panel)
   const isAdmin = user?.role === 'admin';
 
   return (
@@ -193,13 +201,14 @@ export default function Layout({ children, currentPageName }) {
                     </Button>
                   </Link>
                   
-                  {/* ADMIN PANEL - Direct Link (always visible for testing) */}
-                  <Link to={createPageUrl("Admin")}>
-                    <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
-                      <Shield className="w-4 h-4" />
-                      Admin
-                    </Button>
-                  </Link>
+                  {isAdmin && (
+                    <Link to={createPageUrl("Admin")}>
+                      <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
+                        <Shield className="w-4 h-4" />
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
                   
                   {!user.plan && (
                     <Link to={createPageUrl("Pricing")}>
@@ -256,9 +265,9 @@ export default function Layout({ children, currentPageName }) {
                         </>
                       )}
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={handleLogout} disabled={loggingOut}>
+                      <DropdownMenuItem onClick={handleLogout}>
                         <LogOut className="w-4 h-4 mr-2" />
-                        {loggingOut ? "Signing out..." : "Sign Out"}
+                        Sign Out
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -317,12 +326,14 @@ export default function Layout({ children, currentPageName }) {
                         Dashboard
                       </Button>
                     </Link>
-                    <Link to={createPageUrl("Admin")} onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="ghost" className="w-full justify-start gap-2 text-orange-600">
-                        <Shield className="w-4 h-4" />
-                        Admin Panel
-                      </Button>
-                    </Link>
+                    {isAdmin && (
+                      <Link to={createPageUrl("Admin")} onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start gap-2 text-orange-600">
+                          <Shield className="w-4 h-4" />
+                          Admin Panel
+                        </Button>
+                      </Link>
+                    )}
                     <Link to={createPageUrl("AccountProfile")} onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <User className="w-4 h-4" />
@@ -336,10 +347,9 @@ export default function Layout({ children, currentPageName }) {
                         setMobileMenuOpen(false);
                         handleLogout();
                       }}
-                      disabled={loggingOut}
                     >
                       <LogOut className="w-4 h-4" />
-                      {loggingOut ? "Signing out..." : "Sign Out"}
+                      Sign Out
                     </Button>
                   </>
                 )}
