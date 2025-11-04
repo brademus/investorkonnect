@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -7,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Loader2, CheckCircle, AlertCircle } from "lucide-react";
+import { Shield, Loader2, CheckCircle, AlertCircle, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -25,6 +24,8 @@ function OnboardingContent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [statusMessage, setStatusMessage] = useState("");
+  const [statusType, setStatusType] = useState("info"); // info, success, error
   const checkRan = useRef(false);
 
   const [formData, setFormData] = useState({
@@ -47,8 +48,8 @@ function OnboardingContent() {
 
   const loadProfile = async () => {
     try {
-      console.log('[Onboarding] Loading profile data...');
-
+      setStatusMessage("Loading your profile...");
+      
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
@@ -57,10 +58,8 @@ function OnboardingContent() {
 
       if (response.ok) {
         const state = await response.json();
-        console.log('[Onboarding] User state loaded:', state);
 
         if (state.profile) {
-          console.log('[Onboarding] Pre-filling form with existing data');
           setFormData({
             full_name: state.profile.full_name || "",
             role: state.profile.user_type || "",
@@ -71,15 +70,22 @@ function OnboardingContent() {
             goals: state.profile.goals || "",
             agree_terms: false
           });
+          setStatusMessage("Profile loaded successfully!");
+          setStatusType("success");
+        } else {
+          setStatusMessage("Ready to create your profile");
+          setStatusType("info");
         }
       } else {
-        console.warn('[Onboarding] Failed to load profile data');
+        setStatusMessage("Could not load profile");
+        setStatusType("error");
       }
       
       setLoading(false);
 
     } catch (error) {
-      console.error('[Onboarding] Load error:', error);
+      setStatusMessage("Error loading profile: " + error.message);
+      setStatusType("error");
       setLoading(false);
     }
   };
@@ -87,53 +93,49 @@ function OnboardingContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    console.log('');
-    console.log('═══════════════════════════════════════════════');
-    console.log('[Onboarding] 🚀 SAVE BUTTON CLICKED');
-    console.log('═══════════════════════════════════════════════');
-    console.log('[Onboarding] Current form data:', formData);
-    console.log('');
-
     // Validation
     if (!formData.full_name || !formData.full_name.trim()) {
-      console.error('[Onboarding] ❌ Validation failed: Missing full name');
       toast.error("Please enter your full name");
+      setStatusMessage("❌ Missing full name");
+      setStatusType("error");
       return;
     }
 
     if (!formData.role) {
-      console.error('[Onboarding] ❌ Validation failed: Missing role');
       toast.error("Please select your account type");
+      setStatusMessage("❌ Missing account type");
+      setStatusType("error");
       return;
     }
 
     if (!formData.markets || !formData.markets.trim()) {
-      console.error('[Onboarding] ❌ Validation failed: Missing markets');
       toast.error("Please enter at least one target market");
+      setStatusMessage("❌ Missing target markets");
+      setStatusType("error");
       return;
     }
 
     if (!formData.goals || !formData.goals.trim()) {
-      console.error('[Onboarding] ❌ Validation failed: Missing goals');
       toast.error("Please tell us about your goals");
+      setStatusMessage("❌ Missing goals");
+      setStatusType("error");
       return;
     }
 
     if (!formData.agree_terms) {
-      console.error('[Onboarding] ❌ Validation failed: Terms not agreed');
       toast.error("Please agree to the Terms and Privacy Policy");
+      setStatusMessage("❌ Please agree to terms");
+      setStatusType("error");
       return;
     }
 
     if (submitting) {
-      console.warn('[Onboarding] ⚠️ Already submitting, ignoring duplicate submit');
       return;
     }
 
     setSubmitting(true);
-    console.log('[Onboarding] ✅ All validations passed!');
-    console.log('[Onboarding] 📤 Starting submission process...');
-    console.log('');
+    setStatusMessage("⏳ Step 1/4: Validating form...");
+    setStatusType("info");
 
     try {
       // Build payload
@@ -145,21 +147,13 @@ function OnboardingContent() {
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
         goals: formData.goals.trim(),
-        complete: true // Mark onboarding as complete
+        complete: true
       };
 
-      console.log('[Onboarding] 📦 Built payload:');
-      console.log('  - full_name:', payload.full_name);
-      console.log('  - role:', payload.role);
-      console.log('  - markets:', payload.markets);
-      console.log('  - company:', payload.company || '(empty)');
-      console.log('  - phone:', payload.phone || '(empty)');
-      console.log('  - accreditation:', payload.accreditation || '(empty)');
-      console.log('  - goals length:', payload.goals.length, 'chars');
-      console.log('  - complete:', payload.complete);
-      console.log('');
-
-      console.log('[Onboarding] 🌐 Calling /functions/onboardingComplete...');
+      setStatusMessage("⏳ Step 2/4: Preparing data...");
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      setStatusMessage("⏳ Step 3/4: Saving to database...");
       
       // Call backend function
       const response = await fetch('/functions/onboardingComplete', {
@@ -172,92 +166,44 @@ function OnboardingContent() {
         body: JSON.stringify(payload)
       });
       
-      console.log('[Onboarding] 📡 Response received!');
-      console.log('  - Status:', response.status);
-      console.log('  - Status Text:', response.statusText);
-      console.log('  - OK:', response.ok);
-      console.log('');
-      
       // Read response
       const responseText = await response.text();
-      console.log('[Onboarding] 📥 Raw response body:');
-      console.log(responseText);
-      console.log('');
       
       let result;
       try {
         result = JSON.parse(responseText);
-        console.log('[Onboarding] ✅ Successfully parsed JSON response');
-        console.log('[Onboarding] 📊 Parsed result:', result);
-        console.log('');
       } catch (parseError) {
-        console.error('[Onboarding] ❌ FAILED TO PARSE JSON RESPONSE');
-        console.error('Parse error:', parseError);
-        console.error('Raw response was:', responseText.substring(0, 200));
-        throw new Error(`Server returned invalid response: ${responseText.substring(0, 100)}`);
+        throw new Error('Server returned invalid response');
       }
 
       // Check if request failed
       if (!response.ok) {
-        console.error('[Onboarding] ❌ HTTP REQUEST FAILED');
-        console.error('  - Status:', response.status);
-        console.error('  - Error message:', result.message || result.error);
-        console.error('  - Full result:', result);
         throw new Error(result.message || result.error || `Save failed (${response.status})`);
       }
 
       // Check if backend reported failure
       if (!result.ok && !result.success) {
-        console.error('[Onboarding] ❌ BACKEND REPORTED FAILURE');
-        console.error('  - ok:', result.ok);
-        console.error('  - success:', result.success);
-        console.error('  - error:', result.error);
-        console.error('  - message:', result.message);
         throw new Error(result.message || result.error || 'Save failed');
       }
 
       // Success!
-      console.log('');
-      console.log('═══════════════════════════════════════════════');
-      console.log('[Onboarding] ✅ ✅ ✅ SAVE SUCCESSFUL! ✅ ✅ ✅');
-      console.log('═══════════════════════════════════════════════');
-      console.log('[Onboarding] 📋 Saved profile data:');
-      console.log('  - Profile ID:', result.profileId);
-      console.log('  - User ID:', result.userId);
-      console.log('  - Full Name:', result.profile?.full_name);
-      console.log('  - User Type:', result.profile?.user_type);
-      console.log('  - Markets:', result.profile?.markets);
-      console.log('  - Company:', result.profile?.company);
-      console.log('  - Phone:', result.profile?.phone);
-      console.log('  - Goals:', result.profile?.goals ? result.profile.goals.substring(0, 50) + '...' : '(empty)');
-      console.log('  - Onboarding Completed:', result.completed);
-      console.log('  - Completed At:', result.completedAt);
-      console.log('═══════════════════════════════════════════════');
-      console.log('');
+      setStatusMessage("✅ Step 4/4: Profile saved successfully!");
+      setStatusType("success");
       
-      // Show success with profile details
       toast.success(`Profile saved! Welcome, ${result.profile?.full_name || 'there'}!`, {
         duration: 3000
       });
       
-      console.log('[Onboarding] 🎉 Redirecting to Dashboard in 1 second...');
+      setStatusMessage("✅ Redirecting to dashboard...");
       
-      // Wait a moment then redirect
+      // Redirect
       setTimeout(() => {
-        console.log('[Onboarding] → Redirecting now to:', createPageUrl("Dashboard"));
         window.location.href = createPageUrl("Dashboard");
-      }, 1000);
+      }, 1500);
 
     } catch (error) {
-      console.log('');
-      console.error('═══════════════════════════════════════════════');
-      console.error('[Onboarding] ❌ ❌ ❌ ERROR OCCURRED ❌ ❌ ❌');
-      console.error('═══════════════════════════════════════════════');
-      console.error('[Onboarding] Error type:', error.constructor.name);
-      console.error('[Onboarding] Error message:', error.message);
-      console.error('[Onboarding] Error stack:', error.stack);
-      console.error('═══════════════════════════════════════════════');
-      console.log('');
+      setStatusMessage("❌ ERROR: " + error.message);
+      setStatusType("error");
       
       toast.error(error.message || "Failed to save profile. Please try again.", {
         duration: 5000
@@ -278,6 +224,8 @@ function OnboardingContent() {
     );
   }
 
+  const isFormValid = formData.full_name && formData.role && formData.markets && formData.goals && formData.agree_terms;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 py-12">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -288,16 +236,24 @@ function OnboardingContent() {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Complete Your Profile</h1>
           <p className="text-slate-600">Tell us about yourself to get the most out of AgentVault</p>
-          
-          {/* Debug Instructions */}
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-left">
-            <p className="font-semibold text-yellow-900 mb-1">📋 Troubleshooting Instructions:</p>
-            <p className="text-yellow-800 text-xs">
-              1. Open browser console (Press F12)<br />
-              2. Click the "Console" tab<br />
-              3. Fill out this form and click "Save Profile"<br />
-              4. Watch the console for detailed logs<br />
-              5. If you see errors, take a screenshot and share it
+        </div>
+
+        {/* Status Box - VISIBLE FEEDBACK */}
+        <div className={`mb-6 p-4 rounded-xl border-2 ${
+          statusType === 'success' ? 'bg-emerald-50 border-emerald-200' :
+          statusType === 'error' ? 'bg-red-50 border-red-200' :
+          'bg-blue-50 border-blue-200'
+        }`}>
+          <div className="flex items-center gap-3">
+            {statusType === 'success' && <CheckCircle className="w-6 h-6 text-emerald-600 flex-shrink-0" />}
+            {statusType === 'error' && <XCircle className="w-6 h-6 text-red-600 flex-shrink-0" />}
+            {statusType === 'info' && <Loader2 className="w-6 h-6 text-blue-600 animate-spin flex-shrink-0" />}
+            <p className={`font-medium ${
+              statusType === 'success' ? 'text-emerald-900' :
+              statusType === 'error' ? 'text-red-900' :
+              'text-blue-900'
+            }`}>
+              {statusMessage || "Ready to save your profile"}
             </p>
           </div>
         </div>
@@ -442,42 +398,60 @@ function OnboardingContent() {
               </Label>
             </div>
 
+            {/* Form Status Indicator */}
+            <div className={`p-4 rounded-lg border-2 ${
+              isFormValid ? 'bg-emerald-50 border-emerald-200' : 'bg-orange-50 border-orange-200'
+            }`}>
+              <p className={`text-sm font-medium ${
+                isFormValid ? 'text-emerald-900' : 'text-orange-900'
+              }`}>
+                {isFormValid ? '✅ Form is complete - ready to save!' : '⚠️ Please fill out all required fields'}
+              </p>
+              <div className="mt-2 space-y-1 text-xs">
+                <div className={formData.full_name ? 'text-emerald-700' : 'text-orange-700'}>
+                  {formData.full_name ? '✓' : '○'} Full Name
+                </div>
+                <div className={formData.role ? 'text-emerald-700' : 'text-orange-700'}>
+                  {formData.role ? '✓' : '○'} Account Type
+                </div>
+                <div className={formData.markets ? 'text-emerald-700' : 'text-orange-700'}>
+                  {formData.markets ? '✓' : '○'} Target Markets
+                </div>
+                <div className={formData.goals ? 'text-emerald-700' : 'text-orange-700'}>
+                  {formData.goals ? '✓' : '○'} Goals
+                </div>
+                <div className={formData.agree_terms ? 'text-emerald-700' : 'text-orange-700'}>
+                  {formData.agree_terms ? '✓' : '○'} Terms Agreement
+                </div>
+              </div>
+            </div>
+
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={submitting || !formData.agree_terms || !formData.full_name || !formData.role || !formData.markets || !formData.goals}
-              className="w-full bg-blue-600 hover:bg-blue-700 h-12 text-lg font-semibold"
+              disabled={submitting || !isFormValid}
+              className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg font-semibold"
             >
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                  Saving Profile...
+                  Saving Your Profile...
                 </>
               ) : (
                 <>
                   <CheckCircle className="w-5 h-5 mr-2" />
-                  Save Profile
+                  Save Profile & Continue
                 </>
               )}
             </Button>
 
             {submitting && (
-              <div className="flex items-center justify-center gap-2 text-sm text-slate-600">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Please wait while we save your profile...</span>
+              <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                <p className="text-sm text-blue-900 text-center font-medium">
+                  Please wait... Do not close this page
+                </p>
               </div>
             )}
-            
-            {/* Current Form State */}
-            <div className="bg-slate-100 rounded-lg p-4 text-xs space-y-1">
-              <div className="font-bold mb-2">Current Form State:</div>
-              <div>✓ Full Name: {formData.full_name || '(empty)'}</div>
-              <div>✓ Role: {formData.role || '(empty)'}</div>
-              <div>✓ Markets: {formData.markets || '(empty)'}</div>
-              <div>✓ Goals: {formData.goals ? `${formData.goals.substring(0, 30)}...` : '(empty)'}</div>
-              <div>✓ Terms: {formData.agree_terms ? 'Agreed' : 'Not agreed'}</div>
-              <div>✓ Submitting: {submitting ? 'Yes' : 'No'}</div>
-            </div>
           </form>
         </div>
       </div>
