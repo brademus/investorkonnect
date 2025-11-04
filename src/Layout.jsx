@@ -3,10 +3,11 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { 
   Menu, X, ChevronDown, Shield, LogOut, User, 
   LayoutDashboard, Settings, DollarSign,
-  Users, Star, BookOpen, Lock, Mail, Info
+  Users, Star, BookOpen, Mail, Info, FileText, TrendingUp
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -22,12 +23,10 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { loading, user, profile, role, onboarded } = useCurrentProfile();
 
   useEffect(() => {
     setupMeta();
-    checkAuth();
   }, [location.pathname]);
 
   const setupMeta = () => {
@@ -50,43 +49,6 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  const checkAuth = async () => {
-    try {
-      const authenticated = await base44.auth.isAuthenticated();
-      if (authenticated) {
-        const currentUser = await base44.auth.me();
-        if (currentUser) {
-          const response = await fetch('/functions/me', {
-            method: 'POST',
-            credentials: 'include',
-            cache: 'no-store'
-          });
-          
-          if (response.ok) {
-            const state = await response.json();
-            
-            setUser({
-              email: currentUser.email,
-              full_name: state.profile?.full_name || currentUser.full_name,
-              role: state.profile?.role || currentUser.role,
-              plan: state.subscription?.tier
-            });
-          } else {
-            setUser({
-              email: currentUser.email,
-              full_name: currentUser.full_name,
-              role: currentUser.role
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error('[Layout] Auth check error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSignIn = () => {
     try {
       base44.auth.redirectToLogin(window.location.pathname);
@@ -96,18 +58,9 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
-  const handleGetStarted = () => {
-    if (user) {
-      window.location.href = createPageUrl("Pricing");
-    } else {
-      handleSignIn();
-    }
-  };
-
   const handleLogout = async () => {
     try {
       console.log('[Layout] Logging out...');
-      setUser(null);
       window.location.href = "/";
       setTimeout(() => {
         try {
@@ -122,9 +75,16 @@ export default function Layout({ children, currentPageName }) {
     }
   };
 
+  // Determine which nav to show
+  const showPublicNav = !user || !onboarded;
+  const showInvestorNav = user && onboarded && role === 'investor';
+  const showAgentNav = user && onboarded && role === 'agent';
+  
+  const isAdmin = profile?.role === 'admin';
+
   const publicNav = [
     { name: "How It Works", href: createPageUrl("HowItWorks"), icon: Info },
-    { name: "Investors", href: createPageUrl("Investors"), icon: DollarSign },
+    { name: "Investors", href: createPageUrl("Investors"), icon: TrendingUp },
     { name: "Agents", href: createPageUrl("Agents"), icon: Users },
     { name: "Pricing", href: createPageUrl("Pricing"), icon: DollarSign },
     { name: "Reviews", href: createPageUrl("Reviews"), icon: Star },
@@ -133,8 +93,25 @@ export default function Layout({ children, currentPageName }) {
     { name: "Contact", href: createPageUrl("Contact"), icon: Mail },
   ];
 
+  const investorNav = [
+    { name: "Dashboard", href: createPageUrl("Dashboard"), icon: LayoutDashboard },
+    { name: "Agents", href: createPageUrl("Agents"), icon: Users },
+    { name: "Deal Rooms", href: createPageUrl("DealRooms"), icon: FileText },
+    { name: "Documents", href: createPageUrl("InvestorDocuments"), icon: FileText },
+    { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
+  ];
+
+  const agentNav = [
+    { name: "Dashboard", href: createPageUrl("Dashboard"), icon: LayoutDashboard },
+    { name: "Investors", href: createPageUrl("Investors"), icon: TrendingUp },
+    { name: "Leads", href: createPageUrl("Matches"), icon: Users },
+    { name: "Deal Rooms", href: createPageUrl("DealRooms"), icon: FileText },
+    { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
+  ];
+
+  const currentNav = showInvestorNav ? investorNav : showAgentNav ? agentNav : publicNav;
+  
   const isActive = (href) => location.pathname === href;
-  const isAdmin = user?.role === 'admin';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
@@ -159,7 +136,7 @@ export default function Layout({ children, currentPageName }) {
             </Link>
 
             <div className="hidden lg:flex items-center gap-1">
-              {publicNav.map((item) => (
+              {currentNav.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
@@ -182,7 +159,7 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                   <Button 
                     className="bg-blue-600 hover:bg-blue-700"
-                    onClick={handleGetStarted}
+                    onClick={handleSignIn}
                   >
                     Get Started
                   </Button>
@@ -191,13 +168,6 @@ export default function Layout({ children, currentPageName }) {
               
               {user && (
                 <>
-                  <Link to={createPageUrl("Dashboard")}>
-                    <Button variant="ghost" className="gap-2">
-                      <LayoutDashboard className="w-4 h-4" />
-                      Dashboard
-                    </Button>
-                  </Link>
-                  
                   {isAdmin && (
                     <Link to={createPageUrl("Admin")}>
                       <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
@@ -207,7 +177,7 @@ export default function Layout({ children, currentPageName }) {
                     </Link>
                   )}
                   
-                  {!user.plan && (
+                  {!profile?.subscription_tier && (
                     <Link to={createPageUrl("Pricing")}>
                       <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
                         <Shield className="w-4 h-4" />
@@ -220,22 +190,22 @@ export default function Layout({ children, currentPageName }) {
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="gap-2">
                         <User className="w-4 h-4" />
-                        {user.full_name || user.email?.split('@')[0] || 'Account'}
+                        {profile?.full_name || user.email?.split('@')[0] || 'Account'}
                         <ChevronDown className="w-4 h-4" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="w-56">
                       <div className="px-2 py-1.5 text-sm">
-                        <p className="font-medium">{user.full_name || "User"}</p>
+                        <p className="font-medium">{profile?.full_name || "User"}</p>
                         <p className="text-xs text-slate-500">{user.email}</p>
-                        {user.role && (
+                        {role && (
                           <p className="text-xs text-blue-600 mt-1 capitalize">
-                            {user.role} {isAdmin && '👑'}
+                            {role} {isAdmin && '👑'}
                           </p>
                         )}
-                        {user.plan && (
+                        {profile?.subscription_tier && (
                           <p className="text-xs text-emerald-600 capitalize">
-                            {user.plan} Plan
+                            {profile.subscription_tier} Plan
                           </p>
                         )}
                       </div>
@@ -288,7 +258,7 @@ export default function Layout({ children, currentPageName }) {
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white">
             <div className="px-4 py-4 space-y-2">
-              {publicNav.map((item) => (
+              {currentNav.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
@@ -313,7 +283,7 @@ export default function Layout({ children, currentPageName }) {
                       className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
                       onClick={() => {
                         setMobileMenuOpen(false);
-                        handleGetStarted();
+                        handleSignIn();
                       }}
                     >
                       Get Started
@@ -407,7 +377,8 @@ export default function Layout({ children, currentPageName }) {
               <h3 className="font-semibold mb-4">Company</h3>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><Link to={createPageUrl("About")} className="hover:text-white">About</Link></li>
-                <li><Link to={createPageUrl("Contact")} className="hover:text-white">Contact</Link></li>
+                <li><Link to={createPageUrl("Contact")} className="hover:text-white">Contact</Link>
+</li>
                 <li><Link to={createPageUrl("PrivacyPolicy")} className="hover:text-white">Privacy Policy</Link></li>
                 <li><Link to={createPageUrl("Terms")} className="hover:text-white">Terms of Service</Link></li>
               </ul>
