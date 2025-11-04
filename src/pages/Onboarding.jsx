@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -87,6 +88,8 @@ function OnboardingContent() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    console.log('[Onboarding] Form submitted');
+
     if (!formData.full_name.trim()) {
       toast.error("Please enter your full name");
       return;
@@ -141,6 +144,8 @@ function OnboardingContent() {
         body: JSON.stringify(payload)
       });
       
+      console.log('[Onboarding] Response status:', response.status);
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[Onboarding] Save failed:', response.status, errorText);
@@ -154,12 +159,14 @@ function OnboardingContent() {
         throw new Error(result.error || 'Save failed');
       }
 
-      toast.success("Profile saved successfully!");
+      // Show success with profile details
+      toast.success(`Profile saved! Welcome, ${result.profile?.full_name || 'there'}!`);
       
-      // CRITICAL: Always redirect to home after completing onboarding
-      console.log('[Onboarding] ✅ Complete! Redirecting to home...');
+      console.log('[Onboarding] ✅ Complete! Redirecting to Dashboard...');
+      
+      // Redirect to Dashboard after short delay
       setTimeout(() => {
-        navigate("/", { replace: true });
+        navigate(createPageUrl("Dashboard"), { replace: true });
       }, 500);
 
     } catch (error) {
