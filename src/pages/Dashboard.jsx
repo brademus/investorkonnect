@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -7,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Shield, Star, TrendingUp, FileText, 
-  AlertCircle, Users, CheckCircle, Loader2, RefreshCw
+  AlertCircle, Users, CheckCircle, Loader2, RefreshCw, Crown
 } from "lucide-react";
 
 function DashboardContent() {
@@ -28,12 +29,19 @@ function DashboardContent() {
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
 
       if (response.ok) {
         const state = await response.json();
         console.log('[Dashboard] ✅ Session state loaded:', state);
+        console.log('[Dashboard] Profile role:', state.profile?.role);
+        console.log('[Dashboard] Profile user_type:', state.profile?.user_type);
+        console.log('[Dashboard] Subscription:', state.subscription);
         setSession(state);
       } else {
         console.error('[Dashboard] ❌ Failed to load session:', response.status);
@@ -75,16 +83,18 @@ function DashboardContent() {
 
   const user = session?.profile || {};
   const hasCompletedOnboarding = session?.onboarding?.completed || false;
+  const isAdmin = user.role === 'admin';
+  const subscription = session?.subscription || {};
 
   console.log('[Dashboard] Render state:', {
     hasProfile: !!user,
     fullName: user.full_name,
+    role: user.role,
     userType: user.user_type,
-    markets: user.markets,
-    phone: user.phone,
-    company: user.company,
-    onboardingCompleted: hasCompletedOnboarding,
-    onboardingCompletedAt: session?.onboarding?.completedAt
+    isAdmin: isAdmin,
+    subscriptionTier: subscription.tier,
+    subscriptionStatus: subscription.status,
+    onboardingCompleted: hasCompletedOnboarding
   });
 
   return (
@@ -111,6 +121,15 @@ function DashboardContent() {
                 Refresh
               </Button>
               
+              {/* Admin Badge */}
+              {isAdmin && (
+                <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                  <Crown className="w-3 h-3 mr-1" />
+                  Admin
+                </Badge>
+              )}
+              
+              {/* Onboarding Status */}
               {hasCompletedOnboarding ? (
                 <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -123,6 +142,15 @@ function DashboardContent() {
                 </Badge>
               )}
               
+              {/* Subscription Badge */}
+              {subscription.tier && subscription.tier !== 'none' && (
+                <Badge className="bg-blue-100 text-blue-800 border-blue-200 capitalize">
+                  <Star className="w-3 h-3 mr-1" />
+                  {subscription.tier} Plan
+                </Badge>
+              )}
+              
+              {/* NDA Badge */}
               {ndaStatus && (
                 ndaStatus.accepted ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -181,7 +209,8 @@ function DashboardContent() {
         )}
 
         {/* Quick Stats */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
+          {/* Account Type */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
               <Shield className="w-6 h-6 text-blue-600" />
@@ -190,7 +219,35 @@ function DashboardContent() {
               {user.user_type || "Member"}
             </h3>
             <p className="text-slate-600 text-sm">Account Type</p>
+            {isAdmin && (
+              <Badge className="mt-2 bg-orange-50 text-orange-700 border-orange-200">
+                <Crown className="w-3 h-3 mr-1" />
+                Admin Access
+              </Badge>
+            )}
           </div>
+
+          {/* Subscription */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
+              <Star className="w-6 h-6 text-purple-600" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-900 mb-1 capitalize">
+              {subscription.tier && subscription.tier !== 'none' ? subscription.tier : 'None'}
+            </h3>
+            <p className="text-slate-600 text-sm">Subscription Plan</p>
+            {subscription.status && subscription.status !== 'none' && (
+              <Badge className={`mt-2 ${
+                subscription.status === 'active' ? 'bg-emerald-50 text-emerald-700' :
+                subscription.status === 'trialing' ? 'bg-blue-50 text-blue-700' :
+                'bg-slate-50 text-slate-700'
+              }`}>
+                {subscription.status}
+              </Badge>
+            )}
+          </div>
+
+          {/* Active Deals */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
               <FileText className="w-6 h-6 text-emerald-600" />
@@ -198,9 +255,11 @@ function DashboardContent() {
             <h3 className="text-2xl font-bold text-slate-900 mb-1">0</h3>
             <p className="text-slate-600 text-sm">Active Deals</p>
           </div>
+
+          {/* Connections */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
-              <Users className="w-6 h-6 text-purple-600" />
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
+              <Users className="w-6 h-6 text-blue-600" />
             </div>
             <h3 className="text-2xl font-bold text-slate-900 mb-1">0</h3>
             <p className="text-slate-600 text-sm">Connections</p>
@@ -212,12 +271,20 @@ function DashboardContent() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 mb-8">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-slate-900">Your Profile</h2>
-              {hasCompletedOnboarding && (
-                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  Complete
-                </Badge>
-              )}
+              <div className="flex gap-2">
+                {hasCompletedOnboarding && (
+                  <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    <CheckCircle className="w-3 h-3 mr-1" />
+                    Complete
+                  </Badge>
+                )}
+                {isAdmin && (
+                  <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                    <Crown className="w-3 h-3 mr-1" />
+                    Administrator
+                  </Badge>
+                )}
+              </div>
             </div>
             
             <div className="grid md:grid-cols-2 gap-6">
@@ -232,12 +299,20 @@ function DashboardContent() {
                   <p className="font-semibold text-slate-900">{user.full_name || 'Not set'}</p>
                 </div>
                 
-                {user.user_type && (
-                  <div>
-                    <p className="text-sm text-slate-600 mb-1">Account Type</p>
-                    <p className="font-semibold text-slate-900 capitalize">{user.user_type}</p>
-                  </div>
-                )}
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Account Type</p>
+                  <Badge variant="secondary" className="capitalize">
+                    {user.user_type || 'Not set'}
+                  </Badge>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Platform Role</p>
+                  <Badge variant="secondary" className="capitalize">
+                    {user.role || 'member'}
+                    {isAdmin && ' 👑'}
+                  </Badge>
+                </div>
                 
                 {user.phone && (
                   <div>
@@ -252,6 +327,24 @@ function DashboardContent() {
                   <div>
                     <p className="text-sm text-slate-600 mb-1">Company</p>
                     <p className="font-semibold text-slate-900">{user.company}</p>
+                  </div>
+                )}
+                
+                {subscription.tier && subscription.tier !== 'none' && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Subscription</p>
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-purple-100 text-purple-800 capitalize">
+                        {subscription.tier} Plan
+                      </Badge>
+                      <Badge className={
+                        subscription.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                        subscription.status === 'trialing' ? 'bg-blue-100 text-blue-800' :
+                        'bg-slate-100 text-slate-800'
+                      }>
+                        {subscription.status}
+                      </Badge>
+                    </div>
                   </div>
                 )}
                 
@@ -291,6 +384,9 @@ function DashboardContent() {
             )}
             
             <div className="mt-6 pt-4 border-t border-slate-200 flex gap-3">
+              <Link to={createPageUrl("Profile")}>
+                <Button variant="outline">View Full Profile</Button>
+              </Link>
               <Link to={createPageUrl("AccountProfile")}>
                 <Button variant="outline">Edit Profile</Button>
               </Link>
