@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -8,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Loader2, CheckCircle } from "lucide-react";
+import { User, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { AuthGuard } from "@/components/AuthGuard";
 
-export default function AccountProfile() {
+function AccountProfileContent() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -27,36 +27,32 @@ export default function AccountProfile() {
   });
 
   useEffect(() => {
-    document.title = "Profile & Preferences - AgentVault";
+    document.title = "Edit Profile - AgentVault";
     loadProfile();
   }, []);
 
   const loadProfile = async () => {
     try {
-      // Check authentication via /functions/me
+      console.log('[AccountProfile] Loading profile data...');
+
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store'
       });
-      
-      if (!response.ok || !response.headers.get('content-type')?.includes('application/json')) {
-        toast.info("Please sign in to access your profile");
-        navigate(createPageUrl("SignIn") + "?next=" + encodeURIComponent(window.location.pathname));
+
+      if (!response.ok) {
+        toast.error("Please sign in to continue");
+        navigate(createPageUrl("Dashboard"));
         return;
       }
 
       const state = await response.json();
+      console.log('[AccountProfile] Loaded state:', state);
 
       if (!state.authenticated) {
-        toast.info("Please sign in to access your profile");
-        navigate(createPageUrl("SignIn") + "?next=" + encodeURIComponent(window.location.pathname));
-        return;
-      }
-
-      if (!state.onboarding?.completed) {
-        toast.info("Please complete onboarding first");
-        navigate(createPageUrl("Onboarding") + "?next=" + encodeURIComponent(window.location.pathname));
+        toast.error("Please sign in to continue");
+        navigate(createPageUrl("Dashboard"));
         return;
       }
 
@@ -65,21 +61,23 @@ export default function AccountProfile() {
         id: state.profile?.user_id
       });
 
-      // Load profile data
-      setFormData({
-        full_name: state.profile?.full_name || "",
-        role: state.profile?.user_type || "",
-        company: state.profile?.company || "",
-        markets: (state.profile?.markets || []).join(", ") || "",
-        phone: state.profile?.phone || "",
-        accreditation: state.profile?.accreditation || "",
-        goals: state.profile?.goals || ""
-      });
+      // Load profile data into form
+      if (state.profile) {
+        setFormData({
+          full_name: state.profile.full_name || "",
+          role: state.profile.user_type || "",
+          company: state.profile.company || "",
+          markets: Array.isArray(state.profile.markets) ? state.profile.markets.join(", ") : "",
+          phone: state.profile.phone || "",
+          accreditation: state.profile.accreditation || "",
+          goals: state.profile.goals || ""
+        });
+      }
 
       setLoading(false);
 
     } catch (error) {
-      console.error('Profile load error:', error);
+      console.error('[AccountProfile] Load error:', error);
       toast.error("Failed to load profile");
       navigate(createPageUrl("Dashboard"));
     }
@@ -87,26 +85,75 @@ export default function AccountProfile() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    console.log('[AccountProfile] 🚀 Saving profile changes...');
+    console.log('[AccountProfile] Form data:', formData);
+
+    // Validation
+    if (!formData.full_name || !formData.full_name.trim()) {
+      toast.error("Please enter your full name");
+      return;
+    }
+
+    if (!formData.role) {
+      toast.error("Please select your account type");
+      return;
+    }
+
     setSaving(true);
 
     try {
       const payload = {
-        full_name: formData.full_name,
+        full_name: formData.full_name.trim(),
         role: formData.role,
-        company: formData.company,
+        company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
-        phone: formData.phone,
-        accreditation: formData.accreditation,
-        goals: formData.goals,
+        phone: formData.phone.trim(),
+        accreditation: formData.accreditation.trim(),
+        goals: formData.goals.trim(),
         complete: false // Don't reset onboarding status
       };
 
-      await base44.functions.invoke('profileUpsert', payload);
+      console.log('[AccountProfile] 📤 Payload:', payload);
+
+      // Call onboardingComplete to update profile
+      const response = await fetch('/functions/onboardingComplete', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload)
+      });
+
+      console.log('[AccountProfile] 📥 Response status:', response.status);
+
+      const responseText = await response.text();
+      console.log('[AccountProfile] 📥 Response:', responseText);
+
+      let result;
+      try {
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        throw new Error('Invalid server response');
+      }
+
+      if (!response.ok || (!result.ok && !result.success)) {
+        throw new Error(result.message || result.error || 'Save failed');
+      }
+
+      console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
+      // Redirect to profile view page
+      setTimeout(() => {
+        navigate(createPageUrl("Profile"));
+      }, 500);
+
     } catch (error) {
-      console.error("Save error:", error);
-      toast.error("Failed to save profile. Please try again.");
+      console.error("[AccountProfile] ❌ Save error:", error);
+      toast.error(error.message || "Failed to save profile. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -130,11 +177,15 @@ export default function AccountProfile() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
+          <Link to={createPageUrl("Profile")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Profile
+          </Link>
           <div className="flex items-center gap-3 mb-2">
             <User className="w-8 h-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-slate-900">Profile & Preferences</h1>
+            <h1 className="text-3xl font-bold text-slate-900">Edit Profile</h1>
           </div>
-          <p className="text-slate-600">View and update your account information</p>
+          <p className="text-slate-600">Update your account information</p>
         </div>
 
         {/* Profile Form */}
@@ -142,12 +193,14 @@ export default function AccountProfile() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name */}
             <div>
-              <Label htmlFor="full_name">Full Name</Label>
+              <Label htmlFor="full_name">Full Name *</Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                 placeholder="John Doe"
+                required
+                disabled={saving}
               />
             </div>
 
@@ -165,17 +218,18 @@ export default function AccountProfile() {
 
             {/* User Type */}
             <div>
-              <Label className="mb-3 block">Account Type</Label>
+              <Label className="mb-3 block">Account Type *</Label>
               <RadioGroup
                 value={formData.role}
                 onValueChange={(value) => setFormData({...formData, role: value})}
+                disabled={saving}
               >
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                     formData.role === "investor" 
                       ? "border-blue-600 bg-blue-50" 
                       : "border-slate-200 hover:border-slate-300"
-                  }`}>
+                  } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center gap-3">
                       <RadioGroupItem value="investor" id="investor" />
                       <Label htmlFor="investor" className="cursor-pointer font-semibold">
@@ -187,7 +241,7 @@ export default function AccountProfile() {
                     formData.role === "agent" 
                       ? "border-emerald-600 bg-emerald-50" 
                       : "border-slate-200 hover:border-slate-300"
-                  }`}>
+                  } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center gap-3">
                       <RadioGroupItem value="agent" id="agent" />
                       <Label htmlFor="agent" className="cursor-pointer font-semibold">
@@ -207,6 +261,7 @@ export default function AccountProfile() {
                 value={formData.company}
                 onChange={(e) => setFormData({...formData, company: e.target.value})}
                 placeholder="Your Company"
+                disabled={saving}
               />
             </div>
 
@@ -217,9 +272,10 @@ export default function AccountProfile() {
                 id="markets"
                 value={formData.markets}
                 onChange={(e) => setFormData({...formData, markets: e.target.value})}
-                placeholder="Miami, Phoenix, Dallas (comma-separated)"
+                placeholder="Miami, Phoenix, Dallas"
+                disabled={saving}
               />
-              <p className="text-xs text-slate-500 mt-1">Cities or metro areas you're focused on</p>
+              <p className="text-xs text-slate-500 mt-1">Cities or metro areas (comma-separated)</p>
             </div>
 
             {/* Phone */}
@@ -231,6 +287,7 @@ export default function AccountProfile() {
                 value={formData.phone}
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 placeholder="(555) 123-4567"
+                disabled={saving}
               />
             </div>
 
@@ -242,6 +299,7 @@ export default function AccountProfile() {
                 value={formData.accreditation}
                 onChange={(e) => setFormData({...formData, accreditation: e.target.value})}
                 placeholder="e.g., Accredited Investor, Licensed Agent"
+                disabled={saving}
               />
             </div>
 
@@ -252,8 +310,9 @@ export default function AccountProfile() {
                 id="goals"
                 value={formData.goals}
                 onChange={(e) => setFormData({...formData, goals: e.target.value})}
-                placeholder="What are you looking to accomplish?"
+                placeholder="What are you looking to accomplish on AgentVault?"
                 rows={4}
+                disabled={saving}
               />
             </div>
 
@@ -276,17 +335,27 @@ export default function AccountProfile() {
                   </>
                 )}
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(createPageUrl("Dashboard"))}
-              >
-                Cancel
-              </Button>
+              <Link to={createPageUrl("Profile")}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={saving}
+                >
+                  Cancel
+                </Button>
+              </Link>
             </div>
           </form>
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AccountProfile() {
+  return (
+    <AuthGuard requireAuth={true}>
+      <AccountProfileContent />
+    </AuthGuard>
   );
 }
