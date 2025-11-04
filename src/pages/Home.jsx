@@ -3,27 +3,28 @@ import React, { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
   Shield, CheckCircle, Star, Lock, Users,
-  TrendingUp, FileText, ArrowRight, Zap
+  TrendingUp, FileText, ArrowRight, Zap, AlertCircle
 } from "lucide-react";
+import InvestorHome from "./InvestorHome";
+import AgentHome from "./AgentHome";
 
 const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 
 export default function Home() {
-  const [isAuthenticated, setIsAuthenticated] = React.useState(false);
-  const [userType, setUserType] = React.useState(null);
-  const hasChecked = useRef(false);
   const navigate = useNavigate();
+  const { loading, user, role, onboarded } = useCurrentProfile();
+  const hasChecked = useRef(false);
 
   useEffect(() => {
     if (hasChecked.current) return;
     hasChecked.current = true;
     
     setupPageMeta();
-    checkAuth();
     
     // Check for successful payment
     const urlParams = new URLSearchParams(window.location.search);
@@ -36,30 +37,6 @@ export default function Home() {
       window.history.replaceState({}, '', '/');
     }
   }, []);
-
-  const checkAuth = async () => {
-    try {
-      const auth = await base44.auth.isAuthenticated();
-      setIsAuthenticated(auth);
-      
-      if (auth) {
-        const response = await fetch('/functions/me', {
-          method: 'POST',
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const state = await response.json();
-          setUserType(state.profile?.user_type);
-        }
-      }
-    } catch (error) {
-      console.error("Home: Auth check failed:", error);
-      setIsAuthenticated(false);
-      setUserType(null);
-    }
-  };
 
   const setupPageMeta = () => {
     document.title = "AgentVault - Verified Agents. Protected Deal Flow.";
@@ -81,21 +58,46 @@ export default function Home() {
   };
 
   const handleGetStarted = () => {
-    if (isAuthenticated) {
-      navigate(createPageUrl("Pricing"));
+    if (user) {
+      if (!onboarded) {
+        navigate(createPageUrl("Onboarding"));
+      } else {
+        navigate(createPageUrl("Pricing"));
+      }
     } else {
-      navigate(createPageUrl("Login"));
+      base44.auth.redirectToLogin(window.location.pathname);
     }
   };
 
   const handleGetMatched = () => {
-    if (isAuthenticated) {
+    if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      navigate(createPageUrl("Login"));
+      base44.auth.redirectToLogin(window.location.pathname);
     }
   };
 
+  // CONDITIONAL RENDERING BASED ON AUTH + ROLE
+  // If loading, show minimal spinner
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="animate-pulse text-slate-600">Loading...</div>
+      </div>
+    );
+  }
+
+  // If signed in AND onboarded, show role-specific home
+  if (user && onboarded) {
+    if (role === 'investor') {
+      return <InvestorHome />;
+    }
+    if (role === 'agent') {
+      return <AgentHome />;
+    }
+  }
+
+  // Otherwise (not signed in OR not onboarded), show public home
   const features = [
     {
       icon: Shield,
@@ -145,6 +147,31 @@ export default function Home() {
 
   return (
     <div className="overflow-hidden">
+      {/* Onboarding Banner - show if signed in but not onboarded */}
+      {user && !onboarded && (
+        <div className="bg-gradient-to-r from-orange-600 to-amber-600 text-white py-4 sticky top-16 z-40">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="w-6 h-6 flex-shrink-0" />
+                <div>
+                  <p className="font-semibold">Complete your onboarding to unlock matches</p>
+                  <p className="text-sm text-orange-100">Tell us about yourself and start connecting with verified professionals</p>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                className="bg-white text-orange-600 hover:bg-orange-50 font-semibold"
+                onClick={() => navigate(createPageUrl("Onboarding"))}
+              >
+                Finish Onboarding
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-20 md:py-32">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUgMCAwNSkiLz48L2c+PC9zdmc+')] opacity-20"></div>
