@@ -15,6 +15,7 @@ Deno.serve(async (req) => {
     try {
       user = await base44.auth.me();
     } catch (authError) {
+      console.error('❌ [OnboardingComplete] Auth failed:', authError);
       return Response.json({ 
         ok: false, 
         completed: false,
@@ -23,6 +24,7 @@ Deno.serve(async (req) => {
     }
 
     if (!user || !user.email) {
+      console.error('❌ [OnboardingComplete] No user or email');
       return Response.json({ 
         ok: false,
         completed: false,
@@ -30,37 +32,34 @@ Deno.serve(async (req) => {
       }, { status: 401, headers });
     }
 
-    // Parse body - ROBUST: handle JSON, form-urlencoded, or raw text
+    console.log('✅ [OnboardingComplete] User authenticated:', user.email);
+
+    // Parse body
     let payload = {};
     try {
-      const contentType = (req.headers.get('content-type') || '').toLowerCase();
       const bodyText = await req.text();
+      console.log('📥 [OnboardingComplete] Raw body:', bodyText);
       
-      if (!bodyText || bodyText.trim() === '') {
-        payload = {};
-      } else if (contentType.includes('application/json')) {
+      if (bodyText && bodyText.trim()) {
         payload = JSON.parse(bodyText);
-      } else if (contentType.includes('application/x-www-form-urlencoded')) {
-        payload = Object.fromEntries(new URLSearchParams(bodyText));
-      } else {
-        // Try JSON parse, fallback to empty object
-        try {
-          payload = JSON.parse(bodyText);
-        } catch {
-          payload = {};
-        }
+        console.log('📥 [OnboardingComplete] Parsed payload:', payload);
       }
     } catch (parseError) {
-      console.error('Body parse error:', parseError);
-      payload = {};
+      console.error('❌ [OnboardingComplete] Body parse error:', parseError);
+      return Response.json({ 
+        ok: false,
+        completed: false,
+        error: 'invalid_json' 
+      }, { status: 400, headers });
     }
 
-    // Ensure profile exists (auto-create if missing)
+    // Ensure profile exists
     let profile;
     try {
       profile = await ensureProfile(base44, user);
+      console.log('✅ [OnboardingComplete] Profile found/created:', profile.id);
     } catch (ensureError) {
-      console.error('ensureProfile failed:', ensureError);
+      console.error('❌ [OnboardingComplete] ensureProfile failed:', ensureError);
       return Response.json({ 
         ok: false,
         completed: false,
@@ -68,90 +67,111 @@ Deno.serve(async (req) => {
       }, { status: 500, headers });
     }
 
-    // CRITICAL: Check if already onboarded - NEVER reset if already set
-    if (profile.onboarding_completed_at) {
-      console.log('⚠️ Onboarding already completed at:', profile.onboarding_completed_at);
-      console.log('   Updating profile fields but NOT resetting onboarding_completed_at');
-    }
-
-    // Helper to convert to boolean
-    const toBool = (v) => v === true || v === 'true' || v === 1 || v === '1';
-
-    // Build update data - only include provided fields
+    // Build update data
     const updateData = {};
     
-    // Map common field variations
-    if (payload.full_name !== undefined) updateData.full_name = payload.full_name;
-    if (payload.role !== undefined) updateData.user_type = payload.role;
-    if (payload.user_type !== undefined) updateData.user_type = payload.user_type;
-    if (payload.company !== undefined) updateData.company = payload.company;
-    if (payload.phone !== undefined) updateData.phone = payload.phone;
-    if (payload.accreditation !== undefined) updateData.accreditation = payload.accreditation;
-    if (payload.goals !== undefined) updateData.goals = payload.goals;
+    // Map form fields to profile fields
+    if (payload.full_name) {
+      updateData.full_name = payload.full_name.trim();
+      console.log('  → full_name:', updateData.full_name);
+    }
+    
+    if (payload.role) {
+      updateData.user_type = payload.role;
+      console.log('  → user_type:', updateData.user_type);
+    }
+    
+    if (payload.company !== undefined) {
+      updateData.company = payload.company.trim() || null;
+      console.log('  → company:', updateData.company);
+    }
+    
+    if (payload.phone !== undefined) {
+      updateData.phone = payload.phone.trim() || null;
+      console.log('  → phone:', updateData.phone);
+    }
+    
+    if (payload.accreditation !== undefined) {
+      updateData.accreditation = payload.accreditation.trim() || null;
+      console.log('  → accreditation:', updateData.accreditation);
+    }
+    
+    if (payload.goals !== undefined) {
+      updateData.goals = payload.goals.trim() || null;
+      console.log('  → goals:', updateData.goals);
+    }
 
-    // Handle markets array (can be array, comma-separated string, or single string)
+    // Handle markets array
     if (payload.markets !== undefined) {
       if (Array.isArray(payload.markets)) {
-        updateData.markets = payload.markets;
+        updateData.markets = payload.markets.filter(Boolean);
       } else if (typeof payload.markets === 'string') {
         updateData.markets = payload.markets.split(',').map(s => s.trim()).filter(Boolean);
       }
+      console.log('  → markets:', updateData.markets);
     }
 
-    // CRITICAL: Mark onboarding as complete ONLY IF:
-    // 1. The request explicitly asks for it (complete=true)
-    // 2. AND it's not already completed
-    const wantsComplete = toBool(payload.complete) || 
-                          toBool(payload.completed) || 
-                          toBool(payload.onboarding_completed);
-
+    // Check if we should mark onboarding complete
+    const wantsComplete = payload.complete === true || payload.complete === 'true';
+    
     if (wantsComplete && !profile.onboarding_completed_at) {
       updateData.onboarding_completed_at = new Date().toISOString();
-      console.log('✅ Marking onboarding complete for FIRST time:', updateData.onboarding_completed_at);
-    } else if (wantsComplete && profile.onboarding_completed_at) {
-      console.log('ℹ️ Onboarding already completed, NOT resetting timestamp');
-      // Don't include in updateData - preserve existing value
+      console.log('✅ [OnboardingComplete] Marking complete:', updateData.onboarding_completed_at);
+    } else if (wantsComplete) {
+      console.log('ℹ️ [OnboardingComplete] Already completed at:', profile.onboarding_completed_at);
     }
 
-    // Update profile (idempotent - safe to call multiple times)
+    console.log('📤 [OnboardingComplete] Updating profile with:', updateData);
+
+    // Update profile
+    let updatedProfile;
     try {
-      const updatedProfile = await base44.asServiceRole.entities.Profile.update(
+      updatedProfile = await base44.asServiceRole.entities.Profile.update(
         profile.id, 
         updateData
       );
-
-      const isCompleted = !!(updatedProfile.onboarding_completed_at);
-
-      console.log('✅ Profile updated:', {
-        userId: user.id,
-        profileId: profile.id,
-        completed: isCompleted,
-        completedAt: updatedProfile.onboarding_completed_at
-      });
-
-      return Response.json({ 
-        ok: true,
-        completed: isCompleted,
-        userId: user.id,
-        profileId: profile.id,
-        completedAt: updatedProfile.onboarding_completed_at
-      }, { status: 200, headers });
-
+      console.log('✅ [OnboardingComplete] Profile updated successfully!');
+      console.log('   Profile ID:', updatedProfile.id);
+      console.log('   Full name:', updatedProfile.full_name);
+      console.log('   User type:', updatedProfile.user_type);
+      console.log('   Markets:', updatedProfile.markets);
+      console.log('   Completed at:', updatedProfile.onboarding_completed_at);
     } catch (updateError) {
-      console.error('Profile update failed:', updateError);
+      console.error('❌ [OnboardingComplete] Profile update failed:', updateError);
+      console.error('   Error details:', updateError.message);
       return Response.json({ 
         ok: false,
         completed: false,
-        error: 'update_failed' 
+        error: 'update_failed',
+        details: updateError.message
       }, { status: 500, headers });
     }
 
+    const isCompleted = !!(updatedProfile.onboarding_completed_at);
+
+    return Response.json({ 
+      ok: true,
+      completed: isCompleted,
+      userId: user.id,
+      profileId: profile.id,
+      completedAt: updatedProfile.onboarding_completed_at,
+      profile: {
+        full_name: updatedProfile.full_name,
+        user_type: updatedProfile.user_type,
+        markets: updatedProfile.markets,
+        company: updatedProfile.company,
+        phone: updatedProfile.phone
+      }
+    }, { status: 200, headers });
+
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('❌ [OnboardingComplete] Unexpected error:', error);
+    console.error('   Stack:', error.stack);
     return Response.json({ 
       ok: false,
       completed: false,
-      error: 'internal_error'
+      error: 'internal_error',
+      message: error.message
     }, { status: 500, headers });
   }
 });
