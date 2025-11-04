@@ -24,6 +24,17 @@ export default function Home() {
     
     setupPageMeta();
     checkAuth();
+    
+    // Check for successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      toast.success("🎉 Payment successful! Your subscription is now active.", {
+        duration: 5000,
+      });
+      
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
+    }
   }, []);
 
   const checkAuth = async () => {
