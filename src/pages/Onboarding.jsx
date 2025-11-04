@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Shield, Loader2, CheckCircle, AlertCircle, XCircle } from "lucide-react";
+import { Shield, Loader2, CheckCircle, AlertCircle, XCircle, TrendingUp, Users } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -31,7 +31,7 @@ function OnboardingContent() {
 
   const [formData, setFormData] = useState({
     full_name: "",
-    role: "",
+    role: "", // This will be 'investor' or 'agent'
     company: "",
     markets: "",
     phone: "",
@@ -61,9 +61,12 @@ function OnboardingContent() {
         const state = await response.json();
 
         if (state.profile) {
+          // Load existing data - check both user_role (new) and user_type (old)
+          const existingRole = state.profile.user_role || state.profile.user_type || "";
+          
           setFormData({
             full_name: state.profile.full_name || "",
-            role: state.profile.user_type || "",
+            role: existingRole,
             company: state.profile.company || "",
             markets: Array.isArray(state.profile.markets) ? state.profile.markets.join(", ") : "",
             phone: state.profile.phone || "",
@@ -153,10 +156,10 @@ function OnboardingContent() {
 
       setStatusMessage(`⏳ Step 2/5: Authenticated as ${currentUser.email}`);
       
-      // Build payload
+      // Build payload - use 'role' field which maps to user_role in backend
       const payload = {
         full_name: formData.full_name.trim(),
-        role: formData.role,
+        role: formData.role, // 'investor' or 'agent' - backend will save to user_type for now
         company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
@@ -192,7 +195,7 @@ function OnboardingContent() {
       
       setStatusMessage("✅ Redirecting to dashboard...");
       
-      // Redirect
+      // Redirect to Dashboard (will route to role-specific dashboard)
       setTimeout(() => {
         window.location.href = createPageUrl("Dashboard");
       }, 1500);
@@ -243,7 +246,7 @@ function OnboardingContent() {
           <p className="text-slate-600">Tell us about yourself to get the most out of AgentVault</p>
         </div>
 
-        {/* Status Box - VISIBLE FEEDBACK */}
+        {/* Status Box */}
         <div className={`mb-6 p-4 rounded-xl border-2 ${
           statusType === 'success' ? 'bg-emerald-50 border-emerald-200' :
           statusType === 'error' ? 'bg-red-50 border-red-200' :
@@ -280,7 +283,7 @@ function OnboardingContent() {
               />
             </div>
 
-            {/* User Type */}
+            {/* User Role - UPDATED WITH BETTER VISUALS */}
             <div>
               <Label className="mb-3 block">I am a... *</Label>
               <RadioGroup
@@ -289,36 +292,61 @@ function OnboardingContent() {
                 required
                 disabled={submitting}
               >
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    formData.role === "investor" 
-                      ? "border-blue-600 bg-blue-50" 
-                      : "border-slate-200 hover:border-slate-300"
-                  } ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-center gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Investor Option */}
+                  <div 
+                    className={`border-2 rounded-xl p-6 cursor-pointer transition-all ${
+                      formData.role === "investor" 
+                        ? "border-blue-600 bg-blue-50 shadow-md" 
+                        : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    } ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => !submitting && setFormData({...formData, role: 'investor'})}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
                       <RadioGroupItem value="investor" id="investor" />
-                      <Label htmlFor="investor" className="cursor-pointer font-semibold">
+                      <Label htmlFor="investor" className="cursor-pointer font-bold text-lg">
                         Investor
                       </Label>
                     </div>
-                    <p className="text-xs text-slate-600 mt-2 ml-7">
-                      Looking for verified agents
-                    </p>
+                    <div className="ml-7">
+                      <TrendingUp className="w-8 h-8 text-blue-600 mb-2" />
+                      <p className="text-sm text-slate-600 mb-2">
+                        Looking to connect with verified agents
+                      </p>
+                      <ul className="text-xs text-slate-500 space-y-1">
+                        <li>• Browse agent profiles</li>
+                        <li>• View verified reviews</li>
+                        <li>• Secure deal rooms</li>
+                      </ul>
+                    </div>
                   </div>
-                  <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    formData.role === "agent" 
-                      ? "border-emerald-600 bg-emerald-50" 
-                      : "border-slate-200 hover:border-slate-300"
-                  } ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-center gap-3">
+
+                  {/* Agent Option */}
+                  <div 
+                    className={`border-2 rounded-xl p-6 cursor-pointer transition-all ${
+                      formData.role === "agent" 
+                        ? "border-emerald-600 bg-emerald-50 shadow-md" 
+                        : "border-slate-200 hover:border-slate-300 hover:bg-slate-50"
+                    } ${submitting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    onClick={() => !submitting && setFormData({...formData, role: 'agent'})}
+                  >
+                    <div className="flex items-center gap-3 mb-3">
                       <RadioGroupItem value="agent" id="agent" />
-                      <Label htmlFor="agent" className="cursor-pointer font-semibold">
+                      <Label htmlFor="agent" className="cursor-pointer font-bold text-lg">
                         Agent
                       </Label>
                     </div>
-                    <p className="text-xs text-slate-600 mt-2 ml-7">
-                      Connect with investors
-                    </p>
+                    <div className="ml-7">
+                      <Users className="w-8 h-8 text-emerald-600 mb-2" />
+                      <p className="text-sm text-slate-600 mb-2">
+                        Connect with serious investors
+                      </p>
+                      <ul className="text-xs text-slate-500 space-y-1">
+                        <li>• Free membership</li>
+                        <li>• Get verified badge</li>
+                        <li>• Build reputation</li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </RadioGroup>
