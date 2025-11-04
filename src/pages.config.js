@@ -40,6 +40,7 @@ import DashboardAgent from './pages/DashboardAgent';
 import InvestorHome from './pages/InvestorHome';
 import AgentHome from './pages/AgentHome';
 import InvestorBuyBox from './pages/InvestorBuyBox';
+import InvestorDocuments from './pages/InvestorDocuments';
 import Layout from './Layout.jsx';
 
 
@@ -86,6 +87,7 @@ export const PAGES = {
     "InvestorHome": InvestorHome,
     "AgentHome": AgentHome,
     "InvestorBuyBox": InvestorBuyBox,
+    "InvestorDocuments": InvestorDocuments,
 }
 
 export const pagesConfig = {
