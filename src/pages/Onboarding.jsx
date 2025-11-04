@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
@@ -134,10 +135,24 @@ function OnboardingContent() {
     }
 
     setSubmitting(true);
-    setStatusMessage("⏳ Step 1/4: Validating form...");
+    setStatusMessage("⏳ Step 1/5: Checking authentication...");
     setStatusType("info");
 
     try {
+      // CRITICAL FIX: Verify user is authenticated first
+      const isAuth = await base44.auth.isAuthenticated();
+      if (!isAuth) {
+        throw new Error("You must be signed in. Please refresh the page and sign in again.");
+      }
+
+      // Get current user to verify session
+      const currentUser = await base44.auth.me();
+      if (!currentUser || !currentUser.email) {
+        throw new Error("Session expired. Please refresh the page and sign in again.");
+      }
+
+      setStatusMessage(`⏳ Step 2/5: Authenticated as ${currentUser.email}`);
+      
       // Build payload
       const payload = {
         full_name: formData.full_name.trim(),
@@ -150,36 +165,17 @@ function OnboardingContent() {
         complete: true
       };
 
-      setStatusMessage("⏳ Step 2/4: Preparing data...");
-      await new Promise(resolve => setTimeout(resolve, 500));
+      setStatusMessage("⏳ Step 3/5: Preparing data...");
+      await new Promise(resolve => setTimeout(resolve, 300)); // Small delay for effect
       
-      setStatusMessage("⏳ Step 3/4: Saving to database...");
+      setStatusMessage("⏳ Step 4/5: Saving to database...");
       
-      // Call backend function
-      const response = await fetch('/functions/onboardingComplete', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+      // CRITICAL FIX: Use base44.functions.invoke instead of raw fetch
+      // This automatically handles authentication headers
+      const response = await base44.functions.invoke('onboardingComplete', payload);
       
-      // Read response
-      const responseText = await response.text();
-      
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error('Server returned invalid response');
-      }
-
-      // Check if request failed
-      if (!response.ok) {
-        throw new Error(result.message || result.error || `Save failed (${response.status})`);
-      }
+      // base44.functions.invoke returns axios response, data is in response.data
+      const result = response.data;
 
       // Check if backend reported failure
       if (!result.ok && !result.success) {
@@ -187,7 +183,7 @@ function OnboardingContent() {
       }
 
       // Success!
-      setStatusMessage("✅ Step 4/4: Profile saved successfully!");
+      setStatusMessage("✅ Step 5/5: Profile saved successfully!");
       setStatusType("success");
       
       toast.success(`Profile saved! Welcome, ${result.profile?.full_name || 'there'}!`, {
@@ -202,12 +198,21 @@ function OnboardingContent() {
       }, 1500);
 
     } catch (error) {
+      console.error('[Onboarding] Save error:', error);
+      
       setStatusMessage("❌ ERROR: " + error.message);
       setStatusType("error");
       
-      toast.error(error.message || "Failed to save profile. Please try again.", {
-        duration: 5000
-      });
+      // Show helpful error messages
+      if (error.message?.includes('sign in') || error.message?.includes('auth')) {
+        toast.error("Session expired. Please refresh the page and sign in again.", {
+          duration: 7000
+        });
+      } else {
+        toast.error(error.message || "Failed to save profile. Please try again.", {
+          duration: 5000
+        });
+      }
       
       setSubmitting(false);
     }
