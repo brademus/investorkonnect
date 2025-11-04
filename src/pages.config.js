@@ -41,6 +41,7 @@ import InvestorHome from './pages/InvestorHome';
 import AgentHome from './pages/AgentHome';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDocuments from './pages/InvestorDocuments';
+import AgentDocuments from './pages/AgentDocuments';
 import Layout from './Layout.jsx';
 
 
@@ -88,6 +89,7 @@ export const PAGES = {
     "AgentHome": AgentHome,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDocuments": InvestorDocuments,
+    "AgentDocuments": AgentDocuments,
 }
 
 export const pagesConfig = {
