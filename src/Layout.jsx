@@ -81,6 +81,7 @@ export default function Layout({ children, currentPageName }) {
   const showAgentNav = user && onboarded && role === 'agent';
   
   const isAdmin = profile?.role === 'admin';
+  const hasNDA = profile?.nda_accepted;
 
   const publicNav = [
     { name: "How It Works", href: createPageUrl("HowItWorks"), icon: Info },
@@ -208,6 +209,11 @@ export default function Layout({ children, currentPageName }) {
                             {profile.subscription_tier} Plan
                           </p>
                         )}
+                        {/* NDA Status */}
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${hasNDA ? 'text-emerald-600' : 'text-orange-600'}`}>
+                          <Shield className="w-3 h-3" />
+                          NDA: {hasNDA ? 'Signed ✅' : 'Required'}
+                        </p>
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Dashboard")}>
@@ -225,6 +231,11 @@ export default function Layout({ children, currentPageName }) {
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountBilling")}>
                         <DollarSign className="w-4 h-4 mr-2" />
                         Billing & Subscription
+                      </DropdownMenuItem>
+                      {/* NDA Link */}
+                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("NDA")}>
+                        <Shield className="w-4 h-4 mr-2" />
+                        NDA {hasNDA && '✅'}
                       </DropdownMenuItem>
                       {isAdmin && (
                         <>
@@ -315,6 +326,12 @@ export default function Layout({ children, currentPageName }) {
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <Settings className="w-4 h-4" />
                         Edit Profile
+                      </Button>
+                    </Link>
+                    <Link to={createPageUrl("NDA")} onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start gap-2">
+                        <Shield className="w-4 h-4" />
+                        NDA {hasNDA && '✅'}
                       </Button>
                     </Link>
                     <Button 
