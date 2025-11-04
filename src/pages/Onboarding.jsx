@@ -193,11 +193,23 @@ function OnboardingContent() {
         duration: 3000
       });
       
-      setStatusMessage("✅ Redirecting to dashboard...");
+      setStatusMessage("✅ Redirecting to your dashboard...");
       
-      // Redirect to Dashboard (will route to role-specific dashboard)
+      // CRITICAL FIX: Redirect directly to role-specific dashboard based on selected role
+      // This avoids the race condition where /dashboard checks onboarding status before it's cached
       setTimeout(() => {
-        window.location.href = createPageUrl("Dashboard");
+        const selectedRole = formData.role; // 'investor' or 'agent'
+        
+        if (selectedRole === 'investor') {
+          console.log('[Onboarding] Redirecting to investor dashboard');
+          window.location.href = createPageUrl("DashboardInvestor");
+        } else if (selectedRole === 'agent') {
+          console.log('[Onboarding] Redirecting to agent dashboard');
+          window.location.href = createPageUrl("DashboardAgent");
+        } else {
+          console.log('[Onboarding] No specific role, redirecting to generic dashboard');
+          window.location.href = createPageUrl("Dashboard");
+        }
       }, 1500);
 
     } catch (error) {
