@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -86,6 +86,32 @@ function AdminContent() {
     } catch (error) {
       console.error('[Admin] Load data error:', error);
       toast.error("Failed to load data");
+    }
+  };
+
+  const toggleNDA = async (userId, currentStatus) => {
+    if (!confirm(`${currentStatus ? 'Revoke' : 'Grant'} NDA signature for this user?`)) {
+      return;
+    }
+
+    try {
+      setProcessing(true);
+      const response = await base44.functions.invoke('adminNdaSet', {
+        userId: userId,
+        accepted: !currentStatus
+      });
+
+      if (response.data.ok) {
+        toast.success(`NDA ${!currentStatus ? 'granted' : 'revoked'} successfully`);
+        await loadData();
+      } else {
+        toast.error("Failed to update NDA status");
+      }
+    } catch (error) {
+      console.error('[Admin] NDA toggle error:', error);
+      toast.error("Failed to update NDA status: " + error.message);
+    } finally {
+      setProcessing(false);
     }
   };
 
@@ -417,6 +443,98 @@ function AdminContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Users & NDA Management Table */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>User Management</CardTitle>
+            <CardDescription>
+              View and manage user profiles, roles, and NDA status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-slate-200">
+                  <tr>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Email</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Name</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Role</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Onboarded</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">NDA Signed</th>
+                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profiles.slice(0, 50).map((profile) => (
+                    <tr key={profile.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3 px-4 text-slate-900">{profile.email}</td>
+                      <td className="py-3 px-4 text-slate-600">{profile.full_name || '-'}</td>
+                      <td className="py-3 px-4">
+                        <Badge className={
+                          profile.role === 'admin' ? 'bg-orange-100 text-orange-800' :
+                          profile.user_role === 'investor' ? 'bg-blue-100 text-blue-800' :
+                          profile.user_role === 'agent' ? 'bg-emerald-100 text-emerald-800' :
+                          'bg-slate-100 text-slate-800'
+                        }>
+                          {profile.role === 'admin' && '👑 '}
+                          {profile.user_role || profile.role || 'member'}
+                        </Badge>
+                      </td>
+                      <td className="py-3 px-4">
+                        {profile.onboarding_completed_at ? (
+                          <Badge className="bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Yes
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-slate-100 text-slate-600">Pending</Badge>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          {profile.nda_accepted ? (
+                            <Badge className="bg-emerald-100 text-emerald-800">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Signed
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-red-100 text-red-800">
+                              <XCircle className="w-3 h-3 mr-1" />
+                              Not Signed
+                            </Badge>
+                          )}
+                          {profile.nda_accepted_at && (
+                            <span className="text-xs text-slate-500">
+                              {new Date(profile.nda_accepted_at).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => toggleNDA(profile.user_id, profile.nda_accepted)}
+                          className={profile.nda_accepted ? 'text-red-600 hover:text-red-700' : 'text-emerald-600 hover:text-emerald-700'}
+                          disabled={processing}
+                        >
+                          {processing ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          {profile.nda_accepted ? 'Revoke' : 'Grant'} NDA
+                        </Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {profiles.length > 50 && (
+                <p className="text-sm text-slate-500 text-center py-4">
+                  Showing first 50 of {profiles.length} profiles
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Duplicate Profiles List */}
         {duplicateUserIds.length > 0 && (
