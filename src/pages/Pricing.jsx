@@ -4,15 +4,16 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, X, ArrowRight, Shield, Zap, Crown } from "lucide-react";
+import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
-const APP_ID = "690691338bcf93e1da3d088b";
-const BASE44_LOGIN_URL = `https://app.base44.com/apps/${APP_ID}/login?return_to=${encodeURIComponent(PUBLIC_APP_URL)}`;
 
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -26,29 +27,75 @@ export default function Pricing() {
     }
     metaDesc.content = "Choose the AgentVault plan that fits your investment needs. Starter, Pro, and Enterprise plans with 14-day free trial.";
     
-    checkAuth();
+    checkAuthAndOnboarding();
   }, []);
 
-  const checkAuth = async () => {
+  const checkAuthAndOnboarding = async () => {
+    setLoading(true);
     try {
       const auth = await base44.auth.isAuthenticated();
       setIsAuthenticated(auth);
+      
+      if (auth) {
+        // Check onboarding status via /functions/me
+        const response = await fetch('/functions/me', {
+          method: 'POST',
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        
+        if (response.ok) {
+          const state = await response.json();
+          const completed = !!(state.onboarding?.completed || state.profile?.onboarding_completed_at);
+          setOnboardingCompleted(completed);
+          
+          console.log('[Pricing] Auth state:', { 
+            authenticated: auth, 
+            onboarding: completed,
+            profile: state.profile
+          });
+        } else {
+            console.error('[Pricing] Failed to fetch user profile:', response.statusText);
+            setOnboardingCompleted(false); // Assume not onboarded if we can't confirm
+        }
+      } else {
+        setOnboardingCompleted(false); // Not authenticated, so not onboarded
+      }
     } catch (error) {
+      console.error('[Pricing] Auth or profile check failed:', error);
       setIsAuthenticated(false);
+      setOnboardingCompleted(false);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleGetStarted = (plan) => {
+    // Enterprise always goes to contact
     if (plan === 'enterprise') {
       navigate(createPageUrl("Contact"));
       return;
     }
 
-    if (isAuthenticated) {
-      window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
-    } else {
-      window.open(`${PUBLIC_APP_URL}/functions/subscribe?plan=${plan}`, '_self');
+    // Not authenticated - redirect to login
+    if (!isAuthenticated) {
+      toast.info("Please sign in to continue");
+      base44.auth.redirectToLogin(window.location.pathname);
+      return;
     }
+
+    // Authenticated but not onboarded - GATE
+    if (!onboardingCompleted) {
+      toast.error("Please complete your profile before subscribing", {
+        duration: 5000,
+        description: "We need to know your role (investor/agent) first"
+      });
+      navigate(createPageUrl("Onboarding"));
+      return;
+    }
+
+    // Authenticated + onboarded - proceed to checkout
+    window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
   };
 
   const tiers = [
@@ -172,6 +219,30 @@ export default function Pricing() {
 
   return (
     <div>
+      {/* Onboarding Gate Banner */}
+      {isAuthenticated && !onboardingCompleted && !loading && (
+        <div className="bg-orange-600 text-white py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 flex-shrink-0" />
+                <p className="text-sm font-medium">
+                  Complete your profile to unlock subscriptions
+                </p>
+              </div>
+              <Button 
+                size="sm" 
+                className="bg-white text-orange-600 hover:bg-orange-50"
+                onClick={() => navigate(createPageUrl("Onboarding"))}
+              >
+                Complete Profile
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -237,17 +308,36 @@ export default function Pricing() {
                     </span>
                     <span className="text-slate-600">/{billingCycle === "monthly" ? "month" : "month, billed annually"}</span>
                   </div>
-                  <Button
-                    className={`w-full ${
-                      tier.popular
-                        ? "bg-emerald-600 hover:bg-emerald-700"
-                        : "bg-slate-900 hover:bg-slate-800"
-                    }`}
-                    onClick={() => handleGetStarted(tier.planId)}
-                  >
-                    {tier.cta}
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
+                  
+                  {/* CTA Button with Gating */}
+                  {isAuthenticated && !onboardingCompleted && tier.planId !== 'enterprise' ? (
+                    <div className="space-y-3">
+                      <Button
+                        className="w-full bg-slate-300 text-slate-700 cursor-not-allowed"
+                        disabled
+                      >
+                        <Lock className="w-4 h-4 mr-2" />
+                        Complete Profile Required
+                      </Button>
+                      <p className="text-xs text-center text-slate-600">
+                        <Link to={createPageUrl("Onboarding")} className="text-blue-600 hover:underline font-medium">
+                          Complete your profile
+                        </Link> to subscribe
+                      </p>
+                    </div>
+                  ) : (
+                    <Button
+                      className={`w-full ${
+                        tier.popular
+                          ? "bg-emerald-600 hover:bg-emerald-700"
+                          : "bg-slate-900 hover:bg-slate-800"
+                      }`}
+                      onClick={() => handleGetStarted(tier.planId)}
+                    >
+                      {tier.cta}
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  )}
                 </div>
                 <div className="border-t border-slate-200 p-8">
                   <ul className="space-y-3">
@@ -268,6 +358,27 @@ export default function Pricing() {
               </div>
             ))}
           </div>
+
+          {/* Gating Info Box for unauthenticated users */}
+          {!isAuthenticated && !loading && (
+            <div className="mt-12 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
+              <div className="flex items-start gap-4">
+                <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+                <div className="flex-1">
+                  <h3 className="font-bold text-blue-900 mb-2">Sign In to Subscribe</h3>
+                  <p className="text-blue-800 mb-4">
+                    Create a free account to start your 14-day trial. No credit card required.
+                  </p>
+                  <Button 
+                    onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
+                    className="bg-blue-600 hover:bg-blue-700"
+                  >
+                    Sign In / Create Account
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
