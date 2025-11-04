@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -8,7 +9,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import {
   User, Mail, Phone, Building, MapPin, Award,
   Target, CheckCircle, Edit, Loader2, Calendar, ArrowLeft, RefreshCw,
-  Shield, Star, DollarSign, FileText, AlertCircle
+  Shield, Star, DollarSign, FileText, AlertCircle, Crown
 } from "lucide-react";
 
 function ProfileContent() {
@@ -16,6 +17,7 @@ function ProfileContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
+  const [subscription, setSubscription] = useState(null); // Added subscription state
   const [debugInfo, setDebugInfo] = useState("");
   const [error, setError] = useState(null);
   const [renderKey, setRenderKey] = useState(0); // Force re-render
@@ -28,6 +30,7 @@ function ProfileContent() {
     try {
       setLoading(true);
       setError(null);
+      setSubscription(null); // Reset subscription on load
       
       console.log('[Profile] 🔄 Loading profile data DIRECTLY from database...');
       setDebugInfo("Step 1: Getting authenticated user...");
@@ -74,6 +77,13 @@ function ProfileContent() {
       console.log('[Profile] ✅ Found profile:', profileData);
       console.log('[Profile] 📋 Profile fields:', Object.keys(profileData));
 
+      // Extract subscription info
+      const subInfo = {
+        tier: profileData.subscription_tier || 'none',
+        status: profileData.subscription_status || 'none'
+      };
+      setSubscription(subInfo);
+
       // Build comprehensive debug info
       const debugLines = [
         `✅ Successfully loaded profile from database!`,
@@ -81,12 +91,13 @@ function ProfileContent() {
         `USER INFO:`,
         `  Email: ${currentUser.email}`,
         `  User ID: ${currentUser.id}`,
-        `  Role: ${currentUser.role || 'member'}`,
+        `  Platform Role: ${currentUser.role || 'member'}`, // Updated debug info
         ``,
         `PROFILE DATA (from database):`,
         `  Profile ID: ${profileData.id}`,
         `  Full Name: ${profileData.full_name || 'NOT SET'}`,
         `  User Type: ${profileData.user_type || 'NOT SET'}`,
+        `  Platform Role: ${profileData.role || 'NOT SET'}`, // Added Platform Role to debug info
         `  Email: ${profileData.email || 'NOT SET'}`,
         `  Phone: ${profileData.phone || 'NOT SET'}`,
         `  Company: ${profileData.company || 'NOT SET'}`,
@@ -101,8 +112,12 @@ function ProfileContent() {
         `  Reputation Score: ${profileData.reputationScore !== undefined ? profileData.reputationScore : 'NOT SET'}`,
         `  Status: ${profileData.status || 'NOT SET'}`,
         `  Vetted: ${profileData.vetted ? 'YES' : 'NO'}`,
-        `  Subscription Tier: ${profileData.subscription_tier || 'NOT SET'}`,
-        `  Subscription Status: ${profileData.subscription_status || 'NOT SET'}`,
+        ``,
+        `SUBSCRIPTION:`, // Added Subscription debug info
+        `  Tier: ${subInfo.tier}`,
+        `  Status: ${subInfo.status}`,
+        ``,
+        `NDA & ONBOARDING:`, // Grouped NDA & Onboarding
         `  NDA Accepted: ${profileData.nda_accepted ? 'YES' : 'NO'}`,
         `  NDA Accepted At: ${profileData.nda_accepted_at || 'NOT SET'}`,
         `  Onboarding Completed: ${profileData.onboarding_completed_at || 'NOT SET'}`,
@@ -147,6 +162,7 @@ function ProfileContent() {
 
   // Determine onboarding completion status
   const hasCompletedOnboarding = profile?.onboarding_completed_at ? true : false;
+  const isAdmin = profile?.role === 'admin'; // Derived state for admin role
 
   console.log('[Profile] Render - Loading:', loading, 'Profile exists:', !!profile, 'Error:', !!error);
 
@@ -282,6 +298,13 @@ function ProfileContent() {
                       </Badge>
                     )}
 
+                    {isAdmin && ( // Admin badge
+                      <Badge className="bg-orange-100 text-orange-800 border-orange-200">
+                        <Crown className="w-3 h-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
+
                     {profile.vetted && (
                       <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                         <Shield className="w-3 h-3 mr-1" />
@@ -298,6 +321,14 @@ function ProfileContent() {
                         }
                       >
                         {profile.status}
+                      </Badge>
+                    )}
+
+                    {/* Subscription Plan Badge */}
+                    {subscription && subscription.tier && subscription.tier !== 'none' && (
+                      <Badge className="bg-purple-100 text-purple-800 border-purple-200 capitalize">
+                        <Star className="w-3 h-3 mr-1" />
+                        {subscription.tier} Plan
                       </Badge>
                     )}
                   </div>
@@ -324,6 +355,45 @@ function ProfileContent() {
                 </div>
               )}
             </div>
+
+            {/* Subscription Card - NEW */}
+            {subscription && subscription.tier && subscription.tier !== 'none' && (
+              <div className="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl shadow-sm border-2 border-purple-200 p-6">
+                <div className="flex items-center gap-2 mb-4">
+                  <Star className="w-6 h-6 text-purple-600" />
+                  <h2 className="text-xl font-bold text-slate-900">Subscription</h2>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-600 mb-2">Current Plan</p>
+                    <Badge className="bg-purple-600 text-white text-base py-1.5 px-3 capitalize">
+                      {subscription.tier}
+                    </Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-600 mb-2">Status</p>
+                    <Badge 
+                      className={`text-base py-1.5 px-3 ${
+                        subscription.status === 'active' ? 'bg-emerald-100 text-emerald-800' :
+                        subscription.status === 'trialing' ? 'bg-blue-100 text-blue-800' :
+                        subscription.status === 'canceled' ? 'bg-orange-100 text-orange-800' : // Corrected 'cancelled' to 'canceled' for consistency with common Stripe status
+                        'bg-slate-100 text-slate-800'
+                      }`}
+                    >
+                      {subscription.status === 'active' && <CheckCircle className="w-4 h-4 mr-1 inline" />}
+                      {subscription.status}
+                    </Badge>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-purple-200">
+                  <Link to={createPageUrl("AccountBilling")}>
+                    <Button variant="outline" className="border-purple-300 text-purple-700 hover:bg-purple-100">
+                      Manage Subscription
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            )}
 
             {/* Bio Section */}
             {profile.bio && (
@@ -375,6 +445,18 @@ function ProfileContent() {
                       <p className="text-sm text-slate-600">Account Type</p>
                       <Badge variant="secondary" className="mt-1 capitalize">
                         {profile.user_type || 'Not set'}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {/* Platform Role Display */}
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-600">Platform Role</p>
+                      <Badge variant="secondary" className="mt-1 capitalize">
+                        {profile.role || 'member'}
+                        {isAdmin && ' 👑'}
                       </Badge>
                     </div>
                   </div>
