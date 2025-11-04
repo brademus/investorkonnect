@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -106,11 +107,8 @@ export default function Layout({ children, currentPageName }) {
   const handleLogout = async () => {
     try {
       console.log('[Layout] Logging out...');
-      // Clear user state immediately
       setUser(null);
-      // Redirect to home
       window.location.href = "/";
-      // Let Base44 handle the session cleanup in background
       setTimeout(() => {
         try {
           base44.auth.logout();
@@ -120,7 +118,6 @@ export default function Layout({ children, currentPageName }) {
       }, 100);
     } catch (error) {
       console.error('[Layout] Logout error:', error);
-      // Force redirect even if logout fails
       window.location.href = "/";
     }
   };
@@ -247,12 +244,16 @@ export default function Layout({ children, currentPageName }) {
                         <LayoutDashboard className="w-4 h-4 mr-2" />
                         Dashboard
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountProfile")}>
+                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Profile")}>
                         <User className="w-4 h-4 mr-2" />
-                        Profile & Preferences
+                        View Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountProfile")}>
+                        <Settings className="w-4 h-4 mr-2" />
+                        Edit Profile
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountBilling")}>
-                        <Settings className="w-4 h-4 mr-2" />
+                        <DollarSign className="w-4 h-4 mr-2" />
                         Billing & Subscription
                       </DropdownMenuItem>
                       {isAdmin && (
@@ -334,10 +335,16 @@ export default function Layout({ children, currentPageName }) {
                         </Button>
                       </Link>
                     )}
-                    <Link to={createPageUrl("AccountProfile")} onClick={() => setMobileMenuOpen(false)}>
+                    <Link to={createPageUrl("Profile")} onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <User className="w-4 h-4" />
-                        Profile
+                        View Profile
+                      </Button>
+                    </Link>
+                    <Link to={createPageUrl("AccountProfile")} onClick={() => setMobileMenuOpen(false)}>
+                      <Button variant="ghost" className="w-full justify-start gap-2">
+                        <Settings className="w-4 h-4" />
+                        Edit Profile
                       </Button>
                     </Link>
                     <Button 
