@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp, Shield, FileText, Users, CheckCircle,
-  AlertCircle, Building, Target, DollarSign, ArrowRight, Star, XCircle
+  AlertCircle, Building, Target, DollarSign, ArrowRight, Star
 } from "lucide-react";
 
 export default function InvestorHome() {
@@ -47,24 +46,11 @@ export default function InvestorHome() {
                 Plan: <strong>{profile?.subscription_tier || 'None'}</strong>
               </span>
             </div>
-            <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
-              hasNDA ? 'bg-emerald-500/20' : 'bg-red-500/20'
-            }`}>
-              {hasNDA ? (
-                <>
-                  <Shield className="w-4 h-4" />
-                  <span className="text-sm">
-                    NDA: <strong>Signed ✅</strong>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <XCircle className="w-4 h-4" />
-                  <span className="text-sm">
-                    NDA: <strong>Required</strong>
-                  </span>
-                </>
-              )}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
+              <Shield className="w-4 h-4" />
+              <span className="text-sm">
+                NDA: <strong>{hasNDA ? 'Signed' : 'Not Signed'}</strong>
+              </span>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
@@ -78,27 +64,6 @@ export default function InvestorHome() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* NDA Banner */}
-        {!hasNDA && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-red-900 mb-2">NDA Required</h3>
-                <p className="text-red-800 mb-4">
-                  Sign the platform NDA to access agent profiles, deal rooms, and protected features.
-                </p>
-                <Link to={createPageUrl("NDA")}>
-                  <Button className="bg-red-600 hover:bg-red-700">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Sign NDA
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Subscription Banner */}
         {!hasActiveSubscription && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
@@ -268,14 +233,6 @@ export default function InvestorHome() {
                   Billing & Payment
                 </Button>
               </Link>
-              {!hasNDA && (
-                <Link to={createPageUrl("NDA")}>
-                  <Button variant="outline" className="w-full justify-start gap-3 border-red-200 text-red-700 hover:bg-red-50">
-                    <Shield className="w-4 h-4" />
-                    Sign NDA (Required)
-                  </Button>
-                </Link>
-              )}
             </div>
           </div>
         </div>
