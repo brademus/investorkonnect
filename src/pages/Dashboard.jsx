@@ -7,11 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Shield, Star, TrendingUp, FileText, 
-  AlertCircle, Users, CheckCircle, Loader2
+  AlertCircle, Users, CheckCircle, Loader2, RefreshCw
 } from "lucide-react";
 
 function DashboardContent() {
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [session, setSession] = useState(null);
   const [ndaStatus, setNdaStatus] = useState(null);
 
@@ -21,6 +22,8 @@ function DashboardContent() {
 
   const loadData = async () => {
     try {
+      console.log('[Dashboard] 🔄 Loading session data...');
+      
       // Load session state
       const response = await fetch('/functions/me', {
         method: 'POST',
@@ -30,24 +33,33 @@ function DashboardContent() {
 
       if (response.ok) {
         const state = await response.json();
-        console.log('[Dashboard] Session state:', state);
+        console.log('[Dashboard] ✅ Session state loaded:', state);
         setSession(state);
+      } else {
+        console.error('[Dashboard] ❌ Failed to load session:', response.status);
       }
 
       // Load NDA status
       try {
         const ndaResponse = await base44.functions.invoke('ndaStatus');
+        console.log('[Dashboard] ✅ NDA status loaded:', ndaResponse.data);
         setNdaStatus(ndaResponse.data.nda);
       } catch (e) {
-        console.error('Failed to load NDA status:', e);
+        console.error('[Dashboard] ❌ Failed to load NDA status:', e);
         setNdaStatus({ accepted: false, error: true });
       }
 
       setLoading(false);
     } catch (error) {
-      console.error('[Dashboard] Load error:', error);
+      console.error('[Dashboard] ❌ Load error:', error);
       setLoading(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await loadData();
+    setRefreshing(false);
   };
 
   if (loading) {
@@ -64,6 +76,17 @@ function DashboardContent() {
   const user = session?.profile || {};
   const hasCompletedOnboarding = session?.onboarding?.completed || false;
 
+  console.log('[Dashboard] Render state:', {
+    hasProfile: !!user,
+    fullName: user.full_name,
+    userType: user.user_type,
+    markets: user.markets,
+    phone: user.phone,
+    company: user.company,
+    onboardingCompleted: hasCompletedOnboarding,
+    onboardingCompletedAt: session?.onboarding?.completedAt
+  });
+
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,11 +95,22 @@ function DashboardContent() {
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                Welcome back, {user.full_name || session?.email?.split('@')[0] || 'there'}!
+                Welcome back{user.full_name ? `, ${user.full_name}` : ''}!
               </h1>
               <p className="text-slate-600">Here's what's happening with your account</p>
             </div>
-            <div className="flex gap-2 flex-wrap">
+            <div className="flex gap-2 flex-wrap items-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+              
               {hasCompletedOnboarding ? (
                 <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
                   <CheckCircle className="w-3 h-3 mr-1" />
@@ -88,6 +122,7 @@ function DashboardContent() {
                   Profile Incomplete
                 </Badge>
               )}
+              
               {ndaStatus && (
                 ndaStatus.accepted ? (
                   <Badge className="bg-green-100 text-green-800 border-green-200">
@@ -173,38 +208,89 @@ function DashboardContent() {
         </div>
 
         {/* Profile Info */}
-        {user && (
+        {user && Object.keys(user).length > 0 && (
           <div className="bg-white rounded-xl p-6 border border-slate-200 mb-8">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Your Profile</h2>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-slate-600">Email</p>
-                <p className="font-semibold text-slate-900">{session?.email || 'Not set'}</p>
-              </div>
-              <div>
-                <p className="text-sm text-slate-600">Full Name</p>
-                <p className="font-semibold text-slate-900">{user.full_name || 'Not set'}</p>
-              </div>
-              {user.markets && user.markets.length > 0 && (
-                <div>
-                  <p className="text-sm text-slate-600">Markets</p>
-                  <p className="font-semibold text-slate-900">{user.markets.join(", ")}</p>
-                </div>
-              )}
-              {user.phone && (
-                <div>
-                  <p className="text-sm text-slate-600">Phone</p>
-                  <p className="font-semibold text-slate-900">{user.phone}</p>
-                </div>
-              )}
-              {user.company && (
-                <div>
-                  <p className="text-sm text-slate-600">Company</p>
-                  <p className="font-semibold text-slate-900">{user.company}</p>
-                </div>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold text-slate-900">Your Profile</h2>
+              {hasCompletedOnboarding && (
+                <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                  <CheckCircle className="w-3 h-3 mr-1" />
+                  Complete
+                </Badge>
               )}
             </div>
-            <div className="mt-4 pt-4 border-t border-slate-200 flex gap-3">
+            
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Email</p>
+                  <p className="font-semibold text-slate-900">{session?.email || 'Not set'}</p>
+                </div>
+                
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Full Name</p>
+                  <p className="font-semibold text-slate-900">{user.full_name || 'Not set'}</p>
+                </div>
+                
+                {user.user_type && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Account Type</p>
+                    <p className="font-semibold text-slate-900 capitalize">{user.user_type}</p>
+                  </div>
+                )}
+                
+                {user.phone && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Phone</p>
+                    <p className="font-semibold text-slate-900">{user.phone}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-4">
+                {user.company && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Company</p>
+                    <p className="font-semibold text-slate-900">{user.company}</p>
+                  </div>
+                )}
+                
+                {user.markets && user.markets.length > 0 && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Target Markets</p>
+                    <div className="flex flex-wrap gap-2">
+                      {user.markets.map((market, idx) => (
+                        <Badge key={idx} variant="secondary">{market}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
+                {user.accreditation && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Accreditation</p>
+                    <p className="font-semibold text-slate-900">{user.accreditation}</p>
+                  </div>
+                )}
+                
+                {user.goals && (
+                  <div>
+                    <p className="text-sm text-slate-600 mb-1">Goals</p>
+                    <p className="font-semibold text-slate-900 line-clamp-3">{user.goals}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {session?.onboarding?.completedAt && (
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <p className="text-xs text-slate-500">
+                  Profile completed on {new Date(session.onboarding.completedAt).toLocaleDateString()}
+                </p>
+              </div>
+            )}
+            
+            <div className="mt-6 pt-4 border-t border-slate-200 flex gap-3">
               <Link to={createPageUrl("AccountProfile")}>
                 <Button variant="outline">Edit Profile</Button>
               </Link>
@@ -263,22 +349,24 @@ function DashboardContent() {
         </div>
 
         {/* Welcome Info Box */}
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-8">
-          <div className="flex items-start gap-4">
-            <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div className="flex-1">
-              <h3 className="font-bold text-blue-900 mb-2">Welcome to AgentVault!</h3>
-              <p className="text-blue-800 mb-4">
-                Your account is active. Explore verified agents, view reviews, and manage your subscription from this dashboard.
-              </p>
-              <Link to={createPageUrl("HowItWorks")}>
-                <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
-                  Learn How It Works
-                </Button>
-              </Link>
+        {hasCompletedOnboarding && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mt-8">
+            <div className="flex items-start gap-4">
+              <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="font-bold text-blue-900 mb-2">You're all set!</h3>
+                <p className="text-blue-800 mb-4">
+                  Your profile is complete. Explore verified agents, view reviews, and manage your subscription from this dashboard.
+                </p>
+                <Link to={createPageUrl("HowItWorks")}>
+                  <Button variant="outline" className="border-blue-300 text-blue-700 hover:bg-blue-100">
+                    Learn How It Works
+                  </Button>
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
