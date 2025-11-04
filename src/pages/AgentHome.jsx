@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,6 +22,7 @@ export default function AgentHome() {
   }
 
   const isVerified = profile?.vetted || profile?.agent?.verification_status === 'verified';
+  const hasNDA = profile?.nda_accepted;
   const agentData = profile?.agent || {};
   const docs = agentData.documents || [];
 
@@ -45,6 +47,14 @@ export default function AgentHome() {
                 Status: <strong>{isVerified ? 'Verified' : 'Pending'}</strong>
               </span>
             </div>
+            <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
+              hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
+            }`}>
+              <Shield className="w-4 h-4" />
+              <span className="text-sm">
+                NDA: <strong>{hasNDA ? 'Signed ✅' : 'Required'}</strong>
+              </span>
+            </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               <span className="text-sm">
@@ -63,6 +73,28 @@ export default function AgentHome() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* NDA Required Banner */}
+        {!hasNDA && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <Shield className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="font-bold text-orange-900 mb-2">NDA Required</h3>
+                <p className="text-orange-800 mb-4">
+                  You need to accept our Non-Disclosure Agreement to access investor profiles and deal rooms.
+                </p>
+                <Link to={createPageUrl("NDA")}>
+                  <Button className="bg-orange-600 hover:bg-orange-700">
+                    <Shield className="w-4 h-4 mr-2" />
+                    Sign NDA
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Verification Banner */}
         {!isVerified && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
