@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
-import { ensureProfile } from './ensureProfile.js';
 
 Deno.serve(async (req) => {
   const headers = {
@@ -32,7 +31,7 @@ Deno.serve(async (req) => {
       }, { status: 401, headers });
     }
 
-    console.log('✅ [OnboardingComplete] User authenticated:', user.email);
+    console.log('✅ [OnboardingComplete] User authenticated:', user.email, 'ID:', user.id);
 
     // Parse body
     let payload = {};
@@ -60,18 +59,42 @@ Deno.serve(async (req) => {
       }, { status: 400, headers });
     }
 
-    // Ensure profile exists
+    // Find or create profile - use user_id as primary lookup
+    console.log('🔍 [OnboardingComplete] Looking for profile with user_id:', user.id);
+    
+    let profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    console.log('📊 [OnboardingComplete] Found', profiles.length, 'profiles for user_id');
+    
     let profile;
-    try {
-      profile = await ensureProfile(base44, user);
-      console.log('✅ [OnboardingComplete] Profile found/created:', profile.id);
-    } catch (ensureError) {
-      console.error('❌ [OnboardingComplete] ensureProfile failed:', ensureError);
-      return Response.json({ 
-        ok: false,
-        error: 'profile_load_failed',
-        message: 'Could not load your profile'
-      }, { status: 500, headers });
+    
+    if (profiles.length === 0) {
+      // No profile found - create one
+      console.log('🆕 [OnboardingComplete] Creating new profile...');
+      try {
+        profile = await base44.asServiceRole.entities.Profile.create({
+          user_id: user.id,
+          email: user.email.toLowerCase().trim(),
+          role: user.role || 'member',
+          onboarding_completed_at: null,
+          nda_accepted: false,
+          nda_version: "v1.0"
+        });
+        console.log('✅ [OnboardingComplete] Created profile:', profile.id);
+      } catch (createError) {
+        console.error('❌ [OnboardingComplete] Failed to create profile:', createError);
+        return Response.json({ 
+          ok: false,
+          error: 'profile_create_failed',
+          message: 'Could not create profile: ' + createError.message
+        }, { status: 500, headers });
+      }
+    } else if (profiles.length === 1) {
+      profile = profiles[0];
+      console.log('✅ [OnboardingComplete] Found existing profile:', profile.id);
+    } else {
+      // Multiple profiles - should not happen, but take the first one
+      console.warn('⚠️ [OnboardingComplete] Multiple profiles found, using first one');
+      profile = profiles[0];
     }
 
     // Build update data - MAP ALL FIELDS
@@ -104,22 +127,16 @@ Deno.serve(async (req) => {
     }
     
     // Company (OPTIONAL)
-    if (payload.company !== undefined) {
-      updateData.company = payload.company.trim() || null;
-      console.log('  → company:', updateData.company);
-    }
+    updateData.company = (payload.company && payload.company.trim()) || null;
+    console.log('  → company:', updateData.company);
     
     // Phone (OPTIONAL)
-    if (payload.phone !== undefined) {
-      updateData.phone = payload.phone.trim() || null;
-      console.log('  → phone:', updateData.phone);
-    }
+    updateData.phone = (payload.phone && payload.phone.trim()) || null;
+    console.log('  → phone:', updateData.phone);
     
     // Accreditation (OPTIONAL)
-    if (payload.accreditation !== undefined) {
-      updateData.accreditation = payload.accreditation.trim() || null;
-      console.log('  → accreditation:', updateData.accreditation);
-    }
+    updateData.accreditation = (payload.accreditation && payload.accreditation.trim()) || null;
+    console.log('  → accreditation:', updateData.accreditation);
     
     // Goals (REQUIRED)
     if (payload.goals && payload.goals.trim()) {
@@ -173,11 +190,9 @@ Deno.serve(async (req) => {
       } else {
         console.log('ℹ️ [OnboardingComplete] Already completed at:', profile.onboarding_completed_at);
       }
-    } else {
-      console.log('ℹ️ [OnboardingComplete] Not marking as complete (complete flag not set)');
     }
 
-    console.log('📤 [OnboardingComplete] Updating profile with:', JSON.stringify(updateData, null, 2));
+    console.log('📤 [OnboardingComplete] Updating profile', profile.id, 'with:', JSON.stringify(updateData, null, 2));
 
     // Update profile using service role (admin access)
     let updatedProfile;
@@ -189,6 +204,8 @@ Deno.serve(async (req) => {
       
       console.log('✅ [OnboardingComplete] Profile updated successfully!');
       console.log('   Profile ID:', updatedProfile.id);
+      console.log('   User ID:', updatedProfile.user_id);
+      console.log('   Email:', updatedProfile.email);
       console.log('   Full name:', updatedProfile.full_name);
       console.log('   User type:', updatedProfile.user_type);
       console.log('   Markets:', updatedProfile.markets);
@@ -211,12 +228,14 @@ Deno.serve(async (req) => {
       }, { status: 500, headers });
     }
 
-    // Verify the update actually worked
+    // Verify the update worked by reading it back
     try {
-      const verifyProfile = await base44.asServiceRole.entities.Profile.filter({ id: profile.id });
-      if (verifyProfile && verifyProfile.length > 0) {
-        const savedProfile = verifyProfile[0];
-        console.log('🔍 [OnboardingComplete] Verification - Profile after save:');
+      const verifyProfiles = await base44.asServiceRole.entities.Profile.filter({ id: profile.id });
+      if (verifyProfiles && verifyProfiles.length > 0) {
+        const savedProfile = verifyProfiles[0];
+        console.log('🔍 [OnboardingComplete] Verification - Profile in database:');
+        console.log('   ID:', savedProfile.id);
+        console.log('   User ID:', savedProfile.user_id);
         console.log('   Full name:', savedProfile.full_name);
         console.log('   User type:', savedProfile.user_type);
         console.log('   Markets:', savedProfile.markets);
@@ -237,6 +256,8 @@ Deno.serve(async (req) => {
       completedAt: updatedProfile.onboarding_completed_at,
       profile: {
         id: updatedProfile.id,
+        user_id: updatedProfile.user_id,
+        email: updatedProfile.email,
         full_name: updatedProfile.full_name,
         user_type: updatedProfile.user_type,
         markets: updatedProfile.markets,
