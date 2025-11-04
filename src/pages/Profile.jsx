@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -15,10 +14,11 @@ import {
 function ProfileContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [profile, setProfile] = useState(null); // Changed from session to profile
-  const [user, setUser] = useState(null); // New state for authenticated user
+  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
   const [debugInfo, setDebugInfo] = useState("");
   const [error, setError] = useState(null);
+  const [renderKey, setRenderKey] = useState(0); // Force re-render
 
   useEffect(() => {
     loadProfile();
@@ -26,9 +26,11 @@ function ProfileContent() {
 
   const loadProfile = async () => {
     try {
+      setLoading(true);
+      setError(null);
+      
       console.log('[Profile] 🔄 Loading profile data DIRECTLY from database...');
       setDebugInfo("Step 1: Getting authenticated user...");
-      setError(null); // Clear previous errors
 
       // STEP 1: Get current authenticated user
       const currentUser = await base44.auth.me();
@@ -41,7 +43,7 @@ function ProfileContent() {
       setUser(currentUser);
       setDebugInfo(`Step 2: Authenticated as ${currentUser.email} (ID: ${currentUser.id})\nStep 3: Querying Profile entity...`);
 
-      // STEP 2: Query Profile entity DIRECTLY from database
+      // STEP 2: Query Profile entity DIRECTLY from database - FORCE FRESH DATA
       console.log('[Profile] 📊 Querying Profile entity with user_id:', currentUser.id);
 
       const profiles = await base44.entities.Profile.filter({
@@ -113,7 +115,11 @@ function ProfileContent() {
       setDebugInfo(debugLines.join('\n'));
       setProfile(profileData);
       setError(null);
+      setRenderKey(prev => prev + 1); // Force React to re-render
       setLoading(false);
+
+      console.log('[Profile] ✅ State updated with profile data');
+      console.log('[Profile] Profile state:', profileData);
 
     } catch (error) {
       console.error('[Profile] ❌ Load error:', error);
@@ -128,6 +134,7 @@ function ProfileContent() {
         `Stack Trace:\n${error.stack}`
       );
 
+      setProfile(null);
       setLoading(false);
     }
   };
@@ -138,6 +145,11 @@ function ProfileContent() {
     setRefreshing(false);
   };
 
+  // Determine onboarding completion status
+  const hasCompletedOnboarding = profile?.onboarding_completed_at ? true : false;
+
+  console.log('[Profile] Render - Loading:', loading, 'Profile exists:', !!profile, 'Error:', !!error);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -145,7 +157,7 @@ function ProfileContent() {
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading profile...</p>
           {debugInfo && (
-            <div className="mt-4 p-4 bg-white rounded-lg border border-slate-200 text-left max-w-xl">
+            <div className="mt-4 p-4 bg-white rounded-lg border border-slate-200 text-left max-w-xl mx-auto">
               <p className="text-xs text-slate-600 font-mono whitespace-pre-wrap">{debugInfo}</p>
             </div>
           )}
@@ -154,11 +166,8 @@ function ProfileContent() {
     );
   }
 
-  // Determine onboarding completion status from the profile data
-  const hasCompletedOnboarding = !!(profile?.onboarding_completed_at);
-
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-slate-50 py-8" key={renderKey}>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
         {/* Debug Info Box - ALWAYS VISIBLE */}
@@ -187,7 +196,7 @@ function ProfileContent() {
         </div>
 
         {/* Error State */}
-        {error && !profile && ( // Only show this if there's an error and no profile data could be loaded
+        {error && !profile ? (
           <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
             <div className="flex items-start gap-4">
               <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
@@ -207,13 +216,13 @@ function ProfileContent() {
               </div>
             </div>
           </div>
-        )}
+        ) : null}
 
-        {/* Only show profile content if we have profile data */}
-        {profile && (
-          <>
+        {/* PROFILE UI - Only show if profile exists */}
+        {profile ? (
+          <div className="space-y-6">
             {/* Back Button & Refresh */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between">
               <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
                 <ArrowLeft className="w-4 h-4" />
                 Back to Dashboard
@@ -231,7 +240,7 @@ function ProfileContent() {
             </div>
 
             {/* Header with Photo */}
-            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 mb-6">
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
               <div className="flex items-start gap-6 mb-6">
                 {/* Profile Photo */}
                 <div className="flex-shrink-0">
@@ -298,7 +307,7 @@ function ProfileContent() {
                 <Link to={createPageUrl("AccountProfile")}>
                   <Button size="sm" className="gap-2 bg-blue-600 hover:bg-blue-700">
                     <Edit className="w-4 h-4" />
-                    Edit Profile
+                    Edit
                   </Button>
                 </Link>
               </div>
@@ -318,14 +327,14 @@ function ProfileContent() {
 
             {/* Bio Section */}
             {profile.bio && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-4">About</h2>
                 <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{profile.bio}</p>
               </div>
             )}
 
-            {/* Profile Information */}
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Profile Information Grid */}
+            <div className="grid md:grid-cols-2 gap-6">
               {/* Basic Info */}
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-6">Basic Information</h2>
@@ -369,18 +378,6 @@ function ProfileContent() {
                       </Badge>
                     </div>
                   </div>
-
-                  {profile.role && (
-                    <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-600">Platform Role</p>
-                        <Badge variant="secondary" className="mt-1 capitalize">
-                          {profile.role}
-                        </Badge>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -388,7 +385,7 @@ function ProfileContent() {
               <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <h2 className="text-xl font-bold text-slate-900 mb-6">Professional Details</h2>
                 <div className="space-y-4">
-                  {profile.company ? (
+                  {profile.company && (
                     <div className="flex items-start gap-3">
                       <Building className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
@@ -396,9 +393,9 @@ function ProfileContent() {
                         <p className="font-semibold text-slate-900">{profile.company}</p>
                       </div>
                     </div>
-                  ) : null}
+                  )}
 
-                  {profile.accreditation ? (
+                  {profile.accreditation && (
                     <div className="flex items-start gap-3">
                       <Award className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
                       <div className="flex-1">
@@ -406,49 +403,9 @@ function ProfileContent() {
                         <p className="font-semibold text-slate-900">{profile.accreditation}</p>
                       </div>
                     </div>
-                  ) : null}
-
-                  {profile.licenseNumber && (
-                    <div className="flex items-start gap-3">
-                      <FileText className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-600">License Number</p>
-                        <p className="font-semibold text-slate-900">{profile.licenseNumber}</p>
-                      </div>
-                    </div>
                   )}
 
-                  {profile.licenseState && (
-                    <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-600">License State</p>
-                        <p className="font-semibold text-slate-900">{profile.licenseState}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {profile.broker && (
-                    <div className="flex items-start gap-3">
-                      <Building className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-600">Broker</p>
-                        <p className="font-semibold text-slate-900">{profile.broker}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {profile.reputationScore !== undefined && profile.reputationScore !== null && (
-                    <div className="flex items-start gap-3">
-                      <Star className="w-5 h-5 text-slate-400 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-slate-600">Reputation Score</p>
-                        <p className="font-semibold text-slate-900">{profile.reputationScore}/100</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {!profile.company && !profile.accreditation && !profile.licenseNumber && !profile.broker && (
+                  {!profile.company && !profile.accreditation && (
                     <div className="text-center py-8">
                       <p className="text-slate-500 text-sm mb-3">No professional details added yet</p>
                       <Link to={createPageUrl("AccountProfile")}>
@@ -462,40 +419,9 @@ function ProfileContent() {
               </div>
             </div>
 
-            {/* Subscription Info */}
-            {(profile.subscription_tier && profile.subscription_tier !== 'none') && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <DollarSign className="w-5 h-5 text-slate-600" />
-                  <h2 className="text-xl font-bold text-slate-900">Subscription</h2>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-slate-600">Plan</p>
-                    <Badge variant="secondary" className="mt-1 capitalize text-base">
-                      {profile.subscription_tier}
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-slate-600">Status</p>
-                    <Badge
-                      className={`mt-1 ${
-                        profile.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
-                        profile.subscription_status === 'trialing' ? 'bg-blue-100 text-blue-800' :
-                        profile.subscription_status === 'cancelled' ? 'bg-orange-100 text-orange-800' :
-                        'bg-slate-100 text-slate-800'
-                      }`}
-                    >
-                      {profile.subscription_status || 'None'}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-            )}
-
             {/* Markets */}
-            {profile.markets && profile.markets.length > 0 ? (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            {profile.markets && profile.markets.length > 0 && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <MapPin className="w-5 h-5 text-slate-600" />
                   <h2 className="text-xl font-bold text-slate-900">Target Markets</h2>
@@ -508,89 +434,16 @@ function ProfileContent() {
                   ))}
                 </div>
               </div>
-            ) : null}
+            )}
 
             {/* Goals */}
-            {profile.goals ? (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
+            {profile.goals && (
+              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
                 <div className="flex items-center gap-2 mb-4">
                   <Target className="w-5 h-5 text-slate-600" />
                   <h2 className="text-xl font-bold text-slate-900">Goals</h2>
                 </div>
                 <p className="text-slate-700 leading-relaxed whitespace-pre-wrap">{profile.goals}</p>
-              </div>
-            ) : null}
-
-            {/* Proof Links */}
-            {profile.proofLinks && profile.proofLinks.length > 0 && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <FileText className="w-5 h-5 text-slate-600" />
-                  <h2 className="text-xl font-bold text-slate-900">Verification Documents</h2>
-                </div>
-                <div className="space-y-2">
-                  {profile.proofLinks.map((link, idx) => (
-                    <a
-                      key={idx}
-                      href={link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="block text-blue-600 hover:text-blue-700 hover:underline text-sm break-all"
-                    >
-                      {link}
-                    </a>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* NDA Status */}
-            {profile.nda_accepted && (
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 mb-6">
-                <div className="flex items-center gap-2 mb-4">
-                  <Shield className="w-5 h-5 text-slate-600" />
-                  <h2 className="text-xl font-bold text-slate-900">NDA Status</h2>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-5 h-5 text-emerald-600" />
-                    <span className="text-slate-700">NDA Accepted</span>
-                  </div>
-                  {profile.nda_accepted_at && (
-                    <p className="text-sm text-slate-600">
-                      Signed on {new Date(profile.nda_accepted_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })}
-                    </p>
-                  )}
-                  {profile.nda_version && (
-                    <p className="text-xs text-slate-500">Version: {profile.nda_version}</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Incomplete Prompt */}
-            {!hasCompletedOnboarding && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
-                <div className="flex items-start gap-4">
-                  <CheckCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-                  <div className="flex-1">
-                    <h3 className="font-bold text-blue-900 mb-2">Complete Your Profile</h3>
-                    <p className="text-blue-800 mb-4">
-                      Fill out all required information to unlock full access to AgentVault.
-                    </p>
-                    <Link to={createPageUrl("Onboarding")}>
-                      <Button className="bg-blue-600 hover:bg-blue-700">
-                        Complete Now
-                      </Button>
-                    </Link>
-                  </div>
-                </div>
               </div>
             )}
 
@@ -608,8 +461,8 @@ function ProfileContent() {
                 </Button>
               </Link>
             </div>
-          </>
-        )}
+          </div>
+        ) : null}
       </div>
     </div>
   );
