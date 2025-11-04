@@ -35,6 +35,7 @@ import AdminSeed from './pages/AdminSeed';
 import AgentProfile from './pages/AgentProfile';
 import Admin from './pages/Admin';
 import Profile from './pages/Profile';
+import DashboardInvestor from './pages/DashboardInvestor';
 import Layout from './Layout.jsx';
 
 
@@ -76,6 +77,7 @@ export const PAGES = {
     "AgentProfile": AgentProfile,
     "Admin": Admin,
     "Profile": Profile,
+    "DashboardInvestor": DashboardInvestor,
 }
 
 export const pagesConfig = {
