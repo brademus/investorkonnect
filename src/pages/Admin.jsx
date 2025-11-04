@@ -19,6 +19,7 @@ function AdminContent() {
   const [users, setUsers] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [adminEmail, setAdminEmail] = useState("");
+  const [ndaUpdating, setNdaUpdating] = useState({});
 
   useEffect(() => {
     checkAdminAccess();
@@ -162,6 +163,29 @@ function AdminContent() {
       toast.error("Setup failed: " + error.message);
     } finally {
       setProcessing(false);
+    }
+  };
+
+  const handleNdaToggle = async (userId, currentStatus) => {
+    setNdaUpdating(prev => ({ ...prev, [userId]: true }));
+    
+    try {
+      const response = await base44.functions.invoke('adminNdaSet', {
+        user_id: userId,
+        accepted: !currentStatus
+      });
+      
+      if (response.data.ok) {
+        toast.success(`NDA status updated`);
+        await loadData(); // Reload data
+      } else {
+        toast.error(`Failed to update: ${response.data.error}`);
+      }
+    } catch (error) {
+      console.error('[Admin] NDA toggle error:', error);
+      toast.error("Failed to update NDA status");
+    } finally {
+      setNdaUpdating(prev => ({ ...prev, [userId]: false }));
     }
   };
 
@@ -417,6 +441,97 @@ function AdminContent() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Users & NDA Management */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Users & NDA Management
+            </CardTitle>
+            <CardDescription>
+              Manage user profiles and NDA status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-slate-200">
+                  <tr className="text-left">
+                    <th className="pb-3 font-medium text-slate-600">Email</th>
+                    <th className="pb-3 font-medium text-slate-600">Role</th>
+                    <th className="pb-3 font-medium text-slate-600">Type</th>
+                    <th className="pb-3 font-medium text-slate-600">Onboarded</th>
+                    <th className="pb-3 font-medium text-slate-600">Subscription</th>
+                    <th className="pb-3 font-medium text-slate-600">NDA Signed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profiles.slice(0, 20).map((profile) => (
+                    <tr key={profile.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3">
+                        <div className="font-medium text-slate-900">{profile.email}</div>
+                        <div className="text-xs text-slate-500">{profile.full_name || 'No name'}</div>
+                      </td>
+                      <td className="py-3">
+                        <Badge className={profile.role === 'admin' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}>
+                          {profile.role || 'member'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        <Badge variant="secondary" className="capitalize">
+                          {profile.user_type || profile.user_role || 'N/A'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        {profile.onboarding_completed_at ? (
+                          <Badge className="bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Yes
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-500">
+                            No
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <Badge variant="secondary" className="capitalize">
+                          {profile.subscription_tier || 'none'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        <button
+                          onClick={() => handleNdaToggle(profile.user_id, profile.nda_accepted)}
+                          disabled={ndaUpdating[profile.user_id]}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            profile.nda_accepted ? 'bg-emerald-600' : 'bg-slate-200'
+                          } ${ndaUpdating[profile.user_id] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              profile.nda_accepted ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        {profile.nda_accepted && profile.nda_accepted_at && (
+                          <div className="text-xs text-slate-500 mt-1">
+                            {new Date(profile.nda_accepted_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {profiles.length > 20 && (
+                <p className="text-sm text-slate-500 mt-4 text-center">
+                  Showing first 20 of {profiles.length} profiles
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Duplicate Profiles List */}
         {duplicateUserIds.length > 0 && (
