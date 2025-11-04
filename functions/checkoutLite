@@ -1,6 +1,7 @@
 import Stripe from 'npm:stripe@14.11.0';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// LITE CHECKOUT - NO AUTH REQUIRED, NO ONBOARDING REQUIRED
+// LITE CHECKOUT WITH ONBOARDING GATE
 Deno.serve(async (req) => {
   try {
     const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
@@ -12,7 +13,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('=== Lite Checkout ===');
+    console.log('=== Lite Checkout with Gating ===');
     console.log('Base URL:', base);
     
     const url = new URL(req.url, base);
@@ -46,7 +47,48 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Redirect URLs - FIXED: Redirect to homepage after successful payment
+    // HARD GATE: Check onboarding completion
+    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
+    
+    if (enableGating) {
+      try {
+        const base44 = createClientFromRequest(req);
+        const isAuth = await base44.auth.isAuthenticated();
+        
+        if (!isAuth) {
+          console.log('❌ User not authenticated');
+          return Response.json({ 
+            ok: false, 
+            reason: 'AUTH_REQUIRED',
+            message: 'Please sign in to continue' 
+          }, { status: 401 });
+        }
+        
+        const user = await base44.auth.me();
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        
+        if (profiles.length === 0 || !profiles[0].onboarding_completed_at) {
+          console.log('❌ Onboarding not completed');
+          return Response.json({ 
+            ok: false, 
+            reason: 'ONBOARDING_REQUIRED',
+            message: 'Please complete onboarding before subscribing',
+            redirect: `${base}/onboarding`
+          }, { status: 403 });
+        }
+        
+        console.log('✅ Onboarding completed, proceeding to Stripe');
+      } catch (gateError) {
+        console.error('❌ Gating check failed:', gateError);
+        return Response.json({ 
+          ok: false, 
+          reason: 'GATE_ERROR',
+          message: 'Failed to verify onboarding status' 
+        }, { status: 500 });
+      }
+    }
+
+    // Redirect URLs
     const success = `${base}/?payment=success`;
     const cancel = `${base}/pricing?cancelled=true`;
     
