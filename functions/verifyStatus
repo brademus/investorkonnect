@@ -1,0 +1,54 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { ensureProfile } from './ensureProfile.js';
+
+/**
+ * GET /functions/verifyStatus
+ * Returns current user's verification status
+ */
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Check authentication
+    const user = await base44.auth.me();
+    if (!user || !user.id) {
+      return Response.json({
+        ok: false,
+        error: 'not_authenticated'
+      }, { status: 401 });
+    }
+
+    // Get profile
+    let profile;
+    try {
+      profile = await ensureProfile(base44, user);
+    } catch (err) {
+      console.error('[verifyStatus] Profile load failed:', err);
+      return Response.json({
+        ok: false,
+        error: 'profile_load_failed'
+      }, { status: 500 });
+    }
+
+    // Return status
+    return Response.json({
+      ok: true,
+      verified: profile.verified || false,
+      verification_status: profile.verification_status || 'requires_verification',
+      verified_at: profile.verified_at || null,
+      verification_provider: profile.verification_provider || 'stripe_identity'
+    }, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store, no-cache, must-revalidate'
+      }
+    });
+
+  } catch (error) {
+    console.error('[verifyStatus] Error:', error);
+    return Response.json({
+      ok: false,
+      error: error.message || 'Failed to get verification status'
+    }, { status: 500 });
+  }
+});
