@@ -1,0 +1,110 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { ensureProfile } from './ensureProfile.js';
+
+Deno.serve(async (req) => {
+  // NO CACHE - always fresh auth state
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    'Pragma': 'no-cache',
+    'Expires': '0'
+  };
+
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Try to get authenticated user
+    let user = null;
+    try {
+      user = await base44.auth.me();
+    } catch (authError) {
+      // Not authenticated - return unauthenticated state immediately
+      return Response.json({
+        signedIn: false,
+        authenticated: false,
+        onboarding: { completed: false, completedAt: null },
+        flags: { needsOnboarding: true, hasActiveSub: false, role: null, plan: null }
+      }, { status: 200, headers });
+    }
+
+    if (!user || !user.email) {
+      return Response.json({
+        signedIn: false,
+        authenticated: false,
+        onboarding: { completed: false, completedAt: null },
+        flags: { needsOnboarding: true, hasActiveSub: false, role: null, plan: null }
+      }, { status: 200, headers });
+    }
+
+    // User is authenticated - ensure profile exists
+    let profile;
+    try {
+      profile = await ensureProfile(base44, user);
+    } catch (ensureError) {
+      console.error('Failed to ensure profile:', ensureError);
+      // Return authenticated but without profile data
+      return Response.json({
+        signedIn: true,
+        authenticated: true,
+        email: user.email,
+        onboarding: { completed: false, completedAt: null },
+        flags: { needsOnboarding: true, hasActiveSub: false, role: null, plan: null },
+        error: 'profile_load_failed'
+      }, { status: 200, headers });
+    }
+
+    // CRITICAL: Check onboarding completion - SOURCE OF TRUTH is onboarding_completed_at
+    const onboardingCompleted = !!(
+      profile.onboarding_completed_at
+    );
+
+    // Check subscription status
+    const subStatus = profile.subscription_status || 'none';
+    const hasActiveSub = subStatus === 'active' || subStatus === 'trialing';
+
+    // Build response
+    return Response.json({
+      signedIn: true,
+      authenticated: true,
+      email: user.email,
+      onboarding: {
+        completed: onboardingCompleted,
+        completedAt: profile.onboarding_completed_at || null
+      },
+      subscription: {
+        status: subStatus,
+        plan: profile.subscription_tier || null,
+        tier: profile.subscription_tier || null
+      },
+      flags: {
+        needsOnboarding: !onboardingCompleted,
+        hasActiveSub: hasActiveSub,
+        role: profile.user_type || profile.role || null,
+        plan: profile.subscription_tier || null
+      },
+      profile: {
+        id: profile.id,
+        user_id: profile.user_id,
+        email: profile.email,
+        full_name: profile.full_name,
+        user_type: profile.user_type,
+        company: profile.company,
+        phone: profile.phone,
+        markets: profile.markets,
+        accreditation: profile.accreditation,
+        goals: profile.goals,
+        onboarding_completed_at: profile.onboarding_completed_at
+      }
+    }, { status: 200, headers });
+
+  } catch (error) {
+    console.error('Unexpected error in /functions/me:', error);
+    return Response.json({
+      signedIn: false,
+      authenticated: false,
+      onboarding: { completed: false, completedAt: null },
+      flags: { needsOnboarding: true, hasActiveSub: false, role: null, plan: null },
+      error: error.message
+    }, { status: 200, headers });
+  }
+});

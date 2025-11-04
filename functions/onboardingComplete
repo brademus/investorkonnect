@@ -1,0 +1,157 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { ensureProfile } from './ensureProfile.js';
+
+Deno.serve(async (req) => {
+  const headers = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store, no-cache, must-revalidate'
+  };
+
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Get authenticated user
+    let user;
+    try {
+      user = await base44.auth.me();
+    } catch (authError) {
+      return Response.json({ 
+        ok: false, 
+        completed: false,
+        error: 'not_authenticated' 
+      }, { status: 401, headers });
+    }
+
+    if (!user || !user.email) {
+      return Response.json({ 
+        ok: false,
+        completed: false,
+        error: 'not_authenticated' 
+      }, { status: 401, headers });
+    }
+
+    // Parse body - ROBUST: handle JSON, form-urlencoded, or raw text
+    let payload = {};
+    try {
+      const contentType = (req.headers.get('content-type') || '').toLowerCase();
+      const bodyText = await req.text();
+      
+      if (!bodyText || bodyText.trim() === '') {
+        payload = {};
+      } else if (contentType.includes('application/json')) {
+        payload = JSON.parse(bodyText);
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        payload = Object.fromEntries(new URLSearchParams(bodyText));
+      } else {
+        // Try JSON parse, fallback to empty object
+        try {
+          payload = JSON.parse(bodyText);
+        } catch {
+          payload = {};
+        }
+      }
+    } catch (parseError) {
+      console.error('Body parse error:', parseError);
+      payload = {};
+    }
+
+    // Ensure profile exists (auto-create if missing)
+    let profile;
+    try {
+      profile = await ensureProfile(base44, user);
+    } catch (ensureError) {
+      console.error('ensureProfile failed:', ensureError);
+      return Response.json({ 
+        ok: false,
+        completed: false,
+        error: 'profile_create_failed' 
+      }, { status: 500, headers });
+    }
+
+    // CRITICAL: Check if already onboarded - NEVER reset if already set
+    if (profile.onboarding_completed_at) {
+      console.log('⚠️ Onboarding already completed at:', profile.onboarding_completed_at);
+      console.log('   Updating profile fields but NOT resetting onboarding_completed_at');
+    }
+
+    // Helper to convert to boolean
+    const toBool = (v) => v === true || v === 'true' || v === 1 || v === '1';
+
+    // Build update data - only include provided fields
+    const updateData = {};
+    
+    // Map common field variations
+    if (payload.full_name !== undefined) updateData.full_name = payload.full_name;
+    if (payload.role !== undefined) updateData.user_type = payload.role;
+    if (payload.user_type !== undefined) updateData.user_type = payload.user_type;
+    if (payload.company !== undefined) updateData.company = payload.company;
+    if (payload.phone !== undefined) updateData.phone = payload.phone;
+    if (payload.accreditation !== undefined) updateData.accreditation = payload.accreditation;
+    if (payload.goals !== undefined) updateData.goals = payload.goals;
+
+    // Handle markets array (can be array, comma-separated string, or single string)
+    if (payload.markets !== undefined) {
+      if (Array.isArray(payload.markets)) {
+        updateData.markets = payload.markets;
+      } else if (typeof payload.markets === 'string') {
+        updateData.markets = payload.markets.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+
+    // CRITICAL: Mark onboarding as complete ONLY IF:
+    // 1. The request explicitly asks for it (complete=true)
+    // 2. AND it's not already completed
+    const wantsComplete = toBool(payload.complete) || 
+                          toBool(payload.completed) || 
+                          toBool(payload.onboarding_completed);
+
+    if (wantsComplete && !profile.onboarding_completed_at) {
+      updateData.onboarding_completed_at = new Date().toISOString();
+      console.log('✅ Marking onboarding complete for FIRST time:', updateData.onboarding_completed_at);
+    } else if (wantsComplete && profile.onboarding_completed_at) {
+      console.log('ℹ️ Onboarding already completed, NOT resetting timestamp');
+      // Don't include in updateData - preserve existing value
+    }
+
+    // Update profile (idempotent - safe to call multiple times)
+    try {
+      const updatedProfile = await base44.asServiceRole.entities.Profile.update(
+        profile.id, 
+        updateData
+      );
+
+      const isCompleted = !!(updatedProfile.onboarding_completed_at);
+
+      console.log('✅ Profile updated:', {
+        userId: user.id,
+        profileId: profile.id,
+        completed: isCompleted,
+        completedAt: updatedProfile.onboarding_completed_at
+      });
+
+      return Response.json({ 
+        ok: true,
+        completed: isCompleted,
+        userId: user.id,
+        profileId: profile.id,
+        completedAt: updatedProfile.onboarding_completed_at
+      }, { status: 200, headers });
+
+    } catch (updateError) {
+      console.error('Profile update failed:', updateError);
+      return Response.json({ 
+        ok: false,
+        completed: false,
+        error: 'update_failed' 
+      }, { status: 500, headers });
+    }
+
+  } catch (error) {
+    console.error('Unexpected error:', error);
+    return Response.json({ 
+      ok: false,
+      completed: false,
+      error: 'internal_error'
+    }, { status: 500, headers });
+  }
+});
