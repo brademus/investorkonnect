@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -5,16 +6,18 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AuthGuard } from "@/components/AuthGuard";
-import { 
-  User, Mail, Phone, Building, MapPin, Award, 
+import {
+  User, Mail, Phone, Building, MapPin, Award,
   Target, CheckCircle, Edit, Loader2, Calendar, ArrowLeft, RefreshCw,
-  Shield, Star, DollarSign, FileText
+  Shield, Star, DollarSign, FileText, AlertCircle // Added AlertCircle
 } from "lucide-react";
 
 function ProfileContent() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [session, setSession] = useState(null);
+  const [debugInfo, setDebugInfo] = useState(""); // New state for debug info
+  const [error, setError] = useState(null); // New state for error messages
 
   useEffect(() => {
     loadProfile();
@@ -23,6 +26,11 @@ function ProfileContent() {
   const loadProfile = async () => {
     try {
       console.log('[Profile] 🔄 Loading profile data...');
+      setDebugInfo("Step 1: Starting to load profile..."); // NEW
+
+      // Get current authenticated user first
+      const currentUser = await base44.auth.me(); // NEW
+      setDebugInfo(`Step 2: Got authenticated user: ${currentUser?.email || 'NO EMAIL'} (ID: ${currentUser?.id || 'NO ID'})`); // NEW
 
       // Force no-cache to get fresh data
       const response = await fetch('/functions/me', {
@@ -35,18 +43,45 @@ function ProfileContent() {
         }
       });
 
-      if (response.ok) {
-        const state = await response.json();
-        console.log('[Profile] ✅ Loaded fresh state:', state);
-        console.log('[Profile] COMPLETE Profile data:', state.profile);
-        setSession(state);
-      } else {
-        console.error('[Profile] ❌ Failed to load session:', response.status);
+      setDebugInfo(`Step 3: Got response status: ${response.status} (${response.ok ? 'OK' : 'ERROR'})`); // NEW
+
+      if (!response.ok) { // NEW
+        setError(`Failed to load: HTTP ${response.status}`); // NEW
+        setDebugInfo(`ERROR: Response not OK. Status: ${response.status}`); // NEW
+        setLoading(false);
+        return;
       }
 
+      const state = await response.json();
+      console.log('[Profile] ✅ Loaded fresh state:', state);
+      console.log('[Profile] COMPLETE Profile data:', state.profile);
+
+      // Build debug info (NEW)
+      const debugLines = [
+        `✅ Response received successfully`,
+        `Authenticated: ${state.authenticated}`,
+        `Email from response: ${state.email || 'MISSING'}`,
+        `Profile exists: ${!!state.profile}`,
+        `Profile user_id: ${state.profile?.user_id || 'MISSING'}`,
+        `Profile email: ${state.profile?.email || 'MISSING'}`,
+        `Full name: ${state.profile?.full_name || 'MISSING'}`,
+        `User type: ${state.profile?.user_type || 'MISSING'}`,
+        `Phone: ${state.profile?.phone || 'MISSING'}`,
+        `Markets: ${state.profile?.markets ? JSON.stringify(state.profile.markets) : 'MISSING'}`,
+        `Company: ${state.profile?.company || 'MISSING'}`,
+        `Goals: ${state.profile?.goals ? 'YES (' + state.profile.goals.length + ' chars)' : 'MISSING'}`,
+        `Onboarding completed: ${state.onboarding?.completed || false}`,
+        `All profile fields: ${state.profile ? Object.keys(state.profile).join(', ') : 'NO PROFILE'}`
+      ];
+
+      setDebugInfo(debugLines.join('\n')); // NEW
+      setSession(state);
+      setError(null); // NEW
       setLoading(false);
     } catch (error) {
       console.error('[Profile] ❌ Load error:', error);
+      setError(`Load error: ${error.message}`); // NEW
+      setDebugInfo(`❌ ERROR: ${error.message}\nStack: ${error.stack}`); // NEW
       setLoading(false);
     }
   };
@@ -63,6 +98,11 @@ function ProfileContent() {
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading profile...</p>
+          {debugInfo && ( // NEW
+            <div className="mt-4 p-4 bg-white rounded-lg border border-slate-200 text-left max-w-xl">
+              <p className="text-xs text-slate-600 font-mono whitespace-pre-wrap">{debugInfo}</p>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -74,7 +114,48 @@ function ProfileContent() {
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
+        {/* Debug Info Box - ALWAYS VISIBLE */} {/* NEW */}
+        <div className="mb-6 bg-slate-900 text-white rounded-xl p-6 border-2 border-slate-700">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="font-bold text-lg">🔍 Debug Info (for troubleshooting)</h3>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="gap-2 bg-white text-slate-900"
+            >
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Reload
+            </Button>
+          </div>
+          <pre className="text-xs font-mono whitespace-pre-wrap text-emerald-300 bg-slate-800 rounded p-4 max-h-96 overflow-y-auto">
+            {debugInfo || "Loading..."}
+          </pre>
+          {error && (
+            <div className="mt-3 p-3 bg-red-900 border border-red-700 rounded text-red-100 text-sm">
+              ❌ {error}
+            </div>
+          )}
+        </div>
+
+        {/* Error State */} {/* NEW */}
+        {error && !session && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
+              <div>
+                <h3 className="font-bold text-red-900 mb-2">Failed to Load Profile</h3>
+                <p className="text-red-800 mb-4">{error}</p>
+                <Button onClick={handleRefresh} className="bg-red-600 hover:bg-red-700">
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Back Button & Refresh */}
         <div className="flex items-center justify-between mb-6">
           <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900">
@@ -99,9 +180,9 @@ function ProfileContent() {
             {/* Profile Photo */}
             <div className="flex-shrink-0">
               {profile.headshotUrl ? (
-                <img 
-                  src={profile.headshotUrl} 
-                  alt={profile.full_name || 'Profile'} 
+                <img
+                  src={profile.headshotUrl}
+                  alt={profile.full_name || 'Profile'}
                   className="w-24 h-24 rounded-full object-cover border-4 border-slate-100"
                 />
               ) : (
@@ -117,7 +198,7 @@ function ProfileContent() {
                 {profile.full_name || 'Your Profile'}
               </h1>
               <p className="text-slate-600 mb-3">{session?.email || 'No email'}</p>
-              
+
               <div className="flex gap-2 items-center flex-wrap">
                 {hasCompletedOnboarding ? (
                   <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
@@ -129,22 +210,22 @@ function ProfileContent() {
                     Incomplete
                   </Badge>
                 )}
-                
+
                 {profile.user_type && (
                   <Badge variant="secondary" className="capitalize">
                     {profile.user_type}
                   </Badge>
                 )}
-                
+
                 {profile.vetted && (
                   <Badge className="bg-blue-100 text-blue-800 border-blue-200">
                     <Shield className="w-3 h-3 mr-1" />
                     Verified
                   </Badge>
                 )}
-                
+
                 {profile.status && (
-                  <Badge 
+                  <Badge
                     className={
                       profile.status === 'approved' ? 'bg-green-100 text-green-800' :
                       profile.status === 'rejected' ? 'bg-red-100 text-red-800' :
@@ -341,7 +422,7 @@ function ProfileContent() {
               </div>
               <div>
                 <p className="text-sm text-slate-600">Status</p>
-                <Badge 
+                <Badge
                   className={`mt-1 ${
                     profile.subscription_status === 'active' ? 'bg-emerald-100 text-emerald-800' :
                     profile.subscription_status === 'trialing' ? 'bg-blue-100 text-blue-800' :
@@ -393,10 +474,10 @@ function ProfileContent() {
             </div>
             <div className="space-y-2">
               {profile.proofLinks.map((link, idx) => (
-                <a 
-                  key={idx} 
-                  href={link} 
-                  target="_blank" 
+                <a
+                  key={idx}
+                  href={link}
+                  target="_blank"
                   rel="noopener noreferrer"
                   className="block text-blue-600 hover:text-blue-700 hover:underline text-sm break-all"
                 >
@@ -471,10 +552,6 @@ function ProfileContent() {
             </Button>
           </Link>
         </div>
-
-        {/* Debug Info (only shown in console) */}
-        {console.log('[Profile] All available fields:', Object.keys(profile))}
-        {console.log('[Profile] Complete profile object:', profile)}
       </div>
     </div>
   );
