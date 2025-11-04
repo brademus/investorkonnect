@@ -46,9 +46,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Create Stripe session with URLs on base44.app domain
-    // After payment, they can complete profile
-    const success = `${base}/account/billing?success=true`;
+    // Redirect URLs - FIXED: Redirect to homepage after successful payment
+    const success = `${base}/?payment=success`;
     const cancel = `${base}/pricing?cancelled=true`;
     
     console.log('Success URL:', success);
