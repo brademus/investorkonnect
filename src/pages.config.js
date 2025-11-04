@@ -34,6 +34,7 @@ import Vetting from './pages/Vetting';
 import AdminSeed from './pages/AdminSeed';
 import AgentProfile from './pages/AgentProfile';
 import Admin from './pages/Admin';
+import Profile from './pages/Profile';
 import Layout from './Layout.jsx';
 
 
@@ -74,6 +75,7 @@ export const PAGES = {
     "AdminSeed": AdminSeed,
     "AgentProfile": AgentProfile,
     "Admin": Admin,
+    "Profile": Profile,
 }
 
 export const pagesConfig = {
