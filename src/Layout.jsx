@@ -4,8 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import {
-  Menu, X, ChevronDown, Shield, LogOut, User,
+import { 
+  Menu, X, ChevronDown, Shield, LogOut, User, 
   LayoutDashboard, Settings, DollarSign,
   Users, Star, BookOpen, Mail, Info, FileText, TrendingUp
 } from "lucide-react";
@@ -79,10 +79,9 @@ export default function Layout({ children, currentPageName }) {
   const showPublicNav = !user || !onboarded;
   const showInvestorNav = user && onboarded && role === 'investor';
   const showAgentNav = user && onboarded && role === 'agent';
-
+  
   const isAdmin = profile?.role === 'admin';
   const hasNDA = profile?.nda_accepted;
-  const isVerified = profile?.verified;
 
   const publicNav = [
     { name: "How It Works", href: createPageUrl("HowItWorks"), icon: Info },
@@ -112,7 +111,7 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const currentNav = showInvestorNav ? investorNav : showAgentNav ? agentNav : publicNav;
-
+  
   const isActive = (href) => location.pathname === href;
 
   return (
@@ -159,7 +158,7 @@ export default function Layout({ children, currentPageName }) {
                   <Button variant="ghost" onClick={handleSignIn}>
                     Sign In
                   </Button>
-                  <Button
+                  <Button 
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={handleSignIn}
                   >
@@ -167,7 +166,7 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </>
               )}
-
+              
               {user && (
                 <>
                   {isAdmin && (
@@ -178,7 +177,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </Link>
                   )}
-
+                  
                   {!profile?.subscription_tier && (
                     <Link to={createPageUrl("Pricing")}>
                       <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
@@ -187,7 +186,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </Link>
                   )}
-
+                  
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="gap-2">
@@ -210,11 +209,6 @@ export default function Layout({ children, currentPageName }) {
                             {profile.subscription_tier} Plan
                           </p>
                         )}
-                        {/* Verification Status */}
-                        <p className={`text-xs mt-1 flex items-center gap-1 ${isVerified ? 'text-emerald-600' : 'text-orange-600'}`}>
-                          <Shield className="w-3 h-3" />
-                          Verified: {isVerified ? '✅' : 'Required'}
-                        </p>
                         {/* NDA Status */}
                         <p className={`text-xs mt-1 flex items-center gap-1 ${hasNDA ? 'text-emerald-600' : 'text-orange-600'}`}>
                           <Shield className="w-3 h-3" />
@@ -237,11 +231,6 @@ export default function Layout({ children, currentPageName }) {
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountBilling")}>
                         <DollarSign className="w-4 h-4 mr-2" />
                         Billing & Subscription
-                      </DropdownMenuItem>
-                      {/* Verification Link */}
-                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Verify")}>
-                        <Shield className="w-4 h-4 mr-2" />
-                        Identity Verification {isVerified && '✅'}
                       </DropdownMenuItem>
                       {/* NDA Link */}
                       <DropdownMenuItem onClick={() => window.location.href = createPageUrl("NDA")}>
@@ -294,14 +283,14 @@ export default function Layout({ children, currentPageName }) {
                   {item.name}
                 </Link>
               ))}
-
+              
               <div className="border-t border-slate-200 pt-2 mt-2">
                 {!user ? (
                   <>
                     <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); handleSignIn(); }}>
                       Sign In
                     </Button>
-                    <Button
+                    <Button 
                       className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
                       onClick={() => {
                         setMobileMenuOpen(false);
@@ -345,8 +334,8 @@ export default function Layout({ children, currentPageName }) {
                         NDA {hasNDA && '✅'}
                       </Button>
                     </Link>
-                    <Button
-                      variant="ghost"
+                    <Button 
+                      variant="ghost" 
                       className="w-full justify-start gap-2 mt-2"
                       onClick={() => {
                         setMobileMenuOpen(false);

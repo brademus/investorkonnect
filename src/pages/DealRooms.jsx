@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -19,7 +18,6 @@ export default function DealRooms() {
   const [showNDAModal, setShowNDAModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
   const [user, setUser] = useState(null);
-  const [profile, setProfile] = useState(null); // Added: profile state
 
   useEffect(() => {
     checkAuthAndNDA();
@@ -39,18 +37,6 @@ export default function DealRooms() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
-      // Get profile for verification status
-      const meResponse = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
-
-      if (meResponse.ok) {
-        const meData = await meResponse.json();
-        setProfile(meData.profile);
-      }
-
       // Check NDA status
       const response = await base44.functions.invoke('ndaStatus');
       const data = response.data;
@@ -68,22 +54,10 @@ export default function DealRooms() {
     }
   };
 
-  const handleNDAAccepted = async () => { // Modified: made async
+  const handleNDAAccepted = () => {
     setShowNDAModal(false);
     setNdaAccepted(true);
     toast.success("You can now access deal rooms!");
-    
-    // Refresh profile
-    const meResponse = await fetch('/functions/me', {
-      method: 'POST',
-      credentials: 'include',
-      cache: 'no-store'
-    });
-
-    if (meResponse.ok) {
-      const meData = await meResponse.json();
-      setProfile(meData.profile);
-    }
   };
 
   // Only load deals if NDA accepted
@@ -112,7 +86,7 @@ export default function DealRooms() {
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} profile={profile} />} {/* Modified: added profile prop */}
+      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
 
       {ndaAccepted ? (
         <div className="py-8">

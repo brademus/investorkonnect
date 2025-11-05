@@ -23,7 +23,6 @@ export default function InvestorHome() {
 
   const hasActiveSubscription = profile?.subscription_tier && profile?.subscription_tier !== 'none';
   const hasNDA = profile?.nda_accepted;
-  const isVerified = profile?.verified;
   const buyBox = profile?.investor?.buy_box || {};
   const docs = profile?.investor?.documents || [];
 
@@ -51,16 +50,6 @@ export default function InvestorHome() {
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
               <Shield className="w-4 h-4" />
               <span className="text-sm">
-                Verified: {isVerified ? (
-                  <strong className="text-emerald-200">Yes ✅</strong>
-                ) : (
-                  <strong className="text-orange-200">Required</strong>
-                )}
-              </span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">
                 NDA: {hasNDA ? (
                   <strong className="text-emerald-200">Signed ✅</strong>
                 ) : (
@@ -80,30 +69,8 @@ export default function InvestorHome() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Verification Banner */}
-        {!isVerified && (
-          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-red-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-red-900 mb-2">Identity Verification Required</h3>
-                <p className="text-red-800 mb-4">
-                  Please verify your identity to access agent profiles and deal rooms. This is required before you can sign the NDA.
-                </p>
-                <Link to={createPageUrl("Verify")}>
-                  <Button className="bg-red-600 hover:bg-red-700">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Verify Identity
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* NDA Banner */}
-        {isVerified && !hasNDA && (
+        {!hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />

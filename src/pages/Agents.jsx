@@ -16,7 +16,6 @@ export default function Agents() {
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
-  const [profile, setProfile] = useState(null);
 
   useEffect(() => {
     checkNDAStatus();
@@ -33,18 +32,6 @@ export default function Agents() {
         return;
       }
 
-      // Get profile for verification status
-      const meResponse = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
-
-      if (meResponse.ok) {
-        const meData = await meResponse.json();
-        setProfile(meData.profile);
-      }
-
       if (data.nda?.accepted) {
         setNdaAccepted(true);
       } else {
@@ -58,22 +45,10 @@ export default function Agents() {
     }
   };
 
-  const handleNDAAccepted = async () => {
+  const handleNDAAccepted = () => {
     setShowNDAModal(false);
     setNdaAccepted(true);
     toast.success("You can now access agent profiles!");
-    
-    // Refresh profile
-    const meResponse = await fetch('/functions/me', {
-      method: 'POST',
-      credentials: 'include',
-      cache: 'no-store'
-    });
-
-    if (meResponse.ok) {
-      const meData = await meResponse.json();
-      setProfile(meData.profile);
-    }
   };
 
   if (loading) {
@@ -127,7 +102,7 @@ export default function Agents() {
 
   return (
     <div>
-      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} profile={profile} />}
+      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
 
       {/* Hero */}
       <section className="bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-900 text-white py-20">
