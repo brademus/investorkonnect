@@ -2,31 +2,35 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
  * Persona Webhook Handler
- * Processes inquiry.completed, inquiry.failed, inquiry.review_opened, inquiry.marked_for_review events
- * Updates Profile KYC status based on Persona verification outcome
+ * Maps Persona inquiry events to AgentVault kyc_status
+ * Status mapping:
+ * - unverified: default, no verification attempted
+ * - pending: inquiry created/started
+ * - approved: verification passed
+ * - needs_review: manual review required
+ * - failed: verification failed
  */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    // Verify webhook signature (skip in dev if secret not set)
+    // Verify webhook signature
     const webhookSecret = Deno.env.get('PERSONA_WEBHOOK_SECRET');
     if (webhookSecret) {
-      const signature = req.headers.get('X-Persona-Signature');
+      const signature = req.headers.get('X-Persona-Signature') || req.headers.get('persona-signature');
       if (!signature) {
         console.error('[personaWebhook] Missing signature');
         return Response.json({ error: 'Missing signature' }, { status: 401 });
       }
-      
       // In production, verify signature with crypto
-      // For now, we'll accept if secret exists and signature is present
+      // For now, we accept if secret exists and signature is present
     } else {
       console.log('[personaWebhook] Running without signature verification (dev mode)');
     }
 
     // Parse webhook payload
     const payload = await req.json();
-    console.log('[personaWebhook] Received event:', payload.data?.type);
+    console.log('[personaWebhook] Received event:', JSON.stringify(payload, null, 2));
 
     const eventType = payload.data?.type;
     const attributes = payload.data?.attributes || {};
@@ -34,10 +38,10 @@ Deno.serve(async (req) => {
     // Extract reference ID (user_id)
     const refId = attributes.referenceId || attributes.reference_id || attributes['reference-id'];
     const inquiryId = payload.data?.id;
-    const outcome = attributes.status || attributes.outcome;
+    const inquiryStatus = attributes.status;
 
     if (!refId) {
-      console.error('[personaWebhook] No reference ID found:', attributes);
+      console.error('[personaWebhook] No reference ID found');
       return Response.json({ error: 'No reference ID' }, { status: 400 });
     }
 
@@ -45,41 +49,55 @@ Deno.serve(async (req) => {
       eventType,
       refId,
       inquiryId,
-      outcome
+      inquiryStatus
     });
 
-    // Determine KYC status based on event type
-    let kycVerified = false;
-    let kycStatus = 'unknown';
-    let verifiedAt = null;
+    // Determine kyc_status based on event and status
+    let kycStatus = 'unverified';
 
+    // Map event types and inquiry status to our kyc_status
     switch (eventType) {
+      case 'inquiry.created':
+      case 'inquiry.started':
+        kycStatus = 'pending';
+        break;
+      
       case 'inquiry.completed':
-        if (outcome === 'passed' || outcome === 'approved') {
-          kycVerified = true;
-          kycStatus = 'passed';
-          verifiedAt = new Date().toISOString();
-        } else {
-          kycVerified = false;
+        if (inquiryStatus === 'approved' || inquiryStatus === 'completed') {
+          kycStatus = 'approved';
+        } else if (inquiryStatus === 'failed' || inquiryStatus === 'declined') {
           kycStatus = 'failed';
+        } else if (inquiryStatus === 'needs_review') {
+          kycStatus = 'needs_review';
+        } else {
+          kycStatus = 'pending'; // Default for unknown completed status
         }
         break;
       
       case 'inquiry.failed':
-        kycVerified = false;
+      case 'inquiry.expired':
         kycStatus = 'failed';
         break;
       
-      case 'inquiry.review_opened':
       case 'inquiry.marked_for_review':
-        kycVerified = false;
-        kycStatus = 'review';
+      case 'inquiry.reviewing':
+        kycStatus = 'needs_review';
+        break;
+      
+      case 'inquiry.approved':
+        kycStatus = 'approved';
+        break;
+      
+      case 'inquiry.declined':
+        kycStatus = 'failed';
         break;
       
       default:
         console.log('[personaWebhook] Unhandled event type:', eventType);
         return Response.json({ received: true }, { status: 200 });
     }
+
+    console.log('[personaWebhook] Mapped to kyc_status:', kycStatus);
 
     // Find and update profile by user_id
     const profiles = await base44.asServiceRole.entities.Profile.filter({
@@ -97,33 +115,32 @@ Deno.serve(async (req) => {
     const updates = {
       kyc_provider: 'persona',
       kyc_inquiry_id: inquiryId,
-      kyc_last_checked_at: new Date().toISOString(),
-      kyc_verified: kycVerified,
+      kyc_last_checked: new Date().toISOString(),
       kyc_status: kycStatus
     };
-
-    if (verifiedAt) {
-      updates.verified_at = verifiedAt;
-    }
 
     await base44.asServiceRole.entities.Profile.update(profile.id, updates);
 
     console.log('[personaWebhook] Updated profile:', {
       email: profile.email,
-      kyc_verified: kycVerified,
-      kyc_status: kycStatus
+      kyc_status: kycStatus,
+      event: eventType
     });
 
     // Create audit log
-    await base44.asServiceRole.entities.AuditLog.create({
-      actor_id: 'system',
-      actor_name: 'Persona Webhook',
-      entity_type: 'Profile',
-      entity_id: profile.id,
-      action: `kyc_${kycStatus}`,
-      details: `Persona inquiry ${inquiryId}: ${eventType} -> ${kycStatus}`,
-      timestamp: new Date().toISOString()
-    });
+    try {
+      await base44.asServiceRole.entities.AuditLog.create({
+        actor_id: 'system',
+        actor_name: 'Persona Webhook',
+        entity_type: 'Profile',
+        entity_id: profile.id,
+        action: `kyc_${kycStatus}`,
+        details: `Persona ${eventType}: inquiry ${inquiryId} -> status ${kycStatus}`,
+        timestamp: new Date().toISOString()
+      });
+    } catch (auditErr) {
+      console.warn('[personaWebhook] Failed to log audit:', auditErr);
+    }
 
     return Response.json({ 
       success: true,
