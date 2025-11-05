@@ -4,16 +4,7 @@ import { base44 } from '@/api/base44Client';
 /**
  * useCurrentProfile - Single source of truth for auth + profile state
  * 
- * Returns:
- * - loading: boolean - true while fetching initial data
- * - user: object | null - Base44 auth user (id, email, role)
- * - profile: object | null - Profile from database
- * - role: 'investor' | 'agent' | 'member' | null - derived from profile
- * - onboarded: boolean - true if onboarding_completed_at is set
- * - hasNDA: boolean - true if NDA has been accepted
- * - kycStatus: string - current KYC status
- * - refresh: function - manually refetch profile data
- * - error: string | null - error message if fetch failed
+ * HANDLES POST-LOGIN SESSION ESTABLISHMENT WITH AGGRESSIVE RETRIES
  */
 export function useCurrentProfile() {
   const [state, setState] = useState({
@@ -29,10 +20,12 @@ export function useCurrentProfile() {
   
   const mounted = useRef(true);
   const retryCount = useRef(0);
-  const maxRetries = 3;
+  const maxRetries = 5; // Increased from 3 to 5 for post-login scenarios
 
   useEffect(() => {
     mounted.current = true;
+    
+    // Start loading immediately
     refresh();
     
     return () => {
@@ -46,35 +39,9 @@ export function useCurrentProfile() {
     }
 
     try {
-      // FIRST: Check Base44 auth directly (faster, more reliable)
-      let isAuth = false;
-      try {
-        isAuth = await base44.auth.isAuthenticated();
-        console.log('[useCurrentProfile] Base44 auth check:', isAuth);
-      } catch (authCheckError) {
-        console.warn('[useCurrentProfile] Base44 auth check failed:', authCheckError.message);
-      }
+      console.log('[useCurrentProfile] Starting auth check, attempt:', retryCount.current + 1);
 
-      // If not authenticated at Base44 level, return immediately
-      if (!isAuth) {
-        console.log('[useCurrentProfile] Not authenticated at Base44 level');
-        if (mounted.current) {
-          setState({
-            loading: false,
-            user: null,
-            profile: null,
-            role: null,
-            onboarded: false,
-            hasNDA: false,
-            kycStatus: 'unverified',
-            error: null
-          });
-        }
-        retryCount.current = 0; // Reset retry count
-        return;
-      }
-
-      // SECOND: Get user details and profile from /functions/me
+      // Call /functions/me which handles all auth + profile logic
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
@@ -86,22 +53,22 @@ export function useCurrentProfile() {
       });
 
       if (!response.ok) {
-        // Session might still be establishing - retry if under limit
-        if (retryCount.current < maxRetries && isAuth) {
+        // Server error - retry with exponential backoff
+        if (retryCount.current < maxRetries) {
           retryCount.current++;
-          console.log(`[useCurrentProfile] Profile load failed, retrying (${retryCount.current}/${maxRetries})...`);
+          const delay = Math.min(1000 * Math.pow(2, retryCount.current - 1), 5000); // Max 5s delay
+          console.log(`[useCurrentProfile] Server error, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
           
-          // Wait a bit before retrying (exponential backoff)
-          await new Promise(resolve => setTimeout(resolve, 500 * retryCount.current));
+          await new Promise(resolve => setTimeout(resolve, delay));
           
           if (mounted.current) {
-            return refresh(); // Recursive retry
+            return refresh();
           }
           return;
         }
         
         // Max retries reached
-        console.error('[useCurrentProfile] Profile load failed after', maxRetries, 'retries');
+        console.error('[useCurrentProfile] Max retries reached after server errors');
         if (mounted.current) {
           setState({
             loading: false,
@@ -111,7 +78,7 @@ export function useCurrentProfile() {
             onboarded: false,
             hasNDA: false,
             kycStatus: 'unverified',
-            error: 'Failed to load profile'
+            error: 'Failed to load profile after multiple attempts'
           });
         }
         retryCount.current = 0;
@@ -119,14 +86,16 @@ export function useCurrentProfile() {
       }
 
       const data = await response.json();
-      console.log('[useCurrentProfile] Profile data loaded:', {
+      console.log('[useCurrentProfile] Response received:', {
         authenticated: data.authenticated,
-        onboarded: data.onboarding?.completed,
-        role: data.profile?.user_type || data.profile?.user_role
+        signedIn: data.signedIn,
+        hasProfile: !!data.profile,
+        onboarded: data.onboarding?.completed
       });
 
-      // Handle unauthenticated state from /functions/me
+      // NOT AUTHENTICATED - return immediately, no retries needed
       if (!data.authenticated || !data.signedIn) {
+        console.log('[useCurrentProfile] Not authenticated');
         if (mounted.current) {
           setState({
             loading: false,
@@ -143,19 +112,60 @@ export function useCurrentProfile() {
         return;
       }
 
-      // Extract data
-      const profile = data.profile || null;
-      const onboarded = !!(data.onboarding?.completed || profile?.onboarding_completed_at);
-      const role = profile?.user_role || profile?.user_type || null;
-      const hasNDA = profile?.nda_accepted || false;
-      const kycStatus = profile?.kyc_status || 'unverified';
+      // AUTHENTICATED BUT NO PROFILE - retry if under limit
+      // This can happen immediately after redirect when profile hasn't loaded yet
+      if (!data.profile) {
+        if (retryCount.current < maxRetries) {
+          retryCount.current++;
+          const delay = Math.min(1000 * retryCount.current, 3000); // Linear backoff, max 3s
+          console.log(`[useCurrentProfile] Authenticated but no profile, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
+          
+          await new Promise(resolve => setTimeout(resolve, delay));
+          
+          if (mounted.current) {
+            return refresh();
+          }
+          return;
+        }
+        
+        // Max retries - return authenticated but incomplete state
+        console.warn('[useCurrentProfile] Authenticated but profile never loaded');
+        if (mounted.current) {
+          setState({
+            loading: false,
+            user: data.email ? { email: data.email, id: null, role: 'member' } : null,
+            profile: null,
+            role: null,
+            onboarded: false,
+            hasNDA: false,
+            kycStatus: 'unverified',
+            error: 'Profile not found'
+          });
+        }
+        retryCount.current = 0;
+        return;
+      }
 
-      // Build user object from available data
+      // SUCCESS - have auth + profile
+      const profile = data.profile;
+      const onboarded = !!(data.onboarding?.completed || profile.onboarding_completed_at);
+      const role = profile.user_role || profile.user_type || null;
+      const hasNDA = profile.nda_accepted || false;
+      const kycStatus = profile.kyc_status || 'unverified';
+
       const user = data.email ? {
-        id: profile?.user_id || null,
+        id: profile.user_id || null,
         email: data.email,
-        role: profile?.role || 'member'
+        role: profile.role || 'member'
       } : null;
+
+      console.log('[useCurrentProfile] Success!', {
+        email: data.email,
+        role,
+        onboarded,
+        hasNDA,
+        kycStatus
+      });
 
       if (mounted.current) {
         setState({
@@ -176,12 +186,13 @@ export function useCurrentProfile() {
     } catch (error) {
       console.error('[useCurrentProfile] Error:', error);
       
-      // Retry on network errors if under limit
-      if (retryCount.current < maxRetries && error.message?.includes('fetch')) {
+      // Retry on any error if under limit
+      if (retryCount.current < maxRetries) {
         retryCount.current++;
-        console.log(`[useCurrentProfile] Network error, retrying (${retryCount.current}/${maxRetries})...`);
+        const delay = Math.min(1000 * retryCount.current, 3000);
+        console.log(`[useCurrentProfile] Error, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
         
-        await new Promise(resolve => setTimeout(resolve, 500 * retryCount.current));
+        await new Promise(resolve => setTimeout(resolve, delay));
         
         if (mounted.current) {
           return refresh();
@@ -189,7 +200,8 @@ export function useCurrentProfile() {
         return;
       }
       
-      // Max retries or non-network error
+      // Max retries reached
+      console.error('[useCurrentProfile] Max retries reached after errors');
       if (mounted.current) {
         setState({
           loading: false,
