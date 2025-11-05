@@ -5,24 +5,19 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, RefreshCw, LogOut, ArrowRight, Copy, AlertCircle } from "lucide-react";
+import { Shield, RefreshCw, LogOut, Copy, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-
-const APP_ORIGIN = "https://agent-vault-da3d088b.base44.app";
 
 /**
  * Debug Auth Page - for troubleshooting auth/session issues
- * Shows current auth state, session status, cookies, etc.
  * Access with ?k=dev to bypass protection
  */
 export default function DebugAuth() {
   const navigate = useNavigate();
   const { loading, user, profile, role, onboarded, kycStatus, refresh } = useCurrentProfile();
-  const [sessionData, setSessionData] = useState(null);
-  const [sessionLoading, setSessionLoading] = useState(false);
-  const [cookies, setCookies] = useState('');
   const [sdkUser, setSdkUser] = useState(null);
   const [accessGranted, setAccessGranted] = useState(false);
+  const [meData, setMeData] = useState(null);
 
   useEffect(() => {
     // Check for debug key
@@ -34,9 +29,8 @@ export default function DebugAuth() {
 
   useEffect(() => {
     if (accessGranted) {
-      checkSession();
-      loadCookies();
       loadSdkUser();
+      loadMeData();
     }
   }, [accessGranted]);
 
@@ -49,33 +43,18 @@ export default function DebugAuth() {
     }
   };
 
-  const checkSession = async () => {
-    setSessionLoading(true);
+  const loadMeData = async () => {
     try {
-      const response = await fetch(`${APP_ORIGIN}/functions/sessionGet`, {
-        method: 'GET',
+      const response = await fetch('/functions/me', {
+        method: 'POST',
         credentials: 'include',
         cache: 'no-store'
       });
       const data = await response.json();
-      setSessionData({ status: response.status, data });
+      setMeData(data);
     } catch (error) {
-      setSessionData({ status: 'error', error: error.message });
-    } finally {
-      setSessionLoading(false);
+      setMeData({ error: error.message });
     }
-  };
-
-  const loadCookies = () => {
-    const cookieStr = document.cookie
-      .split(';')
-      .map(c => {
-        const [name, value] = c.trim().split('=');
-        const masked = value ? value.substring(0, 12) + '...' : '';
-        return `${name}=${masked}`;
-      })
-      .join('; ');
-    setCookies(cookieStr || 'No cookies found');
   };
 
   const handleCopy = (text) => {
@@ -96,26 +75,9 @@ export default function DebugAuth() {
   const handleHardRefresh = async () => {
     toast.info('Refreshing profile...');
     await refresh();
-    await checkSession();
     await loadSdkUser();
+    await loadMeData();
     toast.success('Profile refreshed');
-  };
-
-  const handleExchangeNow = async () => {
-    toast.info('Attempting to exchange code...');
-    try {
-      // This would be called if we have a code in the URL
-      const isAuth = await base44.auth.isAuthenticated();
-      if (isAuth) {
-        toast.success('Already authenticated!');
-      } else {
-        toast.error('No active session to exchange');
-      }
-      await loadSdkUser();
-      await checkSession();
-    } catch (error) {
-      toast.error('Exchange failed: ' + error.message);
-    }
   };
 
   if (!accessGranted) {
@@ -145,12 +107,12 @@ export default function DebugAuth() {
         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800">
             <strong>Debug Mode:</strong> This page is for troubleshooting authentication issues. 
-            Remove from production. Access: ?k=dev
+            Access: ?k=dev
           </p>
         </div>
 
         {/* Action Buttons */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
           <Button onClick={handleHardRefresh} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
             Refresh
@@ -159,13 +121,8 @@ export default function DebugAuth() {
             <LogOut className="w-4 h-4" />
             Sign Out
           </Button>
-          <Button onClick={() => navigate(createPageUrl("PostAuth"))} variant="outline" className="gap-2">
-            <ArrowRight className="w-4 h-4" />
-            Post-Auth
-          </Button>
-          <Button onClick={handleExchangeNow} variant="outline" className="gap-2">
-            <RefreshCw className="w-4 h-4" />
-            Exchange Now
+          <Button onClick={() => base44.auth.redirectToLogin()} variant="outline" className="gap-2">
+            Sign In
           </Button>
         </div>
 
@@ -242,71 +199,31 @@ export default function DebugAuth() {
             )}
           </div>
 
-          {/* Session Endpoint Result */}
+          {/* /functions/me Response */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900">/functions/sessionGet</h3>
-              {sessionLoading ? (
-                <Badge className="bg-yellow-100 text-yellow-800">Checking...</Badge>
-              ) : sessionData?.data?.ok ? (
-                <Badge className="bg-emerald-100 text-emerald-800">HTTP {sessionData.status}</Badge>
+              <h3 className="font-bold text-slate-900">/functions/me</h3>
+              {meData?.authenticated ? (
+                <Badge className="bg-emerald-100 text-emerald-800">Authenticated</Badge>
               ) : (
-                <Badge className="bg-red-100 text-red-800">HTTP {sessionData?.status || '---'}</Badge>
+                <Badge className="bg-red-100 text-red-800">Not Authenticated</Badge>
               )}
             </div>
-            {sessionData && (
+            {meData && (
               <div className="relative">
                 <Button
                   size="sm"
                   variant="ghost"
                   className="absolute top-0 right-0"
-                  onClick={() => handleCopy(JSON.stringify(sessionData, null, 2))}
+                  onClick={() => handleCopy(JSON.stringify(meData, null, 2))}
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
                 <pre className="bg-slate-50 rounded-lg p-4 overflow-x-auto text-xs font-mono">
-                  {JSON.stringify(sessionData, null, 2)}
+                  {JSON.stringify(meData, null, 2)}
                 </pre>
               </div>
             )}
-          </div>
-
-          {/* Cookies */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900">document.cookie (masked)</h3>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() => handleCopy(cookies)}
-              >
-                <Copy className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="bg-slate-50 rounded-lg p-4 overflow-x-auto">
-              <code className="text-xs font-mono text-slate-700">{cookies}</code>
-            </div>
-          </div>
-
-          {/* Environment */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200">
-            <h3 className="font-bold text-slate-900 mb-4">Environment</h3>
-            <div className="space-y-2 font-mono text-sm">
-              <div className="flex justify-between">
-                <span className="text-slate-600">Location:</span>
-                <span className="text-slate-900 text-xs break-all">{window.location.href}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">Local Time:</span>
-                <span className="text-slate-900">{new Date().toISOString()}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-600">User Agent:</span>
-                <span className="text-slate-900 text-xs truncate max-w-md">
-                  {navigator.userAgent}
-                </span>
-              </div>
-            </div>
           </div>
         </div>
       </div>
