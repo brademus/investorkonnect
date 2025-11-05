@@ -39,16 +39,16 @@ export default function Home() {
     }
   }, []);
 
-  // CRITICAL FIX: Auto-route to onboarding ONLY after loading is complete and session verified
-  // Wait 800ms to show public home first (no hard redirects)
+  // Auto-route to onboarding - wait for auth to fully settle (1.5s instead of 800ms)
   useEffect(() => {
     if (!loading && user && !onboarded && !autoRouted.current) {
-      console.log('[Home] User signed in but not onboarded, auto-routing to /onboarding in 800ms...');
+      console.log('[Home] User signed in but not onboarded, auto-routing to /onboarding...');
       autoRouted.current = true;
       
+      // Increased timeout to ensure session is fully established
       const timer = setTimeout(() => {
         navigate(createPageUrl("Onboarding"));
-      }, 800);
+      }, 1500); // Changed from 800ms to 1500ms
       
       return () => clearTimeout(timer);
     }
@@ -81,8 +81,8 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      // SIMPLE LOGIN - Let Base44 handle auth flow
-      base44.auth.redirectToLogin();
+      // Pass current URL so Base44 redirects back here
+      base44.auth.redirectToLogin(window.location.href);
     }
   };
 
@@ -90,17 +90,22 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      // SIMPLE LOGIN - Let Base44 handle auth flow
-      base44.auth.redirectToLogin();
+      // Pass current URL so Base44 redirects back here
+      base44.auth.redirectToLogin(window.location.href);
     }
   };
 
-  // CONDITIONAL RENDERING BASED ON AUTH + ROLE
-  // CRITICAL: Show loading spinner during initial check - prevents flash
+  // SHOW LOADING SPINNER - LONGER TIMEOUT FOR POST-LOGIN
+  // This prevents flashing the public page when coming back from login
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-pulse text-slate-600">Loading...</div>
+        <div className="text-center">
+          <div className="animate-pulse mb-4">
+            <Shield className="w-12 h-12 text-blue-600 mx-auto" />
+          </div>
+          <p className="text-slate-600">Loading...</p>
+        </div>
       </div>
     );
   }
@@ -192,7 +197,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-20 md:py-32">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUgMCAwNSkiLz48L2c+PC9zdmc+')] opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGciPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUgMCAwNSkiLz48L2c+PC9zdmc+')] opacity-20"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
