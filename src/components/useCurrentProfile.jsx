@@ -11,8 +11,7 @@ import { base44 } from '@/api/base44Client';
  * - role: 'investor' | 'agent' | 'member' | null - derived from profile
  * - onboarded: boolean - true if onboarding_completed_at is set
  * - hasNDA: boolean - true if NDA has been accepted
- * - kycVerified: boolean - true if KYC has been verified
- * - kycStatus: string - current KYC status ('unknown', 'pending', 'approved', 'rejected')
+ * - kycStatus: string - current KYC status ('unverified', 'pending', 'approved', 'needs_review', 'failed')
  * - refresh: function - manually refetch profile data
  * - error: string | null - error message if fetch failed
  */
@@ -24,8 +23,7 @@ export function useCurrentProfile() {
     role: null,
     onboarded: false,
     hasNDA: false,
-    kycVerified: false,
-    kycStatus: 'unknown',
+    kycStatus: 'unverified',
     error: null
   });
   
@@ -107,8 +105,7 @@ export function useCurrentProfile() {
             role: null,
             onboarded: false,
             hasNDA: false,
-            kycVerified: false,
-            kycStatus: 'unknown',
+            kycStatus: 'unverified',
             error: 'Not authenticated'
           });
         }
@@ -121,8 +118,7 @@ export function useCurrentProfile() {
       const onboarded = !!(data.onboarding?.completed || profile?.onboarding_completed_at);
       const role = profile?.user_role || profile?.user_type || null;
       const hasNDA = profile?.nda_accepted || false;
-      const kycVerified = profile?.kyc_verified || false;
-      const kycStatus = profile?.kyc_status || 'unknown';
+      const kycStatus = profile?.kyc_status || 'unverified';
 
       if (mounted.current) {
         setState({
@@ -132,7 +128,6 @@ export function useCurrentProfile() {
           role,
           onboarded,
           hasNDA,
-          kycVerified,
           kycStatus,
           error: null
         });
@@ -151,8 +146,7 @@ export function useCurrentProfile() {
           role: null,
           onboarded: false,
           hasNDA: false,
-          kycVerified: false,
-          kycStatus: 'unknown',
+          kycStatus: 'unverified',
           error: error.message || 'Failed to load profile'
         });
       }
