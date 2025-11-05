@@ -43,6 +43,7 @@ import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDocuments from './pages/InvestorDocuments';
 import AgentDocuments from './pages/AgentDocuments';
 import VerifyStart from './pages/VerifyStart';
+import VerifyCallback from './pages/VerifyCallback';
 import Layout from './Layout.jsx';
 
 
@@ -92,6 +93,7 @@ export const PAGES = {
     "InvestorDocuments": InvestorDocuments,
     "AgentDocuments": AgentDocuments,
     "VerifyStart": VerifyStart,
+    "VerifyCallback": VerifyCallback,
 }
 
 export const pagesConfig = {
