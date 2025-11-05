@@ -39,16 +39,16 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-route to onboarding - wait for auth to fully settle (1.5s instead of 800ms)
+  // Auto-route to onboarding - ONLY after loading is complete AND user is confirmed
   useEffect(() => {
     if (!loading && user && !onboarded && !autoRouted.current) {
-      console.log('[Home] User signed in but not onboarded, auto-routing to /onboarding...');
+      console.log('[Home] User signed in but not onboarded, routing to onboarding...');
       autoRouted.current = true;
       
-      // Increased timeout to ensure session is fully established
+      // Give a moment for state to settle, then route
       const timer = setTimeout(() => {
         navigate(createPageUrl("Onboarding"));
-      }, 1500); // Changed from 800ms to 1500ms
+      }, 500);
       
       return () => clearTimeout(timer);
     }
@@ -81,7 +81,7 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      // Pass current URL so Base44 redirects back here
+      // Pass current URL for redirect back
       base44.auth.redirectToLogin(window.location.href);
     }
   };
@@ -90,21 +90,23 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      // Pass current URL so Base44 redirects back here
+      // Pass current URL for redirect back
       base44.auth.redirectToLogin(window.location.href);
     }
   };
 
-  // SHOW LOADING SPINNER - LONGER TIMEOUT FOR POST-LOGIN
-  // This prevents flashing the public page when coming back from login
+  // SHOW LOADING SCREEN - Let the retries complete
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-pulse mb-4">
-            <Shield className="w-12 h-12 text-blue-600 mx-auto" />
+          <div className="relative mb-6">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-xl flex items-center justify-center mx-auto animate-pulse">
+              <Shield className="w-10 h-10 text-white" />
+            </div>
           </div>
-          <p className="text-slate-600">Loading...</p>
+          <p className="text-slate-600 font-medium">Loading AgentVault...</p>
+          <p className="text-sm text-slate-400 mt-2">Establishing secure session</p>
         </div>
       </div>
     );
