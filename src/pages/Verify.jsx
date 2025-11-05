@@ -8,58 +8,37 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Shield, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
-// Environment IDs
-const ENV_ID = 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H';
-const TMPL_ID = 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM';
-
-// Fallback hosted flow
-const HOSTED_FALLBACK = 'https://agentvault.withpersona.com/verify?inquiry-template-id=itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM&environment-id=env_JYPpWD9CCQRPNSQ2hy6A26czau5H';
-
 function VerifyContent() {
   const navigate = useNavigate();
   const { loading, user, profile, onboarded, kycStatus } = useCurrentProfile();
-  const mountRef = useRef(null);
-  const clientRef = useRef(null);
-  const initAttempted = useRef(false);
-  
-  const [phase, setPhase] = useState('idle');
-  const [msg, setMsg] = useState('');
+  const containerRef = useRef(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Load Persona SDK script
+  // Load Persona script
   useEffect(() => {
     if (window.Persona) {
-      console.log('[Verify] Persona SDK already loaded');
+      console.log('[Verify] Persona already loaded');
       setScriptLoaded(true);
       return;
     }
-
-    console.log('[Verify] Loading Persona SDK...');
-    setPhase('loading-sdk');
-    setMsg('Loading Persona SDK...');
 
     const script = document.createElement('script');
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.1.2.js';
     script.integrity = 'sha384-nuMfOsYXMwp5L13VJicJkSs8tObai/UtHEOg3f7tQuFWU5j6LAewJbjbF5ZkfoDo';
     script.crossOrigin = 'anonymous';
-    script.async = true;
     
     script.onload = () => {
-      console.log('[Verify] ✅ Persona SDK loaded');
+      console.log('[Verify] Persona script loaded');
       setScriptLoaded(true);
-      setMsg('SDK loaded');
     };
     
-    script.onerror = (error) => {
-      console.error('[Verify] ❌ Failed to load SDK:', error);
-      setPhase('error');
-      setMsg('Failed to load verification system. Redirecting...');
-      setTimeout(() => {
-        window.location.href = HOSTED_FALLBACK;
-      }, 2000);
+    script.onerror = () => {
+      console.error('[Verify] Failed to load Persona script');
+      setError('Failed to load verification system');
     };
 
-    document.head.appendChild(script);
+    document.body.appendChild(script);
 
     return () => {
       if (script.parentNode) {
@@ -68,9 +47,9 @@ function VerifyContent() {
     };
   }, []);
 
-  // Initialize Persona client - FIX: Don't use onReady for embedded flow
+  // Initialize Persona client
   useEffect(() => {
-    if (!scriptLoaded || !window.Persona || !mountRef.current || !user || !profile || clientRef.current || initAttempted.current) {
+    if (!scriptLoaded || !window.Persona || !containerRef.current || !user || !profile) {
       return;
     }
 
@@ -78,31 +57,20 @@ function VerifyContent() {
       return;
     }
 
-    initAttempted.current = true;
-
-    console.log('[Verify] 🚀 Initializing embedded flow...');
-    setPhase('rendering');
-    setMsg('Starting verification widget...');
+    console.log('[Verify] Initializing Persona...');
 
     try {
-      // CRITICAL FIX: For embedded flow, create client and call render() IMMEDIATELY
-      // Do NOT use onReady callback - that's for modal flow
       const client = new window.Persona.Client({
-        templateId: TMPL_ID,
-        environmentId: ENV_ID,
+        templateId: 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM',
+        environmentId: 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H',
         referenceId: user.id,
-        fields: {
-          emailAddress: user.email,
-          ...(profile.full_name && {
-            nameFirst: profile.full_name.split(' ')[0],
-            nameLast: profile.full_name.split(' ').slice(1).join(' ')
-          })
+        onReady: () => {
+          console.log('[Verify] Persona ready - rendering in container');
+          // Use render() for embedding instead of open() for modal
+          client.render(containerRef.current);
         },
-        // No onReady for embedded!
-        onComplete: async ({ inquiryId, status }) => {
-          console.log('[Verify] ✅ Completed:', { inquiryId, status });
-          setPhase('completed');
-          setMsg('Verification complete! Finalizing...');
+        onComplete: async ({ inquiryId, status, fields }) => {
+          console.log(`[Verify] Completed inquiry ${inquiryId} with status ${status}`);
           
           try {
             const response = await base44.functions.invoke('personaFinalize', {
@@ -111,9 +79,7 @@ function VerifyContent() {
             });
 
             if (response.data?.ok) {
-              setMsg('Identity verified! Redirecting...');
               toast.success('Verification complete!');
-              
               setTimeout(() => {
                 navigate(createPageUrl("NDA"), { replace: true });
               }, 1500);
@@ -121,86 +87,36 @@ function VerifyContent() {
               throw new Error(response.data?.error || 'Finalization failed');
             }
           } catch (err) {
-            console.error('[Verify] ❌ Finalize error:', err);
-            setPhase('error');
-            setMsg('Could not finalize. Please contact support.');
-            toast.error('Verification incomplete');
+            console.error('[Verify] Finalize error:', err);
+            setError('Verification completed but could not finalize. Please contact support.');
           }
         },
         onCancel: () => {
-          console.log('[Verify] ⚠️ Cancelled');
-          setMsg('Verification cancelled.');
+          console.log('[Verify] User cancelled');
           toast.info('Verification cancelled');
         },
         onError: (error) => {
-          console.error('[Verify] ❌ Error:', error);
-          setPhase('error');
-          setMsg(`Error: ${error?.message || 'Unknown'}. Please try again.`);
-          toast.error('Verification error');
+          console.error('[Verify] Persona error:', error);
+          setError('Verification error. Please refresh the page.');
         }
       });
 
-      clientRef.current = client;
-      
-      // CRITICAL: Call render() IMMEDIATELY after creating client
-      console.log('[Verify] 📺 Calling render() immediately...');
-      
-      try {
-        client.render(mountRef.current);
-        console.log('[Verify] ✅ render() called successfully');
-        setPhase('waiting');
-        setMsg('Please complete the verification in the widget below...');
-      } catch (renderError) {
-        console.error('[Verify] ❌ render() failed:', renderError);
-        console.log('[Verify] 🔄 Trying modal fallback...');
-        
-        try {
-          client.open();
-          setPhase('waiting');
-          setMsg('Please complete verification in the popup...');
-        } catch (modalError) {
-          console.error('[Verify] ❌ Modal failed:', modalError);
-          setPhase('error');
-          setMsg('Could not start verification. Redirecting...');
-          setTimeout(() => {
-            window.location.href = HOSTED_FALLBACK;
-          }, 2000);
-        }
-      }
+      console.log('[Verify] Persona client created');
 
-      return () => {
-        if (clientRef.current) {
-          try {
-            clientRef.current.destroy();
-          } catch (e) {
-            console.warn('[Verify] Cleanup error:', e);
-          }
-          clientRef.current = null;
-        }
-      };
     } catch (err) {
-      console.error('[Verify] ❌ Init error:', err);
-      setPhase('error');
-      setMsg(`Failed to initialize. Redirecting...`);
-      setTimeout(() => {
-        window.location.href = HOSTED_FALLBACK;
-      }, 2000);
+      console.error('[Verify] Init error:', err);
+      setError('Failed to initialize verification');
     }
   }, [scriptLoaded, user, profile, kycStatus, navigate]);
 
-  // Loading
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
-        </div>
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
       </div>
     );
   }
 
-  // Not signed in
   if (!user) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -214,7 +130,6 @@ function VerifyContent() {
     );
   }
 
-  // Not onboarded
   if (!onboarded) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -228,7 +143,6 @@ function VerifyContent() {
     );
   }
 
-  // Already verified
   if (kycStatus === 'approved') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -252,29 +166,10 @@ function VerifyContent() {
     );
   }
 
-  const getStatusColor = () => {
-    switch (phase) {
-      case 'completed': return 'bg-emerald-50 border-emerald-200 text-emerald-900';
-      case 'error': return 'bg-red-50 border-red-200 text-red-900';
-      case 'waiting': return 'bg-blue-50 border-blue-200 text-blue-900';
-      default: return 'bg-slate-50 border-slate-200 text-slate-900';
-    }
-  };
-
-  const getStatusIcon = () => {
-    switch (phase) {
-      case 'completed': return <CheckCircle className="w-5 h-5 text-emerald-600" />;
-      case 'error': return <AlertCircle className="w-5 h-5 text-red-600" />;
-      case 'waiting': return <Shield className="w-5 h-5 text-blue-600" />;
-      default: return <Loader2 className="w-5 h-5 text-slate-600 animate-spin" />;
-    }
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <Shield className="w-10 h-10 text-white" />
@@ -285,18 +180,25 @@ function VerifyContent() {
           </p>
         </div>
 
-        {/* Status */}
-        <div className={`rounded-xl border-2 p-4 mb-6 ${getStatusColor()}`}>
-          <div className="flex items-center gap-3">
-            {getStatusIcon()}
-            <div>
-              <p className="font-semibold">Status: {phase}</p>
-              <p className="text-sm mt-1">{msg}</p>
+        {error && (
+          <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4 mb-6">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-red-900">{error}</p>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-2"
+                  onClick={() => window.location.reload()}
+                >
+                  Refresh Page
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* Benefits */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
@@ -321,18 +223,18 @@ function VerifyContent() {
           </div>
         </div>
 
-        {/* Persona Container - UPDATED: Simpler styling */}
+        {/* Persona Container - Embedded Widget */}
         <div className="bg-white rounded-xl border-2 border-slate-200 overflow-hidden shadow-lg">
           <div 
-            id="persona-container"
-            ref={mountRef}
+            ref={containerRef}
+            id="persona-inline"
             style={{ 
               minHeight: '600px',
               width: '100%'
             }}
           >
             {!scriptLoaded && (
-              <div className="flex items-center justify-center h-full min-h-[600px]">
+              <div className="flex items-center justify-center min-h-[600px]">
                 <div className="text-center">
                   <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-4" />
                   <p className="text-sm text-slate-600">Loading verification system...</p>
@@ -342,23 +244,9 @@ function VerifyContent() {
           </div>
         </div>
 
-        {/* Footer */}
         <p className="text-xs text-slate-500 text-center mt-6">
           Powered by Persona. Your data is encrypted and never shared.
         </p>
-
-        {/* Fallback button */}
-        {scriptLoaded && phase === 'rendering' && (
-          <div className="mt-6 text-center">
-            <p className="text-sm text-slate-600 mb-3">Widget not loading?</p>
-            <Button
-              variant="outline"
-              onClick={() => window.location.href = HOSTED_FALLBACK}
-            >
-              Use Alternative Flow
-            </Button>
-          </div>
-        )}
       </div>
     </div>
   );
