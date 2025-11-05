@@ -15,7 +15,8 @@ export default function VerifyFirstModal({ open = true }) {
   const navigate = useNavigate();
 
   const handleVerify = () => {
-    navigate(createPageUrl("VerifyStart"));
+    // UPDATED - Navigate to new embedded verification page
+    navigate(createPageUrl("Verify"));
   };
 
   return (
