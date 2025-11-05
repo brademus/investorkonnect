@@ -51,17 +51,22 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
-      // Simple redirect - let Base44 handle everything
-      base44.auth.redirectToLogin();
+      // Mark that we're going to auth
+      sessionStorage.setItem('pending_auth', 'true');
+      // Redirect with return URL that includes from_auth param
+      const returnUrl = `${window.location.origin}/?from_auth=1`;
+      base44.auth.redirectToLogin(returnUrl);
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
-      window.location.href = "/";
+      sessionStorage.setItem('pending_auth', 'true');
+      base44.auth.redirectToLogin(`${window.location.origin}/?from_auth=1`);
     }
   };
 
   const handleLogout = async () => {
     try {
-      console.log('[Layout] Logging out...');
+      // Clear any pending auth
+      sessionStorage.removeItem('pending_auth');
       // Navigate to home first
       window.location.href = "/";
       // Then logout
