@@ -4,8 +4,8 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { 
-  Menu, X, ChevronDown, Shield, LogOut, User, 
+import {
+  Menu, X, ChevronDown, Shield, LogOut, User,
   LayoutDashboard, Settings, DollarSign,
   Users, Star, BookOpen, Mail, Info, FileText, TrendingUp
 } from "lucide-react";
@@ -51,13 +51,11 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
-      console.log('[Layout] Redirecting to login, will return to:', window.location.href);
-      // Pass the current page URL so Base44 redirects back here after login
-      base44.auth.redirectToLogin(window.location.href);
+      // Simple redirect - let Base44 handle everything
+      base44.auth.redirectToLogin();
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
-      // Fallback
-      base44.auth.redirectToLogin();
+      window.location.href = "/";
     }
   };
 
@@ -84,7 +82,7 @@ export default function Layout({ children, currentPageName }) {
   const showPublicNav = !user || !onboarded;
   const showInvestorNav = user && onboarded && role === 'investor';
   const showAgentNav = user && onboarded && role === 'agent';
-  
+
   const isAdmin = profile?.role === 'admin';
   const hasNDA = profile?.nda_accepted;
 
@@ -116,7 +114,7 @@ export default function Layout({ children, currentPageName }) {
   ];
 
   const currentNav = showInvestorNav ? investorNav : showAgentNav ? agentNav : publicNav;
-  
+
   const isActive = (href) => location.pathname === href;
 
   return (
@@ -163,7 +161,7 @@ export default function Layout({ children, currentPageName }) {
                   <Button variant="ghost" onClick={handleSignIn}>
                     Sign In
                   </Button>
-                  <Button 
+                  <Button
                     className="bg-blue-600 hover:bg-blue-700"
                     onClick={handleSignIn}
                   >
@@ -171,7 +169,7 @@ export default function Layout({ children, currentPageName }) {
                   </Button>
                 </>
               )}
-              
+
               {user && (
                 <>
                   {/* KYC Status Pill */}
@@ -183,7 +181,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </Link>
                   )}
-                  
+
                   {isAdmin && (
                     <Link to={createPageUrl("Admin")}>
                       <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
@@ -192,7 +190,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </Link>
                   )}
-                  
+
                   {!profile?.subscription_tier && (
                     <Link to={createPageUrl("Pricing")}>
                       <Button className="bg-emerald-600 hover:bg-emerald-700 gap-2">
@@ -201,7 +199,7 @@ export default function Layout({ children, currentPageName }) {
                       </Button>
                     </Link>
                   )}
-                  
+
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" className="gap-2">
@@ -303,14 +301,14 @@ export default function Layout({ children, currentPageName }) {
                   {item.name}
                 </Link>
               ))}
-              
+
               <div className="border-t border-slate-200 pt-2 mt-2">
                 {!user ? (
                   <>
                     <Button variant="ghost" className="w-full justify-start" onClick={() => { setMobileMenuOpen(false); handleSignIn(); }}>
                       Sign In
                     </Button>
-                    <Button 
+                    <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 mt-2"
                       onClick={() => {
                         setMobileMenuOpen(false);
@@ -362,8 +360,8 @@ export default function Layout({ children, currentPageName }) {
                         NDA {hasNDA && '✅'}
                       </Button>
                     </Link>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       className="w-full justify-start gap-2 mt-2"
                       onClick={() => {
                         setMobileMenuOpen(false);
@@ -423,7 +421,7 @@ export default function Layout({ children, currentPageName }) {
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><Link to={createPageUrl("About")} className="hover:text-white">About</Link></li>
                 <li><Link to={createPageUrl("Contact")} className="hover:text-white">Contact</Link>
-</li>
+                </li>
                 <li><Link to={createPageUrl("PrivacyPolicy")} className="hover:text-white">Privacy Policy</Link></li>
                 <li><Link to={createPageUrl("Terms")} className="hover:text-white">Terms of Service</Link></li>
               </ul>
