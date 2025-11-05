@@ -17,8 +17,9 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { loading, user, role, onboarded } = useCurrentProfile();
+  const { loading, user, role, onboarded, kycStatus } = useCurrentProfile();
   const hasChecked = useRef(false);
+  const autoRouted = useRef(false);
 
   useEffect(() => {
     if (hasChecked.current) return;
@@ -37,6 +38,20 @@ export default function Home() {
       window.history.replaceState({}, '', '/');
     }
   }, []);
+
+  // Auto-route to onboarding after 800ms if signed in but not onboarded
+  useEffect(() => {
+    if (!loading && user && !onboarded && !autoRouted.current) {
+      console.log('[Home] User signed in but not onboarded, auto-routing to /onboarding in 800ms...');
+      autoRouted.current = true;
+      
+      const timer = setTimeout(() => {
+        navigate(createPageUrl("Onboarding"));
+      }, 800);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading, user, onboarded, navigate]);
 
   const setupPageMeta = () => {
     document.title = "AgentVault - Verified Agents. Protected Deal Flow.";
