@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -5,6 +6,7 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
+import VerifyFirstModal from "@/components/VerifyFirstModal";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Shield, Users, Lock, FileText, 
@@ -16,14 +18,16 @@ export default function DealRooms() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
+  const [kycVerified, setKycVerified] = useState(false);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    checkAuthAndNDA();
+    checkAuthAndAccess();
   }, []);
 
-  const checkAuthAndNDA = async () => {
+  const checkAuthAndAccess = async () => {
     try {
       // Check if authenticated
       const isAuth = await base44.auth.isAuthenticated();
@@ -37,20 +41,39 @@ export default function DealRooms() {
       const currentUser = await base44.auth.me();
       setUser(currentUser);
 
-      // Check NDA status
-      const response = await base44.functions.invoke('ndaStatus');
-      const data = response.data;
-
-      if (data.nda?.accepted) {
-        setNdaAccepted(true);
-      } else {
-        setShowNDAModal(true);
+      // Get profile
+      const profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
+      if (profiles.length === 0) {
+        setLoading(false);
+        // Optionally, handle the case where a user has no profile
+        toast.error("User profile not found. Please contact support.");
+        return;
       }
-      
+
+      const profile = profiles[0];
+
+      // Check KYC first
+      if (!profile.kyc_verified) {
+        setShowVerifyModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setKycVerified(true);
+
+      // Then check NDA
+      if (!profile.nda_accepted) {
+        setShowNDAModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setNdaAccepted(true);
       setLoading(false);
     } catch (error) {
-      console.error('Auth/NDA check error:', error);
+      console.error('Auth/Access check error:', error);
       setLoading(false);
+      toast.error("Failed to verify access. Please try again.");
     }
   };
 
@@ -58,13 +81,16 @@ export default function DealRooms() {
     setShowNDAModal(false);
     setNdaAccepted(true);
     toast.success("You can now access deal rooms!");
+    // After NDA is accepted, we might want to update the profile state in the backend
+    // For now, assuming the modal handles backend update
   };
 
-  // Only load deals if NDA accepted
+  // Only load deals if KYC + NDA accepted
   const { data: deals, isLoading: dealsLoading } = useQuery({
-    queryKey: ['deals', user?.email],
+    queryKey: ['deals', user?.id], // Use user.id for query key to ensure refetch on user change
     queryFn: async () => {
-      const profiles = await base44.entities.Profile.filter({ email: user.email });
+      if (!user?.id) return []; // Should not happen with enabled condition, but good for type safety
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       if (profiles.length === 0) return [];
       
       const profile = profiles[0];
@@ -72,7 +98,7 @@ export default function DealRooms() {
         participants: { $in: [profile.id] }
       }, '-updated_date');
     },
-    enabled: !!user && ndaAccepted,
+    enabled: !!user && kycVerified && ndaAccepted,
     initialData: []
   });
 
@@ -86,9 +112,10 @@ export default function DealRooms() {
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {showVerifyModal && <VerifyFirstModal open={showVerifyModal} />}
       {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
 
-      {ndaAccepted ? (
+      {(kycVerified && ndaAccepted) && (
         <div className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
@@ -107,7 +134,7 @@ export default function DealRooms() {
                 <div className="flex items-center gap-3">
                   <Shield className="w-5 h-5 text-blue-600" />
                   <p className="text-sm text-blue-800">
-                    <strong>NDA Protected:</strong> All deal rooms are protected by your signed NDA. 
+                    <strong>Protected:</strong> All deal rooms are verified and NDA-protected. 
                     Information shared here is confidential.
                   </p>
                 </div>
@@ -185,15 +212,15 @@ export default function DealRooms() {
               </div>
               <div className="bg-white rounded-xl p-6 border border-slate-200">
                 <Shield className="w-10 h-10 text-purple-600 mb-4" />
-                <h3 className="font-bold text-slate-900 mb-2">Secure Sharing</h3>
+                <h3 className="font-bold text-slate-900 mb-2">Verified Users Only</h3>
                 <p className="text-slate-600 text-sm">
-                  Encrypted file sharing with verified participants only
+                  All participants are identity-verified and NDA-signed
                 </p>
               </div>
             </div>
           </div>
         </div>
-      ) : null}
+      )}
     </div>
   );
 }
