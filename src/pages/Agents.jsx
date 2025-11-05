@@ -5,6 +5,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import NDAModal from "@/components/NDAModal";
+import VerifyFirstModal from "@/components/VerifyFirstModal";
 import { 
   Shield, CheckCircle, Star, Users, 
   TrendingUp, Lock, ArrowRight, FileCheck, Loader2
@@ -15,32 +16,56 @@ export default function Agents() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
+  const [kycVerified, setKycVerified] = useState(false);
 
   useEffect(() => {
-    checkNDAStatus();
+    checkAccess();
   }, []);
 
-  const checkNDAStatus = async () => {
+  const checkAccess = async () => {
     try {
-      const response = await base44.functions.invoke('ndaStatus');
-      const data = response.data;
-
-      if (!data.signedIn) {
+      const isAuth = await base44.auth.isAuthenticated();
+      
+      if (!isAuth) {
         // Not logged in - show public content
         setLoading(false);
         return;
       }
 
-      if (data.nda?.accepted) {
-        setNdaAccepted(true);
-      } else {
-        setShowNDAModal(true);
-      }
+      // Get current profile
+      const user = await base44.auth.me();
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       
+      if (profiles.length === 0) {
+        setLoading(false);
+        return;
+      }
+
+      const profile = profiles[0];
+
+      // Check KYC first
+      if (!profile.kyc_verified) {
+        setShowVerifyModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setKycVerified(true);
+
+      // Then check NDA
+      if (!profile.nda_accepted) {
+        setShowNDAModal(true);
+        setLoading(false);
+        return;
+      }
+
+      setNdaAccepted(true);
       setLoading(false);
+
     } catch (error) {
-      console.error('NDA status check error:', error);
+      console.error('Access check error:', error);
       setLoading(false);
     }
   };
@@ -102,6 +127,7 @@ export default function Agents() {
 
   return (
     <div>
+      {showVerifyModal && <VerifyFirstModal open={showVerifyModal} />}
       {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
 
       {/* Hero */}
