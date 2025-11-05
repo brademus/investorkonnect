@@ -26,7 +26,6 @@ import Logout from './pages/Logout';
 import GetStarted from './pages/GetStarted';
 import Onboarding from './pages/Onboarding';
 import AccountProfile from './pages/AccountProfile';
-import AuthCallback from './pages/AuthCallback';
 import Matches from './pages/Matches';
 import Inbox from './pages/Inbox';
 import Room from './pages/Room';
@@ -78,7 +77,6 @@ export const PAGES = {
     "GetStarted": GetStarted,
     "Onboarding": Onboarding,
     "AccountProfile": AccountProfile,
-    "AuthCallback": AuthCallback,
     "Matches": Matches,
     "Inbox": Inbox,
     "Room": Room,
