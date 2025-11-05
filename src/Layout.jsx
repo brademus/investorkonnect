@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
+const APP_ORIGIN = "https://agent-vault-da3d088b.base44.app";
 
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
@@ -40,7 +40,7 @@ export default function Layout({ children, currentPageName }) {
 
       const canonical = document.querySelector('link[rel="canonical"]') || document.createElement('link');
       canonical.rel = "canonical";
-      canonical.href = `${PUBLIC_APP_URL}${location.pathname}`;
+      canonical.href = `${APP_ORIGIN}${location.pathname}`;
       if (!document.querySelector('link[rel="canonical"]')) {
         document.head.appendChild(canonical);
       }
@@ -51,17 +51,21 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
-      base44.auth.redirectToLogin(window.location.pathname);
+      // Redirect to post-auth page after OAuth callback
+      base44.auth.redirectToLogin(`${APP_ORIGIN}${createPageUrl("PostAuth")}`);
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
-      window.location.href = "/";
+      // Fallback
+      window.location.href = `${APP_ORIGIN}${createPageUrl("PostAuth")}`;
     }
   };
 
   const handleLogout = async () => {
     try {
       console.log('[Layout] Logging out...');
+      // Navigate to home first
       window.location.href = "/";
+      // Then logout
       setTimeout(() => {
         try {
           base44.auth.logout();
