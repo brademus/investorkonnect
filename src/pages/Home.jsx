@@ -39,7 +39,8 @@ export default function Home() {
     }
   }, []);
 
-  // Auto-route to onboarding after 800ms if signed in but not onboarded
+  // CRITICAL FIX: Auto-route to onboarding ONLY after loading is complete and session verified
+  // Wait 800ms to show public home first (no hard redirects)
   useEffect(() => {
     if (!loading && user && !onboarded && !autoRouted.current) {
       console.log('[Home] User signed in but not onboarded, auto-routing to /onboarding in 800ms...');
@@ -80,7 +81,7 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      base44.auth.redirectToLogin(window.location.pathname);
+      base44.auth.redirectToLogin(`${PUBLIC_APP_URL}${createPageUrl("AuthCallback")}`);
     }
   };
 
@@ -88,12 +89,12 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      base44.auth.redirectToLogin(window.location.pathname);
+      base44.auth.redirectToLogin(`${PUBLIC_APP_URL}${createPageUrl("AuthCallback")}`);
     }
   };
 
   // CONDITIONAL RENDERING BASED ON AUTH + ROLE
-  // If loading, show minimal spinner
+  // CRITICAL: Show loading spinner during initial check - prevents flash
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -102,7 +103,7 @@ export default function Home() {
     );
   }
 
-  // If signed in AND onboarded, show role-specific home
+  // If signed in AND onboarded, show role-specific home (NO REDIRECT, conditional render)
   if (user && onboarded) {
     if (role === 'investor') {
       return <InvestorHome />;
