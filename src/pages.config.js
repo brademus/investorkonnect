@@ -44,6 +44,7 @@ import InvestorDocuments from './pages/InvestorDocuments';
 import AgentDocuments from './pages/AgentDocuments';
 import VerifyStart from './pages/VerifyStart';
 import VerifyCallback from './pages/VerifyCallback';
+import PostAuth from './pages/PostAuth';
 import Layout from './Layout.jsx';
 
 
@@ -94,6 +95,7 @@ export const PAGES = {
     "AgentDocuments": AgentDocuments,
     "VerifyStart": VerifyStart,
     "VerifyCallback": VerifyCallback,
+    "PostAuth": PostAuth,
 }
 
 export const pagesConfig = {
