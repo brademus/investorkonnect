@@ -51,13 +51,13 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
-      // SIMPLE LOGIN - Use Base44's built-in auth (no custom callbacks)
-      // Base44 handles OAuth/magic-link and redirects back to app root
-      base44.auth.redirectToLogin();
+      console.log('[Layout] Redirecting to login, will return to:', window.location.href);
+      // Pass the current page URL so Base44 redirects back here after login
+      base44.auth.redirectToLogin(window.location.href);
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
-      // Fallback - redirect to root
-      window.location.href = "/";
+      // Fallback
+      base44.auth.redirectToLogin();
     }
   };
 
