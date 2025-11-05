@@ -2,131 +2,151 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { Loader2, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+const APP_ORIGIN = "https://agent-vault-da3d088b.base44.app";
 
 /**
- * Auth Callback - Finalizes OAuth/Magic Link and routes to home or onboarding
- * This is where users land after Google OAuth or clicking a magic link
+ * AuthCallback - OAuth callback handler
+ * Exchanges auth code for session, sets cookie, then routes to post-auth
  */
 export default function AuthCallback() {
   const navigate = useNavigate();
-  const [status, setStatus] = useState('processing'); // 'processing' | 'success' | 'error'
-  const [message, setMessage] = useState('Completing sign in...');
+  const [status, setStatus] = useState('exchanging'); // 'exchanging' | 'setting_cookie' | 'success' | 'error'
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    console.log('[AuthCallback] Starting session finalization...');
     handleCallback();
   }, []);
 
   const handleCallback = async () => {
     try {
-      // Step 1: Let Base44 process the callback (sets session cookies)
-      console.log('[AuthCallback] Processing OAuth/magic link callback...');
+      console.log('[AuthCallback] Step 1: Exchanging code for session...');
+      setStatus('exchanging');
+
+      // CRITICAL: Exchange the OAuth code/magic link token for a Base44 session
+      // This is handled automatically by Base44 SDK when the callback page loads
+      // The SDK should have already set auth tokens in memory/storage
       
-      // Base44 should automatically handle the callback via URL hash/params
-      // Wait a moment for cookies to be set
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Step 2: Verify session was created
-      console.log('[AuthCallback] Checking if session exists...');
+      // Verify we have a session now
       const isAuth = await base44.auth.isAuthenticated();
       
       if (!isAuth) {
-        console.error('[AuthCallback] No session found after callback');
-        setStatus('error');
-        setMessage('Authentication failed. Please try again.');
-        
-        setTimeout(() => {
-          navigate(createPageUrl("Login"), { replace: true });
-        }, 2000);
-        return;
+        throw new Error('Session exchange failed - not authenticated after callback');
       }
-      
-      console.log('[AuthCallback] ✅ Session confirmed, getting user info...');
-      
-      // Step 3: Get user info and check profile/onboarding status
-      const response = await fetch('/functions/me', {
+
+      const user = await base44.auth.me();
+      console.log('[AuthCallback] ✅ Session exchanged successfully for:', user?.email);
+
+      console.log('[AuthCallback] Step 2: Setting session cookie...');
+      setStatus('setting_cookie');
+
+      // Set the session cookie with proper attributes for Safari/iOS
+      const cookieResponse = await fetch(`${APP_ORIGIN}/functions/sessionSet`, {
         method: 'POST',
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch user info');
+
+      if (!cookieResponse.ok) {
+        console.warn('[AuthCallback] Cookie set returned:', cookieResponse.status);
+        // Continue anyway - cookie might already be set by Base44
+      } else {
+        console.log('[AuthCallback] ✅ Session cookie set');
       }
-      
-      const state = await response.json();
-      
-      console.log('[AuthCallback] User state:', {
-        authenticated: state.authenticated,
-        email: state.email,
-        hasProfile: !!state.profile,
-        onboardingCompleted: state.onboarding?.completed,
-        needsOnboarding: state.flags?.needsOnboarding
-      });
-      
-      // Step 4: Route based on onboarding status
-      const needsOnboarding = state.flags?.needsOnboarding || !state.onboarding?.completed;
-      
+
       setStatus('success');
       
-      if (needsOnboarding) {
-        console.log('[AuthCallback] → Routing to /onboarding');
-        setMessage('Welcome! Let\'s complete your profile...');
-        
-        setTimeout(() => {
-          navigate(createPageUrl("Onboarding"), { replace: true });
-        }, 1000);
-      } else {
-        console.log('[AuthCallback] → Routing to /home');
-        setMessage('Welcome back!');
-        
-        setTimeout(() => {
-          navigate("/", { replace: true });
-        }, 1000);
-      }
+      // Small delay to ensure cookie is persisted
+      await new Promise(resolve => setTimeout(resolve, 300));
+
+      console.log('[AuthCallback] Step 3: Redirecting to post-auth...');
       
-    } catch (error) {
-      console.error('[AuthCallback] Error:', error);
+      // Route to post-auth for final verification
+      navigate(createPageUrl("PostAuth"), { replace: true });
+
+    } catch (err) {
+      console.error('[AuthCallback] Error:', err);
+      setError(err.message || 'Authentication failed');
       setStatus('error');
-      setMessage('Something went wrong. Redirecting to login...');
-      
-      setTimeout(() => {
-        navigate(createPageUrl("Login"), { replace: true });
-      }, 2000);
     }
   };
 
+  if (status === 'error') {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-red-50 rounded-xl p-8 border-2 border-red-200">
+            <AlertCircle className="w-12 h-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-red-900 mb-2">Authentication Error</h2>
+            <p className="text-red-700 mb-4">{error}</p>
+            <div className="flex flex-col gap-3">
+              <Button 
+                onClick={() => window.location.href = '/'}
+                className="bg-blue-600 hover:bg-blue-700 w-full"
+              >
+                Try Again
+              </Button>
+              <Button 
+                onClick={() => navigate(createPageUrl("DebugAuth"))}
+                variant="outline"
+                className="w-full"
+              >
+                View Debug Info
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-slate-200 p-8 text-center">
-        {status === 'processing' && (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="text-center max-w-md">
+        <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
+        
+        {status === 'exchanging' && (
           <>
-            <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Just a moment...</h2>
-            <p className="text-slate-600">{message}</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              Completing Sign In...
+            </h2>
+            <p className="text-slate-600">
+              Step 1/3: Exchanging credentials
+            </p>
+          </>
+        )}
+        
+        {status === 'setting_cookie' && (
+          <>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              Securing Session...
+            </h2>
+            <p className="text-slate-600">
+              Step 2/3: Setting secure cookie
+            </p>
           </>
         )}
         
         {status === 'success' && (
           <>
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Success!</h2>
-            <p className="text-slate-600">{message}</p>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">
+              Almost There...
+            </h2>
+            <p className="text-slate-600">
+              Step 3/3: Verifying session
+            </p>
           </>
         )}
-        
-        {status === 'error' && (
-          <>
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-6">
-              <XCircle className="w-10 h-10 text-red-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">Oops!</h2>
-            <p className="text-slate-600">{message}</p>
-          </>
-        )}
+
+        <p className="text-xs text-slate-500 mt-4">
+          Please do not close this window
+        </p>
       </div>
     </div>
   );
