@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,11 +18,11 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 export default function Home() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded, kycStatus } = useCurrentProfile();
-  const hasChecked = useRef(false);
+  const hasSetup = useRef(false);
 
   useEffect(() => {
-    if (hasChecked.current) return;
-    hasChecked.current = true;
+    if (hasSetup.current) return;
+    hasSetup.current = true;
     
     setupPageMeta();
     
@@ -35,12 +36,6 @@ export default function Home() {
       // Clean up URL
       window.history.replaceState({}, '', '/');
     }
-    
-    // Clean up auth params from URL if present
-    if (urlParams.get('from_auth')) {
-      window.history.replaceState({}, '', '/');
-    }
-    sessionStorage.removeItem('pending_auth');
   }, []);
 
   const setupPageMeta = () => {
@@ -70,6 +65,7 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
+      console.log('[Home] Redirecting to login...');
       base44.auth.redirectToLogin();
     }
   };
@@ -78,6 +74,7 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
+      console.log('[Home] Redirecting to login...');
       base44.auth.redirectToLogin();
     }
   };
