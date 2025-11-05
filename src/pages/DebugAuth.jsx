@@ -5,31 +5,57 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Shield, RefreshCw, LogOut, ArrowRight, Copy } from "lucide-react";
+import { Shield, RefreshCw, LogOut, ArrowRight, Copy, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+
+const APP_ORIGIN = "https://agent-vault-da3d088b.base44.app";
 
 /**
  * Debug Auth Page - for troubleshooting auth/session issues
  * Shows current auth state, session status, cookies, etc.
+ * Access with ?k=dev to bypass protection
  */
 export default function DebugAuth() {
   const navigate = useNavigate();
-  const { loading, user, profile, role, onboarded, kycVerified, refresh } = useCurrentProfile();
+  const { loading, user, profile, role, onboarded, kycStatus, refresh } = useCurrentProfile();
   const [sessionData, setSessionData] = useState(null);
   const [sessionLoading, setSessionLoading] = useState(false);
   const [cookies, setCookies] = useState('');
+  const [sdkUser, setSdkUser] = useState(null);
+  const [accessGranted, setAccessGranted] = useState(false);
 
   useEffect(() => {
-    checkSession();
-    loadCookies();
+    // Check for debug key
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('k') === 'dev') {
+      setAccessGranted(true);
+    }
   }, []);
+
+  useEffect(() => {
+    if (accessGranted) {
+      checkSession();
+      loadCookies();
+      loadSdkUser();
+    }
+  }, [accessGranted]);
+
+  const loadSdkUser = async () => {
+    try {
+      const u = await base44.auth.me();
+      setSdkUser(u);
+    } catch (e) {
+      setSdkUser(null);
+    }
+  };
 
   const checkSession = async () => {
     setSessionLoading(true);
     try {
-      const response = await fetch('/functions/session', {
-        method: 'POST',
-        credentials: 'include'
+      const response = await fetch(`${APP_ORIGIN}/functions/sessionGet`, {
+        method: 'GET',
+        credentials: 'include',
+        cache: 'no-store'
       });
       const data = await response.json();
       setSessionData({ status: response.status, data });
@@ -41,12 +67,11 @@ export default function DebugAuth() {
   };
 
   const loadCookies = () => {
-    // Mask cookie values for security
     const cookieStr = document.cookie
       .split(';')
       .map(c => {
         const [name, value] = c.trim().split('=');
-        const masked = value ? value.substring(0, 8) + '...' : '';
+        const masked = value ? value.substring(0, 12) + '...' : '';
         return `${name}=${masked}`;
       })
       .join('; ');
@@ -72,8 +97,42 @@ export default function DebugAuth() {
     toast.info('Refreshing profile...');
     await refresh();
     await checkSession();
+    await loadSdkUser();
     toast.success('Profile refreshed');
   };
+
+  const handleExchangeNow = async () => {
+    toast.info('Attempting to exchange code...');
+    try {
+      // This would be called if we have a code in the URL
+      const isAuth = await base44.auth.isAuthenticated();
+      if (isAuth) {
+        toast.success('Already authenticated!');
+      } else {
+        toast.error('No active session to exchange');
+      }
+      await loadSdkUser();
+      await checkSession();
+    } catch (error) {
+      toast.error('Exchange failed: ' + error.message);
+    }
+  };
+
+  if (!accessGranted) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md text-center">
+          <div className="bg-orange-50 rounded-xl p-8 border-2 border-orange-200">
+            <AlertCircle className="w-12 h-12 text-orange-600 mx-auto mb-4" />
+            <h2 className="text-xl font-bold text-orange-900 mb-2">Access Restricted</h2>
+            <p className="text-orange-700">
+              This debug page requires a special access key
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -86,7 +145,7 @@ export default function DebugAuth() {
         <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-4 mb-6">
           <p className="text-sm text-yellow-800">
             <strong>Debug Mode:</strong> This page is for troubleshooting authentication issues. 
-            Remove from production.
+            Remove from production. Access: ?k=dev
           </p>
         </div>
 
@@ -104,9 +163,9 @@ export default function DebugAuth() {
             <ArrowRight className="w-4 h-4" />
             Post-Auth
           </Button>
-          <Button onClick={checkSession} variant="outline" className="gap-2">
+          <Button onClick={handleExchangeNow} variant="outline" className="gap-2">
             <RefreshCw className="w-4 h-4" />
-            Ping Session
+            Exchange Now
           </Button>
         </div>
 
@@ -145,8 +204,8 @@ export default function DebugAuth() {
                 <span className="text-slate-900">{onboarded.toString()}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-slate-600">KYC Verified:</span>
-                <span className="text-slate-900">{kycVerified.toString()}</span>
+                <span className="text-slate-600">KYC Status:</span>
+                <span className="text-slate-900">{kycStatus || 'unverified'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Profile ID:</span>
@@ -155,10 +214,38 @@ export default function DebugAuth() {
             </div>
           </div>
 
+          {/* SDK User */}
+          <div className="bg-white rounded-xl p-6 border border-slate-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-slate-900">base44.auth.me()</h3>
+              {sdkUser ? (
+                <Badge className="bg-emerald-100 text-emerald-800">Active</Badge>
+              ) : (
+                <Badge className="bg-red-100 text-red-800">Null</Badge>
+              )}
+            </div>
+            {sdkUser && (
+              <div className="space-y-2 font-mono text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-600">ID:</span>
+                  <span className="text-slate-900">{sdkUser.id}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Email:</span>
+                  <span className="text-slate-900">{sdkUser.email}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-600">Role:</span>
+                  <span className="text-slate-900">{sdkUser.role || 'member'}</span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Session Endpoint Result */}
           <div className="bg-white rounded-xl p-6 border border-slate-200">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-900">/functions/session</h3>
+              <h3 className="font-bold text-slate-900">/functions/sessionGet</h3>
               {sessionLoading ? (
                 <Badge className="bg-yellow-100 text-yellow-800">Checking...</Badge>
               ) : sessionData?.data?.ok ? (
@@ -207,7 +294,7 @@ export default function DebugAuth() {
             <div className="space-y-2 font-mono text-sm">
               <div className="flex justify-between">
                 <span className="text-slate-600">Location:</span>
-                <span className="text-slate-900 text-xs">{window.location.href}</span>
+                <span className="text-slate-900 text-xs break-all">{window.location.href}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-slate-600">Local Time:</span>
