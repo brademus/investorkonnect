@@ -153,9 +153,9 @@ export default function Layout({ children, currentPageName }) {
 
               {user && (
                 <>
-                  {/* KYC Status Pill */}
+                  {/* KYC Status Pill - UPDATED TO USE /Verify */}
                   {user && onboarded && !kycVerified && (
-                    <Link to={createPageUrl("VerifyStart")}>
+                    <Link to={createPageUrl("Verify")}>
                       <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-sm">
                         <Shield className="w-4 h-4" />
                         Verify Identity
@@ -301,8 +301,9 @@ export default function Layout({ children, currentPageName }) {
                   </>
                 ) : (
                   <>
+                    {/* UPDATED TO USE /Verify */}
                     {!kycVerified && (
-                      <Link to={createPageUrl("VerifyStart")} onClick={() => setMobileMenuOpen(false)}>
+                      <Link to={createPageUrl("Verify")} onClick={() => setMobileMenuOpen(false)}>
                         <Button variant="ghost" className="w-full justify-start gap-2 text-orange-600">
                           <Shield className="w-4 h-4" />
                           Verify Identity
