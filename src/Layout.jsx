@@ -51,12 +51,13 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
-      // Redirect to post-auth page after OAuth callback
-      base44.auth.redirectToLogin(`${APP_ORIGIN}${createPageUrl("PostAuth")}`);
+      // CRITICAL FIX: Redirect to /auth/callback after OAuth
+      // This allows us to properly exchange code and set session cookie
+      base44.auth.redirectToLogin(`${APP_ORIGIN}${createPageUrl("AuthCallback")}`);
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
       // Fallback
-      window.location.href = `${APP_ORIGIN}${createPageUrl("PostAuth")}`;
+      window.location.href = `${APP_ORIGIN}${createPageUrl("AuthCallback")}`;
     }
   };
 
