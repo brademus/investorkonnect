@@ -2,9 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * useCurrentProfile - Single source of truth for auth + profile state
- * 
- * HANDLES POST-LOGIN SESSION ESTABLISHMENT WITH AGGRESSIVE RETRIES
+ * useCurrentProfile - Simplified auth + profile state
+ * NO MORE COMPLEX RETRIES - keep it simple and reliable
  */
 export function useCurrentProfile() {
   const [state, setState] = useState({
@@ -19,29 +18,26 @@ export function useCurrentProfile() {
   });
   
   const mounted = useRef(true);
-  const retryCount = useRef(0);
-  const maxRetries = 5; // Increased from 3 to 5 for post-login scenarios
+  const hasRun = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
     
-    // Start loading immediately
-    refresh();
+    if (!hasRun.current) {
+      hasRun.current = true;
+      loadProfile();
+    }
     
     return () => {
       mounted.current = false;
     };
   }, []);
 
-  const refresh = async () => {
-    if (mounted.current) {
-      setState(prev => ({ ...prev, loading: true, error: null }));
-    }
-
+  const loadProfile = async () => {
     try {
-      console.log('[useCurrentProfile] Starting auth check, attempt:', retryCount.current + 1);
+      console.log('[useCurrentProfile] Loading profile...');
 
-      // Call /functions/me which handles all auth + profile logic
+      // Single call to /functions/me - no retries, keep it simple
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
@@ -53,22 +49,7 @@ export function useCurrentProfile() {
       });
 
       if (!response.ok) {
-        // Server error - retry with exponential backoff
-        if (retryCount.current < maxRetries) {
-          retryCount.current++;
-          const delay = Math.min(1000 * Math.pow(2, retryCount.current - 1), 5000); // Max 5s delay
-          console.log(`[useCurrentProfile] Server error, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-          if (mounted.current) {
-            return refresh();
-          }
-          return;
-        }
-        
-        // Max retries reached
-        console.error('[useCurrentProfile] Max retries reached after server errors');
+        console.log('[useCurrentProfile] Not authenticated (response not ok)');
         if (mounted.current) {
           setState({
             loading: false,
@@ -78,22 +59,20 @@ export function useCurrentProfile() {
             onboarded: false,
             hasNDA: false,
             kycStatus: 'unverified',
-            error: 'Failed to load profile after multiple attempts'
+            error: null
           });
         }
-        retryCount.current = 0;
         return;
       }
 
       const data = await response.json();
-      console.log('[useCurrentProfile] Response received:', {
+      console.log('[useCurrentProfile] Response:', {
         authenticated: data.authenticated,
-        signedIn: data.signedIn,
         hasProfile: !!data.profile,
         onboarded: data.onboarding?.completed
       });
 
-      // NOT AUTHENTICATED - return immediately, no retries needed
+      // Not authenticated
       if (!data.authenticated || !data.signedIn) {
         console.log('[useCurrentProfile] Not authenticated');
         if (mounted.current) {
@@ -108,28 +87,12 @@ export function useCurrentProfile() {
             error: null
           });
         }
-        retryCount.current = 0;
         return;
       }
 
-      // AUTHENTICATED BUT NO PROFILE - retry if under limit
-      // This can happen immediately after redirect when profile hasn't loaded yet
+      // Authenticated but no profile yet - might be brand new user
       if (!data.profile) {
-        if (retryCount.current < maxRetries) {
-          retryCount.current++;
-          const delay = Math.min(1000 * retryCount.current, 3000); // Linear backoff, max 3s
-          console.log(`[useCurrentProfile] Authenticated but no profile, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
-          
-          await new Promise(resolve => setTimeout(resolve, delay));
-          
-          if (mounted.current) {
-            return refresh();
-          }
-          return;
-        }
-        
-        // Max retries - return authenticated but incomplete state
-        console.warn('[useCurrentProfile] Authenticated but profile never loaded');
+        console.log('[useCurrentProfile] Authenticated but no profile');
         if (mounted.current) {
           setState({
             loading: false,
@@ -139,14 +102,13 @@ export function useCurrentProfile() {
             onboarded: false,
             hasNDA: false,
             kycStatus: 'unverified',
-            error: 'Profile not found'
+            error: null
           });
         }
-        retryCount.current = 0;
         return;
       }
 
-      // SUCCESS - have auth + profile
+      // Success - have auth + profile
       const profile = data.profile;
       const onboarded = !!(data.onboarding?.completed || profile.onboarding_completed_at);
       const role = profile.user_role || profile.user_type || null;
@@ -162,9 +124,7 @@ export function useCurrentProfile() {
       console.log('[useCurrentProfile] Success!', {
         email: data.email,
         role,
-        onboarded,
-        hasNDA,
-        kycStatus
+        onboarded
       });
 
       if (mounted.current) {
@@ -180,28 +140,9 @@ export function useCurrentProfile() {
         });
       }
 
-      // Reset retry count on success
-      retryCount.current = 0;
-
     } catch (error) {
       console.error('[useCurrentProfile] Error:', error);
       
-      // Retry on any error if under limit
-      if (retryCount.current < maxRetries) {
-        retryCount.current++;
-        const delay = Math.min(1000 * retryCount.current, 3000);
-        console.log(`[useCurrentProfile] Error, retrying in ${delay}ms (${retryCount.current}/${maxRetries})`);
-        
-        await new Promise(resolve => setTimeout(resolve, delay));
-        
-        if (mounted.current) {
-          return refresh();
-        }
-        return;
-      }
-      
-      // Max retries reached
-      console.error('[useCurrentProfile] Max retries reached after errors');
       if (mounted.current) {
         setState({
           loading: false,
@@ -214,8 +155,12 @@ export function useCurrentProfile() {
           error: error.message || 'Failed to load profile'
         });
       }
-      retryCount.current = 0;
     }
+  };
+
+  const refresh = () => {
+    hasRun.current = false;
+    loadProfile();
   };
 
   return {
