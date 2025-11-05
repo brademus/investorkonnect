@@ -42,6 +42,7 @@ import AgentHome from './pages/AgentHome';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDocuments from './pages/InvestorDocuments';
 import AgentDocuments from './pages/AgentDocuments';
+import VerifyStart from './pages/VerifyStart';
 import Layout from './Layout.jsx';
 
 
@@ -90,6 +91,7 @@ export const PAGES = {
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDocuments": InvestorDocuments,
     "AgentDocuments": AgentDocuments,
+    "VerifyStart": VerifyStart,
 }
 
 export const pagesConfig = {
