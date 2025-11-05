@@ -24,25 +24,25 @@ function VerifyStartContent() {
         return;
       }
 
-      // Get profile to check status
-      const response = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
-      });
+      console.log('[VerifyStart] User:', user.email);
 
-      if (!response.ok) {
-        throw new Error('Failed to load profile');
-      }
-
-      const data = await response.json();
-      const profile = data.profile;
-
-      if (!profile) {
+      // Get profile DIRECTLY from database (same pattern as Profile page)
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      
+      if (!profiles || profiles.length === 0) {
+        console.error('[VerifyStart] No profile found for user:', user.id);
         setError("Profile not found. Please complete onboarding first.");
         setTimeout(() => navigate(createPageUrl("Onboarding")), 2000);
         return;
       }
+
+      const profile = profiles[0];
+      console.log('[VerifyStart] Profile loaded:', {
+        id: profile.id,
+        email: profile.email,
+        onboarded: !!profile.onboarding_completed_at,
+        kyc_status: profile.kyc_status
+      });
 
       // Check if onboarding is complete
       if (!profile.onboarding_completed_at) {
@@ -53,6 +53,7 @@ function VerifyStartContent() {
 
       // If already approved, redirect to dashboard
       if (profile.kyc_status === 'approved') {
+        console.log('[VerifyStart] Already verified, redirecting to dashboard');
         navigate(createPageUrl("Dashboard"), { replace: true });
         return;
       }
@@ -89,7 +90,7 @@ function VerifyStartContent() {
       console.log('[VerifyStart] Redirecting to Persona:', url.toString());
 
       // Update profile to set status to 'pending'
-      await base44.functions.invoke('profileUpsert', {
+      await base44.entities.Profile.update(profile.id, {
         kyc_status: 'pending',
         kyc_provider: 'persona'
       });
