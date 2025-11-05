@@ -81,7 +81,8 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      base44.auth.redirectToLogin(`${PUBLIC_APP_URL}${createPageUrl("AuthCallback")}`);
+      // SIMPLE LOGIN - Let Base44 handle auth flow
+      base44.auth.redirectToLogin();
     }
   };
 
@@ -89,7 +90,8 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      base44.auth.redirectToLogin(`${PUBLIC_APP_URL}${createPageUrl("AuthCallback")}`);
+      // SIMPLE LOGIN - Let Base44 handle auth flow
+      base44.auth.redirectToLogin();
     }
   };
 
