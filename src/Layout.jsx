@@ -23,7 +23,7 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 export default function Layout({ children, currentPageName }) {
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { loading, user, profile, role, onboarded } = useCurrentProfile();
+  const { loading, user, profile, role, onboarded, kycVerified } = useCurrentProfile();
 
   useEffect(() => {
     setupMeta();
@@ -169,6 +169,16 @@ export default function Layout({ children, currentPageName }) {
               
               {user && (
                 <>
+                  {/* KYC Status Pill */}
+                  {user && onboarded && !kycVerified && (
+                    <Link to={createPageUrl("VerifyStart")}>
+                      <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 text-sm">
+                        <Shield className="w-4 h-4" />
+                        Verify Identity
+                      </Button>
+                    </Link>
+                  )}
+                  
                   {isAdmin && (
                     <Link to={createPageUrl("Admin")}>
                       <Button variant="ghost" className="gap-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50">
@@ -209,6 +219,11 @@ export default function Layout({ children, currentPageName }) {
                             {profile.subscription_tier} Plan
                           </p>
                         )}
+                        {/* KYC Status */}
+                        <p className={`text-xs mt-1 flex items-center gap-1 ${kycVerified ? 'text-emerald-600' : 'text-orange-600'}`}>
+                          <Shield className="w-3 h-3" />
+                          KYC: {kycVerified ? 'Verified ✅' : 'Required'}
+                        </p>
                         {/* NDA Status */}
                         <p className={`text-xs mt-1 flex items-center gap-1 ${hasNDA ? 'text-emerald-600' : 'text-orange-600'}`}>
                           <Shield className="w-3 h-3" />
@@ -302,6 +317,14 @@ export default function Layout({ children, currentPageName }) {
                   </>
                 ) : (
                   <>
+                    {!kycVerified && (
+                      <Link to={createPageUrl("VerifyStart")} onClick={() => setMobileMenuOpen(false)}>
+                        <Button variant="ghost" className="w-full justify-start gap-2 text-orange-600">
+                          <Shield className="w-4 h-4" />
+                          Verify Identity
+                        </Button>
+                      </Link>
+                    )}
                     <Link to={createPageUrl("Dashboard")} onClick={() => setMobileMenuOpen(false)}>
                       <Button variant="ghost" className="w-full justify-start gap-2">
                         <LayoutDashboard className="w-4 h-4" />
