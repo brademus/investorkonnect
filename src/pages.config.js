@@ -45,6 +45,7 @@ import AgentDocuments from './pages/AgentDocuments';
 import VerifyStart from './pages/VerifyStart';
 import VerifyCallback from './pages/VerifyCallback';
 import PostAuth from './pages/PostAuth';
+import DebugAuth from './pages/DebugAuth';
 import Layout from './Layout.jsx';
 
 
@@ -96,6 +97,7 @@ export const PAGES = {
     "VerifyStart": VerifyStart,
     "VerifyCallback": VerifyCallback,
     "PostAuth": PostAuth,
+    "DebugAuth": DebugAuth,
 }
 
 export const pagesConfig = {
