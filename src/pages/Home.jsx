@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -19,7 +18,6 @@ export default function Home() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded, kycStatus } = useCurrentProfile();
   const hasChecked = useRef(false);
-  const autoRouted = useRef(false);
 
   useEffect(() => {
     if (hasChecked.current) return;
@@ -38,21 +36,6 @@ export default function Home() {
       window.history.replaceState({}, '', '/');
     }
   }, []);
-
-  // Auto-route to onboarding - ONLY after loading is complete AND user is confirmed
-  useEffect(() => {
-    if (!loading && user && !onboarded && !autoRouted.current) {
-      console.log('[Home] User signed in but not onboarded, routing to onboarding...');
-      autoRouted.current = true;
-      
-      // Give a moment for state to settle, then route
-      const timer = setTimeout(() => {
-        navigate(createPageUrl("Onboarding"));
-      }, 500);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [loading, user, onboarded, navigate]);
 
   const setupPageMeta = () => {
     document.title = "AgentVault - Verified Agents. Protected Deal Flow.";
@@ -81,8 +64,8 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      // Pass current URL for redirect back
-      base44.auth.redirectToLogin(window.location.href);
+      // Simple redirect - let Base44 handle it
+      base44.auth.redirectToLogin();
     }
   };
 
@@ -90,12 +73,12 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      // Pass current URL for redirect back
-      base44.auth.redirectToLogin(window.location.href);
+      // Simple redirect - let Base44 handle it
+      base44.auth.redirectToLogin();
     }
   };
 
-  // SHOW LOADING SCREEN - Let the retries complete
+  // SHOW LOADING SCREEN
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
@@ -106,13 +89,12 @@ export default function Home() {
             </div>
           </div>
           <p className="text-slate-600 font-medium">Loading AgentVault...</p>
-          <p className="text-sm text-slate-400 mt-2">Establishing secure session</p>
         </div>
       </div>
     );
   }
 
-  // If signed in AND onboarded, show role-specific home (NO REDIRECT, conditional render)
+  // SIGNED IN + ONBOARDED → Show role-specific home
   if (user && onboarded) {
     if (role === 'investor') {
       return <InvestorHome />;
@@ -122,7 +104,7 @@ export default function Home() {
     }
   }
 
-  // Otherwise (not signed in OR not onboarded), show public home
+  // NOT SIGNED IN OR NOT ONBOARDED → Show public home
   const features = [
     {
       icon: Shield,
@@ -199,7 +181,7 @@ export default function Home() {
 
       {/* Hero Section */}
       <section className="relative bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 text-white py-20 md:py-32">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGciPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUgMCAwNSkiLz48L2c+PC9zdmc+')] opacity-20"></div>
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiAxOGMzLjMxNCAwIDYgMi42ODYgNiA2cy0yLjY4NiA2LTYgNi02LTIuNjg2LTYtNiAyLjY4Ni02IDYtNiIgc3Ryb2tlPSJyZ2JhKDI1NSwgMjU1LCAyNTUgMCAwNSkiLz48L2c+PC9zdmc+')] opacity-20"></div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-4xl mx-auto">
