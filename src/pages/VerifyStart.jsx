@@ -26,7 +26,7 @@ function VerifyStartContent() {
 
       console.log('[VerifyStart] User:', user.email);
 
-      // Get profile DIRECTLY from database (same pattern as Profile page)
+      // Get profile
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       
       if (!profiles || profiles.length === 0) {
@@ -58,45 +58,29 @@ function VerifyStartContent() {
         return;
       }
 
-      // Build Persona hosted flow URL
-      const appOrigin = 'https://agent-vault-da3d088b.base44.app';
-      const personaEnvId = 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H';
-      const personaTemplateId = 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM';
-      const personaBase = 'https://agentvault.withpersona.com/verify';
+      // Call backend to get Persona URL (backend will use secrets)
+      console.log('[VerifyStart] Calling backend to generate Persona URL...');
       
-      const url = new URL(personaBase);
-      url.searchParams.set('inquiry-template-id', personaTemplateId);
-      url.searchParams.set('environment-id', personaEnvId);
-      url.searchParams.set('reference-id', user.id);
-      url.searchParams.set('redirect-uri', `${appOrigin}${createPageUrl("VerifyCallback")}`);
-      
-      // Prefill fields
-      if (user.email) {
-        url.searchParams.set('fields[email]', user.email);
-      }
-      if (profile.user_role || profile.user_type) {
-        url.searchParams.set('fields[role]', profile.user_role || profile.user_type);
-      }
-      if (profile.full_name) {
-        const nameParts = profile.full_name.split(' ');
-        if (nameParts.length > 0) {
-          url.searchParams.set('fields[name-first]', nameParts[0]);
-        }
-        if (nameParts.length > 1) {
-          url.searchParams.set('fields[name-last]', nameParts.slice(1).join(' '));
-        }
+      const response = await base44.functions.invoke('personaStart', {
+        user_id: user.id,
+        profile_id: profile.id
+      });
+
+      if (!response.data || !response.data.persona_url) {
+        throw new Error(response.data?.error || 'Failed to generate verification URL');
       }
 
-      console.log('[VerifyStart] Redirecting to Persona:', url.toString());
+      const personaUrl = response.data.persona_url;
+      console.log('[VerifyStart] Got Persona URL, redirecting...');
 
-      // Update profile to set status to 'pending'
+      // Update profile to pending
       await base44.entities.Profile.update(profile.id, {
         kyc_status: 'pending',
         kyc_provider: 'persona'
       });
 
       // Redirect to Persona
-      window.location.href = url.toString();
+      window.location.href = personaUrl;
 
     } catch (err) {
       console.error('[VerifyStart] Error:', err);
