@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 
@@ -27,16 +26,14 @@ export function useCurrentProfile() {
     hasNDA: false,
     kycVerified: false,
     kycStatus: 'unknown',
-    error: null // Keep error state from original
+    error: null
   });
   
-  // The mounted ref is no longer strictly necessary with the new refresh logic's full state reset,
-  // but keeping it for consistency if any future updates reintroduce async state updates that need safeguarding.
-  const mounted = useRef(true); 
+  const mounted = useRef(true);
+  const retryAttempted = useRef(false);
 
   useEffect(() => {
     mounted.current = true;
-    // Initial load handled by refresh
     refresh();
     
     return () => {
@@ -44,9 +41,31 @@ export function useCurrentProfile() {
     };
   }, []);
 
+  const pingSession = async () => {
+    try {
+      const response = await fetch('/functions/session', {
+        method: 'POST',
+        credentials: 'include',
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.ok && data.authenticated;
+      }
+      return false;
+    } catch (error) {
+      console.error('[useCurrentProfile] Session ping failed:', error);
+      return false;
+    }
+  };
+
   const refresh = async () => {
-    // Set loading to true explicitly when refresh is called
-    if (mounted.current) { // Ensure component is mounted before setting state
+    if (mounted.current) {
       setState(prev => ({ ...prev, loading: true, error: null }));
     }
 
@@ -62,7 +81,24 @@ export function useCurrentProfile() {
       });
 
       if (!response.ok) {
-        // If the fetch fails or response is not ok, clear all user/profile related state
+        // If /functions/me fails and we haven't retried, try session ping
+        if (!retryAttempted.current) {
+          console.log('[useCurrentProfile] /functions/me failed, attempting session ping...');
+          retryAttempted.current = true;
+          
+          // Wait 300ms before retry (Safari needs a moment)
+          await new Promise(resolve => setTimeout(resolve, 300));
+          
+          const sessionActive = await pingSession();
+          
+          if (sessionActive && mounted.current) {
+            console.log('[useCurrentProfile] Session active, retrying refresh...');
+            // Recursive call to try again
+            return refresh();
+          }
+        }
+        
+        // No session or retry exhausted
         if (mounted.current) {
           setState({
             loading: false,
@@ -73,7 +109,7 @@ export function useCurrentProfile() {
             hasNDA: false,
             kycVerified: false,
             kycStatus: 'unknown',
-            error: `Failed to load profile: ${response.statusText || 'Unknown error'}`
+            error: 'Not authenticated'
           });
         }
         return;
@@ -91,7 +127,7 @@ export function useCurrentProfile() {
       if (mounted.current) {
         setState({
           loading: false,
-          user: data.user || null, // Assuming functions/me also returns the user object
+          user: data.user || null,
           profile,
           role,
           onboarded,
@@ -101,6 +137,9 @@ export function useCurrentProfile() {
           error: null
         });
       }
+
+      // Reset retry flag on success
+      retryAttempted.current = false;
 
     } catch (error) {
       console.error('[useCurrentProfile] Error:', error);
@@ -121,7 +160,7 @@ export function useCurrentProfile() {
   };
 
   return {
-    ...state, // Spread all properties from the state object
+    ...state,
     refresh
   };
 }
