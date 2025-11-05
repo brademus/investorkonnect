@@ -1,20 +1,16 @@
 /**
  * Simplified Auth Guard
  * Enforces authentication on protected routes
- * Redirects to /login instead of Base44 hosted page
  */
 
 import React, { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/utils';
 import { Loader2 } from 'lucide-react';
 
 // Routes that don't require authentication
 const PUBLIC_ROUTES = [
   '/',
-  '/login',
-  '/auth/callback',
   '/how-it-works',
   '/investors',
   '/agents',
@@ -31,12 +27,12 @@ const PUBLIC_ROUTES = [
   '/review-policy',
   '/cookies',
   '/thank-you',
-  '/not-found'
+  '/not-found',
+  '/debug-auth'
 ];
 
 export function AuthGuard({ children, requireAuth = false }) {
   const location = useLocation();
-  const navigate = useNavigate();
   const [authState, setAuthState] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated'
 
   useEffect(() => {
@@ -45,12 +41,8 @@ export function AuthGuard({ children, requireAuth = false }) {
 
   const checkAuth = async () => {
     try {
-      console.log('[AuthGuard] Checking auth for:', location.pathname);
-      
       // Wait for Base44 session
       const isAuth = await base44.auth.isAuthenticated();
-      
-      console.log('[AuthGuard] Auth status:', isAuth ? 'authenticated' : 'unauthenticated');
       
       setAuthState(isAuth ? 'authenticated' : 'unauthenticated');
     } catch (error) {
@@ -76,10 +68,10 @@ export function AuthGuard({ children, requireAuth = false }) {
     location.pathname === route || location.pathname.startsWith(route + '/')
   );
 
-  // Unauthenticated on protected route - redirect to /login
+  // Unauthenticated on protected route - redirect to login
   if (requireAuth && authState === 'unauthenticated' && !isPublicRoute) {
-    console.log('[AuthGuard] Unauthenticated on protected route, redirecting to /login');
-    navigate(createPageUrl("Login"), { replace: true });
+    // Trigger Base44 login flow
+    base44.auth.redirectToLogin();
     return null;
   }
 
