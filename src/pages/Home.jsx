@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -21,36 +20,28 @@ export default function Home() {
   const hasChecked = useRef(false);
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const fromAuth = urlParams.get('from_auth') || sessionStorage.getItem('pending_auth');
+    if (hasChecked.current) return;
+    hasChecked.current = true;
     
-    // CRITICAL FIX: Check if we just returned from OAuth
-    // This part needs to react to `loading` and `user` state changes.
-    // It should check if `fromAuth` is present AND if `user` is NOT yet available, AND `loading` is done.
-    if (fromAuth && !user && !loading) {
-      console.log('[Home] Post-auth reload...');
-      sessionStorage.removeItem('pending_auth');
-      window.location.reload();
-      return; // Exit early as we are reloading the page
-    }
-
-    // This section should only run once for initial setup tasks.
-    if (!hasChecked.current) {
-      hasChecked.current = true;
+    setupPageMeta();
+    
+    // Check for successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('payment') === 'success') {
+      toast.success("🎉 Payment successful! Your subscription is now active.", {
+        duration: 5000,
+      });
       
-      setupPageMeta();
-      
-      // Check for successful payment
-      if (urlParams.get('payment') === 'success') {
-        toast.success("🎉 Payment successful! Your subscription is now active.", {
-          duration: 5000,
-        });
-        
-        // Clean up URL
-        window.history.replaceState({}, '', '/');
-      }
+      // Clean up URL
+      window.history.replaceState({}, '', '/');
     }
-  }, [loading, user]); // Dependencies ensure the auth check logic re-evaluates
+    
+    // Clean up auth params from URL if present
+    if (urlParams.get('from_auth')) {
+      window.history.replaceState({}, '', '/');
+    }
+    sessionStorage.removeItem('pending_auth');
+  }, []);
 
   const setupPageMeta = () => {
     document.title = "AgentVault - Verified Agents. Protected Deal Flow.";
@@ -79,11 +70,7 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      // Mark that we're going to auth
-      sessionStorage.setItem('pending_auth', 'true');
-      // Redirect with return URL that includes from_auth param
-      const returnUrl = `${window.location.origin}/?from_auth=1`;
-      base44.auth.redirectToLogin(returnUrl);
+      base44.auth.redirectToLogin();
     }
   };
 
@@ -91,11 +78,7 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      // Mark that we're going to auth
-      sessionStorage.setItem('pending_auth', 'true');
-      // Redirect with return URL that includes from_auth param
-      const returnUrl = `${window.location.origin}/?from_auth=1`;
-      base44.auth.redirectToLogin(returnUrl);
+      base44.auth.redirectToLogin();
     }
   };
 
