@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 
+const APP_ORIGIN = 'https://agent-vault-da3d088b.base44.app';
+
 /**
  * useCurrentProfile - Single source of truth for auth + profile state
+ * CRITICAL: All fetches must include credentials:'include' for cookie-based auth
  * 
  * Returns:
  * - loading: boolean - true while fetching initial data
@@ -41,8 +44,8 @@ export function useCurrentProfile() {
 
   const pingSession = async () => {
     try {
-      const response = await fetch('/functions/session', {
-        method: 'POST',
+      const response = await fetch(`${APP_ORIGIN}/functions/sessionGet`, {
+        method: 'GET',
         credentials: 'include',
         cache: 'no-store',
         headers: {
@@ -68,7 +71,8 @@ export function useCurrentProfile() {
     }
 
     try {
-      const response = await fetch('/functions/me', {
+      // CRITICAL: Include credentials for cookie-based auth
+      const response = await fetch(`${APP_ORIGIN}/functions/me`, {
         method: 'POST',
         credentials: 'include',
         cache: 'no-store',
