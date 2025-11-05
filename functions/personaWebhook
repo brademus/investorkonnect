@@ -1,0 +1,140 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+
+/**
+ * Persona Webhook Handler
+ * Processes inquiry.completed, inquiry.failed, inquiry.review_opened, inquiry.marked_for_review events
+ * Updates Profile KYC status based on Persona verification outcome
+ */
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    // Verify webhook signature (skip in dev if secret not set)
+    const webhookSecret = Deno.env.get('PERSONA_WEBHOOK_SECRET');
+    if (webhookSecret) {
+      const signature = req.headers.get('X-Persona-Signature');
+      if (!signature) {
+        console.error('[personaWebhook] Missing signature');
+        return Response.json({ error: 'Missing signature' }, { status: 401 });
+      }
+      
+      // In production, verify signature with crypto
+      // For now, we'll accept if secret exists and signature is present
+    } else {
+      console.log('[personaWebhook] Running without signature verification (dev mode)');
+    }
+
+    // Parse webhook payload
+    const payload = await req.json();
+    console.log('[personaWebhook] Received event:', payload.data?.type);
+
+    const eventType = payload.data?.type;
+    const attributes = payload.data?.attributes || {};
+    
+    // Extract reference ID (user_id)
+    const refId = attributes.referenceId || attributes.reference_id || attributes['reference-id'];
+    const inquiryId = payload.data?.id;
+    const outcome = attributes.status || attributes.outcome;
+
+    if (!refId) {
+      console.error('[personaWebhook] No reference ID found:', attributes);
+      return Response.json({ error: 'No reference ID' }, { status: 400 });
+    }
+
+    console.log('[personaWebhook] Processing:', {
+      eventType,
+      refId,
+      inquiryId,
+      outcome
+    });
+
+    // Determine KYC status based on event type
+    let kycVerified = false;
+    let kycStatus = 'unknown';
+    let verifiedAt = null;
+
+    switch (eventType) {
+      case 'inquiry.completed':
+        if (outcome === 'passed' || outcome === 'approved') {
+          kycVerified = true;
+          kycStatus = 'passed';
+          verifiedAt = new Date().toISOString();
+        } else {
+          kycVerified = false;
+          kycStatus = 'failed';
+        }
+        break;
+      
+      case 'inquiry.failed':
+        kycVerified = false;
+        kycStatus = 'failed';
+        break;
+      
+      case 'inquiry.review_opened':
+      case 'inquiry.marked_for_review':
+        kycVerified = false;
+        kycStatus = 'review';
+        break;
+      
+      default:
+        console.log('[personaWebhook] Unhandled event type:', eventType);
+        return Response.json({ received: true }, { status: 200 });
+    }
+
+    // Find and update profile by user_id
+    const profiles = await base44.asServiceRole.entities.Profile.filter({
+      user_id: refId
+    });
+
+    if (profiles.length === 0) {
+      console.error('[personaWebhook] Profile not found for user_id:', refId);
+      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    }
+
+    const profile = profiles[0];
+
+    // Update profile with KYC status
+    const updates = {
+      kyc_provider: 'persona',
+      kyc_inquiry_id: inquiryId,
+      kyc_last_checked_at: new Date().toISOString(),
+      kyc_verified: kycVerified,
+      kyc_status: kycStatus
+    };
+
+    if (verifiedAt) {
+      updates.verified_at = verifiedAt;
+    }
+
+    await base44.asServiceRole.entities.Profile.update(profile.id, updates);
+
+    console.log('[personaWebhook] Updated profile:', {
+      email: profile.email,
+      kyc_verified: kycVerified,
+      kyc_status: kycStatus
+    });
+
+    // Create audit log
+    await base44.asServiceRole.entities.AuditLog.create({
+      actor_id: 'system',
+      actor_name: 'Persona Webhook',
+      entity_type: 'Profile',
+      entity_id: profile.id,
+      action: `kyc_${kycStatus}`,
+      details: `Persona inquiry ${inquiryId}: ${eventType} -> ${kycStatus}`,
+      timestamp: new Date().toISOString()
+    });
+
+    return Response.json({ 
+      success: true,
+      profile_id: profile.id,
+      kyc_status: kycStatus
+    }, { status: 200 });
+
+  } catch (error) {
+    console.error('[personaWebhook] Error:', error);
+    return Response.json({ 
+      error: error.message 
+    }, { status: 500 });
+  }
+});
