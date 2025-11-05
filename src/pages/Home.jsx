@@ -65,7 +65,6 @@ export default function Home() {
         navigate(createPageUrl("Pricing"));
       }
     } else {
-      console.log('[Home] Redirecting to login...');
       base44.auth.redirectToLogin();
     }
   };
@@ -74,7 +73,6 @@ export default function Home() {
     if (user) {
       navigate(createPageUrl("Dashboard"));
     } else {
-      console.log('[Home] Redirecting to login...');
       base44.auth.redirectToLogin();
     }
   };
