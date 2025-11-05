@@ -51,26 +51,28 @@ export default function Layout({ children, currentPageName }) {
 
   const handleSignIn = () => {
     try {
+      console.log('[Layout] Redirecting to login...');
+      // Simple redirect - let Base44 handle everything
       base44.auth.redirectToLogin();
     } catch (error) {
       console.error('[Layout] Sign in error:', error);
-      window.location.href = "/";
+      // Fallback - force to login page
+      window.location.href = "/.base44/auth/login";
     }
   };
 
   const handleLogout = async () => {
     try {
+      console.log('[Layout] Logging out...');
+      // Clear any session storage
       sessionStorage.clear();
-      window.location.href = "/";
-      setTimeout(() => {
-        try {
-          base44.auth.logout();
-        } catch (e) {
-          console.error('[Layout] Logout error:', e);
-        }
-      }, 100);
+      localStorage.clear();
+      
+      // Use Base44's logout which will clear cookies and redirect
+      base44.auth.logout("/");
     } catch (error) {
       console.error('[Layout] Logout error:', error);
+      // Fallback
       window.location.href = "/";
     }
   };
