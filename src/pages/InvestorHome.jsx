@@ -47,14 +47,12 @@ export default function InvestorHome() {
                 Plan: <strong>{profile?.subscription_tier || 'None'}</strong>
               </span>
             </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
+            <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
+              hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
+            }`}>
               <Shield className="w-4 h-4" />
               <span className="text-sm">
-                NDA: {hasNDA ? (
-                  <strong className="text-emerald-200">Signed ✅</strong>
-                ) : (
-                  <strong className="text-orange-200">Required</strong>
-                )}
+                NDA: <strong>{hasNDA ? 'Signed ✅' : 'Required'}</strong>
               </span>
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
@@ -69,20 +67,20 @@ export default function InvestorHome() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* NDA Banner */}
+        {/* NDA Required Banner */}
         {!hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+              <Shield className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="font-bold text-orange-900 mb-2">NDA Signature Required</h3>
+                <h3 className="font-bold text-orange-900 mb-2">NDA Required</h3>
                 <p className="text-orange-800 mb-4">
-                  Sign our NDA to access verified agent profiles and secure deal rooms. This protects all confidential information shared on the platform.
+                  You need to accept our Non-Disclosure Agreement to access agent profiles and deal rooms.
                 </p>
-                <Link to={createPageUrl("Agents")}>
+                <Link to={createPageUrl("NDA")}>
                   <Button className="bg-orange-600 hover:bg-orange-700">
                     <Shield className="w-4 h-4 mr-2" />
-                    Sign NDA Now
+                    Sign NDA
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -93,16 +91,16 @@ export default function InvestorHome() {
 
         {/* Subscription Banner */}
         {!hasActiveSubscription && (
-          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
-              <Star className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+              <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
-                <h3 className="font-bold text-blue-900 mb-2">Upgrade to Unlock Full Access</h3>
-                <p className="text-blue-800 mb-4">
+                <h3 className="font-bold text-orange-900 mb-2">Upgrade to Unlock Full Access</h3>
+                <p className="text-orange-800 mb-4">
                   Subscribe to browse agents, view verified reviews, create deal rooms, and more.
                 </p>
                 <Link to={createPageUrl("Pricing")}>
-                  <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Button className="bg-orange-600 hover:bg-orange-700">
                     View Plans
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
