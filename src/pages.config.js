@@ -44,6 +44,9 @@ import AgentDocuments from './pages/AgentDocuments';
 import VerifyStart from './pages/VerifyStart';
 import VerifyCallback from './pages/VerifyCallback';
 import DebugAuth from './pages/DebugAuth';
+import RoleSelection from './pages/RoleSelection';
+import InvestorOnboarding from './pages/InvestorOnboarding';
+import AgentOnboarding from './pages/AgentOnboarding';
 import Layout from './Layout.jsx';
 
 
@@ -94,6 +97,9 @@ export const PAGES = {
     "VerifyStart": VerifyStart,
     "VerifyCallback": VerifyCallback,
     "DebugAuth": DebugAuth,
+    "RoleSelection": RoleSelection,
+    "InvestorOnboarding": InvestorOnboarding,
+    "AgentOnboarding": AgentOnboarding,
 }
 
 export const pagesConfig = {
