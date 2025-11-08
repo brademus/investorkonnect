@@ -2,15 +2,17 @@ import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { WizardProvider } from "@/components/WizardContext";
 import { Shield, FileText, User, Settings } from "lucide-react";
 
 /**
- * LAYOUT - Conditional Navigation
+ * LAYOUT - Conditional Navigation + Wizard Provider
  * 
+ * Wraps entire app with WizardProvider.
  * NO navigation shown during wizard flow (pre-room).
  * Navigation appears ONLY after user has at least one room.
  */
-export default function Layout({ children }) {
+function LayoutContent({ children }) {
   const location = useLocation();
   const { loading, user, role, hasRoom } = useCurrentProfile();
 
@@ -95,5 +97,13 @@ export default function Layout({ children }) {
       {/* Main Content */}
       <main>{children}</main>
     </div>
+  );
+}
+
+export default function Layout({ children, currentPageName }) {
+  return (
+    <WizardProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </WizardProvider>
   );
 }
