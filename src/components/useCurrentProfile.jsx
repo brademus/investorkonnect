@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * CANONICAL PROFILE HOOK
+ * CANONICAL PROFILE HOOK - Enhanced for Wizard Flow
  * 
  * Single source of truth for current user + profile state.
- * Uses existing backend functions, no new APIs.
+ * Now includes hasRoom check for navigation logic.
  * 
  * Returns:
  * - loading: boolean
@@ -16,6 +16,8 @@ import { base44 } from '@/api/base44Client';
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
+ * - hasRoom: boolean (has at least one room)
+ * - targetState: string (user's selected market/state)
  * - error: string | null
  * - refresh: function to reload profile data
  */
@@ -29,6 +31,8 @@ export function useCurrentProfile() {
     hasNDA: false,
     kycStatus: 'unverified',
     kycVerified: false,
+    hasRoom: false,
+    targetState: null,
     error: null
   });
 
@@ -55,13 +59,14 @@ export function useCurrentProfile() {
             hasNDA: false,
             kycStatus: 'unverified',
             kycVerified: false,
+            hasRoom: false,
+            targetState: null,
             error: null
           });
           return;
         }
 
         // STEP 2: Get/ensure canonical profile
-        // Use existing /functions/me or call ensureProfile flow
         let profile = null;
         
         try {
@@ -104,8 +109,6 @@ export function useCurrentProfile() {
         }
 
         // STEP 4: Determine onboarded status
-        // Investor: must have name, phone, and onboarding_completed_at OR have entered intake data
-        // Agent: must have name, license, markets, and onboarding_completed_at
         let onboarded = false;
         
         if (profile?.onboarding_completed_at) {
@@ -117,7 +120,6 @@ export function useCurrentProfile() {
           
           if (role === 'investor') {
             // Investor is onboarded if they have basic info
-            // (Detailed intake can happen after pricing)
             onboarded = hasBasicInfo;
           } else if (role === 'agent') {
             // Agent needs more: license, markets, specialties
@@ -136,6 +138,20 @@ export function useCurrentProfile() {
         const kycStatus = profile?.kyc_status || 'unverified';
         const kycVerified = kycStatus === 'approved';
 
+        // STEP 7: Target state
+        const targetState = profile?.target_state || profile?.markets?.[0] || null;
+
+        // STEP 8: Check if user has any rooms
+        let hasRoom = false;
+        try {
+          const roomsResponse = await base44.functions.invoke('inboxList');
+          const rooms = roomsResponse.data || [];
+          hasRoom = rooms.length > 0;
+        } catch (roomErr) {
+          console.warn('[useCurrentProfile] Could not check rooms:', roomErr);
+          // Default to false
+        }
+
         setState({
           loading: false,
           user,
@@ -145,6 +161,8 @@ export function useCurrentProfile() {
           hasNDA,
           kycStatus,
           kycVerified,
+          hasRoom,
+          targetState,
           error: null
         });
 
@@ -161,6 +179,8 @@ export function useCurrentProfile() {
           hasNDA: false,
           kycStatus: 'unverified',
           kycVerified: false,
+          hasRoom: false,
+          targetState: null,
           error: error.message
         });
       }
