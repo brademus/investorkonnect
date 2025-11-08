@@ -47,6 +47,7 @@ import DebugAuth from './pages/DebugAuth';
 import RoleSelection from './pages/RoleSelection';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import AgentOnboarding from './pages/AgentOnboarding';
+import AgentDashboard from './pages/AgentDashboard';
 import Layout from './Layout.jsx';
 
 
@@ -100,6 +101,7 @@ export const PAGES = {
     "RoleSelection": RoleSelection,
     "InvestorOnboarding": InvestorOnboarding,
     "AgentOnboarding": AgentOnboarding,
+    "AgentDashboard": AgentDashboard,
 }
 
 export const pagesConfig = {

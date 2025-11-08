@@ -1,16 +1,26 @@
-/**
- * Simplified Auth Guard
- * Enforces authentication on protected routes
- */
-
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { createPageUrl } from '@/utils';
 import { base44 } from '@/api/base44Client';
+import { useCurrentProfile } from './useCurrentProfile';
 import { Loader2 } from 'lucide-react';
 
-// Routes that don't require authentication
+/**
+ * AUTH GUARD
+ * 
+ * Protects routes based on auth + onboarding + role requirements
+ * 
+ * Props:
+ * - requireAuth: boolean (default true) - require user to be authenticated
+ * - requireOnboarding: boolean (default false) - require completed onboarding
+ * - requireRole: 'investor' | 'agent' | null - require specific role
+ * - requireKYC: boolean (default false) - require KYC verification
+ * - requireNDA: boolean (default false) - require NDA acceptance
+ */
+
 const PUBLIC_ROUTES = [
   '/',
+  '/role',
   '/how-it-works',
   '/investors',
   '/agents',
@@ -31,28 +41,77 @@ const PUBLIC_ROUTES = [
   '/debug-auth'
 ];
 
-export function AuthGuard({ children, requireAuth = false }) {
+export function AuthGuard({ 
+  children, 
+  requireAuth = true,
+  requireOnboarding = false,
+  requireRole = null,
+  requireKYC = false,
+  requireNDA = false
+}) {
   const location = useLocation();
-  const [authState, setAuthState] = useState('loading'); // 'loading' | 'authenticated' | 'unauthenticated'
+  const navigate = useNavigate();
+  const { loading, user, profile, role, onboarded, kycVerified, hasNDA } = useCurrentProfile();
 
   useEffect(() => {
-    checkAuth();
-  }, [location.pathname]);
+    if (loading) return;
 
-  const checkAuth = async () => {
-    try {
-      // Wait for Base44 session
-      const isAuth = await base44.auth.isAuthenticated();
-      
-      setAuthState(isAuth ? 'authenticated' : 'unauthenticated');
-    } catch (error) {
-      console.error('[AuthGuard] Auth check error:', error);
-      setAuthState('unauthenticated');
+    const currentPath = location.pathname;
+    const isPublicRoute = PUBLIC_ROUTES.some(route => 
+      currentPath === route || currentPath.startsWith(route + '/')
+    );
+
+    // 1. Check auth requirement
+    if (requireAuth && !user && !isPublicRoute) {
+      console.log('[AuthGuard] Not authenticated, redirecting to login');
+      base44.auth.redirectToLogin(currentPath);
+      return;
     }
-  };
 
-  // Still loading - show spinner
-  if (authState === 'loading') {
+    // 2. Check onboarding requirement
+    if (requireOnboarding && user && !onboarded) {
+      console.log('[AuthGuard] Onboarding required, redirecting');
+      
+      // Send to role selection if no role
+      if (!role || role === 'member') {
+        navigate(createPageUrl('RoleSelection'), { replace: true });
+        return;
+      }
+      
+      // Send to appropriate onboarding
+      if (role === 'investor') {
+        navigate(createPageUrl('InvestorOnboarding'), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl('AgentOnboarding'), { replace: true });
+      }
+      return;
+    }
+
+    // 3. Check role requirement
+    if (requireRole && role !== requireRole) {
+      console.log(`[AuthGuard] Role mismatch: required=${requireRole}, actual=${role}`);
+      navigate(createPageUrl('Home'), { replace: true });
+      return;
+    }
+
+    // 4. Check KYC requirement
+    if (requireKYC && !kycVerified) {
+      console.log('[AuthGuard] KYC required, redirecting to verification');
+      navigate(createPageUrl('Verify'), { replace: true });
+      return;
+    }
+
+    // 5. Check NDA requirement
+    if (requireNDA && !hasNDA) {
+      console.log('[AuthGuard] NDA required');
+      // Don't redirect - let the component handle showing NDA modal/gate
+      // This allows for in-place NDA acceptance without navigation
+    }
+
+  }, [loading, user, profile, role, onboarded, kycVerified, hasNDA, location.pathname, requireAuth, requireOnboarding, requireRole, requireKYC, requireNDA, navigate]);
+
+  // Show loading spinner while checking auth
+  if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
@@ -61,18 +120,6 @@ export function AuthGuard({ children, requireAuth = false }) {
         </div>
       </div>
     );
-  }
-
-  // Check if current route is public
-  const isPublicRoute = PUBLIC_ROUTES.some(route => 
-    location.pathname === route || location.pathname.startsWith(route + '/')
-  );
-
-  // Unauthenticated on protected route - redirect to login
-  if (requireAuth && authState === 'unauthenticated' && !isPublicRoute) {
-    // Trigger Base44 login flow
-    base44.auth.redirectToLogin();
-    return null;
   }
 
   // All checks passed - render children
