@@ -3,65 +3,68 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { useWizard } from "@/components/WizardContext";
+import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, ArrowRight, Shield, Loader2 } from "lucide-react";
+import { TrendingUp, Users, ArrowLeft, Shield, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
-export default function RoleSelection() {
+/**
+ * STEP 2: ROLE SELECTION
+ * 
+ * User chooses Investor or Agent.
+ * If not logged in, saves to wizard context then redirects to auth.
+ * If logged in, updates profile and continues to onboarding.
+ */
+function RoleSelectionContent() {
   const navigate = useNavigate();
-  const { loading, user, profile, onboarded, role } = useCurrentProfile();
+  const { selectedState, setSelectedRole } = useWizard();
+  const { loading, user, profile, refresh } = useCurrentProfile();
   const [updating, setUpdating] = useState(false);
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedChoice, setSelectedChoice] = useState(null);
 
   useEffect(() => {
-    document.title = "Select Your Role - AgentVault";
-
-    // Redirect if already has role and onboarded
-    if (!loading && user && onboarded && role && role !== 'member') {
-      if (role === 'investor') {
-        navigate(createPageUrl("Matches"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentDashboard"), { replace: true });
-      }
-    }
-
-    // Redirect to login if not authenticated
-    if (!loading && !user) {
-      base44.auth.redirectToLogin(window.location.pathname);
-    }
-  }, [loading, user, onboarded, role, navigate]);
+    document.title = "Choose Your Role - AgentVault";
+  }, []);
 
   const handleRoleSelection = async (chosenRole) => {
-    if (!user) {
-      toast.error("Please sign in first");
-      return;
-    }
-
-    setSelectedRole(chosenRole);
+    setSelectedChoice(chosenRole);
     setUpdating(true);
 
     try {
-      // Update profile with selected role
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      
-      if (profiles.length > 0) {
-        // Update existing profile
-        await base44.entities.Profile.update(profiles[0].id, {
+      // Save to wizard context
+      setSelectedRole(chosenRole);
+
+      if (!user) {
+        // Not logged in - redirect to Base44 login
+        // After login, PostAuth will bring user back to continue wizard
+        toast.info("Please sign in to continue");
+        base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
+        return;
+      }
+
+      // Logged in - update profile with role
+      if (profile) {
+        await base44.entities.Profile.update(profile.id, {
           user_role: chosenRole
         });
       } else {
-        // Create new profile
+        // Create profile if doesn't exist
         await base44.entities.Profile.create({
           user_id: user.id,
           email: user.email,
           user_role: chosenRole,
-          role: 'member'
+          role: 'member',
+          target_state: selectedState || null
         });
       }
 
+      // Refresh profile to get updated role
+      await refresh();
+
       toast.success(`You're now registered as an ${chosenRole}!`);
 
-      // Navigate to appropriate onboarding
+      // Route to role-specific onboarding
       if (chosenRole === 'investor') {
         navigate(createPageUrl("InvestorOnboarding"));
       } else {
@@ -69,28 +72,34 @@ export default function RoleSelection() {
       }
 
     } catch (error) {
-      console.error('Role selection error:', error);
+      console.error('[RoleSelection] Error:', error);
       toast.error("Failed to save role. Please try again.");
       setUpdating(false);
-      setSelectedRole(null);
+      setSelectedChoice(null);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center p-4">
+      {/* NO TOP NAV */}
+      
       <div className="max-w-5xl w-full">
         
+        {/* Back Button */}
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => navigate(createPageUrl("Home"))}
+            className="gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Map
+          </Button>
+        </div>
+
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
@@ -108,57 +117,49 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('investor')}
             disabled={updating}
-            className={`bg-white rounded-2xl p-8 border-3 transition-all hover:shadow-2xl group text-left ${
-              selectedRole === 'investor' ? 'border-blue-600 shadow-xl' : 'border-slate-200 hover:border-blue-400'
-            } ${updating && selectedRole !== 'investor' ? 'opacity-50' : ''}`}
+            className={`bg-white rounded-3xl p-8 border-3 transition-all group text-left shadow-xl hover:shadow-2xl ${
+              selectedChoice === 'investor' ? 'border-blue-600 scale-105' : 'border-slate-200 hover:border-blue-400'
+            } ${updating && selectedChoice !== 'investor' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 transition-colors">
+            <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 group-hover:scale-110 transition-all">
               <TrendingUp className="w-8 h-8 text-blue-600" />
             </div>
             
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">
               I'm an Investor
             </h2>
             
-            <p className="text-slate-600 mb-6 leading-relaxed">
+            <p className="text-slate-600 mb-6 leading-relaxed text-lg">
               Looking to find verified, investor-friendly agents to help me identify and close deals
             </p>
 
             <ul className="space-y-3 mb-8">
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                </div>
-                Browse verified agent profiles
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Browse verified agent profiles</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                </div>
-                Get matched with top agents in your market
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Get matched with top agents in your market</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                </div>
-                Secure deal rooms with NDA protection
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Secure deal rooms with NDA protection</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-blue-600" />
-                </div>
-                AI-powered contract drafting (Pro plan)
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>AI-powered contract drafting (Pro plan)</span>
               </li>
             </ul>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-blue-600">
-                {updating && selectedRole === 'investor' ? 'Setting up...' : 'Select Investor'}
-              </span>
-              {updating && selectedRole === 'investor' ? (
-                <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+            <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-lg">
+              {updating && selectedChoice === 'investor' ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Setting up...
+                </>
               ) : (
-                <ArrowRight className="w-5 h-5 text-blue-600 group-hover:translate-x-1 transition-transform" />
+                'Select Investor →'
               )}
             </div>
           </button>
@@ -167,57 +168,49 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('agent')}
             disabled={updating}
-            className={`bg-white rounded-2xl p-8 border-3 transition-all hover:shadow-2xl group text-left ${
-              selectedRole === 'agent' ? 'border-emerald-600 shadow-xl' : 'border-slate-200 hover:border-emerald-400'
-            } ${updating && selectedRole !== 'agent' ? 'opacity-50' : ''}`}
+            className={`bg-white rounded-3xl p-8 border-3 transition-all group text-left shadow-xl hover:shadow-2xl ${
+              selectedChoice === 'agent' ? 'border-emerald-600 scale-105' : 'border-slate-200 hover:border-emerald-400'
+            } ${updating && selectedChoice !== 'agent' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <div className="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-200 transition-colors">
+            <div className="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-200 group-hover:scale-110 transition-all">
               <Users className="w-8 h-8 text-emerald-600" />
             </div>
             
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">
+            <h2 className="text-3xl font-bold text-slate-900 mb-3">
               I'm an Agent
             </h2>
             
-            <p className="text-slate-600 mb-6 leading-relaxed">
+            <p className="text-slate-600 mb-6 leading-relaxed text-lg">
               Join a selective network of investor-focused agents and connect with serious buyers
             </p>
 
             <ul className="space-y-3 mb-8">
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                </div>
-                Access serious, pre-qualified investors
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <span>Access serious, pre-qualified investors</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                </div>
-                Build reputation with verified reviews
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <span>Build reputation with verified reviews</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                </div>
-                Manage leads in your dashboard
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <span>Manage leads in your dashboard</span>
               </li>
-              <li className="flex items-start gap-2 text-sm text-slate-700">
-                <div className="w-5 h-5 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <div className="w-2 h-2 rounded-full bg-emerald-600" />
-                </div>
-                Free membership (always)
+              <li className="flex items-start gap-3 text-slate-700">
+                <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <span>Free membership (always)</span>
               </li>
             </ul>
 
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold text-emerald-600">
-                {updating && selectedRole === 'agent' ? 'Setting up...' : 'Select Agent'}
-              </span>
-              {updating && selectedRole === 'agent' ? (
-                <Loader2 className="w-5 h-5 text-emerald-600 animate-spin" />
+            <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold text-lg">
+              {updating && selectedChoice === 'agent' ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Setting up...
+                </>
               ) : (
-                <ArrowRight className="w-5 h-5 text-emerald-600 group-hover:translate-x-1 transition-transform" />
+                'Select Agent →'
               )}
             </div>
           </button>
@@ -225,5 +218,13 @@ export default function RoleSelection() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function RoleSelection() {
+  return (
+    <StepGuard requiredStep={1}> {/* Requires MAP */}
+      <RoleSelectionContent />
+    </StepGuard>
   );
 }
