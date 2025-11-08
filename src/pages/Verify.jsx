@@ -1,16 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { AuthGuard } from "@/components/AuthGuard";
-import { Button } from "@/components/ui/button";
-import { Loader2, Shield, CheckCircle, AlertCircle, ArrowRight } from "lucide-react";
+import { StepGuard } from "@/components/StepGuard";
+import { Loader2, Shield, CheckCircle, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * STEP 5: IDENTITY VERIFICATION (Persona)
+ * 
+ * Embedded Persona flow. No top nav. Linear flow only.
+ */
 function VerifyContent() {
   const navigate = useNavigate();
-  const { loading, user, profile, onboarded, kycStatus, refresh } = useCurrentProfile();
+  const { user, profile, kycStatus, refresh } = useCurrentProfile();
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   // Load Persona script
@@ -38,7 +42,7 @@ function VerifyContent() {
     document.body.appendChild(script);
   }, []);
 
-  // Initialize Persona IMMEDIATELY when script loads
+  // Initialize Persona when script loads
   useEffect(() => {
     if (!scriptLoaded || !window.Persona || !user || !profile) return;
     if (kycStatus === 'approved') return;
@@ -80,47 +84,13 @@ function VerifyContent() {
       }
     });
 
-    // CRITICAL: Call render with the ID selector
+    // Render in container
     console.log('[Verify] 📺 Calling render...');
     client.render('#persona-container');
-    console.log('[Verify] ✅ Render called');
 
   }, [scriptLoaded, user, profile, kycStatus, navigate, refresh]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <Shield className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Sign In Required</h2>
-          <p className="text-slate-600 mb-6">Please sign in to verify your identity</p>
-          <Button onClick={() => base44.auth.redirectToLogin()}>Sign In</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!onboarded) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <AlertCircle className="w-16 h-16 text-orange-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-slate-900 mb-2">Complete Onboarding First</h2>
-          <p className="text-slate-600 mb-6">Please complete your profile before verifying</p>
-          <Button onClick={() => navigate(createPageUrl("Onboarding"))}>Complete Onboarding</Button>
-        </div>
-      </div>
-    );
-  }
-
+  // Already verified - skip to NDA
   if (kycStatus === 'approved') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -130,14 +100,14 @@ function VerifyContent() {
               <CheckCircle className="w-10 h-10 text-emerald-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Already Verified ✓</h2>
-            <p className="text-slate-600 mb-6">Continue to sign the NDA to unlock features.</p>
-            <Button 
+            <p className="text-slate-600 mb-6">Continue to sign the NDA</p>
+            <button
               onClick={() => navigate(createPageUrl("NDA"))}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
             >
-              Continue to NDA
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
+              Continue
+              <ArrowRight className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
@@ -146,6 +116,8 @@ function VerifyContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
+      {/* NO TOP NAV */}
+      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
@@ -154,7 +126,7 @@ function VerifyContent() {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Verify Your Identity</h1>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Bank-level encryption. One-time verification.
+            Bank-level encryption. One-time verification. Takes 2-3 minutes.
           </p>
         </div>
 
@@ -203,8 +175,8 @@ function VerifyContent() {
 
 export default function Verify() {
   return (
-    <AuthGuard requireAuth={true} requireOnboarding={true}>
+    <StepGuard requiredStep={4}> {/* Requires ONBOARDING */}
       <VerifyContent />
-    </AuthGuard>
+    </StepGuard>
   );
 }
