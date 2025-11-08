@@ -3,15 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowRight, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
-export default function InvestorOnboarding() {
+/**
+ * STEP 4A: INVESTOR ONBOARDING
+ * 
+ * 3-step wizard: Name → Phone → Company (optional)
+ * No top nav. Linear flow only.
+ */
+function InvestorOnboardingContent() {
   const navigate = useNavigate();
-  const { loading, user, profile, role } = useCurrentProfile();
+  const { profile, refresh } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,12 +32,6 @@ export default function InvestorOnboarding() {
   useEffect(() => {
     document.title = "Investor Onboarding - AgentVault";
 
-    // Redirect if not investor
-    if (!loading && user && role && role !== 'investor') {
-      toast.error("This page is for investors only");
-      navigate(createPageUrl("Home"), { replace: true });
-    }
-
     // Load existing profile data if available
     if (profile) {
       setFormData({
@@ -39,20 +40,19 @@ export default function InvestorOnboarding() {
         company: profile.company || ''
       });
     }
-  }, [loading, user, profile, role, navigate]);
+  }, [profile]);
 
   const handleNext = async () => {
-    // Validate current step
+    // Validation
     if (step === 1 && !formData.full_name.trim()) {
       toast.error("Please enter your name");
       return;
     }
     if (step === 2 && !formData.phone.trim()) {
-      toast.error("Please enter your contact number");
+      toast.error("Please enter your phone number");
       return;
     }
 
-    // If last step, save and continue
     if (step === TOTAL_STEPS) {
       await handleSubmit();
     } else {
@@ -65,39 +65,32 @@ export default function InvestorOnboarding() {
 
     try {
       // Update profile
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      
-      if (profiles.length > 0) {
-        await base44.entities.Profile.update(profiles[0].id, {
-          full_name: formData.full_name,
-          phone: formData.phone,
-          company: formData.company || null,
+      if (profile) {
+        await base44.entities.Profile.update(profile.id, {
+          full_name: formData.full_name.trim(),
+          phone: formData.phone.trim(),
+          company: formData.company.trim() || null,
           onboarding_completed_at: new Date().toISOString()
         });
       }
 
+      await refresh();
       toast.success("Profile completed!");
       
-      // Navigate to pricing
-      navigate(createPageUrl("Pricing"));
+      // Navigate to verification
+      navigate(createPageUrl("Verify"));
 
     } catch (error) {
-      console.error('Onboarding save error:', error);
+      console.error('[InvestorOnboarding] Save error:', error);
       toast.error("Failed to save. Please try again.");
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center p-4">
+      {/* NO TOP NAV */}
+      
       <div className="max-w-xl w-full">
         
         {/* Progress Bar */}
@@ -232,5 +225,13 @@ export default function InvestorOnboarding() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function InvestorOnboarding() {
+  return (
+    <StepGuard requiredStep={3}> {/* Requires AUTH + ROLE */}
+      <InvestorOnboardingContent />
+    </StepGuard>
   );
 }

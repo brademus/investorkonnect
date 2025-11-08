@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,9 +26,15 @@ const SPECIALTIES = [
   "Luxury"
 ];
 
-export default function AgentOnboarding() {
+/**
+ * STEP 4B: AGENT ONBOARDING
+ * 
+ * 5-step wizard: Name/Phone → License → Markets → Specialties → Bio
+ * No top nav. Linear flow only.
+ */
+function AgentOnboardingContent() {
   const navigate = useNavigate();
-  const { loading, user, profile, role } = useCurrentProfile();
+  const { profile, refresh } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -45,12 +52,6 @@ export default function AgentOnboarding() {
   useEffect(() => {
     document.title = "Agent Onboarding - AgentVault";
 
-    // Redirect if not agent
-    if (!loading && user && role && role !== 'agent') {
-      toast.error("This page is for agents only");
-      navigate(createPageUrl("Home"), { replace: true });
-    }
-
     // Load existing profile data
     if (profile) {
       setFormData({
@@ -63,7 +64,7 @@ export default function AgentOnboarding() {
         bio: profile.agent?.bio || ''
       });
     }
-  }, [loading, user, profile, role, navigate]);
+  }, [profile]);
 
   const toggleMarket = (state) => {
     setFormData(prev => ({
@@ -113,47 +114,43 @@ export default function AgentOnboarding() {
     setSaving(true);
 
     try {
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      
-      if (profiles.length > 0) {
-        await base44.entities.Profile.update(profiles[0].id, {
-          full_name: formData.full_name,
-          phone: formData.phone,
-          licenseNumber: formData.licenseNumber,
+      if (profile) {
+        await base44.entities.Profile.update(profile.id, {
+          full_name: formData.full_name.trim(),
+          phone: formData.phone.trim(),
+          licenseNumber: formData.licenseNumber.trim(),
           licenseState: formData.licenseState,
           markets: formData.markets,
           agent: {
-            ...profiles[0].agent,
+            ...profile.agent,
             specialties: formData.specialties,
-            bio: formData.bio,
+            bio: formData.bio.trim(),
             verification_status: 'pending'
           },
           onboarding_completed_at: new Date().toISOString()
         });
       }
 
+      await refresh();
       toast.success("Profile completed!");
-      navigate(createPageUrl("AgentDashboard"));
+      
+      // Navigate to verification
+      navigate(createPageUrl("Verify"));
 
     } catch (error) {
-      console.error('Agent onboarding error:', error);
+      console.error('[AgentOnboarding] Save error:', error);
       toast.error("Failed to save. Please try again.");
       setSaving(false);
     }
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-emerald-600 animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-50 flex items-center justify-center p-4">
+      {/* NO TOP NAV */}
+      
       <div className="max-w-2xl w-full">
         
+        {/* Progress Bar */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm font-medium text-slate-600">Step {step} of {TOTAL_STEPS}</span>
@@ -167,6 +164,7 @@ export default function AgentOnboarding() {
           </div>
         </div>
 
+        {/* Form Card */}
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
           
           {step === 1 && (
@@ -305,6 +303,7 @@ export default function AgentOnboarding() {
             </div>
           )}
 
+          {/* Navigation */}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
             {step > 1 ? (
               <Button
@@ -343,5 +342,13 @@ export default function AgentOnboarding() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AgentOnboarding() {
+  return (
+    <StepGuard requiredStep={3}> {/* Requires AUTH + ROLE */}
+      <AgentOnboardingContent />
+    </StepGuard>
   );
 }
