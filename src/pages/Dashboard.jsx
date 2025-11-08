@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -7,34 +7,32 @@ import { Loader2 } from "lucide-react";
 import InvestorHome from "./InvestorHome";
 import AgentHome from "./AgentHome";
 
+/**
+ * DASHBOARD - Smart Role Router
+ * 
+ * This page detects the user's role and shows the appropriate dashboard.
+ * Uses conditional RENDERING, not navigation, to avoid redirect loops.
+ */
 function DashboardContent() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded } = useCurrentProfile();
 
-  // Show loading spinner
+  useEffect(() => {
+    // Only redirect if missing critical requirements
+    if (!loading && user && !onboarded) {
+      navigate(createPageUrl("Home"), { replace: true });
+    }
+  }, [loading, user, onboarded, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading dashboard...</p>
-        </div>
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
       </div>
     );
   }
 
-  // Not authenticated - AuthGuard will handle redirect
-  if (!user) {
-    return null;
-  }
-
-  // Not onboarded - redirect to onboarding
-  if (!onboarded) {
-    navigate(createPageUrl("Onboarding"), { replace: true });
-    return null;
-  }
-
-  // Render role-specific home (NO redirect, conditional rendering to avoid loops)
+  // Conditional rendering based on role (NO navigation)
   if (role === 'investor') {
     return <InvestorHome />;
   }
@@ -43,9 +41,21 @@ function DashboardContent() {
     return <AgentHome />;
   }
 
-  // Fallback for users without role (shouldn't happen after onboarding)
-  navigate(createPageUrl("Onboarding"), { replace: true });
-  return null;
+  // Fallback for users without role
+  return (
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="text-center max-w-md">
+        <h2 className="text-2xl font-bold text-slate-900 mb-4">Select Your Role</h2>
+        <p className="text-slate-600 mb-6">Choose whether you're an investor or agent to continue</p>
+        <button
+          onClick={() => navigate(createPageUrl("RoleSelection"))}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium"
+        >
+          Select Role
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function Dashboard() {

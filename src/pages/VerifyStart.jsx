@@ -3,14 +3,14 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 
 /**
- * DEPRECATED - Redirects to new embedded verification flow
- * Old flow used hosted Persona links, now we use embedded widget
+ * DEPRECATED - Old hosted verification flow
+ * Now redirects to new embedded verification
  */
 export default function VerifyStart() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to new embedded verification page
+    // Redirect to new embedded flow
     navigate(createPageUrl("Verify"), { replace: true });
   }, [navigate]);
 

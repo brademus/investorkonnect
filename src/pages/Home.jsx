@@ -4,61 +4,27 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { Shield, MapPin, TrendingUp, Users, ArrowRight } from "lucide-react";
-import { toast } from "sonner";
+import { Shield, MapPin, TrendingUp, Users, ArrowRight, Loader2 } from "lucide-react";
 
 // US States for map selection
 const US_STATES = [
-  { code: "AL", name: "Alabama" },
-  { code: "AK", name: "Alaska" },
-  { code: "AZ", name: "Arizona" },
-  { code: "AR", name: "Arkansas" },
-  { code: "CA", name: "California" },
-  { code: "CO", name: "Colorado" },
-  { code: "CT", name: "Connecticut" },
-  { code: "DE", name: "Delaware" },
-  { code: "FL", name: "Florida" },
-  { code: "GA", name: "Georgia" },
-  { code: "HI", name: "Hawaii" },
-  { code: "ID", name: "Idaho" },
-  { code: "IL", name: "Illinois" },
-  { code: "IN", name: "Indiana" },
-  { code: "IA", name: "Iowa" },
-  { code: "KS", name: "Kansas" },
-  { code: "KY", name: "Kentucky" },
-  { code: "LA", name: "Louisiana" },
-  { code: "ME", name: "Maine" },
-  { code: "MD", name: "Maryland" },
-  { code: "MA", name: "Massachusetts" },
-  { code: "MI", name: "Michigan" },
-  { code: "MN", name: "Minnesota" },
-  { code: "MS", name: "Mississippi" },
-  { code: "MO", name: "Missouri" },
-  { code: "MT", name: "Montana" },
-  { code: "NE", name: "Nebraska" },
-  { code: "NV", name: "Nevada" },
-  { code: "NH", name: "New Hampshire" },
-  { code: "NJ", name: "New Jersey" },
-  { code: "NM", name: "New Mexico" },
-  { code: "NY", name: "New York" },
-  { code: "NC", name: "North Carolina" },
-  { code: "ND", name: "North Dakota" },
-  { code: "OH", name: "Ohio" },
-  { code: "OK", name: "Oklahoma" },
-  { code: "OR", name: "Oregon" },
-  { code: "PA", name: "Pennsylvania" },
-  { code: "RI", name: "Rhode Island" },
-  { code: "SC", name: "South Carolina" },
-  { code: "SD", name: "South Dakota" },
-  { code: "TN", name: "Tennessee" },
-  { code: "TX", name: "Texas" },
-  { code: "UT", name: "Utah" },
-  { code: "VT", name: "Vermont" },
-  { code: "VA", name: "Virginia" },
-  { code: "WA", name: "Washington" },
-  { code: "WV", name: "West Virginia" },
-  { code: "WI", name: "Wisconsin" },
-  { code: "WY", name: "Wyoming" }
+  { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" }, { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" }, { code: "HI", name: "Hawaii" }, { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" }, { code: "IN", name: "Indiana" }, { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" }, { code: "KY", name: "Kentucky" }, { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" }, { code: "MD", name: "Maryland" }, { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" }, { code: "MN", name: "Minnesota" }, { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" }, { code: "MT", name: "Montana" }, { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" }, { code: "NH", name: "New Hampshire" }, { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" }, { code: "NY", name: "New York" }, { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" }, { code: "OH", name: "Ohio" }, { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" }, { code: "PA", name: "Pennsylvania" }, { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" }, { code: "SD", name: "South Dakota" }, { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" }, { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" }, { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" }
 ];
 
 export default function Home() {
@@ -66,63 +32,87 @@ export default function Home() {
   const { loading, user, profile, onboarded, role } = useCurrentProfile();
   const [selectedState, setSelectedState] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const hasCheckedRedirect = useRef(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     document.title = "AgentVault - Select Your Market";
+  }, []);
 
-    // If user is logged in and onboarded, redirect to their appropriate page
-    if (!loading && user && onboarded && !hasCheckedRedirect.current) {
-      hasCheckedRedirect.current = true;
+  // ONE-TIME redirect logic after loading completes
+  useEffect(() => {
+    if (loading || hasRedirected.current) return;
+
+    if (user && onboarded) {
+      hasRedirected.current = true;
       
+      // Redirect onboarded users to their respective dashboards
       if (role === 'investor') {
-        // Check if they have active rooms - if so, redirect to matches/rooms
-        navigate(createPageUrl("Matches"), { replace: true });
+        navigate(createPageUrl("InvestorHome"), { replace: true });
       } else if (role === 'agent') {
-        // Agents go to their dashboard
-        navigate(createPageUrl("AgentDashboard"), { replace: true });
+        navigate(createPageUrl("AgentHome"), { replace: true });
       }
     }
   }, [loading, user, onboarded, role, navigate]);
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     if (!selectedState) {
-      toast.error("Please select a state to continue");
       return;
     }
 
-    // Store selected state in sessionStorage for use in later steps
+    // Store selected state for later use
     sessionStorage.setItem('selectedState', selectedState.code);
     sessionStorage.setItem('selectedStateName', selectedState.name);
 
-    // If user is not logged in, they need to sign up/in first
+    // Route based on auth/onboarding state
     if (!user) {
-      // Redirect to login, which will come back here after auth
+      // Not logged in - redirect to login
       base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
-      return;
-    }
-
-    // If user is logged in but hasn't selected a role, go to role selection
-    if (!profile?.user_role || profile.user_role === 'member') {
+    } else if (!profile || !role || role === 'member') {
+      // Has auth but no role - go to role selection
       navigate(createPageUrl("RoleSelection"));
-      return;
-    }
-
-    // If they have a role but haven't completed onboarding, go there
-    if (!onboarded) {
+    } else if (!onboarded) {
+      // Has role but not onboarded - go to appropriate onboarding
       if (role === 'investor') {
         navigate(createPageUrl("InvestorOnboarding"));
       } else if (role === 'agent') {
         navigate(createPageUrl("AgentOnboarding"));
       }
+    } else {
+      // Fully onboarded - check for existing rooms in this state (lock-in)
+      checkExistingRoomsAndRoute();
+    }
+  };
+
+  const checkExistingRoomsAndRoute = async () => {
+    if (role !== 'investor') {
+      // Agents don't have lock-in, go to dashboard
+      navigate(createPageUrl("AgentHome"));
       return;
     }
 
-    // If fully onboarded investor, go to matches
-    if (role === 'investor') {
+    try {
+      // Check for existing rooms in this state
+      const response = await base44.functions.invoke('inboxList');
+      const rooms = response.data || [];
+      
+      // Find any open room for this state
+      const existingRoom = rooms.find(r => 
+        r.room && 
+        r.room.state === selectedState.code &&
+        (!r.room.closedAt)
+      );
+
+      if (existingRoom) {
+        // Lock-in: send to existing room
+        navigate(createPageUrl(`Room/${existingRoom.roomId}`));
+      } else {
+        // No existing room - proceed to matches
+        navigate(createPageUrl("Matches"));
+      }
+    } catch (error) {
+      console.error('Check rooms error:', error);
+      // On error, just proceed to matches
       navigate(createPageUrl("Matches"));
-    } else if (role === 'agent') {
-      navigate(createPageUrl("AgentDashboard"));
     }
   };
 
@@ -131,6 +121,7 @@ export default function Home() {
     state.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Show loading screen
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
@@ -142,6 +133,7 @@ export default function Home() {
     );
   }
 
+  // Main map selection UI (for non-onboarded users)
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-12 sm:px-6 lg:px-8">

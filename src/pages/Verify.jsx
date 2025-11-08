@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 function VerifyContent() {
   const navigate = useNavigate();
-  const { loading, user, profile, onboarded, kycStatus } = useCurrentProfile();
+  const { loading, user, profile, onboarded, kycStatus, refresh } = useCurrentProfile();
   const [scriptLoaded, setScriptLoaded] = useState(false);
 
   // Load Persona script
@@ -40,7 +40,7 @@ function VerifyContent() {
 
   // Initialize Persona IMMEDIATELY when script loads
   useEffect(() => {
-    if (!scriptLoaded || !window.Persona || !user) return;
+    if (!scriptLoaded || !window.Persona || !user || !profile) return;
     if (kycStatus === 'approved') return;
 
     console.log('[Verify] 🚀 Creating Persona client...');
@@ -60,6 +60,7 @@ function VerifyContent() {
 
           if (response.data?.ok) {
             toast.success('Verification complete!');
+            refresh(); // Refresh profile
             setTimeout(() => {
               navigate(createPageUrl("NDA"), { replace: true });
             }, 1500);
@@ -84,7 +85,7 @@ function VerifyContent() {
     client.render('#persona-container');
     console.log('[Verify] ✅ Render called');
 
-  }, [scriptLoaded, user, kycStatus, navigate]);
+  }, [scriptLoaded, user, profile, kycStatus, navigate, refresh]);
 
   if (loading) {
     return (
@@ -202,7 +203,7 @@ function VerifyContent() {
 
 export default function Verify() {
   return (
-    <AuthGuard requireAuth={true}>
+    <AuthGuard requireAuth={true} requireOnboarding={true}>
       <VerifyContent />
     </AuthGuard>
   );
