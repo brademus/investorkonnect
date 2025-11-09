@@ -9,18 +9,31 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
-import ProfileStep from "@/components/investor-onboarding/ProfileStep";
-import StrategyStep from "@/components/investor-onboarding/StrategyStep";
-import CriteriaStep from "@/components/investor-onboarding/CriteriaStep";
-import GeographyStep from "@/components/investor-onboarding/GeographyStep";
-import DealMechanicsStep from "@/components/investor-onboarding/DealMechanicsStep";
-import AgentPreferencesStep from "@/components/investor-onboarding/AgentPreferencesStep";
+import BasicProfileStep from "@/components/investor-onboarding/BasicProfileStep";
+import CapitalFinancingStep from "@/components/investor-onboarding/CapitalFinancingStep";
+import StrategyDealsStep from "@/components/investor-onboarding/StrategyDealsStep";
+import MarketsStep from "@/components/investor-onboarding/MarketsStep";
+import DealStructureStep from "@/components/investor-onboarding/DealStructureStep";
+import RiskSpeedStep from "@/components/investor-onboarding/RiskSpeedStep";
+import AgentWorkingStep from "@/components/investor-onboarding/AgentWorkingStep";
+import ExperienceAccreditationStep from "@/components/investor-onboarding/ExperienceAccreditationStep";
 
 /**
- * STEP 4A: RICH INVESTOR ONBOARDING
+ * INVESTOR ONBOARDING - 8-Step Deep Intake
  * 
- * 6-step wizard: Profile → Strategy → Criteria → Geography → Deal Mechanics → Agent Preferences
- * Saves data progressively to profile.metadata for future matching
+ * Filters for serious, professional investors and collects rich data
+ * for high-quality matching with investor-friendly agents.
+ * Takes approximately 5 minutes to complete.
+ * 
+ * Steps:
+ * 1. Basic Profile (investor type, deal count, deal size)
+ * 2. Capital & Financing (capital, financing methods, lined up, POF intent)
+ * 3. Strategy & Deals (strategies, property types, condition)
+ * 4. Target Markets (specific areas, importance, price range)
+ * 5. Deal Structure (deal types, structure, priorities, hold period)
+ * 6. Risk & Speed (decision speed, earnest money, recent deal)
+ * 7. Working with Agent (services, communication, response time, deal breakers)
+ * 8. Experience & Accreditation (accredited, holding structure, links, notes)
  */
 function InvestorOnboardingContent() {
   const navigate = useNavigate();
@@ -29,75 +42,88 @@ function InvestorOnboardingContent() {
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
-    // Profile step
-    full_name: '',
-    phone: '',
-    company: '',
-    investor_type: '',
-    experience_level: '',
-    typical_hold_period: '',
-    decision_speed: '',
-    // Strategy step
-    strategies: [],
-    asset_types: [],
-    condition_preferences: [],
-    deal_volume_goal: '',
-    // Criteria step
-    price_per_deal_min: '',
-    price_per_deal_max: '',
-    total_capital_to_deploy: '',
-    min_cap_rate: '',
-    target_cash_on_cash: '',
-    min_deal_size_units: '',
-    max_deal_size_units: '',
-    preferred_financing: [],
-    // Geography step
+    // Step 1: Basic Profile
+    investor_description: '',
+    deals_closed_24mo: '',
+    typical_deal_size: '',
+    
+    // Step 2: Capital & Financing
+    capital_available_12mo: '',
+    financing_methods: [],
+    financing_other: '',
+    financing_lined_up: '',
+    pof_verification_intent: '',
+    
+    // Step 3: Strategy & Deals
+    investment_strategies: [],
+    strategy_other: '',
+    primary_strategy: '',
+    property_types: [],
+    property_type_other: '',
+    property_condition: '',
+    
+    // Step 4: Target Markets
+    specific_cities_counties: '',
+    market_area_importance: '',
+    state_price_min: '',
+    state_price_max: '',
     primary_state: selectedState || '',
-    target_markets: [],
-    will_consider_other_markets: false,
-    secondary_states: [],
-    // Deal mechanics step
-    has_proof_of_funds: false,
-    has_preapproval_or_term_sheet: false,
-    timeline_to_close: '',
-    team_in_place: [],
-    constraints_or_red_flags: '',
-    // Agent preferences step
-    communication_style: '',
-    lead_types_desired: [],
-    service_expectations: [],
-    exclusivity_preference: '',
+    
+    // Step 5: Deal Structure
+    deal_types_open_to: [],
+    preferred_deal_structure: [],
+    most_important_now: '',
+    target_hold_period: '',
+    
+    // Step 6: Risk & Speed
+    decision_speed_on_deal: '',
+    typical_earnest_money_pct: '',
+    comfortable_non_refundable_em: '',
+    most_recent_deal: '',
+    
+    // Step 7: Working with Agent
+    what_from_agent: [],
+    communication_preferences: [],
+    preferred_agent_response_time: '',
+    agent_deal_breakers: '',
+    
+    // Step 8: Experience & Accreditation
+    accredited_investor: '',
+    investment_holding_structures: [],
+    background_links: '',
+    anything_else_for_agent: '',
   });
 
-  const TOTAL_STEPS = 6;
+  const TOTAL_STEPS = 8;
   const STEP_NAMES = [
-    'Profile',
-    'Strategy',
-    'Criteria',
-    'Geography',
-    'Deal Mechanics',
-    'Agent Preferences'
+    'Basic Profile',
+    'Capital & Financing',
+    'Strategy & Deals',
+    'Target Markets',
+    'Deal Structure',
+    'Risk & Speed',
+    'Working with Agent',
+    'Experience & Details'
   ];
 
   useEffect(() => {
-    document.title = "Investor Onboarding - AgentVault";
+    document.title = "Complete Your Investor Profile - AgentVault";
 
     // Load existing profile data if available
     if (profile) {
       const metadata = profile.metadata || {};
-      const investorData = {
-        full_name: profile.full_name || '',
-        phone: profile.phone || '',
-        company: profile.company || '',
+      const savedData = {
         primary_state: selectedState || profile.markets?.[0] || '',
-        ...metadata.investorProfile,
-        ...metadata.investorStrategy,
-        ...metadata.financialCriteria,
-        ...metadata.geography,
-        ...metadata.dealMechanics,
-        ...metadata.agentPreferences,
+        ...metadata.basicProfile,
+        ...metadata.capitalFinancing,
+        ...metadata.strategyDeals,
+        ...metadata.targetMarkets,
+        ...metadata.dealStructure,
+        ...metadata.riskSpeed,
+        ...metadata.agentWorking,
+        ...metadata.experienceAccreditation,
       };
-      setFormData(prev => ({ ...prev, ...investorData }));
+      setFormData(prev => ({ ...prev, ...savedData }));
     }
   }, [profile, selectedState]);
 
@@ -108,101 +134,104 @@ function InvestorOnboardingContent() {
   const validateStep = () => {
     switch (step) {
       case 1:
-        if (!formData.full_name?.trim()) {
-          toast.error("Please enter your name");
+        if (!formData.investor_description) {
+          toast.error("Please select what best describes you as an investor");
           return false;
         }
-        if (!formData.phone?.trim()) {
-          toast.error("Please enter your phone number");
+        if (!formData.deals_closed_24mo) {
+          toast.error("Please select how many deals you've closed");
           return false;
         }
-        if (!formData.investor_type) {
-          toast.error("Please select investor type");
-          return false;
-        }
-        if (!formData.experience_level) {
-          toast.error("Please select experience level");
-          return false;
-        }
-        if (!formData.typical_hold_period) {
-          toast.error("Please select typical hold period");
-          return false;
-        }
-        if (!formData.decision_speed) {
-          toast.error("Please select decision speed");
+        if (!formData.typical_deal_size) {
+          toast.error("Please select your typical deal size");
           return false;
         }
         return true;
 
       case 2:
-        if (!formData.strategies?.length) {
-          toast.error("Please select at least one strategy");
+        if (!formData.capital_available_12mo) {
+          toast.error("Please select capital available");
           return false;
         }
-        if (!formData.asset_types?.length) {
-          toast.error("Please select at least one asset type");
+        if (!formData.financing_methods?.length) {
+          toast.error("Please select at least one financing method");
           return false;
         }
-        if (!formData.condition_preferences?.length) {
-          toast.error("Please select at least one condition preference");
-          return false;
-        }
-        if (!formData.deal_volume_goal) {
-          toast.error("Please enter target deal volume");
+        if (!formData.financing_lined_up) {
+          toast.error("Please indicate if you have financing lined up");
           return false;
         }
         return true;
 
       case 3:
-        if (!formData.price_per_deal_min) {
-          toast.error("Please enter minimum price per deal");
+        if (!formData.investment_strategies?.length) {
+          toast.error("Please select at least one investment strategy");
           return false;
         }
-        if (!formData.price_per_deal_max) {
-          toast.error("Please enter maximum price per deal");
+        if (!formData.primary_strategy) {
+          toast.error("Please select your primary strategy");
           return false;
         }
-        if (!formData.total_capital_to_deploy) {
-          toast.error("Please enter total capital to deploy");
+        if (!formData.property_types?.length) {
+          toast.error("Please select at least one property type");
           return false;
         }
-        if (!formData.preferred_financing?.length) {
-          toast.error("Please select at least one financing option");
+        if (!formData.property_condition) {
+          toast.error("Please select property condition preference");
           return false;
         }
         return true;
 
       case 4:
-        if (!formData.target_markets?.length) {
-          toast.error("Please add at least one target market/city");
+        if (!formData.market_area_importance) {
+          toast.error("Please indicate area importance");
           return false;
         }
         return true;
 
       case 5:
-        if (!formData.timeline_to_close) {
-          toast.error("Please select timeline to close");
+        if (!formData.deal_types_open_to?.length) {
+          toast.error("Please select at least one deal type");
+          return false;
+        }
+        if (!formData.preferred_deal_structure?.length) {
+          toast.error("Please select at least one deal structure");
+          return false;
+        }
+        if (!formData.most_important_now) {
+          toast.error("Please select what's most important to you");
           return false;
         }
         return true;
 
       case 6:
-        if (!formData.communication_style) {
-          toast.error("Please select communication style");
+        if (!formData.decision_speed_on_deal) {
+          toast.error("Please select your decision speed");
           return false;
         }
-        if (!formData.lead_types_desired?.length) {
-          toast.error("Please select at least one lead type");
+        if (!formData.comfortable_non_refundable_em) {
+          toast.error("Please indicate comfort with non-refundable earnest money");
           return false;
         }
-        if (!formData.service_expectations?.length) {
-          toast.error("Please select at least one service expectation");
+        return true;
+
+      case 7:
+        if (!formData.what_from_agent?.length) {
+          toast.error("Please select what you're looking for from an agent");
           return false;
         }
-        if (!formData.exclusivity_preference) {
-          toast.error("Please select exclusivity preference");
+        if (!formData.communication_preferences?.length) {
+          toast.error("Please select at least one communication preference");
           return false;
         }
+        if (!formData.preferred_agent_response_time) {
+          toast.error("Please select preferred response time");
+          return false;
+        }
+        return true;
+
+      case 8:
+        // All fields optional in final step
         return true;
 
       default:
@@ -234,55 +263,62 @@ function InvestorOnboardingContent() {
     try {
       if (!profile) return;
 
-      // Structure data into metadata sections
+      // Structure data into metadata sections for better organization
       const metadata = {
-        investorProfile: {
-          investor_type: formData.investor_type,
-          experience_level: formData.experience_level,
-          typical_hold_period: formData.typical_hold_period,
-          decision_speed: formData.decision_speed,
+        basicProfile: {
+          investor_description: formData.investor_description,
+          deals_closed_24mo: formData.deals_closed_24mo,
+          typical_deal_size: formData.typical_deal_size,
         },
-        investorStrategy: {
-          strategies: formData.strategies,
-          asset_types: formData.asset_types,
-          condition_preferences: formData.condition_preferences,
-          deal_volume_goal: formData.deal_volume_goal,
+        capitalFinancing: {
+          capital_available_12mo: formData.capital_available_12mo,
+          financing_methods: formData.financing_methods,
+          financing_other: formData.financing_other,
+          financing_lined_up: formData.financing_lined_up,
+          pof_verification_intent: formData.pof_verification_intent,
         },
-        financialCriteria: {
-          price_per_deal_min: formData.price_per_deal_min,
-          price_per_deal_max: formData.price_per_deal_max,
-          total_capital_to_deploy: formData.total_capital_to_deploy,
-          min_cap_rate: formData.min_cap_rate,
-          target_cash_on_cash: formData.target_cash_on_cash,
-          min_deal_size_units: formData.min_deal_size_units,
-          max_deal_size_units: formData.max_deal_size_units,
-          preferred_financing: formData.preferred_financing,
+        strategyDeals: {
+          investment_strategies: formData.investment_strategies,
+          strategy_other: formData.strategy_other,
+          primary_strategy: formData.primary_strategy,
+          property_types: formData.property_types,
+          property_type_other: formData.property_type_other,
+          property_condition: formData.property_condition,
         },
-        geography: {
+        targetMarkets: {
+          specific_cities_counties: formData.specific_cities_counties,
+          market_area_importance: formData.market_area_importance,
+          state_price_min: formData.state_price_min,
+          state_price_max: formData.state_price_max,
           primary_state: formData.primary_state,
-          target_markets: formData.target_markets,
-          will_consider_other_markets: formData.will_consider_other_markets,
-          secondary_states: formData.secondary_states,
         },
-        dealMechanics: {
-          has_proof_of_funds: formData.has_proof_of_funds,
-          has_preapproval_or_term_sheet: formData.has_preapproval_or_term_sheet,
-          timeline_to_close: formData.timeline_to_close,
-          team_in_place: formData.team_in_place,
-          constraints_or_red_flags: formData.constraints_or_red_flags,
+        dealStructure: {
+          deal_types_open_to: formData.deal_types_open_to,
+          preferred_deal_structure: formData.preferred_deal_structure,
+          most_important_now: formData.most_important_now,
+          target_hold_period: formData.target_hold_period,
         },
-        agentPreferences: {
-          communication_style: formData.communication_style,
-          lead_types_desired: formData.lead_types_desired,
-          service_expectations: formData.service_expectations,
-          exclusivity_preference: formData.exclusivity_preference,
+        riskSpeed: {
+          decision_speed_on_deal: formData.decision_speed_on_deal,
+          typical_earnest_money_pct: formData.typical_earnest_money_pct,
+          comfortable_non_refundable_em: formData.comfortable_non_refundable_em,
+          most_recent_deal: formData.most_recent_deal,
+        },
+        agentWorking: {
+          what_from_agent: formData.what_from_agent,
+          communication_preferences: formData.communication_preferences,
+          preferred_agent_response_time: formData.preferred_agent_response_time,
+          agent_deal_breakers: formData.agent_deal_breakers,
+        },
+        experienceAccreditation: {
+          accredited_investor: formData.accredited_investor,
+          investment_holding_structures: formData.investment_holding_structures,
+          background_links: formData.background_links,
+          anything_else_for_agent: formData.anything_else_for_agent,
         },
       };
 
       await base44.entities.Profile.update(profile.id, {
-        full_name: formData.full_name.trim(),
-        phone: formData.phone.trim(),
-        company: formData.company?.trim() || null,
         markets: [formData.primary_state],
         metadata: {
           ...profile.metadata,
@@ -309,7 +345,7 @@ function InvestorOnboardingContent() {
       });
 
       await refresh();
-      toast.success("Profile completed!");
+      toast.success("Profile completed! Let's verify your identity.");
       
       // Navigate to verification
       navigate(createPageUrl("Verify"));
@@ -341,6 +377,7 @@ function InvestorOnboardingContent() {
               style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
             />
           </div>
+          <p className="text-xs text-slate-500 mt-1">Takes about 5 minutes • Filtering for serious investors</p>
         </div>
 
         {/* Form Card */}
@@ -348,28 +385,28 @@ function InvestorOnboardingContent() {
           
           {/* Step Content */}
           {step === 1 && (
-            <ProfileStep
+            <BasicProfileStep
               data={formData}
               onChange={updateFormData}
             />
           )}
 
           {step === 2 && (
-            <StrategyStep
+            <CapitalFinancingStep
               data={formData}
               onChange={updateFormData}
             />
           )}
 
           {step === 3 && (
-            <CriteriaStep
+            <StrategyDealsStep
               data={formData}
               onChange={updateFormData}
             />
           )}
 
           {step === 4 && (
-            <GeographyStep
+            <MarketsStep
               data={formData}
               onChange={updateFormData}
               initialState={formData.primary_state}
@@ -377,14 +414,28 @@ function InvestorOnboardingContent() {
           )}
 
           {step === 5 && (
-            <DealMechanicsStep
+            <DealStructureStep
               data={formData}
               onChange={updateFormData}
             />
           )}
 
           {step === 6 && (
-            <AgentPreferencesStep
+            <RiskSpeedStep
+              data={formData}
+              onChange={updateFormData}
+            />
+          )}
+
+          {step === 7 && (
+            <AgentWorkingStep
+              data={formData}
+              onChange={updateFormData}
+            />
+          )}
+
+          {step === 8 && (
+            <ExperienceAccreditationStep
               data={formData}
               onChange={updateFormData}
             />
