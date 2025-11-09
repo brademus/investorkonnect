@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -16,11 +17,11 @@ import { toast } from "sonner";
  * 
  * Shows top 3 matched agents for investor's target state.
  * ENFORCES LOCK-IN: If investor already has a room in this state, redirect to it.
- * No top navigation - wizard flow only.
+ * GATED: Requires NEW onboarding to be completed.
  */
 function MatchesContent() {
   const navigate = useNavigate();
-  const { loading, profile, role, targetState } = useCurrentProfile();
+  const { loading, profile, role, onboarded, targetState } = useCurrentProfile();
   const [matches, setMatches] = useState([]);
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [engaging, setEngaging] = useState(null);
@@ -30,9 +31,21 @@ function MatchesContent() {
     document.title = "Your Top Matches - AgentVault";
   }, []);
 
+  // GATE: Redirect to NEW onboarding if not completed
+  useEffect(() => {
+    if (loading) return;
+
+    if (role === 'investor' && !onboarded) {
+      console.log('[Matches] 🚫 Investor not onboarded, redirecting to InvestorOnboarding');
+      toast.error('Please complete your investor profile first');
+      navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      return;
+    }
+  }, [loading, role, onboarded, navigate]);
+
   // Check for existing room lock-in
   useEffect(() => {
-    if (loading || !profile) return;
+    if (loading || !profile || !onboarded) return;
 
     const checkLockIn = async () => {
       try {
@@ -73,7 +86,7 @@ function MatchesContent() {
     };
 
     checkLockIn();
-  }, [loading, profile, targetState, navigate]);
+  }, [loading, profile, onboarded, targetState, navigate]);
 
   const fetchMatches = async () => {
     try {
@@ -150,7 +163,7 @@ function MatchesContent() {
   }
 
   // Loading state
-  if (loading || loadingMatches) {
+  if (loading || loadingMatches || !onboarded) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
         <div className="text-center">

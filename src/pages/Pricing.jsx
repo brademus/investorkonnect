@@ -46,13 +46,20 @@ export default function Pricing() {
         
         if (response.ok) {
           const state = await response.json();
-          const completed = !!(state.onboarding?.completed || state.profile?.onboarding_completed_at);
+          // NEW CHECK: Onboarding is complete ONLY if:
+          // 1) onboarding_completed_at is set AND
+          // 2) user_role is set
+          const completed = !!(
+            (state.onboarding?.completed || state.profile?.onboarding_completed_at) &&
+            state.profile?.user_role
+          );
           setOnboardingCompleted(completed);
           
           console.log('[Pricing] Auth state:', { 
             authenticated: auth, 
             onboarding: completed,
-            profile: state.profile
+            user_role: state.profile?.user_role,
+            onboarding_completed_at: state.profile?.onboarding_completed_at
           });
         } else {
             console.error('[Pricing] Failed to fetch user profile:', response.statusText);
@@ -84,13 +91,14 @@ export default function Pricing() {
       return;
     }
 
-    // Authenticated but not onboarded - GATE
+    // Authenticated but not onboarded - GATE: Send to NEW InvestorOnboarding
     if (!onboardingCompleted) {
-      toast.error("Please complete your profile before subscribing", {
+      toast.error("Please complete your investor profile before subscribing", {
         duration: 5000,
-        description: "We need to know your role (investor/agent) first"
+        description: "We need to know your investment goals first"
       });
-      navigate(createPageUrl("Onboarding"));
+      // Send to Onboarding redirector which will route to InvestorOnboarding
+      navigate(createPageUrl("InvestorOnboarding"));
       return;
     }
 
@@ -227,13 +235,13 @@ export default function Pricing() {
               <div className="flex items-center gap-3">
                 <Lock className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm font-medium">
-                  Complete your profile to unlock subscriptions
+                  Complete your investor profile to unlock subscriptions
                 </p>
               </div>
               <Button 
                 size="sm" 
                 className="bg-white text-orange-600 hover:bg-orange-50"
-                onClick={() => navigate(createPageUrl("Onboarding"))}
+                onClick={() => navigate(createPageUrl("InvestorOnboarding"))}
               >
                 Complete Profile
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -320,7 +328,7 @@ export default function Pricing() {
                         Complete Profile Required
                       </Button>
                       <p className="text-xs text-center text-slate-600">
-                        <Link to={createPageUrl("Onboarding")} className="text-blue-600 hover:underline font-medium">
+                        <Link to={createPageUrl("InvestorOnboarding")} className="text-blue-600 hover:underline font-medium">
                           Complete your profile
                         </Link> to subscribe
                       </p>

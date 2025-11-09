@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { base44 } from "@/api/base44Client";
 import { useWizard } from "@/components/WizardContext";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,7 @@ const US_STATES = [
  * First thing anyone sees. No auth required.
  * Choose target market/state, then continue to role selection.
  * 
- * NEW: Added "Log In" button for existing users to jump straight to their dashboard.
+ * Login button routes to RoleSelection which handles onboarding status.
  */
 export default function Home() {
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ export default function Home() {
   };
 
   const handleLogin = () => {
-    // Redirect to login, then back to RoleSelection which will route based on onboarding status
+    // Redirect to login, callback to RoleSelection which will check onboarding status
     const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
     base44.auth.redirectToLogin(callbackUrl);
   };
