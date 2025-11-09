@@ -1,4 +1,6 @@
+
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { updateAgentEmbedding } from './matchingEngine.js';
 
 /**
  * UPSERT AGENT ONBOARDING v2 - EXTENDED
@@ -7,6 +9,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
  * Handles all new fields for deep agent qualification
  * 
  * VERSION: "agent-v2-deep" is the ONLY version that indicates new onboarding completion
+ * 
+ * NEW: Generates embedding after onboarding completes
  */
 Deno.serve(async (req) => {
   try {
@@ -228,6 +232,16 @@ Deno.serve(async (req) => {
     console.log('✅ Agent onboarding v2 (extended) saved successfully');
     console.log('📊 Saved', Object.keys(agentData).length, 'agent fields');
     console.log('🏷️  Version set to: agent-v2-deep');
+    
+    // NEW: Generate embedding after onboarding completes
+    console.log('🧠 Generating agent embedding...');
+    try {
+      await updateAgentEmbedding(base44, user.id);
+      console.log('✅ Agent embedding generated');
+    } catch (embErr) {
+      console.error('⚠️ Failed to generate embedding:', embErr);
+      // Don't fail the whole onboarding if embedding fails
+    }
     
     return Response.json({
       ok: true,
