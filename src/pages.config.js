@@ -50,6 +50,7 @@ import AgentOnboarding from './pages/AgentOnboarding';
 import AgentDashboard from './pages/AgentDashboard';
 import InvestorIntake from './pages/InvestorIntake';
 import PostAuth from './pages/PostAuth';
+import BillingSuccess from './pages/BillingSuccess';
 import Layout from './Layout.jsx';
 
 
@@ -106,6 +107,7 @@ export const PAGES = {
     "AgentDashboard": AgentDashboard,
     "InvestorIntake": InvestorIntake,
     "PostAuth": PostAuth,
+    "BillingSuccess": BillingSuccess,
 }
 
 export const pagesConfig = {

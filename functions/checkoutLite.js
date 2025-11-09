@@ -60,6 +60,9 @@ Deno.serve(async (req) => {
     // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
     const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
+    let userId = null;
+    let userEmail = null;
+    
     if (enableGating) {
       try {
         const base44 = createClientFromRequest(req);
@@ -75,7 +78,9 @@ Deno.serve(async (req) => {
         }
         
         const user = await base44.auth.me();
-        console.log('✅ User authenticated:', user.email);
+        userId = user.id;
+        userEmail = user.email;
+        console.log('✅ User authenticated:', userEmail);
         
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
@@ -161,7 +166,7 @@ Deno.serve(async (req) => {
     }
 
     // All checks passed - create Stripe session
-    const success = `${base}/?payment=success`;
+    const success = `${base}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancel = `${base}/pricing?cancelled=true`;
     
     console.log('Success URL:', success);
@@ -169,8 +174,44 @@ Deno.serve(async (req) => {
     
     const stripe = new Stripe(STRIPE_SECRET_KEY);
     
+    // Create or get Stripe customer
+    let customerId = null;
+    
+    if (userId && userEmail) {
+      const base44 = createClientFromRequest(req);
+      const profiles = await base44.entities.Profile.filter({ user_id: userId });
+      
+      if (profiles.length > 0) {
+        const profile = profiles[0];
+        
+        if (profile.stripe_customer_id) {
+          customerId = profile.stripe_customer_id;
+          console.log('✅ Using existing Stripe customer:', customerId);
+        } else {
+          // Create new Stripe customer
+          const customer = await stripe.customers.create({
+            email: userEmail,
+            metadata: {
+              user_id: userId,
+              app: 'agentvault'
+            }
+          });
+          
+          customerId = customer.id;
+          console.log('✅ Created new Stripe customer:', customerId);
+          
+          // Save customer ID to profile
+          await base44.entities.Profile.update(profile.id, {
+            stripe_customer_id: customerId
+          });
+        }
+      }
+    }
+    
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
+      customer: customerId || undefined,
+      customer_email: !customerId ? userEmail : undefined,
       line_items: [{
         price: price,
         quantity: 1
@@ -179,7 +220,15 @@ Deno.serve(async (req) => {
       cancel_url: cancel,
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 14
+        trial_period_days: 14,
+        metadata: {
+          user_id: userId || 'unknown',
+          plan: plan
+        }
+      },
+      metadata: {
+        user_id: userId || 'unknown',
+        plan: plan
       }
     });
 

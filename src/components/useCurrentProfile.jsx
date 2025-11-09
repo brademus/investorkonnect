@@ -2,15 +2,9 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * CANONICAL PROFILE HOOK - Enhanced for Wizard Flow
+ * CANONICAL PROFILE HOOK - Enhanced with Subscription Info
  * 
- * Single source of truth for current user + profile state.
- * Now includes hasRoom check for navigation logic.
- * 
- * IMPORTANT: A user is considered "onboarded" ONLY if:
- * - onboarding_completed_at is set AND
- * - user_role is set (from NEW onboarding)
- * This forces anyone with only OLD onboarding data to complete NEW onboarding.
+ * Single source of truth for current user + profile + subscription state.
  * 
  * Returns:
  * - loading: boolean
@@ -24,6 +18,9 @@ import { base44 } from '@/api/base44Client';
  * - isInvestorReady: boolean (investor fully ready for subscriptions/trials)
  * - hasRoom: boolean (has at least one room)
  * - targetState: string (user's selected market/state)
+ * - subscriptionPlan: 'starter' | 'pro' | 'enterprise' | 'none'
+ * - subscriptionStatus: 'active' | 'trialing' | 'past_due' | 'canceled' | 'none'
+ * - isPaidSubscriber: boolean (active or trialing subscription)
  * - error: string | null
  * - refresh: function to reload profile data
  */
@@ -40,6 +37,9 @@ export function useCurrentProfile() {
     isInvestorReady: false,
     hasRoom: false,
     targetState: null,
+    subscriptionPlan: 'none',
+    subscriptionStatus: 'none',
+    isPaidSubscriber: false,
     error: null
   });
 
@@ -69,6 +69,9 @@ export function useCurrentProfile() {
             isInvestorReady: false,
             hasRoom: false,
             targetState: null,
+            subscriptionPlan: 'none',
+            subscriptionStatus: 'none',
+            isPaidSubscriber: false,
             error: null
           });
           return;
@@ -104,7 +107,6 @@ export function useCurrentProfile() {
         if (!mounted) return;
 
         // STEP 3: Derive role
-        // Priority: profile.user_role > profile.user_type > user.role
         let role = profile?.user_role || profile?.user_type || user.role || 'member';
         
         // Normalize role
@@ -117,17 +119,11 @@ export function useCurrentProfile() {
         }
 
         // STEP 4: Determine onboarded status
-        // NEW LOGIC: Onboarding is complete ONLY if:
-        // 1) onboarding_completed_at exists AND
-        // 2) user_role is set (NEW onboarding finished)
-        // This forces anyone with only OLD onboarding data (timestamp but no user_role) to complete NEW onboarding.
         let onboarded = false;
         
         if (profile?.onboarding_completed_at && profile?.user_role) {
-          // Both timestamp AND role are set → NEW onboarding complete
           onboarded = true;
         }
-        // If only timestamp exists but no user_role → OLD onboarding only → NOT considered onboarded
 
         // STEP 5: NDA status
         const hasNDA = profile?.nda_accepted || false;
@@ -147,20 +143,27 @@ export function useCurrentProfile() {
           hasRoom = rooms.length > 0;
         } catch (roomErr) {
           console.warn('[useCurrentProfile] Could not check rooms:', roomErr);
-          // Default to false
         }
 
         // STEP 9: Determine if investor is fully ready for subscriptions/trials
-        // An investor is ready ONLY when ALL of these are true:
-        // - role is investor
-        // - NEW onboarding complete
-        // - NDA accepted
-        // - KYC verified
         const isInvestorReady = 
           role === 'investor' &&
           onboarded &&
           hasNDA &&
           kycVerified;
+
+        // STEP 10: Extract subscription info
+        const subscriptionPlan = profile?.subscription_tier || 'none';
+        const subscriptionStatus = profile?.subscription_status || 'none';
+        const isPaidSubscriber = 
+          subscriptionStatus === 'active' || 
+          subscriptionStatus === 'trialing';
+
+        console.log('[useCurrentProfile] 💳 Subscription info:', {
+          plan: subscriptionPlan,
+          status: subscriptionStatus,
+          isPaid: isPaidSubscriber
+        });
 
         setState({
           loading: false,
@@ -174,6 +177,9 @@ export function useCurrentProfile() {
           isInvestorReady,
           hasRoom,
           targetState,
+          subscriptionPlan,
+          subscriptionStatus,
+          isPaidSubscriber,
           error: null
         });
 
@@ -193,6 +199,9 @@ export function useCurrentProfile() {
           isInvestorReady: false,
           hasRoom: false,
           targetState: null,
+          subscriptionPlan: 'none',
+          subscriptionStatus: 'none',
+          isPaidSubscriber: false,
           error: error.message
         });
       }
