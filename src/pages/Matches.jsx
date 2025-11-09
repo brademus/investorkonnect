@@ -3,252 +3,381 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { useWizard } from "@/components/WizardContext";
 import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Star, Shield, Users, Loader2, ArrowRight,
-  MapPin, Briefcase
+import { 
+  Loader2, MapPin, Star, TrendingUp, Users, 
+  ArrowRight, CheckCircle, Shield, Lock 
 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
- * STEP 7: MATCHING (Investor Only)
+ * STEP 7: AGENT MATCHING (Investor Only)
  * 
- * Show top 3 matched agents. 
- * Enforce lock-in: one agent per state.
- * No top nav.
+ * Shows top 3 matched agents for investor's target state.
+ * ENFORCES LOCK-IN: If investor already has a room in this state, redirect to it.
+ * No top navigation - wizard flow only.
  */
 function MatchesContent() {
   const navigate = useNavigate();
-  const { profile, targetState, refresh } = useCurrentProfile();
-  const { selectedState } = useWizard();
-  const [loading, setLoading] = useState(true);
+  const { loading, profile, role, targetState } = useCurrentProfile();
   const [matches, setMatches] = useState([]);
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [engaging, setEngaging] = useState(null);
   const [existingRoom, setExistingRoom] = useState(null);
 
-  const state = targetState || selectedState;
-
   useEffect(() => {
-    document.title = "Find Your Agent - AgentVault";
-    checkLockIn();
+    document.title = "Your Top Matches - AgentVault";
   }, []);
 
-  const checkLockIn = async () => {
-    try {
-      // Check if investor already has a room for this state
-      const response = await base44.functions.invoke('inboxList');
-      const rooms = response.data || [];
-      
-      const roomForState = rooms.find(r => 
-        r.room && 
-        r.room.state === state &&
-        !r.room.closedAt
-      );
+  // Check for existing room lock-in
+  useEffect(() => {
+    if (loading || !profile) return;
 
-      if (roomForState) {
-        // Lock-in: redirect to existing room
-        toast.info(`You already have an active room for ${state}`);
-        setExistingRoom(roomForState);
-        navigate(createPageUrl(`Room/${roomForState.roomId}`), { replace: true });
-        return;
+    const checkLockIn = async () => {
+      try {
+        console.log('[Matches] Checking for existing rooms in state:', targetState);
+        
+        // Get all investor's rooms
+        const response = await base44.functions.invoke('inboxList');
+        const rooms = response.data || [];
+        
+        // Check if any room exists for this state
+        const roomInState = rooms.find(room => {
+          // Room metadata should include state
+          const roomState = room.state || room.targetState || room.metadata?.state;
+          return roomState === targetState && !room.closedAt;
+        });
+
+        if (roomInState) {
+          console.log('[Matches] 🔒 Found existing room for state, redirecting:', roomInState.id);
+          toast.info('You already have an active deal room for this market');
+          
+          // Redirect to existing room
+          setTimeout(() => {
+            navigate(createPageUrl(`Room?id=${roomInState.id}`), { replace: true });
+          }, 1500);
+          
+          setExistingRoom(roomInState);
+          return;
+        }
+
+        // No lock-in, fetch matches
+        await fetchMatches();
+
+      } catch (error) {
+        console.error('[Matches] Error checking lock-in:', error);
+        toast.error('Failed to load matches');
+        setLoadingMatches(false);
       }
+    };
 
-      // No room - load matches
-      await loadMatches();
-    } catch (error) {
-      console.error('[Matches] Lock-in check error:', error);
-      await loadMatches(); // Continue anyway
-    }
-  };
+    checkLockIn();
+  }, [loading, profile, targetState, navigate]);
 
-  const loadMatches = async () => {
+  const fetchMatches = async () => {
     try {
-      setLoading(true);
-      
-      // Use matchList function to get real matches
-      const response = await base44.functions.invoke('matchList');
-      const data = response.data;
-      
-      setMatches(data.results || []);
-      setLoading(false);
-    } catch (error) {
-      console.error('[Matches] Load error:', error);
-      toast.error("Failed to load matches");
-      setLoading(false);
-    }
-  };
-
-  const handleEngage = async (match) => {
-    try {
-      toast.info("Creating your deal room...");
-
-      // Create room via introCreate
-      const response = await base44.functions.invoke('introCreate', {
-        agentId: match.agentId || match.agent?.userId,
-        state: state
+      const response = await base44.functions.invoke('matchList', {
+        state: targetState
       });
 
-      if (response.data.roomId) {
-        toast.success("Deal room created!");
-        await refresh(); // Refresh to update hasRoom
-        
-        // Navigate to room - now nav will appear
-        navigate(createPageUrl(`Room/${response.data.roomId}`), { replace: true });
+      if (response.data?.matches) {
+        // Get top 3 matches
+        const topMatches = response.data.matches.slice(0, 3);
+        setMatches(topMatches);
+        console.log('[Matches] Loaded matches:', topMatches.length);
       } else {
-        toast.error("Failed to create room");
+        setMatches([]);
       }
+
+      setLoadingMatches(false);
     } catch (error) {
-      console.error('[Matches] Engage error:', error);
-      toast.error("Failed to engage agent");
+      console.error('[Matches] Error fetching matches:', error);
+      toast.error('Failed to load agent matches');
+      setLoadingMatches(false);
     }
   };
 
-  if (loading) {
+  const handleEngage = async (agent) => {
+    setEngaging(agent.id);
+
+    try {
+      console.log('[Matches] Creating room with agent:', agent.id);
+
+      // Create room via existing backend
+      const response = await base44.functions.invoke('introCreate', {
+        agentId: agent.id,
+        message: `Hi ${agent.full_name}, I'd like to connect about properties in ${targetState}.`,
+        state: targetState
+      });
+
+      if (response.data?.room_id) {
+        toast.success(`Connected with ${agent.full_name}!`);
+        
+        // Navigate to the new room
+        setTimeout(() => {
+          navigate(createPageUrl(`Room?id=${response.data.room_id}`), { replace: true });
+        }, 1000);
+      } else {
+        throw new Error('No room ID returned');
+      }
+
+    } catch (error) {
+      console.error('[Matches] Error engaging agent:', error);
+      toast.error('Failed to connect with agent. Please try again.');
+      setEngaging(null);
+    }
+  };
+
+  // Locked into existing room
+  if (existingRoom) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Lock className="w-10 h-10 text-blue-600" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Active Deal Room</h2>
+            <p className="text-slate-600 mb-6">
+              You already have an active deal room for {targetState}. Redirecting...
+            </p>
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (existingRoom) {
-    return null; // Will redirect
+  // Loading state
+  if (loading || loadingMatches) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Finding your top matches...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // No matches found
+  if (matches.length === 0) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Users className="w-10 h-10 text-slate-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Matches Yet</h2>
+            <p className="text-slate-600 mb-6">
+              We're working on finding agents in {targetState}. Check back soon!
+            </p>
+            <Button
+              onClick={() => navigate(createPageUrl("Dashboard"))}
+              variant="outline"
+            >
+              Go to Dashboard
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 py-8">
       {/* NO TOP NAV */}
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-slate-900 mb-3">Your Top Matches</h1>
-          <p className="text-xl text-slate-600">
-            Based on your criteria, here are the best-matched agents for <strong>{state}</strong>
+          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <Shield className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-slate-900 mb-3">
+            Your Top Matches in {targetState}
+          </h1>
+          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            We've found the best verified agents for your investment goals
           </p>
         </div>
 
-        {/* Matches Grid */}
-        {matches.length === 0 ? (
-          <div className="bg-white rounded-xl p-12 text-center border border-slate-200 shadow-lg">
-            <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-slate-900 mb-2">No matches found</h3>
-            <p className="text-slate-600 mb-6">
-              We couldn't find agents matching your criteria in this market yet.
-            </p>
-            <Button onClick={() => navigate(createPageUrl("Home"))}>
-              Select Different Market
-            </Button>
+        {/* Lock-in Notice */}
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 max-w-3xl mx-auto">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+              <Shield className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h3 className="font-bold text-blue-900 mb-1">Exclusive Partnership Model</h3>
+              <p className="text-sm text-blue-800">
+                Once you engage an agent for {targetState}, they become your exclusive partner for that market. 
+                This ensures focused attention and alignment on your investment goals.
+              </p>
+            </div>
           </div>
-        ) : (
-          <div className="grid md:grid-cols-3 gap-8 mb-12">
-            {matches.slice(0, 3).map((match, idx) => (
-              <div
-                key={match.matchId || match.id || idx}
-                className="bg-white rounded-2xl shadow-xl border-2 border-slate-200 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all"
-              >
-                {/* Agent Card */}
-                <div className="p-6">
-                  <div className="flex items-start gap-4 mb-4">
-                    {match.agent?.headshotUrl ? (
-                      <img
-                        src={match.agent.headshotUrl}
-                        alt={match.agent.name}
-                        className="w-16 h-16 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
-                        <Users className="w-8 h-8 text-blue-600" />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <h3 className="font-bold text-slate-900 mb-1 text-lg">{match.agent?.name || 'Agent'}</h3>
-                      <p className="text-sm text-slate-600">{match.agent?.company || match.agent?.brokerage}</p>
-                    </div>
-                  </div>
+        </div>
 
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {match.agent?.vetted && (
-                      <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
-                        <Shield className="w-3 h-3 mr-1" />
+        {/* Match Cards */}
+        <div className="grid gap-6 mb-12">
+          {matches.map((agent, index) => (
+            <div
+              key={agent.id}
+              className="bg-white rounded-2xl shadow-xl border-2 border-slate-200 p-8 hover:shadow-2xl transition-all"
+            >
+              <div className="flex items-start gap-6">
+                
+                {/* Rank Badge */}
+                <div className="flex-shrink-0">
+                  <div className={`w-16 h-16 rounded-xl flex items-center justify-center font-bold text-2xl ${
+                    index === 0 ? 'bg-gradient-to-br from-yellow-400 to-yellow-500 text-yellow-900' :
+                    index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700' :
+                    'bg-gradient-to-br from-amber-600 to-amber-700 text-amber-100'
+                  }`}>
+                    #{index + 1}
+                  </div>
+                </div>
+
+                {/* Agent Info */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h3 className="text-2xl font-bold text-slate-900 mb-1">
+                        {agent.full_name}
+                      </h3>
+                      {agent.agent?.brokerage && (
+                        <p className="text-slate-600">{agent.agent.brokerage}</p>
+                      )}
+                    </div>
+                    
+                    {agent.agent?.verification_status === 'verified' && (
+                      <div className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-sm font-semibold">
+                        <CheckCircle className="w-4 h-4" />
                         Verified
-                      </Badge>
-                    )}
-                    {match.score && (
-                      <Badge variant="outline">
-                        {match.score}% Match
-                      </Badge>
+                      </div>
                     )}
                   </div>
 
-                  {/* Markets */}
-                  {match.agent?.markets && match.agent.markets.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-1 text-xs text-slate-600 mb-2">
-                        <MapPin className="w-3 h-3" />
-                        <span>Markets</span>
+                  {/* Stats */}
+                  <div className="grid grid-cols-3 gap-4 mb-4">
+                    <div className="bg-slate-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-slate-900 mb-1">
+                        {agent.score || 95}%
                       </div>
-                      <div className="flex flex-wrap gap-1">
-                        {match.agent.markets.slice(0, 3).map(market => (
-                          <Badge key={market} variant="secondary" className="text-xs">
-                            {market}
-                          </Badge>
-                        ))}
-                      </div>
+                      <div className="text-xs text-slate-600">Match Score</div>
                     </div>
+                    <div className="bg-slate-50 rounded-lg p-3 text-center">
+                      <div className="flex items-center justify-center gap-1 mb-1">
+                        <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                        <span className="text-2xl font-bold text-slate-900">
+                          {agent.rating || '4.9'}
+                        </span>
+                      </div>
+                      <div className="text-xs text-slate-600">Rating</div>
+                    </div>
+                    <div className="bg-slate-50 rounded-lg p-3 text-center">
+                      <div className="text-2xl font-bold text-slate-900 mb-1">
+                        {agent.agent?.markets?.length || 1}
+                      </div>
+                      <div className="text-xs text-slate-600">Markets</div>
+                    </div>
+                  </div>
+
+                  {/* Bio */}
+                  {agent.agent?.bio && (
+                    <p className="text-slate-700 mb-4 line-clamp-2">
+                      {agent.agent.bio}
+                    </p>
                   )}
 
                   {/* Specialties */}
-                  {match.agent?.specialties && match.agent.specialties.length > 0 && (
-                    <div className="mb-4">
-                      <div className="flex items-center gap-1 text-xs text-slate-600 mb-2">
-                        <Briefcase className="w-3 h-3" />
-                        <span>Specialties</span>
-                      </div>
-                      <div className="flex flex-wrap gap-1">
-                        {match.agent.specialties.slice(0, 2).map(spec => (
-                          <Badge key={spec} variant="secondary" className="text-xs">
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
+                  {agent.agent?.specialties && agent.agent.specialties.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {agent.agent.specialties.slice(0, 4).map((specialty, idx) => (
+                        <span
+                          key={idx}
+                          className="bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm font-medium"
+                        >
+                          {specialty}
+                        </span>
+                      ))}
                     </div>
                   )}
 
-                  {/* Bio */}
-                  {match.agent?.bio && (
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-3">{match.agent.bio}</p>
+                  {/* Match Reasons */}
+                  {agent.reasons && agent.reasons.length > 0 && (
+                    <div className="bg-emerald-50 rounded-lg p-4 mb-4 border border-emerald-200">
+                      <h4 className="font-semibold text-emerald-900 mb-2 flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4" />
+                        Why this match?
+                      </h4>
+                      <ul className="space-y-1">
+                        {agent.reasons.map((reason, idx) => (
+                          <li key={idx} className="text-sm text-emerald-800 flex items-center gap-2">
+                            <CheckCircle className="w-3 h-3" />
+                            {reason}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
                   )}
-                </div>
 
-                {/* Action */}
-                <div className="border-t border-slate-200 p-4 bg-gradient-to-r from-blue-50 to-emerald-50">
+                  {/* CTA */}
                   <Button
-                    onClick={() => handleEngage(match)}
-                    className="w-full bg-gradient-to-r from-blue-600 to-emerald-600 hover:from-blue-700 hover:to-emerald-700 text-white"
+                    onClick={() => handleEngage(agent)}
+                    disabled={engaging !== null}
+                    size="lg"
+                    className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg"
                   >
-                    Engage Agent
-                    <ArrowRight className="w-4 h-4 ml-2" />
+                    {engaging === agent.id ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Creating Deal Room...
+                      </>
+                    ) : (
+                      <>
+                        Engage {agent.full_name}
+                        <ArrowRight className="w-5 h-5 ml-2" />
+                      </>
+                    )}
                   </Button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            </div>
+          ))}
+        </div>
 
-        {/* Lock-in Info */}
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-          <h3 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
-            <Shield className="w-5 h-5" />
-            Exclusive Matching
-          </h3>
-          <p className="text-sm text-blue-800">
-            Once you engage an agent for this market, you'll work exclusively with them for this deal. 
-            This ensures focused attention and prevents conflicts of interest.
-          </p>
+        {/* Footer Info */}
+        <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-3xl mx-auto">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-blue-600" />
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 mb-2">What happens next?</h4>
+              <ul className="space-y-2 text-sm text-slate-700">
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span>You'll enter a secure deal room with your chosen agent</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span>Both parties sign mutual NDA for protection</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span>Share documents, communicate, and collaborate on deals</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span>All activity is logged and auditable</span>
+                </li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
