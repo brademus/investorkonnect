@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -115,6 +116,8 @@ function AgentOnboardingContent() {
 
     try {
       if (profile) {
+        console.log('[AgentOnboarding] 🎯 Final submit - setting v2 completion flags...');
+        
         await base44.entities.Profile.update(profile.id, {
           full_name: formData.full_name.trim(),
           phone: formData.phone.trim(),
@@ -127,8 +130,13 @@ function AgentOnboardingContent() {
             bio: formData.bio.trim(),
             verification_status: 'pending'
           },
-          onboarding_completed_at: new Date().toISOString()
+          // CRITICAL: Set v2 onboarding flags
+          user_role: 'agent',
+          onboarding_completed_at: new Date().toISOString(),
+          onboarding_version: 'v2'
         });
+        
+        console.log('[AgentOnboarding] ✅ v2 flags set');
       }
 
       await refresh();

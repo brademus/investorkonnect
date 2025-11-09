@@ -2,16 +2,16 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * CANONICAL PROFILE HOOK - Enhanced with Subscription Info
+ * CANONICAL PROFILE HOOK - Enhanced with v2 Onboarding Check
  * 
- * Single source of truth for current user + profile + subscription state.
+ * Single source of truth for current user + profile + onboarding + subscription state.
  * 
  * Returns:
  * - loading: boolean
  * - user: Base44 auth user object
  * - profile: Profile entity (canonical, 1:1 with user)
  * - role: 'investor' | 'agent' | 'admin' | 'member'
- * - onboarded: boolean (true if completed NEW onboarding)
+ * - onboarded: boolean (true if completed NEW v2 onboarding)
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
@@ -118,10 +118,15 @@ export function useCurrentProfile() {
           role = 'member';
         }
 
-        // STEP 4: Determine onboarded status
+        // STEP 4: Determine onboarded status (v2 only)
+        // CRITICAL: Only consider v2 onboarding as "complete"
         let onboarded = false;
         
-        if (profile?.onboarding_completed_at && profile?.user_role) {
+        if (
+          profile?.onboarding_version === 'v2' &&
+          profile?.onboarding_completed_at &&
+          profile?.user_role
+        ) {
           onboarded = true;
         }
 
@@ -159,9 +164,12 @@ export function useCurrentProfile() {
           subscriptionStatus === 'active' || 
           subscriptionStatus === 'trialing';
 
-        console.log('[useCurrentProfile] 💳 Subscription info:', {
-          plan: subscriptionPlan,
-          status: subscriptionStatus,
+        console.log('[useCurrentProfile] 📊 Profile state:', {
+          role,
+          onboarded,
+          onboarding_version: profile?.onboarding_version,
+          has_onboarding_completed_at: !!profile?.onboarding_completed_at,
+          subscription: subscriptionPlan,
           isPaid: isPaidSubscriber
         });
 

@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
-import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useWizard } from "@/components/WizardContext";
-import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Users, ArrowLeft, Shield, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -13,146 +11,41 @@ import { toast } from "sonner";
  * STEP 2: ROLE SELECTION
  * 
  * User chooses Investor or Agent.
- * If not logged in, handles OAuth callback and redirects to auth properly.
- * If logged in, updates profile and continues to onboarding.
+ * Flow: Map → Role → LOGIN → PostAuth → Onboarding
  * 
- * FIXES LOGIN LOOP:
- * - Detects OAuth code in URL and routes to AuthCallback if present
- * - Otherwise redirects to login with proper callback URL
+ * This page does NOT require auth.
+ * When user selects role, we trigger login with state+role params.
  */
-function RoleSelectionContent() {
+export default function RoleSelection() {
   const navigate = useNavigate();
   const { selectedState, setSelectedRole } = useWizard();
-  const { loading, user, profile, onboarded, role, refresh } = useCurrentProfile();
-  const [updating, setUpdating] = useState(false);
   const [selectedChoice, setSelectedChoice] = useState(null);
 
   useEffect(() => {
     document.title = "Choose Your Role - AgentVault";
   }, []);
 
-  // Handle authentication state and routing
-  useEffect(() => {
-    if (loading) return;
-
-    // Check if user is returning from OAuth with a code
-    const params = new URLSearchParams(window.location.search);
-    const hasOAuthCode = params.has("code");
-
-    if (!user) {
-      // Not logged in
-      if (hasOAuthCode) {
-        // We have an OAuth code - redirect to AuthCallback to finalize login
-        console.log('[RoleSelection] OAuth code detected, redirecting to AuthCallback');
-        const authCallbackUrl = createPageUrl("AuthCallback");
-        if (authCallbackUrl) {
-          navigate(authCallbackUrl + window.location.search, { replace: true });
-        } else {
-          // Fallback if no AuthCallback page exists
-          base44.auth.redirectToLogin(window.location.pathname);
-        }
-      } else {
-        // No OAuth code - start login flow
-        console.log('[RoleSelection] Not authenticated, redirecting to login');
-        const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
-        base44.auth.redirectToLogin(callbackUrl);
-      }
-      return;
-    }
-
-    // User is logged in - check if they're already onboarded
-    if (onboarded) {
-      console.log('[RoleSelection] User already onboarded, redirecting to dashboard');
-      // User already completed NEW onboarding - send to dashboard
-      if (role === 'investor') {
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      } else {
-        // Unknown role but onboarded - still send to dashboard
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      }
-      return;
-    }
-
-    // User is logged in but NOT onboarded
-    // If they already have a role selected, send them to onboarding
-    if (profile?.user_role && profile.user_role !== 'member') {
-      console.log('[RoleSelection] Role already set but not onboarded, redirecting to onboarding');
-      if (profile.user_role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (profile.user_role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      }
-      return;
-    }
-
-    // Otherwise stay on RoleSelection to let them choose
-
-  }, [loading, user, profile, onboarded, role, navigate]);
-
-  const handleRoleSelection = async (chosenRole) => {
+  const handleRoleSelection = (chosenRole) => {
+    console.log('[RoleSelection] 🎯 Role selected:', chosenRole);
+    
     setSelectedChoice(chosenRole);
-    setUpdating(true);
+    setSelectedRole(chosenRole);
 
-    try {
-      // Save to wizard context
-      setSelectedRole(chosenRole);
-
-      if (!user) {
-        // Not logged in - redirect to Base44 login
-        toast.info("Please sign in to continue");
-        base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
-        return;
-      }
-
-      // Logged in - update profile with role
-      if (profile) {
-        await base44.entities.Profile.update(profile.id, {
-          user_role: chosenRole
-        });
-      } else {
-        // Create profile if doesn't exist
-        await base44.entities.Profile.create({
-          user_id: user.id,
-          email: user.email,
-          user_role: chosenRole,
-          role: 'member',
-          target_state: selectedState || null
-        });
-      }
-
-      // Refresh profile to get updated role
-      await refresh();
-
-      toast.success(`You're now registered as an ${chosenRole}!`);
-
-      // Route to role-specific onboarding
-      if (chosenRole === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"));
-      } else {
-        navigate(createPageUrl("AgentOnboarding"));
-      }
-
-    } catch (error) {
-      console.error('[RoleSelection] Error:', error);
-      toast.error("Failed to save role. Please try again.");
-      setUpdating(false);
-      setSelectedChoice(null);
+    // Build callback URL with state + role params
+    // This way PostAuth knows what the user intended
+    const params = new URLSearchParams();
+    if (selectedState) {
+      params.set('state', selectedState);
     }
+    params.set('intendedRole', chosenRole);
+    
+    const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
+    
+    console.log('[RoleSelection] 🔐 Triggering login with callback:', callbackUrl);
+    
+    // Trigger login - user will come back to PostAuth with these params
+    base44.auth.redirectToLogin(callbackUrl);
   };
-
-  // Show loading while checking auth state
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center p-4">
@@ -191,10 +84,10 @@ function RoleSelectionContent() {
           {/* Investor Card */}
           <button
             onClick={() => handleRoleSelection('investor')}
-            disabled={updating}
+            disabled={selectedChoice !== null}
             className={`bg-white rounded-3xl p-8 border-3 transition-all group text-left shadow-xl hover:shadow-2xl ${
               selectedChoice === 'investor' ? 'border-blue-600 scale-105' : 'border-slate-200 hover:border-blue-400'
-            } ${updating && selectedChoice !== 'investor' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${selectedChoice && selectedChoice !== 'investor' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="w-16 h-16 bg-blue-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-blue-200 group-hover:scale-110 transition-all">
               <TrendingUp className="w-8 h-8 text-blue-600" />
@@ -228,10 +121,10 @@ function RoleSelectionContent() {
             </ul>
 
             <div className="flex items-center justify-center gap-2 text-blue-600 font-semibold text-lg">
-              {updating && selectedChoice === 'investor' ? (
+              {selectedChoice === 'investor' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Setting up...
+                  Redirecting to sign in...
                 </>
               ) : (
                 'Select Investor →'
@@ -242,10 +135,10 @@ function RoleSelectionContent() {
           {/* Agent Card */}
           <button
             onClick={() => handleRoleSelection('agent')}
-            disabled={updating}
+            disabled={selectedChoice !== null}
             className={`bg-white rounded-3xl p-8 border-3 transition-all group text-left shadow-xl hover:shadow-2xl ${
               selectedChoice === 'agent' ? 'border-emerald-600 scale-105' : 'border-slate-200 hover:border-emerald-400'
-            } ${updating && selectedChoice !== 'agent' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            } ${selectedChoice && selectedChoice !== 'agent' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
             <div className="w-16 h-16 bg-emerald-100 rounded-xl flex items-center justify-center mb-6 group-hover:bg-emerald-200 group-hover:scale-110 transition-all">
               <Users className="w-8 h-8 text-emerald-600" />
@@ -279,10 +172,10 @@ function RoleSelectionContent() {
             </ul>
 
             <div className="flex items-center justify-center gap-2 text-emerald-600 font-semibold text-lg">
-              {updating && selectedChoice === 'agent' ? (
+              {selectedChoice === 'agent' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Setting up...
+                  Redirecting to sign in...
                 </>
               ) : (
                 'Select Agent →'
@@ -293,13 +186,5 @@ function RoleSelectionContent() {
         </div>
       </div>
     </div>
-  );
-}
-
-export default function RoleSelection() {
-  return (
-    <StepGuard requiredStep={1}> {/* Requires MAP */}
-      <RoleSelectionContent />
-    </StepGuard>
   );
 }

@@ -340,34 +340,24 @@ function InvestorOnboardingContent() {
     try {
       await saveProgress();
 
-      console.log('[InvestorOnboarding] 🎯 Final submit - setting ALL completion flags...');
+      console.log('[InvestorOnboarding] 🎯 Final submit - setting v2 completion flags...');
 
-      // CRITICAL: Set BOTH new flags AND all possible legacy flags
-      // This ensures any old checks in the codebase will also pass
+      // CRITICAL: Set v2 onboarding flags
       await base44.entities.Profile.update(profile.id, {
-        // NEW onboarding flags (required for isInvestorReady)
+        // NEW onboarding flags (v2)
         user_role: 'investor',
         onboarding_completed_at: new Date().toISOString(),
-        
-        // Legacy flags for backward compatibility
-        // Set all possible "profile complete" flags to true
-        investor_profile_complete: true,
-        intake_completed: true,
-        profile_complete: true,
-        onboarding_complete: true,
-        has_completed_intake: true,
+        onboarding_version: 'v2',
         
         // Set target state if available
         target_state: formData.primary_state || selectedState,
         markets: [formData.primary_state || selectedState].filter(Boolean)
       });
 
-      console.log('[InvestorOnboarding] ✅ All flags set:', {
+      console.log('[InvestorOnboarding] ✅ v2 flags set:', {
         user_role: 'investor',
         onboarding_completed_at: 'set',
-        investor_profile_complete: true,
-        intake_completed: true,
-        profile_complete: true
+        onboarding_version: 'v2'
       });
 
       // Force profile refresh to load new data
@@ -535,4 +525,3 @@ export default function InvestorOnboarding() {
     </StepGuard>
   );
 }
-
