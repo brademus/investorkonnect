@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle } from "lucide-react";
+import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
@@ -89,6 +90,15 @@ export default function Pricing() {
   const blockingStep = getBlockingStep();
 
   const handleGetStarted = (plan) => {
+    console.log('[Pricing] 🎯 handleGetStarted called:', { plan, loading, user: !!user, role, isInvestorReady });
+    
+    // IMPORTANT: Wait for loading to complete before checking auth
+    if (loading) {
+      console.log('[Pricing] ⏳ Still loading, please wait...');
+      toast.info("Loading your account...");
+      return;
+    }
+    
     // Enterprise always goes to contact
     if (plan === 'enterprise') {
       navigate(createPageUrl("Contact"));
@@ -96,14 +106,14 @@ export default function Pricing() {
     }
 
     // Check if authenticated
-    const isAuthenticated = !!user;
-    
-    // Not authenticated - redirect to login
-    if (!isAuthenticated) {
+    if (!user) {
+      console.log('[Pricing] ❌ Not authenticated, redirecting to login');
       toast.info("Please sign in to continue");
       base44.auth.redirectToLogin(window.location.pathname);
       return;
     }
+
+    console.log('[Pricing] ✅ User authenticated:', user.email);
 
     // For investors, check if fully ready
     if (role === 'investor') {
@@ -133,16 +143,19 @@ export default function Pricing() {
         return;
       }
 
-      console.log('[Pricing] ✅ Investor is ready, proceeding to checkout for plan:', plan);
+      console.log('[Pricing] ✅ Investor ready, opening checkout:', plan);
       
-      // Investor is ready - proceed to checkout
-      window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
+      // Investor is ready - open checkout in same window
+      const checkoutUrl = `${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`;
+      console.log('[Pricing] 🔗 Checkout URL:', checkoutUrl);
+      
+      window.location.href = checkoutUrl;
       return;
     }
 
     // For other roles (agents, etc.) - allow checkout
     console.log('[Pricing] Agent or other role, proceeding to checkout');
-    window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
+    window.location.href = `${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`;
   };
 
   // Get banner message based on what's blocking
@@ -422,9 +435,19 @@ export default function Pricing() {
                           : "bg-slate-900 hover:bg-slate-800"
                       }`}
                       onClick={() => handleGetStarted(tier.planId)}
+                      disabled={loading}
                     >
-                      {tier.cta}
-                      <ArrowRight className="w-4 h-4 ml-2" />
+                      {loading ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        <>
+                          {tier.cta}
+                          <ArrowRight className="w-4 h-4 ml-2" />
+                        </>
+                      )}
                     </Button>
                   )}
                 </div>
@@ -449,7 +472,7 @@ export default function Pricing() {
           </div>
 
           {/* Info Box for unauthenticated users */}
-          {!loading && !role && (
+          {!loading && !user && (
             <div className="mt-12 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
                 <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
@@ -571,9 +594,19 @@ export default function Pricing() {
             size="lg" 
             className="bg-blue-600 hover:bg-blue-700 text-lg px-8 h-14"
             onClick={() => handleGetStarted('starter')}
+            disabled={loading}
           >
-            Get Started Free
-            <ArrowRight className="w-5 h-5 ml-2" />
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                Get Started Free
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </>
+            )}
           </Button>
         </div>
       </section>
