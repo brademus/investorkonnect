@@ -1,4 +1,3 @@
-
 import Stripe from 'npm:stripe@14.11.0';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
@@ -203,7 +202,7 @@ Deno.serve(async (req) => {
           console.log('✅ Created new Stripe customer:', customerId);
           
           // Save customer ID to profile
-          await base44.entities.Profile.update(profile.id, {
+          await base44.asServiceRole.entities.Profile.update(profile.id, {
             stripe_customer_id: customerId
           });
         }
