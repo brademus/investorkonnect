@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -7,11 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, Shield, FileText, TrendingUp, CheckCircle,
-  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail
+  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X
 } from "lucide-react";
+import { useState } from "react";
 
 export default function AgentHome() {
   const { profile, loading } = useCurrentProfile();
+  const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
 
   if (loading) {
     return (
@@ -25,6 +26,12 @@ export default function AgentHome() {
   const hasNDA = profile?.nda_accepted;
   const agentData = profile?.agent || {};
   const docs = agentData.documents || [];
+  
+  // Check if license is missing or unverified
+  const needsLicense = 
+    !agentData.license_number || 
+    !agentData.license_state || 
+    agentData.verification_status !== 'verified';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
@@ -73,6 +80,38 @@ export default function AgentHome() {
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* License Banner - Show if license missing/unverified */}
+        {needsLicense && !dismissedLicenseBanner && (
+          <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 relative">
+            <button
+              onClick={() => setDismissedLicenseBanner(true)}
+              className="absolute top-4 right-4 text-blue-600 hover:text-blue-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <div className="flex items-start gap-4 pr-8">
+              <Shield className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="font-bold text-blue-900 mb-2">Verify your real estate license</h3>
+                <p className="text-blue-800 mb-4">
+                  {!agentData.license_number ? 
+                    "Add your license number and state to unlock full credibility and future verification." :
+                    "Your license is pending verification. We'll notify you once verified."
+                  }
+                </p>
+                <Link to={createPageUrl("AccountProfile")}>
+                  <Button className="bg-blue-600 hover:bg-blue-700">
+                    <Shield className="w-4 h-4 mr-2" />
+                    {!agentData.license_number ? 'Add License' : 'Update License'}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* NDA Required Banner */}
         {!hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
@@ -124,7 +163,7 @@ export default function AgentHome() {
                 <Building className="w-5 h-5 text-emerald-600" />
                 <h2 className="text-xl font-bold text-slate-900">My Profile</h2>
               </div>
-              <Link to={createPageUrl("AgentProfile")}>
+              <Link to={createPageUrl("AccountProfile")}>
                 <Button variant="outline" size="sm">Edit</Button>
               </Link>
             </div>
@@ -141,6 +180,25 @@ export default function AgentHome() {
                 <div>
                   <p className="text-sm text-slate-600 mb-1">License Number</p>
                   <p className="font-semibold text-slate-900">{agentData.license_number}</p>
+                  {agentData.license_state && (
+                    <Badge variant="secondary" className="mt-1">
+                      {agentData.license_state}
+                    </Badge>
+                  )}
+                </div>
+              )}
+              
+              {agentData.experience_years !== undefined && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Experience</p>
+                  <p className="font-semibold text-slate-900">{agentData.experience_years} years</p>
+                </div>
+              )}
+              
+              {agentData.investor_clients_count !== undefined && (
+                <div>
+                  <p className="text-sm text-slate-600 mb-1">Investor Clients</p>
+                  <p className="font-semibold text-slate-900">{agentData.investor_clients_count}+</p>
                 </div>
               )}
               
@@ -148,12 +206,15 @@ export default function AgentHome() {
                 <div>
                   <p className="text-sm text-slate-600 mb-2">Markets</p>
                   <div className="flex flex-wrap gap-2">
-                    {agentData.markets.map((market, idx) => (
+                    {agentData.markets.slice(0, 5).map((market, idx) => (
                       <Badge key={idx} variant="secondary">
                         <MapPin className="w-3 h-3 mr-1" />
                         {market}
                       </Badge>
                     ))}
+                    {agentData.markets.length > 5 && (
+                      <Badge variant="secondary">+{agentData.markets.length - 5} more</Badge>
+                    )}
                   </div>
                 </div>
               )}
@@ -162,18 +223,21 @@ export default function AgentHome() {
                 <div>
                   <p className="text-sm text-slate-600 mb-2">Specialties</p>
                   <div className="flex flex-wrap gap-2">
-                    {agentData.specialties.map((spec, idx) => (
+                    {agentData.specialties.slice(0, 3).map((spec, idx) => (
                       <Badge key={idx} variant="secondary">{spec}</Badge>
                     ))}
+                    {agentData.specialties.length > 3 && (
+                      <Badge variant="secondary">+{agentData.specialties.length - 3} more</Badge>
+                    )}
                   </div>
                 </div>
               )}
 
-              {(!agentData.brokerage && !agentData.license_number && !agentData.markets) && (
+              {(!agentData.markets || agentData.markets.length === 0) && (
                 <div className="text-center py-8">
                   <Building className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-600 mb-3">Complete your agent profile</p>
-                  <Link to={createPageUrl("AgentProfile")}>
+                  <Link to={createPageUrl("AccountProfile")}>
                     <Button size="sm">Edit Profile</Button>
                   </Link>
                 </div>
@@ -197,7 +261,7 @@ export default function AgentHome() {
               <div className="text-center py-8">
                 <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                 <p className="text-slate-600 mb-3">Complete your profile to see investor matches</p>
-                <Link to={createPageUrl("AgentProfile")}>
+                <Link to={createPageUrl("AccountProfile")}>
                   <Button size="sm" variant="outline">Complete Profile</Button>
                 </Link>
               </div>

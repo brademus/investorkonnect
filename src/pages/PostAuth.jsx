@@ -12,7 +12,7 @@ import { Loader2 } from "lucide-react";
  * 
  * This page:
  * 1. Loads user + profile
- * 2. Checks if NEW onboarding (v2) is complete
+ * 2. Checks if NEW onboarding (v2 or v2-agent) is complete
  * 3. Routes appropriately:
  *    - No NEW onboarding → Send to onboarding
  *    - Has NEW onboarding → Send to Dashboard
@@ -71,13 +71,24 @@ export default function PostAuth() {
         
         console.log('[PostAuth] Effective role:', effectiveRole);
 
-        // STEP 4: Check if NEW onboarding (v2) is complete
-        const hasNewOnboarding = 
-          profile?.onboarding_version === 'v2' &&
-          !!profile?.onboarding_completed_at &&
-          !!profile?.user_role;
+        // STEP 4: Check if NEW onboarding is complete (role-specific versions)
+        let hasNewOnboarding = false;
         
-        console.log('[PostAuth] Has NEW onboarding (v2):', hasNewOnboarding);
+        if (effectiveRole === 'investor') {
+          // Investor needs v2 onboarding
+          hasNewOnboarding = 
+            profile?.onboarding_version === 'v2' &&
+            !!profile?.onboarding_completed_at &&
+            profile?.user_role === 'investor';
+        } else if (effectiveRole === 'agent') {
+          // Agent needs v2-agent onboarding
+          hasNewOnboarding = 
+            profile?.onboarding_version === 'v2-agent' &&
+            !!profile?.onboarding_completed_at &&
+            profile?.user_role === 'agent';
+        }
+        
+        console.log('[PostAuth] Has NEW onboarding:', hasNewOnboarding, '(version:', profile?.onboarding_version, ')');
 
         // STEP 5: Route based on onboarding status
         if (!hasNewOnboarding) {
