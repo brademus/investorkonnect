@@ -11,7 +11,7 @@ import { base44 } from '@/api/base44Client';
  * - user: Base44 auth user object
  * - profile: Profile entity (canonical, 1:1 with user)
  * - role: 'investor' | 'agent' | 'admin' | 'member'
- * - onboarded: boolean (true if completed NEW v2 onboarding)
+ * - onboarded: boolean (true if completed NEW v2/v2-agent onboarding)
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
@@ -118,16 +118,28 @@ export function useCurrentProfile() {
           role = 'member';
         }
 
-        // STEP 4: Determine onboarded status (v2 only)
-        // CRITICAL: Only consider v2 onboarding as "complete"
+        // STEP 4: Determine onboarded status (v2 for investor, v2-agent for agent)
+        // CRITICAL: Check role-specific onboarding version
         let onboarded = false;
         
-        if (
-          profile?.onboarding_version === 'v2' &&
-          profile?.onboarding_completed_at &&
-          profile?.user_role
-        ) {
-          onboarded = true;
+        if (role === 'investor') {
+          // Investor must have v2 onboarding
+          if (
+            profile?.onboarding_version === 'v2' &&
+            profile?.onboarding_completed_at &&
+            profile?.user_role === 'investor'
+          ) {
+            onboarded = true;
+          }
+        } else if (role === 'agent') {
+          // Agent must have v2-agent onboarding
+          if (
+            profile?.onboarding_version === 'v2-agent' &&
+            profile?.onboarding_completed_at &&
+            profile?.user_role === 'agent'
+          ) {
+            onboarded = true;
+          }
         }
 
         // STEP 5: NDA status
