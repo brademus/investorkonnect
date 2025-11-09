@@ -1,0 +1,87 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { ensureProfile } from './ensureProfile.js';
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({
+        ok: false,
+        error: "not_authenticated"
+      }, {
+        status: 401,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+
+    // Extract IP address
+    const getHeader = (key) => {
+      return req.headers.get(key) || '';
+    };
+    
+    const xForwardedFor = getHeader('x-forwarded-for');
+    const ip = (xForwardedFor && xForwardedFor.split(',')[0].trim()) || 
+               getHeader('cf-connecting-ip') || 
+               getHeader('x-real-ip') || 
+               'unknown';
+
+    // USE SHARED UPSERT HELPER - Ensures profile exists
+    let profile;
+    try {
+      profile = await ensureProfile(base44, user);
+    } catch (ensureError) {
+      console.error('ndaAccept: ensureProfile failed', ensureError);
+      return Response.json({
+        ok: false,
+        error: "Failed to load profile. Please refresh and try again."
+      }, {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store'
+        }
+      });
+    }
+
+    // Update profile with NDA acceptance
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
+      nda_accepted: true,
+      nda_accepted_at: new Date().toISOString(),
+      nda_version: profile.nda_version || "v1.0",
+      nda_ip: ip
+    });
+
+    console.log('✅ NDA accepted by:', user.email);
+
+    return Response.json({
+      ok: true,
+      accepted: true,
+      at: new Date().toISOString(),
+      version: profile.nda_version || "v1.0"
+    }, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      }
+    });
+
+  } catch (error) {
+    console.error('NDA accept error:', error);
+    return Response.json({
+      ok: false,
+      error: error.message
+    }, {
+      status: 500,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-store'
+      }
+    });
+  }
+});
