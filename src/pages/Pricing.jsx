@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -17,9 +16,12 @@ export default function Pricing() {
   // Use unified profile hook
   const { 
     loading, 
+    user,
+    profile,
     role, 
     onboarded, 
     hasNDA, 
+    kycStatus,
     kycVerified,
     isInvestorReady 
   } = useCurrentProfile();
@@ -36,14 +38,51 @@ export default function Pricing() {
     metaDesc.content = "Choose the AgentVault plan that fits your investment needs. Starter, Pro, and Enterprise plans with 14-day free trial.";
   }, []);
 
+  // DEBUG: Log readiness values on every render
+  useEffect(() => {
+    if (!loading && user) {
+      console.log('[Pricing] 🔍 DEBUG - Investor Readiness Check:', {
+        user_id: user.id,
+        email: user.email,
+        role,
+        onboarded,
+        hasNDA,
+        kycStatus,
+        kycVerified,
+        isInvestorReady,
+        profile_fields: profile ? {
+          user_role: profile.user_role,
+          onboarding_completed_at: profile.onboarding_completed_at,
+          nda_accepted: profile.nda_accepted,
+          kyc_status: profile.kyc_status,
+          // Legacy flags (if they exist)
+          investor_profile_complete: profile.investor_profile_complete,
+          intake_completed: profile.intake_completed,
+          profile_complete: profile.profile_complete,
+          onboarding_complete: profile.onboarding_complete
+        } : null
+      });
+    }
+  }, [loading, user, profile, role, onboarded, hasNDA, kycStatus, kycVerified, isInvestorReady]);
+
   // Determine what's blocking investor (if anything)
   const getBlockingStep = () => {
     if (role !== 'investor') return null;
     
-    if (!onboarded) return 'onboarding';
-    if (!kycVerified) return 'verification';
-    if (!hasNDA) return 'nda';
+    if (!onboarded) {
+      console.log('[Pricing] 🚫 Blocked: onboarding not complete');
+      return 'onboarding';
+    }
+    if (!kycVerified) {
+      console.log('[Pricing] 🚫 Blocked: KYC not verified (status:', kycStatus, ')');
+      return 'verification';
+    }
+    if (!hasNDA) {
+      console.log('[Pricing] 🚫 Blocked: NDA not accepted');
+      return 'nda';
+    }
     
+    console.log('[Pricing] ✅ Not blocked - investor is ready!');
     return null; // All clear!
   };
 
@@ -57,7 +96,7 @@ export default function Pricing() {
     }
 
     // Check if authenticated
-    const isAuthenticated = !!role;
+    const isAuthenticated = !!user;
     
     // Not authenticated - redirect to login
     if (!isAuthenticated) {
@@ -69,6 +108,8 @@ export default function Pricing() {
     // For investors, check if fully ready
     if (role === 'investor') {
       if (!isInvestorReady) {
+        console.log('[Pricing] ❌ Investor not ready, routing to:', blockingStep);
+        
         // Route to the appropriate missing step
         if (!onboarded) {
           toast.error("Please complete your investor profile first", {
@@ -92,12 +133,15 @@ export default function Pricing() {
         return;
       }
 
+      console.log('[Pricing] ✅ Investor is ready, proceeding to checkout for plan:', plan);
+      
       // Investor is ready - proceed to checkout
       window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
       return;
     }
 
     // For other roles (agents, etc.) - allow checkout
+    console.log('[Pricing] Agent or other role, proceeding to checkout');
     window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
   };
 

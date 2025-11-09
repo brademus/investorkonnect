@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -106,16 +107,38 @@ function VerifyContent() {
 
             if (response.data?.ok) {
               const kycStatus = response.data.kyc_status;
-              console.log('[Verify] ✅ Profile updated:', kycStatus);
+              console.log('[Verify] ✅ Backend updated status:', kycStatus);
+              
+              // ALSO update profile directly to ensure all flags are set
+              try {
+                const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+                if (profiles.length > 0) {
+                  await base44.entities.Profile.update(profiles[0].id, {
+                    kyc_status: kycStatus,
+                    kyc_verified: kycStatus === 'approved',
+                    kyc_inquiry_id: inquiryId,
+                    kyc_last_checked: new Date().toISOString(),
+                    // Legacy flags for backward compatibility
+                    verification_complete: kycStatus === 'approved',
+                    identity_verified: kycStatus === 'approved'
+                  });
+                  console.log('[Verify] ✅ Profile updated with verification flags');
+                }
+              } catch (updateErr) {
+                console.warn('[Verify] ⚠️ Could not update profile directly:', updateErr);
+                // Continue anyway since backend function may have done it
+              }
               
               if (kycStatus === 'approved') {
                 toast.success('Identity verified successfully!');
+                
+                // Force profile refresh
                 await refresh();
                 
-                // Small delay for user to see success message
-                setTimeout(() => {
-                  navigate(createPageUrl("NDA"), { replace: true });
-                }, 1500);
+                // Small delay to ensure state is updated
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                navigate(createPageUrl("NDA"), { replace: true });
               } else if (kycStatus === 'needs_review') {
                 toast.info('Verification under review. We\'ll notify you when complete.');
                 navigate(createPageUrl("Dashboard"), { replace: true });

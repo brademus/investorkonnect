@@ -340,22 +340,49 @@ function InvestorOnboardingContent() {
     try {
       await saveProgress();
 
-      // CRITICAL: Mark onboarding as complete AND ensure user_role is set
+      console.log('[InvestorOnboarding] 🎯 Final submit - setting ALL completion flags...');
+
+      // CRITICAL: Set BOTH new flags AND all possible legacy flags
+      // This ensures any old checks in the codebase will also pass
       await base44.entities.Profile.update(profile.id, {
-        user_role: 'investor', // MUST set this for isInvestorReady to work
-        onboarding_completed_at: new Date().toISOString()
+        // NEW onboarding flags (required for isInvestorReady)
+        user_role: 'investor',
+        onboarding_completed_at: new Date().toISOString(),
+        
+        // Legacy flags for backward compatibility
+        // Set all possible "profile complete" flags to true
+        investor_profile_complete: true,
+        intake_completed: true,
+        profile_complete: true,
+        onboarding_complete: true,
+        has_completed_intake: true,
+        
+        // Set target state if available
+        target_state: formData.primary_state || selectedState,
+        markets: [formData.primary_state || selectedState].filter(Boolean)
       });
 
-      console.log('[InvestorOnboarding] ✅ Onboarding complete - user_role and timestamp set');
+      console.log('[InvestorOnboarding] ✅ All flags set:', {
+        user_role: 'investor',
+        onboarding_completed_at: 'set',
+        investor_profile_complete: true,
+        intake_completed: true,
+        profile_complete: true
+      });
 
+      // Force profile refresh to load new data
       await refresh();
+      
+      // Small delay to ensure state is updated
+      await new Promise(resolve => setTimeout(resolve, 300));
+
       toast.success("Profile completed! Let's verify your identity.");
       
       // Navigate to verification
       navigate(createPageUrl("Verify"));
 
     } catch (error) {
-      console.error('[InvestorOnboarding] Submit error:', error);
+      console.error('[InvestorOnboarding] ❌ Submit error:', error);
       toast.error("Failed to save. Please try again.");
       setSaving(false);
     }
@@ -508,3 +535,4 @@ export default function InvestorOnboarding() {
     </StepGuard>
   );
 }
+

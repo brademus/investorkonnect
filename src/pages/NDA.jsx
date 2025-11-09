@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,7 +19,7 @@ import { toast } from "sonner";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { loading, hasNDA, refresh } = useCurrentProfile();
+  const { loading, hasNDA, refresh, profile } = useCurrentProfile(); // Destructure profile
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
@@ -43,7 +44,7 @@ function NDAContent() {
       return;
     }
 
-    console.log('[NDA] Accepting NDA...');
+    console.log('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
 
@@ -54,17 +55,43 @@ function NDAContent() {
       console.log('[NDA] Response:', response.data);
       
       if (response.data?.ok) {
-        console.log('[NDA] ✅ NDA accepted successfully');
+        console.log('[NDA] ✅ NDA accepted by backend');
+        
+        // ALSO update profile directly to ensure flag is set
+        // (in case backend function doesn't update all necessary fields)
+        try {
+          if (profile && profile.user_id) { // Ensure profile and user_id are available
+            const profiles = await base44.entities.Profile.filter({ user_id: profile.user_id });
+            if (profiles.length > 0) {
+              await base44.entities.Profile.update(profiles[0].id, {
+                nda_accepted: true,
+                nda_accepted_at: new Date().toISOString(),
+                nda_version: 'v1.0',
+                // Legacy flag for backward compatibility
+                nda_complete: true
+              });
+              console.log('[NDA] ✅ Profile updated with NDA flags');
+            } else {
+              console.warn('[NDA] ⚠️ No profile found for user_id:', profile.user_id, 'to update directly.');
+            }
+          } else {
+            console.warn('[NDA] ⚠️ Profile or user_id not available to update directly.');
+          }
+        } catch (updateErr) {
+          console.warn('[NDA] ⚠️ Could not update profile directly:', updateErr);
+          // Continue anyway since backend function may have done it
+        }
+        
         toast.success("NDA accepted successfully!");
         
-        // Refresh profile to get updated NDA status
+        // Force profile refresh to load new data
         console.log('[NDA] Refreshing profile...');
         await refresh();
         
         // Small delay to ensure state is updated
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Navigate to Dashboard (both investors and agents)
+        // Navigate to Dashboard
         console.log('[NDA] Navigating to Dashboard...');
         navigate(createPageUrl("Dashboard"), { replace: true });
       } else {
