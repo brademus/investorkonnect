@@ -11,6 +11,8 @@ import { CheckCircle, Loader2, ArrowRight, AlertCircle } from "lucide-react";
  * After successful Stripe checkout, user lands here via /BillingSuccess?session_id=...
  * We sync their subscription from Stripe to our database, show success for 2-3 seconds,
  * then redirect to Dashboard.
+ * 
+ * NEW: For READY investors, also triggers AI matching after subscription sync
  */
 export default function BillingSuccess() {
   const navigate = useNavigate();
@@ -19,6 +21,7 @@ export default function BillingSuccess() {
   
   const [state, setState] = useState({
     syncing: true,
+    matching: false,
     error: null,
     redirecting: false
   });
@@ -64,8 +67,43 @@ export default function BillingSuccess() {
           // Force profile refresh to load new subscription data
           await refresh();
           
+          // NEW: For READY investors, trigger AI matching
+          if (profile.user_role === 'investor') {
+            console.log('[BillingSuccess] 🧠 Investor detected, checking if ready for matching...');
+            
+            const isOnboarded = 
+              profile.onboarding_version === 'v2' &&
+              profile.onboarding_completed_at;
+            
+            const isKYCVerified = profile.kyc_status === 'approved';
+            const hasNDA = profile.nda_accepted;
+            
+            if (isOnboarded && isKYCVerified && hasNDA) {
+              console.log('[BillingSuccess] ✅ Investor is READY, triggering AI matching...');
+              setState(prev => ({ ...prev, syncing: false, matching: true }));
+              
+              try {
+                const matchResponse = await base44.functions.invoke('matchInvestor');
+                console.log('[BillingSuccess] 📊 Match response:', matchResponse.data);
+                
+                if (matchResponse.data?.matched) {
+                  console.log('[BillingSuccess] ✅ Investor matched to agent:', matchResponse.data.agentId);
+                  console.log('[BillingSuccess] Score:', matchResponse.data.score);
+                }
+                
+                // Force another refresh to load match data
+                await refresh();
+              } catch (matchErr) {
+                console.error('[BillingSuccess] ⚠️ Matching failed:', matchErr);
+                // Don't block on match failure
+              }
+            } else {
+              console.log('[BillingSuccess] ⚠️ Investor not ready for matching (onboarded:', isOnboarded, 'kyc:', isKYCVerified, 'nda:', hasNDA, ')');
+            }
+          }
+          
           // Show success message for 2-3 seconds
-          setState({ syncing: false, error: null, redirecting: false });
+          setState({ syncing: false, matching: false, error: null, redirecting: false });
           
           // Wait 2.5 seconds, then redirect
           setTimeout(() => {
@@ -80,7 +118,7 @@ export default function BillingSuccess() {
         } else {
           console.error('[BillingSuccess] ❌ Sync failed:', response.data);
           const errorMsg = response.data?.message || "Failed to sync subscription";
-          setState({ syncing: false, error: errorMsg, redirecting: false });
+          setState({ syncing: false, matching: false, error: errorMsg, redirecting: false });
           
           // Still refresh profile in case webhook already updated it
           try {
@@ -97,7 +135,8 @@ export default function BillingSuccess() {
       } catch (err) {
         console.error('[BillingSuccess] ❌ Error syncing:', err);
         setState({ 
-          syncing: false, 
+          syncing: false,
+          matching: false,
           error: "Could not sync subscription. Your payment was successful but we couldn't update your account. Please refresh the page.", 
           redirecting: false 
         });
@@ -138,7 +177,24 @@ export default function BillingSuccess() {
             Payment Successful!
           </h2>
           <p className="text-slate-600 leading-relaxed">
-            We're updating your subscription and redirecting you to your dashboard...
+            We're updating your subscription...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Matching state
+  if (state.matching) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl border border-blue-200 p-12 text-center">
+          <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-6" />
+          <h2 className="text-2xl font-bold text-slate-900 mb-3">
+            Finding Your Perfect Agent Match
+          </h2>
+          <p className="text-slate-600 leading-relaxed">
+            Our AI is analyzing your profile and matching you with the best investor-friendly agents in your market...
           </p>
         </div>
       </div>
