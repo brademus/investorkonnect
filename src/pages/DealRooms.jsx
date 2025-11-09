@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
@@ -10,12 +10,16 @@ import VerifyFirstModal from "@/components/VerifyFirstModal";
 import { useQuery } from "@tanstack/react-query";
 import { 
   Shield, Users, Lock, FileText, 
-  Plus, MessageCircle, Loader2, AlertCircle
+  Plus, MessageCircle, Loader2, AlertCircle, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * DEAL ROOMS - Gated behind NEW onboarding
+ */
 export default function DealRooms() {
   const navigate = useNavigate();
+  const { loading: profileLoading, role, onboarded } = useCurrentProfile();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
   const [showVerifyModal, setShowVerifyModal] = useState(false);
@@ -23,9 +27,23 @@ export default function DealRooms() {
   const [kycVerified, setKycVerified] = useState(false);
   const [user, setUser] = useState(null);
 
+  // GATE: Redirect to onboarding if investor not onboarded
   useEffect(() => {
-    checkAuthAndAccess();
-  }, []);
+    if (profileLoading) return;
+
+    if (role === 'investor' && !onboarded) {
+      console.log('[DealRooms] 🚫 Investor not onboarded, redirecting');
+      toast.error('Please complete your investor profile first');
+      navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      return;
+    }
+  }, [profileLoading, role, onboarded, navigate]);
+
+  useEffect(() => {
+    if (!profileLoading && onboarded) {
+      checkAuthAndAccess();
+    }
+  }, [profileLoading, onboarded]);
 
   const checkAuthAndAccess = async () => {
     try {
@@ -45,7 +63,6 @@ export default function DealRooms() {
       const profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
       if (profiles.length === 0) {
         setLoading(false);
-        // Optionally, handle the case where a user has no profile
         toast.error("User profile not found. Please contact support.");
         return;
       }
@@ -81,15 +98,13 @@ export default function DealRooms() {
     setShowNDAModal(false);
     setNdaAccepted(true);
     toast.success("You can now access deal rooms!");
-    // After NDA is accepted, we might want to update the profile state in the backend
-    // For now, assuming the modal handles backend update
   };
 
   // Only load deals if KYC + NDA accepted
   const { data: deals, isLoading: dealsLoading } = useQuery({
-    queryKey: ['deals', user?.id], // Use user.id for query key to ensure refetch on user change
+    queryKey: ['deals', user?.id],
     queryFn: async () => {
-      if (!user?.id) return []; // Should not happen with enabled condition, but good for type safety
+      if (!user?.id) return [];
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       if (profiles.length === 0) return [];
       
@@ -98,11 +113,20 @@ export default function DealRooms() {
         participants: { $in: [profile.id] }
       }, '-updated_date');
     },
-    enabled: !!user && kycVerified && ndaAccepted,
+    enabled: !!user && kycVerified && ndaAccepted && onboarded,
     initialData: []
   });
 
-  if (loading) {
+  if (profileLoading || loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+      </div>
+    );
+  }
+
+  // If not onboarded, don't show anything (redirect happens in useEffect)
+  if (!onboarded) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />

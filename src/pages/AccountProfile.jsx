@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,11 +12,18 @@ import { User, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
+/**
+ * ACCOUNT PROFILE EDITOR
+ * 
+ * Mini profile form for basic info (name, phone, company).
+ * NOT the full onboarding - after save, if investor not onboarded,
+ * they must be sent to NEW InvestorOnboarding.
+ */
 function AccountProfileContent() {
   const navigate = useNavigate();
+  const { loading: profileLoading, user, profile, role, onboarded } = useCurrentProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [user, setUser] = useState(null);
   const [formData, setFormData] = useState({
     full_name: "",
     role: "",
@@ -28,66 +36,25 @@ function AccountProfileContent() {
 
   useEffect(() => {
     document.title = "Edit Profile - AgentVault";
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
-    try {
-      console.log('[AccountProfile] Loading profile data...');
-
-      const response = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store'
+    
+    if (!profileLoading && profile) {
+      setFormData({
+        full_name: profile.full_name || "",
+        role: profile.user_role || profile.user_type || "",
+        company: profile.company || "",
+        markets: Array.isArray(profile.markets) ? profile.markets.join(", ") : "",
+        phone: profile.phone || "",
+        accreditation: profile.accreditation || "",
+        goals: profile.goals || ""
       });
-
-      if (!response.ok) {
-        toast.error("Please sign in to continue");
-        navigate(createPageUrl("Dashboard"));
-        return;
-      }
-
-      const state = await response.json();
-      console.log('[AccountProfile] Loaded state:', state);
-
-      if (!state.authenticated) {
-        toast.error("Please sign in to continue");
-        navigate(createPageUrl("Dashboard"));
-        return;
-      }
-
-      setUser({
-        email: state.email,
-        id: state.profile?.user_id
-      });
-
-      // Load profile data into form
-      if (state.profile) {
-        setFormData({
-          full_name: state.profile.full_name || "",
-          role: state.profile.user_type || "",
-          company: state.profile.company || "",
-          markets: Array.isArray(state.profile.markets) ? state.profile.markets.join(", ") : "",
-          phone: state.profile.phone || "",
-          accreditation: state.profile.accreditation || "",
-          goals: state.profile.goals || ""
-        });
-      }
-
       setLoading(false);
-
-    } catch (error) {
-      console.error('[AccountProfile] Load error:', error);
-      toast.error("Failed to load profile");
-      navigate(createPageUrl("Dashboard"));
     }
-  };
+  }, [profileLoading, profile]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     console.log('[AccountProfile] 🚀 Saving profile changes...');
-    console.log('[AccountProfile] Form data:', formData);
 
     // Validation
     if (!formData.full_name || !formData.full_name.trim()) {
@@ -127,11 +94,7 @@ function AccountProfileContent() {
         body: JSON.stringify(payload)
       });
 
-      console.log('[AccountProfile] 📥 Response status:', response.status);
-
       const responseText = await response.text();
-      console.log('[AccountProfile] 📥 Response:', responseText);
-
       let result;
       try {
         result = JSON.parse(responseText);
@@ -146,10 +109,25 @@ function AccountProfileContent() {
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // Redirect to profile view page
-      setTimeout(() => {
-        navigate(createPageUrl("Profile"));
-      }, 500);
+      // CRITICAL: After save, if investor not onboarded, send to NEW onboarding
+      if (role === 'investor' && !onboarded) {
+        console.log('[AccountProfile] Investor not onboarded, redirecting to InvestorOnboarding');
+        toast.info('Please complete your full investor profile');
+        setTimeout(() => {
+          navigate(createPageUrl("InvestorOnboarding"));
+        }, 1000);
+      } else if (role === 'agent' && !onboarded) {
+        console.log('[AccountProfile] Agent not onboarded, redirecting to AgentOnboarding');
+        toast.info('Please complete your agent profile');
+        setTimeout(() => {
+          navigate(createPageUrl("AgentOnboarding"));
+        }, 1000);
+      } else {
+        // Already onboarded, go to profile view
+        setTimeout(() => {
+          navigate(createPageUrl("Profile"));
+        }, 500);
+      }
 
     } catch (error) {
       console.error("[AccountProfile] ❌ Save error:", error);
@@ -159,7 +137,7 @@ function AccountProfileContent() {
     }
   };
 
-  if (loading) {
+  if (profileLoading || loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">

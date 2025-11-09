@@ -9,30 +9,31 @@ import { Shield, FileText, User, Settings } from "lucide-react";
  * LAYOUT - Conditional Navigation + Wizard Provider
  * 
  * Wraps entire app with WizardProvider.
- * NO navigation shown during wizard flow (pre-room).
- * Navigation appears ONLY after user has at least one room.
+ * NO navigation shown during wizard flow (pre-room) OR if not onboarded.
+ * Navigation appears ONLY after user is fully onboarded and has completed setup.
  */
 function LayoutContent({ children }) {
   const location = useLocation();
-  const { loading, user, role, hasRoom } = useCurrentProfile();
+  const { loading, user, role, hasRoom, onboarded } = useCurrentProfile();
 
-  // Wizard pages (no nav)
-  const wizardPages = [
+  // Wizard pages (no nav) + onboarding pages
+  const noNavPages = [
     '/',
     '/role',
     '/onboarding/investor',
     '/onboarding/agent',
+    '/onboarding',
     '/verify',
     '/nda',
     '/matches'
   ];
 
-  const isWizardPage = wizardPages.some(path => location.pathname === path || location.pathname.startsWith(path));
+  const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
 
   // Show nav ONLY if:
-  // 1. User has at least one room, OR
-  // 2. User is on a room page
-  const showNav = !loading && user && (hasRoom || location.pathname.startsWith('/room/'));
+  // 1. User is logged in AND onboarded, AND
+  // 2. User has at least one room, OR is on a room page
+  const showNav = !loading && user && onboarded && (hasRoom || location.pathname.startsWith('/room/'));
 
   // Investor nav
   const investorNav = [
@@ -51,11 +52,11 @@ function LayoutContent({ children }) {
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Conditional Top Navigation */}
-      {showNav && (
+      {showNav && !isNoNavPage && (
         <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
-              <Link to={createPageUrl("DealRooms")} className="flex items-center gap-2">
+              <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
