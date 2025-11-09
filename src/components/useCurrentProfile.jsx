@@ -7,12 +7,17 @@ import { base44 } from '@/api/base44Client';
  * Single source of truth for current user + profile state.
  * Now includes hasRoom check for navigation logic.
  * 
+ * IMPORTANT: A user is considered "onboarded" ONLY if:
+ * - onboarding_completed_at is set AND
+ * - user_role is set (from NEW onboarding)
+ * This forces anyone with only OLD onboarding data to complete NEW onboarding.
+ * 
  * Returns:
  * - loading: boolean
  * - user: Base44 auth user object
  * - profile: Profile entity (canonical, 1:1 with user)
  * - role: 'investor' | 'agent' | 'admin' | 'member'
- * - onboarded: boolean (true if completed onboarding)
+ * - onboarded: boolean (true if completed NEW onboarding)
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
@@ -109,27 +114,17 @@ export function useCurrentProfile() {
         }
 
         // STEP 4: Determine onboarded status
+        // NEW LOGIC: Onboarding is complete ONLY if:
+        // 1) onboarding_completed_at exists AND
+        // 2) user_role is set (NEW onboarding finished)
+        // This forces anyone with only OLD onboarding data (timestamp but no user_role) to complete NEW onboarding.
         let onboarded = false;
         
-        if (profile?.onboarding_completed_at) {
-          // Explicit flag set
+        if (profile?.onboarding_completed_at && profile?.user_role) {
+          // Both timestamp AND role are set → NEW onboarding complete
           onboarded = true;
-        } else if (profile) {
-          // Infer from data completeness
-          const hasBasicInfo = !!(profile.full_name && profile.phone);
-          
-          if (role === 'investor') {
-            // Investor is onboarded if they have basic info
-            onboarded = hasBasicInfo;
-          } else if (role === 'agent') {
-            // Agent needs more: license, markets, specialties
-            const hasLicense = !!(profile.licenseNumber && profile.licenseState);
-            const hasMarkets = profile.markets && profile.markets.length > 0;
-            const hasSpecialties = profile.agent?.specialties && profile.agent.specialties.length > 0;
-            
-            onboarded = hasBasicInfo && hasLicense && hasMarkets && hasSpecialties;
-          }
         }
+        // If only timestamp exists but no user_role → OLD onboarding only → NOT considered onboarded
 
         // STEP 5: NDA status
         const hasNDA = profile?.nda_accepted || false;
