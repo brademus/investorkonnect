@@ -12,13 +12,17 @@ import { Loader2 } from "lucide-react";
  * 
  * This page:
  * 1. Loads user + profile
- * 2. Checks if NEW onboarding (v2 or v2-agent) is complete
+ * 2. Checks if NEW onboarding (v2 or agent-v2-deep) is complete
  * 3. Routes appropriately:
  *    - No NEW onboarding → Send to onboarding
  *    - Has NEW onboarding → Send to Dashboard
  * 
  * CRITICAL: This page MUST NEVER hang on "Loading..."
  * Always routes somewhere within 3 seconds max.
+ * 
+ * AGENT GATING:
+ * - Agents MUST have onboarding_version === "agent-v2-deep" to be considered complete
+ * - Old agents with null or old versions (e.g. "v2-agent") are forced into new onboarding
  */
 export default function PostAuth() {
   const navigate = useNavigate();
@@ -81,11 +85,19 @@ export default function PostAuth() {
             !!profile?.onboarding_completed_at &&
             profile?.user_role === 'investor';
         } else if (effectiveRole === 'agent') {
-          // Agent needs v2-agent onboarding
+          // CRITICAL: Agent needs EXACTLY "agent-v2-deep" onboarding
+          // Old agents with "v2-agent" or null are NOT considered complete
           hasNewOnboarding = 
-            profile?.onboarding_version === 'v2-agent' &&
+            profile?.onboarding_version === 'agent-v2-deep' &&
             !!profile?.onboarding_completed_at &&
             profile?.user_role === 'agent';
+          
+          console.log('[PostAuth] Agent onboarding check:', {
+            version: profile?.onboarding_version,
+            hasCompletedAt: !!profile?.onboarding_completed_at,
+            isAgent: profile?.user_role === 'agent',
+            hasNewOnboarding
+          });
         }
         
         console.log('[PostAuth] Has NEW onboarding:', hasNewOnboarding, '(version:', profile?.onboarding_version, ')');
@@ -138,7 +150,7 @@ export default function PostAuth() {
             console.log('[PostAuth] → InvestorOnboarding');
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (effectiveRole === 'agent') {
-            console.log('[PostAuth] → AgentOnboarding');
+            console.log('[PostAuth] → AgentOnboarding (new deep version required)');
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
             // No role yet - send to RoleSelection

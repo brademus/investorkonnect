@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,15 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 
+/**
+ * AGENT DASHBOARD
+ * 
+ * Shows banner if agent has NOT completed NEW onboarding (agent-v2-deep)
+ * Old agents with "v2-agent" or null version will see the onboarding prompt
+ */
 export default function AgentHome() {
-  const { profile, loading } = useCurrentProfile();
+  const navigate = useNavigate();
+  const { profile, loading, onboarded } = useCurrentProfile();
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
 
   if (loading) {
@@ -32,6 +39,13 @@ export default function AgentHome() {
     !agentData.license_number || 
     !agentData.license_state || 
     agentData.verification_status !== 'verified';
+
+  // CRITICAL: Check if agent has completed NEW onboarding
+  // Only "agent-v2-deep" is considered complete
+  const hasNewOnboarding = 
+    profile?.onboarding_version === 'agent-v2-deep' &&
+    !!profile?.onboarding_completed_at &&
+    profile?.user_role === 'agent';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
@@ -81,8 +95,38 @@ export default function AgentHome() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
+        {/* CRITICAL: New Onboarding Banner - Show if agent hasn't completed agent-v2-deep */}
+        {!hasNewOnboarding && !onboarded && (
+          <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <AlertCircle className="w-8 h-8 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="text-xl font-bold text-orange-900 mb-2">
+                  Complete your agent onboarding
+                </h3>
+                <p className="text-orange-800 mb-4 text-base">
+                  We've updated our onboarding for investor-friendly agents. Please complete the new questions so we can verify your profile and match you with the right investors. This helps us understand your experience, specialties, and approach to working with investor clients.
+                </p>
+                <div className="bg-orange-100 rounded-lg p-3 mb-4">
+                  <p className="text-sm text-orange-900">
+                    <strong>What's new:</strong> Deeper questions about your investor experience, market knowledge, deal sourcing methods, professional network, and service approach. Takes 10-15 minutes.
+                  </p>
+                </div>
+                <Button 
+                  onClick={() => navigate(createPageUrl("AgentOnboarding"))}
+                  className="bg-orange-600 hover:bg-orange-700 text-white font-semibold"
+                  size="lg"
+                >
+                  <ArrowRight className="w-5 h-5 mr-2" />
+                  Continue onboarding
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* License Banner - Show if license missing/unverified */}
-        {needsLicense && !dismissedLicenseBanner && (
+        {hasNewOnboarding && needsLicense && !dismissedLicenseBanner && (
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 relative">
             <button
               onClick={() => setDismissedLicenseBanner(true)}
@@ -113,7 +157,7 @@ export default function AgentHome() {
         )}
         
         {/* NDA Required Banner */}
-        {!hasNDA && (
+        {hasNewOnboarding && !hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <Shield className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
@@ -135,7 +179,7 @@ export default function AgentHome() {
         )}
 
         {/* Verification Banner */}
-        {!isVerified && (
+        {hasNewOnboarding && !isVerified && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <Award className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
@@ -258,13 +302,23 @@ export default function AgentHome() {
             </div>
             
             <div className="space-y-3">
-              <div className="text-center py-8">
-                <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 mb-3">Complete your profile to see investor matches</p>
-                <Link to={createPageUrl("AccountProfile")}>
-                  <Button size="sm" variant="outline">Complete Profile</Button>
-                </Link>
-              </div>
+              {!hasNewOnboarding ? (
+                <div className="text-center py-8">
+                  <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-3">Complete new onboarding to access investor feed</p>
+                  <Button size="sm" onClick={() => navigate(createPageUrl("AgentOnboarding"))}>
+                    Complete Onboarding
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-3">No investor matches yet</p>
+                  <Link to={createPageUrl("Investors")}>
+                    <Button size="sm" variant="outline">Browse Investors</Button>
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
 

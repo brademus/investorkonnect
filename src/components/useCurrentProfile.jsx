@@ -6,12 +6,16 @@ import { base44 } from '@/api/base44Client';
  * 
  * Single source of truth for current user + profile + onboarding + subscription state.
  * 
+ * AGENT ONBOARDING VERSION:
+ * - ONLY "agent-v2-deep" is considered complete for agents
+ * - Old agents with "v2-agent", "v1", or null are NOT onboarded
+ * 
  * Returns:
  * - loading: boolean
  * - user: Base44 auth user object
  * - profile: Profile entity (canonical, 1:1 with user)
  * - role: 'investor' | 'agent' | 'admin' | 'member'
- * - onboarded: boolean (true if completed NEW v2/v2-agent onboarding)
+ * - onboarded: boolean (true if completed NEW v2/agent-v2-deep onboarding)
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
@@ -118,7 +122,7 @@ export function useCurrentProfile() {
           role = 'member';
         }
 
-        // STEP 4: Determine onboarded status (v2 for investor, v2-agent for agent)
+        // STEP 4: Determine onboarded status (v2 for investor, agent-v2-deep for agent)
         // CRITICAL: Check role-specific onboarding version
         let onboarded = false;
         
@@ -132,13 +136,24 @@ export function useCurrentProfile() {
             onboarded = true;
           }
         } else if (role === 'agent') {
-          // Agent must have v2-agent onboarding
+          // CRITICAL: Agent must have EXACTLY "agent-v2-deep" onboarding
+          // Old agents with "v2-agent", "v1", or null are NOT considered onboarded
           if (
-            profile?.onboarding_version === 'v2-agent' &&
+            profile?.onboarding_version === 'agent-v2-deep' &&
             profile?.onboarding_completed_at &&
             profile?.user_role === 'agent'
           ) {
             onboarded = true;
+          }
+          
+          // Log for debugging
+          if (role === 'agent' && !onboarded) {
+            console.log('[useCurrentProfile] Agent NOT onboarded:', {
+              version: profile?.onboarding_version,
+              expected: 'agent-v2-deep',
+              hasCompletedAt: !!profile?.onboarding_completed_at,
+              userRole: profile?.user_role
+            });
           }
         }
 

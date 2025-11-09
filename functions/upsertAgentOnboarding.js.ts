@@ -3,8 +3,10 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 /**
  * UPSERT AGENT ONBOARDING v2 - EXTENDED
  * 
- * Saves comprehensive agent onboarding data and sets onboarding_version="v2-agent"
+ * Saves comprehensive agent onboarding data and sets onboarding_version="agent-v2-deep"
  * Handles all new fields for deep agent qualification
+ * 
+ * VERSION: "agent-v2-deep" is the ONLY version that indicates new onboarding completion
  */
 Deno.serve(async (req) => {
   try {
@@ -211,19 +213,21 @@ Deno.serve(async (req) => {
       bio: payload.bio?.trim() || null
     };
     
-    // Update profile with v2-agent completion
+    // CRITICAL: Update profile with NEW version flag "agent-v2-deep"
+    // This is the ONLY version that indicates new onboarding completion
     await base44.entities.Profile.update(profile.id, {
       full_name: payload.full_name.trim(),
       phone: payload.phone.trim(),
       markets: payload.markets, // Also store at top level for easy querying
       user_role: 'agent',
-      onboarding_version: 'v2-agent',
+      onboarding_version: 'agent-v2-deep', // NEW VERSION FLAG
       onboarding_completed_at: new Date().toISOString(),
       agent: agentData
     });
     
     console.log('✅ Agent onboarding v2 (extended) saved successfully');
     console.log('📊 Saved', Object.keys(agentData).length, 'agent fields');
+    console.log('🏷️  Version set to: agent-v2-deep');
     
     return Response.json({
       ok: true,
