@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -11,10 +12,17 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState("monthly");
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [onboardingCompleted, setOnboardingCompleted] = useState(false);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  
+  // Use unified profile hook
+  const { 
+    loading, 
+    role, 
+    onboarded, 
+    hasNDA, 
+    kycVerified,
+    isInvestorReady 
+  } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Pricing - AgentVault";
@@ -26,56 +34,20 @@ export default function Pricing() {
       document.head.appendChild(metaDesc);
     }
     metaDesc.content = "Choose the AgentVault plan that fits your investment needs. Starter, Pro, and Enterprise plans with 14-day free trial.";
-    
-    checkAuthAndOnboarding();
   }, []);
 
-  const checkAuthAndOnboarding = async () => {
-    setLoading(true);
-    try {
-      const auth = await base44.auth.isAuthenticated();
-      setIsAuthenticated(auth);
-      
-      if (auth) {
-        // Check onboarding status via /functions/me
-        const response = await fetch('/functions/me', {
-          method: 'POST',
-          credentials: 'include',
-          cache: 'no-store'
-        });
-        
-        if (response.ok) {
-          const state = await response.json();
-          // NEW CHECK: Onboarding is complete ONLY if:
-          // 1) onboarding_completed_at is set AND
-          // 2) user_role is set
-          const completed = !!(
-            (state.onboarding?.completed || state.profile?.onboarding_completed_at) &&
-            state.profile?.user_role
-          );
-          setOnboardingCompleted(completed);
-          
-          console.log('[Pricing] Auth state:', { 
-            authenticated: auth, 
-            onboarding: completed,
-            user_role: state.profile?.user_role,
-            onboarding_completed_at: state.profile?.onboarding_completed_at
-          });
-        } else {
-            console.error('[Pricing] Failed to fetch user profile:', response.statusText);
-            setOnboardingCompleted(false); // Assume not onboarded if we can't confirm
-        }
-      } else {
-        setOnboardingCompleted(false); // Not authenticated, so not onboarded
-      }
-    } catch (error) {
-      console.error('[Pricing] Auth or profile check failed:', error);
-      setIsAuthenticated(false);
-      setOnboardingCompleted(false);
-    } finally {
-      setLoading(false);
-    }
+  // Determine what's blocking investor (if anything)
+  const getBlockingStep = () => {
+    if (role !== 'investor') return null;
+    
+    if (!onboarded) return 'onboarding';
+    if (!kycVerified) return 'verification';
+    if (!hasNDA) return 'nda';
+    
+    return null; // All clear!
   };
+
+  const blockingStep = getBlockingStep();
 
   const handleGetStarted = (plan) => {
     // Enterprise always goes to contact
@@ -84,6 +56,9 @@ export default function Pricing() {
       return;
     }
 
+    // Check if authenticated
+    const isAuthenticated = !!role;
+    
     // Not authenticated - redirect to login
     if (!isAuthenticated) {
       toast.info("Please sign in to continue");
@@ -91,20 +66,73 @@ export default function Pricing() {
       return;
     }
 
-    // Authenticated but not onboarded - GATE: Send to NEW InvestorOnboarding
-    if (!onboardingCompleted) {
-      toast.error("Please complete your investor profile before subscribing", {
-        duration: 5000,
-        description: "We need to know your investment goals first"
-      });
-      // Send to Onboarding redirector which will route to InvestorOnboarding
-      navigate(createPageUrl("InvestorOnboarding"));
+    // For investors, check if fully ready
+    if (role === 'investor') {
+      if (!isInvestorReady) {
+        // Route to the appropriate missing step
+        if (!onboarded) {
+          toast.error("Please complete your investor profile first", {
+            duration: 5000,
+            description: "We need to know your investment goals"
+          });
+          navigate(createPageUrl("InvestorOnboarding"));
+        } else if (!kycVerified) {
+          toast.error("Please verify your identity first", {
+            duration: 5000,
+            description: "Identity verification required for subscriptions"
+          });
+          navigate(createPageUrl("Verify"));
+        } else if (!hasNDA) {
+          toast.error("Please accept the NDA first", {
+            duration: 5000,
+            description: "NDA acceptance required for subscriptions"
+          });
+          navigate(createPageUrl("NDA"));
+        }
+        return;
+      }
+
+      // Investor is ready - proceed to checkout
+      window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
       return;
     }
 
-    // Authenticated + onboarded - proceed to checkout
+    // For other roles (agents, etc.) - allow checkout
     window.open(`${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`, '_self');
   };
+
+  // Get banner message based on what's blocking
+  const getBannerMessage = () => {
+    if (!blockingStep) return null;
+    
+    switch (blockingStep) {
+      case 'onboarding':
+        return {
+          icon: Lock,
+          text: "Complete your investor profile to unlock subscriptions",
+          buttonText: "Complete Profile",
+          onClick: () => navigate(createPageUrl("InvestorOnboarding"))
+        };
+      case 'verification':
+        return {
+          icon: Shield,
+          text: "Verify your identity to unlock subscriptions",
+          buttonText: "Verify Identity",
+          onClick: () => navigate(createPageUrl("Verify"))
+        };
+      case 'nda':
+        return {
+          icon: Lock,
+          text: "Accept the NDA to unlock subscriptions",
+          buttonText: "Sign NDA",
+          onClick: () => navigate(createPageUrl("NDA"))
+        };
+      default:
+        return null;
+    }
+  };
+
+  const bannerConfig = getBannerMessage();
 
   const tiers = [
     {
@@ -227,23 +255,23 @@ export default function Pricing() {
 
   return (
     <div>
-      {/* Onboarding Gate Banner */}
-      {isAuthenticated && !onboardingCompleted && !loading && (
+      {/* Blocking Step Banner (only for investors who aren't ready) */}
+      {!loading && role === 'investor' && !isInvestorReady && bannerConfig && (
         <div className="bg-orange-600 text-white py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div className="flex items-center gap-3">
-                <Lock className="w-5 h-5 flex-shrink-0" />
+                <bannerConfig.icon className="w-5 h-5 flex-shrink-0" />
                 <p className="text-sm font-medium">
-                  Complete your investor profile to unlock subscriptions
+                  {bannerConfig.text}
                 </p>
               </div>
               <Button 
                 size="sm" 
                 className="bg-white text-orange-600 hover:bg-orange-50"
-                onClick={() => navigate(createPageUrl("InvestorOnboarding"))}
+                onClick={bannerConfig.onClick}
               >
-                Complete Profile
+                {bannerConfig.buttonText}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </div>
@@ -317,20 +345,29 @@ export default function Pricing() {
                     <span className="text-slate-600">/{billingCycle === "monthly" ? "month" : "month, billed annually"}</span>
                   </div>
                   
-                  {/* CTA Button with Gating */}
-                  {isAuthenticated && !onboardingCompleted && tier.planId !== 'enterprise' ? (
+                  {/* CTA Button - Conditional on investor readiness */}
+                  {!loading && role === 'investor' && !isInvestorReady && tier.planId !== 'enterprise' ? (
                     <div className="space-y-3">
                       <Button
                         className="w-full bg-slate-300 text-slate-700 cursor-not-allowed"
                         disabled
                       >
                         <Lock className="w-4 h-4 mr-2" />
-                        Complete Profile Required
+                        {blockingStep === 'onboarding' ? 'Complete Profile Required' :
+                         blockingStep === 'verification' ? 'Verification Required' :
+                         blockingStep === 'nda' ? 'NDA Required' :
+                         'Complete Setup Required'}
                       </Button>
                       <p className="text-xs text-center text-slate-600">
-                        <Link to={createPageUrl("InvestorOnboarding")} className="text-blue-600 hover:underline font-medium">
-                          Complete your profile
-                        </Link> to subscribe
+                        <button 
+                          onClick={bannerConfig?.onClick}
+                          className="text-blue-600 hover:underline font-medium"
+                        >
+                          {blockingStep === 'onboarding' ? 'Complete your profile' :
+                           blockingStep === 'verification' ? 'Verify your identity' :
+                           blockingStep === 'nda' ? 'Sign the NDA' :
+                           'Complete setup'}
+                        </button> to subscribe
                       </p>
                     </div>
                   ) : (
@@ -367,8 +404,8 @@ export default function Pricing() {
             ))}
           </div>
 
-          {/* Gating Info Box for unauthenticated users */}
-          {!isAuthenticated && !loading && (
+          {/* Info Box for unauthenticated users */}
+          {!loading && !role && (
             <div className="mt-12 bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
                 <AlertCircle className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />

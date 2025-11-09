@@ -21,6 +21,7 @@ import { base44 } from '@/api/base44Client';
  * - hasNDA: boolean (NDA accepted status)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
+ * - isInvestorReady: boolean (investor fully ready for subscriptions/trials)
  * - hasRoom: boolean (has at least one room)
  * - targetState: string (user's selected market/state)
  * - error: string | null
@@ -36,6 +37,7 @@ export function useCurrentProfile() {
     hasNDA: false,
     kycStatus: 'unverified',
     kycVerified: false,
+    isInvestorReady: false,
     hasRoom: false,
     targetState: null,
     error: null
@@ -64,6 +66,7 @@ export function useCurrentProfile() {
             hasNDA: false,
             kycStatus: 'unverified',
             kycVerified: false,
+            isInvestorReady: false,
             hasRoom: false,
             targetState: null,
             error: null
@@ -147,6 +150,18 @@ export function useCurrentProfile() {
           // Default to false
         }
 
+        // STEP 9: Determine if investor is fully ready for subscriptions/trials
+        // An investor is ready ONLY when ALL of these are true:
+        // - role is investor
+        // - NEW onboarding complete
+        // - NDA accepted
+        // - KYC verified
+        const isInvestorReady = 
+          role === 'investor' &&
+          onboarded &&
+          hasNDA &&
+          kycVerified;
+
         setState({
           loading: false,
           user,
@@ -156,6 +171,7 @@ export function useCurrentProfile() {
           hasNDA,
           kycStatus,
           kycVerified,
+          isInvestorReady,
           hasRoom,
           targetState,
           error: null
@@ -174,6 +190,7 @@ export function useCurrentProfile() {
           hasNDA: false,
           kycStatus: 'unverified',
           kycVerified: false,
+          isInvestorReady: false,
           hasRoom: false,
           targetState: null,
           error: error.message
