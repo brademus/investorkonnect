@@ -1,3 +1,4 @@
+
 import Stripe from 'npm:stripe@14.11.0';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
@@ -166,7 +167,8 @@ Deno.serve(async (req) => {
     }
 
     // All checks passed - create Stripe session
-    const success = `${base}/billing/success?session_id={CHECKOUT_SESSION_ID}`;
+    // FIXED: Use /BillingSuccess (matches page filename) instead of /billing/success
+    const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
     const cancel = `${base}/pricing?cancelled=true`;
     
     console.log('Success URL:', success);
