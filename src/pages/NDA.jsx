@@ -13,12 +13,12 @@ import { toast } from "sonner";
 /**
  * STEP 6: NDA ACCEPTANCE
  * 
- * Click-wrap NDA required before matching/rooms.
- * No top nav. Linear flow only.
+ * Click-wrap NDA required before accessing dashboard.
+ * After acceptance, redirects to Dashboard (not matches).
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { loading, role, hasNDA, refresh } = useCurrentProfile();
+  const { loading, hasNDA, refresh } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
@@ -30,13 +30,12 @@ function NDAContent() {
   // Redirect if already accepted (check after loading completes)
   useEffect(() => {
     if (!loading && hasNDA) {
-      console.log('[NDA] Already accepted, redirecting...');
-      const nextRoute = role === 'investor' ? createPageUrl("Matches") : createPageUrl("AgentDashboard");
+      console.log('[NDA] Already accepted, redirecting to dashboard...');
       setTimeout(() => {
-        navigate(nextRoute, { replace: true });
+        navigate(createPageUrl("Dashboard"), { replace: true });
       }, 500);
     }
-  }, [loading, hasNDA, role, navigate]);
+  }, [loading, hasNDA, navigate]);
 
   const handleAccept = async () => {
     if (!agreed) {
@@ -65,13 +64,9 @@ function NDAContent() {
         // Small delay to ensure state is updated
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Navigate based on role
-        console.log('[NDA] Navigating to next step for role:', role);
-        if (role === 'investor') {
-          navigate(createPageUrl("Matches"), { replace: true });
-        } else {
-          navigate(createPageUrl("AgentDashboard"), { replace: true });
-        }
+        // Navigate to Dashboard (both investors and agents)
+        console.log('[NDA] Navigating to Dashboard...');
+        navigate(createPageUrl("Dashboard"), { replace: true });
       } else {
         const errorMsg = response.data?.error || "Failed to accept NDA";
         console.error('[NDA] ❌ Backend returned error:', errorMsg);
@@ -110,9 +105,7 @@ function NDAContent() {
               <CheckCircle className="w-10 h-10 text-emerald-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">NDA Already Signed ✓</h2>
-            <p className="text-slate-600 mb-6">
-              {role === 'investor' ? 'Redirecting to matches...' : 'Redirecting to dashboard...'}
-            </p>
+            <p className="text-slate-600 mb-6">Redirecting to dashboard...</p>
             <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
           </div>
         </div>
@@ -122,8 +115,6 @@ function NDAContent() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
-      {/* NO TOP NAV */}
-      
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
