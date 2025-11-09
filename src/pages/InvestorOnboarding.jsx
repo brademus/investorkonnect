@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -339,10 +340,13 @@ function InvestorOnboardingContent() {
     try {
       await saveProgress();
 
-      // Mark onboarding as complete
+      // CRITICAL: Mark onboarding as complete AND ensure user_role is set
       await base44.entities.Profile.update(profile.id, {
+        user_role: 'investor', // MUST set this for isInvestorReady to work
         onboarding_completed_at: new Date().toISOString()
       });
+
+      console.log('[InvestorOnboarding] ✅ Onboarding complete - user_role and timestamp set');
 
       await refresh();
       toast.success("Profile completed! Let's verify your identity.");
