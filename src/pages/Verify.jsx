@@ -1,96 +1,168 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { StepGuard } from "@/components/StepGuard";
-import { Loader2, Shield, CheckCircle, ArrowRight } from "lucide-react";
+import { Loader2, Shield, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 /**
- * STEP 5: IDENTITY VERIFICATION (Persona)
+ * STEP 5: IDENTITY VERIFICATION (Persona Embedded Flow)
  * 
- * Embedded Persona flow. No top nav. Linear flow only.
+ * Fully embedded Persona verification with proper script loading.
+ * No blank panels - everything renders properly.
+ * 
+ * Flow:
+ * 1. Load Persona SDK script dynamically
+ * 2. Initialize Persona Client with our config
+ * 3. Show "Begin Verification" button
+ * 4. On click, open Persona overlay
+ * 5. On complete, call personaFinalize to update profile
+ * 6. Redirect to NDA page
  */
 function VerifyContent() {
   const navigate = useNavigate();
   const { user, profile, kycStatus, refresh } = useCurrentProfile();
+  
+  const personaClientRef = useRef(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [personaReady, setPersonaReady] = useState(false);
+  const [launching, setLaunching] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [error, setError] = useState(null);
 
   // Load Persona script
   useEffect(() => {
     if (window.Persona) {
+      console.log('[Verify] ✅ Persona already loaded');
       setScriptLoaded(true);
       return;
     }
 
+    console.log('[Verify] 📥 Loading Persona SDK...');
+    
     const script = document.createElement('script');
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.1.2.js';
-    script.integrity = 'sha384-nuMfOsYXMwp5L13VJicJkSs8tObai/UtHEOg3f7tQuFWU5j6LAewJbjbF5ZkfoDo';
+    script.async = true;
     script.crossOrigin = 'anonymous';
     
     script.onload = () => {
-      console.log('[Verify] ✅ Persona loaded');
+      console.log('[Verify] ✅ Persona SDK loaded successfully');
       setScriptLoaded(true);
     };
     
     script.onerror = () => {
-      console.error('[Verify] ❌ Failed to load Persona');
-      toast.error('Failed to load verification system');
+      console.error('[Verify] ❌ Failed to load Persona SDK');
+      setError('Failed to load verification system. Please refresh the page.');
     };
 
     document.body.appendChild(script);
+
+    return () => {
+      // Cleanup script on unmount if not loaded
+      if (!scriptLoaded) {
+        document.body.removeChild(script);
+      }
+    };
   }, []);
 
-  // Initialize Persona when script loads
+  // Initialize Persona client when script is loaded
   useEffect(() => {
-    if (!scriptLoaded || !window.Persona || !user || !profile) return;
-    if (kycStatus === 'approved') return;
+    if (!scriptLoaded || !window.Persona || !user || !profile) {
+      return;
+    }
 
-    console.log('[Verify] 🚀 Creating Persona client...');
+    if (kycStatus === 'approved') {
+      console.log('[Verify] ✅ Already verified, skipping init');
+      return;
+    }
 
-    const client = new window.Persona.Client({
-      templateId: 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM',
-      environmentId: 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H',
-      referenceId: user.id,
-      onComplete: async ({ inquiryId, status }) => {
-        console.log(`[Verify] ✅ Completed: ${inquiryId}`);
+    console.log('[Verify] 🚀 Initializing Persona Client...');
+
+    try {
+      const client = new window.Persona.Client({
+        templateId: 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM',
+        environmentId: 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H',
+        referenceId: user.id,
         
-        try {
-          const response = await base44.functions.invoke('personaFinalize', {
-            inquiryId,
-            status
-          });
+        onReady: () => {
+          console.log('[Verify] ✅ Persona Client ready');
+          setPersonaReady(true);
+          setLaunching(false);
+        },
+        
+        onComplete: async ({ inquiryId, status, fields }) => {
+          console.log('[Verify] ✅ Verification completed:', { inquiryId, status });
+          setVerifying(true);
+          
+          try {
+            // Call backend to validate and update profile
+            const response = await base44.functions.invoke('personaFinalize', {
+              inquiryId,
+              status
+            });
 
-          if (response.data?.ok) {
-            toast.success('Verification complete!');
-            refresh(); // Refresh profile
-            setTimeout(() => {
-              navigate(createPageUrl("NDA"), { replace: true });
-            }, 1500);
+            if (response.data?.ok) {
+              const kycStatus = response.data.kyc_status;
+              console.log('[Verify] ✅ Profile updated:', kycStatus);
+              
+              if (kycStatus === 'approved') {
+                toast.success('Identity verified successfully!');
+                await refresh();
+                
+                // Small delay for user to see success message
+                setTimeout(() => {
+                  navigate(createPageUrl("NDA"), { replace: true });
+                }, 1500);
+              } else if (kycStatus === 'needs_review') {
+                toast.info('Verification under review. We\'ll notify you when complete.');
+                navigate(createPageUrl("Dashboard"), { replace: true });
+              } else if (kycStatus === 'failed') {
+                toast.error('Verification failed. Please contact support.');
+                setVerifying(false);
+                setError('Verification could not be completed. Please contact support for assistance.');
+              } else {
+                toast.info('Verification in progress. This may take a few moments.');
+                setVerifying(false);
+              }
+            } else {
+              throw new Error('Failed to update verification status');
+            }
+          } catch (err) {
+            console.error('[Verify] ❌ Finalize error:', err);
+            toast.error('Could not complete verification. Please try again.');
+            setVerifying(false);
+            setError('We verified your identity but encountered an error saving it. Please refresh and try again.');
           }
-        } catch (err) {
-          console.error('[Verify] ❌ Finalize error:', err);
-          toast.error('Could not finalize verification');
+        },
+        
+        onCancel: ({ inquiryId }) => {
+          console.log('[Verify] ⚠️ User cancelled verification:', inquiryId);
+          toast.info('Verification cancelled');
+          setLaunching(false);
+        },
+        
+        onError: (error) => {
+          console.error('[Verify] ❌ Persona error:', error);
+          toast.error('Verification error occurred');
+          setLaunching(false);
+          setError('An error occurred during verification. Please try again.');
         }
-      },
-      onCancel: () => {
-        console.log('[Verify] ⚠️ Cancelled');
-        toast.info('Verification cancelled');
-      },
-      onError: (error) => {
-        console.error('[Verify] ❌ Error:', error);
-        toast.error('Verification error');
-      }
-    });
+      });
 
-    // Render in container
-    console.log('[Verify] 📺 Calling render...');
-    client.render('#persona-container');
+      personaClientRef.current = client;
+      console.log('[Verify] ✅ Persona Client initialized');
+
+    } catch (err) {
+      console.error('[Verify] ❌ Failed to initialize Persona:', err);
+      setError('Failed to initialize verification. Please refresh the page.');
+    }
 
   }, [scriptLoaded, user, profile, kycStatus, navigate, refresh]);
 
-  // Already verified - skip to NDA
+  // Already verified - show success and redirect
   if (kycStatus === 'approved') {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -100,19 +172,59 @@ function VerifyContent() {
               <CheckCircle className="w-10 h-10 text-emerald-600" />
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">Already Verified ✓</h2>
-            <p className="text-slate-600 mb-6">Continue to sign the NDA</p>
-            <button
+            <p className="text-slate-600 mb-6">Your identity has been verified</p>
+            <Button
               onClick={() => navigate(createPageUrl("NDA"))}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
+              className="bg-blue-600 hover:bg-blue-700"
             >
-              Continue
-              <ArrowRight className="w-4 h-4" />
-            </button>
+              Continue to NDA
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
         </div>
       </div>
     );
   }
+
+  // Verification in progress
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Processing Verification...</h2>
+            <p className="text-slate-600">Please wait while we confirm your identity</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const handleBeginVerification = () => {
+    if (!personaClientRef.current) {
+      setError('Verification system not ready. Please refresh the page.');
+      return;
+    }
+
+    console.log('[Verify] 🚀 Opening Persona overlay...');
+    setLaunching(true);
+    
+    try {
+      personaClientRef.current.open();
+    } catch (err) {
+      console.error('[Verify] ❌ Failed to open Persona:', err);
+      setError('Failed to start verification. Please refresh and try again.');
+      setLaunching(false);
+    }
+  };
+
+  const handleRetry = () => {
+    setError(null);
+    setScriptLoaded(false);
+    setPersonaReady(false);
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -120,16 +232,18 @@ function VerifyContent() {
       
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Verify Your Identity</h1>
           <p className="text-slate-600 max-w-2xl mx-auto">
-            Bank-level encryption. One-time verification. Takes 2-3 minutes.
+            Required to access agent profiles and deal rooms. Your data is encrypted and used only for verification.
           </p>
         </div>
 
+        {/* Trust Indicators */}
         <div className="grid md:grid-cols-3 gap-4 mb-8">
           <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
             <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
@@ -154,15 +268,101 @@ function VerifyContent() {
           </div>
         </div>
 
-        {/* Persona Container */}
-        <div className="bg-white rounded-xl border-2 border-slate-300 shadow-lg overflow-hidden">
-          <div 
-            id="persona-container"
-            style={{ 
-              minHeight: '600px',
-              width: '100%'
-            }}
-          />
+        {/* Main Action Area */}
+        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+          
+          {/* Error State */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div className="flex-1">
+                  <h4 className="font-semibold text-red-900 mb-1">Verification Error</h4>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+              <Button
+                onClick={handleRetry}
+                variant="outline"
+                className="mt-4 border-red-300 text-red-700 hover:bg-red-50"
+              >
+                Retry Verification
+              </Button>
+            </div>
+          )}
+
+          {/* Loading State */}
+          {!scriptLoaded && !error && (
+            <div className="text-center py-12">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Preparing Secure Verification...
+              </h3>
+              <p className="text-slate-600">Loading verification system</p>
+            </div>
+          )}
+
+          {/* Script Loaded but Client Not Ready */}
+          {scriptLoaded && !personaReady && !error && (
+            <div className="text-center py-12">
+              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                Initializing Verification...
+              </h3>
+              <p className="text-slate-600">Setting up your secure session</p>
+            </div>
+          )}
+
+          {/* Ready to Verify */}
+          {personaReady && !error && (
+            <div className="text-center py-8">
+              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Shield className="w-12 h-12 text-blue-600" />
+              </div>
+              
+              <h3 className="text-2xl font-bold text-slate-900 mb-3">
+                Ready to Verify
+              </h3>
+              
+              <p className="text-slate-600 mb-8 max-w-md mx-auto">
+                Click below to open the secure verification window. You'll need:
+              </p>
+
+              <div className="grid gap-3 max-w-sm mx-auto mb-8 text-left">
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-slate-700">A valid government-issued ID</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-slate-700">Your phone or webcam</span>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-slate-700">2-3 minutes of your time</span>
+                </div>
+              </div>
+
+              <Button
+                onClick={handleBeginVerification}
+                disabled={launching}
+                size="lg"
+                className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 h-auto shadow-lg"
+              >
+                {launching ? (
+                  <>
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Opening Verification...
+                  </>
+                ) : (
+                  <>
+                    <Shield className="w-5 h-5 mr-2" />
+                    Begin Verification
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
 
         <p className="text-xs text-slate-500 text-center mt-6">
