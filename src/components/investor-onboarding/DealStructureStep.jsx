@@ -14,7 +14,7 @@ const DEAL_TYPES = [
 const STRUCTURES = [
   { id: 'own_100', label: 'I buy 100% and own the asset' },
   { id: 'equity_jv', label: 'Equity partnerships / joint ventures' },
-  { id: 'debt_funding', label: 'Debt funding (I'm the lender)' },
+  { id: 'debt_funding', label: "Debt funding (I'm the lender)" },
   { id: 'creative', label: 'Creative finance (sub-to, seller finance, etc.)' },
 ];
 
