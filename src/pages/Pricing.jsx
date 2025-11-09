@@ -5,7 +5,7 @@ import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
 
 const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
@@ -14,7 +14,7 @@ export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState("monthly");
   const navigate = useNavigate();
   
-  // Use unified profile hook
+  // Use unified profile hook (now includes subscription info)
   const { 
     loading, 
     user,
@@ -24,7 +24,10 @@ export default function Pricing() {
     hasNDA, 
     kycStatus,
     kycVerified,
-    isInvestorReady 
+    isInvestorReady,
+    subscriptionPlan,
+    subscriptionStatus,
+    isPaidSubscriber
   } = useCurrentProfile();
 
   useEffect(() => {
@@ -51,6 +54,9 @@ export default function Pricing() {
         kycStatus,
         kycVerified,
         isInvestorReady,
+        subscriptionPlan,
+        subscriptionStatus,
+        isPaidSubscriber,
         profile_fields: profile ? {
           user_role: profile.user_role,
           onboarding_completed_at: profile.onboarding_completed_at,
@@ -64,7 +70,7 @@ export default function Pricing() {
         } : null
       });
     }
-  }, [loading, user, profile, role, onboarded, hasNDA, kycStatus, kycVerified, isInvestorReady]);
+  }, [loading, user, profile, role, onboarded, hasNDA, kycStatus, kycVerified, isInvestorReady, subscriptionPlan, subscriptionStatus, isPaidSubscriber]);
 
   // Determine what's blocking investor (if anything)
   const getBlockingStep = () => {
@@ -88,6 +94,17 @@ export default function Pricing() {
   };
 
   const blockingStep = getBlockingStep();
+
+  // Helper to get plan display name
+  const getPlanName = (plan) => {
+    const names = {
+      'starter': 'Starter',
+      'pro': 'Pro',
+      'enterprise': 'Enterprise',
+      'none': 'Free'
+    };
+    return names[plan] || plan;
+  };
 
   const handleGetStarted = async (plan) => {
     console.log('[Pricing] 🎯 handleGetStarted called:', { plan, loading, user: !!user, role, isInvestorReady });
@@ -250,6 +267,7 @@ export default function Pricing() {
   const tiers = [
     {
       name: "Starter",
+      slug: "starter",
       icon: Zap,
       price: { monthly: 19, annual: 15 },
       description: "Perfect for individual investors starting out",
@@ -272,6 +290,7 @@ export default function Pricing() {
     },
     {
       name: "Pro",
+      slug: "pro",
       icon: Shield,
       price: { monthly: 49, annual: 39 },
       description: "For serious investors managing multiple deals",
@@ -296,6 +315,7 @@ export default function Pricing() {
     },
     {
       name: "Enterprise",
+      slug: "enterprise",
       icon: Crown,
       price: { monthly: 99, annual: 79 },
       description: "For investment firms and high-volume investors",
@@ -368,8 +388,23 @@ export default function Pricing() {
 
   return (
     <div>
-      {/* Blocking Step Banner (only for investors who aren't ready) */}
-      {!loading && role === 'investor' && !isInvestorReady && bannerConfig && (
+      {/* SUBSCRIPTION STATUS BANNER - Shows for paid subscribers */}
+      {!loading && isPaidSubscriber && (
+        <div className="bg-emerald-600 text-white py-3">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-center gap-3">
+              <Check className="w-5 h-5 flex-shrink-0" />
+              <p className="text-sm font-medium">
+                You are on the <span className="font-bold">{getPlanName(subscriptionPlan)}</span> plan
+                {subscriptionStatus === 'trialing' && ' (Free trial active)'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Blocking Step Banner (only for investors who aren't ready AND aren't paid) */}
+      {!loading && role === 'investor' && !isInvestorReady && !isPaidSubscriber && bannerConfig && (
         <div className="bg-orange-600 text-white py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between flex-wrap gap-4">
@@ -431,100 +466,125 @@ export default function Pricing() {
       <section className="py-20 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-3 gap-8">
-            {tiers.map((tier) => (
-              <div
-                key={tier.name}
-                className={`bg-white rounded-2xl shadow-xl border-2 ${
-                  tier.popular ? "border-emerald-500 relative" : "border-slate-200"
-                }`}
-              >
-                {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-emerald-500 text-white text-sm font-medium px-4 py-1 rounded-full">
-                      Most Popular
-                    </span>
-                  </div>
-                )}
-                <div className="p-8">
-                  <div className={`w-12 h-12 bg-${tier.color}-100 rounded-lg flex items-center justify-center mb-4`}>
-                    <tier.icon className={`w-6 h-6 text-${tier.color}-600`} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{tier.name}</h3>
-                  <p className="text-slate-600 mb-6">{tier.description}</p>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-slate-900">
-                      ${tier.price[billingCycle]}
-                    </span>
-                    <span className="text-slate-600">/{billingCycle === "monthly" ? "month" : "month, billed annually"}</span>
-                  </div>
-                  
-                  {/* CTA Button - Conditional on investor readiness */}
-                  {!loading && role === 'investor' && !isInvestorReady && tier.planId !== 'enterprise' ? (
-                    <div className="space-y-3">
+            {tiers.map((tier) => {
+              const isCurrentPlan = subscriptionPlan === tier.slug && isPaidSubscriber;
+              
+              return (
+                <div
+                  key={tier.name}
+                  className={`bg-white rounded-2xl shadow-xl border-2 ${
+                    isCurrentPlan ? "border-emerald-600 relative" :
+                    tier.popular ? "border-emerald-500 relative" : 
+                    "border-slate-200"
+                  }`}
+                >
+                  {isCurrentPlan && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <span className="bg-emerald-600 text-white text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
+                        <Check className="w-4 h-4" />
+                        Current Plan
+                      </span>
+                    </div>
+                  )}
+                  {!isCurrentPlan && tier.popular && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                      <span className="bg-emerald-500 text-white text-sm font-medium px-4 py-1 rounded-full">
+                        Most Popular
+                      </span>
+                    </div>
+                  )}
+                  <div className="p-8">
+                    <div className={`w-12 h-12 bg-${tier.color}-100 rounded-lg flex items-center justify-center mb-4`}>
+                      <tier.icon className={`w-6 h-6 text-${tier.color}-600`} />
+                    </div>
+                    <h3 className="text-2xl font-bold text-slate-900 mb-2">{tier.name}</h3>
+                    <p className="text-slate-600 mb-6">{tier.description}</p>
+                    <div className="mb-6">
+                      <span className="text-4xl font-bold text-slate-900">
+                        ${tier.price[billingCycle]}
+                      </span>
+                      <span className="text-slate-600">/{billingCycle === "monthly" ? "month" : "month, billed annually"}</span>
+                    </div>
+                    
+                    {/* CTA Button - Smart conditional logic */}
+                    {isCurrentPlan ? (
+                      // User is already on this plan
                       <Button
-                        className="w-full bg-slate-300 text-slate-700 cursor-not-allowed"
+                        className="w-full bg-emerald-600 hover:bg-emerald-700"
                         disabled
                       >
-                        <Lock className="w-4 h-4 mr-2" />
-                        {blockingStep === 'onboarding' ? 'Complete Profile Required' :
-                         blockingStep === 'verification' ? 'Verification Required' :
-                         blockingStep === 'nda' ? 'NDA Required' :
-                         'Complete Setup Required'}
+                        <Check className="w-4 h-4 mr-2" />
+                        Your Current Plan
                       </Button>
-                      <p className="text-xs text-center text-slate-600">
-                        <button 
-                          onClick={bannerConfig?.onClick}
-                          className="text-blue-600 hover:underline font-medium"
+                    ) : !loading && role === 'investor' && !isInvestorReady && tier.planId !== 'enterprise' ? (
+                      // Investor not ready (needs onboarding/KYC/NDA)
+                      <div className="space-y-3">
+                        <Button
+                          className="w-full bg-slate-300 text-slate-700 cursor-not-allowed"
+                          disabled
                         >
-                          {blockingStep === 'onboarding' ? 'Complete your profile' :
-                           blockingStep === 'verification' ? 'Verify your identity' :
-                           blockingStep === 'nda' ? 'Sign the NDA' :
-                           'Complete setup'}
-                        </button> to subscribe
-                      </p>
-                    </div>
-                  ) : (
-                    <Button
-                      className={`w-full ${
-                        tier.popular
-                          ? "bg-emerald-600 hover:bg-emerald-700"
-                          : "bg-slate-900 hover:bg-slate-800"
-                      }`}
-                      onClick={() => handleGetStarted(tier.planId)}
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Loading...
-                        </>
-                      ) : (
-                        <>
-                          {tier.cta}
-                          <ArrowRight className="w-4 h-4 ml-2" />
-                        </>
-                      )}
-                    </Button>
-                  )}
+                          <Lock className="w-4 h-4 mr-2" />
+                          {blockingStep === 'onboarding' ? 'Complete Profile Required' :
+                           blockingStep === 'verification' ? 'Verification Required' :
+                           blockingStep === 'nda' ? 'NDA Required' :
+                           'Complete Setup Required'}
+                        </Button>
+                        <p className="text-xs text-center text-slate-600">
+                          <button 
+                            onClick={bannerConfig?.onClick}
+                            className="text-blue-600 hover:underline font-medium"
+                          >
+                            {blockingStep === 'onboarding' ? 'Complete your profile' :
+                             blockingStep === 'verification' ? 'Verify your identity' :
+                             blockingStep === 'nda' ? 'Sign the NDA' :
+                             'Complete setup'}
+                          </button> to subscribe
+                        </p>
+                      </div>
+                    ) : (
+                      // Ready to subscribe or upgrade/downgrade
+                      <Button
+                        className={`w-full ${
+                          tier.popular
+                            ? "bg-emerald-600 hover:bg-emerald-700"
+                            : "bg-slate-900 hover:bg-slate-800"
+                        }`}
+                        onClick={() => handleGetStarted(tier.planId)}
+                        disabled={loading}
+                      >
+                        {loading ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            {tier.cta}
+                            <ArrowRight className="w-4 h-4 ml-2" />
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                  <div className="border-t border-slate-200 p-8">
+                    <ul className="space-y-3">
+                      {tier.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3">
+                          <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                          <span className="text-slate-700">{feature}</span>
+                        </li>
+                      ))}
+                      {tier.notIncluded.map((feature) => (
+                        <li key={feature} className="flex items-start gap-3 opacity-40">
+                          <X className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-slate-600">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 </div>
-                <div className="border-t border-slate-200 p-8">
-                  <ul className="space-y-3">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3">
-                        <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                        <span className="text-slate-700">{feature}</span>
-                      </li>
-                    ))}
-                    {tier.notIncluded.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3 opacity-40">
-                        <X className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
-                        <span className="text-slate-600">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Info Box for unauthenticated users */}
