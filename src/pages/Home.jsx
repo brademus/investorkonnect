@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -32,6 +33,8 @@ const US_STATES = [
  * 
  * First thing anyone sees. No auth required.
  * Choose target market/state, then continue to role selection.
+ * 
+ * NEW: Added "Log In" button for existing users to jump straight to their dashboard.
  */
 export default function Home() {
   const navigate = useNavigate();
@@ -71,12 +74,29 @@ export default function Home() {
     navigate(createPageUrl("RoleSelection"));
   };
 
+  const handleLogin = () => {
+    // Redirect to login, then back to RoleSelection which will route based on onboarding status
+    const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
+    base44.auth.redirectToLogin(callbackUrl);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
       {/* NO TOP NAV - Wizard flow only */}
       
       <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         
+        {/* Login button for existing users */}
+        <div className="flex justify-end mb-8">
+          <Button
+            variant="outline"
+            onClick={handleLogin}
+            className="gap-2 border-slate-300 hover:bg-slate-50"
+          >
+            Log In
+          </Button>
+        </div>
+
         {/* Logo */}
         <div className="text-center mb-12">
           <div className="w-20 h-20 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">

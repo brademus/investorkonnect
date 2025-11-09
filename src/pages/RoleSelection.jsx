@@ -13,19 +13,83 @@ import { toast } from "sonner";
  * STEP 2: ROLE SELECTION
  * 
  * User chooses Investor or Agent.
- * If not logged in, saves to wizard context then redirects to auth.
+ * If not logged in, handles OAuth callback and redirects to auth properly.
  * If logged in, updates profile and continues to onboarding.
+ * 
+ * FIXES LOGIN LOOP:
+ * - Detects OAuth code in URL and routes to AuthCallback if present
+ * - Otherwise redirects to login with proper callback URL
  */
 function RoleSelectionContent() {
   const navigate = useNavigate();
   const { selectedState, setSelectedRole } = useWizard();
-  const { loading, user, profile, refresh } = useCurrentProfile();
+  const { loading, user, profile, onboarded, role, refresh } = useCurrentProfile();
   const [updating, setUpdating] = useState(false);
   const [selectedChoice, setSelectedChoice] = useState(null);
 
   useEffect(() => {
     document.title = "Choose Your Role - AgentVault";
   }, []);
+
+  // Handle authentication state and routing
+  useEffect(() => {
+    if (loading) return;
+
+    // Check if user is returning from OAuth with a code
+    const params = new URLSearchParams(window.location.search);
+    const hasOAuthCode = params.has("code");
+
+    if (!user) {
+      // Not logged in
+      if (hasOAuthCode) {
+        // We have an OAuth code - redirect to AuthCallback to finalize login
+        console.log('[RoleSelection] OAuth code detected, redirecting to AuthCallback');
+        const authCallbackUrl = createPageUrl("AuthCallback");
+        if (authCallbackUrl) {
+          navigate(authCallbackUrl + window.location.search, { replace: true });
+        } else {
+          // Fallback if no AuthCallback page exists
+          base44.auth.redirectToLogin(window.location.pathname);
+        }
+      } else {
+        // No OAuth code - start login flow
+        console.log('[RoleSelection] Not authenticated, redirecting to login');
+        const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
+        base44.auth.redirectToLogin(callbackUrl);
+      }
+      return;
+    }
+
+    // User is logged in - check if they're already onboarded
+    if (onboarded) {
+      console.log('[RoleSelection] User already onboarded, redirecting to dashboard');
+      // User already completed NEW onboarding - send to dashboard
+      if (role === 'investor') {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      } else {
+        // Unknown role but onboarded - still send to dashboard
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
+      return;
+    }
+
+    // User is logged in but NOT onboarded
+    // If they already have a role selected, send them to onboarding
+    if (profile?.user_role && profile.user_role !== 'member') {
+      console.log('[RoleSelection] Role already set but not onboarded, redirecting to onboarding');
+      if (profile.user_role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (profile.user_role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+      return;
+    }
+
+    // Otherwise stay on RoleSelection to let them choose
+
+  }, [loading, user, profile, onboarded, role, navigate]);
 
   const handleRoleSelection = async (chosenRole) => {
     setSelectedChoice(chosenRole);
@@ -37,7 +101,6 @@ function RoleSelectionContent() {
 
       if (!user) {
         // Not logged in - redirect to Base44 login
-        // After login, PostAuth will bring user back to continue wizard
         toast.info("Please sign in to continue");
         base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
         return;
@@ -78,6 +141,18 @@ function RoleSelectionContent() {
       setSelectedChoice(null);
     }
   };
+
+  // Show loading while checking auth state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 flex items-center justify-center p-4">
