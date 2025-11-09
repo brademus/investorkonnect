@@ -1,7 +1,7 @@
 import Stripe from 'npm:stripe@14.11.0';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// LITE CHECKOUT WITH ONBOARDING GATE
+// LITE CHECKOUT WITH COMPREHENSIVE GATING
 Deno.serve(async (req) => {
   try {
     const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
@@ -13,7 +13,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log('=== Lite Checkout with Gating ===');
+    console.log('=== Lite Checkout with Full Gating ===');
     console.log('Base URL:', base);
     
     const url = new URL(req.url, base);
@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // HARD GATE: Check onboarding completion
+    // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
     const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
     if (enableGating) {
@@ -65,30 +65,92 @@ Deno.serve(async (req) => {
         }
         
         const user = await base44.auth.me();
+        console.log('✅ User authenticated:', user.email);
+        
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
-        if (profiles.length === 0 || !profiles[0].onboarding_completed_at) {
-          console.log('❌ Onboarding not completed');
+        if (profiles.length === 0) {
+          console.log('❌ No profile found');
           return Response.json({ 
             ok: false, 
-            reason: 'ONBOARDING_REQUIRED',
-            message: 'Please complete onboarding before subscribing',
-            redirect: `${base}/onboarding`
+            reason: 'PROFILE_REQUIRED',
+            message: 'Profile not found. Please complete setup.',
+            redirect: `${base}/role`
           }, { status: 403 });
         }
         
-        console.log('✅ Onboarding completed, proceeding to Stripe');
+        const profile = profiles[0];
+        console.log('📋 Profile check:', {
+          user_role: profile.user_role,
+          onboarding_completed_at: profile.onboarding_completed_at,
+          nda_accepted: profile.nda_accepted,
+          kyc_status: profile.kyc_status
+        });
+        
+        // Check if investor role
+        if (profile.user_role === 'investor') {
+          // For investors, check FULL readiness
+          
+          // 1. Check onboarding
+          if (!profile.onboarding_completed_at || !profile.user_role) {
+            console.log('❌ Onboarding not completed');
+            return Response.json({ 
+              ok: false, 
+              reason: 'ONBOARDING_REQUIRED',
+              message: 'Please complete your investor profile first',
+              redirect: `${base}/onboarding/investor`
+            }, { status: 403 });
+          }
+          
+          // 2. Check KYC
+          if (profile.kyc_status !== 'approved') {
+            console.log('❌ KYC not verified (status:', profile.kyc_status, ')');
+            return Response.json({ 
+              ok: false, 
+              reason: 'VERIFICATION_REQUIRED',
+              message: 'Please complete identity verification first',
+              redirect: `${base}/verify`
+            }, { status: 403 });
+          }
+          
+          // 3. Check NDA
+          if (!profile.nda_accepted) {
+            console.log('❌ NDA not accepted');
+            return Response.json({ 
+              ok: false, 
+              reason: 'NDA_REQUIRED',
+              message: 'Please accept the NDA first',
+              redirect: `${base}/nda`
+            }, { status: 403 });
+          }
+          
+          console.log('✅ Investor fully ready - all gates passed');
+        } else {
+          // For non-investors (agents, etc.), just check basic onboarding
+          if (!profile.onboarding_completed_at) {
+            console.log('❌ Basic onboarding not completed');
+            return Response.json({ 
+              ok: false, 
+              reason: 'ONBOARDING_REQUIRED',
+              message: 'Please complete onboarding before subscribing',
+              redirect: `${base}/onboarding`
+            }, { status: 403 });
+          }
+          
+          console.log('✅ Non-investor user ready');
+        }
+        
       } catch (gateError) {
         console.error('❌ Gating check failed:', gateError);
         return Response.json({ 
           ok: false, 
           reason: 'GATE_ERROR',
-          message: 'Failed to verify onboarding status' 
+          message: 'Failed to verify account status. Please try again.' 
         }, { status: 500 });
       }
     }
 
-    // Redirect URLs
+    // All checks passed - create Stripe session
     const success = `${base}/?payment=success`;
     const cancel = `${base}/pricing?cancelled=true`;
     
@@ -105,13 +167,16 @@ Deno.serve(async (req) => {
       }],
       success_url: success,
       cancel_url: cancel,
-      allow_promotion_codes: true
+      allow_promotion_codes: true,
+      subscription_data: {
+        trial_period_days: 14
+      }
     });
 
-    console.log('✅ Session created:', session.id);
+    console.log('✅ Stripe session created:', session.id);
     console.log('✅ Redirecting to:', session.url);
     
-    // FORCE REDIRECT
+    // FORCE REDIRECT with HTML
     const html = `<!doctype html>
 <html>
 <head>
@@ -119,7 +184,14 @@ Deno.serve(async (req) => {
   <title>Redirecting to Stripe...</title>
   <meta http-equiv="refresh" content="0;url=${session.url}">
   <script>
-    top.location.replace(${JSON.stringify(session.url)});
+    // Try multiple redirect methods
+    setTimeout(function() {
+      if (window.top) {
+        window.top.location.replace(${JSON.stringify(session.url)});
+      } else {
+        window.location.replace(${JSON.stringify(session.url)});
+      }
+    }, 100);
   </script>
   <style>
     body { 
@@ -159,6 +231,9 @@ Deno.serve(async (req) => {
 <body>
   <div class="spinner"></div>
   <p>Opening Stripe Checkout...</p>
+  <p style="color: #64748b; font-size: 14px; margin-top: 10px;">
+    Starting your 14-day free trial
+  </p>
   <a href="${session.url}">Click here if not redirected</a>
 </body>
 </html>`;

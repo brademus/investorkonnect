@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -75,8 +76,9 @@ export default function Home() {
   };
 
   const handleLogin = () => {
-    // Redirect to login, callback to RoleSelection which will check onboarding status
-    const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
+    // Redirect to login, callback to PostAuth which will route appropriately
+    const callbackUrl = createPageUrl("PostAuth") || createPageUrl("Dashboard") || window.location.pathname;
+    console.log('[Home] Login redirect, callback:', callbackUrl);
     base44.auth.redirectToLogin(callbackUrl);
   };
 
