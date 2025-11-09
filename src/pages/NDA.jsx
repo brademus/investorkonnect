@@ -7,7 +7,7 @@ import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight } from "lucide-react";
+import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -18,15 +18,89 @@ import { toast } from "sonner";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { role, hasNDA, refresh } = useCurrentProfile();
+  const { loading, role, hasNDA, refresh } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     document.title = "NDA Required - AgentVault";
   }, []);
 
-  // Already accepted - continue to next step
+  // Redirect if already accepted (check after loading completes)
+  useEffect(() => {
+    if (!loading && hasNDA) {
+      console.log('[NDA] Already accepted, redirecting...');
+      const nextRoute = role === 'investor' ? createPageUrl("Matches") : createPageUrl("AgentDashboard");
+      setTimeout(() => {
+        navigate(nextRoute, { replace: true });
+      }, 500);
+    }
+  }, [loading, hasNDA, role, navigate]);
+
+  const handleAccept = async () => {
+    if (!agreed) {
+      toast.error("Please read and agree to the NDA terms");
+      return;
+    }
+
+    console.log('[NDA] Accepting NDA...');
+    setAccepting(true);
+    setError(null);
+
+    try {
+      console.log('[NDA] Calling ndaAccept function...');
+      const response = await base44.functions.invoke('ndaAccept');
+      
+      console.log('[NDA] Response:', response.data);
+      
+      if (response.data?.ok) {
+        console.log('[NDA] ✅ NDA accepted successfully');
+        toast.success("NDA accepted successfully!");
+        
+        // Refresh profile to get updated NDA status
+        console.log('[NDA] Refreshing profile...');
+        await refresh();
+        
+        // Small delay to ensure state is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Navigate based on role
+        console.log('[NDA] Navigating to next step for role:', role);
+        if (role === 'investor') {
+          navigate(createPageUrl("Matches"), { replace: true });
+        } else {
+          navigate(createPageUrl("AgentDashboard"), { replace: true });
+        }
+      } else {
+        const errorMsg = response.data?.error || "Failed to accept NDA";
+        console.error('[NDA] ❌ Backend returned error:', errorMsg);
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setAccepting(false);
+      }
+    } catch (error) {
+      console.error('[NDA] ❌ Exception:', error);
+      const errorMsg = error.message || "Failed to accept NDA. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
+      setAccepting(false);
+    }
+  };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <p className="text-slate-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Already accepted - show success message while redirecting
   if (hasNDA) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -37,58 +111,14 @@ function NDAContent() {
             </div>
             <h2 className="text-2xl font-bold text-slate-900 mb-2">NDA Already Signed ✓</h2>
             <p className="text-slate-600 mb-6">
-              {role === 'investor' ? 'Continue to find agents' : 'Continue to dashboard'}
+              {role === 'investor' ? 'Redirecting to matches...' : 'Redirecting to dashboard...'}
             </p>
-            <button
-              onClick={() => {
-                if (role === 'investor') {
-                  navigate(createPageUrl("Matches"));
-                } else {
-                  navigate(createPageUrl("AgentDashboard"));
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium inline-flex items-center gap-2"
-            >
-              Continue
-              <ArrowRight className="w-4 h-4" />
-            </button>
+            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
           </div>
         </div>
       </div>
     );
   }
-
-  const handleAccept = async () => {
-    if (!agreed) {
-      toast.error("Please read and agree to the NDA terms");
-      return;
-    }
-
-    setAccepting(true);
-    try {
-      const response = await base44.functions.invoke('ndaAccept');
-      
-      if (response.data.ok) {
-        toast.success("NDA accepted successfully!");
-        await refresh();
-        
-        // Route based on role
-        if (role === 'investor') {
-          navigate(createPageUrl("Matches"));
-        } else {
-          // Agent doesn't have matches, goes to placeholder or waits for first room
-          navigate(createPageUrl("AgentDashboard"));
-        }
-      } else {
-        toast.error("Failed to accept NDA");
-        setAccepting(false);
-      }
-    } catch (error) {
-      console.error('[NDA] Accept error:', error);
-      toast.error("Failed to accept NDA. Please try again.");
-      setAccepting(false);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-slate-50 py-8">
@@ -97,7 +127,7 @@ function NDAContent() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">Confidentiality & NDA Required</h1>
@@ -131,6 +161,20 @@ function NDAContent() {
         </div>
 
         <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+          
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-red-900 mb-1">Error</h4>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-slate-50 rounded-xl p-6 max-h-96 overflow-y-auto border border-slate-200 mb-6">
             <h3 className="text-lg font-bold text-slate-900 mb-4">AgentVault Non-Disclosure Agreement v1.0</h3>
             
@@ -181,6 +225,7 @@ function NDAContent() {
               checked={agreed}
               onCheckedChange={setAgreed}
               className="mt-1"
+              disabled={accepting}
             />
             <Label htmlFor="nda-agree" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
               I have read and agree to the terms of this Non-Disclosure Agreement. I understand that this is a legally 
@@ -191,7 +236,7 @@ function NDAContent() {
           <Button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg"
+            className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {accepting ? (
               <>

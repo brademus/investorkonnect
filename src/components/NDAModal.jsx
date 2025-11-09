@@ -10,12 +10,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Shield, Lock, FileText, Loader2 } from "lucide-react";
+import { Shield, Lock, FileText, Loader2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
+/**
+ * NDAModal - Modal version for inline NDA acceptance
+ * Used on pages like /agents, /deal-rooms where NDA is required
+ * Calls same backend as full NDA page
+ */
 export default function NDAModal({ open, onAccepted }) {
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleAccept = async () => {
     if (!agreed) {
@@ -23,20 +29,36 @@ export default function NDAModal({ open, onAccepted }) {
       return;
     }
 
+    console.log('[NDAModal] Accepting NDA...');
     setAccepting(true);
+    setError(null);
+
     try {
+      console.log('[NDAModal] Calling ndaAccept function...');
       const response = await base44.functions.invoke('ndaAccept');
       
-      if (response.data.ok) {
+      console.log('[NDAModal] Response:', response.data);
+      
+      if (response.data?.ok) {
+        console.log('[NDAModal] ✅ NDA accepted successfully');
         toast.success("NDA accepted successfully!");
-        onAccepted();
+        
+        // Call parent callback to refresh and close modal
+        if (onAccepted) {
+          onAccepted();
+        }
       } else {
-        toast.error("Failed to accept NDA");
+        const errorMsg = response.data?.error || "Failed to accept NDA";
+        console.error('[NDAModal] ❌ Backend returned error:', errorMsg);
+        setError(errorMsg);
+        toast.error(errorMsg);
+        setAccepting(false);
       }
     } catch (error) {
-      console.error('NDA accept error:', error);
-      toast.error("Failed to accept NDA. Please try again.");
-    } finally {
+      console.error('[NDAModal] ❌ Exception:', error);
+      const errorMsg = error.message || "Failed to accept NDA. Please try again.";
+      setError(errorMsg);
+      toast.error(errorMsg);
       setAccepting(false);
     }
   };
@@ -75,6 +97,19 @@ export default function NDAModal({ open, onAccepted }) {
             <p className="text-xs text-slate-600">Accept once, valid forever</p>
           </div>
         </div>
+
+        {/* Error Display */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-red-900 mb-1">Error</h4>
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="bg-slate-50 rounded-xl p-6 max-h-96 overflow-y-auto border border-slate-200">
           <h3 className="text-lg font-bold text-slate-900 mb-4">AgentVault Non-Disclosure Agreement v1.0</h3>
@@ -134,12 +169,13 @@ export default function NDAModal({ open, onAccepted }) {
 
         <div className="flex items-start gap-3 mt-6">
           <Checkbox
-            id="nda-agree"
+            id="nda-agree-modal"
             checked={agreed}
             onCheckedChange={setAgreed}
             className="mt-1"
+            disabled={accepting}
           />
-          <Label htmlFor="nda-agree" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
+          <Label htmlFor="nda-agree-modal" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
             I have read and agree to the terms of this Non-Disclosure Agreement. I understand that this is a legally 
             binding contract and that I am responsible for maintaining confidentiality of all information accessed through AgentVault.
           </Label>
@@ -149,7 +185,7 @@ export default function NDAModal({ open, onAccepted }) {
           <Button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="flex-1 bg-blue-600 hover:bg-blue-700"
+            className="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {accepting ? (
               <>
