@@ -89,7 +89,7 @@ export default function Pricing() {
 
   const blockingStep = getBlockingStep();
 
-  const handleGetStarted = (plan) => {
+  const handleGetStarted = async (plan) => {
     console.log('[Pricing] 🎯 handleGetStarted called:', { plan, loading, user: !!user, role, isInvestorReady });
     
     // IMPORTANT: Wait for loading to complete before checking auth
@@ -142,20 +142,76 @@ export default function Pricing() {
         }
         return;
       }
-
-      console.log('[Pricing] ✅ Investor ready, opening checkout:', plan);
-      
-      // Investor is ready - open checkout in same window
-      const checkoutUrl = `${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`;
-      console.log('[Pricing] 🔗 Checkout URL:', checkoutUrl);
-      
-      window.location.href = checkoutUrl;
-      return;
     }
 
-    // For other roles (agents, etc.) - allow checkout
-    console.log('[Pricing] Agent or other role, proceeding to checkout');
-    window.location.href = `${PUBLIC_APP_URL}/functions/checkoutLite?plan=${plan}`;
+    // User is ready - call checkout function via SDK (passes auth automatically)
+    console.log('[Pricing] ✅ User ready, calling checkout function via SDK...');
+    toast.loading("Opening checkout...", { id: 'checkout-loading' });
+
+    try {
+      // Call backend function through SDK - this passes authentication
+      const response = await base44.functions.invoke('checkoutLite', { plan });
+      
+      console.log('[Pricing] 📦 Backend response:', response);
+      
+      toast.dismiss('checkout-loading');
+
+      if (!response.data) {
+        console.error('[Pricing] ❌ No response data');
+        toast.error("Failed to create checkout session");
+        return;
+      }
+
+      const data = response.data;
+
+      // Check for errors
+      if (!data.ok) {
+        console.error('[Pricing] ❌ Backend error:', data);
+        
+        if (data.reason === 'AUTH_REQUIRED') {
+          toast.error("Please sign in again");
+          base44.auth.redirectToLogin(window.location.pathname);
+          return;
+        }
+        
+        if (data.reason === 'ONBOARDING_REQUIRED') {
+          toast.error(data.message || "Please complete onboarding first");
+          if (data.redirect) {
+            navigate(data.redirect.replace(PUBLIC_APP_URL, ''));
+          }
+          return;
+        }
+        
+        if (data.reason === 'VERIFICATION_REQUIRED') {
+          toast.error(data.message || "Please verify your identity first");
+          navigate(createPageUrl("Verify"));
+          return;
+        }
+        
+        if (data.reason === 'NDA_REQUIRED') {
+          toast.error(data.message || "Please accept the NDA first");
+          navigate(createPageUrl("NDA"));
+          return;
+        }
+        
+        toast.error(data.message || "Failed to start checkout");
+        return;
+      }
+
+      // Success - redirect to Stripe
+      if (data.url) {
+        console.log('[Pricing] ✅ Redirecting to Stripe:', data.url);
+        window.location.href = data.url;
+      } else {
+        console.error('[Pricing] ❌ No Stripe URL in response');
+        toast.error("Failed to get checkout URL");
+      }
+
+    } catch (error) {
+      console.error('[Pricing] ❌ Checkout error:', error);
+      toast.dismiss('checkout-loading');
+      toast.error("Failed to start checkout. Please try again.");
+    }
   };
 
   // Get banner message based on what's blocking

@@ -1,24 +1,33 @@
 import Stripe from 'npm:stripe@14.11.0';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
-// LITE CHECKOUT WITH COMPREHENSIVE GATING
+// LITE CHECKOUT - CALLED VIA SDK (not direct URL)
 Deno.serve(async (req) => {
   try {
     const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
     
     if (!base) {
-      return new Response('Set PUBLIC_APP_URL', { 
-        status: 500,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return Response.json({ 
+        ok: false, 
+        reason: 'CONFIG_ERROR',
+        message: 'Server configuration error' 
+      }, { status: 500 });
     }
 
-    console.log('=== Lite Checkout with Full Gating ===');
-    console.log('Base URL:', base);
+    console.log('=== Checkout Lite (SDK Call) ===');
     
-    const url = new URL(req.url, base);
-    const plan = url.searchParams.get('plan');
-    const priceParam = url.searchParams.get('price');
+    // Parse request body to get plan
+    let plan = null;
+    try {
+      const body = await req.json();
+      plan = body.plan;
+      console.log('📦 Received plan from body:', plan);
+    } catch (parseErr) {
+      // Fallback to URL params for backward compatibility
+      const url = new URL(req.url, base);
+      plan = url.searchParams.get('plan');
+      console.log('📦 Received plan from URL:', plan);
+    }
     
     // Map plan to price ID
     const priceMap = {
@@ -27,24 +36,25 @@ Deno.serve(async (req) => {
       "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
-    const price = priceParam || (plan ? priceMap[plan] : null);
+    const price = plan ? priceMap[plan] : null;
     
-    console.log('Plan:', plan);
-    console.log('Price:', price);
+    console.log('Plan:', plan, '→ Price:', price);
     
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
     if (!STRIPE_SECRET_KEY) {
-      return new Response('Missing STRIPE_SECRET_KEY', { 
-        status: 500,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return Response.json({ 
+        ok: false, 
+        reason: 'CONFIG_ERROR',
+        message: 'Stripe not configured' 
+      }, { status: 500 });
     }
     
     if (!price || !price.startsWith('price_')) {
-      return new Response('Missing or invalid price', { 
-        status: 400,
-        headers: { 'Content-Type': 'text/plain' }
-      });
+      return Response.json({ 
+        ok: false, 
+        reason: 'INVALID_PLAN',
+        message: 'Invalid or missing plan' 
+      }, { status: 400 });
     }
 
     // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
@@ -174,83 +184,21 @@ Deno.serve(async (req) => {
     });
 
     console.log('✅ Stripe session created:', session.id);
-    console.log('✅ Redirecting to:', session.url);
+    console.log('✅ Stripe URL:', session.url);
     
-    // FORCE REDIRECT with HTML
-    const html = `<!doctype html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Redirecting to Stripe...</title>
-  <meta http-equiv="refresh" content="0;url=${session.url}">
-  <script>
-    // Try multiple redirect methods
-    setTimeout(function() {
-      if (window.top) {
-        window.top.location.replace(${JSON.stringify(session.url)});
-      } else {
-        window.location.replace(${JSON.stringify(session.url)});
-      }
-    }, 100);
-  </script>
-  <style>
-    body { 
-      font-family: system-ui, sans-serif; 
-      max-width: 500px; 
-      margin: 100px auto; 
-      text-align: center; 
-    }
-    .spinner {
-      border: 3px solid #f3f3f3;
-      border-top: 3px solid #2563eb;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      animation: spin 1s linear infinite;
-      margin: 20px auto;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    a {
-      display: inline-block;
-      margin-top: 20px;
-      padding: 12px 24px;
-      background: #2563eb;
-      color: white;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: 500;
-    }
-    a:hover {
-      background: #1d4ed8;
-    }
-  </style>
-</head>
-<body>
-  <div class="spinner"></div>
-  <p>Opening Stripe Checkout...</p>
-  <p style="color: #64748b; font-size: 14px; margin-top: 10px;">
-    Starting your 14-day free trial
-  </p>
-  <a href="${session.url}">Click here if not redirected</a>
-</body>
-</html>`;
-    
-    return new Response(html, {
-      status: 200,
-      headers: { 
-        'Content-Type': 'text/html; charset=utf-8',
-        'Location': session.url
-      }
-    });
+    // Return JSON with Stripe URL for client to redirect
+    return Response.json({
+      ok: true,
+      url: session.url,
+      session_id: session.id
+    }, { status: 200 });
 
   } catch (error) {
     console.error('❌ Checkout error:', error);
-    return new Response(`Server error: ${error.message}`, { 
-      status: 500,
-      headers: { 'Content-Type': 'text/plain' }
-    });
+    return Response.json({ 
+      ok: false, 
+      reason: 'SERVER_ERROR',
+      message: `Server error: ${error.message}` 
+    }, { status: 500 });
   }
 });
