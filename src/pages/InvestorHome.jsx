@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // Added useNavigate
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,15 @@ import {
 } from "lucide-react";
 
 export default function InvestorHome() {
-  const { profile, loading } = useCurrentProfile();
+  const navigate = useNavigate(); // Initialize useNavigate
+  const { 
+    user, 
+    profile, 
+    subscriptionPlan, 
+    subscriptionStatus, 
+    isPaidSubscriber,
+    loading 
+  } = useCurrentProfile();
 
   if (loading) {
     return (
@@ -21,52 +29,89 @@ export default function InvestorHome() {
     );
   }
 
-  const hasActiveSubscription = profile?.subscription_tier && profile?.subscription_tier !== 'none';
+  // Helper to get plan display name
+  const getPlanName = (plan) => {
+    const names = {
+      'starter': 'Starter',
+      'pro': 'Pro', 
+      'enterprise': 'Enterprise',
+      'none': 'Free'
+    };
+    return names[plan] || 'Free';
+  };
+
   const hasNDA = profile?.nda_accepted;
   const buyBox = profile?.investor?.buy_box || {};
   const docs = profile?.investor?.documents || [];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
-      {/* Hero */}
-      <div className="bg-gradient-to-r from-blue-600 to-emerald-600 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-4">
-            <TrendingUp className="w-10 h-10" />
-            <h1 className="text-4xl font-bold">Your Investor Dashboard</h1>
-          </div>
-          <p className="text-blue-100 text-lg">
-            Welcome back, {profile?.full_name || 'Investor'}! Manage your deal flow and connect with verified agents.
-          </p>
-          
-          {/* Metric Pills */}
-          <div className="flex gap-4 mt-6 flex-wrap">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              <span className="text-sm">
-                Plan: <strong>{profile?.subscription_tier || 'None'}</strong>
-              </span>
-            </div>
-            <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
-              hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
-            }`}>
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">
-                NDA: <strong>{hasNDA ? 'Signed ✅' : 'Required'}</strong>
-              </span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm">
-                Last updated: <strong>{new Date(profile?.updated_date || Date.now()).toLocaleDateString()}</strong>
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
+    <div className="min-h-screen bg-slate-50"> {/* Outermost div with new background */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 mb-2">
+            Welcome back, {user?.full_name || 'Investor'}! 👋
+          </h1>
+          <p className="text-slate-600">
+            Your AgentVault dashboard
+          </p>
+        </div>
+
+        {/* Subscription Status Banner */}
+        {isPaidSubscriber ? (
+          <div className="bg-emerald-50 border-2 border-emerald-200 rounded-xl p-4 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center">
+                  <Shield className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <p className="font-bold text-emerald-900">
+                    {getPlanName(subscriptionPlan)} Plan Active
+                  </p>
+                  <p className="text-sm text-emerald-700">
+                    {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(createPageUrl("Pricing"))}
+                className="border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+              >
+                Manage Plan
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-xl p-6 mb-8">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 mb-1">
+                    Upgrade to unlock full platform access
+                  </h3>
+                  <p className="text-sm text-slate-600">
+                    Get unlimited deal rooms, advanced analytics, and priority support
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => navigate(createPageUrl("Pricing"))}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                View Plans
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* NDA Required Banner */}
         {!hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
@@ -81,27 +126,6 @@ export default function InvestorHome() {
                   <Button className="bg-orange-600 hover:bg-orange-700">
                     <Shield className="w-4 h-4 mr-2" />
                     Sign NDA
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Subscription Banner */}
-        {!hasActiveSubscription && (
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <AlertCircle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-orange-900 mb-2">Upgrade to Unlock Full Access</h3>
-                <p className="text-orange-800 mb-4">
-                  Subscribe to browse agents, view verified reviews, create deal rooms, and more.
-                </p>
-                <Link to={createPageUrl("Pricing")}>
-                  <Button className="bg-orange-600 hover:bg-orange-700">
-                    View Plans
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
