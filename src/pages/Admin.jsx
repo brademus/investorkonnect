@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -14,6 +14,7 @@ function AdminContent() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [resetting, setResetting] = useState(false); // NEW: State for reset operation
   const [healthData, setHealthData] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -166,6 +167,54 @@ function AdminContent() {
     }
   };
 
+  // NEW: Reset all non-admin profiles
+  const resetAllNonAdminProfiles = async () => {
+    const confirmText = `⚠️ DANGER: This will DELETE all investor and agent profiles for non-admin users.
+
+This is irreversible and should only be used for test environments.
+
+Type "RESET" to confirm:`;
+
+    const userInput = prompt(confirmText);
+    
+    if (userInput !== "RESET") {
+      toast.info("Reset cancelled");
+      return;
+    }
+
+    setResetting(true);
+    
+    try {
+      console.log('[Admin] Calling resetProfiles...');
+      const response = await base44.functions.invoke('resetProfiles');
+      const data = response.data;
+      
+      console.log('[Admin] Reset result:', data);
+      
+      if (response.ok && data.ok) { // Check both HTTP status and custom `ok` flag
+        toast.success(`Reset complete! Deleted ${data.deleted} non-admin profiles`);
+        
+        // Show error details if any
+        if (data.errors && data.errors.length > 0) {
+          console.warn('[Admin] Reset errors:', data.errors);
+          data.errors.forEach(err => toast.error(`Reset error: ${err.message}`));
+        }
+        
+        // Reload data after 1 second
+        setTimeout(async () => {
+          await loadData();
+        }, 1000);
+      } else {
+        toast.error("Reset failed: " + (data.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('[Admin] Reset error:', error);
+      toast.error("Reset failed: " + error.message);
+    } finally {
+      setResetting(false);
+    }
+  };
+
   const handleNdaToggle = async (userId, currentStatus) => {
     setNdaUpdating(prev => ({ ...prev, [userId]: true }));
     
@@ -244,6 +293,9 @@ function AdminContent() {
 
   const orphanedProfiles = profiles.filter(p => !p.user_id || !users.find(u => u.id === p.user_id));
 
+  // Count non-admin profiles
+  const nonAdminProfiles = profiles.filter(p => p.role !== 'admin');
+
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -254,6 +306,55 @@ function AdminContent() {
           </h1>
           <p className="text-slate-600">System management and diagnostics</p>
         </div>
+
+        {/* DANGER ZONE: Reset All Profiles */}
+        <Card className="mb-8 border-red-300 bg-red-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-red-900">
+              <Trash2 className="w-5 h-5" />
+              ⚠️ DANGER ZONE: Reset All Non-Admin Profiles
+            </CardTitle>
+            <CardDescription className="text-red-700">
+              Use this to start fresh with test data. This will DELETE all investor and agent profiles for non-admin users.
+              Admin accounts will NOT be affected.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-red-100 border border-red-300 rounded-lg p-4">
+              <p className="text-sm text-red-900 font-semibold mb-2">
+                ⚠️ This action will:
+              </p>
+              <ul className="text-sm text-red-800 space-y-1 list-disc pl-5">
+                <li>Delete all investor profiles (onboarding, matches, subscriptions)</li>
+                <li>Delete all agent profiles (onboarding, embeddings)</li>
+                <li>NOT delete admin users (safe)</li>
+                <li>Force users to go through onboarding again</li>
+                <li>Cannot be undone</li>
+              </ul>
+              <p className="text-sm text-red-900 font-semibold mt-3">
+                {nonAdminProfiles.length} non-admin profiles will be deleted
+              </p>
+            </div>
+            
+            <Button 
+              onClick={resetAllNonAdminProfiles}
+              disabled={resetting}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {resetting ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Resetting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Reset All Non-Admin Profiles
+                </>
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* Quick Admin Setup */}
         <Card className="mb-8 border-orange-200 bg-orange-50">
@@ -401,7 +502,7 @@ function AdminContent() {
                 variant="outline"
                 className="w-full justify-start"
               >
-                <Loader2 className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-4 h-4 mr-2" /> {/* Changed icon here */}
                 Refresh Data
               </Button>
             </CardContent>
