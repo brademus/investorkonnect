@@ -1,33 +1,33 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 /**
- * RESET ALL NON-ADMIN PROFILES - COMPREHENSIVE
+ * RESET ALL NON-ADMIN PROFILES - NUCLEAR OPTION
  * 
- * ADMIN-ONLY: Deletes all investor/agent profiles AND related data for non-admin users
- * Use this to start fresh with test data
+ * ADMIN-ONLY: Completely wipes all non-admin user data from the system
  * 
- * CRITICAL: This does NOT delete admin users or their profiles
+ * This function:
+ * 1. Identifies admin users (by role === 'admin' OR user_role === 'admin')
+ * 2. Deletes ALL related data for non-admin users (matches, rooms, deals, etc.)
+ * 3. Deletes ALL Profile records for non-admin users
+ * 4. Leaves admin users and their data completely untouched
  * 
- * Deletes from:
- * - Profile (main user profiles)
- * - Match (investor-agent matches)
- * - IntroRequest (introduction requests)
- * - Room (deal rooms)
- * - RoomMessage (chat messages)
- * - Deal (deals)
- * - Review (reviews)
+ * After this runs, non-admin users will be treated as brand new when they log in.
  */
 Deno.serve(async (req) => {
+  console.log('\n=== RESET NON-ADMIN PROFILES - START ===\n');
+  
   try {
-    console.log('=== Reset Non-Admin Profiles (COMPREHENSIVE) ===');
-    
     const base44 = createClientFromRequest(req);
     
-    // 1. VERIFY CURRENT USER IS ADMIN
+    // ========================================
+    // STEP 1: VERIFY ADMIN ACCESS
+    // ========================================
+    console.log('STEP 1: Verifying admin access...');
+    
     const currentUser = await base44.auth.me();
     
     if (!currentUser) {
-      console.log('❌ Not authenticated');
+      console.log('❌ ERROR: No authenticated user');
       return Response.json({ 
         ok: false,
         reason: 'AUTH_REQUIRED',
@@ -35,38 +35,35 @@ Deno.serve(async (req) => {
       }, { status: 401 });
     }
     
-    console.log('👤 Current user:', currentUser.email);
+    console.log('✓ Current user:', currentUser.email, '(id:', currentUser.id, ')');
     
-    // Check if current user is admin using ALL possible methods
-    let isAdmin = false;
-    
-    // Method 1: Check auth user role
-    if (currentUser.role === 'admin') {
-      console.log('✅ User is admin (via auth.role)');
-      isAdmin = true;
-    }
-    
-    // Method 2: Check profile role
-    const currentUserProfiles = await base44.entities.Profile.filter({ 
+    // Check if current user is admin
+    const currentUserProfiles = await base44.asServiceRole.entities.Profile.filter({ 
       user_id: currentUser.id 
     });
     
-    if (currentUserProfiles.length > 0) {
-      const currentProfile = currentUserProfiles[0];
-      
-      if (currentProfile.role === 'admin') {
-        console.log('✅ User is admin (via profile.role)');
-        isAdmin = true;
-      }
-      
-      if (currentProfile.user_role === 'admin') {
-        console.log('✅ User is admin (via profile.user_role)');
-        isAdmin = true;
-      }
+    if (currentUserProfiles.length === 0) {
+      console.log('❌ ERROR: No profile found for current user');
+      return Response.json({ 
+        ok: false,
+        reason: 'PROFILE_NOT_FOUND',
+        message: 'Your profile was not found' 
+      }, { status: 404 });
     }
     
+    const currentProfile = currentUserProfiles[0];
+    console.log('✓ Current profile role:', currentProfile.role);
+    console.log('✓ Current profile user_role:', currentProfile.user_role);
+    console.log('✓ Current auth role:', currentUser.role);
+    
+    // Check admin status
+    const isAdmin = 
+      currentProfile.role === 'admin' || 
+      currentProfile.user_role === 'admin' ||
+      currentUser.role === 'admin';
+    
     if (!isAdmin) {
-      console.log('❌ User is not admin, access denied');
+      console.log('❌ ERROR: User is not admin');
       return Response.json({ 
         ok: false,
         reason: 'FORBIDDEN',
@@ -74,275 +71,280 @@ Deno.serve(async (req) => {
       }, { status: 403 });
     }
     
-    console.log('✅ Admin access confirmed, proceeding with reset');
+    console.log('✅ Admin access confirmed\n');
     
-    // 2. IDENTIFY ALL ADMIN USER IDs
-    console.log('\n📋 Step 1: Identifying admin users...');
+    // ========================================
+    // STEP 2: IDENTIFY ADMIN USER IDs
+    // ========================================
+    console.log('STEP 2: Identifying admin users to protect...');
     
-    const allProfiles = await base44.asServiceRole.entities.Profile.filter({});
-    console.log('Found', allProfiles.length, 'total profiles');
+    // Get ALL profiles using service role
+    const allProfiles = await base44.asServiceRole.entities.Profile.list('-created_date', 1000);
+    console.log('✓ Loaded', allProfiles.length, 'total profiles from database');
     
-    // Build set of admin user IDs using ALL possible indicators
+    // Build set of admin user_ids to protect
     const adminUserIds = new Set();
     
     for (const profile of allProfiles) {
-      // Check multiple fields that might indicate admin
-      if (
-        profile.role === 'admin' ||
-        profile.user_role === 'admin' ||
-        profile.isAdmin === true
-      ) {
+      // Check if profile is admin by ANY criteria
+      const isAdminProfile = 
+        profile.role === 'admin' || 
+        profile.user_role === 'admin';
+      
+      if (isAdminProfile && profile.user_id) {
         adminUserIds.add(profile.user_id);
-        console.log('  ✓ Admin:', profile.email, '(user_id:', profile.user_id, ')');
+        console.log('  → PROTECTED ADMIN:', profile.email, '(user_id:', profile.user_id, ')');
       }
     }
     
-    console.log('📊 Found', adminUserIds.size, 'admin users to protect');
+    console.log('✅ Protected', adminUserIds.size, 'admin users\n');
     
-    // 3. IDENTIFY ALL NON-ADMIN PROFILES
-    console.log('\n📋 Step 2: Identifying non-admin profiles...');
+    // ========================================
+    // STEP 3: IDENTIFY NON-ADMIN PROFILES TO DELETE
+    // ========================================
+    console.log('STEP 3: Identifying non-admin profiles to delete...');
     
-    const nonAdminProfiles = allProfiles.filter(p => !adminUserIds.has(p.user_id));
-    const nonAdminUserIds = new Set(nonAdminProfiles.map(p => p.user_id));
+    const profilesToDelete = allProfiles.filter(p => {
+      // Keep if admin
+      if (adminUserIds.has(p.user_id)) {
+        return false;
+      }
+      // Delete if not admin
+      return true;
+    });
     
-    console.log('📊 Found', nonAdminProfiles.length, 'non-admin profiles to delete');
-    console.log('📊 Affecting', nonAdminUserIds.size, 'non-admin users');
+    console.log('✓ Found', profilesToDelete.length, 'non-admin profiles to delete');
     
-    if (nonAdminProfiles.length === 0) {
-      console.log('⚠️ No non-admin profiles to delete');
+    // Build set of non-admin user_ids for related data cleanup
+    const nonAdminUserIds = new Set();
+    profilesToDelete.forEach(p => {
+      if (p.user_id) {
+        nonAdminUserIds.add(p.user_id);
+      }
+    });
+    
+    console.log('✓ Identified', nonAdminUserIds.size, 'unique non-admin user_ids\n');
+    
+    if (profilesToDelete.length === 0) {
+      console.log('⚠️ No non-admin profiles to delete\n');
       return Response.json({
         ok: true,
         message: 'No non-admin profiles found',
         deletedProfiles: 0,
         deletedUsers: 0,
-        deletedRelated: {
-          matches: 0,
-          introRequests: 0,
-          rooms: 0,
-          roomMessages: 0,
-          deals: 0,
-          reviews: 0,
-        }
+        details: {}
       });
     }
     
-    const deletionStats = {
-      profiles: 0,
+    // Log profiles that will be deleted
+    console.log('Profiles to be deleted:');
+    profilesToDelete.forEach((p, i) => {
+      console.log(`  ${i + 1}. ${p.email} (id: ${p.id}, user_id: ${p.user_id})`);
+    });
+    console.log('');
+    
+    // ========================================
+    // STEP 4: DELETE RELATED DATA FIRST
+    // ========================================
+    console.log('STEP 4: Deleting related data...');
+    
+    const stats = {
       matches: 0,
       introRequests: 0,
-      rooms: 0,
       roomMessages: 0,
+      rooms: 0,
       deals: 0,
       reviews: 0,
-      errors: []
+      auditLogs: 0,
+      profiles: 0,
     };
     
-    // 4. DELETE RELATED DATA FIRST (to avoid FK constraints)
-    console.log('\n🗑️  Step 3: Deleting related data...');
+    // Convert to array for includes() check
+    const nonAdminUserIdArray = Array.from(nonAdminUserIds);
     
     // Delete Matches
+    console.log('  → Deleting Matches...');
     try {
-      console.log('  Deleting Match records...');
-      const allMatches = await base44.asServiceRole.entities.Match.filter({});
-      for (const match of allMatches) {
-        if (nonAdminUserIds.has(match.investorId) || nonAdminUserIds.has(match.agentId)) {
-          try {
-            await base44.asServiceRole.entities.Match.delete(match.id);
-            deletionStats.matches++;
-          } catch (err) {
-            console.error('    Failed to delete match:', err.message);
-            deletionStats.errors.push({ entity: 'Match', id: match.id, error: err.message });
-          }
+      const matches = await base44.asServiceRole.entities.Match.list('-created_date', 1000);
+      for (const match of matches) {
+        if (nonAdminUserIdArray.includes(match.investorId) || nonAdminUserIdArray.includes(match.agentId)) {
+          await base44.asServiceRole.entities.Match.delete(match.id);
+          stats.matches++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.matches, 'matches');
+      console.log('    ✓ Deleted', stats.matches, 'matches');
     } catch (err) {
-      console.error('  ⚠️ Error loading matches:', err.message);
+      console.log('    ⚠️ Error:', err.message);
     }
     
     // Delete IntroRequests
+    console.log('  → Deleting IntroRequests...');
     try {
-      console.log('  Deleting IntroRequest records...');
-      const allIntroRequests = await base44.asServiceRole.entities.IntroRequest.filter({});
-      for (const intro of allIntroRequests) {
-        if (nonAdminUserIds.has(intro.investorId) || nonAdminUserIds.has(intro.agentId)) {
-          try {
-            await base44.asServiceRole.entities.IntroRequest.delete(intro.id);
-            deletionStats.introRequests++;
-          } catch (err) {
-            console.error('    Failed to delete intro request:', err.message);
-            deletionStats.errors.push({ entity: 'IntroRequest', id: intro.id, error: err.message });
-          }
+      const intros = await base44.asServiceRole.entities.IntroRequest.list('-created_date', 1000);
+      for (const intro of intros) {
+        if (nonAdminUserIdArray.includes(intro.investorId) || nonAdminUserIdArray.includes(intro.agentId)) {
+          await base44.asServiceRole.entities.IntroRequest.delete(intro.id);
+          stats.introRequests++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.introRequests, 'intro requests');
+      console.log('    ✓ Deleted', stats.introRequests, 'intro requests');
     } catch (err) {
-      console.error('  ⚠️ Error loading intro requests:', err.message);
+      console.log('    ⚠️ Error:', err.message);
     }
     
-    // Delete RoomMessages first (before Rooms)
+    // Delete RoomMessages
+    console.log('  → Deleting RoomMessages...');
     try {
-      console.log('  Deleting RoomMessage records...');
-      const allRoomMessages = await base44.asServiceRole.entities.RoomMessage.filter({});
-      for (const msg of allRoomMessages) {
-        if (nonAdminUserIds.has(msg.senderUserId)) {
-          try {
-            await base44.asServiceRole.entities.RoomMessage.delete(msg.id);
-            deletionStats.roomMessages++;
-          } catch (err) {
-            console.error('    Failed to delete room message:', err.message);
-            deletionStats.errors.push({ entity: 'RoomMessage', id: msg.id, error: err.message });
-          }
+      const messages = await base44.asServiceRole.entities.RoomMessage.list('-created_date', 1000);
+      for (const msg of messages) {
+        if (nonAdminUserIdArray.includes(msg.senderUserId)) {
+          await base44.asServiceRole.entities.RoomMessage.delete(msg.id);
+          stats.roomMessages++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.roomMessages, 'room messages');
+      console.log('    ✓ Deleted', stats.roomMessages, 'room messages');
     } catch (err) {
-      console.error('  ⚠️ Error loading room messages:', err.message);
+      console.log('    ⚠️ Error:', err.message);
     }
     
     // Delete Rooms
+    console.log('  → Deleting Rooms...');
     try {
-      console.log('  Deleting Room records...');
-      const allRooms = await base44.asServiceRole.entities.Room.filter({});
-      for (const room of allRooms) {
-        if (nonAdminUserIds.has(room.investorId) || nonAdminUserIds.has(room.agentId)) {
-          try {
-            await base44.asServiceRole.entities.Room.delete(room.id);
-            deletionStats.rooms++;
-          } catch (err) {
-            console.error('    Failed to delete room:', err.message);
-            deletionStats.errors.push({ entity: 'Room', id: room.id, error: err.message });
-          }
+      const rooms = await base44.asServiceRole.entities.Room.list('-created_date', 1000);
+      for (const room of rooms) {
+        if (nonAdminUserIdArray.includes(room.investorId) || nonAdminUserIdArray.includes(room.agentId)) {
+          await base44.asServiceRole.entities.Room.delete(room.id);
+          stats.rooms++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.rooms, 'rooms');
+      console.log('    ✓ Deleted', stats.rooms, 'rooms');
     } catch (err) {
-      console.error('  ⚠️ Error loading rooms:', err.message);
+      console.log('    ⚠️ Error:', err.message);
     }
     
     // Delete Deals
+    console.log('  → Deleting Deals...');
     try {
-      console.log('  Deleting Deal records...');
-      const allDeals = await base44.asServiceRole.entities.Deal.filter({});
-      for (const deal of allDeals) {
-        // Check if deal involves non-admin users
-        const involvedUserIds = [
-          deal.investor_id,
-          deal.agent_id,
-          ...(deal.participants || [])
-        ].filter(Boolean);
-        
-        const hasNonAdmin = involvedUserIds.some(id => nonAdminUserIds.has(id));
-        
-        if (hasNonAdmin) {
-          try {
-            await base44.asServiceRole.entities.Deal.delete(deal.id);
-            deletionStats.deals++;
-          } catch (err) {
-            console.error('    Failed to delete deal:', err.message);
-            deletionStats.errors.push({ entity: 'Deal', id: deal.id, error: err.message });
-          }
+      const deals = await base44.asServiceRole.entities.Deal.list('-created_date', 1000);
+      for (const deal of deals) {
+        if (nonAdminUserIdArray.includes(deal.investor_id) || nonAdminUserIdArray.includes(deal.agent_id)) {
+          await base44.asServiceRole.entities.Deal.delete(deal.id);
+          stats.deals++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.deals, 'deals');
+      console.log('    ✓ Deleted', stats.deals, 'deals');
     } catch (err) {
-      console.error('  ⚠️ Error loading deals:', err.message);
+      console.log('    ⚠️ Error:', err.message);
     }
     
-    // Check if Review entity exists and delete if so
+    // Delete Reviews (if entity exists)
+    console.log('  → Deleting Reviews...');
     try {
-      console.log('  Checking for Review records...');
-      const allReviews = await base44.asServiceRole.entities.Review.filter({});
-      for (const review of allReviews) {
-        // Assume reviews have reviewer_id and reviewee_id or similar
-        const reviewerIds = [
-          review.reviewer_id,
-          review.reviewee_id,
-          review.author_id,
-          review.subject_id
-        ].filter(Boolean);
-        
-        const hasNonAdmin = reviewerIds.some(id => nonAdminUserIds.has(id));
-        
-        if (hasNonAdmin) {
-          try {
-            await base44.asServiceRole.entities.Review.delete(review.id);
-            deletionStats.reviews++;
-          } catch (err) {
-            console.error('    Failed to delete review:', err.message);
-            deletionStats.errors.push({ entity: 'Review', id: review.id, error: err.message });
-          }
+      const reviews = await base44.asServiceRole.entities.Review.list('-created_date', 1000);
+      for (const review of reviews) {
+        const reviewerIds = [review.reviewer_profile_id, review.reviewee_profile_id].filter(Boolean);
+        if (reviewerIds.some(id => nonAdminUserIdArray.includes(id))) {
+          await base44.asServiceRole.entities.Review.delete(review.id);
+          stats.reviews++;
         }
       }
-      console.log('    ✓ Deleted', deletionStats.reviews, 'reviews');
+      console.log('    ✓ Deleted', stats.reviews, 'reviews');
     } catch (err) {
-      // Review entity might not exist, that's OK
-      console.log('  ⚠️ Review entity not found or error:', err.message);
+      console.log('    ⚠️ Review entity not found or error:', err.message);
     }
     
-    // 5. DELETE PROFILE RECORDS
-    console.log('\n🗑️  Step 4: Deleting Profile records...');
+    // Delete AuditLogs
+    console.log('  → Deleting AuditLogs...');
+    try {
+      const audits = await base44.asServiceRole.entities.AuditLog.list('-created_date', 1000);
+      for (const audit of audits) {
+        if (nonAdminUserIdArray.includes(audit.actor_id)) {
+          await base44.asServiceRole.entities.AuditLog.delete(audit.id);
+          stats.auditLogs++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.auditLogs, 'audit logs');
+    } catch (err) {
+      console.log('    ⚠️ Error:', err.message);
+    }
     
-    for (const profile of nonAdminProfiles) {
+    console.log('');
+    
+    // ========================================
+    // STEP 5: DELETE PROFILE RECORDS
+    // ========================================
+    console.log('STEP 5: Deleting Profile records...');
+    
+    for (const profile of profilesToDelete) {
       try {
-        console.log('  Deleting profile:', profile.email, '(user_id:', profile.user_id, ')');
+        console.log(`  → Deleting: ${profile.email} (id: ${profile.id})`);
         await base44.asServiceRole.entities.Profile.delete(profile.id);
-        deletionStats.profiles++;
+        stats.profiles++;
       } catch (err) {
-        console.error('    ❌ Failed to delete profile:', profile.email, err.message);
-        deletionStats.errors.push({ 
-          entity: 'Profile', 
-          id: profile.id, 
-          email: profile.email,
-          error: err.message 
-        });
+        console.log(`    ❌ FAILED to delete ${profile.email}: ${err.message}`);
       }
     }
     
-    console.log('    ✓ Deleted', deletionStats.profiles, 'profiles');
+    console.log('  ✓ Deleted', stats.profiles, 'profiles\n');
     
-    // 6. SUMMARY
-    console.log('\n✅ Reset complete!');
-    console.log('📊 Summary:');
-    console.log('  - Profiles deleted:', deletionStats.profiles);
-    console.log('  - Users affected:', nonAdminUserIds.size);
-    console.log('  - Matches deleted:', deletionStats.matches);
-    console.log('  - Intro requests deleted:', deletionStats.introRequests);
-    console.log('  - Rooms deleted:', deletionStats.rooms);
-    console.log('  - Room messages deleted:', deletionStats.roomMessages);
-    console.log('  - Deals deleted:', deletionStats.deals);
-    console.log('  - Reviews deleted:', deletionStats.reviews);
-    console.log('  - Errors:', deletionStats.errors.length);
+    // ========================================
+    // STEP 6: VERIFY DELETION
+    // ========================================
+    console.log('STEP 6: Verifying deletion...');
     
-    if (deletionStats.errors.length > 0) {
-      console.log('\n⚠️ Errors during deletion:');
-      deletionStats.errors.forEach((err, idx) => {
-        console.log(`  ${idx + 1}. ${err.entity} ${err.id}: ${err.error}`);
-      });
-    }
+    const remainingProfiles = await base44.asServiceRole.entities.Profile.list('-created_date', 1000);
+    console.log('✓ Profiles remaining in database:', remainingProfiles.length);
+    console.log('  (Should only be admin profiles)');
+    
+    remainingProfiles.forEach(p => {
+      console.log(`  - ${p.email} (role: ${p.role}, user_role: ${p.user_role})`);
+    });
+    
+    console.log('');
+    
+    // ========================================
+    // FINAL SUMMARY
+    // ========================================
+    console.log('=== RESET COMPLETE ===');
+    console.log('Summary:');
+    console.log(`  • Protected admins: ${adminUserIds.size}`);
+    console.log(`  • Deleted profiles: ${stats.profiles}`);
+    console.log(`  • Affected users: ${nonAdminUserIds.size}`);
+    console.log(`  • Deleted matches: ${stats.matches}`);
+    console.log(`  • Deleted intro requests: ${stats.introRequests}`);
+    console.log(`  • Deleted rooms: ${stats.rooms}`);
+    console.log(`  • Deleted messages: ${stats.roomMessages}`);
+    console.log(`  • Deleted deals: ${stats.deals}`);
+    console.log(`  • Deleted reviews: ${stats.reviews}`);
+    console.log(`  • Deleted audit logs: ${stats.auditLogs}`);
+    console.log('');
     
     return Response.json({
       ok: true,
-      message: 'Non-admin profiles reset successfully',
-      deletedProfiles: deletionStats.profiles,
+      message: `Successfully deleted ${stats.profiles} profiles for ${nonAdminUserIds.size} non-admin users`,
+      deletedProfiles: stats.profiles,
       deletedUsers: nonAdminUserIds.size,
-      deletedRelated: {
-        matches: deletionStats.matches,
-        introRequests: deletionStats.introRequests,
-        rooms: deletionStats.rooms,
-        roomMessages: deletionStats.roomMessages,
-        deals: deletionStats.deals,
-        reviews: deletionStats.reviews,
-      },
-      errors: deletionStats.errors.length > 0 ? deletionStats.errors : undefined,
+      details: {
+        protectedAdmins: adminUserIds.size,
+        deletedMatches: stats.matches,
+        deletedIntroRequests: stats.introRequests,
+        deletedRooms: stats.rooms,
+        deletedRoomMessages: stats.roomMessages,
+        deletedDeals: stats.deals,
+        deletedReviews: stats.reviews,
+        deletedAuditLogs: stats.auditLogs,
+      }
     });
     
   } catch (error) {
-    console.error('❌ Reset error:', error);
+    console.error('\n❌ RESET FAILED:', error);
+    console.error('Stack:', error.stack);
+    console.error('');
+    
     return Response.json({ 
       ok: false,
-      reason: 'SERVER_ERROR',
-      message: error.message,
+      error: error.message,
+      message: 'Reset failed: ' + error.message,
       stack: error.stack,
     }, { status: 500 });
   }
