@@ -2,13 +2,14 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 
 /**
- * CANONICAL PROFILE HOOK - Enhanced with v2 Onboarding Check
+ * CANONICAL PROFILE HOOK - Enhanced with Clear KYC Gating
  * 
- * Single source of truth for current user + profile + onboarding + subscription state.
+ * Single source of truth for current user + profile + onboarding + KYC + NDA state.
  * 
- * AGENT ONBOARDING VERSION:
- * - ONLY "agent-v2-deep" is considered complete for agents
- * - Old agents with "v2-agent", "v1", or null are NOT onboarded
+ * CRITICAL: Separate flags for each step:
+ * - needsOnboarding: onboarding not complete
+ * - needsKyc: onboarding done, but Persona/KYC not done
+ * - needsNda: onboarding + KYC done, but NDA not accepted
  * 
  * Returns:
  * - loading: boolean
@@ -16,9 +17,12 @@ import { base44 } from '@/api/base44Client';
  * - profile: Profile entity (canonical, 1:1 with user)
  * - role: 'investor' | 'agent' | 'admin' | 'member'
  * - onboarded: boolean (true if completed NEW v2/agent-v2-deep onboarding)
- * - hasNDA: boolean (NDA accepted status)
+ * - needsOnboarding: boolean (true if onboarding incomplete)
  * - kycStatus: 'unverified' | 'pending' | 'approved' | 'needs_review' | 'failed'
  * - kycVerified: boolean (shortcut for kycStatus === 'approved')
+ * - needsKyc: boolean (onboarding done but KYC not verified)
+ * - hasNDA: boolean (NDA accepted status)
+ * - needsNda: boolean (onboarding + KYC done but NDA not accepted)
  * - isInvestorReady: boolean (investor fully ready for subscriptions/trials)
  * - hasRoom: boolean (has at least one room)
  * - targetState: string (user's selected market/state)
@@ -35,9 +39,12 @@ export function useCurrentProfile() {
     profile: null,
     role: null,
     onboarded: false,
-    hasNDA: false,
+    needsOnboarding: false,
     kycStatus: 'unverified',
     kycVerified: false,
+    needsKyc: false,
+    hasNDA: false,
+    needsNda: false,
     isInvestorReady: false,
     hasRoom: false,
     targetState: null,
@@ -67,9 +74,12 @@ export function useCurrentProfile() {
             profile: null,
             role: null,
             onboarded: false,
-            hasNDA: false,
+            needsOnboarding: false,
             kycStatus: 'unverified',
             kycVerified: false,
+            needsKyc: false,
+            hasNDA: false,
+            needsNda: false,
             isInvestorReady: false,
             hasRoom: false,
             targetState: null,
@@ -123,46 +133,37 @@ export function useCurrentProfile() {
         }
 
         // STEP 4: Determine onboarded status (v2 for investor, agent-v2-deep for agent)
-        // CRITICAL: Check role-specific onboarding version
         let onboarded = false;
         
         if (role === 'investor') {
           // Investor must have v2 onboarding
-          if (
+          onboarded = 
             profile?.onboarding_version === 'v2' &&
-            profile?.onboarding_completed_at &&
-            profile?.user_role === 'investor'
-          ) {
-            onboarded = true;
-          }
+            !!profile?.onboarding_completed_at &&
+            profile?.user_role === 'investor';
         } else if (role === 'agent') {
-          // CRITICAL: Agent must have EXACTLY "agent-v2-deep" onboarding
-          // Old agents with "v2-agent", "v1", or null are NOT considered onboarded
-          if (
+          // Agent must have EXACTLY "agent-v2-deep" onboarding
+          onboarded = 
             profile?.onboarding_version === 'agent-v2-deep' &&
-            profile?.onboarding_completed_at &&
-            profile?.user_role === 'agent'
-          ) {
-            onboarded = true;
-          }
-          
-          // Log for debugging
-          if (role === 'agent' && !onboarded) {
-            console.log('[useCurrentProfile] Agent NOT onboarded:', {
-              version: profile?.onboarding_version,
-              expected: 'agent-v2-deep',
-              hasCompletedAt: !!profile?.onboarding_completed_at,
-              userRole: profile?.user_role
-            });
-          }
+            !!profile?.onboarding_completed_at &&
+            profile?.user_role === 'agent';
         }
 
-        // STEP 5: NDA status
-        const hasNDA = profile?.nda_accepted || false;
+        // needsOnboarding = user has a role but hasn't completed onboarding
+        const needsOnboarding = (role === 'investor' || role === 'agent') && !onboarded;
 
-        // STEP 6: KYC status
+        // STEP 5: KYC status
         const kycStatus = profile?.kyc_status || 'unverified';
         const kycVerified = kycStatus === 'approved';
+        
+        // needsKyc = onboarding complete but KYC not verified
+        const needsKyc = onboarded && !kycVerified;
+
+        // STEP 6: NDA status
+        const hasNDA = profile?.nda_accepted || false;
+        
+        // needsNda = onboarding + KYC complete but NDA not accepted
+        const needsNda = onboarded && kycVerified && !hasNDA;
 
         // STEP 7: Target state
         const targetState = profile?.target_state || profile?.markets?.[0] || null;
@@ -177,12 +178,12 @@ export function useCurrentProfile() {
           console.warn('[useCurrentProfile] Could not check rooms:', roomErr);
         }
 
-        // STEP 9: Determine if investor is fully ready for subscriptions/trials
+        // STEP 9: Determine if investor is fully ready
         const isInvestorReady = 
           role === 'investor' &&
           onboarded &&
-          hasNDA &&
-          kycVerified;
+          kycVerified &&
+          hasNDA;
 
         // STEP 10: Extract subscription info
         const subscriptionPlan = profile?.subscription_tier || 'none';
@@ -194,10 +195,12 @@ export function useCurrentProfile() {
         console.log('[useCurrentProfile] 📊 Profile state:', {
           role,
           onboarded,
+          needsOnboarding,
+          kycVerified,
+          needsKyc,
+          hasNDA,
+          needsNda,
           onboarding_version: profile?.onboarding_version,
-          has_onboarding_completed_at: !!profile?.onboarding_completed_at,
-          subscription: subscriptionPlan,
-          isPaid: isPaidSubscriber
         });
 
         setState({
@@ -206,9 +209,12 @@ export function useCurrentProfile() {
           profile,
           role,
           onboarded,
-          hasNDA,
+          needsOnboarding,
           kycStatus,
           kycVerified,
+          needsKyc,
+          hasNDA,
+          needsNda,
           isInvestorReady,
           hasRoom,
           targetState,
@@ -228,9 +234,12 @@ export function useCurrentProfile() {
           profile: null,
           role: null,
           onboarded: false,
-          hasNDA: false,
+          needsOnboarding: false,
           kycStatus: 'unverified',
           kycVerified: false,
+          needsKyc: false,
+          hasNDA: false,
+          needsNda: false,
           isInvestorReady: false,
           hasRoom: false,
           targetState: null,

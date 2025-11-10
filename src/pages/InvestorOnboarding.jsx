@@ -38,7 +38,7 @@ import ExperienceAccreditationStep from "@/components/investor-onboarding/Experi
  */
 function InvestorOnboardingContent() {
   const navigate = useNavigate();
-  const { profile, refresh } = useCurrentProfile();
+  const { profile, refresh, kycVerified } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -354,11 +354,7 @@ function InvestorOnboardingContent() {
         markets: [formData.primary_state || selectedState].filter(Boolean)
       });
 
-      console.log('[InvestorOnboarding] ✅ v2 flags set:', {
-        user_role: 'investor',
-        onboarding_completed_at: 'set',
-        onboarding_version: 'v2'
-      });
+      console.log('[InvestorOnboarding] ✅ v2 flags set');
 
       // Force profile refresh to load new data
       await refresh();
@@ -366,10 +362,17 @@ function InvestorOnboardingContent() {
       // Small delay to ensure state is updated
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      toast.success("Profile completed! Let's verify your identity.");
+      toast.success("Profile completed! Next: verify your identity.");
       
-      // Navigate to verification
-      navigate(createPageUrl("Verify"));
+      // CRITICAL: Navigate to Persona/KYC verification (not Dashboard)
+      // Only skip if KYC is already verified (edge case: admin manually verified)
+      if (kycVerified) {
+        console.log('[InvestorOnboarding] KYC already verified, going to NDA');
+        navigate(createPageUrl("NDA"), { replace: true });
+      } else {
+        console.log('[InvestorOnboarding] Going to Persona verification');
+        navigate(createPageUrl("Verify"), { replace: true });
+      }
 
     } catch (error) {
       console.error('[InvestorOnboarding] ❌ Submit error:', error);

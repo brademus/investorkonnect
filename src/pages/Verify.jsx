@@ -4,28 +4,22 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { StepGuard } from "@/components/StepGuard";
 import { Loader2, Shield, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
 /**
- * STEP 5: IDENTITY VERIFICATION (Persona Embedded Flow)
+ * IDENTITY VERIFICATION (Persona Embedded Flow)
  * 
- * Fully embedded Persona verification with proper script loading.
- * No blank panels - everything renders properly.
+ * CRITICAL: This page should ONLY be shown to users who have:
+ * - Completed onboarding
+ * - NOT yet verified KYC
  * 
- * Flow:
- * 1. Load Persona SDK script dynamically
- * 2. Initialize Persona Client with our config
- * 3. Show "Begin Verification" button
- * 4. On click, open Persona overlay
- * 5. On complete, call personaFinalize to update profile
- * 6. Redirect to NDA page
+ * Once KYC is verified, redirect immediately to NDA or Dashboard
  */
 function VerifyContent() {
   const navigate = useNavigate();
-  const { user, profile, kycStatus, refresh } = useCurrentProfile();
+  const { user, profile, kycVerified, hasNDA, onboarded, refresh } = useCurrentProfile();
   
   const personaClientRef = useRef(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -33,6 +27,32 @@ function VerifyContent() {
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
+
+  // CRITICAL: Redirect if already verified
+  useEffect(() => {
+    if (!user || !profile) return;
+    
+    if (kycVerified) {
+      console.log('[Verify] ✅ KYC already verified, redirecting...');
+      
+      // Redirect based on NDA status
+      if (hasNDA) {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      } else {
+        navigate(createPageUrl("NDA"), { replace: true });
+      }
+    }
+  }, [user, profile, kycVerified, hasNDA, navigate]);
+
+  // CRITICAL: Redirect if not onboarded
+  useEffect(() => {
+    if (!user || !profile) return;
+    
+    if (!onboarded) {
+      console.log('[Verify] ⚠️ User not onboarded, redirecting...');
+      navigate(createPageUrl("Dashboard"), { replace: true });
+    }
+  }, [user, profile, onboarded, navigate]);
 
   // Load Persona script
   useEffect(() => {
@@ -62,12 +82,12 @@ function VerifyContent() {
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script on unmount if not loaded
-      if (!scriptLoaded) {
+      // Cleanup script on unmount if not loaded, and if it's still attached to the DOM
+      if (!scriptLoaded && script.parentNode) {
         document.body.removeChild(script);
       }
     };
-  }, []);
+  }, [scriptLoaded]); // Added scriptLoaded to deps to ensure cleanup logic is current
 
   // Initialize Persona client when script is loaded
   useEffect(() => {
@@ -75,7 +95,7 @@ function VerifyContent() {
       return;
     }
 
-    if (kycStatus === 'approved') {
+    if (kycVerified) {
       console.log('[Verify] ✅ Already verified, skipping init');
       return;
     }
@@ -115,12 +135,8 @@ function VerifyContent() {
                 if (profiles.length > 0) {
                   await base44.entities.Profile.update(profiles[0].id, {
                     kyc_status: kycStatus,
-                    kyc_verified: kycStatus === 'approved',
                     kyc_inquiry_id: inquiryId,
                     kyc_last_checked: new Date().toISOString(),
-                    // Legacy flags for backward compatibility
-                    verification_complete: kycStatus === 'approved',
-                    identity_verified: kycStatus === 'approved'
                   });
                   console.log('[Verify] ✅ Profile updated with verification flags');
                 }
@@ -183,31 +199,7 @@ function VerifyContent() {
       setError('Failed to initialize verification. Please refresh the page.');
     }
 
-  }, [scriptLoaded, user, profile, kycStatus, navigate, refresh]);
-
-  // Already verified - show success and redirect
-  if (kycStatus === 'approved') {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-10 h-10 text-emerald-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Already Verified ✓</h2>
-            <p className="text-slate-600 mb-6">Your identity has been verified</p>
-            <Button
-              onClick={() => navigate(createPageUrl("NDA"))}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              Continue to NDA
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  }, [scriptLoaded, user, profile, kycVerified, navigate, refresh]);
 
   // Verification in progress
   if (verifying) {
@@ -397,9 +389,5 @@ function VerifyContent() {
 }
 
 export default function Verify() {
-  return (
-    <StepGuard requiredStep={4}> {/* Requires ONBOARDING */}
-      <VerifyContent />
-    </StepGuard>
-  );
+  return <VerifyContent />;
 }

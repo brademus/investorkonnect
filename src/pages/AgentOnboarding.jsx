@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -427,11 +428,29 @@ function AgentOnboardingContent() {
       const response = await base44.functions.invoke('upsertAgentOnboarding', formData);
 
       if (response.data?.ok) {
-        console.log('[AgentOnboarding] ✅ Onboarding saved');
+        console.log('[AgentOnboarding] ✅ Onboarding saved, nextStep:', response.data.nextStep);
+        
+        // Refresh profile to get updated data
         await refresh();
-        toast.success("Welcome to AgentVault!");
+        
+        toast.success("Profile completed! Next: verify your identity.");
+        
+        // Small delay to ensure state is updated
         await new Promise(resolve => setTimeout(resolve, 300));
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        
+        // CRITICAL: Route based on nextStep from backend
+        const nextStep = response.data.nextStep;
+        
+        if (nextStep === 'verify') {
+          console.log('[AgentOnboarding] Going to Persona verification');
+          navigate(createPageUrl("Verify"), { replace: true });
+        } else if (nextStep === 'nda') {
+          console.log('[AgentOnboarding] Going to NDA');
+          navigate(createPageUrl("NDA"), { replace: true });
+        } else {
+          console.log('[AgentOnboarding] Going to Dashboard');
+          navigate(createPageUrl("Dashboard"), { replace: true });
+        }
       } else {
         throw new Error(response.data?.message || 'Failed to save onboarding');
       }

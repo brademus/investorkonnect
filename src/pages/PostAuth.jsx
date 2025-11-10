@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -10,19 +11,11 @@ import { Loader2 } from "lucide-react";
  * After OAuth login, users land here with optional query params:
  * - ?state=CO&intendedRole=investor
  * 
- * This page:
- * 1. Loads user + profile
- * 2. Checks if NEW onboarding (v2 or agent-v2-deep) is complete
- * 3. Routes appropriately:
- *    - No NEW onboarding → Send to onboarding
- *    - Has NEW onboarding → Send to Dashboard
- * 
- * CRITICAL: This page MUST NEVER hang on "Loading..."
- * Always routes somewhere within 3 seconds max.
- * 
- * AGENT GATING:
- * - Agents MUST have onboarding_version === "agent-v2-deep" to be considered complete
- * - Old agents with null or old versions (e.g. "v2-agent") are forced into new onboarding
+ * CRITICAL: This handles the complete flow after login:
+ * 1. Onboarding (if not complete)
+ * 2. Persona/KYC verification (if onboarded but not verified)
+ * 3. NDA (if onboarded + verified but no NDA)
+ * 4. Dashboard (if all complete)
  */
 export default function PostAuth() {
   const navigate = useNavigate();
@@ -102,14 +95,12 @@ export default function PostAuth() {
         
         console.log('[PostAuth] Has NEW onboarding:', hasNewOnboarding, '(version:', profile?.onboarding_version, ')');
 
-        // STEP 5: Route based on onboarding status
+        // STEP 5: If no onboarding, route to onboarding
         if (!hasNewOnboarding) {
-          // User needs to complete NEW onboarding
           console.log('[PostAuth] 📝 User needs NEW onboarding');
           
           // Update profile with role + state if provided
           if (profile && (intendedRole || stateParam)) {
-            console.log('[PostAuth] Updating profile with role/state...');
             const updates = {};
             
             if (intendedRole) {
@@ -123,13 +114,11 @@ export default function PostAuth() {
             
             try {
               await base44.entities.Profile.update(profile.id, updates);
-              console.log('[PostAuth] ✅ Profile updated');
             } catch (updateErr) {
               console.error('[PostAuth] Failed to update profile:', updateErr);
             }
           } else if (!profile && user) {
             // Create profile if doesn't exist
-            console.log('[PostAuth] Creating new profile...');
             try {
               await base44.entities.Profile.create({
                 user_id: user.id,
@@ -139,7 +128,6 @@ export default function PostAuth() {
                 target_state: stateParam || null,
                 markets: stateParam ? [stateParam] : []
               });
-              console.log('[PostAuth] ✅ Profile created');
             } catch (createErr) {
               console.error('[PostAuth] Failed to create profile:', createErr);
             }
@@ -162,8 +150,32 @@ export default function PostAuth() {
           return;
         }
 
-        // Has completed NEW onboarding - send to Dashboard
-        console.log('[PostAuth] ✅ NEW onboarding complete → Dashboard');
+        // STEP 6: Onboarding complete - check KYC
+        const kycVerified = profile?.kyc_status === 'approved';
+        
+        console.log('[PostAuth] KYC verified:', kycVerified);
+
+        if (!kycVerified) {
+          console.log('[PostAuth] 🔐 User needs Persona verification');
+          navigate(createPageUrl("Verify"), { replace: true });
+          setHasRouted(true);
+          return;
+        }
+
+        // STEP 7: KYC complete - check NDA
+        const hasNDA = profile?.nda_accepted;
+        
+        console.log('[PostAuth] Has NDA:', hasNDA);
+
+        if (!hasNDA) {
+          console.log('[PostAuth] 📄 User needs NDA');
+          navigate(createPageUrl("NDA"), { replace: true });
+          setHasRouted(true);
+          return;
+        }
+
+        // STEP 8: All complete - go to Dashboard
+        console.log('[PostAuth] ✅ All complete → Dashboard');
         navigate(createPageUrl("Dashboard"), { replace: true });
         setHasRouted(true);
 
