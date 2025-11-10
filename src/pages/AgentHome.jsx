@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -18,7 +19,7 @@ import { useState } from "react";
  */
 export default function AgentHome() {
   const navigate = useNavigate();
-  const { profile, loading, onboarded } = useCurrentProfile();
+  const { profile, loading, onboarded, user } = useCurrentProfile();
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
 
   if (loading) {
@@ -28,6 +29,9 @@ export default function AgentHome() {
       </div>
     );
   }
+
+  // Check if user is admin
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
   const isVerified = profile?.vetted || profile?.agent?.verification_status === 'verified';
   const hasNDA = profile?.nda_accepted;
@@ -52,42 +56,57 @@ export default function AgentHome() {
       {/* Hero */}
       <div className="bg-gradient-to-r from-emerald-600 to-blue-600 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3 mb-4">
-            <Users className="w-10 h-10" />
-            <h1 className="text-4xl font-bold">Your Agent Dashboard</h1>
-          </div>
-          <p className="text-emerald-100 text-lg">
-            Welcome back, {profile?.full_name || 'Agent'}! Connect with serious investors and grow your business.
-          </p>
-          
-          {/* Metric Pills */}
-          <div className="flex gap-4 mt-6 flex-wrap">
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">
-                Status: <strong>{isVerified ? 'Verified' : 'Pending'}</strong>
-              </span>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-4">
+                <Users className="w-10 h-10" />
+                <h1 className="text-4xl font-bold">Your Agent Dashboard</h1>
+              </div>
+              <p className="text-emerald-100 text-lg">
+                Welcome back, {profile?.full_name || 'Agent'}! Connect with serious investors and grow your business.
+              </p>
+              
+              {/* Metric Pills */}
+              <div className="flex gap-4 mt-6 flex-wrap">
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm">
+                    Status: <strong>{isVerified ? 'Verified' : 'Pending'}</strong>
+                  </span>
+                </div>
+                <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
+                  hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
+                }`}>
+                  <Shield className="w-4 h-4" />
+                  <span className="text-sm">
+                    NDA: <strong>{hasNDA ? 'Signed ✅' : 'Required'}</strong>
+                  </span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" />
+                  <span className="text-sm">
+                    Deals Closed: <strong>0</strong>
+                  </span>
+                </div>
+                <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
+                  <CheckCircle className="w-4 h-4" />
+                  <span className="text-sm">
+                    Last updated: <strong>{new Date(profile?.updated_date || Date.now()).toLocaleDateString()}</strong>
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
-              hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
-            }`}>
-              <Shield className="w-4 h-4" />
-              <span className="text-sm">
-                NDA: <strong>{hasNDA ? 'Signed ✅' : 'Required'}</strong>
-              </span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm">
-                Deals Closed: <strong>0</strong>
-              </span>
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm">
-                Last updated: <strong>{new Date(profile?.updated_date || Date.now()).toLocaleDateString()}</strong>
-              </span>
-            </div>
+            
+            {/* Admin Button - Only visible to admins */}
+            {isAdmin && (
+              <Button
+                onClick={() => navigate(createPageUrl("Admin"))}
+                className="bg-orange-600 hover:bg-orange-700 gap-2"
+              >
+                <Shield className="w-4 h-4" />
+                Admin Panel
+              </Button>
+            )}
           </div>
         </div>
       </div>

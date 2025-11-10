@@ -29,6 +29,9 @@ export default function InvestorHome() {
     );
   }
 
+  // Check if user is admin
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
+
   // Helper to get plan display name
   const getPlanName = (plan) => {
     const names = {
@@ -48,14 +51,27 @@ export default function InvestorHome() {
     <div className="min-h-screen bg-slate-50"> {/* Outermost div with new background */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">
-            Welcome back, {user?.full_name || 'Investor'}! 👋
-          </h1>
-          <p className="text-slate-600">
-            Your AgentVault dashboard
-          </p>
+        {/* Header with Admin Button */}
+        <div className="mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-slate-900 mb-2">
+              Welcome back, {user?.full_name || 'Investor'}! 👋
+            </h1>
+            <p className="text-slate-600">
+              Your AgentVault dashboard
+            </p>
+          </div>
+          
+          {/* Admin Button - Only visible to admins */}
+          {isAdmin && (
+            <Button
+              onClick={() => navigate(createPageUrl("Admin"))}
+              className="bg-orange-600 hover:bg-orange-700 gap-2"
+            >
+              <Shield className="w-4 h-4" />
+              Admin Panel
+            </Button>
+          )}
         </div>
 
         {/* Subscription Status Banner */}
