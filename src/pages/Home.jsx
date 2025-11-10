@@ -82,29 +82,14 @@ export default function Home() {
     base44.auth.redirectToLogin(callbackUrl);
   };
 
-  // Check if current user is admin
-  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50">
       {/* NO TOP NAV - Wizard flow only */}
       
       <div className="max-w-6xl mx-auto px-4 py-16 sm:px-6 lg:px-8">
         
-        {/* Login/Admin buttons for existing users */}
+        {/* Login button for existing users */}
         <div className="flex justify-end gap-3 mb-8">
-          {/* Admin Button - Only visible to logged-in admins */}
-          {!loading && isAdmin && (
-            <Button
-              variant="outline"
-              onClick={() => navigate(createPageUrl("Admin"))}
-              className="gap-2 border-orange-300 text-orange-700 hover:bg-orange-50"
-            >
-              <Shield className="w-4 h-4" />
-              Admin
-            </Button>
-          )}
-          
           <Button
             variant="outline"
             onClick={handleLogin}
