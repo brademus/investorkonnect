@@ -167,7 +167,7 @@ function AdminContent() {
     }
   };
 
-  // UPDATED: Reset all non-admin profiles with new response format
+  // UPDATED: Reset all non-admin profiles with better feedback
   const resetAllNonAdminProfiles = async () => {
     const confirmText = `⚠️ DANGER: This will DELETE all investor and agent profiles for non-admin users.
 
@@ -192,34 +192,32 @@ Type "RESET" to confirm:`;
       console.log('[Admin] Reset result:', data);
       
       if (data.ok) {
-        // Show comprehensive success message
-        const message = `Reset complete! 
+        // Build success message with details
+        let message = `Reset complete!\n\n`;
+        message += `✅ Deleted ${data.deletedProfiles} profiles for ${data.deletedUsers} users\n\n`;
+        message += `Related data deleted:\n`;
+        message += `- Matches: ${data.deletedRelated?.matches || 0}\n`;
+        message += `- Intro requests: ${data.deletedRelated?.introRequests || 0}\n`;
+        message += `- Rooms: ${data.deletedRelated?.rooms || 0}\n`;
+        message += `- Messages: ${data.deletedRelated?.roomMessages || 0}\n`;
+        message += `- Deals: ${data.deletedRelated?.deals || 0}\n`;
+        message += `- Reviews: ${data.deletedRelated?.reviews || 0}\n`;
         
-Deleted ${data.deletedProfiles} profiles for ${data.deletedUsers} non-admin users.
-
-Additional cleanup:
-- Rooms: ${data.details?.deletedRooms || 0}
-- Messages: ${data.details?.deletedMessages || 0}
-- Deals: ${data.details?.deletedDeals || 0}
-- Matches: ${data.details?.deletedMatches || 0}
-- Intros: ${data.details?.deletedIntros || 0}
-- Audits: ${data.details?.deletedAudits || 0}
-
-Protected ${data.details?.protectedAdmins || 0} admin users.`;
+        if (data.errors && data.errors.length > 0) {
+          message += `\n⚠️ ${data.errors.length} errors occurred (check console)`;
+          console.warn('[Admin] Reset errors:', data.errors);
+        }
         
-        toast.success("Reset complete!");
         alert(message);
+        toast.success(`Deleted ${data.deletedProfiles} non-admin profiles`);
         
         // Reload data after 1 second
         setTimeout(async () => {
           await loadData();
         }, 1000);
       } else {
-        toast.error("Reset failed: " + (data.message || data.error || 'Unknown error'));
-        
-        if (data.reason === 'FORBIDDEN') {
-          alert('You do not have admin privileges to perform this action.');
-        }
+        toast.error("Reset failed: " + (data.message || 'Unknown error'));
+        console.error('[Admin] Reset failed:', data);
       }
     } catch (error) {
       console.error('[Admin] Reset error:', error);
@@ -321,7 +319,7 @@ Protected ${data.details?.protectedAdmins || 0} admin users.`;
           <p className="text-slate-600">System management and diagnostics</p>
         </div>
 
-        {/* DANGER ZONE: Reset All Profiles */}
+        {/* UPDATED: DANGER ZONE with better messaging */}
         <Card className="mb-8 border-red-300 bg-red-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-red-900">
@@ -329,8 +327,8 @@ Protected ${data.details?.protectedAdmins || 0} admin users.`;
               ⚠️ DANGER ZONE: Reset All Non-Admin Profiles
             </CardTitle>
             <CardDescription className="text-red-700">
-              Use this to start fresh with test data. This will DELETE all investor and agent profiles for non-admin users.
-              Admin accounts will NOT be affected.
+              Use this to start fresh with test data. This will DELETE all investor and agent profiles for non-admin users, 
+              plus all related data (matches, rooms, deals, etc.). Admin accounts will NOT be affected.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -339,14 +337,17 @@ Protected ${data.details?.protectedAdmins || 0} admin users.`;
                 ⚠️ This action will DELETE:
               </p>
               <ul className="text-sm text-red-800 space-y-1 list-disc pl-5">
-                <li>All investor and agent profiles (onboarding, matches, subscriptions)</li>
-                <li>All deal rooms and messages</li>
-                <li>All deals, matches, and intro requests</li>
-                <li>All audit logs for non-admin users</li>
-                <li><strong>Admin users and their data will be protected</strong></li>
+                <li><strong>Profiles:</strong> All investor/agent profile records</li>
+                <li><strong>Matches:</strong> All AI-generated investor-agent matches</li>
+                <li><strong>Intro Requests:</strong> All introduction requests</li>
+                <li><strong>Rooms & Messages:</strong> All deal rooms and chat history</li>
+                <li><strong>Deals:</strong> All deal records</li>
+                <li><strong>Reviews:</strong> All review records (if any)</li>
+                <li className="mt-2 font-semibold">❌ Cannot be undone</li>
+                <li className="text-emerald-700 font-semibold">✅ Admin accounts are safe</li>
               </ul>
-              <p className="text-sm text-red-900 font-semibold mt-3">
-                {nonAdminProfiles.length} non-admin profiles will be deleted
+              <p className="text-sm text-red-900 font-bold mt-3">
+                📊 {nonAdminProfiles.length} non-admin profiles will be deleted
               </p>
             </div>
             
