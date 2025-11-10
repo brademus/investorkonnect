@@ -282,11 +282,12 @@ export async function updateAgentEmbedding(base44, userId) {
 }
 
 // ====================================================
-// MATCH INVESTOR TO AGENT
+// MATCH INVESTOR TO AGENT (ENHANCED)
 // ====================================================
 
 /**
- * Match investor to best agent using semantic similarity
+ * Match investor to best agents using semantic similarity
+ * Creates Match records for top 5 agents
  */
 export async function matchInvestorToAgent(base44, investorUserId) {
   console.log('[matchInvestorToAgent] Starting for investor:', investorUserId);
@@ -314,9 +315,6 @@ export async function matchInvestorToAgent(base44, investorUserId) {
   
   const isKYCVerified = investor.kyc_status === 'approved';
   const hasNDA = investor.nda_accepted;
-  const hasSubscription = 
-    investor.subscription_status === 'active' ||
-    investor.subscription_status === 'trialing';
   
   if (!isOnboarded) {
     console.log('[matchInvestorToAgent] ❌ Investor not onboarded');
@@ -330,11 +328,6 @@ export async function matchInvestorToAgent(base44, investorUserId) {
   
   if (!hasNDA) {
     console.log('[matchInvestorToAgent] ❌ Investor NDA not accepted');
-    return null;
-  }
-  
-  if (!hasSubscription) {
-    console.log('[matchInvestorToAgent] ❌ Investor no active subscription');
     return null;
   }
   
@@ -393,9 +386,8 @@ export async function matchInvestorToAgent(base44, investorUserId) {
     return null;
   }
   
-  // 6. Calculate similarities
-  let bestAgent = null;
-  let bestScore = -1;
+  // 6. Calculate similarities and rank agents
+  const rankedAgents = [];
   
   for (const agent of eligibleAgents) {
     const score = cosineSimilarity(investor.embedding, agent.embedding);
@@ -409,41 +401,100 @@ export async function matchInvestorToAgent(base44, investorUserId) {
     console.log('[matchInvestorToAgent] Agent', agent.user_id, 'score:', score.toFixed(3), 
                 agent._stateMatch ? '(state match)' : '');
     
-    if (adjustedScore > bestScore) {
-      bestScore = score; // Store original score
-      bestAgent = agent;
-    }
+    rankedAgents.push({
+      agent,
+      score,
+      adjustedScore,
+      stateMatch: agent._stateMatch || false,
+    });
   }
   
-  if (!bestAgent) {
+  // Sort by adjusted score
+  rankedAgents.sort((a, b) => b.adjustedScore - a.adjustedScore);
+  
+  if (rankedAgents.length === 0) {
     console.log('[matchInvestorToAgent] ⚠️ No valid matches');
     return null;
   }
   
-  console.log('[matchInvestorToAgent] ✅ Best match:', bestAgent.user_id, 'score:', bestScore.toFixed(3));
+  // 7. Take top 5 agents
+  const topAgents = rankedAgents.slice(0, 5);
   
-  // 7. Generate LLM explanation
-  const explanation = await generateMatchExplanation(
+  console.log('[matchInvestorToAgent] Top', topAgents.length, 'agents selected');
+  
+  // 8. Generate explanations and create Match records
+  const matches = [];
+  
+  for (let i = 0; i < topAgents.length; i++) {
+    const { agent, score, stateMatch } = topAgents[i];
+    
+    // Generate explanation
+    const explanation = await generateMatchExplanation(
+      investor.profileNarrative,
+      agent.profileNarrative
+    );
+    
+    console.log('[matchInvestorToAgent] Generated explanation for agent', agent.user_id);
+    
+    // Create match reasons array
+    const reasons = [explanation];
+    if (stateMatch) {
+      reasons.push(`Operates in your target market: ${targetState}`);
+    }
+    
+    // Check if match already exists
+    const existingMatches = await base44.entities.Match.filter({
+      investorId: investor.id,
+      agentId: agent.id,
+    });
+    
+    if (existingMatches.length > 0) {
+      // Update existing match
+      const match = existingMatches[0];
+      await base44.asServiceRole.entities.Match.update(match.id, {
+        score,
+        reasons,
+        status: 'suggested',
+      });
+      console.log('[matchInvestorToAgent] Updated existing match:', match.id);
+      matches.push({ ...match, score, reasons });
+    } else {
+      // Create new match
+      const newMatch = await base44.asServiceRole.entities.Match.create({
+        investorId: investor.id,
+        agentId: agent.id,
+        score,
+        reasons,
+        status: 'suggested',
+      });
+      console.log('[matchInvestorToAgent] Created new match:', newMatch.id);
+      matches.push(newMatch);
+    }
+  }
+  
+  // 9. Also update investor profile with best match (for backward compatibility)
+  const bestAgent = topAgents[0].agent;
+  const bestScore = topAgents[0].score;
+  const bestExplanation = await generateMatchExplanation(
     investor.profileNarrative,
     bestAgent.profileNarrative
   );
   
-  console.log('[matchInvestorToAgent] Generated explanation:', explanation);
-  
-  // 8. Save match to investor profile
   await base44.asServiceRole.entities.Profile.update(investor.id, {
     matchedAgentId: bestAgent.user_id,
     matchScore: bestScore,
-    matchExplanation: explanation,
+    matchExplanation: bestExplanation,
   });
   
-  console.log('[matchInvestorToAgent] ✅ Match saved to investor profile');
+  console.log('[matchInvestorToAgent] ✅ Created/updated', matches.length, 'matches');
+  console.log('[matchInvestorToAgent] ✅ Updated investor profile with best match');
   
   return {
     investor,
-    agent: bestAgent,
+    agent: bestAgent, // Best agent for backward compatibility
     score: bestScore,
-    matchExplanation: explanation,
+    matchExplanation: bestExplanation,
+    allMatches: matches, // All top matches
   };
 }
 
