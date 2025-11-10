@@ -1,9 +1,10 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
-import { Shield, FileText, User, Settings } from "lucide-react";
+import { Shield, FileText, User, Settings, ShieldCheck } from "lucide-react";
 
 /**
  * LAYOUT - Conditional Navigation + Wizard Provider
@@ -14,7 +15,7 @@ import { Shield, FileText, User, Settings } from "lucide-react";
  */
 function LayoutContent({ children }) {
   const location = useLocation();
-  const { loading, user, role, hasRoom, onboarded } = useCurrentProfile();
+  const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
 
   // Wizard pages (no nav) + onboarding pages
   const noNavPages = [
@@ -34,6 +35,9 @@ function LayoutContent({ children }) {
   // 1. User is logged in AND onboarded, AND
   // 2. User has at least one room, OR is on a room page
   const showNav = !loading && user && onboarded && (hasRoom || location.pathname.startsWith('/room/'));
+
+  // Check if current user is admin
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
   // Investor nav
   const investorNav = [
@@ -81,6 +85,21 @@ function LayoutContent({ children }) {
                     {item.name}
                   </Link>
                 ))}
+                
+                {/* Admin Button - Only visible to admins */}
+                {isAdmin && (
+                  <Link
+                    to={createPageUrl("Admin")}
+                    className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
+                      location.pathname === createPageUrl("Admin")
+                        ? "bg-orange-50 text-orange-700 border border-orange-300"
+                        : "text-orange-700 hover:bg-orange-50 border border-orange-200"
+                    }`}
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Admin
+                  </Link>
+                )}
               </div>
 
               <div className="flex items-center gap-2">
