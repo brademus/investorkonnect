@@ -51,6 +51,8 @@ import AgentDashboard from './pages/AgentDashboard';
 import InvestorIntake from './pages/InvestorIntake';
 import PostAuth from './pages/PostAuth';
 import BillingSuccess from './pages/BillingSuccess';
+import InvestorDirectory from './pages/InvestorDirectory';
+import AgentDirectory from './pages/AgentDirectory';
 import Layout from './Layout.jsx';
 
 
@@ -108,6 +110,8 @@ export const PAGES = {
     "InvestorIntake": InvestorIntake,
     "PostAuth": PostAuth,
     "BillingSuccess": BillingSuccess,
+    "InvestorDirectory": InvestorDirectory,
+    "AgentDirectory": AgentDirectory,
 }
 
 export const pagesConfig = {

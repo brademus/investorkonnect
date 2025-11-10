@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -12,14 +11,24 @@ import {
 import { useState } from "react";
 
 /**
- * AGENT DASHBOARD
+ * AGENT DASHBOARD - Fixed KYC Verification Banners
  * 
- * Shows banner if agent has NOT completed NEW onboarding (agent-v2-deep)
- * Old agents with "v2-agent" or null version will see the onboarding prompt
+ * Uses needsKyc flag to show verification banner correctly
+ * Routes to Persona/KYC page, not onboarding
  */
 export default function AgentHome() {
   const navigate = useNavigate();
-  const { profile, loading, onboarded, user } = useCurrentProfile();
+  const { 
+    profile, 
+    loading, 
+    onboarded, 
+    user,
+    kycVerified,
+    needsKyc,
+    needsOnboarding,
+    hasNDA
+  } = useCurrentProfile();
+  
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
 
   if (loading) {
@@ -33,8 +42,6 @@ export default function AgentHome() {
   // Check if user is admin
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
-  const isVerified = profile?.vetted || profile?.agent?.verification_status === 'verified';
-  const hasNDA = profile?.nda_accepted;
   const agentData = profile?.agent || {};
   const docs = agentData.documents || [];
   
@@ -44,12 +51,27 @@ export default function AgentHome() {
     !agentData.license_state || 
     agentData.verification_status !== 'verified';
 
-  // CRITICAL: Check if agent has completed NEW onboarding
-  // Only "agent-v2-deep" is considered complete
-  const hasNewOnboarding = 
-    profile?.onboarding_version === 'agent-v2-deep' &&
-    !!profile?.onboarding_completed_at &&
-    profile?.user_role === 'agent';
+  // Handler for starting KYC verification
+  const handleStartKyc = () => {
+    if (!user) {
+      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+      return;
+    }
+
+    // If onboarding not finished, send to onboarding
+    if (needsOnboarding) {
+      navigate(createPageUrl("AgentOnboarding"));
+      return;
+    }
+
+    // If onboarding done but KYC not verified, go to Persona
+    if (needsKyc) {
+      navigate(createPageUrl("Verify"));
+      return;
+    }
+
+    // Already verified - do nothing or show toast
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
@@ -71,7 +93,7 @@ export default function AgentHome() {
                 <div className="bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2">
                   <Shield className="w-4 h-4" />
                   <span className="text-sm">
-                    Status: <strong>{isVerified ? 'Verified' : 'Pending'}</strong>
+                    Identity: <strong>{kycVerified ? 'Verified ✅' : 'Pending'}</strong>
                   </span>
                 </div>
                 <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
@@ -114,8 +136,8 @@ export default function AgentHome() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* CRITICAL: New Onboarding Banner - Show if agent hasn't completed agent-v2-deep */}
-        {!hasNewOnboarding && !onboarded && (
+        {/* Onboarding Banner */}
+        {needsOnboarding && (
           <div className="bg-orange-50 border-2 border-orange-300 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <AlertCircle className="w-8 h-8 text-orange-600 flex-shrink-0 mt-1" />
@@ -124,13 +146,8 @@ export default function AgentHome() {
                   Complete your agent onboarding
                 </h3>
                 <p className="text-orange-800 mb-4 text-base">
-                  We've updated our onboarding for investor-friendly agents. Please complete the new questions so we can verify your profile and match you with the right investors. This helps us understand your experience, specialties, and approach to working with investor clients.
+                  We've updated our onboarding for investor-friendly agents. Please complete the new questions so we can verify your profile and match you with the right investors.
                 </p>
-                <div className="bg-orange-100 rounded-lg p-3 mb-4">
-                  <p className="text-sm text-orange-900">
-                    <strong>What's new:</strong> Deeper questions about your investor experience, market knowledge, deal sourcing methods, professional network, and service approach. Takes 10-15 minutes.
-                  </p>
-                </div>
                 <Button 
                   onClick={() => navigate(createPageUrl("AgentOnboarding"))}
                   className="bg-orange-600 hover:bg-orange-700 text-white font-semibold"
@@ -144,8 +161,31 @@ export default function AgentHome() {
           </div>
         )}
         
+        {/* KYC Verification Banner - ONLY show if onboarded but not verified */}
+        {onboarded && needsKyc && (
+          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
+            <div className="flex items-start gap-4">
+              <Award className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
+              <div className="flex-1">
+                <h3 className="font-bold text-orange-900 mb-2">Verify Your Identity</h3>
+                <p className="text-orange-800 mb-4">
+                  Complete identity verification to access investor profiles and appear in search results. Required for platform security.
+                </p>
+                <Button 
+                  onClick={handleStartKyc}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  <Shield className="w-4 h-4 mr-2" />
+                  Start Identity Verification
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {/* License Banner - Show if license missing/unverified */}
-        {hasNewOnboarding && needsLicense && !dismissedLicenseBanner && (
+        {onboarded && needsLicense && !dismissedLicenseBanner && (
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 relative">
             <button
               onClick={() => setDismissedLicenseBanner(true)}
@@ -176,7 +216,7 @@ export default function AgentHome() {
         )}
         
         {/* NDA Required Banner */}
-        {hasNewOnboarding && !hasNDA && (
+        {onboarded && kycVerified && !hasNDA && (
           <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
             <div className="flex items-start gap-4">
               <Shield className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
@@ -189,27 +229,6 @@ export default function AgentHome() {
                   <Button className="bg-orange-600 hover:bg-orange-700">
                     <Shield className="w-4 h-4 mr-2" />
                     Sign NDA
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Verification Banner */}
-        {hasNewOnboarding && !isVerified && (
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <Award className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-orange-900 mb-2">Complete Verification</h3>
-                <p className="text-orange-800 mb-4">
-                  Get your profile verified to appear in investor searches and unlock all features. Free for agents!
-                </p>
-                <Link to={createPageUrl("Vetting")}>
-                  <Button className="bg-orange-600 hover:bg-orange-700">
-                    Start Verification
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -315,27 +334,43 @@ export default function AgentHome() {
                 <TrendingUp className="w-5 h-5 text-blue-600" />
                 <h2 className="text-xl font-bold text-slate-900">Investor Feed</h2>
               </div>
-              <Link to={createPageUrl("Investors")}>
-                <Button variant="outline" size="sm">View All</Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate(createPageUrl("InvestorDirectory"))}
+              >
+                View All
+              </Button>
             </div>
             
             <div className="space-y-3">
-              {!hasNewOnboarding ? (
+              {needsOnboarding ? (
                 <div className="text-center py-8">
                   <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
-                  <p className="text-slate-600 mb-3">Complete new onboarding to access investor feed</p>
+                  <p className="text-slate-600 mb-3">Complete onboarding to access investors</p>
                   <Button size="sm" onClick={() => navigate(createPageUrl("AgentOnboarding"))}>
                     Complete Onboarding
+                  </Button>
+                </div>
+              ) : needsKyc ? (
+                <div className="text-center py-8">
+                  <Shield className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                  <p className="text-slate-600 mb-3">Verify identity to access investors</p>
+                  <Button size="sm" onClick={handleStartKyc}>
+                    Verify Identity
                   </Button>
                 </div>
               ) : (
                 <div className="text-center py-8">
                   <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
                   <p className="text-slate-600 mb-3">No investor matches yet</p>
-                  <Link to={createPageUrl("Investors")}>
-                    <Button size="sm" variant="outline">Browse Investors</Button>
-                  </Link>
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => navigate(createPageUrl("InvestorDirectory"))}
+                  >
+                    Browse Investors
+                  </Button>
                 </div>
               )}
             </div>
@@ -385,18 +420,14 @@ export default function AgentHome() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <h2 className="text-xl font-bold text-slate-900 mb-4">Quick Links</h2>
             <div className="space-y-2">
-              <Link to={createPageUrl("Vetting")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <Shield className="w-4 h-4 text-emerald-600" />
-                  Verification Status
-                </Button>
-              </Link>
-              <Link to={createPageUrl("Matches")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <Users className="w-4 h-4 text-blue-600" />
-                  My Leads
-                </Button>
-              </Link>
+              <Button 
+                variant="outline" 
+                className="w-full justify-start gap-3"
+                onClick={() => navigate(createPageUrl("InvestorDirectory"))}
+              >
+                <Users className="w-4 h-4 text-blue-600" />
+                Browse Investors
+              </Button>
               <Link to={createPageUrl("DealRooms")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
                   <FileText className="w-4 h-4 text-purple-600" />
