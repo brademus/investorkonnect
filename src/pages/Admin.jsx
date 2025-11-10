@@ -14,7 +14,7 @@ function AdminContent() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [processing, setProcessing] = useState(false);
-  const [resetting, setResetting] = useState(false); // NEW: State for reset operation
+  const [resetting, setResetting] = useState(false); // State for reset operation
   const [healthData, setHealthData] = useState(null);
   const [profiles, setProfiles] = useState([]);
   const [users, setUsers] = useState([]);
@@ -167,7 +167,7 @@ function AdminContent() {
     }
   };
 
-  // NEW: Reset all non-admin profiles
+  // UPDATED: Reset all non-admin profiles with new response format
   const resetAllNonAdminProfiles = async () => {
     const confirmText = `⚠️ DANGER: This will DELETE all investor and agent profiles for non-admin users.
 
@@ -191,21 +191,35 @@ Type "RESET" to confirm:`;
       
       console.log('[Admin] Reset result:', data);
       
-      if (response.ok && data.ok) { // Check both HTTP status and custom `ok` flag
-        toast.success(`Reset complete! Deleted ${data.deleted} non-admin profiles`);
+      if (data.ok) {
+        // Show comprehensive success message
+        const message = `Reset complete! 
         
-        // Show error details if any
-        if (data.errors && data.errors.length > 0) {
-          console.warn('[Admin] Reset errors:', data.errors);
-          data.errors.forEach(err => toast.error(`Reset error: ${err.message}`));
-        }
+Deleted ${data.deletedProfiles} profiles for ${data.deletedUsers} non-admin users.
+
+Additional cleanup:
+- Rooms: ${data.details?.deletedRooms || 0}
+- Messages: ${data.details?.deletedMessages || 0}
+- Deals: ${data.details?.deletedDeals || 0}
+- Matches: ${data.details?.deletedMatches || 0}
+- Intros: ${data.details?.deletedIntros || 0}
+- Audits: ${data.details?.deletedAudits || 0}
+
+Protected ${data.details?.protectedAdmins || 0} admin users.`;
+        
+        toast.success("Reset complete!");
+        alert(message);
         
         // Reload data after 1 second
         setTimeout(async () => {
           await loadData();
         }, 1000);
       } else {
-        toast.error("Reset failed: " + (data.message || 'Unknown error'));
+        toast.error("Reset failed: " + (data.message || data.error || 'Unknown error'));
+        
+        if (data.reason === 'FORBIDDEN') {
+          alert('You do not have admin privileges to perform this action.');
+        }
       }
     } catch (error) {
       console.error('[Admin] Reset error:', error);
@@ -322,14 +336,14 @@ Type "RESET" to confirm:`;
           <CardContent className="space-y-4">
             <div className="bg-red-100 border border-red-300 rounded-lg p-4">
               <p className="text-sm text-red-900 font-semibold mb-2">
-                ⚠️ This action will:
+                ⚠️ This action will DELETE:
               </p>
               <ul className="text-sm text-red-800 space-y-1 list-disc pl-5">
-                <li>Delete all investor profiles (onboarding, matches, subscriptions)</li>
-                <li>Delete all agent profiles (onboarding, embeddings)</li>
-                <li>NOT delete admin users (safe)</li>
-                <li>Force users to go through onboarding again</li>
-                <li>Cannot be undone</li>
+                <li>All investor and agent profiles (onboarding, matches, subscriptions)</li>
+                <li>All deal rooms and messages</li>
+                <li>All deals, matches, and intro requests</li>
+                <li>All audit logs for non-admin users</li>
+                <li><strong>Admin users and their data will be protected</strong></li>
               </ul>
               <p className="text-sm text-red-900 font-semibold mt-3">
                 {nonAdminProfiles.length} non-admin profiles will be deleted
@@ -502,7 +516,7 @@ Type "RESET" to confirm:`;
                 variant="outline"
                 className="w-full justify-start"
               >
-                <RefreshCw className="w-4 h-4 mr-2" /> {/* Changed icon here */}
+                <RefreshCw className="w-4 h-4 mr-2" />
                 Refresh Data
               </Button>
             </CardContent>
