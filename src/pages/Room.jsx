@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -39,7 +40,7 @@ export default function Room() {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [roomId]);
+  }, [roomId, activeTab]); // Added activeTab to dependency array for clarity
 
   useEffect(() => {
     // Set active tab from URL param
@@ -165,10 +166,13 @@ export default function Room() {
     ? room.ndaAcceptedInvestor 
     : room.ndaAcceptedAgent;
 
-  // Get current profile ID for payments
+  // Get profile IDs for payment schedule
   const currentProfileId = room.currentUserRole === 'investor' 
     ? room.investor.profileId 
     : room.agent.profileId;
+  
+  const investorProfileId = room.investor?.profileId || null;
+  const agentProfileId = room.agent?.profileId || null;
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -389,6 +393,8 @@ export default function Room() {
                 dealId={room.dealId}
                 currentProfileId={currentProfileId}
                 currentRole={room.currentUserRole}
+                investorProfileId={investorProfileId}
+                agentProfileId={agentProfileId}
               />
             )}
           </div>
