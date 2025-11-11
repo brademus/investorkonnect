@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -475,8 +476,8 @@ Type "RESET" to confirm:`;
           </Card>
         )}
 
-        {/* Admin Actions */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        {/* Admin Actions - NOW WITH 4 CARDS INCLUDING MILESTONE SUMMARY */}
+        <div className="grid md:grid-cols-4 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -569,6 +570,28 @@ Type "RESET" to confirm:`;
               >
                 <ListOrdered className="w-4 h-4 mr-2 text-blue-500" />
                 Audit Log
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5 text-slate-700" />
+                Milestone 1 Summary
+              </CardTitle>
+              <CardDescription>
+                Client-facing one-pager
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button
+                onClick={() => window.location.assign(createPageUrl("MilestoneOneSummary"))}
+                variant="outline"
+                className="w-full justify-start"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                View Summary
               </Button>
             </CardContent>
           </Card>
