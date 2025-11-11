@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, FileText, ListOrdered } from "lucide-react";
+import { Loader2, Shield, AlertTriangle, CheckCircle, Trash2, Users, Database, Settings, RefreshCw, ListOrdered } from "lucide-react";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -574,4 +574,163 @@ Type "RESET" to confirm:`;
           </Card>
         </div>
 
-        {/* Users & NDA Management ... keep existing code ... */}
+        {/* Users & NDA Management */}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="w-5 h-5 text-blue-600" />
+              Users & NDA Management
+            </CardTitle>
+            <CardDescription>
+              Manage user profiles and NDA status
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="border-b border-slate-200">
+                  <tr className="text-left">
+                    <th className="pb-3 font-medium text-slate-600">Email</th>
+                    <th className="pb-3 font-medium text-slate-600">Role</th>
+                    <th className="pb-3 font-medium text-slate-600">Type</th>
+                    <th className="pb-3 font-medium text-slate-600">Onboarded</th>
+                    <th className="pb-3 font-medium text-slate-600">Subscription</th>
+                    <th className="pb-3 font-medium text-slate-600">NDA Signed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {profiles.slice(0, 20).map((profile) => (
+                    <tr key={profile.id} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="py-3">
+                        <div className="font-medium text-slate-900">{profile.email}</div>
+                        <div className="text-xs text-slate-500">{profile.full_name || 'No name'}</div>
+                      </td>
+                      <td className="py-3">
+                        <Badge className={profile.role === 'admin' ? 'bg-orange-100 text-orange-800' : 'bg-slate-100 text-slate-800'}>
+                          {profile.role || 'member'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        <Badge variant="secondary" className="capitalize">
+                          {profile.user_type || profile.user_role || 'N/A'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        {profile.onboarding_completed_at ? (
+                          <Badge className="bg-emerald-100 text-emerald-800">
+                            <CheckCircle className="w-3 h-3 mr-1" />
+                            Yes
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-500">
+                            No
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="py-3">
+                        <Badge variant="secondary" className="capitalize">
+                          {profile.subscription_tier || 'none'}
+                        </Badge>
+                      </td>
+                      <td className="py-3">
+                        <button
+                          onClick={() => handleNdaToggle(profile.user_id, profile.nda_accepted)}
+                          disabled={ndaUpdating[profile.user_id]}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            profile.nda_accepted ? 'bg-emerald-600' : 'bg-slate-200'
+                          } ${ndaUpdating[profile.user_id] ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              profile.nda_accepted ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                        {profile.nda_accepted && profile.nda_accepted_at && (
+                          <div className="text-xs text-slate-500 mt-1">
+                            {new Date(profile.nda_accepted_at).toLocaleDateString()}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {profiles.length > 20 && (
+                <p className="text-sm text-slate-500 mt-4 text-center">
+                  Showing first 20 of {profiles.length} profiles
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Duplicate Profiles List */}
+        {duplicateUserIds.length > 0 && (
+          <Card className="mb-8">
+            <CardHeader>
+              <CardTitle>Duplicate Profiles ({duplicateUserIds.length})</CardTitle>
+              <CardDescription>
+                Users with multiple profile records
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {duplicateUserIds.map(({ user_id, count }) => {
+                  const user = users.find(u => u.id === user_id);
+                  const userProfiles = profiles.filter(p => p.user_id === user_id);
+                  
+                  return (
+                    <div key={user_id} className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-slate-900">
+                            {user?.email || user_id}
+                          </div>
+                          <div className="text-sm text-slate-600">
+                            {count} profiles found
+                          </div>
+                        </div>
+                        <Badge className="bg-red-100 text-red-800">
+                          Duplicate
+                        </Badge>
+                      </div>
+                      <div className="mt-2 text-xs text-slate-600">
+                        Profile IDs: {userProfiles.map(p => p.id.substring(0, 8)).join(', ')}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Health Check Results */}
+        {healthData && (
+          <Card>
+            <CardHeader>
+              <CardTitle>Latest Health Check Results</CardTitle>
+              <CardDescription>
+                {new Date(healthData.timestamp).toLocaleString()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <pre className="text-xs bg-slate-50 p-4 rounded-lg overflow-auto max-h-96">
+                {JSON.stringify(healthData, null, 2)}
+              </pre>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function Admin() {
+  return (
+    <AuthGuard requireAuth={true}>
+      <AdminContent />
+    </AuthGuard>
+  );
+}
