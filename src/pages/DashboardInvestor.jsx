@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   TrendingUp, Star, Users, FileText, Search, 
-  Shield, Zap, Plus, ArrowRight, CheckCircle
+  Shield, Zap, Plus, ArrowRight, CheckCircle, DollarSign
 } from "lucide-react";
 
 function InvestorDashboardContent() {
@@ -96,7 +96,7 @@ function InvestorDashboardContent() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link to={createPageUrl("Reviews")}>
+          <Link to={createPageUrl("AgentDirectory")}>
             <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
                 <Search className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
@@ -126,13 +126,13 @@ function InvestorDashboardContent() {
             </div>
           </Link>
 
-          <Link to={createPageUrl("Profile")}>
-            <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all cursor-pointer group">
-              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-slate-600 transition-colors">
-                <TrendingUp className="w-6 h-6 text-slate-600 group-hover:text-white transition-colors" />
+          <Link to={createPageUrl("DealRooms")}>
+            <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all cursor-pointer group">
+              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-600 transition-colors">
+                <DollarSign className="w-6 h-6 text-amber-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">My Profile</h3>
-              <p className="text-sm text-slate-600">View and edit your investor profile</p>
+              <h3 className="font-bold text-slate-900 mb-2">Payments & Milestones</h3>
+              <p className="text-sm text-slate-600">Review payment schedules for your deals</p>
             </div>
           </Link>
         </div>
@@ -231,7 +231,7 @@ function InvestorDashboardContent() {
               <div>
                 <p className="font-medium text-slate-900">Browse Agents</p>
                 <p className="text-sm text-slate-600">Start exploring verified agent profiles</p>
-                <Link to={createPageUrl("Reviews")}>
+                <Link to={createPageUrl("AgentDirectory")}>
                   <Button variant="outline" size="sm" className="mt-2">
                     Browse Now
                   </Button>

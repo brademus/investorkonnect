@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Users, Star, FileText, TrendingUp, Search,
-  Shield, CheckCircle, Mail, Award, MapPin
+  Shield, CheckCircle, Mail, Award, MapPin, DollarSign
 } from "lucide-react";
 
 function AgentDashboardContent() {
@@ -111,13 +111,13 @@ function AgentDashboardContent() {
             </div>
           </Link>
 
-          <Link to={createPageUrl("Matches")}>
+          <Link to={createPageUrl("InvestorDirectory")}>
             <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
-                <TrendingUp className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+                <Search className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">Investor Leads</h3>
-              <p className="text-sm text-slate-600">See investors looking in your markets</p>
+              <h3 className="font-bold text-slate-900 mb-2">Browse Investors</h3>
+              <p className="text-sm text-slate-600">See investors in your markets</p>
             </div>
           </Link>
 
@@ -131,13 +131,13 @@ function AgentDashboardContent() {
             </div>
           </Link>
 
-          <Link to={createPageUrl("Inbox")}>
-            <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-slate-400 hover:shadow-lg transition-all cursor-pointer group">
-              <div className="w-12 h-12 bg-slate-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-slate-600 transition-colors">
-                <Mail className="w-6 h-6 text-slate-600 group-hover:text-white transition-colors" />
+          <Link to={createPageUrl("DealRooms")}>
+            <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all cursor-pointer group">
+              <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-600 transition-colors">
+                <DollarSign className="w-6 h-6 text-amber-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">Messages</h3>
-              <p className="text-sm text-slate-600">Investor inquiries and messages</p>
+              <h3 className="font-bold text-slate-900 mb-2">Payments & Milestones</h3>
+              <p className="text-sm text-slate-600">View payment schedules</p>
             </div>
           </Link>
         </div>
@@ -280,8 +280,13 @@ function AgentDashboardContent() {
             <div className="flex items-start gap-3">
               <div className="w-5 h-5 rounded-full border-2 border-slate-300 flex-shrink-0 mt-0.5"></div>
               <div>
-                <p className="font-medium text-slate-900">Connect with Investors</p>
-                <p className="text-sm text-slate-600">Start receiving investor inquiries and leads</p>
+                <p className="font-medium text-slate-900">Browse Investors</p>
+                <p className="text-sm text-slate-600">See investor profiles that match your markets</p>
+                <Link to={createPageUrl("InvestorDirectory")}>
+                  <Button variant="outline" size="sm" className="mt-2">
+                    Browse Investors
+                  </Button>
+                </Link>
               </div>
             </div>
           </div>
