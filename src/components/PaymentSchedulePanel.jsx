@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, Calendar, Plus, X, Save, Edit, 
-  CheckCircle, Clock, Loader2, AlertCircle
+  CheckCircle, Clock, Loader2, AlertCircle, Sparkles
 } from "lucide-react";
 import * as Payments from "@/api/payments";
+import { listPaymentTemplates, getPaymentTemplateByKey } from "@/config/paymentScheduleTemplates";
 import { toast } from "sonner";
 
 /**
@@ -16,11 +17,14 @@ import { toast } from "sonner";
  * 
  * Shows/edits payment schedule for a deal.
  * Test mode only - no real money moves.
+ * Now with template support for quick setup.
  */
 export default function PaymentSchedulePanel({ 
   dealId, 
   currentProfileId, 
-  currentRole 
+  currentRole,
+  investorProfileId,
+  agentProfileId
 }) {
   const [loading, setLoading] = useState(true);
   const [schedule, setSchedule] = useState(null);
@@ -33,6 +37,7 @@ export default function PaymentSchedulePanel({
   const [editTitle, setEditTitle] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editMilestones, setEditMilestones] = useState([]);
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState('');
 
   useEffect(() => {
     if (dealId) {
@@ -62,10 +67,63 @@ export default function PaymentSchedulePanel({
     }
   };
 
+  const applyTemplateToRows = (templateKey) => {
+    const template = getPaymentTemplateByKey(templateKey);
+    if (!template) return;
+
+    console.log('[PaymentSchedulePanel] Applying template:', templateKey);
+
+    // Compute a schedule "start date" baseline - use today
+    const start = new Date();
+
+    const newRows = template.milestones.map((m, index) => {
+      const due = new Date(start);
+      due.setDate(due.getDate() + (m.offsetDaysFromStart || 0));
+
+      // Decide who pays who based on roles
+      let payerProfileId = null;
+      let payeeProfileId = null;
+
+      if (m.payerRole === "investor" && m.payeeRole === "agent") {
+        payerProfileId = investorProfileId || null;
+        payeeProfileId = agentProfileId || null;
+      } else if (m.payerRole === "agent" && m.payeeRole === "investor") {
+        payerProfileId = agentProfileId || null;
+        payeeProfileId = investorProfileId || null;
+      }
+
+      return {
+        id: null, // new row
+        label: m.label,
+        description: m.description || "",
+        due_date: due.toISOString().slice(0, 10), // YYYY-MM-DD
+        amount_dollars: "", // leave empty for user to fill
+        payer_profile_id: payerProfileId,
+        payee_profile_id: payeeProfileId,
+        sort_order: index
+      };
+    });
+
+    setEditMilestones(newRows);
+
+    // Pre-fill title/description if schedule is new or draft
+    if (!schedule || schedule.status === 'draft') {
+      if (!editTitle) {
+        setEditTitle(template.label);
+      }
+      if (!editDescription) {
+        setEditDescription(template.description || "");
+      }
+    }
+
+    toast.success(`Applied template: ${template.label}`);
+  };
+
   const startEditing = () => {
     if (schedule) {
       setEditTitle(schedule.title || '');
       setEditDescription(schedule.description || '');
+      setSelectedTemplateKey(schedule.template_key || '');
       setEditMilestones(milestones.map(m => ({
         id: m.id,
         label: m.label,
@@ -78,9 +136,10 @@ export default function PaymentSchedulePanel({
       })));
     } else {
       // Creating new schedule
-      setEditTitle('Deal Payment Schedule');
+      setEditTitle('');
       setEditDescription('');
       setEditMilestones([]);
+      setSelectedTemplateKey('');
     }
     setIsEditing(true);
   };
@@ -90,6 +149,7 @@ export default function PaymentSchedulePanel({
     setEditTitle('');
     setEditDescription('');
     setEditMilestones([]);
+    setSelectedTemplateKey('');
   };
 
   const addMilestone = () => {
@@ -147,7 +207,8 @@ export default function PaymentSchedulePanel({
         title: editTitle,
         description: editDescription,
         currency: 'USD',
-        status: 'active'
+        status: 'active',
+        template_key: selectedTemplateKey || null
       };
 
       const milestonesInput = editMilestones.map(m => ({
@@ -155,9 +216,9 @@ export default function PaymentSchedulePanel({
         label: m.label,
         description: m.description,
         due_date: new Date(m.due_date).toISOString(),
-        amount_dollars: parseFloat(m.amount_dollars),
-        payer_profile_id: m.payer_profile_id,
-        payee_profile_id: m.payee_profile_id,
+        amount_dollars: parseFloat(m.amount_dollars) || 0,
+        payer_profile_id: m.payer_profile_id || null,
+        payee_profile_id: m.payee_profile_id || null,
         sort_order: m.sort_order || 0
       }));
 
@@ -229,6 +290,8 @@ export default function PaymentSchedulePanel({
 
   // Editing mode
   if (isEditing) {
+    const templates = listPaymentTemplates();
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between">
@@ -238,6 +301,42 @@ export default function PaymentSchedulePanel({
           <Badge className="bg-orange-100 text-orange-800">
             TEST MODE
           </Badge>
+        </div>
+
+        {/* Template Picker */}
+        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
+          <div className="flex items-start gap-3 mb-3">
+            <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <Label htmlFor="template-select" className="text-sm font-semibold text-blue-900 mb-2 block">
+                Start from template (optional)
+              </Label>
+              <select
+                id="template-select"
+                value={selectedTemplateKey || ""}
+                onChange={(e) => {
+                  const key = e.target.value;
+                  setSelectedTemplateKey(key);
+                  if (key) {
+                    applyTemplateToRows(key);
+                  }
+                }}
+                className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              >
+                <option value="">No template (start from scratch)</option>
+                {templates.map(t => (
+                  <option key={t.key} value={t.key}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+              {selectedTemplateKey && (
+                <p className="mt-2 text-xs text-blue-700">
+                  {getPaymentTemplateByKey(selectedTemplateKey)?.description}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Schedule Fields */}
@@ -376,11 +475,19 @@ export default function PaymentSchedulePanel({
   }
 
   // View mode
+  const usedTemplate = schedule.template_key ? getPaymentTemplateByKey(schedule.template_key) : null;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-bold text-slate-900">{schedule.title}</h3>
+          {usedTemplate && (
+            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
+              <Sparkles className="w-3 h-3" />
+              Based on template: {usedTemplate.label}
+            </p>
+          )}
           {schedule.description && (
             <p className="text-sm text-slate-600 mt-1">{schedule.description}</p>
           )}
