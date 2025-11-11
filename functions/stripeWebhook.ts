@@ -2,7 +2,7 @@ import Stripe from 'npm:stripe@14.11.0';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
 
 // STRIPE WEBHOOK HANDLER
-// Handles subscription lifecycle events and syncs to Profile
+// Handles subscription lifecycle events AND milestone payments
 
 Deno.serve(async (req) => {
   console.log('=== Stripe Webhook Received ===');
@@ -54,6 +54,107 @@ Deno.serve(async (req) => {
   // Handle different event types
   try {
     switch (event.type) {
+      // ========================================
+      // MILESTONE PAYMENT EVENTS
+      // ========================================
+      
+      case 'payment_intent.succeeded': {
+        const paymentIntent = event.data.object;
+        console.log('💳 PaymentIntent succeeded:', paymentIntent.id);
+        
+        // Check if this is a milestone payment
+        const milestoneId = paymentIntent.metadata?.milestone_id;
+        
+        if (milestoneId) {
+          console.log('🎯 Milestone payment detected:', milestoneId);
+          
+          try {
+            // Fetch milestone
+            const milestones = await base44.asServiceRole.entities.PaymentMilestone.filter({ 
+              id: milestoneId 
+            });
+            
+            if (milestones.length === 0) {
+              console.error('❌ Milestone not found:', milestoneId);
+              break;
+            }
+            
+            const milestone = milestones[0];
+            console.log('📋 Milestone:', {
+              id: milestone.id,
+              label: milestone.label,
+              status: milestone.status
+            });
+            
+            // Only update if still pending
+            if (milestone.status === 'pending') {
+              await base44.asServiceRole.entities.PaymentMilestone.update(milestone.id, {
+                status: 'paid',
+                paid_at: new Date().toISOString(),
+                stripe_payment_intent_id: paymentIntent.id
+              });
+              
+              console.log('✅ Milestone marked as PAID:', milestone.label);
+              
+              // Optionally create audit log
+              try {
+                await base44.asServiceRole.entities.AuditLog.create({
+                  actor_id: milestone.payer_profile_id || 'system',
+                  actor_name: 'Stripe Payment',
+                  entity_type: 'PaymentMilestone',
+                  entity_id: milestone.id,
+                  action: 'milestone_paid',
+                  details: `Milestone "${milestone.label}" paid via Stripe. Amount: $${(paymentIntent.amount / 100).toFixed(2)}`,
+                  timestamp: new Date().toISOString()
+                });
+              } catch (auditError) {
+                console.error('⚠️ Could not create audit log:', auditError);
+                // Non-fatal
+              }
+            } else {
+              console.log('ℹ️ Milestone already marked as:', milestone.status);
+            }
+          } catch (milestoneError) {
+            console.error('❌ Error processing milestone payment:', milestoneError);
+            // Continue to return success to Stripe
+          }
+        } else {
+          console.log('ℹ️ Non-milestone payment (maybe subscription-related)');
+        }
+        break;
+      }
+      
+      case 'payment_intent.payment_failed': {
+        const paymentIntent = event.data.object;
+        console.log('❌ PaymentIntent failed:', paymentIntent.id);
+        
+        const milestoneId = paymentIntent.metadata?.milestone_id;
+        
+        if (milestoneId) {
+          console.log('💔 Milestone payment failed:', milestoneId);
+          
+          // Optionally create audit log for failure
+          try {
+            await base44.asServiceRole.entities.AuditLog.create({
+              actor_id: 'system',
+              actor_name: 'Stripe Payment',
+              entity_type: 'PaymentMilestone',
+              entity_id: milestoneId,
+              action: 'milestone_payment_failed',
+              details: `Payment attempt failed. Error: ${paymentIntent.last_payment_error?.message || 'Unknown'}`,
+              timestamp: new Date().toISOString()
+            });
+          } catch (auditError) {
+            console.error('⚠️ Could not create audit log:', auditError);
+          }
+        }
+        break;
+      }
+      
+      // ========================================
+      // SUBSCRIPTION EVENTS (EXISTING)
+      // ========================================
+      
       case 'checkout.session.completed': {
         const session = event.data.object;
         console.log('💰 Checkout completed:', session.id);
