@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import PaymentSchedulePanel from "@/components/PaymentSchedulePanel";
 import {
   Shield, Loader2, Send, FileText, 
-  AlertTriangle, CheckCircle, Upload
+  AlertTriangle, CheckCircle, Upload, MessageCircle, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,8 +21,10 @@ export default function Room() {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [sending, setSending] = useState(false);
+  const [activeTab, setActiveTab] = useState('messages');
   const messagesEndRef = useRef(null);
   const roomId = new URLSearchParams(window.location.search).get('id');
+  const tab = new URLSearchParams(window.location.search).get('tab');
 
   useEffect(() => {
     if (!roomId) {
@@ -29,14 +32,27 @@ export default function Room() {
       return;
     }
     loadRoom();
-    // Poll for new messages every 5 seconds
-    const interval = setInterval(loadRoom, 5000);
+    // Poll for new messages every 5 seconds (only when on messages tab)
+    const interval = setInterval(() => {
+      if (activeTab === 'messages') {
+        loadRoom();
+      }
+    }, 5000);
     return () => clearInterval(interval);
   }, [roomId]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    // Set active tab from URL param
+    if (tab === 'payments') {
+      setActiveTab('payments');
+    }
+  }, [tab]);
+
+  useEffect(() => {
+    if (activeTab === 'messages') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, activeTab]);
 
   const loadRoom = async () => {
     try {
@@ -149,6 +165,11 @@ export default function Room() {
     ? room.ndaAcceptedInvestor 
     : room.ndaAcceptedAgent;
 
+  // Get current profile ID for payments
+  const currentProfileId = room.currentUserRole === 'investor' 
+    ? room.investor.profileId 
+    : room.agent.profileId;
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -182,6 +203,32 @@ export default function Room() {
                 </Badge>
               )}
             </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mt-4 border-b border-slate-200 -mb-px">
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'messages'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <MessageCircle className="w-4 h-4 inline mr-2" />
+              Messages
+            </button>
+            <button
+              onClick={() => setActiveTab('payments')}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === 'payments'
+                  ? 'border-blue-600 text-blue-600'
+                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <DollarSign className="w-4 h-4 inline mr-2" />
+              Payments
+            </button>
           </div>
         </div>
       </div>
@@ -220,105 +267,132 @@ export default function Room() {
           </div>
         )}
 
-        {/* Messages */}
-        <div className="bg-white rounded-xl border border-slate-200 mb-6">
-          <div className="h-[500px] overflow-y-auto p-6 space-y-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-slate-400">
-                <p>No messages yet. Start the conversation!</p>
+        {/* Messages Tab */}
+        {activeTab === 'messages' && (
+          <>
+            {/* Messages */}
+            <div className="bg-white rounded-xl border border-slate-200 mb-6">
+              <div className="h-[500px] overflow-y-auto p-6 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full text-slate-400">
+                    <p>No messages yet. Start the conversation!</p>
+                  </div>
+                ) : (
+                  messages.map((msg) => {
+                    const isSystem = msg.kind === 'system';
+                    const isMe = msg.senderUserId !== 'system' && 
+                      ((room.currentUserRole === 'investor' && room.investor.userId === msg.senderUserId) ||
+                       (room.currentUserRole === 'agent' && room.agent.userId === msg.senderUserId));
+                    
+                    if (isSystem) {
+                      return (
+                        <div key={msg.id} className="flex justify-center">
+                          <div className="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-full">
+                            {msg.text}
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[70%] ${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'} rounded-2xl px-4 py-3`}>
+                          <div className="text-xs opacity-70 mb-1">{msg.senderName}</div>
+                          {msg.kind === 'file' ? (
+                            <div className="flex items-center gap-2">
+                              <FileText className="w-4 h-4" />
+                              <a 
+                                href={msg.fileUrl} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="underline"
+                              >
+                                {msg.text}
+                              </a>
+                            </div>
+                          ) : (
+                            <p className="text-sm">{msg.text}</p>
+                          )}
+                          <div className="text-xs opacity-60 mt-1">
+                            {new Date(msg.createdAt).toLocaleTimeString()}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </div>
+
+            {/* Message Input */}
+            <div className="bg-white rounded-xl border border-slate-200 p-4">
+              <div className="flex gap-3">
+                <Input
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+                  placeholder="Type your message..."
+                  disabled={sending}
+                />
+                <input
+                  type="file"
+                  id="file-upload"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={!bothNdaAccepted || sending}
+                />
+                <Button
+                  onClick={() => document.getElementById('file-upload').click()}
+                  variant="outline"
+                  size="icon"
+                  disabled={!bothNdaAccepted || sending}
+                  title={!bothNdaAccepted ? "Both parties must accept NDA first" : "Upload file"}
+                >
+                  <Upload className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!newMessage.trim() || sending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {sending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+              {!bothNdaAccepted && (
+                <p className="text-xs text-slate-500 mt-2">
+                  File uploads disabled until both parties accept NDA
+                </p>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Payments Tab */}
+        {activeTab === 'payments' && (
+          <div className="bg-white rounded-xl border border-slate-200 p-6">
+            {!bothNdaAccepted ? (
+              <div className="text-center py-12">
+                <AlertTriangle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-slate-900 mb-2">NDA Required</h3>
+                <p className="text-slate-600 max-w-md mx-auto">
+                  Both parties must accept the NDA before accessing payment schedules. 
+                  This ensures confidentiality of deal terms.
+                </p>
               </div>
             ) : (
-              messages.map((msg) => {
-                const isSystem = msg.kind === 'system';
-                const isMe = msg.senderUserId !== 'system' && 
-                  ((room.currentUserRole === 'investor' && room.investor.userId === msg.senderUserId) ||
-                   (room.currentUserRole === 'agent' && room.agent.userId === msg.senderUserId));
-                
-                if (isSystem) {
-                  return (
-                    <div key={msg.id} className="flex justify-center">
-                      <div className="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-full">
-                        {msg.text}
-                      </div>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[70%] ${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'} rounded-2xl px-4 py-3`}>
-                      <div className="text-xs opacity-70 mb-1">{msg.senderName}</div>
-                      {msg.kind === 'file' ? (
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-4 h-4" />
-                          <a 
-                            href={msg.fileUrl} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="underline"
-                          >
-                            {msg.text}
-                          </a>
-                        </div>
-                      ) : (
-                        <p className="text-sm">{msg.text}</p>
-                      )}
-                      <div className="text-xs opacity-60 mt-1">
-                        {new Date(msg.createdAt).toLocaleTimeString()}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
+              <PaymentSchedulePanel
+                dealId={room.dealId}
+                currentProfileId={currentProfileId}
+                currentRole={room.currentUserRole}
+              />
             )}
-            <div ref={messagesEndRef} />
           </div>
-        </div>
-
-        {/* Message Input */}
-        <div className="bg-white rounded-xl border border-slate-200 p-4">
-          <div className="flex gap-3">
-            <Input
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type your message..."
-              disabled={sending}
-            />
-            <input
-              type="file"
-              id="file-upload"
-              className="hidden"
-              onChange={handleFileUpload}
-              disabled={!bothNdaAccepted || sending}
-            />
-            <Button
-              onClick={() => document.getElementById('file-upload').click()}
-              variant="outline"
-              size="icon"
-              disabled={!bothNdaAccepted || sending}
-              title={!bothNdaAccepted ? "Both parties must accept NDA first" : "Upload file"}
-            >
-              <Upload className="w-4 h-4" />
-            </Button>
-            <Button
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() || sending}
-              className="bg-blue-600 hover:bg-blue-700"
-            >
-              {sending ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
-          </div>
-          {!bothNdaAccepted && (
-            <p className="text-xs text-slate-500 mt-2">
-              File uploads disabled until both parties accept NDA
-            </p>
-          )}
-        </div>
+        )}
       </div>
     </div>
   );
