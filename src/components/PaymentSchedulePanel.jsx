@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,18 +7,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, Calendar, Plus, X, Save, Edit, 
-  CheckCircle, Clock, Loader2, AlertCircle, Sparkles
+  CheckCircle, Clock, Loader2, AlertCircle, Sparkles, CreditCard
 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import * as Payments from "@/api/payments";
 import { listPaymentTemplates, getPaymentTemplateByKey } from "@/config/paymentScheduleTemplates";
+import MilestonePaymentForm from "./MilestonePaymentForm";
 import { toast } from "sonner";
 
 /**
  * PAYMENT SCHEDULE PANEL
  * 
  * Shows/edits payment schedule for a deal.
- * Test mode only - no real money moves.
- * Now with template support for quick setup.
+ * Now supports REAL Stripe payments for milestones!
  */
 export default function PaymentSchedulePanel({ 
   dealId, 
@@ -32,6 +34,11 @@ export default function PaymentSchedulePanel({
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // Payment UI state
+  const [payingMilestone, setPayingMilestone] = useState(null);
+  const [paymentClientSecret, setPaymentClientSecret] = useState("");
+  const [isInitializingPayment, setIsInitializingPayment] = useState(false);
 
   // Form state for editing
   const [editTitle, setEditTitle] = useState('');
@@ -73,14 +80,12 @@ export default function PaymentSchedulePanel({
 
     console.log('[PaymentSchedulePanel] Applying template:', templateKey);
 
-    // Compute a schedule "start date" baseline - use today
     const start = new Date();
 
     const newRows = template.milestones.map((m, index) => {
       const due = new Date(start);
       due.setDate(due.getDate() + (m.offsetDaysFromStart || 0));
 
-      // Decide who pays who based on roles
       let payerProfileId = null;
       let payeeProfileId = null;
 
@@ -93,11 +98,11 @@ export default function PaymentSchedulePanel({
       }
 
       return {
-        id: null, // new row
+        id: null,
         label: m.label,
         description: m.description || "",
-        due_date: due.toISOString().slice(0, 10), // YYYY-MM-DD
-        amount_dollars: "", // leave empty for user to fill
+        due_date: due.toISOString().slice(0, 10),
+        amount_dollars: "",
         payer_profile_id: payerProfileId,
         payee_profile_id: payeeProfileId,
         sort_order: index
@@ -106,7 +111,6 @@ export default function PaymentSchedulePanel({
 
     setEditMilestones(newRows);
 
-    // Pre-fill title/description if schedule is new or draft
     if (!schedule || schedule.status === 'draft') {
       if (!editTitle) {
         setEditTitle(template.label);
@@ -135,7 +139,6 @@ export default function PaymentSchedulePanel({
         sort_order: m.sort_order || 0
       })));
     } else {
-      // Creating new schedule
       setEditTitle('');
       setEditDescription('');
       setEditMilestones([]);
@@ -178,7 +181,6 @@ export default function PaymentSchedulePanel({
   };
 
   const saveSchedule = async () => {
-    // Validation
     if (!editTitle.trim()) {
       toast.error('Please enter a schedule title');
       return;
@@ -240,6 +242,61 @@ export default function PaymentSchedulePanel({
     }
   };
 
+  // NEW: Handle real Stripe payment for milestone
+  const handlePayMilestone = async (milestone) => {
+    console.log('[PaymentSchedulePanel] Initiating payment for milestone:', milestone.id);
+    
+    setIsInitializingPayment(true);
+    setPayingMilestone(milestone);
+    setPaymentClientSecret("");
+    
+    try {
+      // Call backend to create PaymentIntent
+      const response = await base44.functions.invoke('createMilestonePaymentIntent', {
+        milestoneId: milestone.id
+      });
+      
+      console.log('[PaymentSchedulePanel] Payment intent response:', response.data);
+      
+      if (!response.data?.ok || !response.data?.clientSecret) {
+        throw new Error(response.data?.error || 'Failed to initialize payment');
+      }
+      
+      setPaymentClientSecret(response.data.clientSecret);
+      setIsInitializingPayment(false);
+      
+      toast.success('Payment form ready');
+    } catch (err) {
+      console.error('[PaymentSchedulePanel] Error initializing payment:', err);
+      toast.error(err.message || 'Failed to initialize payment');
+      setPayingMilestone(null);
+      setPaymentClientSecret("");
+      setIsInitializingPayment(false);
+    }
+  };
+
+  const handlePaymentSuccess = async () => {
+    console.log('[PaymentSchedulePanel] Payment successful, refreshing...');
+    
+    // Close payment UI
+    setPayingMilestone(null);
+    setPaymentClientSecret("");
+    
+    // Wait a moment for webhook to process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Reload schedule to show updated status
+    await loadSchedule();
+    
+    toast.success('Payment complete! Milestone marked as paid.');
+  };
+
+  const handleClosePayment = () => {
+    setPayingMilestone(null);
+    setPaymentClientSecret("");
+    setIsInitializingPayment(false);
+  };
+
   const handleMarkPaid = async (milestoneId) => {
     try {
       await Payments.markMilestonePaid({ milestoneId });
@@ -277,8 +334,7 @@ export default function PaymentSchedulePanel({
         <DollarSign className="w-16 h-16 text-slate-300 mx-auto mb-4" />
         <h3 className="text-xl font-bold text-slate-900 mb-2">No Payment Schedule Yet</h3>
         <p className="text-slate-600 mb-6 max-w-md mx-auto">
-          Create a payment schedule so both sides can see all deal payments in one place. 
-          This is test mode only—no real money moves yet.
+          Create a payment schedule to manage all deal payments in one place.
         </p>
         <Button onClick={startEditing} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
@@ -298,12 +354,11 @@ export default function PaymentSchedulePanel({
           <h3 className="text-xl font-bold text-slate-900">
             {schedule ? 'Edit Payment Schedule' : 'Create Payment Schedule'}
           </h3>
-          <Badge className="bg-orange-100 text-orange-800">
-            TEST MODE
+          <Badge className="bg-blue-100 text-blue-800">
+            REAL PAYMENTS
           </Badge>
         </div>
 
-        {/* Template Picker */}
         <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
           <div className="flex items-start gap-3 mb-3">
             <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -339,7 +394,6 @@ export default function PaymentSchedulePanel({
           </div>
         </div>
 
-        {/* Schedule Fields */}
         <div className="space-y-4 bg-slate-50 rounded-lg p-4">
           <div>
             <Label htmlFor="title">Schedule Title *</Label>
@@ -364,11 +418,10 @@ export default function PaymentSchedulePanel({
 
           <div>
             <Label>Currency</Label>
-            <p className="text-sm text-slate-600 mt-1">USD (fixed for test mode)</p>
+            <p className="text-sm text-slate-600 mt-1">USD (fixed)</p>
           </div>
         </div>
 
-        {/* Milestones */}
         <div>
           <div className="flex items-center justify-between mb-4">
             <h4 className="font-bold text-slate-900">Payment Milestones</h4>
@@ -447,7 +500,6 @@ export default function PaymentSchedulePanel({
           )}
         </div>
 
-        {/* Actions */}
         <div className="flex gap-3">
           <Button 
             onClick={saveSchedule} 
@@ -493,8 +545,8 @@ export default function PaymentSchedulePanel({
           )}
         </div>
         <div className="flex gap-2">
-          <Badge className="bg-orange-100 text-orange-800">
-            TEST MODE
+          <Badge className="bg-blue-100 text-blue-800">
+            REAL PAYMENTS
           </Badge>
           <Button onClick={startEditing} size="sm" variant="outline">
             <Edit className="w-4 h-4 mr-2" />
@@ -503,7 +555,6 @@ export default function PaymentSchedulePanel({
         </div>
       </div>
 
-      {/* Summary */}
       <div className="bg-slate-50 rounded-lg p-4">
         <div className="flex items-center justify-between">
           <div>
@@ -522,7 +573,31 @@ export default function PaymentSchedulePanel({
         </div>
       </div>
 
-      {/* Milestones Table */}
+      {/* Payment UI Modal */}
+      {payingMilestone && paymentClientSecret && (
+        <div className="mb-6">
+          <MilestonePaymentForm
+            clientSecret={paymentClientSecret}
+            milestone={payingMilestone}
+            onSuccess={handlePaymentSuccess}
+            onClose={handleClosePayment}
+          />
+        </div>
+      )}
+
+      {/* Initializing payment UI */}
+      {isInitializingPayment && (
+        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
+          <div className="flex items-center gap-3">
+            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
+            <div>
+              <h4 className="font-semibold text-blue-900">Initializing payment...</h4>
+              <p className="text-sm text-blue-700">Setting up secure payment form</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div>
         <h4 className="font-bold text-slate-900 mb-3">Payment Milestones</h4>
         {milestones.length === 0 ? (
@@ -534,6 +609,7 @@ export default function PaymentSchedulePanel({
             {milestones.map((milestone) => {
               const isPaid = milestone.status === 'paid';
               const isPending = milestone.status === 'pending';
+              const isCurrentUserPayer = milestone.payer_profile_id === currentProfileId;
               
               return (
                 <div 
@@ -584,14 +660,15 @@ export default function PaymentSchedulePanel({
                     </div>
                   </div>
 
-                  {isPending && (
+                  {isPending && isCurrentUserPayer && (
                     <Button
-                      onClick={() => handleMarkPaid(milestone.id)}
+                      onClick={() => handlePayMilestone(milestone)}
                       size="sm"
-                      className="bg-emerald-600 hover:bg-emerald-700"
+                      className="bg-blue-600 hover:bg-blue-700"
+                      disabled={isInitializingPayment || (payingMilestone && payingMilestone.id !== milestone.id)}
                     >
-                      <CheckCircle className="w-4 h-4 mr-2" />
-                      Mark Paid (test)
+                      <CreditCard className="w-4 h-4 mr-2" />
+                      Pay Now
                     </Button>
                   )}
                 </div>
