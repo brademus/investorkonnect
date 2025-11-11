@@ -7,19 +7,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, Calendar, Plus, X, Save, Edit, 
-  CheckCircle, Clock, Loader2, AlertCircle, Sparkles, CreditCard
+  CheckCircle, Clock, Loader2, AlertCircle, Sparkles, CreditCard, AlertTriangle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import * as Payments from "@/api/payments";
 import { listPaymentTemplates, getPaymentTemplateByKey } from "@/config/paymentScheduleTemplates";
+import { APP_RULES } from "@/config/rules";
+import { validateMilestoneInput } from "@/validators/milestone";
+import { useRoomPaymentRefetch } from "@/hooks/useRoomPaymentRefetch";
 import MilestonePaymentForm from "./MilestonePaymentForm";
 import { toast } from "sonner";
 
 /**
- * PAYMENT SCHEDULE PANEL
+ * PAYMENT SCHEDULE PANEL - Enhanced with validation & status machine
  * 
  * Shows/edits payment schedule for a deal.
- * Now supports REAL Stripe payments for milestones!
+ * Supports REAL Stripe payments for milestones with comprehensive edge-case handling!
  */
 export default function PaymentSchedulePanel({ 
   dealId, 
@@ -73,6 +76,9 @@ export default function PaymentSchedulePanel({
       setLoading(false);
     }
   };
+
+  // Auto-refetch on focus/interval for real-time updates
+  useRoomPaymentRefetch(loadSchedule);
 
   const applyTemplateToRows = (templateKey) => {
     const template = getPaymentTemplateByKey(templateKey);
@@ -191,13 +197,17 @@ export default function PaymentSchedulePanel({
       return;
     }
 
+    // Enhanced validation using validators/milestone.js
     for (const m of editMilestones) {
-      if (!m.label.trim()) {
-        toast.error('All milestones must have a label');
-        return;
-      }
-      if (!m.due_date) {
-        toast.error('All milestones must have a due date');
+      try {
+        validateMilestoneInput({
+          label: m.label,
+          amount_cents: Math.round((parseFloat(m.amount_dollars) || 0) * 100),
+          currency: 'USD',
+          due_date: m.due_date
+        });
+      } catch (err) {
+        toast.error(err.message || 'Please check milestone details');
         return;
       }
     }
@@ -242,7 +252,6 @@ export default function PaymentSchedulePanel({
     }
   };
 
-  // NEW: Handle real Stripe payment for milestone
   const handlePayMilestone = async (milestone) => {
     console.log('[PaymentSchedulePanel] Initiating payment for milestone:', milestone.id);
     
@@ -251,7 +260,6 @@ export default function PaymentSchedulePanel({
     setPaymentClientSecret("");
     
     try {
-      // Call backend to create PaymentIntent
       const response = await base44.functions.invoke('createMilestonePaymentIntent', {
         milestoneId: milestone.id
       });
@@ -278,14 +286,10 @@ export default function PaymentSchedulePanel({
   const handlePaymentSuccess = async () => {
     console.log('[PaymentSchedulePanel] Payment successful, refreshing...');
     
-    // Close payment UI
     setPayingMilestone(null);
     setPaymentClientSecret("");
     
-    // Wait a moment for webhook to process
     await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Reload schedule to show updated status
     await loadSchedule();
     
     toast.success('Payment complete! Milestone marked as paid.');
@@ -295,17 +299,6 @@ export default function PaymentSchedulePanel({
     setPayingMilestone(null);
     setPaymentClientSecret("");
     setIsInitializingPayment(false);
-  };
-
-  const handleMarkPaid = async (milestoneId) => {
-    try {
-      await Payments.markMilestonePaid({ milestoneId });
-      toast.success('Milestone marked as paid (test mode)');
-      await loadSchedule();
-    } catch (err) {
-      console.error('[PaymentSchedulePanel] Error marking paid:', err);
-      toast.error('Failed to mark milestone as paid');
-    }
   };
 
   if (loading) {
@@ -327,7 +320,6 @@ export default function PaymentSchedulePanel({
     );
   }
 
-  // No schedule - show create prompt
   if (!schedule && !isEditing) {
     return (
       <div className="text-center py-12">
@@ -344,7 +336,6 @@ export default function PaymentSchedulePanel({
     );
   }
 
-  // Editing mode
   if (isEditing) {
     const templates = listPaymentTemplates();
 
@@ -526,7 +517,7 @@ export default function PaymentSchedulePanel({
     );
   }
 
-  // View mode
+  // View mode with enhanced status handling
   const usedTemplate = schedule.template_key ? getPaymentTemplateByKey(schedule.template_key) : null;
 
   return (
@@ -573,7 +564,6 @@ export default function PaymentSchedulePanel({
         </div>
       </div>
 
-      {/* Payment UI Modal */}
       {payingMilestone && paymentClientSecret && (
         <div className="mb-6">
           <MilestonePaymentForm
@@ -585,7 +575,6 @@ export default function PaymentSchedulePanel({
         </div>
       )}
 
-      {/* Initializing payment UI */}
       {isInitializingPayment && (
         <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
           <div className="flex items-center gap-3">
@@ -607,9 +596,14 @@ export default function PaymentSchedulePanel({
         ) : (
           <div className="space-y-2">
             {milestones.map((milestone) => {
-              const isPaid = milestone.status === 'paid';
-              const isPending = milestone.status === 'pending';
+              const status = milestone.status || 'pending';
+              const isPaid = status === 'paid';
+              const isOverdue = status === 'overdue';
+              const isFailed = status === 'failed';
+              const isRefunded = status === 'refunded';
+              const isBlockedForPay = APP_RULES.milestone.payBlockedStatuses.includes(status);
               const isCurrentUserPayer = milestone.payer_profile_id === currentProfileId;
+              const isPending = ['pending', 'scheduled', 'due', 'overdue', 'failed'].includes(status);
               
               return (
                 <div 
@@ -617,7 +611,7 @@ export default function PaymentSchedulePanel({
                   className="bg-white border border-slate-200 rounded-lg p-4 flex items-center justify-between"
                 >
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
+                    <div className="flex items-center gap-3 mb-2 flex-wrap">
                       <h5 className="font-semibold text-slate-900">{milestone.label}</h5>
                       {isPaid && (
                         <Badge className="bg-emerald-100 text-emerald-800">
@@ -625,10 +619,39 @@ export default function PaymentSchedulePanel({
                           Paid
                         </Badge>
                       )}
-                      {isPending && (
+                      {isOverdue && (
+                        <Badge className="bg-red-100 text-red-800">
+                          <AlertTriangle className="w-3 h-3 mr-1" />
+                          Overdue
+                        </Badge>
+                      )}
+                      {isFailed && (
+                        <Badge className="bg-amber-100 text-amber-800">
+                          <AlertCircle className="w-3 h-3 mr-1" />
+                          Failed
+                        </Badge>
+                      )}
+                      {isRefunded && (
+                        <Badge variant="outline" className="border-slate-400 text-slate-700">
+                          Refunded
+                        </Badge>
+                      )}
+                      {status === 'pending' && !isOverdue && (
                         <Badge variant="outline">
                           <Clock className="w-3 h-3 mr-1" />
                           Pending
+                        </Badge>
+                      )}
+                      {status === 'scheduled' && (
+                        <Badge variant="outline">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Scheduled
+                        </Badge>
+                      )}
+                      {status === 'due' && (
+                        <Badge className="bg-blue-100 text-blue-800">
+                          <Clock className="w-3 h-3 mr-1" />
+                          Due
                         </Badge>
                       )}
                     </div>
@@ -660,7 +683,7 @@ export default function PaymentSchedulePanel({
                     </div>
                   </div>
 
-                  {isPending && isCurrentUserPayer && (
+                  {!isBlockedForPay && isPending && isCurrentUserPayer && (
                     <Button
                       onClick={() => handlePayMilestone(milestone)}
                       size="sm"
