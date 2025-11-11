@@ -8,7 +8,7 @@ import {
   DollarSign, Calendar, Plus, X, Save, Edit, 
   CheckCircle, Clock, Loader2, AlertCircle
 } from "lucide-react";
-import * as Payments from "@/src/api/payments";
+import * as Payments from "@/api/payments";
 import { toast } from "sonner";
 
 /**
