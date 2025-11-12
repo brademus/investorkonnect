@@ -53,6 +53,8 @@ import PostAuth from './pages/PostAuth';
 import BillingSuccess from './pages/BillingSuccess';
 import InvestorDirectory from './pages/InvestorDirectory';
 import AgentDirectory from './pages/AgentDirectory';
+import Billing from './pages/Billing';
+import MyProfile from './pages/MyProfile';
 import Layout from './Layout.jsx';
 
 
@@ -112,6 +114,8 @@ export const PAGES = {
     "BillingSuccess": BillingSuccess,
     "InvestorDirectory": InvestorDirectory,
     "AgentDirectory": AgentDirectory,
+    "Billing": Billing,
+    "MyProfile": MyProfile,
 }
 
 export const pagesConfig = {

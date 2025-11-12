@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -7,24 +8,24 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp, Shield, FileText, Users, CheckCircle,
-  AlertCircle, Building, Target, DollarSign, ArrowRight, Star, 
-  Loader2, RefreshCw, MapPin, Award
+  AlertCircle, Building, Target, DollarSign, ArrowRight, Star,
+  Loader2, RefreshCw, MapPin, Award, User
 } from "lucide-react";
 import { toast } from "sonner";
 
 export default function InvestorHome() {
   const navigate = useNavigate();
-  const { 
-    user, 
-    profile, 
-    subscriptionPlan, 
-    subscriptionStatus, 
+  const {
+    user,
+    profile,
+    subscriptionPlan,
+    subscriptionStatus,
     isPaidSubscriber,
     isInvestorReady,
     loading: profileLoading,
     targetState
   } = useCurrentProfile();
-  
+
   // AI-powered suggested agents
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [loadingSuggestedAgents, setLoadingSuggestedAgents] = useState(true);
@@ -57,7 +58,7 @@ export default function InvestorHome() {
       const matchResponse = await base44.functions.invoke('matchAgentsForInvestor', {
         limit: 6
       });
-      
+
       console.log('[InvestorHome] Match response:', matchResponse.data);
 
       if (!cancelled && matchResponse.data?.ok) {
@@ -93,7 +94,7 @@ export default function InvestorHome() {
   const getPlanName = (plan) => {
     const names = {
       'starter': 'Starter',
-      'pro': 'Pro', 
+      'pro': 'Pro',
       'enterprise': 'Enterprise',
       'none': 'Free'
     };
@@ -107,7 +108,7 @@ export default function InvestorHome() {
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
         {/* Header with Admin Button */}
         <div className="mb-8 flex items-start justify-between">
           <div>
@@ -118,7 +119,7 @@ export default function InvestorHome() {
               Your AgentVault dashboard
             </p>
           </div>
-          
+
           {/* Admin Button - Only visible to admins */}
           {isAdmin && (
             <Button
@@ -315,7 +316,7 @@ export default function InvestorHome() {
                 <Button variant="outline" size="sm">Edit</Button>
               </Link>
             </div>
-            
+
             {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
               <div className="space-y-4">
                 {buyBox.asset_types && buyBox.asset_types.length > 0 && (
@@ -328,7 +329,7 @@ export default function InvestorHome() {
                     </div>
                   </div>
                 )}
-                
+
                 {buyBox.markets && buyBox.markets.length > 0 && (
                   <div>
                     <p className="text-sm text-slate-600 mb-2">Target Markets</p>
@@ -339,7 +340,7 @@ export default function InvestorHome() {
                     </div>
                   </div>
                 )}
-                
+
                 {(buyBox.min_budget || buyBox.max_budget) && (
                   <div>
                     <p className="text-sm text-slate-600 mb-2">Budget Range</p>
@@ -371,7 +372,7 @@ export default function InvestorHome() {
                 <Button variant="outline" size="sm">Manage</Button>
               </Link>
             </div>
-            
+
             {docs.length > 0 ? (
               <div className="space-y-2">
                 {docs.slice(0, 3).map((doc, idx) => (
@@ -410,9 +411,9 @@ export default function InvestorHome() {
                   Subscription & Plans
                 </Button>
               </Link>
-              <Link to={createPageUrl("Profile")}>
+              <Link to={createPageUrl("MyProfile")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <Building className="w-4 h-4 text-slate-600" />
+                  <User className="w-4 h-4 text-slate-700" />
                   My Profile
                 </Button>
               </Link>
@@ -422,7 +423,7 @@ export default function InvestorHome() {
                   Deal Rooms
                 </Button>
               </Link>
-              <Link to={createPageUrl("AccountBilling")}>
+              <Link to={createPageUrl("Billing")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
                   <DollarSign className="w-4 h-4 text-emerald-600" />
                   Billing & Payment

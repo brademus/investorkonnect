@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, Shield, FileText, TrendingUp, CheckCircle,
-  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X, Loader2
+  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X, Loader2, User, DollarSign
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -548,24 +548,34 @@ export default function AgentHome() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <h2 className="text-xl font-bold text-slate-900 mb-4">Quick Links</h2>
             <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                className="w-full justify-start gap-3"
-                onClick={() => navigate(createPageUrl("InvestorDirectory"))}
-              >
-                <Users className="w-4 h-4 text-blue-600" />
-                Browse Investors
-              </Button>
+              <Link to={createPageUrl("Pricing")}>
+                <Button variant="outline" className="w-full justify-start gap-3">
+                  <Star className="w-4 h-4 text-blue-600" />
+                  Subscription & Plans
+                </Button>
+              </Link>
+              <Link to={createPageUrl("AccountProfile")}>
+                <Button variant="outline" className="w-full justify-start gap-3">
+                  <User className="w-4 h-4 text-slate-700" />
+                  My Profile
+                </Button>
+              </Link>
+              <Link to={createPageUrl("InvestorDirectory")}>
+                <Button variant="outline" className="w-full justify-start gap-3">
+                  <Users className="w-4 h-4 text-blue-600" />
+                  Browse Investors
+                </Button>
+              </Link>
               <Link to={createPageUrl("DealRooms")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
                   <FileText className="w-4 h-4 text-purple-600" />
                   Deal Rooms
                 </Button>
               </Link>
-              <Link to={createPageUrl("Inbox")}>
+              <Link to={createPageUrl("Billing")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <Mail className="w-4 h-4 text-slate-600" />
-                  Messages
+                  <DollarSign className="w-4 h-4 text-emerald-600" />
+                  Billing & Payment
                 </Button>
               </Link>
             </div>
