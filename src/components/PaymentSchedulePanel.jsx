@@ -10,11 +10,11 @@ import {
   CheckCircle, Clock, Loader2, AlertCircle, Sparkles, CreditCard, AlertTriangle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import * as Payments from "@/api/payments";
-import { listPaymentTemplates, getPaymentTemplateByKey } from "@/config/paymentScheduleTemplates";
-import { APP_RULES } from "@/config/rules";
-import { validateMilestoneInput } from "@/validators/milestone";
-import { useRoomPaymentRefetch } from "@/hooks/useRoomPaymentRefetch";
+import * as Payments from "../src/api/payments.js";
+import { listPaymentTemplates, getPaymentTemplateByKey } from "../src/config/paymentScheduleTemplates.js";
+import { APP_RULES } from "../src/config/rules.js";
+import { validateMilestoneInput } from "../src/validators/milestone.js";
+import { useRoomPaymentRefetch } from "../src/hooks/useRoomPaymentRefetch.js";
 import MilestonePaymentForm from "./MilestonePaymentForm";
 import { toast } from "sonner";
 
