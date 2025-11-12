@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Users, Shield, FileText, TrendingUp, CheckCircle,
-  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X
+  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X, Loader2
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -33,20 +33,20 @@ export default function AgentHome() {
   
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
 
-  // Suggested investors state (simple fallback for now)
+  // AI-powered suggested investors
   const [suggestedInvestors, setSuggestedInvestors] = useState([]);
   const [loadingSuggestedInvestors, setLoadingSuggestedInvestors] = useState(true);
 
   // Check if user is admin
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
-  // Load suggested investors when profile is ready
+  // Load AI-matched investors when profile is ready
   useEffect(() => {
     let cancelled = false;
 
     const fetchSuggested = async () => {
       if (!loading && user && profile?.user_role === 'agent' && onboarded && kycVerified) {
-        await loadSuggestedInvestors();
+        await loadAIMatches();
       } else if (!loading && !cancelled) {
         setLoadingSuggestedInvestors(false);
       }
@@ -57,33 +57,37 @@ export default function AgentHome() {
     return () => {
       cancelled = true;
     };
-  }, [loading, user, profile, onboarded, kycVerified, targetState]); // Added targetState as a dependency
+  }, [loading, user, profile, onboarded, kycVerified]);
 
-  const loadSuggestedInvestors = async () => {
+  const loadAIMatches = async () => {
     let cancelled = false;
 
     try {
       setLoadingSuggestedInvestors(true);
 
-      // Simple fallback: Get verified investors in agent's markets
-      // Assuming 'base44' is globally available or imported if not defined in this snippet.
-      // In a real application, 'base44' would be imported or provided via context.
-      const allProfiles = await base44.entities.Profile.filter({});
-      
-      const investorProfiles = allProfiles
-        .filter(p => 
-          p.user_role === 'investor' &&
-          p.onboarding_version === 'v2' &&
-          p.onboarding_completed_at &&
-          (!targetState || p.target_state === targetState || p.markets?.includes(targetState))
-        )
-        .slice(0, 6); // Limit to 6 investors
+      console.log('[AgentHome] 🤖 Starting AI matching...');
 
-      if (!cancelled) {
-        setSuggestedInvestors(investorProfiles);
+      // Step 1: Ensure agent has an embedding
+      const embedResponse = await base44.functions.invoke('embedProfile');
+      console.log('[AgentHome] Embedding response:', embedResponse.data);
+
+      // Step 2: Get AI-matched investors
+      const matchResponse = await base44.functions.invoke('matchInvestorsForAgent', {
+        limit: 6
+      });
+      
+      console.log('[AgentHome] Match response:', matchResponse.data);
+
+      if (!cancelled && matchResponse.data?.ok) {
+        const results = matchResponse.data.results || [];
+        setSuggestedInvestors(results);
+        console.log('[AgentHome] ✅ Loaded', results.length, 'AI-matched investors');
+      } else {
+        console.warn('[AgentHome] No AI matches returned');
+        setSuggestedInvestors([]);
       }
     } catch (err) {
-      console.warn("[AgentHome] Failed to load suggested investors", err);
+      console.error("[AgentHome] AI matching error:", err);
       if (!cancelled) setSuggestedInvestors([]);
     } finally {
       if (!cancelled) setLoadingSuggestedInvestors(false);
@@ -388,13 +392,18 @@ export default function AgentHome() {
             </div>
           </div>
 
-          {/* Suggested Investors - FIXED */}
+          {/* AI-Powered Suggested Investors */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-medium text-slate-800">Suggested Investors</h3>
-                <p className="text-xs text-slate-500">
-                  Investors whose profiles align with your markets and strategy.
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-slate-800">Suggested Investors</h3>
+                  <Badge className="bg-purple-100 text-purple-800 text-xs">
+                    AI Powered
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Smart matches based on your markets and expertise
                 </p>
               </div>
               <button
@@ -408,9 +417,9 @@ export default function AgentHome() {
 
             {loadingSuggestedInvestors ? (
               <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
-                <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-500 animate-spin mb-3" />
-                <div>Analyzing investor demand…</div>
-                <div className="mt-1">We&apos;re surfacing investors that fit your focus.</div>
+                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+                <div className="font-medium">AI is analyzing investor demand...</div>
+                <div className="mt-1">Finding the best investor matches for you</div>
               </div>
             ) : needsOnboarding ? (
               <div className="text-center py-8">
@@ -430,30 +439,45 @@ export default function AgentHome() {
               </div>
             ) : suggestedInvestors.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <Users className="w-12 h-12 text-slate-300 mb-3" />
                 <p className="mb-3 text-center">
-                  No suggested investors yet. While we improve matching, you can browse the full investor directory.
+                  No AI matches yet. Complete your profile for better matching.
                 </p>
                 <button
                   type="button"
-                  className="px-3 py-2 rounded-md bg-black text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-md bg-purple-600 text-white text-xs font-medium hover:bg-purple-700"
                   onClick={() => navigate(createPageUrl("InvestorDirectory"))}
                 >
                   Browse all investors
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
-                {suggestedInvestors.map((inv) => (
+                {suggestedInvestors.map(({ profile: inv, score }) => (
                   <div
                     key={inv.id}
-                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
                   >
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
-                        {inv.full_name || 'Investor'}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium text-slate-900">
+                          {inv.full_name || 'Investor'}
+                        </div>
+                        {score && score >= 0.8 && (
+                          <Badge className="bg-emerald-100 text-emerald-800 text-xs">
+                            Top Match
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {inv.target_state || inv.markets?.[0] || 'Market not set'}
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span>
+                          {inv.target_state || inv.markets?.[0] || 'Market not set'}
+                        </span>
+                        {score && (
+                          <Badge variant="outline" className="text-xs">
+                            {(score * 100).toFixed(0)}% match
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <button
@@ -472,7 +496,7 @@ export default function AgentHome() {
                     className="inline-flex items-center text-xs text-slate-700 hover:text-slate-900"
                     onClick={() => navigate(createPageUrl("InvestorDirectory"))}
                   >
-                    <span className="mr-1">Find matches now</span>
+                    <span className="mr-1">Find more matches</span>
                     <span className="text-slate-400">↗</span>
                   </button>
                 </div>
