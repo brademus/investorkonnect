@@ -295,6 +295,41 @@ Type "RESET" to confirm:`;
   const orphanedProfiles = profiles.filter(p => !p.user_id || !users.find(u => u.id === p.user_id));
   const nonAdminProfiles = profiles.filter(p => p.role !== 'admin');
 
+  // AI Embedding functions
+  const refreshAgentVectors = async () => {
+    setProcessing(true);
+    try {
+      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+        role: 'agent' 
+      });
+      const data = response.data;
+      toast.success(`Agent vectors updated: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped`);
+      alert(JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error('[Admin] Refresh agent vectors error:', error);
+      toast.error("Failed to refresh agent vectors: " + error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const refreshInvestorVectors = async () => {
+    setProcessing(true);
+    try {
+      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+        role: 'investor' 
+      });
+      const data = response.data;
+      toast.success(`Investor vectors updated: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped`);
+      alert(JSON.stringify(data, null, 2));
+    } catch (error) {
+      console.error('[Admin] Refresh investor vectors error:', error);
+      toast.error("Failed to refresh investor vectors: " + error.message);
+    } finally {
+      setProcessing(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -476,8 +511,8 @@ Type "RESET" to confirm:`;
           </Card>
         )}
 
-        {/* Admin Actions - NOW WITH 4 CARDS INCLUDING MILESTONE SUMMARY */}
-        <div className="grid md:grid-cols-4 gap-6 mb-8">
+        {/* Admin Actions - NOW WITH 5 CARDS INCLUDING AI MATCHING */}
+        <div className="grid md:grid-cols-5 gap-6 mb-8">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -593,6 +628,41 @@ Type "RESET" to confirm:`;
                 <FileText className="w-4 h-4 mr-2" />
                 View Summary
               </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-purple-200 bg-purple-50">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-purple-900">
+                <Database className="w-5 h-5 text-purple-600" />
+                AI Matching
+              </CardTitle>
+              <CardDescription className="text-purple-700">
+                Rebuild embedding vectors for matching
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button
+                onClick={refreshAgentVectors}
+                disabled={processing}
+                variant="outline"
+                className="w-full justify-start border-purple-300 text-purple-700 hover:bg-purple-100"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Rebuild Agent Vectors
+              </Button>
+              <Button
+                onClick={refreshInvestorVectors}
+                disabled={processing}
+                variant="outline"
+                className="w-full justify-start border-purple-300 text-purple-700 hover:bg-purple-100"
+              >
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Rebuild Investor Vectors
+              </Button>
+              <div className="text-xs text-purple-700 mt-2">
+                Run after major profile updates
+              </div>
             </CardContent>
           </Card>
         </div>
