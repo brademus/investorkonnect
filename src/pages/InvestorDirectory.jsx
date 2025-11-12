@@ -8,14 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Users, TrendingUp, MapPin, Building, DollarSign,
-  Loader2, AlertCircle, Shield, Search, Filter
+  Loader2, AlertCircle, Shield, Search, Filter, CheckCircle, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
  * INVESTOR DIRECTORY - For Agents
  * 
- * Shows real investor profiles, not marketing content
+ * Shows ALL investors who have signed up, regardless of onboarding status
  * Requires: agent role + onboarding + KYC + NDA
  */
 export default function InvestorDirectory() {
@@ -84,18 +84,16 @@ export default function InvestorDirectory() {
 
   const loadInvestors = async () => {
     try {
-      console.log('[InvestorDirectory] Loading investors...');
+      console.log('[InvestorDirectory] Loading ALL investors...');
       
-      // Get all profiles with investor role
+      // Get ALL profiles with investor role - no filtering by onboarding status
       const allProfiles = await base44.entities.Profile.filter({});
       
       const investorProfiles = allProfiles.filter(p => 
-        p.user_role === 'investor' &&
-        p.onboarding_version === 'v2' &&
-        p.onboarding_completed_at
+        p.user_role === 'investor' || p.user_type === 'investor'
       );
       
-      console.log('[InvestorDirectory] Found', investorProfiles.length, 'investors');
+      console.log('[InvestorDirectory] Found', investorProfiles.length, 'investors (including incomplete profiles)');
       
       setInvestors(investorProfiles);
       setLoading(false);
@@ -138,7 +136,7 @@ export default function InvestorDirectory() {
             Investor Directory
           </h1>
           <p className="text-slate-600">
-            Browse verified investors looking for agents in your market
+            Browse {investors.length} verified investors looking for agents in your market
           </p>
         </div>
 
@@ -181,6 +179,8 @@ export default function InvestorDirectory() {
               const basic = metadata.basicProfile || {};
               const markets = metadata.targetMarkets || {};
               const strategy = metadata.strategyDeals || {};
+              const isFullyOnboarded = investor.onboarding_completed_at && investor.onboarding_version;
+              const isVerified = investor.kyc_status === 'approved';
               
               return (
                 <div
@@ -194,14 +194,33 @@ export default function InvestorDirectory() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="font-bold text-slate-900 text-lg mb-1">
-                        {investor.full_name || 'Investor'}
+                        {investor.full_name || investor.email || 'Investor'}
                       </h3>
                       {basic.investor_description && (
                         <p className="text-sm text-slate-600">{basic.investor_description}</p>
                       )}
                     </div>
-                    <Shield className="w-5 h-5 text-emerald-600" />
+                    {isVerified ? (
+                      <Shield className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Clock className="w-5 h-5 text-slate-400" />
+                    )}
                   </div>
+
+                  {/* Status Badge */}
+                  {!isFullyOnboarded && (
+                    <Badge variant="outline" className="mb-3 border-amber-300 text-amber-700">
+                      <Clock className="w-3 h-3 mr-1" />
+                      Profile In Progress
+                    </Badge>
+                  )}
+                  
+                  {isFullyOnboarded && isVerified && (
+                    <Badge className="mb-3 bg-emerald-100 text-emerald-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Fully Verified
+                    </Badge>
+                  )}
 
                   {/* Target Market */}
                   {investor.target_state && (
@@ -227,6 +246,12 @@ export default function InvestorDirectory() {
                         <TrendingUp className="w-4 h-4" />
                         <span>{strategy.primary_strategy}</span>
                       </div>
+                    )}
+
+                    {!basic.typical_deal_size && !strategy.primary_strategy && (
+                      <p className="text-slate-400 text-xs italic">
+                        Profile details pending completion
+                      </p>
                     )}
                   </div>
 

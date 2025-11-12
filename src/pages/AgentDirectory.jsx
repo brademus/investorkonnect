@@ -8,14 +8,14 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Users, Shield, MapPin, Building, TrendingUp, Award,
-  Loader2, Search, Filter
+  Loader2, Search, Filter, CheckCircle, Clock
 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
  * AGENT DIRECTORY - For Investors
  * 
- * Shows real agent profiles, not marketing content
+ * Shows ALL agents who have signed up, regardless of onboarding status
  * Requires: investor role + onboarding + KYC + NDA
  */
 export default function AgentDirectory() {
@@ -84,18 +84,16 @@ export default function AgentDirectory() {
 
   const loadAgents = async () => {
     try {
-      console.log('[AgentDirectory] Loading agents...');
+      console.log('[AgentDirectory] Loading ALL agents...');
       
-      // Get all profiles with agent role
+      // Get ALL profiles with agent role - no filtering by onboarding status
       const allProfiles = await base44.entities.Profile.filter({});
       
       const agentProfiles = allProfiles.filter(p => 
-        p.user_role === 'agent' &&
-        p.onboarding_version === 'agent-v2-deep' &&
-        p.onboarding_completed_at
+        p.user_role === 'agent' || p.user_type === 'agent'
       );
       
-      console.log('[AgentDirectory] Found', agentProfiles.length, 'agents');
+      console.log('[AgentDirectory] Found', agentProfiles.length, 'agents (including incomplete profiles)');
       
       setAgents(agentProfiles);
       setLoading(false);
@@ -138,7 +136,7 @@ export default function AgentDirectory() {
             Agent Directory
           </h1>
           <p className="text-slate-600">
-            Browse verified agents in your target market
+            Browse {agents.length} verified agents in your target market
           </p>
         </div>
 
@@ -178,9 +176,11 @@ export default function AgentDirectory() {
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAgents.map((agent) => {
               const agentData = agent.agent || {};
+              const isFullyOnboarded = agent.onboarding_completed_at && agent.onboarding_version;
+              const isVerified = agent.kyc_status === 'approved';
               const badges = [];
               
-              if (agent.kyc_status === 'approved') badges.push('Verified');
+              if (isVerified) badges.push('Verified');
               if (agentData.investor_friendly) badges.push('Investor-friendly');
               if (agentData.personally_invests) badges.push('Personal investor');
               if (agentData.sources_off_market) badges.push('Off-market deals');
@@ -197,14 +197,33 @@ export default function AgentDirectory() {
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="font-bold text-slate-900 text-lg mb-1">
-                        {agent.full_name || 'Agent'}
+                        {agent.full_name || agent.email || 'Agent'}
                       </h3>
                       {agentData.brokerage && (
                         <p className="text-sm text-slate-600">{agentData.brokerage}</p>
                       )}
                     </div>
-                    <Shield className="w-5 h-5 text-emerald-600" />
+                    {isVerified ? (
+                      <Shield className="w-5 h-5 text-emerald-600" />
+                    ) : (
+                      <Clock className="w-5 h-5 text-slate-400" />
+                    )}
                   </div>
+
+                  {/* Status Badge */}
+                  {!isFullyOnboarded && (
+                    <Badge variant="outline" className="mb-3 border-amber-300 text-amber-700">
+                      <Clock className="w-3 h-3 mr-1" />
+                      Profile In Progress
+                    </Badge>
+                  )}
+                  
+                  {isFullyOnboarded && isVerified && (
+                    <Badge className="mb-3 bg-emerald-100 text-emerald-800">
+                      <CheckCircle className="w-3 h-3 mr-1" />
+                      Fully Verified
+                    </Badge>
+                  )}
 
                   {/* Markets */}
                   {agentData.markets && agentData.markets.length > 0 && (
@@ -237,6 +256,12 @@ export default function AgentDirectory() {
                         <Users className="w-4 h-4" />
                         <span>{agentData.investor_clients_count}+ investor clients</span>
                       </div>
+                    )}
+
+                    {!agentData.experience_years && !agentData.investor_clients_count && (
+                      <p className="text-slate-400 text-xs italic">
+                        Profile details pending completion
+                      </p>
                     )}
                   </div>
 
