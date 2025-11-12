@@ -25,45 +25,52 @@ export default function InvestorHome() {
     targetState
   } = useCurrentProfile();
   
-  // Suggested agents state (simple fallback for now)
+  // AI-powered suggested agents
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [loadingSuggestedAgents, setLoadingSuggestedAgents] = useState(true);
 
   // Check if user is admin
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
-  // Load suggested agents when profile is ready
+  // Load AI-matched agents when profile is ready
   useEffect(() => {
     if (!profileLoading && user && profile?.user_role === 'investor' && isInvestorReady) {
-      loadSuggestedAgents();
-    } else if (!profileLoading && !loadingSuggestedAgents) {
+      loadAIMatches();
+    } else if (!profileLoading) {
       setLoadingSuggestedAgents(false);
     }
   }, [profileLoading, user, profile, isInvestorReady]);
 
-  const loadSuggestedAgents = async () => {
+  const loadAIMatches = async () => {
     let cancelled = false;
 
     try {
       setLoadingSuggestedAgents(true);
 
-      // Simple fallback: Get vetted agents in user's target state
-      const allProfiles = await base44.entities.Profile.filter({});
-      
-      const agentProfiles = allProfiles
-        .filter(p => 
-          p.user_role === 'agent' &&
-          p.onboarding_version === 'agent-v2-deep' &&
-          p.onboarding_completed_at &&
-          (!targetState || p.agent?.markets?.includes(targetState))
-        )
-        .slice(0, 6); // Limit to 6 agents
+      console.log('[InvestorHome] 🤖 Starting AI matching...');
 
-      if (!cancelled) {
-        setSuggestedAgents(agentProfiles);
+      // Step 1: Ensure investor has an embedding
+      const embedResponse = await base44.functions.invoke('embedProfile');
+      console.log('[InvestorHome] Embedding response:', embedResponse.data);
+
+      // Step 2: Get AI-matched agents
+      const matchResponse = await base44.functions.invoke('matchAgentsForInvestor', {
+        limit: 6
+      });
+      
+      console.log('[InvestorHome] Match response:', matchResponse.data);
+
+      if (!cancelled && matchResponse.data?.ok) {
+        const results = matchResponse.data.results || [];
+        setSuggestedAgents(results);
+        console.log('[InvestorHome] ✅ Loaded', results.length, 'AI-matched agents');
+      } else {
+        console.warn('[InvestorHome] No AI matches returned');
+        setSuggestedAgents([]);
       }
     } catch (err) {
-      console.warn("[InvestorHome] Failed to load suggested agents", err);
+      console.error("[InvestorHome] AI matching error:", err);
+      toast.error("Failed to load agent matches");
       if (!cancelled) setSuggestedAgents([]);
     } finally {
       if (!cancelled) setLoadingSuggestedAgents(false);
@@ -201,13 +208,18 @@ export default function InvestorHome() {
         )}
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Suggested Agents - FIXED */}
+          {/* AI-Powered Suggested Agents */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-medium text-slate-800">Suggested Agents</h3>
-                <p className="text-xs text-slate-500">
-                  Investor-friendly agents in your chosen market.
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-slate-800">Suggested Agents</h3>
+                  <Badge className="bg-purple-100 text-purple-800 text-xs">
+                    AI Powered
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 mt-1">
+                  Smart matches based on your investment goals and preferences
                 </p>
               </div>
               <button
@@ -221,18 +233,19 @@ export default function InvestorHome() {
 
             {loadingSuggestedAgents ? (
               <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
-                <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-500 animate-spin mb-3" />
-                <div>Analyzing your profile…</div>
-                <div className="mt-1">We&apos;re finding investor-friendly agents in your market.</div>
+                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+                <div className="font-medium">AI is analyzing your profile...</div>
+                <div className="mt-1">Finding the best agent matches for you</div>
               </div>
             ) : suggestedAgents.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <Users className="w-12 h-12 text-slate-300 mb-3" />
                 <p className="mb-3 text-center">
-                  No suggested agents yet. While we improve matching, you can browse the full directory.
+                  No AI matches yet. Complete your profile for better matching.
                 </p>
                 <button
                   type="button"
-                  className="px-3 py-2 rounded-md bg-black text-white text-xs font-medium"
+                  className="px-3 py-2 rounded-md bg-purple-600 text-white text-xs font-medium hover:bg-purple-700"
                   onClick={() => navigate(createPageUrl("AgentDirectory"))}
                 >
                   Browse all agents
@@ -240,17 +253,31 @@ export default function InvestorHome() {
               </div>
             ) : (
               <div className="space-y-3">
-                {suggestedAgents.map((agent) => (
+                {suggestedAgents.map(({ profile: agent, score }) => (
                   <div
                     key={agent.id}
-                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
                   >
-                    <div>
-                      <div className="text-sm font-medium text-slate-900">
-                        {agent.full_name || 'Investor-friendly agent'}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <div className="text-sm font-medium text-slate-900">
+                          {agent.full_name || 'Investor-friendly agent'}
+                        </div>
+                        {score && score >= 0.8 && (
+                          <Badge className="bg-emerald-100 text-emerald-800 text-xs">
+                            Top Match
+                          </Badge>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500">
-                        {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
+                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
+                        <span>
+                          {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
+                        </span>
+                        {score && (
+                          <Badge variant="outline" className="text-xs">
+                            {(score * 100).toFixed(0)}% match
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     <button
@@ -269,7 +296,7 @@ export default function InvestorHome() {
                     className="inline-flex items-center text-xs text-slate-700 hover:text-slate-900"
                     onClick={() => navigate(createPageUrl("AgentDirectory"))}
                   >
-                    <span className="mr-1">Find matches now</span>
+                    <span className="mr-1">Find more matches</span>
                     <span className="text-slate-400">↗</span>
                   </button>
                 </div>
