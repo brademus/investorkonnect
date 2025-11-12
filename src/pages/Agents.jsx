@@ -1,88 +1,20 @@
-
-import React, { useState, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import NDAModal from "@/components/NDAModal";
-import VerifyFirstModal from "@/components/VerifyFirstModal";
 import { 
   Shield, CheckCircle, Star, Users, 
-  TrendingUp, Lock, ArrowRight, FileCheck, Loader2
+  TrendingUp, Lock, ArrowRight, FileCheck
 } from "lucide-react";
-import { toast } from "sonner";
 
+/**
+ * AGENTS MARKETING PAGE
+ * 
+ * Public marketing page for agents to learn about the platform.
+ * NOT the agent directory - that's AgentDirectory.jsx
+ */
 export default function Agents() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [showNDAModal, setShowNDAModal] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [ndaAccepted, setNdaAccepted] = useState(false);
-  const [kycVerified, setKycVerified] = useState(false);
-
-  useEffect(() => {
-    checkAccess();
-  }, []);
-
-  const checkAccess = async () => {
-    try {
-      const isAuth = await base44.auth.isAuthenticated();
-      
-      if (!isAuth) {
-        // Not logged in - show public content
-        setLoading(false);
-        return;
-      }
-
-      // Get current profile
-      const user = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      
-      if (profiles.length === 0) {
-        setLoading(false);
-        return;
-      }
-
-      const profile = profiles[0];
-
-      // Check KYC first
-      if (!profile.kyc_verified) {
-        setShowVerifyModal(true);
-        setLoading(false);
-        return;
-      }
-
-      setKycVerified(true);
-
-      // Then check NDA
-      if (!profile.nda_accepted) {
-        setShowNDAModal(true);
-        setLoading(false);
-        return;
-      }
-
-      setNdaAccepted(true);
-      setLoading(false);
-
-    } catch (error) {
-      console.error('Access check error:', error);
-      setLoading(false);
-    }
-  };
-
-  const handleNDAAccepted = () => {
-    setShowNDAModal(false);
-    setNdaAccepted(true);
-    toast.success("You can now access agent profiles!");
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
 
   const vettingChecklist = [
     "Valid real estate license in good standing",
@@ -127,9 +59,6 @@ export default function Agents() {
 
   return (
     <div>
-      {showVerifyModal && <VerifyFirstModal open={showVerifyModal} />}
-      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
-
       {/* Hero */}
       <section className="bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-900 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -148,7 +77,7 @@ export default function Agents() {
               <Button 
                 size="lg" 
                 className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => navigate(createPageUrl("Onboarding"))}
+                onClick={() => navigate(createPageUrl("RoleSelection"))}
               >
                 Apply Now
                 <ArrowRight className="w-5 h-5 ml-2" />
@@ -281,7 +210,7 @@ export default function Agents() {
           <Button 
             size="lg" 
             className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 h-14"
-            onClick={() => navigate(createPageUrl("Onboarding"))}
+            onClick={() => navigate(createPageUrl("RoleSelection"))}
           >
             Start Your Application
             <ArrowRight className="w-5 h-5 ml-2" />

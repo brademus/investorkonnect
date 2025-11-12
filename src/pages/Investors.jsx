@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -8,6 +7,12 @@ import {
   TrendingUp, CheckCircle, ArrowRight, Zap
 } from "lucide-react";
 
+/**
+ * INVESTORS MARKETING PAGE
+ * 
+ * Public marketing page for investors to learn about the platform.
+ * NOT the investor directory - that's InvestorDirectory.jsx
+ */
 export default function Investors() {
   const navigate = useNavigate();
 
