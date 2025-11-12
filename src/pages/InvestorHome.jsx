@@ -21,74 +21,57 @@ export default function InvestorHome() {
     subscriptionStatus, 
     isPaidSubscriber,
     isInvestorReady,
-    loading: profileLoading
+    loading: profileLoading,
+    targetState
   } = useCurrentProfile();
   
-  // Matches state
-  const [matches, setMatches] = useState([]);
-  const [matchesLoading, setMatchesLoading] = useState(false);
-  const [matchesError, setMatchesError] = useState(null);
-  const [refreshing, setRefreshing] = useState(false);
+  // Suggested agents state (simple fallback for now)
+  const [suggestedAgents, setSuggestedAgents] = useState([]);
+  const [loadingSuggestedAgents, setLoadingSuggestedAgents] = useState(true);
 
   // Check if user is admin
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
-  // Load matches when profile is ready
+  // Load suggested agents when profile is ready
   useEffect(() => {
     if (!profileLoading && user && profile?.user_role === 'investor' && isInvestorReady) {
-      loadMatches();
+      loadSuggestedAgents();
+    } else if (!profileLoading && !loadingSuggestedAgents) {
+      setLoadingSuggestedAgents(false);
     }
   }, [profileLoading, user, profile, isInvestorReady]);
 
-  const loadMatches = async () => {
-    setMatchesLoading(true);
-    setMatchesError(null);
-    
-    try {
-      console.log('[InvestorHome] Loading matches...');
-      const response = await base44.functions.invoke('getInvestorMatches');
-      
-      if (response.data.ok) {
-        console.log('[InvestorHome] ✅ Loaded', response.data.matches.length, 'matches');
-        setMatches(response.data.matches || []);
-      } else {
-        console.error('[InvestorHome] ❌ Failed to load matches:', response.data.message);
-        setMatchesError(response.data.message || 'Failed to load matches');
-      }
-    } catch (error) {
-      console.error('[InvestorHome] ❌ Error loading matches:', error);
-      setMatchesError('Unable to load agent matches. Please try again.');
-    } finally {
-      setMatchesLoading(false);
-    }
-  };
+  const loadSuggestedAgents = async () => {
+    let cancelled = false;
 
-  const handleRefreshMatches = async () => {
-    setRefreshing(true);
-    
     try {
-      console.log('[InvestorHome] Refreshing matches...');
-      toast.info('Finding your best agent matches...');
+      setLoadingSuggestedAgents(true);
+
+      // Simple fallback: Get vetted agents in user's target state
+      const allProfiles = await base44.entities.Profile.filter({});
       
-      // Trigger matching
-      const matchResponse = await base44.functions.invoke('matchInvestor');
-      
-      if (matchResponse.data.ok) {
-        console.log('[InvestorHome] ✅ Matching completed');
-        toast.success('Matches updated!');
-        
-        // Reload matches
-        await loadMatches();
-      } else {
-        console.error('[InvestorHome] ❌ Matching failed:', matchResponse.data.message);
-        toast.error(matchResponse.data.message || 'Failed to refresh matches');
+      const agentProfiles = allProfiles
+        .filter(p => 
+          p.user_role === 'agent' &&
+          p.onboarding_version === 'agent-v2-deep' &&
+          p.onboarding_completed_at &&
+          (!targetState || p.agent?.markets?.includes(targetState))
+        )
+        .slice(0, 6); // Limit to 6 agents
+
+      if (!cancelled) {
+        setSuggestedAgents(agentProfiles);
       }
-    } catch (error) {
-      console.error('[InvestorHome] ❌ Error refreshing:', error);
-      toast.error('Could not refresh matches. Please try again.');
+    } catch (err) {
+      console.warn("[InvestorHome] Failed to load suggested agents", err);
+      if (!cancelled) setSuggestedAgents([]);
     } finally {
-      setRefreshing(false);
+      if (!cancelled) setLoadingSuggestedAgents(false);
     }
+
+    return () => {
+      cancelled = true;
+    };
   };
 
   if (profileLoading) {
@@ -218,174 +201,78 @@ export default function InvestorHome() {
         )}
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Suggested Agents - ENHANCED */}
+          {/* Suggested Agents - FIXED */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-emerald-600" />
-                <h2 className="text-xl font-bold text-slate-900">Suggested Agents</h2>
-              </div>
-              <div className="flex gap-2">
-                {matches.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleRefreshMatches}
-                    disabled={refreshing || !isInvestorReady}
-                    className="gap-2"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-                    {refreshing ? 'Matching...' : 'Refresh'}
-                  </Button>
-                )}
-                <Link to={createPageUrl("Agents")}>
-                  <Button variant="outline" size="sm">View All</Button>
-                </Link>
-              </div>
-            </div>
-            
-            {/* Loading State */}
-            {matchesLoading && (
-              <div className="text-center py-12">
-                <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-                <p className="text-slate-600 font-medium">Finding your best agent matches...</p>
-                <p className="text-sm text-slate-500 mt-2">Analyzing profiles and market fit</p>
-              </div>
-            )}
-            
-            {/* Error State */}
-            {!matchesLoading && matchesError && (
-              <div className="text-center py-12">
-                <AlertCircle className="w-12 h-12 text-red-400 mx-auto mb-4" />
-                <p className="text-slate-600 mb-4">{matchesError}</p>
-                <Button size="sm" onClick={loadMatches} variant="outline">
-                  Try Again
-                </Button>
-              </div>
-            )}
-            
-            {/* Empty State - Not Ready */}
-            {!matchesLoading && !matchesError && !isInvestorReady && (
-              <div className="text-center py-12">
-                <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-4" />
-                <p className="text-slate-600 mb-4">Complete verification to see agent matches</p>
-                <Button size="sm" onClick={() => navigate(createPageUrl("Verify"))}>
-                  Complete Verification
-                </Button>
-              </div>
-            )}
-            
-            {/* Empty State - No Matches Yet */}
-            {!matchesLoading && !matchesError && isInvestorReady && matches.length === 0 && (
-              <div className="text-center py-12">
-                <Users className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                <p className="text-slate-600 mb-2 font-medium">Analyzing your profile...</p>
-                <p className="text-sm text-slate-500 mb-4">
-                  We're matching you with agents in your market. Your matches will appear here soon.
+              <div>
+                <h3 className="text-sm font-medium text-slate-800">Suggested Agents</h3>
+                <p className="text-xs text-slate-500">
+                  Investor-friendly agents in your chosen market.
                 </p>
-                <Button size="sm" onClick={handleRefreshMatches} disabled={refreshing}>
-                  {refreshing ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Finding matches...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="w-4 h-4 mr-2" />
-                      Find matches now
-                    </>
-                  )}
-                </Button>
               </div>
-            )}
-            
-            {/* Matches List */}
-            {!matchesLoading && !matchesError && matches.length > 0 && (
-              <div className="space-y-4">
-                {matches.slice(0, 3).map((match) => (
-                  <div key={match.match_id} className="border border-slate-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <h3 className="font-bold text-slate-900 mb-1">
-                          {match.agent.name}
-                        </h3>
-                        {match.agent.brokerage && (
-                          <p className="text-sm text-slate-600">{match.agent.brokerage}</p>
-                        )}
+              <button
+                type="button"
+                className="text-xs font-medium text-slate-700 hover:text-slate-900"
+                onClick={() => navigate(createPageUrl("AgentDirectory"))}
+              >
+                View All
+              </button>
+            </div>
+
+            {loadingSuggestedAgents ? (
+              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-500 animate-spin mb-3" />
+                <div>Analyzing your profile…</div>
+                <div className="mt-1">We&apos;re finding investor-friendly agents in your market.</div>
+              </div>
+            ) : suggestedAgents.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <p className="mb-3 text-center">
+                  No suggested agents yet. While we improve matching, you can browse the full directory.
+                </p>
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded-md bg-black text-white text-xs font-medium"
+                  onClick={() => navigate(createPageUrl("AgentDirectory"))}
+                >
+                  Browse all agents
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {suggestedAgents.map((agent) => (
+                  <div
+                    key={agent.id}
+                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {agent.full_name || 'Investor-friendly agent'}
                       </div>
-                      <div className="text-right">
-                        <div className="text-sm font-semibold text-emerald-600">
-                          {Math.round(match.score * 100)}% match
-                        </div>
+                      <div className="text-xs text-slate-500">
+                        {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
                       </div>
                     </div>
-                    
-                    {/* Markets */}
-                    {match.agent.markets && match.agent.markets.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                        {match.agent.markets.slice(0, 3).map((market, idx) => (
-                          <Badge key={idx} variant="secondary" className="text-xs">
-                            <MapPin className="w-3 h-3 mr-1" />
-                            {market}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Specialties */}
-                    {match.agent.specialties && match.agent.specialties.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {match.agent.specialties.slice(0, 2).map((spec, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs">
-                            {spec}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Badges */}
-                    {match.agent.badges && match.agent.badges.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-3">
-                        {match.agent.badges.map((badge, idx) => (
-                          <Badge key={idx} className="text-xs bg-blue-100 text-blue-800">
-                            <Award className="w-3 h-3 mr-1" />
-                            {badge}
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {/* Explanation */}
-                    <p className="text-sm text-slate-600 mb-4 line-clamp-2">
-                      {match.explanation}
-                    </p>
-                    
-                    {/* Actions */}
-                    <div className="flex gap-2">
-                      <Button size="sm" className="flex-1" onClick={() => {
-                        toast.info('Agent profile view coming soon!');
-                      }}>
-                        View Profile
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => {
-                        toast.info('Deal room creation coming soon!');
-                      }}>
-                        Connect
-                      </Button>
-                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                      onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)}
+                    >
+                      View profile
+                    </button>
                   </div>
                 ))}
-                
-                {matches.length > 3 && (
-                  <div className="text-center pt-2">
-                    <Link to={createPageUrl("Agents")}>
-                      <Button variant="ghost" size="sm">
-                        View all {matches.length} matches
-                        <ArrowRight className="w-4 h-4 ml-2" />
-                      </Button>
-                    </Link>
-                  </div>
-                )}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    className="inline-flex items-center text-xs text-slate-700 hover:text-slate-900"
+                    onClick={() => navigate(createPageUrl("AgentDirectory"))}
+                  >
+                    <span className="mr-1">Find matches now</span>
+                    <span className="text-slate-400">↗</span>
+                  </button>
+                </div>
               </div>
             )}
           </div>

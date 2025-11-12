@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
@@ -8,7 +9,7 @@ import {
   Users, Shield, FileText, TrendingUp, CheckCircle,
   AlertCircle, Building, Award, MapPin, ArrowRight, Star, Mail, X
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 /**
  * AGENT DASHBOARD - Fixed KYC Verification Banners
@@ -26,10 +27,72 @@ export default function AgentHome() {
     kycVerified,
     needsKyc,
     needsOnboarding,
-    hasNDA
+    hasNDA,
+    targetState
   } = useCurrentProfile();
   
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
+
+  // Suggested investors state (simple fallback for now)
+  const [suggestedInvestors, setSuggestedInvestors] = useState([]);
+  const [loadingSuggestedInvestors, setLoadingSuggestedInvestors] = useState(true);
+
+  // Check if user is admin
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
+
+  // Load suggested investors when profile is ready
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchSuggested = async () => {
+      if (!loading && user && profile?.user_role === 'agent' && onboarded && kycVerified) {
+        await loadSuggestedInvestors();
+      } else if (!loading && !cancelled) {
+        setLoadingSuggestedInvestors(false);
+      }
+    };
+    
+    fetchSuggested();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loading, user, profile, onboarded, kycVerified, targetState]); // Added targetState as a dependency
+
+  const loadSuggestedInvestors = async () => {
+    let cancelled = false;
+
+    try {
+      setLoadingSuggestedInvestors(true);
+
+      // Simple fallback: Get verified investors in agent's markets
+      // Assuming 'base44' is globally available or imported if not defined in this snippet.
+      // In a real application, 'base44' would be imported or provided via context.
+      const allProfiles = await base44.entities.Profile.filter({});
+      
+      const investorProfiles = allProfiles
+        .filter(p => 
+          p.user_role === 'investor' &&
+          p.onboarding_version === 'v2' &&
+          p.onboarding_completed_at &&
+          (!targetState || p.target_state === targetState || p.markets?.includes(targetState))
+        )
+        .slice(0, 6); // Limit to 6 investors
+
+      if (!cancelled) {
+        setSuggestedInvestors(investorProfiles);
+      }
+    } catch (err) {
+      console.warn("[AgentHome] Failed to load suggested investors", err);
+      if (!cancelled) setSuggestedInvestors([]);
+    } finally {
+      if (!cancelled) setLoadingSuggestedInvestors(false);
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  };
 
   if (loading) {
     return (
@@ -38,9 +101,6 @@ export default function AgentHome() {
       </div>
     );
   }
-
-  // Check if user is admin
-  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
   const agentData = profile?.agent || {};
   const docs = agentData.documents || [];
@@ -54,6 +114,7 @@ export default function AgentHome() {
   // Handler for starting KYC verification
   const handleStartKyc = () => {
     if (!user) {
+      // Assuming 'base44' is globally available or imported if not defined in this snippet.
       base44.auth.redirectToLogin(createPageUrl("PostAuth"));
       return;
     }
@@ -327,53 +388,96 @@ export default function AgentHome() {
             </div>
           </div>
 
-          {/* Investor Feed */}
+          {/* Suggested Investors - FIXED */}
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-                <h2 className="text-xl font-bold text-slate-900">Investor Feed</h2>
+              <div>
+                <h3 className="text-sm font-medium text-slate-800">Suggested Investors</h3>
+                <p className="text-xs text-slate-500">
+                  Investors whose profiles align with your markets and strategy.
+                </p>
               </div>
-              <Button 
-                variant="outline" 
-                size="sm"
+              <button
+                type="button"
+                className="text-xs font-medium text-slate-700 hover:text-slate-900"
                 onClick={() => navigate(createPageUrl("InvestorDirectory"))}
               >
                 View All
-              </Button>
+              </button>
             </div>
-            
-            <div className="space-y-3">
-              {needsOnboarding ? (
-                <div className="text-center py-8">
-                  <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
-                  <p className="text-slate-600 mb-3">Complete onboarding to access investors</p>
-                  <Button size="sm" onClick={() => navigate(createPageUrl("AgentOnboarding"))}>
-                    Complete Onboarding
-                  </Button>
-                </div>
-              ) : needsKyc ? (
-                <div className="text-center py-8">
-                  <Shield className="w-12 h-12 text-orange-400 mx-auto mb-3" />
-                  <p className="text-slate-600 mb-3">Verify identity to access investors</p>
-                  <Button size="sm" onClick={handleStartKyc}>
-                    Verify Identity
-                  </Button>
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                  <p className="text-slate-600 mb-3">No investor matches yet</p>
-                  <Button 
-                    size="sm" 
-                    variant="outline"
+
+            {loadingSuggestedInvestors ? (
+              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <div className="w-8 h-8 rounded-full border-2 border-slate-200 border-t-slate-500 animate-spin mb-3" />
+                <div>Analyzing investor demand…</div>
+                <div className="mt-1">We&apos;re surfacing investors that fit your focus.</div>
+              </div>
+            ) : needsOnboarding ? (
+              <div className="text-center py-8">
+                <AlertCircle className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                <p className="text-slate-600 mb-3 text-xs">Complete onboarding to access investors</p>
+                <Button size="sm" onClick={() => navigate(createPageUrl("AgentOnboarding"))}>
+                  Complete Onboarding
+                </Button>
+              </div>
+            ) : needsKyc ? (
+              <div className="text-center py-8">
+                <Shield className="w-12 h-12 text-orange-400 mx-auto mb-3" />
+                <p className="text-slate-600 mb-3 text-xs">Verify identity to access investors</p>
+                <Button size="sm" onClick={handleStartKyc}>
+                  Verify Identity
+                </Button>
+              </div>
+            ) : suggestedInvestors.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
+                <p className="mb-3 text-center">
+                  No suggested investors yet. While we improve matching, you can browse the full investor directory.
+                </p>
+                <button
+                  type="button"
+                  className="px-3 py-2 rounded-md bg-black text-white text-xs font-medium"
+                  onClick={() => navigate(createPageUrl("InvestorDirectory"))}
+                >
+                  Browse all investors
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {suggestedInvestors.map((inv) => (
+                  <div
+                    key={inv.id}
+                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2"
+                  >
+                    <div>
+                      <div className="text-sm font-medium text-slate-900">
+                        {inv.full_name || 'Investor'}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {inv.target_state || inv.markets?.[0] || 'Market not set'}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                      onClick={() => navigate(`${createPageUrl("InvestorDirectory")}?highlight=${inv.id}`)}
+                    >
+                      View profile
+                    </button>
+                  </div>
+                ))}
+
+                <div className="flex justify-end pt-1">
+                  <button
+                    type="button"
+                    className="inline-flex items-center text-xs text-slate-700 hover:text-slate-900"
                     onClick={() => navigate(createPageUrl("InvestorDirectory"))}
                   >
-                    Browse Investors
-                  </Button>
+                    <span className="mr-1">Find matches now</span>
+                    <span className="text-slate-400">↗</span>
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           {/* Documents */}
