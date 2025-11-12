@@ -3,6 +3,7 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -12,7 +13,7 @@ import {
 import { useState, useEffect } from "react";
 
 /**
- * AGENT DASHBOARD - Fixed KYC Verification Banners
+ * AGENT DASHBOARD - With AI Matching
  * 
  * Uses needsKyc flag to show verification banner correctly
  * Routes to Persona/KYC page, not onboarding
@@ -118,7 +119,6 @@ export default function AgentHome() {
   // Handler for starting KYC verification
   const handleStartKyc = () => {
     if (!user) {
-      // Assuming 'base44' is globally available or imported if not defined in this snippet.
       base44.auth.redirectToLogin(createPageUrl("PostAuth"));
       return;
     }
@@ -443,9 +443,9 @@ export default function AgentHome() {
                 <p className="mb-3 text-center">
                   No AI matches yet. Complete your profile for better matching.
                 </p>
-                <button
-                  type="button"
-                  className="px-3 py-2 rounded-md bg-purple-600 text-white text-xs font-medium hover:bg-purple-700"
+                <Button
+                  size="sm"
+                  className="bg-purple-600 hover:bg-purple-700"
                   onClick={() => navigate(createPageUrl("InvestorDirectory"))}
                 >
                   Browse all investors

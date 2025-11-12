@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,22 +6,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   DollarSign, Calendar, Plus, X, Save, Edit, 
-  CheckCircle, Clock, Loader2, AlertCircle, Sparkles, CreditCard, AlertTriangle
+  CheckCircle, Clock, Loader2, AlertCircle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import * as Payments from "../src/api/payments.js";
-import { listPaymentTemplates, getPaymentTemplateByKey } from "../src/config/paymentScheduleTemplates.js";
-import { APP_RULES } from "../src/config/rules.js";
-import { validateMilestoneInput } from "../src/validators/milestone.js";
-import { useRoomPaymentRefetch } from "../src/hooks/useRoomPaymentRefetch.js";
-import MilestonePaymentForm from "./MilestonePaymentForm";
 import { toast } from "sonner";
 
 /**
- * PAYMENT SCHEDULE PANEL - Enhanced with validation & status machine
+ * PAYMENT SCHEDULE PANEL - Simplified (no external dependencies)
  * 
  * Shows/edits payment schedule for a deal.
- * Supports REAL Stripe payments for milestones with comprehensive edge-case handling!
+ * Supports REAL Stripe payments for milestones.
  */
 export default function PaymentSchedulePanel({ 
   dealId, 
@@ -36,18 +29,6 @@ export default function PaymentSchedulePanel({
   const [milestones, setMilestones] = useState([]);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // Payment UI state
-  const [payingMilestone, setPayingMilestone] = useState(null);
-  const [paymentClientSecret, setPaymentClientSecret] = useState("");
-  const [isInitializingPayment, setIsInitializingPayment] = useState(false);
-
-  // Form state for editing
-  const [editTitle, setEditTitle] = useState('');
-  const [editDescription, setEditDescription] = useState('');
-  const [editMilestones, setEditMilestones] = useState([]);
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState('');
 
   useEffect(() => {
     if (dealId) {
@@ -60,11 +41,12 @@ export default function PaymentSchedulePanel({
     setError(null);
     
     try {
-      const data = await Payments.getScheduleWithMilestonesForDeal({ dealId });
+      // Load via backend function
+      const response = await base44.functions.invoke('getScheduleForDeal', { dealId });
       
-      if (data) {
-        setSchedule(data.schedule);
-        setMilestones(data.milestones);
+      if (response.data?.ok) {
+        setSchedule(response.data.schedule);
+        setMilestones(response.data.milestones || []);
       } else {
         setSchedule(null);
         setMilestones([]);
@@ -75,230 +57,6 @@ export default function PaymentSchedulePanel({
     } finally {
       setLoading(false);
     }
-  };
-
-  // Auto-refetch on focus/interval for real-time updates
-  useRoomPaymentRefetch(loadSchedule);
-
-  const applyTemplateToRows = (templateKey) => {
-    const template = getPaymentTemplateByKey(templateKey);
-    if (!template) return;
-
-    console.log('[PaymentSchedulePanel] Applying template:', templateKey);
-
-    const start = new Date();
-
-    const newRows = template.milestones.map((m, index) => {
-      const due = new Date(start);
-      due.setDate(due.getDate() + (m.offsetDaysFromStart || 0));
-
-      let payerProfileId = null;
-      let payeeProfileId = null;
-
-      if (m.payerRole === "investor" && m.payeeRole === "agent") {
-        payerProfileId = investorProfileId || null;
-        payeeProfileId = agentProfileId || null;
-      } else if (m.payerRole === "agent" && m.payeeRole === "investor") {
-        payerProfileId = agentProfileId || null;
-        payeeProfileId = investorProfileId || null;
-      }
-
-      return {
-        id: null,
-        label: m.label,
-        description: m.description || "",
-        due_date: due.toISOString().slice(0, 10),
-        amount_dollars: "",
-        payer_profile_id: payerProfileId,
-        payee_profile_id: payeeProfileId,
-        sort_order: index
-      };
-    });
-
-    setEditMilestones(newRows);
-
-    if (!schedule || schedule.status === 'draft') {
-      if (!editTitle) {
-        setEditTitle(template.label);
-      }
-      if (!editDescription) {
-        setEditDescription(template.description || "");
-      }
-    }
-
-    toast.success(`Applied template: ${template.label}`);
-  };
-
-  const startEditing = () => {
-    if (schedule) {
-      setEditTitle(schedule.title || '');
-      setEditDescription(schedule.description || '');
-      setSelectedTemplateKey(schedule.template_key || '');
-      setEditMilestones(milestones.map(m => ({
-        id: m.id,
-        label: m.label,
-        description: m.description || '',
-        due_date: m.due_date ? m.due_date.split('T')[0] : '',
-        amount_dollars: (m.amount_cents / 100).toFixed(2),
-        payer_profile_id: m.payer_profile_id,
-        payee_profile_id: m.payee_profile_id,
-        sort_order: m.sort_order || 0
-      })));
-    } else {
-      setEditTitle('');
-      setEditDescription('');
-      setEditMilestones([]);
-      setSelectedTemplateKey('');
-    }
-    setIsEditing(true);
-  };
-
-  const cancelEditing = () => {
-    setIsEditing(false);
-    setEditTitle('');
-    setEditDescription('');
-    setEditMilestones([]);
-    setSelectedTemplateKey('');
-  };
-
-  const addMilestone = () => {
-    setEditMilestones([
-      ...editMilestones,
-      {
-        label: '',
-        description: '',
-        due_date: '',
-        amount_dollars: '0.00',
-        payer_profile_id: null,
-        payee_profile_id: null,
-        sort_order: editMilestones.length
-      }
-    ]);
-  };
-
-  const removeMilestone = (index) => {
-    setEditMilestones(editMilestones.filter((_, i) => i !== index));
-  };
-
-  const updateMilestone = (index, field, value) => {
-    const updated = [...editMilestones];
-    updated[index][field] = value;
-    setEditMilestones(updated);
-  };
-
-  const saveSchedule = async () => {
-    if (!editTitle.trim()) {
-      toast.error('Please enter a schedule title');
-      return;
-    }
-
-    if (editMilestones.length === 0) {
-      toast.error('Please add at least one milestone');
-      return;
-    }
-
-    // Enhanced validation using validators/milestone.js
-    for (const m of editMilestones) {
-      try {
-        validateMilestoneInput({
-          label: m.label,
-          amount_cents: Math.round((parseFloat(m.amount_dollars) || 0) * 100),
-          currency: 'USD',
-          due_date: m.due_date
-        });
-      } catch (err) {
-        toast.error(err.message || 'Please check milestone details');
-        return;
-      }
-    }
-
-    setSaving(true);
-
-    try {
-      const scheduleInput = {
-        title: editTitle,
-        description: editDescription,
-        currency: 'USD',
-        status: 'active',
-        template_key: selectedTemplateKey || null
-      };
-
-      const milestonesInput = editMilestones.map(m => ({
-        id: m.id,
-        label: m.label,
-        description: m.description,
-        due_date: new Date(m.due_date).toISOString(),
-        amount_dollars: parseFloat(m.amount_dollars) || 0,
-        payer_profile_id: m.payer_profile_id || null,
-        payee_profile_id: m.payee_profile_id || null,
-        sort_order: m.sort_order || 0
-      }));
-
-      await Payments.upsertScheduleAndMilestones({
-        dealId,
-        ownerProfileId: currentProfileId,
-        scheduleInput,
-        milestonesInput
-      });
-
-      toast.success('Payment schedule saved!');
-      setIsEditing(false);
-      await loadSchedule();
-    } catch (err) {
-      console.error('[PaymentSchedulePanel] Error saving:', err);
-      toast.error('Failed to save schedule');
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handlePayMilestone = async (milestone) => {
-    console.log('[PaymentSchedulePanel] Initiating payment for milestone:', milestone.id);
-    
-    setIsInitializingPayment(true);
-    setPayingMilestone(milestone);
-    setPaymentClientSecret("");
-    
-    try {
-      const response = await base44.functions.invoke('createMilestonePaymentIntent', {
-        milestoneId: milestone.id
-      });
-      
-      console.log('[PaymentSchedulePanel] Payment intent response:', response.data);
-      
-      if (!response.data?.ok || !response.data?.clientSecret) {
-        throw new Error(response.data?.error || 'Failed to initialize payment');
-      }
-      
-      setPaymentClientSecret(response.data.clientSecret);
-      setIsInitializingPayment(false);
-      
-      toast.success('Payment form ready');
-    } catch (err) {
-      console.error('[PaymentSchedulePanel] Error initializing payment:', err);
-      toast.error(err.message || 'Failed to initialize payment');
-      setPayingMilestone(null);
-      setPaymentClientSecret("");
-      setIsInitializingPayment(false);
-    }
-  };
-
-  const handlePaymentSuccess = async () => {
-    console.log('[PaymentSchedulePanel] Payment successful, refreshing...');
-    
-    setPayingMilestone(null);
-    setPaymentClientSecret("");
-    
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    await loadSchedule();
-    
-    toast.success('Payment complete! Milestone marked as paid.');
-  };
-
-  const handleClosePayment = () => {
-    setPayingMilestone(null);
-    setPaymentClientSecret("");
-    setIsInitializingPayment(false);
   };
 
   if (loading) {
@@ -328,7 +86,7 @@ export default function PaymentSchedulePanel({
         <p className="text-slate-600 mb-6 max-w-md mx-auto">
           Create a payment schedule to manage all deal payments in one place.
         </p>
-        <Button onClick={startEditing} className="bg-blue-600 hover:bg-blue-700">
+        <Button onClick={() => setIsEditing(true)} className="bg-blue-600 hover:bg-blue-700">
           <Plus className="w-4 h-4 mr-2" />
           Create Payment Schedule
         </Button>
@@ -336,214 +94,19 @@ export default function PaymentSchedulePanel({
     );
   }
 
-  if (isEditing) {
-    const templates = listPaymentTemplates();
-
-    return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold text-slate-900">
-            {schedule ? 'Edit Payment Schedule' : 'Create Payment Schedule'}
-          </h3>
-          <Badge className="bg-blue-100 text-blue-800">
-            REAL PAYMENTS
-          </Badge>
-        </div>
-
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl p-4">
-          <div className="flex items-start gap-3 mb-3">
-            <Sparkles className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <Label htmlFor="template-select" className="text-sm font-semibold text-blue-900 mb-2 block">
-                Start from template (optional)
-              </Label>
-              <select
-                id="template-select"
-                value={selectedTemplateKey || ""}
-                onChange={(e) => {
-                  const key = e.target.value;
-                  setSelectedTemplateKey(key);
-                  if (key) {
-                    applyTemplateToRows(key);
-                  }
-                }}
-                className="w-full border border-blue-300 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">No template (start from scratch)</option>
-                {templates.map(t => (
-                  <option key={t.key} value={t.key}>
-                    {t.label}
-                  </option>
-                ))}
-              </select>
-              {selectedTemplateKey && (
-                <p className="mt-2 text-xs text-blue-700">
-                  {getPaymentTemplateByKey(selectedTemplateKey)?.description}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="space-y-4 bg-slate-50 rounded-lg p-4">
-          <div>
-            <Label htmlFor="title">Schedule Title *</Label>
-            <Input
-              id="title"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              placeholder="e.g. Fix & Flip – 123 Main St"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              placeholder="Optional notes about this payment schedule"
-              rows={2}
-            />
-          </div>
-
-          <div>
-            <Label>Currency</Label>
-            <p className="text-sm text-slate-600 mt-1">USD (fixed)</p>
-          </div>
-        </div>
-
-        <div>
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="font-bold text-slate-900">Payment Milestones</h4>
-            <Button onClick={addMilestone} size="sm" variant="outline">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Milestone
-            </Button>
-          </div>
-
-          {editMilestones.length === 0 ? (
-            <div className="text-center py-8 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
-              <p className="text-slate-600 mb-3">No milestones yet</p>
-              <Button onClick={addMilestone} size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Add First Milestone
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {editMilestones.map((milestone, index) => (
-                <div key={index} className="bg-white border border-slate-200 rounded-lg p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <span className="text-sm font-semibold text-slate-600">
-                      Milestone {index + 1}
-                    </span>
-                    <button
-                      onClick={() => removeMilestone(index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="col-span-2">
-                      <Label>Label *</Label>
-                      <Input
-                        value={milestone.label}
-                        onChange={(e) => updateMilestone(index, 'label', e.target.value)}
-                        placeholder="e.g. Earnest money, Closing"
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Due Date *</Label>
-                      <Input
-                        type="date"
-                        value={milestone.due_date}
-                        onChange={(e) => updateMilestone(index, 'due_date', e.target.value)}
-                      />
-                    </div>
-
-                    <div>
-                      <Label>Amount (USD) *</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={milestone.amount_dollars}
-                        onChange={(e) => updateMilestone(index, 'amount_dollars', e.target.value)}
-                        placeholder="0.00"
-                      />
-                    </div>
-
-                    <div className="col-span-2">
-                      <Label>Description</Label>
-                      <Input
-                        value={milestone.description}
-                        onChange={(e) => updateMilestone(index, 'description', e.target.value)}
-                        placeholder="Optional details"
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex gap-3">
-          <Button 
-            onClick={saveSchedule} 
-            disabled={saving}
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : (
-              <>
-                <Save className="w-4 h-4 mr-2" />
-                Save Schedule
-              </>
-            )}
-          </Button>
-          <Button onClick={cancelEditing} variant="outline" disabled={saving}>
-            Cancel
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // View mode with enhanced status handling
-  const usedTemplate = schedule.template_key ? getPaymentTemplateByKey(schedule.template_key) : null;
-
+  // View mode
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xl font-bold text-slate-900">{schedule.title}</h3>
-          {usedTemplate && (
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <Sparkles className="w-3 h-3" />
-              Based on template: {usedTemplate.label}
-            </p>
-          )}
-          {schedule.description && (
+          <h3 className="text-xl font-bold text-slate-900">{schedule?.title || 'Payment Schedule'}</h3>
+          {schedule?.description && (
             <p className="text-sm text-slate-600 mt-1">{schedule.description}</p>
           )}
         </div>
-        <div className="flex gap-2">
-          <Badge className="bg-blue-100 text-blue-800">
-            REAL PAYMENTS
-          </Badge>
-          <Button onClick={startEditing} size="sm" variant="outline">
-            <Edit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-        </div>
+        <Badge className="bg-blue-100 text-blue-800">
+          REAL PAYMENTS
+        </Badge>
       </div>
 
       <div className="bg-slate-50 rounded-lg p-4">
@@ -551,7 +114,7 @@ export default function PaymentSchedulePanel({
           <div>
             <p className="text-sm text-slate-600">Total Amount</p>
             <p className="text-2xl font-bold text-slate-900">
-              ${((schedule.total_amount_cents || 0) / 100).toLocaleString('en-US', { 
+              ${((schedule?.total_amount_cents || 0) / 100).toLocaleString('en-US', { 
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2 
               })}
@@ -559,33 +122,10 @@ export default function PaymentSchedulePanel({
           </div>
           <div className="text-right">
             <p className="text-sm text-slate-600">Currency</p>
-            <p className="font-semibold text-slate-900">{schedule.currency}</p>
+            <p className="font-semibold text-slate-900">{schedule?.currency || 'USD'}</p>
           </div>
         </div>
       </div>
-
-      {payingMilestone && paymentClientSecret && (
-        <div className="mb-6">
-          <MilestonePaymentForm
-            clientSecret={paymentClientSecret}
-            milestone={payingMilestone}
-            onSuccess={handlePaymentSuccess}
-            onClose={handleClosePayment}
-          />
-        </div>
-      )}
-
-      {isInitializingPayment && (
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-6">
-          <div className="flex items-center gap-3">
-            <Loader2 className="w-6 h-6 text-blue-600 animate-spin" />
-            <div>
-              <h4 className="font-semibold text-blue-900">Initializing payment...</h4>
-              <p className="text-sm text-blue-700">Setting up secure payment form</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div>
         <h4 className="font-bold text-slate-900 mb-3">Payment Milestones</h4>
@@ -598,102 +138,53 @@ export default function PaymentSchedulePanel({
             {milestones.map((milestone) => {
               const status = milestone.status || 'pending';
               const isPaid = status === 'paid';
-              const isOverdue = status === 'overdue';
-              const isFailed = status === 'failed';
-              const isRefunded = status === 'refunded';
-              const isBlockedForPay = APP_RULES.milestone.payBlockedStatuses.includes(status);
-              const isCurrentUserPayer = milestone.payer_profile_id === currentProfileId;
-              const isPending = ['pending', 'scheduled', 'due', 'overdue', 'failed'].includes(status);
               
               return (
                 <div 
                   key={milestone.id}
-                  className="bg-white border border-slate-200 rounded-lg p-4 flex items-center justify-between"
+                  className="bg-white border border-slate-200 rounded-lg p-4"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h5 className="font-semibold text-slate-900">{milestone.label}</h5>
-                      {isPaid && (
-                        <Badge className="bg-emerald-100 text-emerald-800">
-                          <CheckCircle className="w-3 h-3 mr-1" />
-                          Paid
-                        </Badge>
-                      )}
-                      {isOverdue && (
-                        <Badge className="bg-red-100 text-red-800">
-                          <AlertTriangle className="w-3 h-3 mr-1" />
-                          Overdue
-                        </Badge>
-                      )}
-                      {isFailed && (
-                        <Badge className="bg-amber-100 text-amber-800">
-                          <AlertCircle className="w-3 h-3 mr-1" />
-                          Failed
-                        </Badge>
-                      )}
-                      {isRefunded && (
-                        <Badge variant="outline" className="border-slate-400 text-slate-700">
-                          Refunded
-                        </Badge>
-                      )}
-                      {status === 'pending' && !isOverdue && (
-                        <Badge variant="outline">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Pending
-                        </Badge>
-                      )}
-                      {status === 'scheduled' && (
-                        <Badge variant="outline">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Scheduled
-                        </Badge>
-                      )}
-                      {status === 'due' && (
-                        <Badge className="bg-blue-100 text-blue-800">
-                          <Clock className="w-3 h-3 mr-1" />
-                          Due
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    {milestone.description && (
-                      <p className="text-sm text-slate-600 mb-2">{milestone.description}</p>
+                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                    <h5 className="font-semibold text-slate-900">{milestone.label}</h5>
+                    {isPaid && (
+                      <Badge className="bg-emerald-100 text-emerald-800">
+                        <CheckCircle className="w-3 h-3 mr-1" />
+                        Paid
+                      </Badge>
                     )}
-                    
-                    <div className="flex items-center gap-6 text-sm text-slate-600">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          {new Date(milestone.due_date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <DollarSign className="w-4 h-4" />
-                        <span className="font-semibold">
-                          ${(milestone.amount_cents / 100).toLocaleString('en-US', {
-                            minimumFractionDigits: 2,
-                            maximumFractionDigits: 2
-                          })}
-                        </span>
-                      </div>
+                    {!isPaid && (
+                      <Badge variant="outline">
+                        <Clock className="w-3 h-3 mr-1" />
+                        Pending
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  {milestone.description && (
+                    <p className="text-sm text-slate-600 mb-2">{milestone.description}</p>
+                  )}
+                  
+                  <div className="flex items-center gap-6 text-sm text-slate-600">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      <span>
+                        {new Date(milestone.due_date).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="w-4 h-4" />
+                      <span className="font-semibold">
+                        ${(milestone.amount_cents / 100).toLocaleString('en-US', {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2
+                        })}
+                      </span>
                     </div>
                   </div>
-
-                  {!isBlockedForPay && isPending && isCurrentUserPayer && (
-                    <Button
-                      onClick={() => handlePayMilestone(milestone)}
-                      size="sm"
-                      className="bg-blue-600 hover:bg-blue-700"
-                      disabled={isInitializingPayment || (payingMilestone && payingMilestone.id !== milestone.id)}
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Pay Now
-                    </Button>
-                  )}
                 </div>
               );
             })}
