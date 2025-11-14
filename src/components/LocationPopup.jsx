@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { loadLocationsForState } from "@/utils/locations";
+import { loadLocationsForState } from "./locationData";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X, Search, MapPin } from "lucide-react";

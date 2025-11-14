@@ -1,20 +1,38 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { Button } from "@/components/ui/button";
+import MapUSA from "@/components/MapUSA";
+import LocationPopup from "@/components/LocationPopup";
 import { 
   Shield, Star, Lock, FileText, Users, 
-  TrendingUp, CheckCircle, ArrowRight, Zap
+  TrendingUp, CheckCircle, ArrowRight, Zap, MapPin
 } from "lucide-react";
 
 /**
  * INVESTORS MARKETING PAGE
  * 
- * Public marketing page for investors to learn about the platform.
- * NOT the investor directory - that's InvestorDirectory.jsx
+ * Public marketing page with interactive state selection
+ * Click state → location picker → redirect to role selection
  */
 export default function Investors() {
   const navigate = useNavigate();
+  const [popup, setPopup] = useState(null);
+
+  const handleStateClick = (stateCode, stateName) => {
+    setPopup({ stateCode, stateName });
+  };
+
+  const handleLocationContinue = ({ state, stateName, county, city }) => {
+    const params = new URLSearchParams();
+    params.set('state', state);
+    params.set('stateName', stateName);
+    if (county) params.set('county', county);
+    if (city) params.set('city', city);
+
+    // Redirect to role selection with location context
+    navigate(`${createPageUrl("RoleSelection")}?${params.toString()}`);
+  };
 
   const benefits = [
     {
@@ -129,6 +147,36 @@ export default function Investors() {
           </div>
         </div>
       </section>
+
+      {/* Interactive Map Section */}
+      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-4 py-2 mb-4">
+              <MapPin className="w-4 h-4 text-blue-600" />
+              <span className="text-sm font-semibold text-blue-900">Get Started</span>
+            </div>
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+              Select Your Investment Market
+            </h2>
+            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+              Click on a state to begin your journey with verified agents in your target market
+            </p>
+          </div>
+
+          <MapUSA onStateClick={handleStateClick} />
+        </div>
+      </section>
+
+      {/* Location Popup */}
+      {popup && (
+        <LocationPopup
+          stateCode={popup.stateCode}
+          stateName={popup.stateName}
+          onClose={() => setPopup(null)}
+          onContinue={handleLocationContinue}
+        />
+      )}
 
       {/* Benefits */}
       <section className="py-20 bg-white">
