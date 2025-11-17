@@ -64,15 +64,19 @@ export default function AgentDirectory() {
       return;
     }
 
-    // Not KYC verified
-    if (!kycVerified) {
+    // Check both KYC flag and status field
+    const isKycVerified = kycVerified || profile?.kyc_status === 'approved' || profile?.identity_verified || profile?.persona_verified;
+    
+    if (!isKycVerified) {
       toast.info("Verify your identity to access agent profiles");
       navigate(createPageUrl("Verify"), { replace: true });
       return;
     }
 
-    // No NDA
-    if (!hasNDA) {
+    // Check both NDA flags
+    const hasAcceptedNDA = hasNDA || profile?.nda_accepted || profile?.has_accepted_nda;
+    
+    if (!hasAcceptedNDA) {
       toast.info("Accept NDA to access agent profiles");
       navigate(createPageUrl("NDA"), { replace: true });
       return;

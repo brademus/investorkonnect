@@ -96,23 +96,23 @@ function InvestorDashboardContent() {
 
         {/* Quick Actions */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Link to={createPageUrl("AgentDirectory")}>
+          <Link to={createPageUrl("Pricing")}>
             <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-blue-400 hover:shadow-lg transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-blue-600 transition-colors">
-                <Search className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
+                <Star className="w-6 h-6 text-blue-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">Browse Agents</h3>
-              <p className="text-sm text-slate-600">Find verified agents in your target markets</p>
+              <h3 className="font-bold text-slate-900 mb-2">Subscription & Plans</h3>
+              <p className="text-sm text-slate-600">Manage your subscription</p>
             </div>
           </Link>
 
-          <Link to={createPageUrl("Matches")}>
+          <Link to={createPageUrl("MyProfile")}>
             <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-emerald-400 hover:shadow-lg transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-emerald-600 transition-colors">
                 <Users className="w-6 h-6 text-emerald-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">My Matches</h3>
-              <p className="text-sm text-slate-600">View agents matched to your criteria</p>
+              <h3 className="font-bold text-slate-900 mb-2">My Profile</h3>
+              <p className="text-sm text-slate-600">Update your profile and preferences</p>
             </div>
           </Link>
 
@@ -126,13 +126,13 @@ function InvestorDashboardContent() {
             </div>
           </Link>
 
-          <Link to={createPageUrl("DealRooms")}>
+          <Link to={createPageUrl("Billing")}>
             <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-amber-400 hover:shadow-lg transition-all cursor-pointer group">
               <div className="w-12 h-12 bg-amber-100 rounded-lg flex items-center justify-center mb-4 group-hover:bg-amber-600 transition-colors">
                 <DollarSign className="w-6 h-6 text-amber-600 group-hover:text-white transition-colors" />
               </div>
-              <h3 className="font-bold text-slate-900 mb-2">Payments & Milestones</h3>
-              <p className="text-sm text-slate-600">Review payment schedules for your deals</p>
+              <h3 className="font-bold text-slate-900 mb-2">Billing & Payment</h3>
+              <p className="text-sm text-slate-600">Manage billing and payment methods</p>
             </div>
           </Link>
         </div>

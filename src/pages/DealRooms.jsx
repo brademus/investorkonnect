@@ -69,8 +69,15 @@ export default function DealRooms() {
 
       const profile = profiles[0];
 
-      // Check KYC first
-      if (!profile.kyc_verified) {
+      // Check KYC - check multiple possible field names
+      const kycVerified = !!(
+        profile.kyc_verified || 
+        profile.kyc_status === 'approved' ||
+        profile.identity_verified ||
+        profile.persona_verified
+      );
+      
+      if (!kycVerified) {
         setShowVerifyModal(true);
         setLoading(false);
         return;
@@ -78,8 +85,13 @@ export default function DealRooms() {
 
       setKycVerified(true);
 
-      // Then check NDA
-      if (!profile.nda_accepted) {
+      // Check NDA - check multiple possible field names
+      const ndaAccepted = !!(
+        profile.nda_accepted ||
+        profile.has_accepted_nda
+      );
+      
+      if (!ndaAccepted) {
         setShowNDAModal(true);
         setLoading(false);
         return;

@@ -55,7 +55,7 @@ import InvestorDirectory from './pages/InvestorDirectory';
 import AgentDirectory from './pages/AgentDirectory';
 import Billing from './pages/Billing';
 import MyProfile from './pages/MyProfile';
-import Layout from './Layout.jsx';
+import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
@@ -121,5 +121,5 @@ export const PAGES = {
 export const pagesConfig = {
     mainPage: "Home",
     Pages: PAGES,
-    Layout: Layout,
+    Layout: __Layout,
 };
