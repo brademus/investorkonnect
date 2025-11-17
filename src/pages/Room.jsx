@@ -5,8 +5,9 @@ import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ContractWizard from "@/components/ContractWizard";
 import { 
-  Menu, Send, Loader2, ArrowLeft, DollarSign
+  Menu, Send, Loader2, ArrowLeft, DollarSign, FileText
 } from "lucide-react";
 
 function useMyRooms() {
@@ -108,6 +109,7 @@ export default function Room() {
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
+  const [wizardOpen, setWizardOpen] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || "Chat";
@@ -213,13 +215,22 @@ export default function Room() {
             )}
           </div>
           {roomId && (
-            <Link 
-              to={`${createPageUrl("Room")}?roomId=${roomId}&tab=payments`}
-              className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
-            >
-              <DollarSign className="w-4 h-4" />
-              Payments
-            </Link>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setWizardOpen(true)}
+                className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-200"
+              >
+                <FileText className="w-4 h-4" />
+                Generate Contract
+              </button>
+              <Link 
+                to={`${createPageUrl("Room")}?roomId=${roomId}&tab=payments`}
+                className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
+              >
+                <DollarSign className="w-4 h-4" />
+                Payments
+              </Link>
+            </div>
           )}
         </div>
 
@@ -298,6 +309,12 @@ export default function Room() {
           </div>
         </div>
       </div>
+
+      <ContractWizard 
+        roomId={roomId} 
+        open={wizardOpen} 
+        onClose={() => setWizardOpen(false)} 
+      />
     </div>
   );
 }
