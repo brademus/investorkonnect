@@ -5,8 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import NDAModal from "@/components/NDAModal";
-import VerifyFirstModal from "@/components/VerifyFirstModal";
+
 import { useQuery } from "@tanstack/react-query";
 import { 
   Shield, Users, Lock, FileText, 
@@ -19,13 +18,8 @@ import { toast } from "sonner";
  */
 export default function DealRooms() {
   const navigate = useNavigate();
-  const { loading: profileLoading, role, onboarded } = useCurrentProfile();
+  const { loading: profileLoading, role, onboarded, kycVerified, hasNDA, user, profile } = useCurrentProfile();
   const [loading, setLoading] = useState(true);
-  const [showNDAModal, setShowNDAModal] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false);
-  const [ndaAccepted, setNdaAccepted] = useState(false);
-  const [kycVerified, setKycVerified] = useState(false);
-  const [user, setUser] = useState(null);
 
   // GATE: Redirect to onboarding if investor not onboarded
   useEffect(() => {
@@ -40,92 +34,21 @@ export default function DealRooms() {
   }, [profileLoading, role, onboarded, navigate]);
 
   useEffect(() => {
-    if (!profileLoading && onboarded) {
-      checkAuthAndAccess();
-    }
-  }, [profileLoading, onboarded]);
-
-  const checkAuthAndAccess = async () => {
-    try {
-      // Check if authenticated
-      const isAuth = await base44.auth.isAuthenticated();
-      
-      if (!isAuth) {
-        toast.info("Please sign in to access deal rooms");
-        base44.auth.redirectToLogin(window.location.pathname);
-        return;
-      }
-
-      const currentUser = await base44.auth.me();
-      setUser(currentUser);
-
-      // Get profile
-      const profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
-      if (profiles.length === 0) {
-        setLoading(false);
-        toast.error("User profile not found. Please contact support.");
-        return;
-      }
-
-      const profile = profiles[0];
-
-      // Check KYC - check multiple possible field names
-      const kycVerified = !!(
-        profile.kyc_verified || 
-        profile.kyc_status === 'approved' ||
-        profile.identity_verified ||
-        profile.persona_verified
-      );
-      
-      if (!kycVerified) {
-        setShowVerifyModal(true);
-        setLoading(false);
-        return;
-      }
-
-      setKycVerified(true);
-
-      // Check NDA - check multiple possible field names
-      const ndaAccepted = !!(
-        profile.nda_accepted ||
-        profile.has_accepted_nda
-      );
-      
-      if (!ndaAccepted) {
-        setShowNDAModal(true);
-        setLoading(false);
-        return;
-      }
-
-      setNdaAccepted(true);
+    if (!profileLoading) {
       setLoading(false);
-    } catch (error) {
-      console.error('Auth/Access check error:', error);
-      setLoading(false);
-      toast.error("Failed to verify access. Please try again.");
     }
-  };
+  }, [profileLoading]);
 
-  const handleNDAAccepted = () => {
-    setShowNDAModal(false);
-    setNdaAccepted(true);
-    toast.success("You can now access deal rooms!");
-  };
-
-  // Only load deals if KYC + NDA accepted
+  // Only load deals if verified
   const { data: deals, isLoading: dealsLoading } = useQuery({
     queryKey: ['deals', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      if (profiles.length === 0) return [];
-      
-      const profile = profiles[0];
+      if (!user?.id || !profile?.id) return [];
       return await base44.entities.Deal.filter({
         participants: { $in: [profile.id] }
       }, '-updated_date');
     },
-    enabled: !!user && kycVerified && ndaAccepted && onboarded,
+    enabled: !!user && !!profile && kycVerified && hasNDA && onboarded,
     initialData: []
   });
 
@@ -146,12 +69,55 @@ export default function DealRooms() {
     );
   }
 
+  // Show gate if not ready
+  if (!onboarded || !kycVerified || !hasNDA) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+        <div className="bg-white rounded-xl p-8 max-w-md border border-slate-200">
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Complete Setup to Access Deal Rooms</h2>
+          <div className="space-y-3">
+            {!onboarded && (
+              <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
+                <AlertCircle className="w-5 h-5 text-orange-600" />
+                <div>
+                  <p className="text-sm font-medium text-orange-900">Complete onboarding</p>
+                  <Button size="sm" onClick={() => navigate(createPageUrl(role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding'))} className="mt-2">
+                    Start Onboarding
+                  </Button>
+                </div>
+              </div>
+            )}
+            {!kycVerified && (
+              <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
+                <Shield className="w-5 h-5 text-blue-600" />
+                <div>
+                  <p className="text-sm font-medium text-blue-900">Verify identity</p>
+                  <Button size="sm" onClick={() => navigate(createPageUrl('Verify'))} className="mt-2">
+                    Verify Now
+                  </Button>
+                </div>
+              </div>
+            )}
+            {!hasNDA && (
+              <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
+                <Lock className="w-5 h-5 text-purple-600" />
+                <div>
+                  <p className="text-sm font-medium text-purple-900">Accept NDA</p>
+                  <Button size="sm" onClick={() => navigate(createPageUrl('NDA'))} className="mt-2">
+                    Review NDA
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
-      {showVerifyModal && <VerifyFirstModal open={showVerifyModal} />}
-      {showNDAModal && <NDAModal open={showNDAModal} onAccepted={handleNDAAccepted} />}
-
-      {(kycVerified && ndaAccepted) && (
+      {(kycVerified && hasNDA) && (
         <div className="py-8">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             {/* Header */}
