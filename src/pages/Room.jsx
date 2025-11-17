@@ -1,404 +1,302 @@
-
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { createPageUrl } from "@/utils";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import PaymentSchedulePanel from "@/components/PaymentSchedulePanel";
-import {
-  Shield, Loader2, Send, FileText, 
-  AlertTriangle, CheckCircle, Upload, MessageCircle, DollarSign
+import { 
+  Menu, Send, Loader2, ArrowLeft, DollarSign
 } from "lucide-react";
-import { toast } from "sonner";
+
+function useMyRooms() {
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    
+    const loadRooms = async () => {
+      try {
+        const response = await base44.functions.invoke('listMyRooms');
+        if (!cancelled) {
+          setRooms(response.data?.items || []);
+        }
+      } catch (error) {
+        console.error('Error loading rooms:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    loadRooms();
+    return () => { cancelled = true; };
+  }, []);
+
+  return { rooms, loading };
+}
+
+function useMessages(roomId) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [items]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    
+    let cancelled = false;
+    let lastFetch = null;
+
+    const fetchMessages = async () => {
+      try {
+        const params = { room_id: roomId };
+        if (lastFetch) params.after = lastFetch;
+        
+        const response = await base44.functions.invoke('listMessages', params);
+        const newMessages = response.data?.items || [];
+        
+        if (!cancelled) {
+          if (lastFetch) {
+            // Append new messages
+            setItems(prev => [...prev, ...newMessages]);
+          } else {
+            // Initial load
+            setItems(newMessages);
+          }
+          
+          if (newMessages.length > 0) {
+            lastFetch = newMessages[newMessages.length - 1].created_date;
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    // Initial load
+    fetchMessages();
+
+    // Poll every 3 seconds
+    const interval = setInterval(fetchMessages, 3000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [roomId]);
+
+  return { items, loading, setItems, messagesEndRef };
+}
 
 export default function Room() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [room, setRoom] = useState(null);
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState('');
+  const [params] = useSearchParams();
+  const roomId = params.get("roomId");
+  const { profile } = useCurrentProfile();
+  const { rooms } = useMyRooms();
+  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
+  const [drawer, setDrawer] = useState(false);
+  const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [activeTab, setActiveTab] = useState('messages');
-  const messagesEndRef = useRef(null);
-  const roomId = new URLSearchParams(window.location.search).get('id');
-  const tab = new URLSearchParams(window.location.search).get('tab');
 
-  useEffect(() => {
-    if (!roomId) {
-      navigate(createPageUrl("Dashboard"));
-      return;
-    }
-    loadRoom();
-    // Poll for new messages every 5 seconds (only when on messages tab)
-    const interval = setInterval(() => {
-      if (activeTab === 'messages') {
-        loadRoom();
-      }
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [roomId, activeTab]); // Added activeTab to dependency array for clarity
+  const currentRoom = rooms.find(r => r.id === roomId) || null;
+  const counterpartName = currentRoom?.counterparty_name || "Chat";
 
-  useEffect(() => {
-    // Set active tab from URL param
-    if (tab === 'payments') {
-      setActiveTab('payments');
-    }
-  }, [tab]);
-
-  useEffect(() => {
-    if (activeTab === 'messages') {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages, activeTab]);
-
-  const loadRoom = async () => {
-    try {
-      const params = new URLSearchParams({ roomId });
-      const response = await base44.functions.invoke('roomGet', params);
-      setRoom(response.data.room);
-      setMessages(response.data.messages);
-      setLoading(false);
-    } catch (error) {
-      console.error('Load room error:', error);
-      toast.error("Failed to load room");
-      setLoading(false);
-    }
-  };
-
-  const handleNdaToggle = async (accept) => {
-    try {
-      await base44.functions.invoke('roomUpdate', {
-        roomId,
-        ndaAccept: accept
-      });
-      loadRoom();
-      toast.success(accept ? "NDA accepted" : "NDA acceptance revoked");
-    } catch (error) {
-      console.error('NDA toggle error:', error);
-      toast.error("Failed to update NDA status");
-    }
-  };
-
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const send = async () => {
+    const t = text.trim();
+    if (!t || !roomId || sending) return;
     
+    setText("");
     setSending(true);
+
+    // Optimistic add
+    const optimistic = {
+      id: `tmp-${Date.now()}`,
+      room_id: roomId,
+      body: t,
+      sender_profile_id: profile?.id || "me",
+      created_date: new Date().toISOString()
+    };
+    setItems(prev => [...prev, optimistic]);
+
     try {
-      await base44.functions.invoke('messagePost', {
-        roomId,
-        kind: 'text',
-        text: newMessage
+      const response = await base44.functions.invoke('sendMessage', {
+        room_id: roomId,
+        body: t
       });
-      
-      setNewMessage('');
-      loadRoom();
+
+      if (!response.data?.ok) {
+        throw new Error(response.data?.error || "Failed to send");
+      }
     } catch (error) {
-      console.error('Send message error:', error);
-      toast.error("Failed to send message");
+      console.error('Send error:', error);
+      // Revert optimistic
+      setItems(prev => prev.filter(m => m.id !== optimistic.id));
+      setText(t);
     } finally {
       setSending(false);
     }
   };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Check NDA requirement
-    if (!room.ndaAcceptedInvestor || !room.ndaAcceptedAgent) {
-      toast.error("Both parties must accept NDA before sharing files");
-      return;
-    }
-
-    try {
-      setSending(true);
-      
-      // Upload file
-      const formData = new FormData();
-      formData.append('file', file);
-      const uploadResponse = await base44.integrations.Core.UploadFile({ file });
-      
-      // Send file message
-      await base44.functions.invoke('messagePost', {
-        roomId,
-        kind: 'file',
-        text: file.name,
-        fileUrl: uploadResponse.file_url
-      });
-      
-      toast.success("File uploaded");
-      loadRoom();
-    } catch (error) {
-      console.error('File upload error:', error);
-      toast.error("Failed to upload file");
-    } finally {
-      setSending(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
-      </div>
-    );
-  }
-
-  if (!room) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <h3 className="text-xl font-semibold text-slate-900 mb-2">Room not found</h3>
-          <Button onClick={() => navigate(createPageUrl("Dashboard"))}>
-            Back to Dashboard
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  const bothNdaAccepted = room.ndaAcceptedInvestor && room.ndaAcceptedAgent;
-  const currentUserNdaAccepted = room.currentUserRole === 'investor' 
-    ? room.ndaAcceptedInvestor 
-    : room.ndaAcceptedAgent;
-
-  // Get profile IDs for payment schedule
-  const currentProfileId = room.currentUserRole === 'investor' 
-    ? room.investor.profileId 
-    : room.agent.profileId;
-  
-  const investorProfileId = room.investor?.profileId || null;
-  const agentProfileId = room.agent?.profileId || null;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-slate-900">
-                {room.currentUserRole === 'investor' ? room.agent.name : room.investor.name}
-              </h1>
-              <p className="text-sm text-slate-600">
-                {room.currentUserRole === 'investor' ? room.agent.company : room.investor.company}
-              </p>
-            </div>
-            <div className="flex gap-2">
-              {room.agent.vetted && (
-                <Badge className="bg-emerald-100 text-emerald-800">
-                  <Shield className="w-3 h-3 mr-1" />
-                  Vetted Agent
-                </Badge>
-              )}
-              {bothNdaAccepted ? (
-                <Badge className="bg-green-100 text-green-800">
-                  <CheckCircle className="w-3 h-3 mr-1" />
-                  NDA Signed
-                </Badge>
-              ) : (
-                <Badge variant="outline" className="text-orange-600 border-orange-200">
-                  <AlertTriangle className="w-3 h-3 mr-1" />
-                  NDA Pending
-                </Badge>
-              )}
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex gap-2 mt-4 border-b border-slate-200 -mb-px">
+    <div className="min-h-screen bg-white flex">
+      {/* Sidebar */}
+      <div className={`fixed inset-y-0 left-0 w-72 bg-slate-50 border-r border-slate-200 z-40 transform transition-transform ${
+        drawer ? "translate-x-0" : "-translate-x-full"
+      } md:translate-x-0`}>
+        <div className="p-4 border-b border-slate-200">
+          <h2 className="font-semibold text-slate-900">Your Chats</h2>
+        </div>
+        <div className="px-2 py-2 space-y-1 overflow-y-auto h-[calc(100vh-5rem)]">
+          {rooms.map(r => (
             <button
-              onClick={() => setActiveTab('messages')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'messages'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              key={r.id}
+              onClick={() => {
+                navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+                setDrawer(false);
+              }}
+              className={`w-full text-left px-3 py-2 rounded-lg transition-colors ${
+                r.id === roomId 
+                  ? "bg-blue-100 text-blue-900" 
+                  : "hover:bg-slate-100 text-slate-700"
               }`}
             >
-              <MessageCircle className="w-4 h-4 inline mr-2" />
-              Messages
+              <div className="text-sm font-medium truncate">
+                {r.counterparty_name || `Room ${r.id.slice(0, 6)}`}
+              </div>
+              <div className="text-xs text-slate-500 capitalize">
+                {r.counterparty_role || "active"}
+              </div>
             </button>
-            <button
-              onClick={() => setActiveTab('payments')}
-              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-                activeTab === 'payments'
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <DollarSign className="w-4 h-4 inline mr-2" />
-              Payments
-            </button>
-          </div>
+          ))}
+          <Link 
+            to={createPageUrl("DealRooms")} 
+            className="block px-3 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
+          >
+            + New Deal Room
+          </Link>
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        {/* NDA Banner */}
-        {!bothNdaAccepted && (
-          <div className="bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl p-6 mb-6">
-            <div className="flex items-start gap-4">
-              <AlertTriangle className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-orange-900 mb-2">NDA Required</h3>
-                <p className="text-orange-800 mb-4">
-                  Both parties must accept the NDA before sharing files or sensitive information. 
-                  File uploads are disabled until both parties agree.
-                </p>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      id="nda-accept"
-                      checked={currentUserNdaAccepted}
-                      onCheckedChange={handleNdaToggle}
-                    />
-                    <Label htmlFor="nda-accept" className="cursor-pointer font-medium">
-                      I agree to the Non-Disclosure Agreement
-                    </Label>
-                  </div>
-                  <div className="text-sm text-orange-700">
-                    Status: 
-                    {room.ndaAcceptedInvestor && <span className="ml-2">✓ Investor agreed</span>}
-                    {room.ndaAcceptedAgent && <span className="ml-2">✓ Agent agreed</span>}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Messages Tab */}
-        {activeTab === 'messages' && (
-          <>
-            {/* Messages */}
-            <div className="bg-white rounded-xl border border-slate-200 mb-6">
-              <div className="h-[500px] overflow-y-auto p-6 space-y-4">
-                {messages.length === 0 ? (
-                  <div className="flex items-center justify-center h-full text-slate-400">
-                    <p>No messages yet. Start the conversation!</p>
-                  </div>
-                ) : (
-                  messages.map((msg) => {
-                    const isSystem = msg.kind === 'system';
-                    const isMe = msg.senderUserId !== 'system' && 
-                      ((room.currentUserRole === 'investor' && room.investor.userId === msg.senderUserId) ||
-                       (room.currentUserRole === 'agent' && room.agent.userId === msg.senderUserId));
-                    
-                    if (isSystem) {
-                      return (
-                        <div key={msg.id} className="flex justify-center">
-                          <div className="bg-slate-100 text-slate-600 text-sm px-4 py-2 rounded-full">
-                            {msg.text}
-                          </div>
-                        </div>
-                      );
-                    }
-
-                    return (
-                      <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <div className={`max-w-[70%] ${isMe ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-900'} rounded-2xl px-4 py-3`}>
-                          <div className="text-xs opacity-70 mb-1">{msg.senderName}</div>
-                          {msg.kind === 'file' ? (
-                            <div className="flex items-center gap-2">
-                              <FileText className="w-4 h-4" />
-                              <a 
-                                href={msg.fileUrl} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="underline"
-                              >
-                                {msg.text}
-                              </a>
-                            </div>
-                          ) : (
-                            <p className="text-sm">{msg.text}</p>
-                          )}
-                          <div className="text-xs opacity-60 mt-1">
-                            {new Date(msg.createdAt).toLocaleTimeString()}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })
-                )}
-                <div ref={messagesEndRef} />
-              </div>
-            </div>
-
-            {/* Message Input */}
-            <div className="bg-white rounded-xl border border-slate-200 p-4">
-              <div className="flex gap-3">
-                <Input
-                  value={newMessage}
-                  onChange={(e) => setNewMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                  placeholder="Type your message..."
-                  disabled={sending}
-                />
-                <input
-                  type="file"
-                  id="file-upload"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                  disabled={!bothNdaAccepted || sending}
-                />
-                <Button
-                  onClick={() => document.getElementById('file-upload').click()}
-                  variant="outline"
-                  size="icon"
-                  disabled={!bothNdaAccepted || sending}
-                  title={!bothNdaAccepted ? "Both parties must accept NDA first" : "Upload file"}
-                >
-                  <Upload className="w-4 h-4" />
-                </Button>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!newMessage.trim() || sending}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {sending ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <Send className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-              {!bothNdaAccepted && (
-                <p className="text-xs text-slate-500 mt-2">
-                  File uploads disabled until both parties accept NDA
-                </p>
-              )}
-            </div>
-          </>
-        )}
-
-        {/* Payments Tab */}
-        {activeTab === 'payments' && (
-          <div className="bg-white rounded-xl border border-slate-200 p-6">
-            {!bothNdaAccepted ? (
-              <div className="text-center py-12">
-                <AlertTriangle className="w-16 h-16 text-orange-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-slate-900 mb-2">NDA Required</h3>
-                <p className="text-slate-600 max-w-md mx-auto">
-                  Both parties must accept the NDA before accessing payment schedules. 
-                  This ensures confidentiality of deal terms.
-                </p>
-              </div>
-            ) : (
-              <PaymentSchedulePanel
-                dealId={room.dealId}
-                currentProfileId={currentProfileId}
-                currentRole={room.currentUserRole}
-                investorProfileId={investorProfileId}
-                agentProfileId={agentProfileId}
-              />
+      {/* Main Chat Area */}
+      <div className="flex-1 md:ml-72 flex flex-col">
+        {/* Header */}
+        <div className="h-16 border-b border-slate-200 flex items-center px-4 bg-white">
+          <button 
+            className="mr-3 md:hidden text-slate-600 hover:text-slate-900"
+            onClick={() => setDrawer(s => !s)}
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <button
+            className="mr-3 text-slate-600 hover:text-slate-900"
+            onClick={() => navigate(createPageUrl("DealRooms"))}
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="flex-1">
+            <h2 className="font-semibold text-slate-900">{counterpartName}</h2>
+            {currentRoom && (
+              <p className="text-xs text-slate-500 capitalize">
+                {currentRoom.counterparty_role}
+              </p>
             )}
           </div>
-        )}
+          {roomId && (
+            <Link 
+              to={`${createPageUrl("Room")}?roomId=${roomId}&tab=payments`}
+              className="flex items-center gap-2 px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg"
+            >
+              <DollarSign className="w-4 h-4" />
+              Payments
+            </Link>
+          )}
+        </div>
+
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-slate-50">
+          {loading ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-center">
+                <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
+                <p className="text-sm text-slate-600">Loading messages...</p>
+              </div>
+            </div>
+          ) : messages.length === 0 ? (
+            <div className="flex items-center justify-center h-full">
+              <p className="text-sm text-slate-600">No messages yet. Say hello!</p>
+            </div>
+          ) : (
+            <>
+              {messages.map((m) => {
+                const isMe = m.sender_profile_id === profile?.id;
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`max-w-[80%] rounded-2xl px-4 py-2 ${
+                        isMe
+                          ? "bg-blue-600 text-white"
+                          : "bg-white border border-slate-200 text-slate-900"
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">{m.body}</p>
+                      <div className={`text-[10px] mt-1 ${isMe ? "text-blue-100" : "text-slate-500"}`}>
+                        {new Date(m.created_date).toLocaleTimeString([], { 
+                          hour: '2-digit', 
+                          minute: '2-digit' 
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </>
+          )}
+        </div>
+
+        {/* Input */}
+        <div className="border-t border-slate-200 p-4 bg-white">
+          <div className="flex gap-3">
+            <Input
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  send();
+                }
+              }}
+              placeholder="Type a message..."
+              className="flex-1"
+              disabled={sending}
+            />
+            <Button 
+              onClick={send} 
+              disabled={!text.trim() || sending}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              {sending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
