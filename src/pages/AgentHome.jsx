@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
-import { embedProfile, matchInvestorsForAgent } from "@/api/functions";
+import { embedProfile, matchInvestorsForAgent } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {

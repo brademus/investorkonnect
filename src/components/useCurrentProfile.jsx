@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { inboxList } from '@/api/functions';
+import { inboxList } from '@/components/functions';
 
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Clear KYC Gating

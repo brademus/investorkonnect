@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { billingPortal } from "@/api/functions";
+import { billingPortal } from "@/components/functions";
 import { Loader2 } from "lucide-react";
 
 /**

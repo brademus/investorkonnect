@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
-import { upsertBuyBox } from "@/api/functions";
+import { upsertBuyBox } from "@/components/functions";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMessages, listMyRooms, sendMessage } from "@/api/functions";
+import { listMessages, listMyRooms, sendMessage } from "@/components/functions";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
