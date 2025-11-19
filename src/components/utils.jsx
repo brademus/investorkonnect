@@ -1,7 +1,10 @@
-// Utility for creating page URLs
+import { createPageUrl as createPageUrlTs } from "@/utils";
+
+// Small JS shim so components can import from "@/components/utils"
 export function createPageUrl(pageName) {
-  // Our routes in src/pages/index.jsx are defined as "/Home", "/Pricing",
-  // "/DashboardInvestor", etc. We want createPageUrl("DashboardInvestor")
-  // to return "/DashboardInvestor" exactly.
-  return '/' + pageName;
+  return createPageUrlTs(pageName);
 }
+
+export default {
+  createPageUrl,
+};
