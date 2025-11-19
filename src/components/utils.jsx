@@ -1,9 +1,7 @@
-import { createPageUrl as createPageUrlTs } from '@/utils';
-
+// Wrapper for createPageUrl utility
 export function createPageUrl(pageName) {
-  return createPageUrlTs(pageName);
-}
-
-export default {
-  createPageUrl,
+  // Our routes in src/pages/index.jsx are defined as "/Home", "/Pricing",
+  // "/DashboardInvestor", etc. We want createPageUrl("DashboardInvestor")
+  // to return "/DashboardInvestor" exactly.
+  return '/' + pageName;
 }
