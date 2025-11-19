@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
+import { listMessages, listMyRooms, sendMessage } from "@/api/functions";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ function useMyRooms() {
     
     const loadRooms = async () => {
       try {
-        const response = await base44.functions.invoke('listMyRooms');
+        const response = await listMyRooms();
         if (!cancelled) {
           setRooms(response.data?.items || []);
         }
@@ -61,7 +62,7 @@ function useMessages(roomId) {
         const params = { room_id: roomId };
         if (lastFetch) params.after = lastFetch;
         
-        const response = await base44.functions.invoke('listMessages', params);
+        const response = await listMessages(params);
         const newMessages = response.data?.items || [];
         
         if (!cancelled) {
@@ -132,7 +133,7 @@ export default function Room() {
     setItems(prev => [...prev, optimistic]);
 
     try {
-      const response = await base44.functions.invoke('sendMessage', {
+      const response = await sendMessage({
         room_id: roomId,
         body: t
       });

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { matchInvestor, syncSubscription } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { CheckCircle, Loader2, ArrowRight, AlertCircle } from "lucide-react";
 
@@ -53,7 +54,7 @@ export default function BillingSuccess() {
         console.log('[BillingSuccess] Session ID:', sessionId);
         
         // Call backend function to sync subscription data
-        const response = await base44.functions.invoke('syncSubscription', {
+        const response = await syncSubscription({
           session_id: sessionId
         });
 
@@ -83,7 +84,7 @@ export default function BillingSuccess() {
               setState(prev => ({ ...prev, syncing: false, matching: true }));
               
               try {
-                const matchResponse = await base44.functions.invoke('matchInvestor');
+                const matchResponse = await matchInvestor();
                 console.log('[BillingSuccess] 📊 Match response:', matchResponse.data);
                 
                 if (matchResponse.data?.matched) {

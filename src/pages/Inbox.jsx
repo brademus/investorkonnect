@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { inboxList, introRespond } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,7 +27,7 @@ export default function Inbox() {
       setLoading(true);
       
       // Load intro requests
-      const requestsRes = await base44.functions.invoke('inboxList');
+      const requestsRes = await inboxList();
       setRequests(requestsRes.data.requests || []);
       
       // Load active rooms
@@ -51,7 +52,7 @@ export default function Inbox() {
 
   const handleAccept = async (requestId) => {
     try {
-      const response = await base44.functions.invoke('introRespond', {
+      const response = await introRespond({
         requestId,
         action: 'accept'
       });
@@ -72,7 +73,7 @@ export default function Inbox() {
 
   const handleDecline = async (requestId) => {
     try {
-      await base44.functions.invoke('introRespond', {
+      await introRespond({
         requestId,
         action: 'decline'
       });
