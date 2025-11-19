@@ -1,7 +1,14 @@
-
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
+import {
+  adminNdaSet,
+  adminSetup,
+  profileDedup,
+  profileHealthCheck,
+  refreshAllEmbeddings,
+  resetProfiles,
+} from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -90,7 +97,7 @@ function AdminContent() {
   const runHealthCheck = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('profileHealthCheck');
+      const response = await profileHealthCheck();
       setHealthData(response.data);
       toast.success("Health check completed!");
     } catch (error) {
@@ -108,7 +115,7 @@ function AdminContent() {
 
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('profileDedup');
+      const response = await profileDedup();
       const data = response.data;
       
       console.log('[Admin] Dedup result:', data);
@@ -138,7 +145,7 @@ function AdminContent() {
 
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('adminSetup', { adminEmail });
+      const response = await adminSetup({ adminEmail });
       const data = response.data;
       
       console.log('[Admin] Setup result:', data);
@@ -178,7 +185,7 @@ Type "RESET" to confirm:`;
     
     try {
       console.log('[Admin] Calling resetProfiles...');
-      const response = await base44.functions.invoke('resetProfiles');
+      const response = await resetProfiles();
       const data = response.data;
       
       console.log('[Admin] Reset result:', data);
@@ -221,7 +228,7 @@ Type "RESET" to confirm:`;
     setNdaUpdating(prev => ({ ...prev, [userId]: true }));
     
     try {
-      const response = await base44.functions.invoke('adminNdaSet', {
+      const response = await adminNdaSet({
         user_id: userId,
         accepted: !currentStatus
       });
@@ -299,7 +306,7 @@ Type "RESET" to confirm:`;
   const refreshAgentVectors = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+      const response = await refreshAllEmbeddings({ 
         role: 'agent' 
       });
       const data = response.data;
@@ -316,7 +323,7 @@ Type "RESET" to confirm:`;
   const refreshInvestorVectors = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+      const response = await refreshAllEmbeddings({ 
         role: 'investor' 
       });
       const data = response.data;

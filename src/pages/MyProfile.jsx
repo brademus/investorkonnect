@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/utils";
+import { embedProfile } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { User, Edit, Layers, Loader2, RefreshCw } from "lucide-react";
@@ -24,7 +25,7 @@ export default function MyProfile() {
     setRefreshing(true);
     try {
       console.log('[MyProfile] Refreshing embedding...');
-      await base44.functions.invoke('embedProfile');
+      await embedProfile();
       toast.success('Profile embedding refreshed for AI matching!');
     } catch (error) {
       console.error('[MyProfile] Error refreshing embedding:', error);

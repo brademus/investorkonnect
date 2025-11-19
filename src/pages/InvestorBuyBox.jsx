@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
+import { upsertBuyBox } from "@/api/functions";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -131,7 +132,7 @@ function InvestorBuyBoxContent() {
       console.log('[InvestorBuyBox] Saving buy box:', buyBox);
 
       // Call backend function to save
-      const response = await base44.functions.invoke('upsertBuyBox', {
+      const response = await upsertBuyBox({
         buy_box: buyBox
       });
 
