@@ -9,7 +9,7 @@ import {
   CheckCircle, Clock, Loader2, AlertCircle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { getScheduleForDeal } from "@/api/functions";
+import { getScheduleForDeal } from "@/components/functions";
 import { toast } from "sonner";
 
 /**
