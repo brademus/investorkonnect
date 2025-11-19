@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { introCreate, ndaStatus } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
@@ -36,7 +37,7 @@ export default function AgentProfile() {
       }
 
       // Check NDA status
-      const response = await base44.functions.invoke('ndaStatus');
+      const response = await ndaStatus();
       const data = response.data;
 
       if (!data.nda?.accepted) {
@@ -113,7 +114,7 @@ export default function AgentProfile() {
       const investorProfile = profiles[0];
 
       // Create intro request
-      await base44.functions.invoke('introCreate', {
+      await introCreate({
         investorId: investorProfile.id,
         agentId: profile.id,
         message: ""

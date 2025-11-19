@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { checkoutLite } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2, Check } from "lucide-react";
@@ -167,7 +167,7 @@ export default function Pricing() {
 
     try {
       // Call backend function through SDK - this passes authentication
-      const response = await base44.functions.invoke('checkoutLite', { plan });
+      const response = await checkoutLite({ plan });
       
       console.log('[Pricing] 📦 Backend response:', response);
       

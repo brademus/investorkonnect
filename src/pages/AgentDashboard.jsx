@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { inboxList, introRespond } from "@/api/functions";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ function AgentDashboardContent() {
       setLoading(true);
       
       // Use inboxList to get leads (pending intros)
-      const inboxResponse = await base44.functions.invoke('inboxList');
+      const inboxResponse = await inboxList();
       const inbox = inboxResponse.data || [];
       
       // Separate into leads (pending) and active deals (accepted/active rooms)
@@ -55,7 +56,7 @@ function AgentDashboardContent() {
 
   const handleRespondToLead = async (item, accept) => {
     try {
-      await base44.functions.invoke('introRespond', {
+      await introRespond({
         introId: item.intro?.id || item.id,
         accept
       });

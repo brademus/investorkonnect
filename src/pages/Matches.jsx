@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { inboxList, introCreate, matchList } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
@@ -52,7 +52,7 @@ function MatchesContent() {
         console.log('[Matches] Checking for existing rooms in state:', targetState);
         
         // Get all investor's rooms
-        const response = await base44.functions.invoke('inboxList');
+        const response = await inboxList();
         const rooms = response.data || [];
         
         // Check if any room exists for this state
@@ -90,7 +90,7 @@ function MatchesContent() {
 
   const fetchMatches = async () => {
     try {
-      const response = await base44.functions.invoke('matchList', {
+      const response = await matchList({
         state: targetState
       });
 
@@ -118,7 +118,7 @@ function MatchesContent() {
       console.log('[Matches] Creating room with agent:', agent.id);
 
       // Create room via existing backend
-      const response = await base44.functions.invoke('introCreate', {
+      const response = await introCreate({
         agentId: agent.id,
         message: `Hi ${agent.full_name}, I'd like to connect about properties in ${targetState}.`,
         state: targetState
