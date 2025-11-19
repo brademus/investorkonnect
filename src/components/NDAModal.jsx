@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
+import { ndaAccept } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -35,7 +36,7 @@ export default function NDAModal({ open, onAccepted }) {
 
     try {
       console.log('[NDAModal] Calling ndaAccept function...');
-      const response = await base44.functions.invoke('ndaAccept');
+      const response = await ndaAccept();
       
       console.log('[NDAModal] Response:', response.data);
       

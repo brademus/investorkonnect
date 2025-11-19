@@ -9,6 +9,7 @@ import {
   CheckCircle, Clock, Loader2, AlertCircle
 } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { getScheduleForDeal } from "@/api/functions";
 import { toast } from "sonner";
 
 /**
@@ -42,7 +43,7 @@ export default function PaymentSchedulePanel({
     
     try {
       // Load via backend function
-      const response = await base44.functions.invoke('getScheduleForDeal', { dealId });
+      const response = await getScheduleForDeal({ dealId });
       
       if (response.data?.ok) {
         setSchedule(response.data.schedule);

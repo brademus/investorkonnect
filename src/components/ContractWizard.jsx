@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { contractAnalyzeChat, contractGenerateDraft } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,7 +35,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
   const analyze = async () => {
     setLoading(true);
     try {
-      const response = await base44.functions.invoke('contractAnalyzeChat', { room_id: roomId });
+      const response = await contractAnalyzeChat({ room_id: roomId });
       
       if (response.data?.analysis) {
         setAnalysis(response.data.analysis);
@@ -65,7 +66,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
 
     setSaving(true);
     try {
-      const response = await base44.functions.invoke('contractGenerateDraft', {
+      const response = await contractGenerateDraft({
         room_id: roomId,
         template_id: templateId,
         terms

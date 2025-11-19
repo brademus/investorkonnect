@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { inboxList } from '@/api/functions';
 
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Clear KYC Gating
@@ -171,7 +172,7 @@ export function useCurrentProfile() {
         // STEP 8: Check if user has any rooms
         let hasRoom = false;
         try {
-          const roomsResponse = await base44.functions.invoke('inboxList');
+          const roomsResponse = await inboxList();
           const rooms = roomsResponse.data || [];
           hasRoom = rooms.length > 0;
         } catch (roomErr) {
