@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { stripeValidate } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -55,7 +56,7 @@ export default function BillingSetup() {
   const handleValidate = async () => {
     setValidating(true);
     try {
-      const response = await base44.functions.invoke('stripeValidate');
+      const response = await stripeValidate();
       setValidation(response.data);
       
       if (response.data.ok) {
