@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { demoSeed } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Loader2, CheckCircle, Database } from "lucide-react";
@@ -46,7 +47,7 @@ export default function AdminSeed() {
     setResult(null);
 
     try {
-      const response = await base44.functions.invoke('demoSeed');
+      const response = await demoSeed();
       setResult(response.data);
       toast.success("Demo data seeded successfully!");
     } catch (error) {

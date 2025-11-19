@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
+import { embedProfile, matchAgentsForInvestor } from "@/api/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -51,11 +51,11 @@ export default function InvestorHome() {
       console.log('[InvestorHome] 🤖 Starting AI matching...');
 
       // Step 1: Ensure investor has an embedding
-      const embedResponse = await base44.functions.invoke('embedProfile');
+      const embedResponse = await embedProfile();
       console.log('[InvestorHome] Embedding response:', embedResponse.data);
 
       // Step 2: Get AI-matched agents
-      const matchResponse = await base44.functions.invoke('matchAgentsForInvestor', {
+      const matchResponse = await matchAgentsForInvestor({
         limit: 6
       });
 

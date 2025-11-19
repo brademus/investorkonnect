@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { base44 } from "@/api/base44Client";
+import { upsertAgentOnboarding } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -425,7 +425,7 @@ function AgentOnboardingContent() {
     try {
       console.log('[AgentOnboarding] 🎯 Submitting v2-agent onboarding...');
 
-      const response = await base44.functions.invoke('upsertAgentOnboarding', formData);
+      const response = await upsertAgentOnboarding(formData);
 
       if (response.data?.ok) {
         console.log('[AgentOnboarding] ✅ Onboarding saved, nextStep:', response.data.nextStep);

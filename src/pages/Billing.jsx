@@ -1,5 +1,6 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { billingPortal } from "@/api/functions";
 import { Loader2 } from "lucide-react";
 
 /**
@@ -15,7 +16,7 @@ export default function Billing() {
       try {
         console.log('[Billing] Opening Stripe Billing Portal...');
         
-        const response = await base44.functions.invoke('billingPortal');
+        const response = await billingPortal();
         
         if (!mounted) return;
         
