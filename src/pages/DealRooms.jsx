@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
-import { createDealRoom, listMyRooms, searchCounterparties } from "@/api/functions";
+import { createPageUrl } from "@/components/utils";
+import { createDealRoom, listMyRooms, searchCounterparties } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
