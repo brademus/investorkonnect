@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { base44 } from "@/api/base44Client";
+import { createDealRoom, listMyRooms, searchCounterparties } from "@/api/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,7 +26,7 @@ function NewRoomModal({ open, onClose, onCreated }) {
     const loadCounterparties = async () => {
       setLoading(true);
       try {
-        const response = await base44.functions.invoke('searchCounterparties', { q: query });
+        const response = await searchCounterparties({ q: query });
         if (!cancelled) {
           setItems(response.data?.items || []);
         }
@@ -44,10 +44,10 @@ function NewRoomModal({ open, onClose, onCreated }) {
 
   const createRoom = async () => {
     if (!selected) return;
-    
+
     setCreating(true);
     try {
-      const response = await base44.functions.invoke('createDealRoom', {
+      const response = await createDealRoom({
         counterparty_profile_id: selected.id
       });
       
@@ -178,7 +178,7 @@ export default function DealRooms() {
 
   const loadRooms = async () => {
     try {
-      const response = await base44.functions.invoke('listMyRooms');
+      const response = await listMyRooms();
       setRooms(response.data?.items || []);
     } catch (error) {
       console.error('Error loading rooms:', error);
