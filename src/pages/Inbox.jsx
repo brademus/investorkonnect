@@ -60,7 +60,7 @@ export default function Inbox() {
       
       // Navigate to room
       if (response.data.roomId) {
-        navigate(createPageUrl("Room") + `?id=${response.data.roomId}`);
+        navigate(createPageUrl("Room") + `?roomId=${response.data.roomId}`);
       } else {
         loadInbox();
       }
@@ -86,7 +86,7 @@ export default function Inbox() {
   };
 
   const goToRoom = (roomId) => {
-    navigate(createPageUrl("Room") + `?id=${roomId}`);
+    navigate(createPageUrl("Room") + `?roomId=${roomId}`);
   };
 
   if (loading) {
