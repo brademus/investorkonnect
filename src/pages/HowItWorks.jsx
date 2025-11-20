@@ -1,7 +1,6 @@
-
 import React from "react";
 import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, CheckCircle, Lock, FileCheck, 

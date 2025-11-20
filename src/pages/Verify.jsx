@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { personaFinalize } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
