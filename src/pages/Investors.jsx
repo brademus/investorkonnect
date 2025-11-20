@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import MapUSA from "@/components/MapUSA";
 import LocationPopup from "@/components/LocationPopup";

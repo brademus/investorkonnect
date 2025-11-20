@@ -1,6 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, CheckCircle, Star, Users, 
