@@ -66,29 +66,22 @@ export default function AgentHome() {
     try {
       setLoadingSuggestedInvestors(true);
 
-      console.log('[AgentHome] 🤖 Starting AI matching...');
-
       // Step 1: Ensure agent has an embedding
-      const embedResponse = await embedProfile();
-      console.log('[AgentHome] Embedding response:', embedResponse.data);
+      await embedProfile();
 
       // Step 2: Get AI-matched investors
       const matchResponse = await matchInvestorsForAgent({
         limit: 6
       });
-      
-      console.log('[AgentHome] Match response:', matchResponse.data);
 
       if (!cancelled && matchResponse.data?.ok) {
         const results = matchResponse.data.results || [];
         setSuggestedInvestors(results);
-        console.log('[AgentHome] ✅ Loaded', results.length, 'AI-matched investors');
       } else {
-        console.warn('[AgentHome] No AI matches returned');
         setSuggestedInvestors([]);
       }
     } catch (err) {
-      console.error("[AgentHome] AI matching error:", err);
+      // Silent fail - user still sees empty state with browse option
       if (!cancelled) setSuggestedInvestors([]);
     } finally {
       if (!cancelled) setLoadingSuggestedInvestors(false);

@@ -30,25 +30,18 @@ export default function PostAuth() {
 
     const handlePostAuth = async () => {
       try {
-        console.log('[PostAuth] 🔄 Starting post-auth flow...');
-        
         // Get query params
         const stateParam = searchParams.get('state');
         const intendedRole = searchParams.get('intendedRole');
-        
-        console.log('[PostAuth] Query params:', { stateParam, intendedRole });
 
         // STEP 1: Get authenticated user
         const user = await base44.auth.me();
         
         if (!user) {
-          console.log('[PostAuth] ❌ No user, redirecting to home');
           navigate(createPageUrl("Home"), { replace: true });
           setHasRouted(true);
           return;
         }
-        
-        console.log('[PostAuth] ✅ User authenticated:', user.email);
 
         // STEP 2: Get profile
         let profile = null;
@@ -57,15 +50,11 @@ export default function PostAuth() {
           const profiles = await base44.entities.Profile.filter({ user_id: user.id });
           profile = profiles[0] || null;
         } catch (err) {
-          console.error('[PostAuth] Failed to fetch profile:', err);
+          // Silent fail - will create profile if needed
         }
-
-        console.log('[PostAuth] Profile:', profile ? 'found' : 'not found');
 
         // STEP 3: Determine effective role
         let effectiveRole = intendedRole || profile?.user_role || null;
-        
-        console.log('[PostAuth] Effective role:', effectiveRole);
 
         // STEP 4: Check if NEW onboarding is complete (role-specific versions)
         let hasNewOnboarding = false;
