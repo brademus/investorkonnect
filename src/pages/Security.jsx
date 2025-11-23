@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { 
   Shield, Lock, FileText, Eye, AlertTriangle, 
   Server, CheckCircle, Mail
