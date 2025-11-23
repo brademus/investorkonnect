@@ -1,4 +1,5 @@
-// Thin barrel that re-exports all typed Base44 function wrappers
-// from the canonical implementation in components/functions.js
 
-export * from "./functions";
+// src/api/functions.js
+// Barrel file: re-export all shared Base44 function wrappers from components/functions.jsx
+
+export * from "@/components/functions";
