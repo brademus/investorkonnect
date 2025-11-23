@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { contractAnalyzeChat, contractGenerateDraft } from "@/api/functions";
+import { contractAnalyzeChat, contractGenerateDraft } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -47,7 +47,6 @@ export default function ContractWizard({ roomId, open, onClose }) {
         alert(response.data?.error || "Could not analyze chat");
       }
     } catch (error) {
-      console.error('Analysis error:', error);
       alert("Failed to analyze chat");
     } finally {
       setLoading(false);
@@ -79,7 +78,6 @@ export default function ContractWizard({ roomId, open, onClose }) {
         alert(response.data?.error || "Generate failed");
       }
     } catch (error) {
-      console.error('Generation error:', error);
       alert("Failed to generate contract");
     } finally {
       setSaving(false);

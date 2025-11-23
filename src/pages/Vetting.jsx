@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,6 @@ export default function Vetting() {
       });
       setLoading(false);
     } catch (error) {
-      console.error('Load profile error:', error);
       toast.error("Failed to load profile");
       setLoading(false);
     }
@@ -77,7 +76,6 @@ export default function Vetting() {
       toast.success("Vetting application submitted!");
       loadProfile();
     } catch (error) {
-      console.error('Submit error:', error);
       toast.error("Failed to submit application");
     } finally {
       setSubmitting(false);

@@ -28,14 +28,11 @@ function VerifyContent() {
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
 
-  // CRITICAL: Redirect if already verified
+  // Redirect if already verified
   useEffect(() => {
     if (!user || !profile) return;
     
     if (kycVerified) {
-      console.log('[Verify] ✅ KYC already verified, redirecting...');
-      
-      // Redirect based on NDA status
       if (hasNDA) {
         navigate(createPageUrl("Dashboard"), { replace: true });
       } else {
@@ -44,12 +41,11 @@ function VerifyContent() {
     }
   }, [user, profile, kycVerified, hasNDA, navigate]);
 
-  // CRITICAL: Redirect if not onboarded
+  // Redirect if not onboarded
   useEffect(() => {
     if (!user || !profile) return;
     
     if (!onboarded) {
-      console.log('[Verify] ⚠️ User not onboarded, redirecting...');
       navigate(createPageUrl("Dashboard"), { replace: true });
     }
   }, [user, profile, onboarded, navigate]);
@@ -57,12 +53,9 @@ function VerifyContent() {
   // Load Persona script
   useEffect(() => {
     if (window.Persona) {
-      console.log('[Verify] ✅ Persona already loaded');
       setScriptLoaded(true);
       return;
     }
-
-    console.log('[Verify] 📥 Loading Persona SDK...');
     
     const script = document.createElement('script');
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.1.2.js';
@@ -70,19 +63,16 @@ function VerifyContent() {
     script.crossOrigin = 'anonymous';
     
     script.onload = () => {
-      console.log('[Verify] ✅ Persona SDK loaded successfully');
       setScriptLoaded(true);
     };
     
     script.onerror = () => {
-      console.error('[Verify] ❌ Failed to load Persona SDK');
       setError('Failed to load verification system. Please refresh the page.');
     };
 
     document.body.appendChild(script);
 
     return () => {
-      // Cleanup script on unmount if not loaded, and if it's still attached to the DOM
       if (!scriptLoaded && script.parentNode) {
         document.body.removeChild(script);
       }
