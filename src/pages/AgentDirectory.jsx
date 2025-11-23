@@ -88,21 +88,15 @@ export default function AgentDirectory() {
 
   const loadAgents = async () => {
     try {
-      console.log('[AgentDirectory] Loading ALL agents...');
-      
-      // Get ALL profiles with agent role - no filtering by onboarding status
       const allProfiles = await base44.entities.Profile.filter({});
       
       const agentProfiles = allProfiles.filter(p => 
         p.user_role === 'agent' || p.user_type === 'agent'
       );
       
-      console.log('[AgentDirectory] Found', agentProfiles.length, 'agents (including incomplete profiles)');
-      
       setAgents(agentProfiles);
       setLoading(false);
     } catch (error) {
-      console.error('[AgentDirectory] Error loading agents:', error);
       toast.error("Failed to load agents");
       setLoading(false);
     }
@@ -194,8 +188,7 @@ export default function AgentDirectory() {
                   key={agent.id}
                   className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => {
-                    // TODO: Navigate to agent profile page
-                    toast.info('Agent profile view coming soon!');
+                    navigate(`${createPageUrl("AgentProfile")}?agentId=${agent.user_id || agent.id}`);
                   }}
                 >
                   <div className="flex items-start justify-between mb-4">

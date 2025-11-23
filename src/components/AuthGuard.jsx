@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '@/components/utils';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from './useCurrentProfile';
 import { Loader2 } from 'lucide-react';
@@ -63,15 +63,12 @@ export function AuthGuard({
 
     // 1. Check auth requirement
     if (requireAuth && !user && !isPublicRoute) {
-      console.log('[AuthGuard] Not authenticated, redirecting to login');
       base44.auth.redirectToLogin(currentPath);
       return;
     }
 
     // 2. Check onboarding requirement
     if (requireOnboarding && user && !onboarded) {
-      console.log('[AuthGuard] Onboarding required, redirecting');
-      
       // Send to role selection if no role
       if (!role || role === 'member') {
         navigate(createPageUrl('RoleSelection'), { replace: true });
@@ -89,24 +86,17 @@ export function AuthGuard({
 
     // 3. Check role requirement
     if (requireRole && role !== requireRole) {
-      console.log(`[AuthGuard] Role mismatch: required=${requireRole}, actual=${role}`);
       navigate(createPageUrl('Home'), { replace: true });
       return;
     }
 
     // 4. Check KYC requirement
     if (requireKYC && !kycVerified) {
-      console.log('[AuthGuard] KYC required, redirecting to verification');
       navigate(createPageUrl('Verify'), { replace: true });
       return;
     }
 
-    // 5. Check NDA requirement
-    if (requireNDA && !hasNDA) {
-      console.log('[AuthGuard] NDA required');
-      // Don't redirect - let the component handle showing NDA modal/gate
-      // This allows for in-place NDA acceptance without navigation
-    }
+    // 5. Check NDA requirement (no redirect - let component handle)
 
   }, [loading, user, profile, role, onboarded, kycVerified, hasNDA, location.pathname, requireAuth, requireOnboarding, requireRole, requireKYC, requireNDA, navigate]);
 

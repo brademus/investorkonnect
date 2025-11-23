@@ -84,21 +84,15 @@ export default function InvestorDirectory() {
 
   const loadInvestors = async () => {
     try {
-      console.log('[InvestorDirectory] Loading ALL investors...');
-      
-      // Get ALL profiles with investor role - no filtering by onboarding status
       const allProfiles = await base44.entities.Profile.filter({});
       
       const investorProfiles = allProfiles.filter(p => 
         p.user_role === 'investor' || p.user_type === 'investor'
       );
       
-      console.log('[InvestorDirectory] Found', investorProfiles.length, 'investors (including incomplete profiles)');
-      
       setInvestors(investorProfiles);
       setLoading(false);
     } catch (error) {
-      console.error('[InvestorDirectory] Error loading investors:', error);
       toast.error("Failed to load investors");
       setLoading(false);
     }
@@ -187,8 +181,7 @@ export default function InvestorDirectory() {
                   key={investor.id}
                   className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => {
-                    // TODO: Navigate to investor profile page
-                    toast.info('Investor profile view coming soon!');
+                    navigate(`${createPageUrl("Profile")}?userId=${investor.user_id || investor.id}`);
                   }}
                 >
                   <div className="flex items-start justify-between mb-4">
