@@ -34,44 +34,26 @@ export default function BillingSuccess() {
   }, []);
 
   useEffect(() => {
-    // No session ID - redirect immediately
     if (!sessionId) {
-      console.log('[BillingSuccess] ❌ No session_id, redirecting to Dashboard');
       navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
 
-    // Wait for user/profile to load before syncing
     if (!user || !profile) {
-      console.log('[BillingSuccess] ⏳ Waiting for user/profile to load...');
       return;
     }
 
-    // Start sync process
     const syncAndRedirect = async () => {
       try {
-        console.log('[BillingSuccess] 🔄 Syncing subscription from Stripe...');
-        console.log('[BillingSuccess] Session ID:', sessionId);
-        
-        // Call backend function to sync subscription data
         const response = await syncSubscription({
           session_id: sessionId
         });
 
-        console.log('[BillingSuccess] 📦 Sync response:', response.data);
-
         if (response.data?.ok) {
-          console.log('[BillingSuccess] ✅ Subscription synced successfully');
-          console.log('[BillingSuccess] Plan:', response.data.plan);
-          console.log('[BillingSuccess] Status:', response.data.status);
-          
-          // Force profile refresh to load new subscription data
           await refresh();
           
-          // NEW: For READY investors, trigger AI matching
+          // For READY investors, trigger AI matching
           if (profile.user_role === 'investor') {
-            console.log('[BillingSuccess] 🧠 Investor detected, checking if ready for matching...');
-            
             const isOnboarded = 
               profile.onboarding_version === 'v2' &&
               profile.onboarding_completed_at;
@@ -80,35 +62,20 @@ export default function BillingSuccess() {
             const hasNDA = profile.nda_accepted;
             
             if (isOnboarded && isKYCVerified && hasNDA) {
-              console.log('[BillingSuccess] ✅ Investor is READY, triggering AI matching...');
               setState(prev => ({ ...prev, syncing: false, matching: true }));
               
               try {
-                const matchResponse = await matchInvestor();
-                console.log('[BillingSuccess] 📊 Match response:', matchResponse.data);
-                
-                if (matchResponse.data?.matched) {
-                  console.log('[BillingSuccess] ✅ Investor matched to agent:', matchResponse.data.agentId);
-                  console.log('[BillingSuccess] Score:', matchResponse.data.score);
-                }
-                
-                // Force another refresh to load match data
+                await matchInvestor();
                 await refresh();
               } catch (matchErr) {
-                console.error('[BillingSuccess] ⚠️ Matching failed:', matchErr);
                 // Don't block on match failure
               }
-            } else {
-              console.log('[BillingSuccess] ⚠️ Investor not ready for matching (onboarded:', isOnboarded, 'kyc:', isKYCVerified, 'nda:', hasNDA, ')');
             }
           }
           
-          // Show success message for 2-3 seconds
           setState({ syncing: false, matching: false, error: null, redirecting: false });
           
-          // Wait 2.5 seconds, then redirect
           setTimeout(() => {
-            console.log('[BillingSuccess] 🎯 Redirecting to Dashboard...');
             setState(prev => ({ ...prev, redirecting: true }));
             
             setTimeout(() => {
@@ -117,24 +84,20 @@ export default function BillingSuccess() {
           }, 2500);
           
         } else {
-          console.error('[BillingSuccess] ❌ Sync failed:', response.data);
           const errorMsg = response.data?.message || "Failed to sync subscription";
           setState({ syncing: false, matching: false, error: errorMsg, redirecting: false });
           
-          // Still refresh profile in case webhook already updated it
           try {
             await refresh();
           } catch (refreshErr) {
-            console.error('[BillingSuccess] Failed to refresh profile:', refreshErr);
+            // Silent error
           }
           
-          // Redirect after 5 seconds even on error
           setTimeout(() => {
             navigate(createPageUrl("Dashboard"), { replace: true });
           }, 5000);
         }
       } catch (err) {
-        console.error('[BillingSuccess] ❌ Error syncing:', err);
         setState({ 
           syncing: false,
           matching: false,
@@ -142,14 +105,12 @@ export default function BillingSuccess() {
           redirecting: false 
         });
         
-        // Still try to refresh profile
         try {
           await refresh();
         } catch (refreshErr) {
-          console.error('[BillingSuccess] Failed to refresh profile:', refreshErr);
+          // Silent error
         }
         
-        // Redirect after 5 seconds
         setTimeout(() => {
           navigate(createPageUrl("Dashboard"), { replace: true });
         }, 5000);
