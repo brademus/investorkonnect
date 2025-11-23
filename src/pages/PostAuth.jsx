@@ -1,7 +1,6 @@
-
 import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 

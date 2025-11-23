@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { createPageUrl } from '@/utils';
+import { createPageUrl } from '@/components/utils';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useWizard } from './WizardContext';
