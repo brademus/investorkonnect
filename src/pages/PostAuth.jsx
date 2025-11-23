@@ -72,20 +72,10 @@ export default function PostAuth() {
             profile?.onboarding_version === 'agent-v2-deep' &&
             !!profile?.onboarding_completed_at &&
             profile?.user_role === 'agent';
-          
-          console.log('[PostAuth] Agent onboarding check:', {
-            version: profile?.onboarding_version,
-            hasCompletedAt: !!profile?.onboarding_completed_at,
-            isAgent: profile?.user_role === 'agent',
-            hasNewOnboarding
-          });
         }
-        
-        console.log('[PostAuth] Has NEW onboarding:', hasNewOnboarding, '(version:', profile?.onboarding_version, ')');
 
         // STEP 5: If no onboarding, route to onboarding
         if (!hasNewOnboarding) {
-          console.log('[PostAuth] 📝 User needs NEW onboarding');
           
           // Update profile with role + state if provided
           if (profile && (intendedRole || stateParam)) {
@@ -103,7 +93,7 @@ export default function PostAuth() {
             try {
               await base44.entities.Profile.update(profile.id, updates);
             } catch (updateErr) {
-              console.error('[PostAuth] Failed to update profile:', updateErr);
+              // Silent fail - will retry on next attempt
             }
           } else if (!profile && user) {
             // Create profile if doesn't exist
@@ -117,20 +107,16 @@ export default function PostAuth() {
                 markets: stateParam ? [stateParam] : []
               });
             } catch (createErr) {
-              console.error('[PostAuth] Failed to create profile:', createErr);
+              // Silent fail - will retry on next attempt
             }
           }
           
           // Route to onboarding based on role
           if (effectiveRole === 'investor') {
-            console.log('[PostAuth] → InvestorOnboarding');
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (effectiveRole === 'agent') {
-            console.log('[PostAuth] → AgentOnboarding (new deep version required)');
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            // No role yet - send to RoleSelection
-            console.log('[PostAuth] → RoleSelection (no role)');
             navigate(createPageUrl("RoleSelection"), { replace: true });
           }
           
@@ -140,11 +126,8 @@ export default function PostAuth() {
 
         // STEP 6: Onboarding complete - check KYC
         const kycVerified = profile?.kyc_status === 'approved';
-        
-        console.log('[PostAuth] KYC verified:', kycVerified);
 
         if (!kycVerified) {
-          console.log('[PostAuth] 🔐 User needs Persona verification');
           navigate(createPageUrl("Verify"), { replace: true });
           setHasRouted(true);
           return;
@@ -152,26 +135,19 @@ export default function PostAuth() {
 
         // STEP 7: KYC complete - check NDA
         const hasNDA = profile?.nda_accepted;
-        
-        console.log('[PostAuth] Has NDA:', hasNDA);
 
         if (!hasNDA) {
-          console.log('[PostAuth] 📄 User needs NDA');
           navigate(createPageUrl("NDA"), { replace: true });
           setHasRouted(true);
           return;
         }
 
         // STEP 8: All complete - go to Dashboard
-        console.log('[PostAuth] ✅ All complete → Dashboard');
         navigate(createPageUrl("Dashboard"), { replace: true });
         setHasRouted(true);
 
       } catch (error) {
-        console.error('[PostAuth] ❌ Error in post-auth flow:', error);
-        
-        // On error, don't hang - redirect somewhere
-        console.log('[PostAuth] Recovering from error → Home');
+        // On error, don't hang - redirect somewhere safe
         navigate(createPageUrl("Home"), { replace: true });
         setHasRouted(true);
       }

@@ -71,7 +71,6 @@ export function StepGuard({ children, requiredStep }) {
     }
 
     if (redirectTo && redirectTo !== location.pathname) {
-      console.log(`[StepGuard] Redirecting to ${redirectTo} (missing prerequisite)`);
       navigate(redirectTo, { replace: true });
     }
 
