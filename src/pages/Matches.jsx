@@ -36,7 +36,6 @@ function MatchesContent() {
     if (loading) return;
 
     if (role === 'investor' && !onboarded) {
-      console.log('[Matches] 🚫 Investor not onboarded, redirecting to InvestorOnboarding');
       toast.error('Please complete your investor profile first');
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       return;
@@ -49,8 +48,6 @@ function MatchesContent() {
 
     const checkLockIn = async () => {
       try {
-        console.log('[Matches] Checking for existing rooms in state:', targetState);
-        
         // Get all investor's rooms
         const response = await inboxList();
         const rooms = response.data || [];
@@ -63,7 +60,6 @@ function MatchesContent() {
         });
 
         if (roomInState) {
-          console.log('[Matches] 🔒 Found existing room for state, redirecting:', roomInState.id);
           toast.info('You already have an active deal room for this market');
           
           // Redirect to existing room
@@ -79,7 +75,6 @@ function MatchesContent() {
         await fetchMatches();
 
       } catch (error) {
-        console.error('[Matches] Error checking lock-in:', error);
         toast.error('Failed to load matches');
         setLoadingMatches(false);
       }
@@ -98,14 +93,12 @@ function MatchesContent() {
         // Get top 3 matches
         const topMatches = response.data.matches.slice(0, 3);
         setMatches(topMatches);
-        console.log('[Matches] Loaded matches:', topMatches.length);
       } else {
         setMatches([]);
       }
 
       setLoadingMatches(false);
     } catch (error) {
-      console.error('[Matches] Error fetching matches:', error);
       toast.error('Failed to load agent matches');
       setLoadingMatches(false);
     }
@@ -115,8 +108,6 @@ function MatchesContent() {
     setEngaging(agent.id);
 
     try {
-      console.log('[Matches] Creating room with agent:', agent.id);
-
       // Create room via existing backend
       const response = await introCreate({
         agentId: agent.id,
@@ -136,7 +127,6 @@ function MatchesContent() {
       }
 
     } catch (error) {
-      console.error('[Matches] Error engaging agent:', error);
       toast.error('Failed to connect with agent. Please try again.');
       setEngaging(null);
     }
