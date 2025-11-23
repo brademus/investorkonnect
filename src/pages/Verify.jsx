@@ -86,11 +86,8 @@ function VerifyContent() {
     }
 
     if (kycVerified) {
-      console.log('[Verify] ✅ Already verified, skipping init');
       return;
     }
-
-    console.log('[Verify] 🚀 Initializing Persona Client...');
 
     try {
       const client = new window.Persona.Client({
@@ -99,13 +96,11 @@ function VerifyContent() {
         referenceId: user.id,
         
         onReady: () => {
-          console.log('[Verify] ✅ Persona Client ready');
           setPersonaReady(true);
           setLaunching(false);
         },
         
         onComplete: async ({ inquiryId, status, fields }) => {
-          console.log('[Verify] ✅ Verification completed:', { inquiryId, status });
           setVerifying(true);
           
           try {
@@ -117,7 +112,6 @@ function VerifyContent() {
 
             if (response.data?.ok) {
               const kycStatus = response.data.kyc_status;
-              console.log('[Verify] ✅ Backend updated status:', kycStatus);
               
               // ALSO update profile directly to ensure all flags are set
               try {
@@ -128,10 +122,8 @@ function VerifyContent() {
                     kyc_inquiry_id: inquiryId,
                     kyc_last_checked: new Date().toISOString(),
                   });
-                  console.log('[Verify] ✅ Profile updated with verification flags');
                 }
               } catch (updateErr) {
-                console.warn('[Verify] ⚠️ Could not update profile directly:', updateErr);
                 // Continue anyway since backend function may have done it
               }
               
@@ -160,7 +152,6 @@ function VerifyContent() {
               throw new Error('Failed to update verification status');
             }
           } catch (err) {
-            console.error('[Verify] ❌ Finalize error:', err);
             toast.error('Could not complete verification. Please try again.');
             setVerifying(false);
             setError('We verified your identity but encountered an error saving it. Please refresh and try again.');
@@ -168,13 +159,11 @@ function VerifyContent() {
         },
         
         onCancel: ({ inquiryId }) => {
-          console.log('[Verify] ⚠️ User cancelled verification:', inquiryId);
           toast.info('Verification cancelled');
           setLaunching(false);
         },
         
         onError: (error) => {
-          console.error('[Verify] ❌ Persona error:', error);
           toast.error('Verification error occurred');
           setLaunching(false);
           setError('An error occurred during verification. Please try again.');
@@ -182,10 +171,8 @@ function VerifyContent() {
       });
 
       personaClientRef.current = client;
-      console.log('[Verify] ✅ Persona Client initialized');
 
     } catch (err) {
-      console.error('[Verify] ❌ Failed to initialize Persona:', err);
       setError('Failed to initialize verification. Please refresh the page.');
     }
 
@@ -212,13 +199,11 @@ function VerifyContent() {
       return;
     }
 
-    console.log('[Verify] 🚀 Opening Persona overlay...');
     setLaunching(true);
     
     try {
       personaClientRef.current.open();
     } catch (err) {
-      console.error('[Verify] ❌ Failed to open Persona:', err);
       setError('Failed to start verification. Please refresh and try again.');
       setLaunching(false);
     }

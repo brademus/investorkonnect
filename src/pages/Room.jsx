@@ -25,7 +25,7 @@ function useMyRooms() {
           setRooms(response.data?.items || []);
         }
       } catch (error) {
-        console.error('Error loading rooms:', error);
+        // Silent fail
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -79,7 +79,7 @@ function useMessages(roomId) {
           }
         }
       } catch (error) {
-        console.error('Error fetching messages:', error);
+        // Silent fail
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -142,7 +142,6 @@ export default function Room() {
         throw new Error(response.data?.error || "Failed to send");
       }
     } catch (error) {
-      console.error('Send error:', error);
       // Revert optimistic
       setItems(prev => prev.filter(m => m.id !== optimistic.id));
       setText(t);
