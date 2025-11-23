@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,7 +75,6 @@ export default function Contact() {
 
       navigate(createPageUrl("ThankYou"));
     } catch (error) {
-      console.error('Email send error:', error);
       // Show success anyway in demo mode
       toast.success("Message received! We'll get back to you within 24 hours.");
       setFormData({ name: "", email: "", subject: "", message: "", honeypot: "" });
