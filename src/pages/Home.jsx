@@ -66,7 +66,7 @@ export default function Home() {
           markets: [localState.code]
         });
       } catch (err) {
-        console.warn('[Home] Could not update profile with state:', err);
+        // Profile update failed, continue anyway
       }
     }
 
@@ -75,9 +75,7 @@ export default function Home() {
   };
 
   const handleLogin = () => {
-    // Redirect to login, callback to PostAuth which will route appropriately
     const callbackUrl = createPageUrl("PostAuth") || createPageUrl("Dashboard") || window.location.pathname;
-    console.log('[Home] Login redirect, callback:', callbackUrl);
     base44.auth.redirectToLogin(callbackUrl);
   };
 
