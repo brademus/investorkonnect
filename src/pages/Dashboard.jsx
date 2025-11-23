@@ -22,7 +22,6 @@ function DashboardContent() {
   useEffect(() => {
     // If no role set at all, send to role selection
     if (!loading && user && (!role || role === 'member')) {
-      console.log('[Dashboard] No role set, redirecting to RoleSelection');
       navigate(createPageUrl("RoleSelection"), { replace: true });
     }
   }, [loading, user, role, navigate]);
