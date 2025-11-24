@@ -7,6 +7,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2, Check } from "lucide-react";
 import { toast } from "sonner";
+import { devLog } from "@/components/devLogger";
 
 const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 
@@ -45,7 +46,7 @@ export default function Pricing() {
   // DEBUG: Log readiness values on every render
   useEffect(() => {
     if (!loading && user) {
-      console.log('[Pricing] 🔍 DEBUG - Investor Readiness Check:', {
+      devLog('[Pricing] 🔍 DEBUG - Investor Readiness Check:', {
         user_id: user.id,
         email: user.email,
         role,
@@ -77,19 +78,19 @@ export default function Pricing() {
     if (role !== 'investor') return null;
     
     if (!onboarded) {
-      console.log('[Pricing] 🚫 Blocked: onboarding not complete');
+      devLog('[Pricing] 🚫 Blocked: onboarding not complete');
       return 'onboarding';
     }
     if (!kycVerified) {
-      console.log('[Pricing] 🚫 Blocked: KYC not verified (status:', kycStatus, ')');
+      devLog('[Pricing] 🚫 Blocked: KYC not verified (status:', kycStatus, ')');
       return 'verification';
     }
     if (!hasNDA) {
-      console.log('[Pricing] 🚫 Blocked: NDA not accepted');
+      devLog('[Pricing] 🚫 Blocked: NDA not accepted');
       return 'nda';
     }
     
-    console.log('[Pricing] ✅ Not blocked - investor is ready!');
+    devLog('[Pricing] ✅ Not blocked - investor is ready!');
     return null; // All clear!
   };
 
@@ -107,11 +108,11 @@ export default function Pricing() {
   };
 
   const handleGetStarted = async (plan) => {
-    console.log('[Pricing] 🎯 handleGetStarted called:', { plan, loading, user: !!user, role, isInvestorReady });
+    devLog('[Pricing] 🎯 handleGetStarted called:', { plan, loading, user: !!user, role, isInvestorReady });
     
     // IMPORTANT: Wait for loading to complete before checking auth
     if (loading) {
-      console.log('[Pricing] ⏳ Still loading, please wait...');
+      devLog('[Pricing] ⏳ Still loading, please wait...');
       toast.info("Loading your account...");
       return;
     }
@@ -124,18 +125,18 @@ export default function Pricing() {
 
     // Check if authenticated
     if (!user) {
-      console.log('[Pricing] ❌ Not authenticated, redirecting to login');
+      devLog('[Pricing] ❌ Not authenticated, redirecting to login');
       toast.info("Please sign in to continue");
       base44.auth.redirectToLogin(window.location.pathname);
       return;
     }
 
-    console.log('[Pricing] ✅ User authenticated:', user.email);
+    devLog('[Pricing] ✅ User authenticated:', user.email);
 
     // For investors, check if fully ready
     if (role === 'investor') {
       if (!isInvestorReady) {
-        console.log('[Pricing] ❌ Investor not ready, routing to:', blockingStep);
+        devLog('[Pricing] ❌ Investor not ready, routing to:', blockingStep);
         
         // Route to the appropriate missing step
         if (!onboarded) {
@@ -162,19 +163,19 @@ export default function Pricing() {
     }
 
     // User is ready - call checkout function via SDK (passes auth automatically)
-    console.log('[Pricing] ✅ User ready, calling checkout function via SDK...');
+    devLog('[Pricing] ✅ User ready, calling checkout function via SDK...');
     toast.loading("Opening checkout...", { id: 'checkout-loading' });
 
     try {
       // Call backend function through SDK - this passes authentication
       const response = await checkoutLite({ plan });
       
-      console.log('[Pricing] 📦 Backend response:', response);
+      devLog('[Pricing] 📦 Backend response:', response);
       
       toast.dismiss('checkout-loading');
 
       if (!response.data) {
-        console.error('[Pricing] ❌ No response data');
+        devLog('[Pricing] ❌ No response data');
         toast.error("Failed to create checkout session");
         return;
       }
@@ -183,7 +184,7 @@ export default function Pricing() {
 
       // Check for errors
       if (!data.ok) {
-        console.error('[Pricing] ❌ Backend error:', data);
+        devLog('[Pricing] ❌ Backend error:', data);
         
         if (data.reason === 'AUTH_REQUIRED') {
           toast.error("Please sign in again");
@@ -217,15 +218,15 @@ export default function Pricing() {
 
       // Success - redirect to Stripe
       if (data.url) {
-        console.log('[Pricing] ✅ Redirecting to Stripe:', data.url);
+        devLog('[Pricing] ✅ Redirecting to Stripe:', data.url);
         window.location.href = data.url;
       } else {
-        console.error('[Pricing] ❌ No Stripe URL in response');
+        devLog('[Pricing] ❌ No Stripe URL in response');
         toast.error("Failed to get checkout URL");
       }
 
     } catch (error) {
-      console.error('[Pricing] ❌ Checkout error:', error);
+      devLog('[Pricing] ❌ Checkout error:', error);
       toast.dismiss('checkout-loading');
       toast.error("Failed to start checkout. Please try again.");
     }
