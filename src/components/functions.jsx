@@ -67,3 +67,12 @@ export const libText = base44.functions["lib/text"];
 export const libCosine = base44.functions["lib/cosine"];
 export const libHash = base44.functions["lib/hash"];
 export const libOpenaiContractsClient = base44.functions["lib/openaiContractsClient"];
+
+// 10x Enhancement Functions
+export const predictiveMatchScore = base44.functions.predictiveMatchScore;
+export const suggestBuyBoxRefinement = base44.functions.suggestBuyBoxRefinement;
+export const generatePitchAdjustment = base44.functions.generatePitchAdjustment;
+export const getPersonalizedMarketIntel = base44.functions.getPersonalizedMarketIntel;
+export const getAgentPerformanceMetrics = base44.functions.getAgentPerformanceMetrics;
+export const getInvestorPortfolioData = base44.functions.getInvestorPortfolioData;
+export const generateDueDiligenceChecklist = base44.functions.generateDueDiligenceChecklist;
