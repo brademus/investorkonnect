@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { devLog } from "@/components/devLogger";
 
 /**
  * STEP 6: NDA ACCEPTANCE
@@ -31,7 +32,7 @@ function NDAContent() {
   // Redirect if already accepted (check after loading completes)
   useEffect(() => {
     if (!loading && hasNDA) {
-      console.log('[NDA] Already accepted, redirecting to dashboard...');
+      devLog('[NDA] Already accepted, redirecting to dashboard...');
       setTimeout(() => {
         navigate(createPageUrl("Dashboard"), { replace: true });
       }, 500);
@@ -44,18 +45,18 @@ function NDAContent() {
       return;
     }
 
-    console.log('[NDA] 🎯 Accepting NDA...');
+    devLog('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
 
     try {
-      console.log('[NDA] Calling ndaAccept function...');
+      devLog('[NDA] Calling ndaAccept function...');
       const response = await ndaAccept();
       
-      console.log('[NDA] Response:', response.data);
+      devLog('[NDA] Response:', response.data);
       
       if (response.data?.ok) {
-        console.log('[NDA] ✅ NDA accepted by backend');
+        devLog('[NDA] ✅ NDA accepted by backend');
         
         // ALSO update profile directly to ensure flag is set
         // (in case backend function doesn't update all necessary fields)
@@ -70,39 +71,39 @@ function NDAContent() {
                 // Legacy flag for backward compatibility
                 nda_complete: true
               });
-              console.log('[NDA] ✅ Profile updated with NDA flags');
+              devLog('[NDA] ✅ Profile updated with NDA flags');
             } else {
-              console.warn('[NDA] ⚠️ No profile found for user_id:', profile.user_id, 'to update directly.');
+              devLog('[NDA] ⚠️ No profile found for user_id:', profile.user_id, 'to update directly.');
             }
           } else {
-            console.warn('[NDA] ⚠️ Profile or user_id not available to update directly.');
+            devLog('[NDA] ⚠️ Profile or user_id not available to update directly.');
           }
         } catch (updateErr) {
-          console.warn('[NDA] ⚠️ Could not update profile directly:', updateErr);
+          devLog('[NDA] ⚠️ Could not update profile directly:', updateErr);
           // Continue anyway since backend function may have done it
         }
         
         toast.success("NDA accepted successfully!");
         
         // Force profile refresh to load new data
-        console.log('[NDA] Refreshing profile...');
+        devLog('[NDA] Refreshing profile...');
         await refresh();
         
         // Small delay to ensure state is updated
         await new Promise(resolve => setTimeout(resolve, 500));
         
         // Navigate to Dashboard
-        console.log('[NDA] Navigating to Dashboard...');
+        devLog('[NDA] Navigating to Dashboard...');
         navigate(createPageUrl("Dashboard"), { replace: true });
       } else {
         const errorMsg = response.data?.error || "Failed to accept NDA";
-        console.error('[NDA] ❌ Backend returned error:', errorMsg);
+        devLog('[NDA] ❌ Backend returned error:', errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
         setAccepting(false);
       }
     } catch (error) {
-      console.error('[NDA] ❌ Exception:', error);
+      devLog('[NDA] ❌ Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg);
