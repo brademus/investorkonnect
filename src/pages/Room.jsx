@@ -8,8 +8,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
 import { 
-  Menu, Send, Loader2, ArrowLeft, DollarSign, FileText
+  Menu, Send, Loader2, ArrowLeft, DollarSign, FileText, Shield
 } from "lucide-react";
+import EscrowPanel from "@/components/EscrowPanel";
 
 function useMyRooms() {
   const [rooms, setRooms] = useState([]);
@@ -111,6 +112,7 @@ export default function Room() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
+  const [showEscrow, setShowEscrow] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || "Chat";
@@ -217,11 +219,22 @@ export default function Room() {
           {roomId && (
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setShowEscrow(!showEscrow)}
+                className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg border ${
+                  showEscrow 
+                    ? "bg-blue-100 text-blue-700 border-blue-300" 
+                    : "text-slate-700 hover:bg-slate-100 border-slate-200"
+                }`}
+              >
+                <Shield className="w-4 h-4" />
+                Escrow
+              </button>
+              <button
                 onClick={() => setWizardOpen(true)}
                 className="flex items-center gap-2 px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg border border-slate-200"
               >
                 <FileText className="w-4 h-4" />
-                Generate Contract
+                Contract
               </button>
               <Link 
                 to={`${createPageUrl("Room")}?roomId=${roomId}&tab=payments`}
@@ -233,6 +246,20 @@ export default function Room() {
             </div>
           )}
         </div>
+
+        {/* Escrow Panel */}
+        {showEscrow && currentRoom && (
+          <div className="px-4 py-3 bg-slate-100 border-b border-slate-200">
+            <EscrowPanel 
+              room={currentRoom} 
+              profile={profile}
+              onUpdate={() => {
+                // Trigger room refresh
+                window.location.reload();
+              }}
+            />
+          </div>
+        )}
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3 bg-slate-50">
