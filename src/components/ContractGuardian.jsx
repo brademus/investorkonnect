@@ -3,83 +3,47 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Shield, AlertTriangle, CheckCircle, Loader2, Sparkles } from "lucide-react";
+import { Shield, AlertTriangle, CheckCircle, Loader2, Sparkles, FileWarning, Scale } from "lucide-react";
 import { base44 } from "@/api/base44Client";
+import { contractAnalyzeChat } from "@/components/functions";
 
 /**
- * CONTRACT GUARDIAN - AI Risk Analysis
- * Analyzes contract clauses against user's risk profile
+ * CONTRACT GUARDIAN - AI Risk Analysis using OpenAI Prompt ID
+ * Uses GPT-4o for high-stakes legal analysis
+ * Prompt ID: pmpt_69251b41d54c81909c072edf566f67ce0447ce55c0cd42b6
  */
 export function ContractGuardian({ contractText, userProfile, onSuggestionApply }) {
   const [analyzing, setAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState(null);
+  const [error, setError] = useState(null);
 
   const analyzeContract = async () => {
+    if (!contractText?.trim()) {
+      setError("Please provide contract text to analyze");
+      return;
+    }
+    
     setAnalyzing(true);
+    setError(null);
+    
     try {
-      const riskProfile = {
-        riskTolerance: userProfile?.metadata?.risk_tolerance || 'moderate',
+      // Use the backend function which calls OpenAI with Prompt ID
+      const response = await contractAnalyzeChat({
+        mode: "guardian",
+        contract_text: contractText,
+        risk_tolerance: userProfile?.metadata?.risk_tolerance || 'moderate',
         experience: userProfile?.metadata?.experience_level || 'intermediate',
         strategies: userProfile?.metadata?.strategies || [],
         concerns: userProfile?.metadata?.deal_breakers || []
-      };
-
-      const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a real estate contract advisor. Analyze this contract for potential risks and suggest safer alternatives.
-
-Contract Text:
-${contractText.slice(0, 3000)}
-
-Investor Risk Profile:
-- Risk Tolerance: ${riskProfile.riskTolerance}
-- Experience Level: ${riskProfile.experience}
-- Investment Strategies: ${riskProfile.strategies.join(', ')}
-- Key Concerns: ${riskProfile.concerns.join(', ')}
-
-Provide:
-1. Risk level (Low/Medium/High) for each major clause
-2. Specific concerns based on their risk profile
-3. Safer alternative language for high-risk clauses
-
-Format as JSON:
-{
-  "overallRisk": "Medium",
-  "clauses": [
-    {
-      "section": "Earnest Money",
-      "risk": "High",
-      "concern": "Non-refundable deposit is 10% - higher than standard 1-3%",
-      "suggestion": "Negotiate earnest money down to 3% with refund contingencies for inspection and financing"
-    }
-  ],
-  "redFlags": ["list of serious concerns"],
-  "recommendations": ["actionable steps"]
-}`,
-        response_json_schema: {
-          type: "object",
-          properties: {
-            overallRisk: { type: "string" },
-            clauses: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  section: { type: "string" },
-                  risk: { type: "string" },
-                  concern: { type: "string" },
-                  suggestion: { type: "string" }
-                }
-              }
-            },
-            redFlags: { type: "array", items: { type: "string" } },
-            recommendations: { type: "array", items: { type: "string" } }
-          }
-        }
       });
 
-      setAnalysis(response);
-    } catch (error) {
-      console.error('Analysis failed:', error);
+      if (response.data?.ok && response.data?.analysis) {
+        setAnalysis(response.data.analysis);
+      } else {
+        throw new Error(response.data?.error || "Analysis failed");
+      }
+    } catch (err) {
+      setError(err.message || "Failed to analyze contract");
     } finally {
       setAnalyzing(false);
     }
@@ -109,30 +73,43 @@ Format as JSON:
           </div>
           <div>
             <h3 className="font-bold text-slate-900">Contract Guardian</h3>
-            <p className="text-sm text-slate-600">AI-powered risk analysis</p>
+            <p className="text-sm text-slate-600">GPT-4o powered legal analysis</p>
           </div>
         </div>
-        <Button
-          onClick={analyzeContract}
-          disabled={analyzing || !contractText}
-          size="sm"
-          className="gap-2"
-        >
-          {analyzing ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Analyzing...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-4 h-4" />
-              Analyze Contract
-            </>
-          )}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+            <Scale className="w-3 h-3 mr-1" />
+            GPT-4o
+          </Badge>
+          <Button
+            onClick={analyzeContract}
+            disabled={analyzing || !contractText}
+            size="sm"
+            className="gap-2"
+          >
+            {analyzing ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4" />
+                Analyze Contract
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
-      {!analysis && !analyzing && (
+      {error && (
+        <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-4 flex items-center gap-2">
+          <FileWarning className="w-4 h-4 text-red-600" />
+          <p className="text-sm text-red-800">{error}</p>
+        </div>
+      )}
+
+      {!analysis && !analyzing && !error && (
         <p className="text-sm text-slate-600">
           Click "Analyze Contract" to get AI-powered risk assessment and safer alternatives based on your profile.
         </p>
@@ -202,6 +179,42 @@ Format as JSON:
             ))}
           </div>
 
+          {/* Missing Protections */}
+          {analysis.missingProtections?.length > 0 && (
+            <div className="p-4 bg-amber-50 border-2 border-amber-200 rounded-lg">
+              <h4 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+                <FileWarning className="w-4 h-4" />
+                Missing Protections
+              </h4>
+              <ul className="space-y-1">
+                {analysis.missingProtections.map((item, idx) => (
+                  <li key={idx} className="text-sm text-amber-800 flex items-start gap-2">
+                    <span className="text-amber-600 mt-0.5">•</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Negotiation Points */}
+          {analysis.negotiationPoints?.length > 0 && (
+            <div className="p-4 bg-purple-50 border-2 border-purple-200 rounded-lg">
+              <h4 className="font-semibold text-purple-900 mb-2 flex items-center gap-2">
+                <Scale className="w-4 h-4" />
+                Key Negotiation Points
+              </h4>
+              <ul className="space-y-1">
+                {analysis.negotiationPoints.map((point, idx) => (
+                  <li key={idx} className="text-sm text-purple-800 flex items-start gap-2">
+                    <span className="text-purple-600 mt-0.5">→</span>
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           {/* Recommendations */}
           {analysis.recommendations?.length > 0 && (
             <div className="p-4 bg-blue-50 border-2 border-blue-200 rounded-lg">
@@ -214,6 +227,14 @@ Format as JSON:
                   </li>
                 ))}
               </ul>
+            </div>
+          )}
+
+          {/* Summary */}
+          {analysis.summary && (
+            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg">
+              <h4 className="font-semibold text-slate-900 mb-2">Summary</h4>
+              <p className="text-sm text-slate-700">{analysis.summary}</p>
             </div>
           )}
         </div>

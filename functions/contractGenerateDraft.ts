@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { completeText } from './lib/openaiContractsClient.js';
+import { completeText, generateContractDraft } from './lib/openaiContractsClient.js';
 
 const CONTRACT_TEMPLATES = [
   {
@@ -138,9 +138,15 @@ Deno.serve(async (req) => {
 
     const baseDoc = renderTemplate(template.body, enrichedTerms);
 
-    // Polish with AI
-    const system = "You are a contract editor. Improve clarity and grammar while preserving structure and all placeholders. Do not change legal meaning. Return pure Markdown text.";
-    const polished = await completeText(system, baseDoc);
+    // Generate polished contract using GPT-4o
+    const dealContext = {
+      room_id,
+      investor_name: enrichedTerms.investor_name,
+      agent_name: enrichedTerms.agent_name,
+      property_region: enrichedTerms.property_region
+    };
+    
+    const polished = await generateContractDraft(baseDoc, enrichedTerms, dealContext);
 
     // Create contract record
     const contract = await base44.entities.Contract.create({

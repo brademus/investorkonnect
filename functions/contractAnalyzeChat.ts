@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { completeJSON } from './lib/openaiContractsClient.js';
+import { completeJSON, analyzeContractWithPrompt } from './lib/openaiContractsClient.js';
 
 const CONTRACT_TEMPLATES = [
   { id: "buyer_rep_v1", name: "Buyer Representation Agreement" },
@@ -18,7 +18,7 @@ async function audit(base44, actor_profile_id, action, entity_type, entity_id, m
       timestamp: new Date().toISOString()
     });
   } catch (e) {
-    console.error("Audit failed:", e);
+    // Silent fail for audit
   }
 }
 
@@ -36,12 +36,15 @@ function toCompactTranscript(messages) {
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    const body = await req.json().catch(() => ({}));
     const url = new URL(req.url);
-    const room_id = url.searchParams.get("room_id");
-
-    if (!room_id) {
-      return Response.json({ error: "room_id required" }, { status: 400 });
-    }
+    
+    // Support both query param and body for room_id
+    const room_id = body.room_id || url.searchParams.get("room_id");
+    
+    // Contract Guardian mode: analyze provided contract text
+    const contract_text = body.contract_text;
+    const mode = body.mode || (contract_text ? "guardian" : "extract");
 
     const user = await base44.auth.me();
     if (!user) {
@@ -53,6 +56,31 @@ Deno.serve(async (req) => {
 
     if (!profile) {
       return Response.json({ error: "Profile not found" }, { status: 404 });
+    }
+
+    // MODE: CONTRACT GUARDIAN - Analyze provided contract text
+    if (mode === "guardian" && contract_text) {
+      const riskProfile = {
+        riskTolerance: profile.metadata?.risk_tolerance || body.risk_tolerance || 'moderate',
+        experience: profile.metadata?.experience_level || body.experience || 'intermediate',
+        strategies: profile.metadata?.strategies || body.strategies || [],
+        concerns: profile.metadata?.deal_breakers || body.concerns || []
+      };
+
+      const analysis = await analyzeContractWithPrompt(contract_text, { riskProfile });
+
+      await audit(base44, profile.id, "contract.guardian_analyze", "Contract", "direct", {
+        overallRisk: analysis.overallRisk,
+        clauseCount: analysis.clauses?.length || 0,
+        redFlagCount: analysis.redFlags?.length || 0
+      });
+
+      return Response.json({ ok: true, mode: "guardian", analysis });
+    }
+
+    // MODE: EXTRACT - Extract terms from chat transcript (requires room_id)
+    if (!room_id) {
+      return Response.json({ error: "room_id required for term extraction" }, { status: 400 });
     }
 
     const rooms = await base44.entities.Room.filter({ id: room_id });
@@ -76,7 +104,7 @@ Deno.serve(async (req) => {
     const investor = investorProfiles[0];
     const agent = agentProfiles[0];
 
-    const system = `You are a contracts analyst. Extract structured deal terms from a chat transcript and choose the most appropriate contract template id from this list: ${CONTRACT_TEMPLATES.map(t => t.id).join(", ")}. 
+    const system = `You are a contracts analyst using GPT-4o for high-accuracy legal analysis. Extract structured deal terms from a chat transcript and choose the most appropriate contract template id from this list: ${CONTRACT_TEMPLATES.map(t => t.id).join(", ")}. 
 
 Output JSON with this structure:
 {
@@ -93,7 +121,8 @@ Output JSON with this structure:
     "exclusivity": "exclusive/non-exclusive"
   },
   "missing_fields": ["retainer_amount", "term_end"],
-  "plain_summary": "Brief summary of the deal"
+  "plain_summary": "Brief summary of the deal",
+  "risk_factors": ["Any risks identified in the discussion"]
 }
 
 Do not invent facts; if unknown, leave fields out so they appear under missing_fields.`;
@@ -112,9 +141,8 @@ ${transcript}`;
       missing: result.missing_fields?.length || 0
     });
 
-    return Response.json({ ok: true, analysis: result });
+    return Response.json({ ok: true, mode: "extract", analysis: result });
   } catch (error) {
-    console.error('[contractAnalyzeChat] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
