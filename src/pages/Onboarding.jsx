@@ -26,11 +26,11 @@ export default function Onboarding() {
   useEffect(() => {
     if (loading) return;
 
-    console.log('[Onboarding Redirector] Auth state:', { user: !!user, profile: !!profile, role: profile?.user_role });
+    // Auth state logging removed for production
 
     // 1) Not authenticated → go to login, then back via RoleSelection
     if (!user) {
-      console.log('[Onboarding Redirector] Not authenticated, redirecting to login');
+      // Redirect to login
       const callbackUrl = createPageUrl("RoleSelection") || window.location.pathname;
       base44.auth.redirectToLogin(callbackUrl);
       return;
@@ -38,27 +38,27 @@ export default function Onboarding() {
 
     // 2) Authenticated but no role yet → go pick investor or agent
     if (!profile || !profile.user_role || profile.user_role === "member") {
-      console.log('[Onboarding Redirector] No role set, redirecting to RoleSelection');
+      // No role set
       navigate(createPageUrl("RoleSelection"), { replace: true });
       return;
     }
 
     // 3) Role is investor → go to NEW investor onboarding
     if (profile.user_role === "investor") {
-      console.log('[Onboarding Redirector] Investor role detected, redirecting to InvestorOnboarding');
+      // Investor role detected
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       return;
     }
 
     // 4) Role is agent → go to agent onboarding
     if (profile.user_role === "agent") {
-      console.log('[Onboarding Redirector] Agent role detected, redirecting to AgentOnboarding');
+      // Agent role detected
       navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
 
     // 5) Fallback: unknown role → force re-selection
-    console.log('[Onboarding Redirector] Unknown role, redirecting to RoleSelection');
+    // Unknown role fallback
     navigate(createPageUrl("RoleSelection"), { replace: true });
   }, [loading, user, profile, navigate]);
 
