@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { introCreate, ndaStatus } from "@/api/functions";
+import { introCreate, ndaStatus } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
