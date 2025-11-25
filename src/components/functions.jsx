@@ -76,3 +76,9 @@ export const getPersonalizedMarketIntel = base44.functions.getPersonalizedMarket
 export const getAgentPerformanceMetrics = base44.functions.getAgentPerformanceMetrics;
 export const getInvestorPortfolioData = base44.functions.getInvestorPortfolioData;
 export const generateDueDiligenceChecklist = base44.functions.generateDueDiligenceChecklist;
+
+// Escrow.com Integration Functions
+export const initiateEscrowTransaction = base44.functions.initiateEscrowTransaction;
+export const getEscrowStatus = base44.functions.getEscrowStatus;
+export const fundEscrow = base44.functions.fundEscrow;
+export const releaseEscrow = base44.functions.releaseEscrow;
