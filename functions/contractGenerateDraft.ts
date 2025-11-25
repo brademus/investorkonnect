@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
-import { completeText, generateContractDraft } from './lib/openaiContractsClient.js';
+import { completeText, generateContractDraft, generateDraftWithPrompt, analyzeContractWithPrompt } from './lib/openaiContractsClient.js';
 
 const CONTRACT_TEMPLATES = [
   {
@@ -87,14 +87,133 @@ async function audit(base44, actor_profile_id, action, entity_type, entity_id, m
   }
 }
 
+function toCompactTranscript(messages) {
+  const MAX = 200;
+  const recent = messages.slice(-MAX).map(m => {
+    const who = m.sender_profile_id || "USER";
+    return `[${new Date(m.created_date).toISOString()}] ${who}: ${m.body}`;
+  });
+  let txt = recent.join("\n");
+  if (txt.length > 20000) txt = txt.slice(-20000);
+  return txt;
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const { room_id, template_id, terms } = body || {};
+    const { room_id, template_id, terms, mode } = body || {};
 
+    // MODE: AI_FLOW - Full two-step AI contract flow
+    if (mode === "ai_flow" && room_id) {
+      const user = await base44.auth.me();
+      if (!user) {
+        return Response.json({ error: "Unauthorized" }, { status: 401 });
+      }
+
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const profile = profiles[0];
+      if (!profile) {
+        return Response.json({ error: "Profile not found" }, { status: 404 });
+      }
+
+      const rooms = await base44.entities.Room.filter({ id: room_id });
+      const room = rooms[0];
+      if (!room) {
+        return Response.json({ error: "Room not found" }, { status: 404 });
+      }
+
+      if (![room.investorId, room.agentId].includes(profile.id)) {
+        return Response.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      // Step 1: Get conversation transcript
+      const messages = await base44.entities.Message.filter({ room_id });
+      const conversationText = toCompactTranscript(messages || []);
+
+      if (!conversationText || conversationText.length < 50) {
+        return Response.json({ 
+          error: "Not enough conversation to generate contract",
+          hint: "Please have more discussion in the Deal Room before generating a contract"
+        }, { status: 400 });
+      }
+
+      // Get party names
+      const investorProfiles = await base44.entities.Profile.filter({ id: room.investorId });
+      const agentProfiles = await base44.entities.Profile.filter({ id: room.agentId });
+      const investor = investorProfiles[0];
+      const agent = agentProfiles[0];
+
+      const enrichedConversation = `Deal Room: ${room_id}
+Investor: ${investor?.full_name || investor?.email || "Unknown Investor"}
+Agent: ${agent?.full_name || agent?.email || "Unknown Agent"}
+
+Conversation Transcript:
+${conversationText}`;
+
+      // Step 2: Generate draft using Drafting Prompt ID
+      const draftContent = await generateDraftWithPrompt(enrichedConversation, {
+        investor_name: investor?.full_name,
+        agent_name: agent?.full_name
+      });
+
+      // Step 3: Analyze draft using Analysis Prompt ID
+      const riskProfile = {
+        riskTolerance: profile.metadata?.risk_tolerance || 'moderate',
+        experience: profile.metadata?.experience_level || 'intermediate'
+      };
+      
+      const analysis = await analyzeContractWithPrompt(draftContent, { riskProfile });
+
+      // Step 4: Create contract record
+      const contract = await base44.entities.Contract.create({
+        room_id,
+        template_id: "ai_generated",
+        status: "draft",
+        terms_json: {
+          investor_name: investor?.full_name,
+          agent_name: agent?.full_name,
+          generated_at: new Date().toISOString(),
+          ai_flow: true
+        },
+        draft_html_url: null,
+        created_by_profile_id: profile.id
+      });
+
+      // Audit
+      try {
+        await base44.entities.AuditLog.create({
+          actor_profile_id: profile.id,
+          action: "contract.ai_flow_generate",
+          entity_type: "Contract",
+          entity_id: contract.id,
+          meta: {
+            room_id,
+            overallRisk: analysis.overallRisk,
+            redFlagCount: analysis.redFlags?.length || 0
+          },
+          timestamp: new Date().toISOString()
+        });
+      } catch (e) {
+        // Silent fail for audit
+      }
+
+      return Response.json({
+        ok: true,
+        mode: "ai_flow",
+        contract,
+        draft: draftContent,
+        analysis,
+        parties: {
+          investor: investor?.full_name || investor?.email,
+          agent: agent?.full_name || agent?.email
+        }
+      });
+    }
+
+    // MODE: TEMPLATE - Original template-based flow
     if (!room_id || !template_id || !terms) {
-      return Response.json({ error: "room_id, template_id, terms required" }, { status: 400 });
+      return Response.json({ error: "room_id, template_id, terms required (or use mode: 'ai_flow')" }, { status: 400 });
     }
 
     const user = await base44.auth.me();

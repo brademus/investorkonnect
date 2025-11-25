@@ -9,12 +9,75 @@ function getClient() {
   return client;
 }
 
-// Contract Guardian Prompt ID for high-stakes legal analysis
-const CONTRACT_GUARDIAN_PROMPT_ID = "pmpt_69251b41d54c81909c072edf566f67ce0447ce55c0cd42b6";
+// OpenAI Stored Prompt IDs
+const CONTRACT_DRAFTING_PROMPT_ID = "pmpt_69251e14fe2081978cbce9e8eeb35eb6061bb00e8b46b159";
+const CONTRACT_ANALYSIS_PROMPT_ID = "pmpt_69251b41d54c81909c072edf566f67ce0447ce55c0cd42b6";
+
+/**
+ * Generate contract draft from conversation using OpenAI Responses API
+ * Prompt ID: pmpt_69251e14fe2081978cbce9e8eeb35eb6061bb00e8b46b159
+ * Variable: conversation_text
+ */
+export async function generateDraftWithPrompt(conversationText, context = {}) {
+  const oai = getClient();
+  
+  try {
+    // Try OpenAI Responses API with stored prompt
+    const response = await oai.responses.create({
+      model: "gpt-4o",
+      prompt: CONTRACT_DRAFTING_PROMPT_ID,
+      input: {
+        conversation_text: conversationText
+      },
+      temperature: 0.2
+    });
+    
+    return response.output_text || response.choices?.[0]?.message?.content || "";
+  } catch (promptError) {
+    // Fallback to direct completion
+    return await generateDraftDirect(conversationText, context);
+  }
+}
+
+/**
+ * Fallback: Generate draft using direct GPT-4o call
+ */
+async function generateDraftDirect(conversationText, context = {}) {
+  const oai = getClient();
+  
+  const systemPrompt = `You are a legal contract drafter for AgentVault, a real estate investment platform.
+Analyze the conversation transcript and generate a professional contract draft.
+
+Extract:
+- Party names and roles (investor, agent)
+- Property/market details
+- Fee structures and payment terms
+- Timeline and exclusivity
+- Any special conditions discussed
+
+Output a complete, professional contract in Markdown format with:
+- Clear section headers
+- All negotiated terms filled in
+- Standard legal protections
+- Placeholder markers <<FIELD>> for any missing information`;
+
+  const resp = await oai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: `Generate a contract draft from this Deal Room conversation:\n\n${conversationText}` }
+    ],
+    temperature: 0.2,
+    max_tokens: 4000
+  });
+  
+  return resp.choices?.[0]?.message?.content || "";
+}
 
 /**
  * Analyze contract using OpenAI Responses API with stored Prompt ID
- * Uses GPT-4o for maximum accuracy on legal analysis
+ * Prompt ID: pmpt_69251b41d54c81909c072edf566f67ce0447ce55c0cd42b6
+ * Variable: contract_text
  */
 export async function analyzeContractWithPrompt(contractText, additionalContext = {}) {
   const oai = getClient();
@@ -23,12 +86,11 @@ export async function analyzeContractWithPrompt(contractText, additionalContext 
     // Call OpenAI Responses API with stored prompt
     const response = await oai.responses.create({
       model: "gpt-4o",
-      prompt: CONTRACT_GUARDIAN_PROMPT_ID,
+      prompt: CONTRACT_ANALYSIS_PROMPT_ID,
       input: {
-        contract_text: contractText,
-        ...additionalContext
+        contract_text: contractText
       },
-      temperature: 0.1 // Low temperature for consistent legal analysis
+      temperature: 0.1
     });
     
     const content = response.output_text || response.choices?.[0]?.message?.content || "{}";
@@ -40,7 +102,6 @@ export async function analyzeContractWithPrompt(contractText, additionalContext 
     }
   } catch (promptError) {
     // Fallback to direct completion if Responses API unavailable
-    console.log("[openaiContractsClient] Falling back to direct completion");
     return await analyzeContractDirect(contractText, additionalContext);
   }
 }
