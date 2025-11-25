@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList, introCreate, matchList } from "@/api/functions";
+import { inboxList, introCreate, matchList } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
