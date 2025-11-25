@@ -4,7 +4,8 @@ import { contractAnalyzeChat, contractGenerateDraft } from "@/components/functio
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, FileText, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, FileText, AlertCircle, Sparkles, Shield, AlertTriangle, CheckCircle, Scale } from "lucide-react";
 
 const CONTRACT_TEMPLATES = [
   { id: "buyer_rep_v1", name: "Buyer Representation Agreement" },
@@ -21,6 +22,8 @@ export default function ContractWizard({ roomId, open, onClose }) {
   const [missing, setMissing] = useState([]);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
+  const [mode, setMode] = useState("ai"); // "ai" or "template"
+  const [aiFlowResult, setAiFlowResult] = useState(null);
 
   useEffect(() => {
     if (!open) return;
@@ -30,8 +33,35 @@ export default function ContractWizard({ roomId, open, onClose }) {
     setTerms({});
     setMissing([]);
     setDraft("");
+    setMode("ai");
+    setAiFlowResult(null);
   }, [open]);
 
+  // AI Flow: Generate + Analyze in one step
+  const runAiFlow = async () => {
+    setLoading(true);
+    try {
+      const response = await contractGenerateDraft({ 
+        room_id: roomId,
+        mode: "ai_flow"
+      });
+      
+      if (response.data?.ok) {
+        setAiFlowResult(response.data);
+        setDraft(response.data.draft || "");
+        setAnalysis(response.data.analysis || null);
+        setStep(3); // Go to AI review step
+      } else {
+        alert(response.data?.error || response.data?.hint || "Could not generate contract");
+      }
+    } catch (error) {
+      alert("Failed to generate contract: " + (error.message || "Unknown error"));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Template flow: Analyze first
   const analyze = async () => {
     setLoading(true);
     try {
@@ -105,28 +135,181 @@ export default function ContractWizard({ roomId, open, onClose }) {
         </div>
 
         <div className="p-6">
-          {/* Step 1: Analyze */}
+          {/* Step 1: Choose Mode */}
           {step === 1 && (
-            <div className="space-y-4">
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <p className="text-sm text-blue-900">
-                  We'll analyze your chat history to extract deal terms and suggest the best contract template.
-                </p>
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* AI Flow Option */}
+                <button
+                  onClick={() => setMode("ai")}
+                  className={`p-6 rounded-xl border-2 text-left transition-all ${
+                    mode === "ai" 
+                      ? "border-blue-500 bg-blue-50" 
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900">AI Contract Flow</h4>
+                      <Badge className="text-xs bg-emerald-100 text-emerald-700">GPT-4o</Badge>
+                    </div>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Automatically generate a contract from your conversation and get instant risk analysis.
+                  </p>
+                </button>
+
+                {/* Template Option */}
+                <button
+                  onClick={() => setMode("template")}
+                  className={`p-6 rounded-xl border-2 text-left transition-all ${
+                    mode === "template" 
+                      ? "border-blue-500 bg-blue-50" 
+                      : "border-slate-200 hover:border-slate-300"
+                  }`}
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
+                      <FileText className="w-5 h-5 text-white" />
+                    </div>
+                    <h4 className="font-bold text-slate-900">Template-Based</h4>
+                  </div>
+                  <p className="text-sm text-slate-600">
+                    Extract terms from chat and fill in a standard contract template manually.
+                  </p>
+                </button>
               </div>
+
               <Button 
-                onClick={analyze} 
+                onClick={mode === "ai" ? runAiFlow : analyze} 
                 disabled={loading}
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12"
               >
                 {loading ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Analyzing Chat History...
+                    {mode === "ai" ? "Generating Contract & Analyzing..." : "Analyzing Chat..."}
+                  </>
+                ) : mode === "ai" ? (
+                  <>
+                    <Sparkles className="w-5 h-5 mr-2" />
+                    Generate AI Contract
                   </>
                 ) : (
-                  "Analyze Chat & Extract Terms"
+                  "Extract Terms from Chat"
                 )}
               </Button>
+            </div>
+          )}
+
+          {/* Step 3: AI Flow Review (Draft + Analysis) */}
+          {step === 3 && aiFlowResult && (
+            <div className="space-y-6">
+              {/* Parties */}
+              {aiFlowResult.parties && (
+                <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">
+                    <strong>Investor:</strong> {aiFlowResult.parties.investor}
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-sm text-slate-600">
+                    <strong>Agent:</strong> {aiFlowResult.parties.agent}
+                  </span>
+                </div>
+              )}
+
+              {/* Risk Summary */}
+              {analysis && (
+                <div className={`p-4 rounded-xl border-2 ${
+                  analysis.overallRisk === 'High' ? 'bg-red-50 border-red-200' :
+                  analysis.overallRisk === 'Medium' ? 'bg-yellow-50 border-yellow-200' :
+                  'bg-emerald-50 border-emerald-200'
+                }`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <Shield className="w-5 h-5" />
+                      <span className="font-bold">Contract Guardian Analysis</span>
+                    </div>
+                    <Badge className={
+                      analysis.overallRisk === 'High' ? 'bg-red-100 text-red-800' :
+                      analysis.overallRisk === 'Medium' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-emerald-100 text-emerald-800'
+                    }>
+                      {analysis.overallRisk || 'Unknown'} Risk
+                    </Badge>
+                  </div>
+
+                  {/* Red Flags */}
+                  {analysis.redFlags?.length > 0 && (
+                    <div className="mb-3">
+                      <div className="text-sm font-semibold text-red-900 mb-1 flex items-center gap-1">
+                        <AlertTriangle className="w-4 h-4" />
+                        Red Flags
+                      </div>
+                      <ul className="text-sm text-red-800 space-y-1">
+                        {analysis.redFlags.slice(0, 3).map((flag, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span>•</span>
+                            <span>{flag}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Recommendations */}
+                  {analysis.recommendations?.length > 0 && (
+                    <div>
+                      <div className="text-sm font-semibold text-blue-900 mb-1 flex items-center gap-1">
+                        <CheckCircle className="w-4 h-4" />
+                        Recommendations
+                      </div>
+                      <ul className="text-sm text-blue-800 space-y-1">
+                        {analysis.recommendations.slice(0, 3).map((rec, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span>→</span>
+                            <span>{rec}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Draft Preview */}
+              <div>
+                <Label className="text-sm font-semibold mb-2 block">Generated Contract Draft</Label>
+                <textarea 
+                  className="w-full h-64 border border-slate-300 rounded-lg p-4 text-sm font-mono bg-slate-50" 
+                  value={draft}
+                  onChange={(e) => setDraft(e.target.value)}
+                />
+              </div>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setStep(1)}>
+                  Start Over
+                </Button>
+                <div className="flex gap-3">
+                  <a 
+                    href={`data:text/markdown;charset=utf-8,${encodeURIComponent(draft)}`}
+                    download="contract_draft.md"
+                    className="px-4 py-2 text-sm border border-slate-300 rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    Download .md
+                  </a>
+                  <Button 
+                    onClick={onClose}
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    Done
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
 
