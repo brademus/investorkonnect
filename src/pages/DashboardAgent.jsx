@@ -39,9 +39,9 @@ function AgentDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[hsl(0_0%_98%)] flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
@@ -51,9 +51,9 @@ function AgentDashboardContent() {
   const isVerified = profile?.vetted || profile?.agent?.verification_status === 'verified';
 
   return (
-    <div className="min-h-screen bg-[hsl(0_0%_98%)]">
+    <div className="min-h-screen bg-slate-50">
       {/* Navigation Bar */}
-      <nav className="navbar px-6 md:px-20 py-4">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm px-6 md:px-20 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to={createPageUrl("Home")} className="flex items-center gap-3">
             <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
@@ -77,7 +77,7 @@ function AgentDashboardContent() {
         </div>
       </nav>
 
-      <div className="container-airbnb py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
         {/* Header */}
         <div className="mb-8">

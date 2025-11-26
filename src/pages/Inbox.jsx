@@ -89,19 +89,19 @@ export default function Inbox() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[hsl(0_0%_98%)] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[hsl(43_59%_52%)] border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[hsl(0_0%_98%)]">
+    <div className="min-h-screen bg-slate-50">
       {/* Navigation Bar */}
-      <nav className="navbar px-6 md:px-20 py-4">
+      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm px-6 md:px-20 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to={createPageUrl("Home")} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gold-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
               <HomeIcon className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-700">INVESTOR KONNECT</span>
@@ -118,7 +118,7 @@ export default function Inbox() {
         </div>
       </nav>
 
-      <div className="container-airbnb py-8 md:py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-3">
@@ -151,7 +151,7 @@ export default function Inbox() {
               <MessageCircle className="w-4 h-4 mr-2" />
               Active Rooms
               {rooms.length > 0 && (
-                <span className="ml-2 badge-gold">{rooms.length}</span>
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{rooms.length}</span>
               )}
             </TabsTrigger>
           </TabsList>
@@ -176,7 +176,7 @@ export default function Inbox() {
                             <h3 className="text-xl font-bold text-gray-800">
                               {request.investor.name || 'Investor'}
                             </h3>
-                            <span className="badge-gold">New</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">New</span>
                           </div>
                           {request.investor.company && (
                             <p className="text-sm text-gray-600 mb-2">{request.investor.company}</p>
@@ -256,7 +256,7 @@ export default function Inbox() {
                         </div>
                         <div className="flex items-center gap-2">
                           {room.ndaAcceptedInvestor && room.ndaAcceptedAgent && (
-                            <span className="badge-gold">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
                               <Shield className="w-3 h-3 mr-1" />
                               NDA Signed
                             </span>
