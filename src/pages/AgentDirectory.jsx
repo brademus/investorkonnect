@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
+import { demoAgents, demoRooms } from "@/components/data/demoData";
+import { createDealRoom } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Users, Shield, MapPin, Building, TrendingUp, Award,
-  Loader2, Search, Filter, CheckCircle, Clock
+  Loader2, Search, Filter, CheckCircle, Clock, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -88,6 +91,13 @@ export default function AgentDirectory() {
 
   const loadAgents = async () => {
     try {
+      // DEMO MODE: Use static demo data
+      if (DEMO_MODE && DEMO_CONFIG.useStaticData) {
+        setAgents(demoAgents);
+        setLoading(false);
+        return;
+      }
+      
       const allProfiles = await base44.entities.Profile.filter({});
       
       const agentProfiles = allProfiles.filter(p => 
@@ -97,8 +107,64 @@ export default function AgentDirectory() {
       setAgents(agentProfiles);
       setLoading(false);
     } catch (error) {
-      toast.error("Failed to load agents");
+      // Fallback to demo data on error
+      if (DEMO_MODE) {
+        setAgents(demoAgents);
+      } else {
+        toast.error("Failed to load agents");
+        setAgents([]);
+      }
       setLoading(false);
+    }
+  };
+
+  const handleOpenRoom = async (agent) => {
+    if (DEMO_MODE) {
+      // Check for existing room with this agent
+      const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+      const allRooms = [...demoRooms, ...sessionRooms];
+      const existingRoom = allRooms.find(r => r.counterparty_profile_id === agent.id);
+      
+      if (existingRoom) {
+        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
+      } else {
+        // Create new demo room
+        const newRoom = {
+          id: 'room-demo-' + Date.now(),
+          investorId: 'investor-demo',
+          agentId: agent.id,
+          counterparty_name: agent.full_name,
+          counterparty_role: 'agent',
+          counterparty_profile_id: agent.id,
+          status: 'active',
+          created_date: new Date().toISOString(),
+          ndaAcceptedInvestor: true,
+          ndaAcceptedAgent: true,
+        };
+        
+        sessionRooms.push(newRoom);
+        sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
+        
+        toast.success(`Deal room created with ${agent.full_name}`);
+        navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
+      }
+      return;
+    }
+    
+    // Real room creation
+    try {
+      const response = await createDealRoom({
+        counterparty_profile_id: agent.id
+      });
+      
+      if (response.data?.room?.id) {
+        toast.success(`Deal room created with ${agent.full_name}`);
+        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
+      } else {
+        toast.error("Could not create room");
+      }
+    } catch (error) {
+      toast.error("Failed to create room");
     }
   };
 
@@ -186,10 +252,7 @@ export default function AgentDirectory() {
               return (
                 <div
                   key={agent.id}
-                  className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => {
-                    navigate(`${createPageUrl("AgentProfile")}?agentId=${agent.user_id || agent.id}`);
-                  }}
+                  className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -200,7 +263,7 @@ export default function AgentDirectory() {
                         <p className="text-sm text-slate-600">{agentData.brokerage}</p>
                       )}
                     </div>
-                    {isVerified ? (
+                    {(isVerified || agent.verified) ? (
                       <Shield className="w-5 h-5 text-emerald-600" />
                     ) : (
                       <Clock className="w-5 h-5 text-slate-400" />
@@ -208,19 +271,19 @@ export default function AgentDirectory() {
                   </div>
 
                   {/* Status Badge */}
-                  {!isFullyOnboarded && (
+                  {!isFullyOnboarded && !agent.verified && (
                     <Badge variant="outline" className="mb-3 border-amber-300 text-amber-700">
                       <Clock className="w-3 h-3 mr-1" />
                       Profile In Progress
                     </Badge>
                   )}
                   
-                  {isFullyOnboarded && isVerified && (
+                  {(isFullyOnboarded && isVerified) || agent.verified ? (
                     <Badge className="mb-3 bg-emerald-100 text-emerald-800">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Fully Verified
                     </Badge>
-                  )}
+                  ) : null}
 
                   {/* Markets */}
                   {agentData.markets && agentData.markets.length > 0 && (
@@ -239,6 +302,11 @@ export default function AgentDirectory() {
                     </div>
                   )}
 
+                  {/* Bio */}
+                  {agentData.bio && (
+                    <p className="text-sm text-slate-600 mb-3 line-clamp-2">{agentData.bio}</p>
+                  )}
+
                   {/* Experience */}
                   <div className="space-y-2 text-sm mb-4">
                     {agentData.experience_years && (
@@ -248,36 +316,42 @@ export default function AgentDirectory() {
                       </div>
                     )}
                     
-                    {agentData.investor_clients_count && (
+                    {(agentData.investor_clients_count || agentData.deals_closed) && (
                       <div className="flex items-center gap-2 text-slate-600">
                         <Users className="w-4 h-4" />
-                        <span>{agentData.investor_clients_count}+ investor clients</span>
+                        <span>{agentData.deals_closed || agentData.investor_clients_count}+ deals closed</span>
                       </div>
                     )}
 
-                    {!agentData.experience_years && !agentData.investor_clients_count && (
+                    {!agentData.experience_years && !agentData.investor_clients_count && !agentData.deals_closed && (
                       <p className="text-slate-400 text-xs italic">
                         Profile details pending completion
                       </p>
                     )}
                   </div>
 
-                  {/* Badges */}
-                  {badges.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {badges.slice(0, 2).map((badge, idx) => (
-                        <Badge key={idx} className="text-xs bg-blue-100 text-blue-800">
-                          <Award className="w-3 h-3 mr-1" />
-                          {badge}
+                  {/* Specialties */}
+                  {(agentData.specialties || agentData.investment_strategies) && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {(agentData.specialties || agentData.investment_strategies || []).slice(0, 3).map((spec, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {spec}
                         </Badge>
                       ))}
-                      {badges.length > 2 && (
-                        <Badge className="text-xs bg-blue-100 text-blue-800">
-                          +{badges.length - 2}
-                        </Badge>
-                      )}
                     </div>
                   )}
+
+                  {/* Open Deal Room Button */}
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenRoom(agent);
+                    }}
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Open Deal Room
+                  </Button>
                 </div>
               );
             })}
