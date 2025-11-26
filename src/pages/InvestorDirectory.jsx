@@ -3,12 +3,15 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
+import { demoInvestors, demoRooms } from "@/components/data/demoData";
+import { createDealRoom } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
   Users, TrendingUp, MapPin, Building, DollarSign,
-  Loader2, AlertCircle, Shield, Search, Filter, CheckCircle, Clock
+  Loader2, AlertCircle, Shield, Search, Filter, CheckCircle, Clock, MessageCircle
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -84,6 +87,13 @@ export default function InvestorDirectory() {
 
   const loadInvestors = async () => {
     try {
+      // DEMO MODE: Use static demo data
+      if (DEMO_MODE && DEMO_CONFIG.useStaticData) {
+        setInvestors(demoInvestors);
+        setLoading(false);
+        return;
+      }
+      
       const allProfiles = await base44.entities.Profile.filter({});
       
       const investorProfiles = allProfiles.filter(p => 
@@ -93,8 +103,64 @@ export default function InvestorDirectory() {
       setInvestors(investorProfiles);
       setLoading(false);
     } catch (error) {
-      toast.error("Failed to load investors");
+      // Fallback to demo data on error
+      if (DEMO_MODE) {
+        setInvestors(demoInvestors);
+      } else {
+        toast.error("Failed to load investors");
+        setInvestors([]);
+      }
       setLoading(false);
+    }
+  };
+
+  const handleOpenRoom = async (investor) => {
+    if (DEMO_MODE) {
+      // Check for existing room with this investor
+      const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+      const allRooms = [...demoRooms, ...sessionRooms];
+      const existingRoom = allRooms.find(r => r.counterparty_profile_id === investor.id);
+      
+      if (existingRoom) {
+        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
+      } else {
+        // Create new demo room
+        const newRoom = {
+          id: 'room-demo-' + Date.now(),
+          investorId: investor.id,
+          agentId: 'agent-demo',
+          counterparty_name: investor.full_name,
+          counterparty_role: 'investor',
+          counterparty_profile_id: investor.id,
+          status: 'active',
+          created_date: new Date().toISOString(),
+          ndaAcceptedInvestor: true,
+          ndaAcceptedAgent: true,
+        };
+        
+        sessionRooms.push(newRoom);
+        sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
+        
+        toast.success(`Deal room created with ${investor.full_name}`);
+        navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
+      }
+      return;
+    }
+    
+    // Real room creation
+    try {
+      const response = await createDealRoom({
+        counterparty_profile_id: investor.id
+      });
+      
+      if (response.data?.room?.id) {
+        toast.success(`Deal room created with ${investor.full_name}`);
+        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
+      } else {
+        toast.error("Could not create room");
+      }
+    } catch (error) {
+      toast.error("Failed to create room");
     }
   };
 
@@ -176,24 +242,23 @@ export default function InvestorDirectory() {
               const isFullyOnboarded = investor.onboarding_completed_at && investor.onboarding_version;
               const isVerified = investor.kyc_status === 'approved';
               
+              const investorData = investor.investor || {};
+              
               return (
                 <div
                   key={investor.id}
-                  className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => {
-                    navigate(`${createPageUrl("Profile")}?userId=${investor.user_id || investor.id}`);
-                  }}
+                  className="bg-white rounded-xl p-6 border border-slate-200 hover:shadow-lg transition-shadow"
                 >
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="font-bold text-slate-900 text-lg mb-1">
                         {investor.full_name || investor.email || 'Investor'}
                       </h3>
-                      {basic.investor_description && (
-                        <p className="text-sm text-slate-600">{basic.investor_description}</p>
+                      {(investorData.company_name || basic.investor_description) && (
+                        <p className="text-sm text-slate-600">{investorData.company_name || basic.investor_description}</p>
                       )}
                     </div>
-                    {isVerified ? (
+                    {(isVerified || investor.verified) ? (
                       <Shield className="w-5 h-5 text-emerald-600" />
                     ) : (
                       <Clock className="w-5 h-5 text-slate-400" />
@@ -201,47 +266,56 @@ export default function InvestorDirectory() {
                   </div>
 
                   {/* Status Badge */}
-                  {!isFullyOnboarded && (
+                  {!isFullyOnboarded && !investor.verified && (
                     <Badge variant="outline" className="mb-3 border-amber-300 text-amber-700">
                       <Clock className="w-3 h-3 mr-1" />
                       Profile In Progress
                     </Badge>
                   )}
                   
-                  {isFullyOnboarded && isVerified && (
+                  {(isFullyOnboarded && isVerified) || investor.verified ? (
                     <Badge className="mb-3 bg-emerald-100 text-emerald-800">
                       <CheckCircle className="w-3 h-3 mr-1" />
                       Fully Verified
                     </Badge>
-                  )}
+                  ) : null}
 
                   {/* Target Market */}
-                  {investor.target_state && (
-                    <div className="mb-3">
-                      <Badge variant="secondary" className="gap-1">
-                        <MapPin className="w-3 h-3" />
-                        {investor.target_state}
-                      </Badge>
+                  {(investor.target_state || investor.markets?.[0]) && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {(investor.markets || [investor.target_state]).slice(0, 3).map((market, idx) => (
+                        <Badge key={idx} variant="secondary" className="gap-1">
+                          <MapPin className="w-3 h-3" />
+                          {market}
+                        </Badge>
+                      ))}
                     </div>
                   )}
 
                   {/* Key Info */}
                   <div className="space-y-2 text-sm mb-4">
-                    {basic.typical_deal_size && (
+                    {(investorData.typical_deal_size || basic.typical_deal_size) && (
                       <div className="flex items-center gap-2 text-slate-600">
                         <DollarSign className="w-4 h-4" />
-                        <span>Typical deal: {basic.typical_deal_size}</span>
+                        <span>Typical deal: {investorData.typical_deal_size || basic.typical_deal_size}</span>
                       </div>
                     )}
                     
-                    {strategy.primary_strategy && (
+                    {(investorData.primary_strategy || strategy.primary_strategy) && (
                       <div className="flex items-center gap-2 text-slate-600">
                         <TrendingUp className="w-4 h-4" />
-                        <span>{strategy.primary_strategy}</span>
+                        <span>{investorData.primary_strategy || strategy.primary_strategy}</span>
                       </div>
                     )}
 
-                    {!basic.typical_deal_size && !strategy.primary_strategy && (
+                    {(investorData.capital_available_12mo) && (
+                      <div className="flex items-center gap-2 text-slate-600">
+                        <Building className="w-4 h-4" />
+                        <span>Capital: {investorData.capital_available_12mo}</span>
+                      </div>
+                    )}
+
+                    {!basic.typical_deal_size && !strategy.primary_strategy && !investorData.typical_deal_size && (
                       <p className="text-slate-400 text-xs italic">
                         Profile details pending completion
                       </p>
@@ -249,20 +323,27 @@ export default function InvestorDirectory() {
                   </div>
 
                   {/* Strategies */}
-                  {strategy.investment_strategies && strategy.investment_strategies.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {strategy.investment_strategies.slice(0, 2).map((strat, idx) => (
+                  {(metadata.strategies || strategy.investment_strategies || investorData.property_types) && (
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {(metadata.strategies || strategy.investment_strategies || investorData.property_types || []).slice(0, 2).map((strat, idx) => (
                         <Badge key={idx} variant="outline" className="text-xs">
                           {strat}
                         </Badge>
                       ))}
-                      {strategy.investment_strategies.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{strategy.investment_strategies.length - 2}
-                        </Badge>
-                      )}
                     </div>
                   )}
+
+                  {/* Open Deal Room Button */}
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleOpenRoom(investor);
+                    }}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700"
+                  >
+                    <MessageCircle className="w-4 h-4 mr-2" />
+                    Open Deal Room
+                  </Button>
                 </div>
               );
             })}
