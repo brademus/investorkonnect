@@ -56,7 +56,7 @@ function InvestorDashboardContent() {
       <nav className="navbar px-6 md:px-20 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to={createPageUrl("Home")} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gold-500 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
               <HomeIcon className="w-6 h-6 text-white" />
             </div>
             <span className="text-xl font-bold text-gray-700">INVESTOR KONNECT</span>
@@ -82,7 +82,7 @@ function InvestorDashboardContent() {
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <TrendingUp className="w-8 h-8 text-gold-600" />
+            <TrendingUp className="w-8 h-8 text-amber-600" />
             <h1 className="text-3xl font-bold text-gray-800">
               Investor Dashboard
             </h1>
@@ -95,24 +95,24 @@ function InvestorDashboardContent() {
 
         {/* Subscription Status Banner */}
         {!hasActiveSubscription && (
-          <div className="bg-gold-gradient border-2 border-gold-200 rounded-3xl p-6 mb-8">
+          <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50 border-2 border-amber-200 rounded-3xl p-6 mb-8">
             <div className="flex items-start justify-between flex-wrap gap-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
-                  <Shield className="w-6 h-6 text-gold-600" />
+                  <Shield className="w-6 h-6 text-amber-600" />
                   <h3 className="text-xl font-bold text-gray-800">Unlock Full Access</h3>
                 </div>
                 <p className="text-gray-600 mb-4">
                   Subscribe to browse agents, view reviews, create deal rooms, and more. Start with a 14-day free trial.
                 </p>
                 <Link to={createPageUrl("Pricing")}>
-                  <Button className="btn-gold">
+                  <Button className="bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200">
                     View Plans
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
               </div>
-              <Zap className="w-20 h-20 text-gold-200" />
+              <Zap className="w-20 h-20 text-amber-200" />
             </div>
           </div>
         )}
@@ -135,8 +135,8 @@ function InvestorDashboardContent() {
 
             <Link to={createPageUrl("Pricing")}>
               <div className="listing-card p-6 group">
-                <div className="w-14 h-14 bg-gold-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-gold-500 transition-colors">
-                  <Star className="w-7 h-7 text-gold-600 group-hover:text-white transition-colors" />
+                <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center mb-4 group-hover:bg-amber-500 transition-colors">
+                  <Star className="w-7 h-7 text-amber-600 group-hover:text-white transition-colors" />
                 </div>
                 <h3 className="text-lg font-bold text-gray-800 mb-2">Subscription</h3>
                 <p className="text-sm text-gray-600">Manage your subscription</p>
@@ -180,7 +180,7 @@ function InvestorDashboardContent() {
           <div className="bg-white rounded-2xl p-6 border border-gray-200 shadow-sm">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-sm font-medium text-gray-500">Saved Agents</h3>
-              <Star className="w-5 h-5 text-gold-500" />
+              <Star className="w-5 h-5 text-amber-500" />
             </div>
             <p className="text-3xl font-bold text-gray-800">0</p>
             <p className="text-xs text-gray-500 mt-1">Agents you're interested in</p>
@@ -214,7 +214,7 @@ function InvestorDashboardContent() {
                 <p className="text-sm text-gray-600 mb-2">Target Markets</p>
                 <div className="flex flex-wrap gap-2">
                   {profile.markets.map((market, idx) => (
-                    <span key={idx} className="badge-gold">{market}</span>
+                    <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">{market}</span>
                   ))}
                 </div>
               </div>
@@ -234,7 +234,7 @@ function InvestorDashboardContent() {
         )}
 
         {/* Getting Started Guide */}
-        <div className="bg-gold-gradient rounded-2xl p-6 border-2 border-gold-200">
+        <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50 rounded-2xl p-6 border-2 border-amber-200">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Getting Started</h2>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
@@ -257,7 +257,7 @@ function InvestorDashboardContent() {
                 </p>
                 {!hasActiveSubscription && (
                   <Link to={createPageUrl("Pricing")}>
-                    <Button size="sm" className="mt-2 btn-gold">
+                    <Button size="sm" className="mt-2 bg-amber-500 hover:bg-amber-600 text-white rounded-xl shadow-sm">
                       View Plans
                     </Button>
                   </Link>

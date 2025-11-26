@@ -31,7 +31,7 @@ export default function About() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
+      <section className="bg-gradient-to-br from-slate-900 to-amber-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">About Investor Konnect</h1>
           <p className="text-xl text-slate-300">
@@ -62,9 +62,9 @@ export default function About() {
           <h2 className="text-3xl font-bold text-slate-900 mb-12 text-center">Our Values</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value) => (
-              <div key={value.title} className="bg-white rounded-xl p-6 border border-slate-200">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <value.icon className="w-6 h-6 text-blue-600" />
+              <div key={value.title} className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-200">
+                <div className="w-12 h-12 bg-amber-100 rounded-xl flex items-center justify-center mb-4">
+                  <value.icon className="w-6 h-6 text-amber-600" />
                 </div>
                 <h3 className="text-lg font-bold text-slate-900 mb-3">{value.title}</h3>
                 <p className="text-slate-600">{value.description}</p>
@@ -85,7 +85,7 @@ export default function About() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 to-blue-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-slate-900 to-amber-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Join Our Mission
@@ -94,7 +94,7 @@ export default function About() {
             Whether you're an investor or agent, be part of a more trustworthy real estate ecosystem.
           </p>
           <Link to={createPageUrl("Onboard")}>
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 h-14">
+            <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-lg px-8 h-14 rounded-xl shadow-md hover:shadow-lg transition-all duration-200">
               Get Started
               <ArrowRight className="w-5 h-5 ml-2" />
             </Button>

@@ -37,9 +37,9 @@ export default function FAQ() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
+      <section className="bg-gradient-to-br from-slate-900 to-amber-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <HelpCircle className="w-16 h-16 mx-auto mb-6 text-blue-400" />
+          <HelpCircle className="w-16 h-16 mx-auto mb-6 text-amber-400" />
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Frequently Asked Questions</h1>
           <p className="text-xl text-slate-300">
             Everything you need to know about Investor Konnect
