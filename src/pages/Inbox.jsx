@@ -136,7 +136,7 @@ export default function Inbox() {
           <TabsList className="bg-white rounded-full p-1 border border-gray-200 shadow-sm">
             <TabsTrigger 
               value="requests" 
-              className="rounded-full px-6 data-[state=active]:bg-[hsl(43_59%_52%)] data-[state=active]:text-white"
+              className="rounded-full px-6 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
             >
               <Users className="w-4 h-4 mr-2" />
               Requests
@@ -146,7 +146,7 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger 
               value="active" 
-              className="rounded-full px-6 data-[state=active]:bg-[hsl(43_59%_52%)] data-[state=active]:text-white"
+              className="rounded-full px-6 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               Active Rooms
