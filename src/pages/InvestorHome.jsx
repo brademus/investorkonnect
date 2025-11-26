@@ -136,7 +136,7 @@ export default function InvestorHome() {
                   <p className="font-bold text-gold-900">
                     {getPlanName(subscriptionPlan)} Plan Active
                   </p>
-                  <p className="text-sm text-emerald-700">
+                  <p className="text-sm text-gold-700">
                     {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
                   </p>
                 </div>
