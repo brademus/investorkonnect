@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { inboxList, introRespond } from "@/components/functions";
@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, Loader2, CheckCircle, X, 
-  MessageCircle, Shield
+  MessageCircle, Shield, Home as HomeIcon, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,11 +26,9 @@ export default function Inbox() {
     try {
       setLoading(true);
       
-      // Load intro requests
       const requestsRes = await inboxList();
       setRequests(requestsRes.data.requests || []);
       
-      // Load active rooms
       const userProfiles = await base44.entities.Profile.filter({ 
         created_by: (await base44.auth.me()).email 
       });
@@ -59,7 +57,6 @@ export default function Inbox() {
       
       toast.success("Connection accepted!");
       
-      // Navigate to room
       if (response.data.roomId) {
         navigate(createPageUrl("Room") + `?roomId=${response.data.roomId}`);
       } else {
@@ -92,82 +89,121 @@ export default function Inbox() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin" />
+      <div className="min-h-screen bg-[hsl(0_0%_98%)] flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[hsl(43_59%_52%)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[hsl(0_0%_98%)]">
+      {/* Navigation Bar */}
+      <nav className="navbar px-6 md:px-20 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <Link to={createPageUrl("Home")} className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gold-500 rounded-xl flex items-center justify-center">
+              <HomeIcon className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold text-gray-700">INVESTOR KONNECT</span>
+          </Link>
+          
+          <Button
+            variant="ghost"
+            onClick={() => navigate(-1)}
+            className="rounded-full font-medium gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+      </nav>
+
+      <div className="container-airbnb py-8 md:py-12">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Agent Inbox</h1>
-          <p className="text-slate-600">Connection requests and active conversations</p>
+        <div className="mb-10">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
+              <MessageCircle className="w-7 h-7 text-blue-600" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-800">Messages</h1>
+          </div>
+          <p className="text-lg text-gray-600">
+            Connection requests and active conversations
+          </p>
         </div>
 
-        <Tabs defaultValue="requests" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="requests" className="gap-2">
-              <Users className="w-4 h-4" />
+        <Tabs defaultValue="requests" className="space-y-8">
+          <TabsList className="bg-white rounded-full p-1 border border-gray-200 shadow-sm">
+            <TabsTrigger 
+              value="requests" 
+              className="rounded-full px-6 data-[state=active]:bg-[hsl(43_59%_52%)] data-[state=active]:text-white"
+            >
+              <Users className="w-4 h-4 mr-2" />
               Requests
               {requests.length > 0 && (
-                <Badge variant="destructive" className="ml-2">{requests.length}</Badge>
+                <Badge variant="destructive" className="ml-2 bg-red-500">{requests.length}</Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="active" className="gap-2">
-              <MessageCircle className="w-4 h-4" />
+            <TabsTrigger 
+              value="active" 
+              className="rounded-full px-6 data-[state=active]:bg-[hsl(43_59%_52%)] data-[state=active]:text-white"
+            >
+              <MessageCircle className="w-4 h-4 mr-2" />
               Active Rooms
               {rooms.length > 0 && (
-                <Badge variant="secondary" className="ml-2">{rooms.length}</Badge>
+                <span className="ml-2 badge-gold">{rooms.length}</span>
               )}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="requests">
-            <div className="bg-white rounded-xl border border-slate-200">
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
               {requests.length === 0 ? (
-                <div className="p-12 text-center">
-                  <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No pending requests</h3>
-                  <p className="text-slate-600">New connection requests will appear here</p>
+                <div className="p-16 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6">
+                    <Users className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">No pending requests</h3>
+                  <p className="text-gray-600 text-lg">New connection requests will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-gray-200">
                   {requests.map((request) => (
-                    <div key={request.requestId} className="p-6">
-                      <div className="flex items-start justify-between mb-4">
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900 mb-1">
-                            {request.investor.name || 'Investor'}
-                          </h3>
+                    <div key={request.requestId} className="p-8 hover:bg-gray-50 transition-colors">
+                      <div className="flex items-start justify-between mb-6">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-3 mb-2">
+                            <h3 className="text-xl font-bold text-gray-800">
+                              {request.investor.name || 'Investor'}
+                            </h3>
+                            <span className="badge-gold">New</span>
+                          </div>
                           {request.investor.company && (
-                            <p className="text-sm text-slate-600 mb-2">{request.investor.company}</p>
+                            <p className="text-sm text-gray-600 mb-2">{request.investor.company}</p>
                           )}
                           <div className="flex flex-wrap gap-1">
                             {request.investor.markets?.map(market => (
-                              <Badge key={market} variant="secondary" className="text-xs">
+                              <Badge key={market} variant="secondary" className="text-xs rounded-full">
                                 {market}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                        <Badge variant="outline">
+                        <Badge variant="outline" className="rounded-full">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </Badge>
                       </div>
 
                       {request.message && (
-                        <div className="bg-slate-50 rounded-lg p-4 mb-4">
-                          <p className="text-sm text-slate-700">{request.message}</p>
+                        <div className="bg-gray-50 rounded-2xl p-4 mb-6">
+                          <p className="text-sm text-gray-700">{request.message}</p>
                         </div>
                       )}
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-4">
                         <Button
                           onClick={() => handleAccept(request.requestId)}
-                          className="bg-emerald-600 hover:bg-emerald-700"
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 font-semibold"
                         >
                           <CheckCircle className="w-4 h-4 mr-2" />
                           Accept
@@ -175,7 +211,7 @@ export default function Inbox() {
                         <Button
                           onClick={() => handleDecline(request.requestId)}
                           variant="outline"
-                          className="text-red-600 border-red-200 hover:bg-red-50"
+                          className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 font-semibold"
                         >
                           <X className="w-4 h-4 mr-2" />
                           Decline
@@ -189,41 +225,43 @@ export default function Inbox() {
           </TabsContent>
 
           <TabsContent value="active">
-            <div className="bg-white rounded-xl border border-slate-200">
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
               {rooms.length === 0 ? (
-                <div className="p-12 text-center">
-                  <MessageCircle className="w-16 h-16 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-slate-900 mb-2">No active rooms</h3>
-                  <p className="text-slate-600">Accepted connections will appear here</p>
+                <div className="p-16 text-center">
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6">
+                    <MessageCircle className="w-10 h-10 text-gray-400" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-800 mb-3">No active rooms</h3>
+                  <p className="text-gray-600 text-lg">Accepted connections will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y divide-slate-200">
+                <div className="divide-y divide-gray-200">
                   {rooms.map((room) => (
                     <div 
                       key={room.id} 
-                      className="p-6 hover:bg-slate-50 cursor-pointer transition-colors"
+                      className="p-6 hover:bg-gray-50 cursor-pointer transition-colors"
                       onClick={() => goToRoom(room.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
                             <Users className="w-6 h-6 text-blue-600" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-slate-900">Intro Room</h3>
-                            <p className="text-sm text-slate-600">
+                            <h3 className="font-semibold text-gray-800">Intro Room</h3>
+                            <p className="text-sm text-gray-500">
                               Created {new Date(room.created_date).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {room.ndaAcceptedInvestor && room.ndaAcceptedAgent && (
-                            <Badge className="bg-emerald-100 text-emerald-800">
+                            <span className="badge-gold">
                               <Shield className="w-3 h-3 mr-1" />
                               NDA Signed
-                            </Badge>
+                            </span>
                           )}
-                          <Button variant="ghost" size="sm">
+                          <Button variant="ghost" size="sm" className="rounded-full">
                             View
                           </Button>
                         </div>
