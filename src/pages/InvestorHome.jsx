@@ -116,7 +116,7 @@ export default function InvestorHome() {
           {isAdmin && (
             <Button
               onClick={() => navigate(createPageUrl("Admin"))}
-              className="bg-gold-600 hover:bg-gold-700 gap-2"
+              className="bg-amber-500 hover:bg-amber-600 gap-2"
             >
               <Shield className="w-4 h-4" />
               Admin Panel
@@ -126,17 +126,17 @@ export default function InvestorHome() {
 
         {/* Subscription Status Banner */}
         {isPaidSubscriber ? (
-          <div className="bg-gold-50 border-2 border-gold-200 rounded-xl p-4 mb-8">
+          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gold-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
                   <Shield className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <p className="font-bold text-gold-900">
+                  <p className="font-bold text-amber-900">
                     {getPlanName(subscriptionPlan)} Plan Active
                   </p>
-                  <p className="text-sm text-gold-700">
+                  <p className="text-sm text-amber-700">
                     {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
                   </p>
                 </div>
@@ -145,7 +145,7 @@ export default function InvestorHome() {
                 variant="outline"
                 size="sm"
                 onClick={() => navigate(createPageUrl("Pricing"))}
-                className="border-gold-300 text-gold-700 hover:bg-gold-100"
+                className="border-amber-300 text-amber-700 hover:bg-amber-100"
               >
                 Manage Plan
               </Button>
@@ -169,7 +169,7 @@ export default function InvestorHome() {
               </div>
               <Button
                 onClick={() => navigate(createPageUrl("Pricing"))}
-                className="bg-gold-600 hover:bg-gold-700"
+                className="bg-amber-500 hover:bg-amber-600"
               >
                 View Plans
                 <ArrowRight className="w-4 h-4 ml-2" />
@@ -189,7 +189,7 @@ export default function InvestorHome() {
                   You need to accept our Non-Disclosure Agreement to access agent profiles and deal rooms.
                 </p>
                 <Link to={createPageUrl("NDA")}>
-                  <Button className="bg-gold-600 hover:bg-gold-700">
+                  <Button className="bg-amber-500 hover:bg-amber-600">
                     <Shield className="w-4 h-4 mr-2" />
                     Sign NDA
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -275,7 +275,7 @@ export default function InvestorHome() {
                     </div>
                     <button
                       type="button"
-                      className="text-xs font-medium text-gold-600 hover:text-blue-800"
+                      className="text-xs font-medium text-amber-600 hover:text-amber-800"
                       onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)}
                     >
                       View profile
@@ -301,7 +301,7 @@ export default function InvestorHome() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-gold-600" />
+                <Target className="w-5 h-5 text-amber-600" />
                 <h2 className="text-xl font-bold text-slate-900">Buy Box</h2>
               </div>
               <Link to={createPageUrl("InvestorBuyBox")}>
@@ -399,7 +399,7 @@ export default function InvestorHome() {
             <div className="space-y-2">
               <Link to={createPageUrl("Pricing")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <Star className="w-4 h-4 text-gold-600" />
+                  <Star className="w-4 h-4 text-amber-600" />
                   Subscription & Plans
                 </Button>
               </Link>
