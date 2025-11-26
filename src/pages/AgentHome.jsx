@@ -247,7 +247,7 @@ export default function AgentHome() {
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 relative">
             <button
               onClick={() => setDismissedLicenseBanner(true)}
-              className="absolute top-4 right-4 text-gold-600 hover:text-blue-800"
+              className="absolute top-4 right-4 text-gold-600 hover:text-gold-800"
             >
               <X className="w-5 h-5" />
             </button>
@@ -391,7 +391,7 @@ export default function AgentHome() {
               <div>
                 <div className="flex items-center gap-2">
                   <h3 className="text-sm font-medium text-slate-800">Suggested Investors</h3>
-                  <Badge className="bg-purple-100 text-purple-800 text-xs">
+                  <Badge className="bg-gray-100 text-purple-800 text-xs">
                     AI Powered
                   </Badge>
                 </div>
@@ -410,7 +410,7 @@ export default function AgentHome() {
 
             {loadingSuggestedInvestors ? (
               <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
+                <Loader2 className="w-8 h-8 text-gray-600 animate-spin mb-3" />
                 <div className="font-medium">AI is analyzing investor demand...</div>
                 <div className="mt-1">Finding the best investor matches for you</div>
               </div>
@@ -475,7 +475,7 @@ export default function AgentHome() {
                     </div>
                     <button
                       type="button"
-                      className="text-xs font-medium text-gold-600 hover:text-blue-800"
+                      className="text-xs font-medium text-gold-600 hover:text-gold-800"
                       onClick={() => navigate(`${createPageUrl("InvestorDirectory")}?highlight=${inv.id}`)}
                     >
                       View profile
@@ -501,7 +501,7 @@ export default function AgentHome() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600" />
+                <FileText className="w-5 h-5 text-gray-600" />
                 <h2 className="text-xl font-bold text-slate-900">Documents</h2>
               </div>
               <Link to={createPageUrl("AgentDocuments")}>
@@ -561,7 +561,7 @@ export default function AgentHome() {
               </Link>
               <Link to={createPageUrl("DealRooms")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <FileText className="w-4 h-4 text-purple-600" />
+                  <FileText className="w-4 h-4 text-gray-600" />
                   Deal Rooms
                 </Button>
               </Link>
@@ -587,15 +587,15 @@ export default function AgentHome() {
               <p className="text-sm text-slate-600">No fees to join or use Investor Konnect. Always free for agents.</p>
             </div>
             <div>
-              <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
                 <TrendingUp className="w-5 h-5 text-gold-600" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-2">Qualified Investors</h3>
               <p className="text-sm text-slate-600">Connect with serious, pre-vetted investors only.</p>
             </div>
             <div>
-              <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mb-3">
-                <Star className="w-5 h-5 text-purple-600" />
+              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
+                <Star className="w-5 h-5 text-gray-600" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-2">Build Reputation</h3>
               <p className="text-sm text-slate-600">Earn verified reviews and grow your business.</p>
