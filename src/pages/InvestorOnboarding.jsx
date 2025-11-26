@@ -381,30 +381,39 @@ function InvestorOnboardingContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Progress Bar */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium text-slate-600">
-              Step {step} of {TOTAL_STEPS}: {STEP_NAMES[step - 1]}
-            </span>
-            <span className="text-sm font-medium text-blue-600">
-              {Math.round((step / TOTAL_STEPS) * 100)}%
-            </span>
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+      {/* Simple Header with Logo */}
+      <header className="h-20 flex items-center justify-center border-b border-[#E5E5E5]">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-[#D4AF37] rounded-xl flex items-center justify-center">
+            <CheckCircle className="w-6 h-6 text-white" />
           </div>
-          <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
-            <div 
-              className="h-full bg-blue-600 transition-all duration-300"
-              style={{ width: `${(step / TOTAL_STEPS) * 100}%` }}
-            />
-          </div>
-          <p className="text-xs text-slate-500 mt-1">Takes about 5 minutes • Filtering for serious investors</p>
+          <span className="text-xl font-bold text-black">INVESTOR KONNECT</span>
         </div>
+      </header>
 
+      {/* Progress Indicator */}
+      <div className="py-6 flex flex-col items-center">
+        <div className="flex items-center gap-3 mb-2">
+          {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
+            <div
+              key={idx}
+              className={`rounded-full transition-all ${
+                idx + 1 === step 
+                  ? 'w-4 h-4 bg-[#D4AF37] animate-pulse' 
+                  : idx + 1 < step 
+                    ? 'w-3 h-3 bg-[#D4AF37]' 
+                    : 'w-3 h-3 border-2 border-[#E5E5E5] bg-transparent'
+              }`}
+            />
+          ))}
+        </div>
+        <p className="text-[14px] text-[#666666]">Step {step} of {TOTAL_STEPS}</p>
+      </div>
+
+      <div className="max-w-[600px] mx-auto px-4 pb-12">
         {/* Form Card */}
-        <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
+        <div className="bg-white rounded-3xl p-12 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
           
           {/* Step Content */}
           {step === 1 && (
@@ -465,55 +474,34 @@ function InvestorOnboardingContent() {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E5E5]">
             {step > 1 ? (
-              <Button
-                variant="ghost"
+              <button
                 onClick={handleBack}
                 disabled={saving}
+                className="text-[#666666] hover:text-black font-medium transition-colors"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
+                ← Back
+              </button>
             ) : <div />}
             
-            <Button
+            <button
               onClick={handleNext}
               disabled={saving}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="h-12 px-8 rounded-lg bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold transition-all duration-200 disabled:bg-[#E5E5E5] disabled:text-[#999999]"
             >
               {saving ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin inline" />
                   Saving...
                 </>
               ) : step === TOTAL_STEPS ? (
-                <>
-                  Complete Onboarding
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                </>
+                'Complete Onboarding →'
               ) : (
-                <>
-                  Next
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </>
+                'Continue →'
               )}
-            </Button>
+            </button>
           </div>
-        </div>
-
-        {/* Step Indicator Dots */}
-        <div className="flex justify-center gap-2 mt-6">
-          {Array.from({ length: TOTAL_STEPS }).map((_, idx) => (
-            <div
-              key={idx}
-              className={`h-2 rounded-full transition-all ${
-                idx + 1 === step ? 'w-8 bg-blue-600' :
-                idx + 1 < step ? 'w-2 bg-blue-400' :
-                'w-2 bg-slate-300'
-              }`}
-            />
-          ))}
         </div>
       </div>
     </div>
