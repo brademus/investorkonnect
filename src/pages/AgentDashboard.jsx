@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList, introRespond } from "@/api/functions";
+import { inboxList, introRespond } from "@/components/functions";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
