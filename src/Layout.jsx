@@ -61,7 +61,7 @@ function LayoutContent({ children }) {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-gold-500 to-gold-700 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -77,8 +77,8 @@ function LayoutContent({ children }) {
                     to={item.href}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                       location.pathname === item.href
-                        ? "bg-gold-50 text-gold-700"
-                        : "text-slate-700 hover:bg-slate-100"
+                          ? "bg-amber-50 text-amber-700"
+                          : "text-slate-700 hover:bg-slate-100"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />
