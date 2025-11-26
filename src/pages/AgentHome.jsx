@@ -577,14 +577,14 @@ export default function AgentHome() {
 
         {/* Agent Benefits */}
         <div className="mt-8 bg-white rounded-xl p-6 border border-slate-200">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Why AgentVault?</h2>
+          <h2 className="text-xl font-bold text-slate-900 mb-4">Why Investor Konnect?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
               <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mb-3">
                 <CheckCircle className="w-5 h-5 text-emerald-600" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-2">Free Membership</h3>
-              <p className="text-sm text-slate-600">No fees to join or use AgentVault. Always free for agents.</p>
+              <p className="text-sm text-slate-600">No fees to join or use Investor Konnect. Always free for agents.</p>
             </div>
             <div>
               <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mb-3">

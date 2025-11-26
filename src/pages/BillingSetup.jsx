@@ -35,7 +35,7 @@ export default function BillingSetup() {
 
   useEffect(() => {
     loadProfile();
-    document.title = "Stripe Billing Setup - AgentVault Admin";
+    document.title = "Stripe Billing Setup - Investor Konnect Admin";
   }, []);
 
   const loadProfile = async () => {

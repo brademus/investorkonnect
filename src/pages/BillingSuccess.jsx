@@ -30,7 +30,7 @@ export default function BillingSuccess() {
   const sessionId = searchParams.get('session_id');
 
   useEffect(() => {
-    document.title = "Subscription Active! - AgentVault";
+    document.title = "Subscription Active! - Investor Konnect";
   }, []);
 
   useEffect(() => {

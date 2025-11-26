@@ -15,7 +15,7 @@ export default function AccountBilling() {
   const [subscriptionActive, setSubscriptionActive] = useState(false);
 
   useEffect(() => {
-    document.title = "Account & Billing - AgentVault";
+    document.title = "Account & Billing - Investor Konnect";
     loadUserAndProfile();
     
     // Check URL param for subscription success

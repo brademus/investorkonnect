@@ -15,7 +15,7 @@ export function AIChatbot() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: "Hi! I'm your AgentVault AI assistant. I can help you with:\n\n• Platform navigation and features\n• Deal room management\n• Contract questions\n• Payment and billing\n• Matching and verification\n\nWhat can I help you with?"
+      content: "Hi! I'm your Investor Konnect AI assistant. I can help you with:\n\n• Platform navigation and features\n• Deal room management\n• Contract questions\n• Payment and billing\n• Matching and verification\n\nWhat can I help you with?"
     }
   ]);
   const [input, setInput] = useState('');
@@ -36,7 +36,7 @@ export function AIChatbot() {
     setLoading(true);
 
     try {
-      const context = `User is a ${role} on AgentVault platform. Profile: ${JSON.stringify({
+      const context = `User is a ${role} on Investor Konnect platform. Profile: ${JSON.stringify({
         name: profile?.full_name,
         markets: profile?.markets,
         onboarded: profile?.onboarding_completed_at ? 'yes' : 'no',
@@ -45,7 +45,7 @@ export function AIChatbot() {
       })}`;
 
       const response = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a helpful support agent for AgentVault, a platform connecting real estate investors with vetted agents.
+        prompt: `You are a helpful support agent for Investor Konnect, a platform connecting real estate investors with vetted agents.
 
 User Context: ${context}
 

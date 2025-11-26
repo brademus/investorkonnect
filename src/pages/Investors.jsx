@@ -239,7 +239,7 @@ export default function Investors() {
             Ready to Find Your Verified Agent?
           </h2>
           <p className="text-xl text-slate-300 mb-8">
-            Join thousands of investors who trust AgentVault for secure connections.
+            Join thousands of investors who trust Investor Konnect for secure connections.
           </p>
           <Button 
             size="lg" 

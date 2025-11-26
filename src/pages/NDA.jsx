@@ -26,7 +26,7 @@ function NDAContent() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    document.title = "NDA Required - AgentVault";
+    document.title = "NDA Required - Investor Konnect";
   }, []);
 
   // Redirect if already accepted (check after loading completes)
@@ -195,11 +195,11 @@ function NDAContent() {
           )}
 
           <div className="bg-slate-50 rounded-xl p-6 max-h-96 overflow-y-auto border border-slate-200 mb-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">AgentVault Non-Disclosure Agreement v1.0</h3>
+            <h3 className="text-lg font-bold text-slate-900 mb-4">Investor Konnect Non-Disclosure Agreement v1.0</h3>
             
             <div className="prose prose-sm text-slate-700 space-y-4">
               <p>
-                This Non-Disclosure Agreement ("Agreement") is entered into by and between AgentVault ("Platform") and you ("User").
+                This Non-Disclosure Agreement ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
               </p>
               
               <h4 className="font-semibold text-slate-900">1. Confidential Information</h4>
@@ -248,7 +248,7 @@ function NDAContent() {
             />
             <Label htmlFor="nda-agree" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
               I have read and agree to the terms of this Non-Disclosure Agreement. I understand that this is a legally 
-              binding contract and that I am responsible for maintaining confidentiality of all information accessed through AgentVault.
+              binding contract and that I am responsible for maintaining confidentiality of all information accessed through Investor Konnect.
             </Label>
           </div>
 

@@ -22,7 +22,7 @@ export default function PostAuth() {
   const [hasRouted, setHasRouted] = useState(false);
 
   useEffect(() => {
-    document.title = "Signing you in... - AgentVault";
+    document.title = "Signing you in... - Investor Konnect";
   }, []);
 
   useEffect(() => {

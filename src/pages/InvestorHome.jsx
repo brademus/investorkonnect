@@ -108,7 +108,7 @@ export default function InvestorHome() {
               Welcome back, {user?.full_name || 'Investor'}! 👋
             </h1>
             <p className="text-slate-600">
-              Your AgentVault dashboard
+              Your Investor Konnect dashboard
             </p>
           </div>
 
