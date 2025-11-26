@@ -20,7 +20,7 @@ export default function Contact() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    document.title = "Contact AgentVault - Get in Touch";
+    document.title = "Contact Investor Konnect - Get in Touch";
     
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
@@ -28,7 +28,7 @@ export default function Contact() {
       metaDesc.name = "description";
       document.head.appendChild(metaDesc);
     }
-    metaDesc.content = "Have questions about AgentVault? Contact our team for support, demos, or partnership inquiries.";
+    metaDesc.content = "Have questions about Investor Konnect? Contact our team for support, demos, or partnership inquiries.";
 
     // Load EmailJS
     const script = document.createElement('script');

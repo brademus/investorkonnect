@@ -6,7 +6,7 @@ import { Home, Search, AlertCircle } from "lucide-react";
 
 export default function NotFound() {
   useEffect(() => {
-    document.title = "404 - Page Not Found | AgentVault";
+    document.title = "404 - Page Not Found | Investor Konnect";
   }, []);
 
   return (

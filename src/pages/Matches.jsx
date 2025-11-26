@@ -28,7 +28,7 @@ function MatchesContent() {
   const [existingRoom, setExistingRoom] = useState(null);
 
   useEffect(() => {
-    document.title = "Your Top Matches - AgentVault";
+    document.title = "Your Top Matches - Investor Konnect";
   }, []);
 
   // GATE: Redirect to NEW onboarding if not completed

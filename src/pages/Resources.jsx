@@ -102,7 +102,7 @@ export default function Resources() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-slate-600 mb-8">
-            Join AgentVault and connect with verified, investor-friendly agents.
+            Join Investor Konnect and connect with verified, investor-friendly agents.
           </p>
           <Link to={createPageUrl("Onboard")}>
             <Button size="lg" className="bg-blue-600 hover:bg-blue-700">

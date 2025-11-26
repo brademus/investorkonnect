@@ -6,7 +6,7 @@ import { CheckCircle, Home, Mail } from "lucide-react";
 
 export default function ThankYou() {
   useEffect(() => {
-    document.title = "Thank You - AgentVault";
+    document.title = "Thank You - Investor Konnect";
     
     if (window.gtag) {
       window.gtag('event', 'contact_success', {
@@ -24,7 +24,7 @@ export default function ThankYou() {
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-4">Message Received!</h1>
           <p className="text-lg text-slate-600 mb-2">
-            Thank you for reaching out to AgentVault.
+            Thank you for reaching out to Investor Konnect.
           </p>
           <p className="text-slate-600 mb-8">
             We'll get back to you within 24 hours at the email address you provided.

@@ -50,7 +50,7 @@ function DashboardContent() {
               One More Step to Get Started
             </h1>
             <p className="text-lg text-slate-600 text-center mb-8 max-w-xl mx-auto">
-              Before you can access AgentVault, we need a bit more information about your investment goals and preferences. This helps us match you with the right agents.
+              Before you can access Investor Konnect, we need a bit more information about your investment goals and preferences. This helps us match you with the right agents.
             </p>
 
             {/* Why we need this */}
@@ -124,7 +124,7 @@ function DashboardContent() {
               Complete Your Agent Profile
             </h1>
             <p className="text-lg text-slate-600 text-center mb-8 max-w-xl mx-auto">
-              Before you can access AgentVault, please complete your agent profile so investors can learn about your expertise and services.
+              Before you can access Investor Konnect, please complete your agent profile so investors can learn about your expertise and services.
             </p>
 
             {/* CTA */}

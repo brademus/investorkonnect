@@ -42,7 +42,7 @@ export default function FAQ() {
           <HelpCircle className="w-16 h-16 mx-auto mb-6 text-blue-400" />
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Frequently Asked Questions</h1>
           <p className="text-xl text-slate-300">
-            Everything you need to know about AgentVault
+            Everything you need to know about Investor Konnect
           </p>
         </div>
       </section>

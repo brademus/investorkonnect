@@ -65,7 +65,7 @@ export default function Cookies() {
             </ol>
 
             <p className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-              <strong>Note:</strong> Blocking essential cookies will prevent you from using AgentVault.
+              <strong>Note:</strong> Blocking essential cookies will prevent you from using Investor Konnect.
             </p>
 
             <h2>Third-Party Services</h2>

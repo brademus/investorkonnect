@@ -32,7 +32,7 @@ export default function Pricing() {
   } = useCurrentProfile();
 
   useEffect(() => {
-    document.title = "Pricing - AgentVault";
+    document.title = "Pricing - Investor Konnect";
     
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
@@ -40,7 +40,7 @@ export default function Pricing() {
       metaDesc.name = "description";
       document.head.appendChild(metaDesc);
     }
-    metaDesc.content = "Choose the AgentVault plan that fits your investment needs. Starter, Pro, and Enterprise plans with 14-day free trial.";
+    metaDesc.content = "Choose the Investor Konnect plan that fits your investment needs. Starter, Pro, and Enterprise plans with 14-day free trial.";
   }, []);
 
   // DEBUG: Log readiness values on every render
@@ -379,7 +379,7 @@ export default function Pricing() {
     },
     {
       q: "Is agent membership free?",
-      a: "Yes! Agents never pay to join AgentVault. We charge investors, not agents, so agents can focus on serving clients."
+      a: "Yes! Agents never pay to join Investor Konnect. We charge investors, not agents, so agents can focus on serving clients."
     },
     {
       q: "Can I upgrade or downgrade my plan?",

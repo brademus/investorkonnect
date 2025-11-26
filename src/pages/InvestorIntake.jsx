@@ -43,7 +43,7 @@ function InvestorIntakeContent() {
   const TOTAL_STEPS = 5;
 
   useEffect(() => {
-    document.title = "Investment Criteria - AgentVault";
+    document.title = "Investment Criteria - Investor Konnect";
 
     // Load existing intake data
     if (profile?.investor?.buy_box) {

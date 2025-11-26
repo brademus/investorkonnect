@@ -35,7 +35,7 @@ function AccountProfileContent() {
   });
 
   useEffect(() => {
-    document.title = "Edit Profile - AgentVault";
+    document.title = "Edit Profile - Investor Konnect";
     
     if (!profileLoading && profile) {
       setFormData({
@@ -288,7 +288,7 @@ function AccountProfileContent() {
                 id="goals"
                 value={formData.goals}
                 onChange={(e) => setFormData({...formData, goals: e.target.value})}
-                placeholder="What are you looking to accomplish on AgentVault?"
+                placeholder="What are you looking to accomplish on Investor Konnect?"
                 rows={4}
                 disabled={saving}
               />
