@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { inboxList } from '@/components/functions';
+import { DEMO_MODE } from '@/components/config/demo';
 
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Clear KYC Gating
@@ -62,6 +63,50 @@ export function useCurrentProfile() {
     
     const loadProfile = async () => {
       try {
+        // DEMO MODE: Load from sessionStorage
+        if (DEMO_MODE) {
+          const demoUser = JSON.parse(sessionStorage.getItem('demo_user') || 'null');
+          const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || 'null');
+          
+          if (demoUser && demoProfile) {
+            const role = demoProfile.user_role || 'member';
+            const onboarded = !!demoProfile.onboarding_completed_at;
+            const kycStatus = demoProfile.kyc_status || 'unverified';
+            const kycVerified = kycStatus === 'approved' || demoProfile.identity_verified;
+            const hasNDA = demoProfile.nda_accepted || false;
+            const targetState = demoProfile.target_state || demoProfile.markets?.[0] || null;
+            
+            // Check for demo rooms
+            let hasRoom = false;
+            try {
+              const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+              hasRoom = sessionRooms.length > 0;
+            } catch (e) {}
+            
+            setState({
+              loading: false,
+              user: demoUser,
+              profile: demoProfile,
+              role,
+              onboarded,
+              needsOnboarding: !onboarded && (role === 'investor' || role === 'agent'),
+              kycStatus,
+              kycVerified,
+              needsKyc: onboarded && !kycVerified,
+              hasNDA,
+              needsNda: onboarded && kycVerified && !hasNDA,
+              isInvestorReady: role === 'investor' && onboarded && kycVerified && hasNDA,
+              hasRoom,
+              targetState,
+              subscriptionPlan: demoProfile.subscription_tier || 'none',
+              subscriptionStatus: demoProfile.subscription_status || 'none',
+              isPaidSubscriber: false,
+              error: null
+            });
+            return;
+          }
+        }
+        
         // STEP 1: Get authenticated user via Base44 auth
         const user = await base44.auth.me();
         
@@ -260,7 +305,33 @@ export function useCurrentProfile() {
   }, [refreshTrigger]);
 
   // Refresh function to manually reload profile
-  const refresh = () => {
+  const refresh = async () => {
+    // In demo mode, reload from sessionStorage immediately
+    if (DEMO_MODE) {
+      const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || 'null');
+      if (demoProfile) {
+        const role = demoProfile.user_role || 'member';
+        const onboarded = !!demoProfile.onboarding_completed_at;
+        const kycStatus = demoProfile.kyc_status || 'unverified';
+        const kycVerified = kycStatus === 'approved' || demoProfile.identity_verified;
+        const hasNDA = demoProfile.nda_accepted || false;
+        
+        setState(prev => ({
+          ...prev,
+          profile: demoProfile,
+          role,
+          onboarded,
+          needsOnboarding: !onboarded && (role === 'investor' || role === 'agent'),
+          kycStatus,
+          kycVerified,
+          needsKyc: onboarded && !kycVerified,
+          hasNDA,
+          needsNda: onboarded && kycVerified && !hasNDA,
+          isInvestorReady: role === 'investor' && onboarded && kycVerified && hasNDA,
+        }));
+        return;
+      }
+    }
     setRefreshTrigger(prev => prev + 1);
   };
 
