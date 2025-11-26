@@ -57,15 +57,15 @@ function LayoutContent({ children }) {
     <div className="min-h-screen bg-slate-50">
       {/* Conditional Top Navigation */}
       {showNav && !isNoNavPage && (
-        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
+        <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm" style={{fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif"}}>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex justify-between items-center h-16">
               <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-amber-600 rounded-lg flex items-center justify-center">
+                <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center shadow-sm">
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="font-bold text-xl text-slate-900">INVESTOR KONNECT</div>
+                  <div className="font-bold text-xl text-slate-800">INVESTOR KONNECT</div>
                   <div className="text-xs text-slate-500 -mt-1">Verified agents. Protected deals.</div>
                 </div>
               </Link>
@@ -77,8 +77,8 @@ function LayoutContent({ children }) {
                     to={item.href}
                     className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2 ${
                       location.pathname === item.href
-                          ? "bg-amber-50 text-amber-700"
-                          : "text-slate-700 hover:bg-slate-100"
+                          ? "bg-amber-100 text-amber-700"
+                          : "text-slate-600 hover:bg-slate-100"
                     }`}
                   >
                     <item.icon className="w-4 h-4" />

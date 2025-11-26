@@ -86,7 +86,7 @@ function InvestorDashboardContent() {
             <h1 className="text-3xl font-bold text-gray-800">
               Investor Dashboard
             </h1>
-            <span className="badge-gold">Investor</span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-amber-100 text-amber-700">Investor</span>
           </div>
           <p className="text-gray-600">
             Welcome back, {profile?.full_name || 'Investor'}! Find verified agents and manage your deal flow.
