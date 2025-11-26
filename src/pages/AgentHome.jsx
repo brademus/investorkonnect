@@ -134,7 +134,7 @@ export default function AgentHome() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-emerald-50">
       {/* Hero */}
-      <div className="bg-gradient-to-r from-gold-600 to-gold-800 text-white py-12">
+      <div className="bg-gradient-to-r from-amber-500 to-amber-700 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -155,7 +155,7 @@ export default function AgentHome() {
                   </span>
                 </div>
                 <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
-                  hasNDA ? 'bg-gold-500/20 border border-gold-400/30' : 'bg-red-500/20 border border-red-400/30'
+                  hasNDA ? 'bg-amber-500/20 border border-amber-400/30' : 'bg-red-500/20 border border-red-400/30'
                 }`}>
                   <Shield className="w-4 h-4" />
                   <span className="text-sm">
@@ -247,12 +247,12 @@ export default function AgentHome() {
           <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 relative">
             <button
               onClick={() => setDismissedLicenseBanner(true)}
-              className="absolute top-4 right-4 text-gold-600 hover:text-gold-800"
+              className="absolute top-4 right-4 text-amber-600 hover:text-amber-800"
             >
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-start gap-4 pr-8">
-              <Shield className="w-6 h-6 text-gold-600 flex-shrink-0 mt-1" />
+              <Shield className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
               <div className="flex-1">
                 <h3 className="font-bold text-blue-900 mb-2">Verify your real estate license</h3>
                 <p className="text-blue-800 mb-4">
@@ -262,7 +262,7 @@ export default function AgentHome() {
                   }
                 </p>
                 <Link to={createPageUrl("AccountProfile")}>
-                  <Button className="bg-gold-600 hover:bg-gold-700">
+                  <Button className="bg-amber-500 hover:bg-amber-600">
                     <Shield className="w-4 h-4 mr-2" />
                     {!agentData.license_number ? 'Add License' : 'Update License'}
                     <ArrowRight className="w-4 h-4 ml-2" />
@@ -300,7 +300,7 @@ export default function AgentHome() {
           <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <Building className="w-5 h-5 text-gold-600" />
+                <Building className="w-5 h-5 text-amber-600" />
                 <h2 className="text-xl font-bold text-slate-900">My Profile</h2>
               </div>
               <Link to={createPageUrl("AccountProfile")}>
@@ -457,7 +457,7 @@ export default function AgentHome() {
                           {inv.full_name || 'Investor'}
                         </div>
                         {score && score >= 0.8 && (
-                          <Badge className="bg-gold-100 text-gold-800 text-xs">
+                          <Badge className="bg-amber-100 text-amber-800 text-xs">
                             Top Match
                           </Badge>
                         )}
@@ -475,7 +475,7 @@ export default function AgentHome() {
                     </div>
                     <button
                       type="button"
-                      className="text-xs font-medium text-gold-600 hover:text-gold-800"
+                      className="text-xs font-medium text-amber-600 hover:text-amber-800"
                       onClick={() => navigate(`${createPageUrl("InvestorDirectory")}?highlight=${inv.id}`)}
                     >
                       View profile
@@ -543,7 +543,7 @@ export default function AgentHome() {
             <div className="space-y-2">
               <Link to={createPageUrl("Pricing")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <Star className="w-4 h-4 text-gold-600" />
+                  <Star className="w-4 h-4 text-amber-600" />
                   Subscription & Plans
                 </Button>
               </Link>
@@ -555,7 +555,7 @@ export default function AgentHome() {
               </Link>
               <Link to={createPageUrl("InvestorDirectory")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <Users className="w-4 h-4 text-gold-600" />
+                  <Users className="w-4 h-4 text-amber-600" />
                   Browse Investors
                 </Button>
               </Link>
@@ -567,7 +567,7 @@ export default function AgentHome() {
               </Link>
               <Link to={createPageUrl("Billing")}>
                 <Button variant="outline" className="w-full justify-start gap-3">
-                  <DollarSign className="w-4 h-4 text-gold-600" />
+                  <DollarSign className="w-4 h-4 text-amber-600" />
                   Billing & Payment
                 </Button>
               </Link>
@@ -580,15 +580,15 @@ export default function AgentHome() {
           <h2 className="text-xl font-bold text-slate-900 mb-4">Why Investor Konnect?</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div>
-              <div className="w-10 h-10 bg-gold-100 rounded-lg flex items-center justify-center mb-3">
-                <CheckCircle className="w-5 h-5 text-gold-600" />
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
+                <CheckCircle className="w-5 h-5 text-amber-600" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-2">Free Membership</h3>
               <p className="text-sm text-slate-600">No fees to join or use Investor Konnect. Always free for agents.</p>
             </div>
             <div>
-              <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center mb-3">
-                <TrendingUp className="w-5 h-5 text-gold-600" />
+              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center mb-3">
+                <TrendingUp className="w-5 h-5 text-amber-600" />
               </div>
               <h3 className="font-semibold text-slate-900 mb-2">Qualified Investors</h3>
               <p className="text-sm text-slate-600">Connect with serious, pre-vetted investors only.</p>

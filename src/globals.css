@@ -1,197 +1,277 @@
-css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   INVESTOR KONNECT - AIRBNB-STYLE DESIGN SYSTEM
+   Gold + Gray Palette with Modern Typography
+   ============================================ */
+
 @layer base {
   :root {
+    /* GOLD COLOR SCALE - Primary Brand Color */
+    --color-gold-50: 48 100% 96%;
+    --color-gold-100: 48 96% 89%;
+    --color-gold-200: 48 93% 77%;
+    --color-gold-300: 46 90% 65%;
+    --color-gold-400: 43 87% 54%;
+    --color-gold-500: 41 83% 47%;
+    --color-gold-600: 38 84% 40%;
+    --color-gold-700: 32 80% 33%;
+    --color-gold-800: 28 75% 27%;
+    --color-gold-900: 24 70% 23%;
+    
+    /* GRAY COLOR SCALE - Neutrals */
+    --color-gray-50: 0 0% 98%;
+    --color-gray-100: 0 0% 96%;
+    --color-gray-200: 0 0% 90%;
+    --color-gray-300: 0 0% 83%;
+    --color-gray-400: 0 0% 64%;
+    --color-gray-500: 0 0% 45%;
+    --color-gray-600: 0 0% 32%;
+    --color-gray-700: 0 0% 21%;
+    --color-gray-800: 0 0% 15%;
+    --color-gray-900: 0 0% 9%;
+    
+    /* SHADCN UI VARIABLES */
     --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 41 83% 47%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
     --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 48 96% 89%;
+    --accent-foreground: 32 80% 33%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 41 83% 47%;
+    --radius: 0.75rem;
+    
+    /* Sidebar */
     --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-foreground: 0 0% 32%;
+    --sidebar-primary: 41 83% 47%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 48 96% 89%;
+    --sidebar-accent-foreground: 32 80% 33%;
+    --sidebar-border: 0 0% 90%;
+    --sidebar-ring: 41 83% 47%;
   }
   
   .dark {
-    --background: 0 0% 3.9%;
+    --background: 0 0% 9%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
+    --card: 0 0% 12%;
     --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
+    --popover: 0 0% 12%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 41 83% 52%;
     --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
+    --secondary: 0 0% 15%;
     --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 32 80% 25%;
+    --accent-foreground: 48 96% 89%;
+    --destructive: 0 62% 30%;
     --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 41 83% 52%;
   }
-}
-
-@layer base {
+  
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
+    font-feature-settings: 'cv11', 'ss01';
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
   
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold;
-    color: hsl(var(--color-gray-800));
-  }
-}
-
-@layer components {
-  .listing-card {
-    @apply bg-white rounded-2xl border shadow-sm hover:shadow-lg;
-    @apply transition-all duration-200 cursor-pointer hover:-translate-y-1;
-    border-color: hsl(var(--color-gray-200));
+    @apply font-bold tracking-tight;
+    color: hsl(var(--color-gray-900));
   }
   
+  h1 { @apply text-4xl md:text-5xl; }
+  h2 { @apply text-3xl md:text-4xl; }
+  h3 { @apply text-2xl md:text-3xl; }
+  h4 { @apply text-xl md:text-2xl; }
+}
+
+/* ============================================
+   COMPONENT CLASSES - AIRBNB-STYLE
+   ============================================ */
+
+@layer components {
+  /* NAVBAR - Sticky white bar with shadow */
+  .navbar {
+    @apply bg-white sticky top-0 z-50;
+    border-bottom: 1px solid hsl(var(--color-gray-200));
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+  }
+  
+  /* CONTAINER - Airbnb-style max-width with responsive padding */
+  .container-airbnb {
+    @apply max-w-7xl mx-auto px-4;
+  }
+  
+  @media (min-width: 640px) {
+    .container-airbnb { @apply px-6; }
+  }
+  
+  @media (min-width: 1024px) {
+    .container-airbnb { @apply px-8; }
+  }
+  
+  @media (min-width: 1280px) {
+    .container-airbnb { @apply px-12; }
+  }
+  
+  /* LISTING CARD - White card with hover lift effect */
+  .listing-card {
+    @apply bg-white rounded-2xl border p-6;
+    border-color: hsl(var(--color-gray-200));
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: all 0.2s ease;
+  }
+  
+  .listing-card:hover {
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+    transform: translateY(-2px);
+  }
+  
+  /* BTN-GOLD - Primary gold button */
   .btn-gold {
-    @apply text-white font-semibold px-6 py-3 rounded-xl shadow-sm;
-    @apply hover:shadow-md transition-all duration-200 hover:-translate-y-0.5;
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-xl font-semibold text-white;
     background-color: hsl(var(--color-gold-500));
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+    transition: all 0.2s ease;
   }
   
   .btn-gold:hover {
     background-color: hsl(var(--color-gold-600));
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    transform: translateY(-1px);
   }
   
+  .btn-gold:disabled {
+    @apply opacity-50 cursor-not-allowed;
+    transform: none;
+  }
+  
+  /* BADGE-GOLD - Gold pill badge */
   .badge-gold {
     @apply inline-flex items-center px-3 py-1 rounded-full text-sm font-medium;
     background-color: hsl(var(--color-gold-100));
     color: hsl(var(--color-gold-700));
   }
   
+  /* SEARCH BAR - Airbnb-style search input */
   .search-bar {
-    @apply bg-white rounded-full px-6 py-3 shadow-sm hover:shadow-md transition-shadow;
+    @apply bg-white rounded-full px-5 py-3;
     border: 1px solid hsl(var(--color-gray-300));
+    box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    transition: all 0.2s ease;
   }
   
-  .navbar {
-    @apply bg-white sticky top-0 z-50 shadow-sm;
-    border-bottom: 1px solid hsl(var(--color-gray-200));
+  .search-bar:hover, .search-bar:focus-within {
+    border-color: hsl(var(--color-gray-400));
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   }
   
-  .container-airbnb {
-    @apply max-w-7xl mx-auto px-6;
-  }
-  
-  @media (min-width: 768px) {
-    .container-airbnb {
-      @apply px-12;
-    }
-  }
-  
-  @media (min-width: 1024px) {
-    .container-airbnb {
-      @apply px-20;
-    }
-  }
-  
+  /* GOLD GRADIENT BACKGROUND */
   .bg-gold-gradient {
-    background: linear-gradient(135deg, hsl(var(--color-gold-50)) 0%, white 100%);
+    background: linear-gradient(135deg, hsl(var(--color-gold-50)) 0%, hsl(0 0% 100%) 50%, hsl(var(--color-gold-50)) 100%);
   }
 }
 
+/* ============================================
+   UTILITY CLASSES - GOLD & GRAY SCALE
+   ============================================ */
+
 @layer utilities {
-  /* Gold utilities */
+  /* Gold text colors */
+  .text-gold-50 { color: hsl(var(--color-gold-50)); }
+  .text-gold-100 { color: hsl(var(--color-gold-100)); }
+  .text-gold-200 { color: hsl(var(--color-gold-200)); }
+  .text-gold-300 { color: hsl(var(--color-gold-300)); }
+  .text-gold-400 { color: hsl(var(--color-gold-400)); }
   .text-gold-500 { color: hsl(var(--color-gold-500)); }
   .text-gold-600 { color: hsl(var(--color-gold-600)); }
   .text-gold-700 { color: hsl(var(--color-gold-700)); }
   .text-gold-800 { color: hsl(var(--color-gold-800)); }
   .text-gold-900 { color: hsl(var(--color-gold-900)); }
+  
+  /* Gold background colors */
   .bg-gold-50 { background-color: hsl(var(--color-gold-50)); }
   .bg-gold-100 { background-color: hsl(var(--color-gold-100)); }
   .bg-gold-200 { background-color: hsl(var(--color-gold-200)); }
+  .bg-gold-300 { background-color: hsl(var(--color-gold-300)); }
+  .bg-gold-400 { background-color: hsl(var(--color-gold-400)); }
   .bg-gold-500 { background-color: hsl(var(--color-gold-500)); }
   .bg-gold-600 { background-color: hsl(var(--color-gold-600)); }
   .bg-gold-700 { background-color: hsl(var(--color-gold-700)); }
   .bg-gold-800 { background-color: hsl(var(--color-gold-800)); }
   .bg-gold-900 { background-color: hsl(var(--color-gold-900)); }
+  
+  /* Gold border colors */
+  .border-gold-50 { border-color: hsl(var(--color-gold-50)); }
+  .border-gold-100 { border-color: hsl(var(--color-gold-100)); }
   .border-gold-200 { border-color: hsl(var(--color-gold-200)); }
   .border-gold-300 { border-color: hsl(var(--color-gold-300)); }
+  .border-gold-400 { border-color: hsl(var(--color-gold-400)); }
   .border-gold-500 { border-color: hsl(var(--color-gold-500)); }
+  .border-gold-600 { border-color: hsl(var(--color-gold-600)); }
+  .border-gold-700 { border-color: hsl(var(--color-gold-700)); }
+  .border-gold-800 { border-color: hsl(var(--color-gold-800)); }
+  .border-gold-900 { border-color: hsl(var(--color-gold-900)); }
   
-  /* Blue utilities */
-  .bg-blue-100 { background-color: hsl(203 100% 95%); }
-  .bg-blue-500 { background-color: hsl(var(--color-info)); }
-  .text-blue-600 { color: hsl(var(--color-info)); }
-  
-  /* Emerald utilities */
-  .bg-emerald-100 { background-color: hsl(122 100% 95%); }
-  .bg-emerald-500 { background-color: hsl(var(--color-success)); }
-  .bg-emerald-600 { background-color: hsl(var(--color-success)); }
-  .text-emerald-600 { color: hsl(var(--color-success)); }
-  .text-emerald-700 { color: hsl(122 100% 20%); }
-  
-  /* Purple utilities */
-  .bg-purple-100 { background-color: hsl(280 100% 95%); }
-  .bg-purple-500 { background-color: hsl(280 65% 60%); }
-  .bg-purple-600 { background-color: hsl(280 65% 50%); }
-  .text-purple-600 { color: hsl(280 65% 50%); }
-  
-  /* Gray utilities */
+  /* Gray text colors */
+  .text-gray-50 { color: hsl(var(--color-gray-50)); }
+  .text-gray-100 { color: hsl(var(--color-gray-100)); }
+  .text-gray-200 { color: hsl(var(--color-gray-200)); }
+  .text-gray-300 { color: hsl(var(--color-gray-300)); }
+  .text-gray-400 { color: hsl(var(--color-gray-400)); }
   .text-gray-500 { color: hsl(var(--color-gray-500)); }
   .text-gray-600 { color: hsl(var(--color-gray-600)); }
   .text-gray-700 { color: hsl(var(--color-gray-700)); }
   .text-gray-800 { color: hsl(var(--color-gray-800)); }
+  .text-gray-900 { color: hsl(var(--color-gray-900)); }
+  
+  /* Gray background colors */
   .bg-gray-50 { background-color: hsl(var(--color-gray-50)); }
   .bg-gray-100 { background-color: hsl(var(--color-gray-100)); }
+  .bg-gray-200 { background-color: hsl(var(--color-gray-200)); }
+  .bg-gray-300 { background-color: hsl(var(--color-gray-300)); }
+  .bg-gray-400 { background-color: hsl(var(--color-gray-400)); }
+  .bg-gray-500 { background-color: hsl(var(--color-gray-500)); }
+  .bg-gray-600 { background-color: hsl(var(--color-gray-600)); }
+  .bg-gray-700 { background-color: hsl(var(--color-gray-700)); }
+  .bg-gray-800 { background-color: hsl(var(--color-gray-800)); }
+  .bg-gray-900 { background-color: hsl(var(--color-gray-900)); }
+  
+  /* Gray border colors */
+  .border-gray-50 { border-color: hsl(var(--color-gray-50)); }
+  .border-gray-100 { border-color: hsl(var(--color-gray-100)); }
   .border-gray-200 { border-color: hsl(var(--color-gray-200)); }
   .border-gray-300 { border-color: hsl(var(--color-gray-300)); }
+  .border-gray-400 { border-color: hsl(var(--color-gray-400)); }
+  .border-gray-500 { border-color: hsl(var(--color-gray-500)); }
+  .border-gray-600 { border-color: hsl(var(--color-gray-600)); }
+  .border-gray-700 { border-color: hsl(var(--color-gray-700)); }
+  .border-gray-800 { border-color: hsl(var(--color-gray-800)); }
+  .border-gray-900 { border-color: hsl(var(--color-gray-900)); }
 }
