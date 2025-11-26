@@ -391,7 +391,7 @@ export default function Pricing() {
     <div>
       {/* SUBSCRIPTION STATUS BANNER - Shows for paid subscribers */}
       {!loading && isPaidSubscriber && (
-        <div className="bg-gold-600 text-white py-3">
+        <div className="bg-amber-500 text-white py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-center gap-3">
               <Check className="w-5 h-5 flex-shrink-0" />
@@ -429,7 +429,7 @@ export default function Pricing() {
       )}
 
       {/* Hero */}
-      <section className="bg-gradient-to-br from-slate-900 to-gold-900 text-white py-20">
+      <section className="bg-gradient-to-br from-slate-900 to-amber-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">Simple, Transparent Pricing</h1>
           <p className="text-xl text-slate-300 mb-8">
@@ -457,7 +457,7 @@ export default function Pricing() {
               }`}
             >
               Annual
-              <span className="ml-2 text-xs bg-gold-500 text-white px-2 py-0.5 rounded">Save 20%</span>
+              <span className="ml-2 text-xs bg-amber-500 text-white px-2 py-0.5 rounded">Save 20%</span>
             </button>
           </div>
         </div>
@@ -474,14 +474,14 @@ export default function Pricing() {
                 <div
                   key={tier.name}
                   className={`bg-white rounded-2xl shadow-xl border-2 ${
-                    isCurrentPlan ? "border-gold-600 relative" :
-                    tier.popular ? "border-gold-500 relative" : 
+                    isCurrentPlan ? "border-amber-500 relative" :
+                    tier.popular ? "border-amber-500 relative" : 
                     "border-slate-200"
                   }`}
                 >
                   {isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-gold-600 text-white text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
+                      <span className="bg-amber-500 text-white text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
                         <Check className="w-4 h-4" />
                         Current Plan
                       </span>
@@ -489,7 +489,7 @@ export default function Pricing() {
                   )}
                   {!isCurrentPlan && tier.popular && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-gold-500 text-white text-sm font-medium px-4 py-1 rounded-full">
+                      <span className="bg-amber-500 text-white text-sm font-medium px-4 py-1 rounded-full">
                         Most Popular
                       </span>
                     </div>
@@ -511,7 +511,7 @@ export default function Pricing() {
                     {isCurrentPlan ? (
                       // User is already on this plan
                       <Button
-                        className="w-full bg-gold-600 hover:bg-gold-700"
+                        className="w-full bg-amber-500 hover:bg-amber-600"
                         disabled
                       >
                         <Check className="w-4 h-4 mr-2" />
@@ -533,7 +533,7 @@ export default function Pricing() {
                         <p className="text-xs text-center text-slate-600">
                           <button 
                             onClick={bannerConfig?.onClick}
-                            className="text-gold-600 hover:underline font-medium"
+                            className="text-amber-600 hover:underline font-medium"
                           >
                             {blockingStep === 'onboarding' ? 'Complete your profile' :
                              blockingStep === 'verification' ? 'Verify your identity' :
@@ -547,7 +547,7 @@ export default function Pricing() {
                       <Button
                         className={`w-full ${
                           tier.popular
-                            ? "bg-gold-600 hover:bg-gold-700"
+                            ? "bg-amber-500 hover:bg-amber-600"
                             : "bg-slate-900 hover:bg-slate-800"
                         }`}
                         onClick={() => handleGetStarted(tier.planId)}
@@ -571,7 +571,7 @@ export default function Pricing() {
                     <ul className="space-y-3">
                       {tier.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-3">
-                          <CheckCircle className="w-5 h-5 text-gold-600 flex-shrink-0 mt-0.5" />
+                          <CheckCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                           <span className="text-slate-700">{feature}</span>
                         </li>
                       ))}
@@ -590,17 +590,17 @@ export default function Pricing() {
 
           {/* Info Box for unauthenticated users */}
           {!loading && !user && (
-            <div className="mt-12 bg-gold-50 border-2 border-gold-200 rounded-xl p-6">
+            <div className="mt-12 bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
               <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-gold-600 flex-shrink-0 mt-1" />
+                <AlertCircle className="w-6 h-6 text-amber-600 flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="font-bold text-gold-900 mb-2">Sign In to Subscribe</h3>
-                  <p className="text-gold-800 mb-4">
+                  <h3 className="font-bold text-amber-900 mb-2">Sign In to Subscribe</h3>
+                  <p className="text-amber-800 mb-4">
                     Create a free account to start your 14-day trial. No credit card required.
                   </p>
                   <Button 
                     onClick={() => base44.auth.redirectToLogin(window.location.pathname)}
-                    className="bg-gold-600 hover:bg-gold-700"
+                    className="bg-amber-500 hover:bg-amber-600"
                   >
                     Sign In / Create Account
                   </Button>
@@ -641,7 +641,7 @@ export default function Pricing() {
                         <td className="py-4 px-4 text-center">
                           {typeof feature.starter === "boolean" ? (
                             feature.starter ? (
-                              <CheckCircle className="w-5 h-5 text-gold-600 mx-auto" />
+                              <CheckCircle className="w-5 h-5 text-amber-600 mx-auto" />
                             ) : (
                               <X className="w-5 h-5 text-slate-300 mx-auto" />
                             )
@@ -652,7 +652,7 @@ export default function Pricing() {
                         <td className="py-4 px-4 text-center">
                           {typeof feature.pro === "boolean" ? (
                             feature.pro ? (
-                              <CheckCircle className="w-5 h-5 text-gold-600 mx-auto" />
+                              <CheckCircle className="w-5 h-5 text-amber-600 mx-auto" />
                             ) : (
                               <X className="w-5 h-5 text-slate-300 mx-auto" />
                             )
@@ -663,7 +663,7 @@ export default function Pricing() {
                         <td className="py-4 px-4 text-center">
                           {typeof feature.enterprise === "boolean" ? (
                             feature.enterprise ? (
-                              <CheckCircle className="w-5 h-5 text-gold-600 mx-auto" />
+                              <CheckCircle className="w-5 h-5 text-amber-600 mx-auto" />
                             ) : (
                               <X className="w-5 h-5 text-slate-300 mx-auto" />
                             )
@@ -699,7 +699,7 @@ export default function Pricing() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 to-gold-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-slate-900 to-amber-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Start Your Free Trial Today
@@ -709,7 +709,7 @@ export default function Pricing() {
           </p>
           <Button 
             size="lg" 
-            className="bg-gold-600 hover:bg-gold-700 text-lg px-8 h-14"
+            className="bg-amber-500 hover:bg-amber-600 text-lg px-8 h-14"
             onClick={() => handleGetStarted('starter')}
             disabled={loading}
           >

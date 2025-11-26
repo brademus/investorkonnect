@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { Loader2, AlertCircle, Shield, ArrowRight, TrendingUp, Users } from "lucide-react";
+import { Loader2, Shield, ArrowRight, TrendingUp, Users } from "lucide-react";
 import InvestorHome from "./InvestorHome";
 import AgentHome from "./AgentHome";
 
@@ -29,7 +29,7 @@ function DashboardContent() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-gold-600 animate-spin" />
+        <Loader2 className="w-12 h-12 text-amber-600 animate-spin" />
       </div>
     );
   }
@@ -37,12 +37,12 @@ function DashboardContent() {
   // INVESTOR NOT ONBOARDED - Show blocking prompt
   if (role === 'investor' && !onboarded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-gold-50 to-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-50 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          <div className="bg-white rounded-3xl shadow-2xl border-2 border-gold-200 p-12">
+          <div className="bg-white rounded-3xl shadow-2xl border-2 border-amber-200 p-12">
             {/* Icon */}
-            <div className="w-20 h-20 bg-gold-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <TrendingUp className="w-10 h-10 text-gold-600" />
+            <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <TrendingUp className="w-10 h-10 text-amber-600" />
             </div>
 
             {/* Heading */}
@@ -54,26 +54,26 @@ function DashboardContent() {
             </p>
 
             {/* Why we need this */}
-            <div className="bg-gold-50 rounded-xl p-6 mb-8 border border-gold-200">
-              <h3 className="font-bold text-gold-900 mb-3 flex items-center gap-2">
+            <div className="bg-amber-50 rounded-xl p-6 mb-8 border border-amber-200">
+              <h3 className="font-bold text-amber-900 mb-3 flex items-center gap-2">
                 <Shield className="w-5 h-5" />
                 Why we need this:
               </h3>
-              <ul className="space-y-2 text-sm text-gold-800">
+              <ul className="space-y-2 text-sm text-amber-800">
                 <li className="flex items-start gap-2">
-                  <span className="text-gold-600 mt-0.5">•</span>
+                  <span className="text-amber-600 mt-0.5">•</span>
                   <span>Find agents who specialize in your investment strategy</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gold-600 mt-0.5">•</span>
+                  <span className="text-amber-600 mt-0.5">•</span>
                   <span>Match your budget and market preferences</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gold-600 mt-0.5">•</span>
+                  <span className="text-amber-600 mt-0.5">•</span>
                   <span>Provide agents with context before connecting</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-gold-600 mt-0.5">•</span>
+                  <span className="text-amber-600 mt-0.5">•</span>
                   <span>Unlock all platform features and deal rooms</span>
                 </li>
               </ul>
@@ -83,7 +83,7 @@ function DashboardContent() {
             <Button
               onClick={() => navigate(createPageUrl("InvestorOnboarding"))}
               size="lg"
-              className="w-full bg-gold-600 hover:bg-gold-700 h-16 text-lg font-semibold shadow-lg"
+              className="w-full bg-amber-500 hover:bg-amber-600 h-16 text-lg font-semibold shadow-lg"
             >
               Complete My Investor Profile
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -169,7 +169,7 @@ function DashboardContent() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="text-center max-w-md">
-        <Loader2 className="w-12 h-12 text-gold-600 animate-spin mx-auto mb-4" />
+        <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
         <p className="text-slate-600">Setting up your dashboard...</p>
       </div>
     </div>
