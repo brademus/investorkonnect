@@ -100,13 +100,13 @@ export default function Investors() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-blue-900 via-slate-900 to-blue-900 text-white py-20">
+      <section className="bg-gradient-to-br from-gold-900 via-slate-900 to-gold-900 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 rounded-full px-4 py-2 mb-6">
-                <TrendingUp className="w-4 h-4 text-blue-400" />
-                <span className="text-sm text-blue-300">For Real Estate Investors</span>
+              <div className="inline-flex items-center gap-2 bg-gold-500/10 border border-gold-500/20 rounded-full px-4 py-2 mb-6">
+                <TrendingUp className="w-4 h-4 text-gold-400" />
+                <span className="text-sm text-gold-300">For Real Estate Investors</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                 Connect with Verified, Investor-Friendly Agents
@@ -117,7 +117,7 @@ export default function Investors() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Button 
                   size="lg" 
-                  className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                  className="bg-gold-600 hover:bg-gold-700 w-full sm:w-auto"
                   onClick={() => navigate(createPageUrl("Pricing"))}
                 >
                   Start Free Trial
@@ -149,12 +149,12 @@ export default function Investors() {
       </section>
 
       {/* Interactive Map Section */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-blue-50">
+      <section className="py-20 bg-gradient-to-br from-slate-50 to-gold-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-blue-100 rounded-full px-4 py-2 mb-4">
-              <MapPin className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-semibold text-blue-900">Get Started</span>
+            <div className="inline-flex items-center gap-2 bg-gold-100 rounded-full px-4 py-2 mb-4">
+              <MapPin className="w-4 h-4 text-gold-600" />
+              <span className="text-sm font-semibold text-gold-900">Get Started</span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
               Select Your Investment Market
@@ -196,8 +196,8 @@ export default function Investors() {
                 key={benefit.title}
                 className="bg-slate-50 rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow"
               >
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-blue-600" />
+                <div className="w-12 h-12 bg-gold-100 rounded-lg flex items-center justify-center mb-4">
+                  <benefit.icon className="w-6 h-6 text-gold-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{benefit.title}</h3>
                 <p className="text-slate-600 leading-relaxed">{benefit.description}</p>
@@ -233,7 +233,7 @@ export default function Investors() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 to-blue-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-slate-900 to-gold-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Find Your Verified Agent?
@@ -243,7 +243,7 @@ export default function Investors() {
           </p>
           <Button 
             size="lg" 
-            className="bg-blue-600 hover:bg-blue-700 text-lg px-8 h-14"
+            className="bg-gold-600 hover:bg-gold-700 text-lg px-8 h-14"
             onClick={() => navigate(createPageUrl("Pricing"))}
           >
             See Pricing & Plans

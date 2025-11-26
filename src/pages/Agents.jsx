@@ -60,13 +60,13 @@ export default function Agents() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-gradient-to-br from-emerald-900 via-slate-900 to-emerald-900 text-white py-20">
+      <section className="bg-gradient-to-br from-gold-900 via-slate-900 to-gold-900 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 rounded-full px-4 py-2 mb-6">
-                <Shield className="w-4 h-4 text-emerald-400" />
-                <span className="text-sm text-emerald-300">For Real Estate Agents</span>
+              <div className="inline-flex items-center gap-2 bg-gold-500/10 border border-gold-500/20 rounded-full px-4 py-2 mb-6">
+                <Shield className="w-4 h-4 text-gold-400" />
+                <span className="text-sm text-gold-300">For Real Estate Agents</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                 Join a Selective Network of Investor-Focused Agents
@@ -76,7 +76,7 @@ export default function Agents() {
               </p>
               <Button 
                 size="lg" 
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-gold-600 hover:bg-gold-700"
                 onClick={() => navigate(createPageUrl("RoleSelection"))}
               >
                 Apply Now
@@ -88,7 +88,7 @@ export default function Agents() {
               <ul className="space-y-4">
                 {vettingChecklist.map((item) => (
                   <li key={item} className="flex items-start gap-3">
-                    <FileCheck className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
+                    <FileCheck className="w-5 h-5 text-gold-400 mt-0.5 flex-shrink-0" />
                     <span className="text-slate-200">{item}</span>
                   </li>
                 ))}
@@ -119,8 +119,8 @@ export default function Agents() {
                 key={benefit.title}
                 className="bg-slate-50 rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow"
               >
-                <div className="w-12 h-12 bg-emerald-100 rounded-lg flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-emerald-600" />
+                <div className="w-12 h-12 bg-gold-100 rounded-lg flex items-center justify-center mb-4">
+                  <benefit.icon className="w-6 h-6 text-gold-600" />
                 </div>
                 <h3 className="text-xl font-bold text-slate-900 mb-3">{benefit.title}</h3>
                 <p className="text-slate-600 leading-relaxed">{benefit.description}</p>
@@ -189,7 +189,7 @@ export default function Agents() {
             <ul className="space-y-4">
               {codeOfConduct.map((item) => (
                 <li key={item} className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <CheckCircle className="w-5 h-5 text-gold-600 mt-0.5 flex-shrink-0" />
                   <span className="text-slate-700 text-lg">{item}</span>
                 </li>
               ))}
@@ -199,7 +199,7 @@ export default function Agents() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 to-emerald-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-slate-900 to-gold-900 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Join?
@@ -209,7 +209,7 @@ export default function Agents() {
           </p>
           <Button 
             size="lg" 
-            className="bg-emerald-600 hover:bg-emerald-700 text-lg px-8 h-14"
+            className="bg-gold-600 hover:bg-gold-700 text-lg px-8 h-14"
             onClick={() => navigate(createPageUrl("RoleSelection"))}
           >
             Start Your Application

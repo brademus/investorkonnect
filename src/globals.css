@@ -1,204 +1,138 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    /* Gold Palette - PRIMARY BRAND COLOR */
-    --color-gold-50: 51 100% 98%;    /* #FFFDF7 - Lightest gold */
-    --color-gold-100: 48 100% 95%;   /* #FFF9E6 - Very light gold */
-    --color-gold-200: 44 75% 84%;    /* #F4E5B8 - Light gold */
-    --color-gold-300: 44 68% 75%;    /* #EBD896 */
-    --color-gold-400: 43 67% 64%;    /* #DFC76B */
-    --color-gold-500: 43 59% 52%;    /* #D4AF37 - PRIMARY GOLD */
-    --color-gold-600: 43 71% 42%;    /* #B8941F - Hover state */
-    --color-gold-700: 43 71% 33%;    /* #8F7318 - Text on light bg */
-    --color-gold-800: 43 71% 25%;    /* #6B5612 - Dark gold */
-    --color-gold-900: 43 71% 17%;    /* #4A3C0C - Darkest gold */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
 
-    /* Neutral Grays - PROFESSIONAL PALETTE */
-    --color-gray-50: 0 0% 98%;       /* #FAFAFA - Page background */
-    --color-gray-100: 0 0% 97%;      /* #F7F7F7 - Card background */
-    --color-gray-200: 0 0% 92%;      /* #EBEBEB - Borders */
-    --color-gray-300: 0 0% 87%;      /* #DDDDDD - Input borders */
-    --color-gray-400: 0 0% 69%;      /* #B0B0B0 - Placeholder text */
-    --color-gray-500: 0 0% 44%;      /* #717171 - Secondary text */
-    --color-gray-600: 0 0% 28%;      /* #484848 - Body text */
-    --color-gray-700: 0 0% 13%;      /* #222222 - Headings */
-    --color-gray-800: 0 0% 10%;      /* #1A1A1A - Dark headings */
-    --color-gray-900: 0 0% 0%;       /* #000000 - Black */
-
-    /* Semantic Colors - MUTED, PROFESSIONAL */
-    --color-success: 122 100% 27%;   /* #008A05 - Emerald green */
-    --color-info: 203 100% 38%;      /* #0071C2 - Blue */
-    --color-warning: 32 98% 57%;     /* #FFA726 - Orange */
-    --color-error: 11 81% 43%;       /* #C13515 - Red */
-
-    /* Map to shadcn UI variables */
-    --background: var(--color-gray-50);
-    --foreground: var(--color-gray-700);
-    --primary: var(--color-gold-500);
-    --primary-foreground: 0 0% 100%;
     --card: 0 0% 100%;
-    --card-foreground: var(--color-gray-700);
-    --secondary: var(--color-gray-100);
-    --secondary-foreground: var(--color-gray-700);
-    --muted: var(--color-gray-100);
-    --muted-foreground: var(--color-gray-500);
-    --accent: var(--color-gold-100);
-    --accent-foreground: var(--color-gold-700);
-    --destructive: var(--color-error);
-    --destructive-foreground: 0 0% 100%;
-    --border: var(--color-gray-200);
-    --input: var(--color-gray-300);
-    --ring: var(--color-gold-500);
-    --radius: 0.75rem; /* 12px - professional default */
+    --card-foreground: 222.2 84% 4.9%;
 
-    /* Sidebar variables (keep existing) */
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 42 100% 50%; /* Gold */
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 42 100% 50%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 42 100% 50%;
+
+    --radius: 0.5rem;
   }
 
   .dark {
-    /* Keep existing dark mode variables */
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 42 100% 50%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 42 100% 50%;
+    --accent-foreground: 210 40% 98%;
+
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 42 100% 50%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    @apply bg-background text-foreground font-sans antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    @apply text-gray-800 font-bold;
-  }
-}
-
-@layer components {
-  /* Airbnb-style listing card */
-  .listing-card {
-    @apply bg-white rounded-2xl border border-gray-200 shadow-sm hover:shadow-lg;
-    @apply transition-all duration-200 cursor-pointer hover:-translate-y-1;
-  }
-
-  /* Professional gold button */
-  .btn-gold {
-    @apply bg-[hsl(var(--color-gold-500))] text-white font-semibold;
-    @apply px-6 py-3 rounded-xl shadow-sm;
-    @apply hover:bg-[hsl(var(--color-gold-600))] hover:shadow-md;
-    @apply transition-all duration-200 hover:-translate-y-0.5;
-  }
-
-  /* Gold badge */
-  .badge-gold {
-    @apply inline-flex items-center px-3 py-1 rounded-full;
-    @apply bg-[hsl(var(--color-gold-100))] text-[hsl(var(--color-gold-700))];
-    @apply text-sm font-medium;
-  }
-
-  /* Airbnb-style search bar */
-  .search-bar {
-    @apply bg-white border border-gray-300 rounded-full px-6 py-3;
-    @apply shadow-sm hover:shadow-md transition-shadow;
-  }
-
-  /* Professional navigation bar */
-  .navbar {
-    @apply bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm;
-  }
-
-  /* Airbnb-style container */
-  .container-airbnb {
-    @apply max-w-7xl mx-auto px-6 md:px-12 lg:px-20;
-  }
-
-  /* Subtle gold gradient */
-  .bg-gold-gradient {
-    background: linear-gradient(135deg, hsl(var(--color-gold-50)) 0%, white 100%);
+    @apply font-bold text-slate-900;
   }
 }
 
 @layer utilities {
-  /* Gold color utilities */
-  .text-gold-500 { color: hsl(var(--color-gold-500)); }
-  .text-gold-600 { color: hsl(var(--color-gold-600)); }
-  .text-gold-700 { color: hsl(var(--color-gold-700)); }
-  .bg-gold-50 { background-color: hsl(var(--color-gold-50)); }
-  .bg-gold-100 { background-color: hsl(var(--color-gold-100)); }
-  .bg-gold-200 { background-color: hsl(var(--color-gold-200)); }
-  .bg-gold-500 { background-color: hsl(var(--color-gold-500)); }
-  .bg-gold-600 { background-color: hsl(var(--color-gold-600)); }
-  .border-gold-200 { border-color: hsl(var(--color-gold-200)); }
-  .border-gold-500 { border-color: hsl(var(--color-gold-500)); }
+  /* Gold Color Palette */
+  .text-gold-50 { color: #FFFAEB; }
+  .text-gold-100 { color: #FFF5D6; }
+  .text-gold-200 { color: #FFEBAD; }
+  .text-gold-300 { color: #FFE085; }
+  .text-gold-400 { color: #FFD65C; }
+  .text-gold-500 { color: #FFCC33; }
+  .text-gold-600 { color: #FFB400; } /* Primary Brand Color */
+  .text-gold-700 { color: #E09600; }
+  .text-gold-800 { color: #B87A00; }
+  .text-gold-900 { color: #946200; }
 
-  /* Blue utilities (for Messages button) */
-  .bg-blue-100 { background-color: hsl(203 100% 95%); }
-  .bg-blue-500 { background-color: hsl(var(--color-info)); }
-  .text-blue-600 { color: hsl(var(--color-info)); }
+  .bg-gold-50 { background-color: #FFFAEB; }
+  .bg-gold-100 { background-color: #FFF5D6; }
+  .bg-gold-200 { background-color: #FFEBAD; }
+  .bg-gold-300 { background-color: #FFE085; }
+  .bg-gold-400 { background-color: #FFD65C; }
+  .bg-gold-500 { background-color: #FFCC33; }
+  .bg-gold-600 { background-color: #FFB400; }
+  .bg-gold-700 { background-color: #E09600; }
+  .bg-gold-800 { background-color: #B87A00; }
+  .bg-gold-900 { background-color: #946200; }
 
-  /* Emerald utilities (for verified badges) */
-  .bg-emerald-100 { background-color: hsl(122 100% 95%); }
-  .bg-emerald-500 { background-color: hsl(var(--color-success)); }
-  .bg-emerald-600 { background-color: hsl(var(--color-success)); }
-  .text-emerald-600 { color: hsl(var(--color-success)); }
-  .text-emerald-700 { color: hsl(122 100% 20%); }
+  .border-gold-100 { border-color: #FFF5D6; }
+  .border-gold-200 { border-color: #FFEBAD; }
+  .border-gold-300 { border-color: #FFE085; }
+  .border-gold-400 { border-color: #FFD65C; }
+  .border-gold-500 { border-color: #FFCC33; }
+  .border-gold-600 { border-color: #FFB400; }
 
-  /* Purple utilities (for deal rooms) */
-  .bg-purple-100 { background-color: hsl(280 100% 95%); }
-  .bg-purple-500 { background-color: hsl(280 65% 60%); }
-  .bg-purple-600 { background-color: hsl(280 65% 50%); }
-  .text-purple-600 { color: hsl(280 65% 50%); }
+  /* Custom Gradients */
+  .bg-gold-gradient {
+    background: linear-gradient(135deg, #FFFAEB 0%, #FFF5D6 100%);
+  }
+  
+  .btn-gold {
+    @apply bg-gold-600 hover:bg-gold-700 text-white font-semibold shadow-lg transition-all duration-200;
+  }
 
-  /* Gray utilities (already in Tailwind but ensuring consistency) */
-  .text-gray-500 { color: hsl(var(--color-gray-500)); }
-  .text-gray-600 { color: hsl(var(--color-gray-600)); }
-  .text-gray-700 { color: hsl(var(--color-gray-700)); }
-  .text-gray-800 { color: hsl(var(--color-gray-800)); }
-  .bg-gray-50 { background-color: hsl(var(--color-gray-50)); }
-  .bg-gray-100 { background-color: hsl(var(--color-gray-100)); }
-  .border-gray-200 { border-color: hsl(var(--color-gray-200)); }
-  .border-gray-300 { border-color: hsl(var(--color-gray-300)); }
+  /* Airbnb-style utilities */
+  .container-airbnb {
+    @apply max-w-7xl mx-auto px-6 sm:px-8 lg:px-12;
+  }
+  
+  .listing-card {
+    @apply bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200;
+  }
+
+  .navbar {
+    @apply border-b border-gray-100 bg-white sticky top-0 z-50;
+  }
+  
+  .search-bar {
+    @apply flex items-center border border-gray-300 rounded-full shadow-sm hover:shadow-md transition-shadow px-4 py-2.5 bg-white;
+  }
 }
