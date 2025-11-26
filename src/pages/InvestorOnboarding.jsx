@@ -413,7 +413,7 @@ function InvestorOnboardingContent() {
 
       <div className="max-w-[600px] mx-auto px-4 pb-12">
         {/* Form Card */}
-        <div className="bg-white rounded-3xl p-12 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}
+        <div className="bg-white rounded-3xl p-12 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
           
           {/* Step Content */}
           {step === 1 && (
