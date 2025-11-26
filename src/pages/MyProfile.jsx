@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/components/utils";
-import { embedProfile } from "@/api/functions";
+import { embedProfile } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { User, Edit, Layers, Loader2, RefreshCw } from "lucide-react";
