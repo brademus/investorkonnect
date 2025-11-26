@@ -28,7 +28,7 @@ export default function BillingSetup() {
     STRIPE_PRICE_PRO: '',
     STRIPE_PRICE_ENTERPRISE: '',
     STRIPE_PORTAL_URL: '',
-    BASE_URL: 'https://agent-vault-da3d088b.base44.app',
+    BASE_URL: 'https://investor-konnect-da3d088b.base44.app',
     STRIPE_SECRET_KEY: '',
     STRIPE_WEBHOOK_SECRET: ''
   });
@@ -193,7 +193,7 @@ export default function BillingSetup() {
                       id="base"
                       value={config.BASE_URL}
                       onChange={(e) => setConfig({...config, BASE_URL: e.target.value})}
-                      placeholder="https://agent-vault-da3d088b.base44.app"
+                      placeholder="https://investor-konnect-da3d088b.base44.app"
                     />
                   </div>
                 </div>
@@ -406,7 +406,7 @@ export default function BillingSetup() {
                   <ol className="space-y-2 text-sm text-blue-800 ml-5 list-decimal">
                     <li>Go to Stripe Dashboard → Developers → Webhooks</li>
                     <li>Add endpoint: <code className="bg-blue-100 px-2 py-0.5 rounded">
-                      https://agent-vault-da3d088b.base44.app/functions/stripeWebhook
+                      https://investor-konnect-da3d088b.base44.app/functions/stripeWebhook
                     </code></li>
                     <li>Listen for events: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted</li>
                     <li>Copy the signing secret (whsec_...) and add to Base44 Secrets as STRIPE_WEBHOOK_SECRET</li>

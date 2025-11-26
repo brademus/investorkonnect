@@ -271,7 +271,7 @@ function NDAContent() {
           </Button>
 
           <p className="text-center text-xs text-slate-500 mt-4">
-            Questions? Contact <a href="mailto:legal@agentvault.com" className="text-blue-600 hover:text-blue-700">legal@agentvault.com</a>
+            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-blue-600 hover:text-blue-700">legal@investorkonnect.com</a>
           </p>
         </div>
       </div>

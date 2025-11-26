@@ -57,14 +57,14 @@ Provide a helpful, concise answer about:
 - Billing and subscription questions
 - Best practices for closing deals
 
-Keep answers short (2-3 sentences) and actionable. If you don't know something specific about the platform, suggest contacting support@agentvault.com.`
+Keep answers short (2-3 sentences) and actionable. If you don't know something specific about the platform, suggest contacting support@investorkonnect.com.`
       });
 
       setMessages(prev => [...prev, { role: 'assistant', content: response }]);
     } catch (error) {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again or contact support@agentvault.com for assistance.'
+        content: 'Sorry, I encountered an error. Please try again or contact support@investorkonnect.com for assistance.'
       }]);
     } finally {
       setLoading(false);
