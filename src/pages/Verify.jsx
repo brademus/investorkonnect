@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { personaFinalize } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
 import { Loader2, Shield, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -27,6 +28,31 @@ function VerifyContent() {
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
+
+  // DEMO MODE: Auto-approve KYC
+  useEffect(() => {
+    if (!user || !profile) return;
+    
+    if (DEMO_MODE && DEMO_CONFIG.autoApproveKYC && !kycVerified) {
+      setVerifying(true);
+      
+      setTimeout(async () => {
+        // Update demo profile in sessionStorage
+        const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || '{}');
+        demoProfile.kyc_status = 'approved';
+        demoProfile.identity_verified = true;
+        demoProfile.kyc_last_checked = new Date().toISOString();
+        sessionStorage.setItem('demo_profile', JSON.stringify(demoProfile));
+        
+        toast.success('Identity verified successfully!');
+        await refresh();
+        
+        navigate(createPageUrl("NDA"), { replace: true });
+      }, 2000);
+      
+      return;
+    }
+  }, [user, profile, kycVerified, navigate, refresh]);
 
   // Redirect if already verified
   useEffect(() => {
