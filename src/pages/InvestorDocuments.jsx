@@ -1,6 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Button } from "@/components/ui/button";
 import { FileText, ArrowLeft } from "lucide-react";
