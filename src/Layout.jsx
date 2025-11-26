@@ -65,7 +65,7 @@ function LayoutContent({ children }) {
                   <Shield className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <div className="font-bold text-xl text-slate-900">AgentVault</div>
+                  <div className="font-bold text-xl text-slate-900">INVESTOR KONNECT</div>
                   <div className="text-xs text-slate-500 -mt-1">Verified agents. Protected deals.</div>
                 </div>
               </Link>

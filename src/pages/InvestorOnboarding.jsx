@@ -107,7 +107,7 @@ function InvestorOnboardingContent() {
   ];
 
   useEffect(() => {
-    document.title = "Complete Your Investor Profile - AgentVault";
+    document.title = "Complete Your Investor Profile - Investor Konnect";
 
     // Load existing profile data if available
     if (profile) {

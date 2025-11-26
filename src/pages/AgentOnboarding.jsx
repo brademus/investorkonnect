@@ -170,7 +170,7 @@ function AgentOnboardingContent() {
   const TOTAL_STEPS = 5;
 
   useEffect(() => {
-    document.title = "Agent Onboarding - AgentVault";
+    document.title = "Agent Onboarding - Investor Konnect";
 
     // Load existing profile data if available
     if (profile && profile.agent) {

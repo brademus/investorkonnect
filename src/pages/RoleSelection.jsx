@@ -22,7 +22,7 @@ export default function RoleSelection() {
   const [selectedChoice, setSelectedChoice] = useState(null);
 
   useEffect(() => {
-    document.title = "Choose Your Role - AgentVault";
+    document.title = "Choose Your Role - Investor Konnect";
   }, []);
 
   const handleRoleSelection = (chosenRole) => {
@@ -71,7 +71,7 @@ export default function RoleSelection() {
             <Shield className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold text-slate-900 mb-4">
-            How will you use AgentVault?
+            How will you use Investor Konnect?
           </h1>
           <p className="text-xl text-slate-600">
             Choose your role to get started

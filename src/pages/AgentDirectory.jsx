@@ -38,7 +38,7 @@ export default function AgentDirectory() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    document.title = "Agent Directory - AgentVault";
+    document.title = "Agent Directory - Investor Konnect";
     
     if (!profileLoading) {
       checkAccessAndLoad();

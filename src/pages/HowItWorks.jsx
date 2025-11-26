@@ -86,7 +86,7 @@ export default function HowItWorks() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">How AgentVault Works</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">How Investor Konnect Works</h1>
           <p className="text-xl text-slate-300">
             A three-layer trust system designed to protect investors and empower verified agents.
           </p>
@@ -223,7 +223,7 @@ export default function HowItWorks() {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-slate-300 mb-8">
-            Join AgentVault today and experience the future of secure real estate connections.
+            Join Investor Konnect today and experience the future of secure real estate connections.
           </p>
           <Button 
             size="lg" 

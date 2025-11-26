@@ -33,7 +33,7 @@ export default function About() {
       {/* Hero */}
       <section className="bg-gradient-to-br from-slate-900 to-blue-900 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">About AgentVault</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6">About Investor Konnect</h1>
           <p className="text-xl text-slate-300">
             We're building the most trusted network of investor-focused real estate agents.
           </p>
@@ -48,7 +48,7 @@ export default function About() {
             Real estate investing shouldn't require blind trust. Yet too often, investors work with agents who prioritize commissions over client interests, share confidential deal information, or provide misleading market analysis.
           </p>
           <p className="text-lg text-slate-700 leading-relaxed mb-6">
-            AgentVault was founded to solve this problem. We combine rigorous agent vetting, platform-verified reviews, and NDA-protected deal rooms to create a network where trust isn't assumed — it's engineered.
+            Investor Konnect was founded to solve this problem. We combine rigorous agent vetting, platform-verified reviews, and NDA-protected deal rooms to create a network where trust isn't assumed — it's engineered.
           </p>
           <p className="text-lg text-slate-700 leading-relaxed">
             Our goal is simple: make it easy for investors to find agents who will protect their interests, and help those agents build reputations based on real performance, not fake reviews.
