@@ -155,7 +155,7 @@ export default function AgentHome() {
                   </span>
                 </div>
                 <div className={`backdrop-blur-sm rounded-lg px-4 py-2 flex items-center gap-2 ${
-                  hasNDA ? 'bg-emerald-500/20 border border-emerald-400/30' : 'bg-red-500/20 border border-red-400/30'
+                  hasNDA ? 'bg-gold-500/20 border border-gold-400/30' : 'bg-red-500/20 border border-red-400/30'
                 }`}>
                   <Shield className="w-4 h-4" />
                   <span className="text-sm">
@@ -457,7 +457,7 @@ export default function AgentHome() {
                           {inv.full_name || 'Investor'}
                         </div>
                         {score && score >= 0.8 && (
-                          <Badge className="bg-gold-100 text-emerald-800 text-xs">
+                          <Badge className="bg-gold-100 text-gold-800 text-xs">
                             Top Match
                           </Badge>
                         )}
