@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* GOLD COLOR PALETTE - ADD THESE NEW VARIABLES */
+    /* GOLD COLOR PALETTE */
     --color-gold-50: 51 100% 98%;
     --color-gold-100: 48 100% 95%;
     --color-gold-200: 44 75% 84%;
@@ -16,7 +16,7 @@
     --color-gold-800: 43 71% 25%;
     --color-gold-900: 43 71% 17%;
     
-    /* GRAY PALETTE - ADD THESE NEW VARIABLES */
+    /* GRAY PALETTE */
     --color-gray-50: 0 0% 98%;
     --color-gray-100: 0 0% 97%;
     --color-gray-200: 0 0% 92%;
@@ -28,13 +28,13 @@
     --color-gray-800: 0 0% 10%;
     --color-gray-900: 0 0% 0%;
     
-    /* SEMANTIC COLORS - ADD THESE NEW VARIABLES */
+    /* SEMANTIC COLORS */
     --color-success: 122 100% 27%;
     --color-info: 203 100% 38%;
     --color-warning: 32 98% 57%;
     --color-error: 11 81% 43%;
     
-    /* EXISTING SHADCN VARIABLES - KEEP THESE */
+    /* SHADCN VARIABLES */
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -194,6 +194,7 @@
   .bg-gold-800 { background-color: hsl(var(--color-gold-800)); }
   .bg-gold-900 { background-color: hsl(var(--color-gold-900)); }
   .border-gold-200 { border-color: hsl(var(--color-gold-200)); }
+  .border-gold-300 { border-color: hsl(var(--color-gold-300)); }
   .border-gold-500 { border-color: hsl(var(--color-gold-500)); }
   
   /* Blue utilities */
