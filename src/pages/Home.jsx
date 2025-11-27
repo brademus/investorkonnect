@@ -87,87 +87,87 @@ export default function Home() {
         </div>
       </nav>
 
-      <main className="ik-container py-12 sm:py-16 lg:py-20">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] items-center">
+      <main className="ik-container py-16 sm:py-20 lg:py-24">
+        <div className="grid gap-16 lg:gap-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center">
           {/* Left: copy */}
-          <section className="max-w-xl">
-            <div className="ik-badge-gold mb-5 inline-flex items-center gap-2">
+          <section className="lg:pr-8">
+            <div className="ik-badge-gold mb-6 inline-flex items-center gap-2 text-sm">
               <Shield className="w-4 h-4" />
               <span>Verified investor-friendly agents</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight mb-5 leading-tight" style={{ color: 'hsl(0 0% 0%)' }}>
+            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-bold tracking-tight mb-6 leading-[1.1]" style={{ color: 'hsl(0 0% 0%)' }}>
               Stop training retail agents.
               <br />
               <span style={{ color: 'hsl(43 71% 42%)' }}>Start closing investor deals.</span>
             </h1>
-            <p className="ik-text-subtle text-base sm:text-lg mb-7 max-w-xl leading-relaxed">
+            <p className="text-lg sm:text-xl mb-8 leading-relaxed max-w-lg" style={{ color: 'hsl(0 0% 28%)' }}>
               Investor Konnect matches your strategy and market with agents who already know how to work with real estate investors — then keeps everything in one shared deal room.
             </p>
 
-            <div className="flex flex-wrap gap-3 mb-7">
+            <div className="flex flex-wrap gap-3 mb-8">
               <button
                 type="button"
                 onClick={handleContinue}
                 disabled={!localState}
-                className="ik-btn-gold flex items-center gap-2 disabled:opacity-50"
+                className="ik-btn-gold flex items-center gap-2 text-base px-6 py-3 disabled:opacity-50"
               >
-                <MapPin className="w-4 h-4" />
+                <MapPin className="w-5 h-5" />
                 Submit your first deal
               </button>
               <Link to={createPageUrl("Investors")}>
-                <button className="ik-btn-pill">For investors</button>
+                <button className="ik-btn-pill text-base px-5 py-2.5">For investors</button>
               </Link>
               <Link to={createPageUrl("Agents")}>
-                <button className="ik-btn-pill">For agents</button>
+                <button className="ik-btn-pill text-base px-5 py-2.5">For agents</button>
               </Link>
             </div>
 
-            <ul className="space-y-2.5 text-sm ik-text-subtle">
-              <li className="flex items-center gap-2.5">
-                <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+            <ul className="space-y-3 text-base" style={{ color: 'hsl(0 0% 28%)' }}>
+              <li className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
                 Vetted agents with investor track records
               </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+              <li className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
                 Shared deal rooms with chat & milestones
               </li>
-              <li className="flex items-center gap-2.5">
-                <CheckCircle className="w-4 h-4 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+              <li className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
                 Contracts pre-filled from your conversation
               </li>
             </ul>
           </section>
 
           {/* Right: state selector card */}
-          <section className="ik-card p-5 sm:p-6 lg:p-7 w-full max-w-md lg:ml-auto">
-            <header className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'hsl(48 100% 95%)' }}>
-                <MapPin className="w-5 h-5" style={{ color: 'hsl(43 71% 42%)' }} />
+          <section className="ik-card p-6 sm:p-8 w-full max-w-[420px] lg:ml-auto shadow-lg" style={{ borderColor: 'hsl(0 0% 90%)' }}>
+            <header className="flex items-start gap-4 mb-6">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'hsl(48 100% 95%)' }}>
+                <MapPin className="w-6 h-6" style={{ color: 'hsl(43 71% 42%)' }} />
               </div>
               <div>
-                <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
+                <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
                   Where are you looking to invest?
                 </h2>
-                <p className="text-xs ik-text-muted mt-0.5">
+                <p className="text-sm" style={{ color: 'hsl(0 0% 44%)' }}>
                   Select your target state to see investor-friendly agents.
                 </p>
               </div>
             </header>
 
-            <div className="ik-search-bar mb-5">
-              <Search className="w-4 h-4 ik-text-muted flex-shrink-0" />
+            <div className="ik-search-bar mb-6">
+              <Search className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(0 0% 44%)' }} />
               <input
                 type="text"
                 placeholder="Search for a state…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-sm placeholder:text-gray-400"
+                className="flex-1 bg-transparent outline-none text-base placeholder:text-gray-400"
                 style={{ color: 'hsl(0 0% 10%)' }}
               />
             </div>
 
-            <div className="max-h-72 overflow-y-auto -mx-1 px-1">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="max-h-64 overflow-y-auto -mx-1 px-1 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {filteredStates.map((state) => (
                   <button
                     key={state.code}
@@ -178,24 +178,24 @@ export default function Home() {
                       ? { borderColor: 'hsl(43 59% 52%)', background: 'hsl(51 100% 98%)' } 
                       : { borderColor: 'hsl(0 0% 92%)', background: 'white' }}
                   >
-                    <div className="text-sm font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
+                    <div className="text-base font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
                       {state.code}
                     </div>
-                    <div className="text-xs ik-text-muted mt-0.5">{state.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color: 'hsl(0 0% 44%)' }}>{state.name}</div>
                   </button>
                 ))}
               </div>
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="flex justify-end pt-2 border-t" style={{ borderColor: 'hsl(0 0% 92%)' }}>
               <button
                 type="button"
                 disabled={!localState}
                 onClick={handleContinue}
-                className="ik-btn-gold flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                className="ik-btn-gold flex items-center gap-2 text-base px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Continue
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-5 h-5" />
               </button>
             </div>
           </section>

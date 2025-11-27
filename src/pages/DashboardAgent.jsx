@@ -54,149 +54,167 @@ function AgentDashboardContent() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
-            Welcome back, {firstName}!
-          </h1>
-          <p className="ik-text-subtle text-sm sm:text-base">
-            Your Agent dashboard
-          </p>
-        </div>
+      <header>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
+          Your Agent dashboard
+        </h1>
+        <p className="text-base" style={{ color: 'hsl(0 0% 44%)' }}>
+          Track your profile performance and connect with investors.
+        </p>
       </header>
 
-      {/* Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="ik-card p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Profile Strength</h3>
-              <p className="text-sm ik-text-muted mt-1">Complete your profile to attract investors</p>
-            </div>
+      {/* Top Stats Row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="ik-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Profile Strength</span>
             <TrendingUp className="w-5 h-5" style={{ color: 'hsl(43 59% 52%)' }} />
           </div>
-          <div className="mb-4">
-            <div className="flex items-end gap-2 mb-2">
-              <span className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{profileCompletion}%</span>
-              <span className="text-sm ik-text-muted mb-1">Complete</span>
-            </div>
-            <div className="ik-progress-bar">
-              <div className="ik-progress-fill" style={{ width: `${profileCompletion}%` }}></div>
-            </div>
+          <div className="text-3xl font-bold mb-2" style={{ color: 'hsl(0 0% 10%)' }}>{profileCompletion}%</div>
+          <div className="ik-progress-bar h-1.5">
+            <div className="ik-progress-fill" style={{ width: `${profileCompletion}%` }}></div>
           </div>
-          <Link to={createPageUrl("MyProfile")} className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: 'hsl(43 71% 42%)' }}>
-            Complete Profile <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
 
-        <div className="ik-card p-6">
-          <div className="flex items-start justify-between mb-4">
-            <div>
-              <h3 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Profile Views</h3>
-              <p className="text-sm ik-text-muted mt-1">Investors viewing your profile</p>
-            </div>
+        <div className="ik-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Profile Views</span>
             <Eye className="w-5 h-5" style={{ color: 'hsl(217 91% 60%)' }} />
           </div>
-          <div className="mb-4">
-            <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.profileViews}</div>
-            <div className="text-sm mt-2" style={{ color: 'hsl(142 71% 45%)' }}>+15% this week</div>
+          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.profileViews}</div>
+          <p className="text-sm mt-1" style={{ color: 'hsl(142 71% 45%)' }}>+15% this week</p>
+        </div>
+
+        <div className="ik-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Unread Messages</span>
+            <MessageSquare className="w-5 h-5" style={{ color: 'hsl(270 60% 55%)' }} />
           </div>
-          <Link to={createPageUrl("InvestorDirectory")} className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: 'hsl(217 91% 60%)' }}>
-            Find Investors <ArrowRight className="w-4 h-4" />
-          </Link>
+          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.unreadMessages}</div>
+          <Link to={createPageUrl("Inbox")} className="text-sm font-medium mt-1 inline-block hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>View inbox</Link>
+        </div>
+
+        <div className="ik-card p-5">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Active Clients</span>
+            <Users className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
+          </div>
+          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.activeClients}</div>
+          <p className="text-sm mt-1" style={{ color: 'hsl(0 0% 44%)' }}>{userData.pendingRequests} pending</p>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Link to={createPageUrl("InvestorDirectory")} className="ik-card ik-card-hover p-6 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'hsl(48 100% 95%)' }}>
-              <Users className="w-7 h-7" style={{ color: 'hsl(43 71% 42%)' }} />
-            </div>
-            <h3 className="text-base font-semibold mb-2" style={{ color: 'hsl(0 0% 10%)' }}>Find Investors</h3>
-            <p className="text-sm ik-text-muted mb-4">Connect with active investors</p>
-            <span className="ik-btn-gold text-sm px-4 py-2">Browse Now</span>
-          </Link>
+      {/* Main Content Grid */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        {/* Left Column */}
+        <div className="space-y-6">
+          {/* Quick Actions */}
+          <section className="ik-card p-6">
+            <h2 className="text-base font-semibold mb-5" style={{ color: 'hsl(0 0% 10%)' }}>Quick Actions</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <Link to={createPageUrl("InvestorDirectory")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(48 100% 95%)' }}>
+                  <Users className="w-6 h-6" style={{ color: 'hsl(43 71% 42%)' }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Find Investors</h3>
+                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>Connect with investors</p>
+              </Link>
 
-          <Link to={createPageUrl("Inbox")} className="ik-card ik-card-hover p-6 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'hsl(217 91% 95%)' }}>
-              <MessageSquare className="w-7 h-7" style={{ color: 'hsl(217 91% 60%)' }} />
-            </div>
-            <h3 className="text-base font-semibold mb-2" style={{ color: 'hsl(0 0% 10%)' }}>Messages</h3>
-            <p className="text-sm ik-text-muted mb-4">
-              {userData.unreadMessages > 0 ? `${userData.unreadMessages} unread messages` : "No new messages"}
-            </p>
-            <span className="ik-btn-pill text-sm">Open Inbox</span>
-          </Link>
+              <Link to={createPageUrl("Inbox")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(217 91% 95%)' }}>
+                  <MessageSquare className="w-6 h-6" style={{ color: 'hsl(217 91% 60%)' }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Messages</h3>
+                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>{userData.unreadMessages} unread</p>
+              </Link>
 
-          <Link to={createPageUrl("DealRooms")} className="ik-card ik-card-hover p-6 text-center">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: 'hsl(270 91% 95%)' }}>
-              <FileText className="w-7 h-7" style={{ color: 'hsl(270 60% 55%)' }} />
+              <Link to={createPageUrl("DealRooms")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
+                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(270 91% 95%)' }}>
+                  <FileText className="w-6 h-6" style={{ color: 'hsl(270 60% 55%)' }} />
+                </div>
+                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Deal Rooms</h3>
+                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>{userData.activeDealRooms} active</p>
+              </Link>
             </div>
-            <h3 className="text-base font-semibold mb-2" style={{ color: 'hsl(0 0% 10%)' }}>Deal Rooms</h3>
-            <p className="text-sm ik-text-muted mb-4">
-              {userData.activeDealRooms > 0 ? `${userData.activeDealRooms} active rooms` : "No active rooms"}
-            </p>
-            <span className="ik-btn-pill text-sm">View Rooms</span>
-          </Link>
-        </div>
-      </div>
+          </section>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="ik-card p-6">
-          <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Recent Activity</h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-3 pb-4 border-b" style={{ borderColor: 'hsl(0 0% 95%)' }}>
-              <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'hsl(217 91% 95%)' }}>
-                <Eye className="w-4 h-4" style={{ color: 'hsl(217 91% 60%)' }} />
+          {/* Recent Activity */}
+          <section className="ik-card p-6">
+            <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Recent Activity</h2>
+            <div className="space-y-0 divide-y" style={{ borderColor: 'hsl(0 0% 94%)' }}>
+              <div className="flex items-center gap-4 py-3 first:pt-0">
+                <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'hsl(217 91% 95%)' }}>
+                  <Eye className="w-4 h-4" style={{ color: 'hsl(217 91% 60%)' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>An investor viewed your profile</p>
+                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>1 hour ago</p>
+                </div>
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>An investor viewed your profile</p>
-                <p className="text-xs ik-text-muted">1 hour ago</p>
+              <div className="flex items-center gap-4 py-3">
+                <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'hsl(48 100% 95%)' }}>
+                  <TrendingUp className="w-4 h-4" style={{ color: 'hsl(43 71% 42%)' }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>New connection request</p>
+                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>Yesterday</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4 py-3 last:pb-0">
+                <div className="w-10 h-10 rounded-full flex-shrink-0" style={{ background: 'hsl(0 0% 92%)' }}></div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>Alex T. sent you a message</p>
+                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>2 days ago</p>
+                </div>
               </div>
             </div>
-            <div className="flex items-start gap-3 pb-4 border-b" style={{ borderColor: 'hsl(0 0% 95%)' }}>
-              <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'hsl(48 100% 95%)' }}>
-                <TrendingUp className="w-4 h-4" style={{ color: 'hsl(43 71% 42%)' }} />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>New connection request</p>
-                <p className="text-xs ik-text-muted">Yesterday</p>
-              </div>
-            </div>
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full flex-shrink-0" style={{ background: 'hsl(0 0% 92%)' }}></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>Alex T. sent you a message</p>
-                <p className="text-xs ik-text-muted">2 days ago</p>
-              </div>
-            </div>
-          </div>
+          </section>
         </div>
 
-        <div className="ik-card p-6">
-          <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Active Clients</h2>
-          <div className="mb-4">
-            <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.activeClients}</div>
-            <div className="text-sm ik-text-muted mt-2">{userData.pendingRequests} pending requests</div>
-          </div>
-          <div className="space-y-3 mb-4">
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 flex-shrink-0 ik-text-muted" />
-              <div className="flex-1">
-                <p className="text-xs ik-text-muted">Primary Markets</p>
-                <p className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>{profile?.agent?.markets?.join(', ') || 'Not set'}</p>
+        {/* Right Column */}
+        <div className="space-y-6">
+          {/* Markets & Info */}
+          <section className="ik-card p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Your Markets</h2>
+              <Link to={createPageUrl("MyProfile")} className="text-sm font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Edit</Link>
+            </div>
+            <div className="flex items-start gap-3 mb-4">
+              <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'hsl(0 0% 69%)' }} />
+              <div>
+                <dt className="text-xs mb-0.5" style={{ color: 'hsl(0 0% 44%)' }}>Primary Markets</dt>
+                <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>{profile?.agent?.markets?.join(', ') || 'Not set'}</dd>
               </div>
             </div>
-          </div>
-          <Link to={createPageUrl("DealRooms")} className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: 'hsl(43 71% 42%)' }}>
-            Manage Clients <ArrowRight className="w-4 h-4" />
-          </Link>
+            <Link to={createPageUrl("DealRooms")} className="inline-flex items-center gap-2 text-sm font-medium" style={{ color: 'hsl(43 71% 42%)' }}>
+              Manage Clients <ArrowRight className="w-4 h-4" />
+            </Link>
+          </section>
+
+          {/* Quick Links */}
+          <section className="ik-card p-6">
+            <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Quick Links</h2>
+            <nav className="space-y-1">
+              <Link to={createPageUrl("MyProfile")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
+                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>My profile</span>
+                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
+              </Link>
+              <Link to={createPageUrl("InvestorDirectory")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
+                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Browse investors</span>
+                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
+              </Link>
+              <Link to={createPageUrl("DealRooms")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
+                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Deal rooms</span>
+                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
+              </Link>
+              <Link to={createPageUrl("Inbox")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
+                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Messages</span>
+                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
+              </Link>
+            </nav>
+          </section>
         </div>
       </div>
     </div>
