@@ -89,38 +89,71 @@
 
   /* Cards */
   .ik-card {
-    @apply bg-white rounded-2xl border shadow-sm;
-    border-color: hsl(0 0% 92%);
-    transition: all 200ms ease;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid hsl(0 0% 95%);
+  }
+
+  .ik-card-hover {
+    cursor: pointer;
   }
 
   .ik-card-hover:hover {
     transform: translateY(-4px);
-    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 4px 10px rgba(0, 0, 0, 0.06);
+    border-color: hsl(0 0% 90%);
   }
 
   /* Buttons */
   .ik-btn-gold {
-    background: hsl(43 59% 52%);
-    @apply text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm;
-    transition: all 200ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, hsl(43 71% 42%) 0%, hsl(43 59% 52%) 100%);
+    color: white;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 12px 24px;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
+    border: none;
   }
 
   .ik-btn-gold:hover {
-    background: hsl(43 71% 42%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
+    background: linear-gradient(135deg, hsl(43 71% 38%) 0%, hsl(43 59% 48%) 100%);
+  }
+
+  .ik-btn-gold:focus-visible {
+    outline: 2px solid hsl(43 71% 42%);
+    outline-offset: 2px;
   }
 
   .ik-btn-pill {
-    @apply rounded-full border px-4 py-2 text-sm font-medium bg-white;
-    border-color: hsl(0 0% 87%);
-    color: hsl(0 0% 13%);
-    transition: all 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: hsl(0 0% 96%);
+    color: hsl(0 0% 20%);
+    font-weight: 500;
+    border-radius: 24px;
+    padding: 10px 20px;
+    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid hsl(0 0% 90%);
   }
 
   .ik-btn-pill:hover {
-    background: hsl(0 0% 97%);
+    background: hsl(0 0% 92%);
+    border-color: hsl(0 0% 80%);
+    transform: translateY(-1px);
+  }
+
+  .ik-btn-pill:focus-visible {
+    outline: 2px solid hsl(43 71% 42%);
+    outline-offset: 2px;
   }
 
   .ik-badge-gold {
@@ -152,22 +185,75 @@
 
   /* Progress bar */
   .ik-progress-bar {
-    @apply h-2 rounded-full overflow-hidden;
-    background: hsl(0 0% 92%);
+    width: 100%;
+    height: 8px;
+    background: hsl(0 0% 95%);
+    border-radius: 999px;
+    overflow: hidden;
   }
 
   .ik-progress-fill {
-    @apply h-full rounded-full;
-    background: linear-gradient(90deg, hsl(43 59% 52%) 0%, hsl(48 85% 60%) 100%);
-    transition: width 300ms ease;
+    height: 100%;
+    background: linear-gradient(90deg, hsl(43 71% 42%) 0%, hsl(43 59% 52%) 100%);
+    border-radius: 999px;
+    transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1);
   }
-}
 
-/* Utility shorthands */
-@layer utilities {
-  .ik-text-muted { color: hsl(0 0% 44%); }
-  .ik-text-subtle { color: hsl(0 0% 28%); }
+  /* Upgrade Banner */
+  .ik-upgrade-banner {
+    background: linear-gradient(135deg, hsl(48 100% 95%) 0%, hsl(48 100% 92%) 100%);
+    border: 1px solid hsl(43 59% 85%);
+    border-radius: 16px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .ik-upgrade-banner:hover {
+    border-color: hsl(43 59% 75%);
+  }
+
+  /* Empty State */
+  .ik-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: hsl(0 0% 45%);
+  }
+
+  .ik-empty-state-icon {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 16px;
+    color: hsl(0 0% 70%);
+  }
+  }
+
+  /* Utility shorthands */
+  @layer utilities {
+  .ik-text-muted { color: hsl(0 0% 45%); }
+  .ik-text-subtle { color: hsl(0 0% 55%); }
   .ik-border { border-color: hsl(0 0% 92%); }
   .ik-bg-card { background-color: hsl(0 0% 100%); }
   .ik-bg-page { background-color: hsl(0 0% 98%); }
-}
+  }
+
+  /* Responsive Utilities */
+  @media (max-width: 768px) {
+  .ik-card {
+    border-radius: 12px;
+  }
+
+  .ik-btn-gold {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+  }
+
+  /* Focus States for Accessibility */
+  .ik-card:focus-visible {
+  outline: 2px solid hsl(217 91% 60%);
+  outline-offset: 2px;
+  }
