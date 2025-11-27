@@ -2,173 +2,172 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ====== Design Tokens (Investor Konnect - Airbnb Style) ====== */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-}
+    /* Gold palette based on logo */
+    --gold-50: 51 100% 98%;
+    --gold-100: 48 100% 95%;
+    --gold-200: 44 75% 84%;
+    --gold-300: 44 68% 75%;
+    --gold-400: 43 67% 64%;
+    --gold-500: 43 59% 52%;
+    --gold-600: 43 71% 42%;
+    --gold-700: 43 71% 33%;
+    --gold-800: 43 71% 25%;
+    --gold-900: 43 71% 17%;
 
-@layer base {
+    /* Airbnb-style neutrals */
+    --gray-50: 0 0% 98%;
+    --gray-100: 0 0% 97%;
+    --gray-200: 0 0% 92%;
+    --gray-300: 0 0% 87%;
+    --gray-400: 0 0% 69%;
+    --gray-500: 0 0% 44%;
+    --gray-600: 0 0% 28%;
+    --gray-700: 0 0% 13%;
+    --gray-800: 0 0% 10%;
+    --gray-900: 0 0% 0%;
+
+    --background: 0 0% 100%;
+    --foreground: 0 0% 13%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 13%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 13%;
+    --primary: 43 59% 52%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 44%;
+    --accent: 0 0% 96%;
+    --accent-foreground: 0 0% 13%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 92%;
+    --input: 0 0% 92%;
+    --ring: 43 59% 52%;
+    --radius: 0.75rem;
+  }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold;
+    color: hsl(0 0% 10%);
   }
 }
 
-/* ========================================
-   PROFESSIONAL B2B DASHBOARD STYLES
-   ======================================== */
+/* ====== Reusable Layout & Components ====== */
+@layer components {
+  /* Top navbar */
+  .ik-navbar {
+    @apply bg-white border-b sticky top-0 z-40;
+    border-color: hsl(0 0% 92%);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
 
-/* Card Components */
-.card-professional {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
-  transition: all 250ms ease;
+  .ik-container {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .ik-body-shell {
+    @apply min-h-screen;
+    background-color: hsl(0 0% 98%);
+    color: hsl(0 0% 13%);
+  }
+
+  /* Cards */
+  .ik-card {
+    @apply bg-white rounded-2xl border shadow-sm;
+    border-color: hsl(0 0% 92%);
+    transition: all 200ms ease;
+  }
+
+  .ik-card-hover:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+  }
+
+  /* Buttons */
+  .ik-btn-gold {
+    background: hsl(43 59% 52%);
+    @apply text-white font-semibold px-5 py-2.5 rounded-xl shadow-sm;
+    transition: all 200ms ease;
+  }
+
+  .ik-btn-gold:hover {
+    background: hsl(43 71% 42%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  }
+
+  .ik-btn-pill {
+    @apply rounded-full border px-4 py-2 text-sm font-medium bg-white;
+    border-color: hsl(0 0% 87%);
+    color: hsl(0 0% 13%);
+    transition: all 150ms ease;
+  }
+
+  .ik-btn-pill:hover {
+    background: hsl(0 0% 97%);
+  }
+
+  .ik-badge-gold {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
+    background: hsl(48 100% 95%);
+    color: hsl(43 71% 33%);
+  }
+
+  /* Search bar shell */
+  .ik-search-bar {
+    @apply bg-white border rounded-full px-5 py-3 shadow-sm flex items-center gap-3;
+    border-color: hsl(0 0% 87%);
+    transition: box-shadow 200ms ease;
+  }
+
+  .ik-search-bar:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+
+  /* Hero background */
+  .ik-hero {
+    background: radial-gradient(circle at top left, hsl(48 100% 95%) 0%, #ffffff 55%, hsl(48 100% 95%) 100%);
+  }
+
+  /* Simple section spacing */
+  .ik-section {
+    @apply py-10 sm:py-12;
+  }
+
+  /* Progress bar */
+  .ik-progress-bar {
+    @apply h-2 rounded-full overflow-hidden;
+    background: hsl(0 0% 92%);
+  }
+
+  .ik-progress-fill {
+    @apply h-full rounded-full;
+    background: linear-gradient(90deg, hsl(43 59% 52%) 0%, hsl(48 85% 60%) 100%);
+    transition: width 300ms ease;
+  }
 }
 
-.card-professional:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
-}
-
-.metric-card {
-  background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid #F3F4F6;
-}
-
-.action-card {
-  background: white;
-  border-radius: 12px;
-  padding: 32px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 250ms ease;
-  text-align: center;
-  border: 2px solid transparent;
-  display: block;
-}
-
-.action-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
-  border-color: #D4AF37;
-}
-
-/* Button Components */
-.btn-primary-professional {
-  background: #D4AF37;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
-  transition: all 200ms ease;
-  border: none;
-  cursor: pointer;
-  width: 100%;
-}
-
-.btn-primary-professional:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
-}
-
-.btn-secondary-professional {
-  background: white;
-  color: #6B7280;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  font-size: 16px;
-  border: 1px solid #E5E7EB;
-  transition: all 200ms ease;
-  cursor: pointer;
-  width: 100%;
-}
-
-.btn-secondary-professional:hover {
-  border-color: #D4AF37;
-  color: #D4AF37;
-}
-
-/* Progress Bar */
-.progress-bar {
-  height: 8px;
-  background: #E5E7EB;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-bar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #D4AF37 0%, #F4D03F 100%);
-  transition: width 300ms ease;
-}
-
-/* Typography */
-.section-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #111827;
-  margin-bottom: 16px;
-}
-
-.metric-number {
-  font-size: 32px;
-  font-weight: 700;
-  color: #111827;
-  line-height: 1;
-}
-
-.metric-label {
-  font-size: 14px;
-  color: #6B7280;
-  margin-top: 8px;
-}
-
-/* Empty States */
-.empty-state {
-  text-align: center;
-  padding: 48px 24px;
-  background: #F9FAFB;
-  border-radius: 12px;
-  border: 2px dashed #E5E7EB;
-}
-
-/* Badges */
-.badge-verified {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  background: #ECFDF5;
-  color: #059669;
-  padding: 4px 12px;
-  border-radius: 16px;
-  font-size: 14px;
-  font-weight: 600;
+/* Utility shorthands */
+@layer utilities {
+  .ik-text-muted { color: hsl(0 0% 44%); }
+  .ik-text-subtle { color: hsl(0 0% 28%); }
+  .ik-border { border-color: hsl(0 0% 92%); }
+  .ik-bg-card { background-color: hsl(0 0% 100%); }
+  .ik-bg-page { background-color: hsl(0 0% 98%); }
 }
