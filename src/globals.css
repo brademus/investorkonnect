@@ -274,4 +274,115 @@
   .border-gray-700 { border-color: hsl(var(--color-gray-700)); }
   .border-gray-800 { border-color: hsl(var(--color-gray-800)); }
   .border-gray-900 { border-color: hsl(var(--color-gray-900)); }
-}
+  }
+
+  /* Professional B2B Design System */
+  .card-professional {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  transition: all 250ms ease;
+  }
+  .card-professional:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06);
+  }
+  .btn-primary-professional {
+  background: #D4AF37;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  transition: all 200ms ease;
+  border: none;
+  cursor: pointer;
+  }
+  .btn-primary-professional:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(212, 175, 55, 0.3);
+  }
+  .btn-secondary-professional {
+  background: white;
+  color: #6B7280;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 16px;
+  border: 1px solid #E5E7EB;
+  transition: all 200ms ease;
+  cursor: pointer;
+  }
+  .btn-secondary-professional:hover {
+  border-color: #D4AF37;
+  color: #D4AF37;
+  }
+  .metric-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #F3F4F6;
+  }
+  .action-card {
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 250ms ease;
+  cursor: pointer;
+  text-align: center;
+  border: 2px solid transparent;
+  }
+  .action-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  border-color: #D4AF37;
+  }
+  .empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  background: #F9FAFB;
+  border-radius: 12px;
+  border: 2px dashed #E5E7EB;
+  }
+  .progress-bar {
+  height: 8px;
+  background: #E5E7EB;
+  border-radius: 4px;
+  overflow: hidden;
+  }
+  .progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #D4AF37 0%, #F4D03F 100%);
+  transition: width 300ms ease;
+  }
+  .badge-verified {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ECFDF5;
+  color: #059669;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  }
+  .section-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 16px;
+  }
+  .metric-number {
+  font-size: 32px;
+  font-weight: 700;
+  color: #111827;
+  line-height: 1;
+  }
+  .metric-label {
+  font-size: 14px;
+  color: #6B7280;
+  margin-top: 8px;
+  }

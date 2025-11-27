@@ -1,22 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { 
-  Users, Eye, TrendingUp, Mail, Folder, 
-  User, ArrowRight, Shield, CheckSquare
+  Search, MessageSquare, Users, FileText, TrendingUp, Eye,
+  MapPin, CheckCircle2, ArrowRight, User, Shield
 } from "lucide-react";
 
 function AgentDashboardContent() {
-  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    connectionRequests: 0,
-    profileViews: 0,
-    activeInvestors: 0,
-    unreadMessages: 0
-  });
+  const [profileCompletion] = useState(75);
 
   useEffect(() => {
     loadProfile();
@@ -41,332 +35,210 @@ function AgentDashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="bg-white rounded-[20px] p-8 animate-pulse" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div className="w-12 h-12 bg-[#E5E7EB] rounded-full mb-4 mx-auto"></div>
-            <div className="h-8 bg-[#E5E7EB] rounded w-48 mb-2 mx-auto"></div>
-            <div className="h-4 bg-[#E5E7EB] rounded w-32 mx-auto"></div>
-          </div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-500 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
         </div>
       </div>
     );
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Agent';
-  const profileCompletion = 75;
+  const userData = {
+    activeClients: 5,
+    pendingRequests: 3,
+    unreadMessages: 4,
+    profileViews: 12,
+    activeDealRooms: 2
+  };
 
   return (
-    <div className="min-h-screen bg-[#FFFFFF]" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+    <div className="min-h-screen bg-gray-50">
       {/* Navigation Bar */}
-      <nav className="h-20 bg-white border-b border-[#E5E7EB] sticky top-0 z-50" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between">
-          <Link to={createPageUrl("Home")} className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-[#D4AF37] rounded-[12px] flex items-center justify-center">
-              <Shield className="w-7 h-7 text-white" />
-            </div>
-            <span className="text-[20px] font-bold text-[#1A1A1A]">INVESTOR KONNECT</span>
-          </Link>
-          
-          <div className="flex items-center gap-4">
-            <Link to={createPageUrl("InvestorDirectory")}>
-              <button className="rounded-full font-medium text-[14px] text-[#666666] hover:text-[#1A1A1A] px-4 py-2 transition-colors">
-                Browse Investors
-              </button>
-            </Link>
-            <Link to={createPageUrl("MyProfile")}>
-              <div className="w-10 h-10 bg-[#F9FAFB] rounded-full flex items-center justify-center cursor-pointer hover:bg-[#D4AF37]/20 transition-all duration-250">
-                <User className="w-5 h-5 text-[#666666]" />
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="flex items-center justify-between h-16">
+            <Link to={createPageUrl("Home")} className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
+                <Shield className="text-white w-6 h-6" />
               </div>
+              <span className="text-xl font-bold text-gray-900">INVESTOR KONNECT</span>
             </Link>
+
+            <div className="flex-1 max-w-2xl mx-8">
+              <div className="relative">
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <input
+                  type="text"
+                  placeholder="Search investors, locations..."
+                  className="w-full pl-12 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Link to={createPageUrl("Inbox")} className="relative p-2 hover:bg-gray-100 rounded-lg transition">
+                <MessageSquare size={24} className="text-gray-600" />
+                {userData.unreadMessages > 0 && (
+                  <span className="absolute top-0 right-0 w-5 h-5 bg-blue-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {userData.unreadMessages}
+                  </span>
+                )}
+              </Link>
+              <Link to={createPageUrl("MyProfile")} className="w-8 h-8 bg-amber-500 rounded-full flex items-center justify-center">
+                <User size={18} className="text-white" />
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
 
-      {/* Hero Welcome Card */}
-      <section className="px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-        <div className="max-w-7xl mx-auto">
-          <div 
-            className="relative overflow-hidden rounded-[24px] p-8 md:p-12"
-            style={{
-              background: 'linear-gradient(135deg, #D4AF37 0%, #B8941F 100%)',
-              boxShadow: '0 8px 24px rgba(212, 175, 55, 0.25)'
-            }}
-          >
-            {/* Decorative circles */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/3"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/4"></div>
-            
-            <div className="relative z-10">
-              <h1 className="text-white text-[32px] font-bold mb-2 leading-[1.2]">
-                Welcome back, {firstName}! 👋
-              </h1>
-              <p className="text-white/90 text-[16px] mb-6 leading-[1.5]">
-                You're growing your investor network
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Hero Section */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {firstName}!</h1>
+          <p className="text-gray-600 mt-2">Your Agent dashboard</p>
+        </div>
+
+        {/* Key Metrics Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {/* Profile Strength */}
+          <div className="metric-card">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Profile Strength</h3>
+                <p className="text-sm text-gray-600 mt-1">Complete your profile to attract investors</p>
+              </div>
+              <TrendingUp className="text-amber-500" size={24} />
+            </div>
+            <div className="mb-4">
+              <div className="flex items-end gap-2 mb-2">
+                <span className="metric-number">{profileCompletion}%</span>
+                <span className="text-sm text-gray-600 mb-1">Complete</span>
+              </div>
+              <div className="progress-bar">
+                <div className="progress-bar-fill" style={{ width: `${profileCompletion}%` }}></div>
+              </div>
+            </div>
+            <Link to={createPageUrl("MyProfile")} className="inline-flex items-center gap-2 text-amber-600 font-semibold hover:text-amber-700 transition">
+              Complete Profile <ArrowRight size={18} />
+            </Link>
+          </div>
+
+          {/* Profile Views */}
+          <div className="metric-card">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">Profile Views</h3>
+                <p className="text-sm text-gray-600 mt-1">Investors viewing your profile</p>
+              </div>
+              <Eye className="text-blue-500" size={24} />
+            </div>
+            <div className="mb-4">
+              <div className="metric-number">{userData.profileViews}</div>
+              <div className="text-sm text-green-600 mt-2">+15% this week</div>
+            </div>
+            <Link to={createPageUrl("InvestorDirectory")} className="inline-flex items-center gap-2 text-blue-600 font-semibold hover:text-blue-700 transition">
+              Find Investors <ArrowRight size={18} />
+            </Link>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div className="mb-8">
+          <h2 className="section-title">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Link to={createPageUrl("InvestorDirectory")} className="action-card block">
+              <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="text-amber-600" size={32} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Find Investors</h3>
+              <p className="text-gray-600 mb-4">Connect with active investors</p>
+              <button className="btn-primary-professional w-full">Browse Now</button>
+            </Link>
+
+            <Link to={createPageUrl("Inbox")} className="action-card block">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare className="text-blue-600" size={32} />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Messages</h3>
+              <p className="text-gray-600 mb-4">
+                {userData.unreadMessages > 0 ? `${userData.unreadMessages} unread messages` : "No new messages"}
               </p>
-              
-              {/* Progress Bar */}
-              <div className="mb-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-white/90 text-[14px] font-medium">Profile Completion</span>
-                  <span className="text-white font-bold text-[14px]">{profileCompletion}%</span>
-                </div>
-                <div className="w-full h-3 bg-white/20 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-white rounded-full transition-all duration-500"
-                    style={{ width: `${profileCompletion}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              {/* Next Step CTA */}
-              <div className="flex items-center gap-3 mt-6">
-                <span className="text-white/90 text-[14px]">Next step:</span>
-                <Link to={createPageUrl("InvestorDirectory")}>
-                  <button className="bg-white text-[#B8941F] px-6 py-2.5 rounded-full font-medium text-[14px] hover:bg-white/95 transition-all duration-250 hover:scale-[1.02] flex items-center gap-2">
-                    Find investors in your market
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Key Metrics with Hierarchy */}
-      <section className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[24px] font-bold text-[#1A1A1A] mb-6 leading-[1.2]">Your Performance</h2>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* HERO METRIC - Profile Views */}
-            <div className="lg:col-span-2">
-              <div 
-                className="bg-white rounded-[20px] p-8 h-full transition-all duration-250 hover:-translate-y-1 border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-12 h-12 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                    <Eye className="w-6 h-6 text-[#D4AF37]" />
-                  </div>
-                  <span className="text-[14px] font-medium text-[#666666]">PROFILE VIEWS</span>
-                </div>
-                
-                <p className="text-[64px] font-bold text-[#1A1A1A] leading-none mb-4">
-                  {stats.profileViews}
-                </p>
-                
-                {stats.profileViews === 0 ? (
-                  <div>
-                    <p className="text-[16px] text-[#666666] mb-4 leading-[1.5]">
-                      Complete your profile to attract more investors
-                    </p>
-                    <Link to={createPageUrl("MyProfile")}>
-                      <button className="bg-[#D4AF37] text-white px-6 py-3 rounded-full font-medium text-[14px] hover:bg-[#B8941F] transition-all duration-250 hover:scale-[1.02] flex items-center gap-2">
-                        Complete Profile
-                        <ArrowRight className="w-4 h-4" />
-                      </button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2 text-[#10B981]">
-                    <TrendingUp className="w-4 h-4" />
-                    <span className="text-[14px] font-medium">+15% this week</span>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {/* SUPPORTING METRICS */}
-            <div className="space-y-6">
-              {/* Connection Requests */}
-              <div 
-                className="bg-white rounded-[20px] p-6 transition-all duration-250 hover:-translate-y-1 border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-[#3B82F6]/20 rounded-full flex items-center justify-center">
-                    <Users className="w-5 h-5 text-[#3B82F6]" />
-                  </div>
-                  {stats.connectionRequests > 0 && (
-                    <span className="text-[12px] text-[#10B981] font-medium">+{stats.connectionRequests} new</span>
-                  )}
-                </div>
-                <p className="text-[28px] font-bold text-[#1A1A1A]">{stats.connectionRequests}</p>
-                <p className="text-[14px] text-[#666666]">Connection Requests</p>
-              </div>
-              
-              {/* Unread Messages */}
-              <div 
-                className="bg-white rounded-[20px] p-6 transition-all duration-250 hover:-translate-y-1 border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <div className="w-10 h-10 bg-[#10B981]/20 rounded-full flex items-center justify-center">
-                    <Mail className="w-5 h-5 text-[#10B981]" />
-                  </div>
-                  {stats.unreadMessages > 0 && (
-                    <span className="text-[12px] text-[#EF4444] font-medium">{stats.unreadMessages} new</span>
-                  )}
-                </div>
-                <p className="text-[28px] font-bold text-[#1A1A1A]">{stats.unreadMessages}</p>
-                <p className="text-[14px] text-[#666666]">Unread Messages</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Quick Actions - Simplified */}
-      <section className="px-4 sm:px-6 lg:px-8 py-8">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[24px] font-bold text-[#1A1A1A] mb-2 leading-[1.2]">What would you like to do?</h2>
-          <p className="text-[14px] text-[#666666] mb-6">Choose your next action</p>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-            {/* Messages */}
-            <Link to={createPageUrl("Inbox")}>
-              <div 
-                className="bg-white rounded-[20px] p-8 transition-all duration-250 cursor-pointer hover:scale-[1.02] hover:-translate-y-1 group border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="w-16 h-16 bg-[#3B82F6]/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#3B82F6] transition-colors duration-250">
-                  <Mail className="w-8 h-8 text-[#3B82F6] group-hover:text-white transition-colors duration-250" />
-                </div>
-                <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-2 leading-[1.3]">Messages</h3>
-                <p className="text-[14px] text-[#666666] mb-3 leading-[1.5]">View your inbox and investor requests</p>
-                {stats.unreadMessages > 0 && (
-                  <div className="inline-flex items-center gap-2 bg-[#EF4444]/10 text-[#EF4444] px-3 py-1 rounded-full text-[12px] font-medium">
-                    <span className="w-2 h-2 bg-[#EF4444] rounded-full animate-pulse"></span>
-                    {stats.unreadMessages} unread
-                  </div>
-                )}
-              </div>
+              <button className="btn-secondary-professional w-full">Open Inbox</button>
             </Link>
-            
-            {/* Find Investors */}
-            <Link to={createPageUrl("InvestorDirectory")}>
-              <div 
-                className="bg-white rounded-[20px] p-8 transition-all duration-250 cursor-pointer hover:scale-[1.02] hover:-translate-y-1 group border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="w-16 h-16 bg-[#D4AF37]/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#D4AF37] transition-colors duration-250">
-                  <Users className="w-8 h-8 text-[#D4AF37] group-hover:text-white transition-colors duration-250" />
-                </div>
-                <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-2 leading-[1.3]">Find Investors</h3>
-                <p className="text-[14px] text-[#666666] mb-3 leading-[1.5]">Connect with active investors in your market</p>
-                <div className="inline-flex items-center gap-2 bg-[#10B981]/10 text-[#10B981] px-3 py-1 rounded-full text-[12px] font-medium">
-                  <CheckSquare className="w-3 h-3" />
-                  All verified
-                </div>
+
+            <Link to={createPageUrl("DealRooms")} className="action-card block">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <FileText className="text-purple-600" size={32} />
               </div>
-            </Link>
-            
-            {/* My Deals */}
-            <Link to={createPageUrl("DealRooms")}>
-              <div 
-                className="bg-white rounded-[20px] p-8 transition-all duration-250 cursor-pointer hover:scale-[1.02] hover:-translate-y-1 group border border-[#E5E7EB]"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}
-                onMouseEnter={(e) => e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.12)'}
-                onMouseLeave={(e) => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.06)'}
-              >
-                <div className="w-16 h-16 bg-[#8B5CF6]/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-[#8B5CF6] transition-colors duration-250">
-                  <Folder className="w-8 h-8 text-[#8B5CF6] group-hover:text-white transition-colors duration-250" />
-                </div>
-                <h3 className="text-[20px] font-bold text-[#1A1A1A] mb-2 leading-[1.3]">My Deals</h3>
-                <p className="text-[14px] text-[#666666] mb-3 leading-[1.5]">Manage your active deal rooms</p>
-                <div className="text-[12px] text-[#666666]">
-                  {stats.activeInvestors === 0 ? 'No active deals yet' : `${stats.activeInvestors} active`}
-                </div>
-              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Deal Rooms</h3>
+              <p className="text-gray-600 mb-4">
+                {userData.activeDealRooms > 0 ? `${userData.activeDealRooms} active rooms` : "No active rooms"}
+              </p>
+              <button className="btn-secondary-professional w-full">View Rooms</button>
             </Link>
           </div>
-          
-          {/* Secondary Actions */}
-          <div className="flex flex-wrap items-center gap-4 text-[14px]">
-            <span className="text-[#666666]">More actions:</span>
-            <Link to={createPageUrl("MyProfile")} className="text-[#D4AF37] hover:underline font-medium">Profile</Link>
-            <span className="text-[#E5E7EB]">•</span>
-            <Link to={createPageUrl("Billing")} className="text-[#D4AF37] hover:underline font-medium">Earnings</Link>
-            <span className="text-[#E5E7EB]">•</span>
-            <Link to={createPageUrl("Resources")} className="text-[#D4AF37] hover:underline font-medium">Resources</Link>
-          </div>
         </div>
-      </section>
 
-      {/* Activity Feed */}
-      <section className="px-4 sm:px-6 lg:px-8 py-8 pb-16">
-        <div className="max-w-7xl mx-auto">
-          <h2 className="text-[24px] font-bold text-[#1A1A1A] mb-6 leading-[1.2]">Your Activity</h2>
-          
-          <div className="bg-white rounded-[20px] p-8 border border-[#E5E7EB]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-            <div className="space-y-6">
-              {/* Activity Item 1 */}
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-[#3B82F6]/20 rounded-full flex items-center justify-center">
-                    <Eye className="w-5 h-5 text-[#3B82F6]" />
-                  </div>
-                  <div className="w-0.5 h-full bg-[#E5E7EB] mt-2"></div>
-                </div>
-                <div className="flex-1 pb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[14px] font-medium text-[#1A1A1A]">An investor viewed your profile</span>
-                  </div>
-                  <p className="text-[12px] text-[#999999] mb-3">Today, 3:15 PM</p>
-                </div>
-              </div>
-              
-              {/* Activity Item 2 */}
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-[#10B981]/20 rounded-full flex items-center justify-center">
-                    <CheckSquare className="w-5 h-5 text-[#10B981]" />
-                  </div>
-                  <div className="w-0.5 h-full bg-[#E5E7EB] mt-2"></div>
-                </div>
-                <div className="flex-1 pb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[14px] font-medium text-[#1A1A1A]">You completed your agent profile</span>
-                    <span className="text-[20px]">🎉</span>
-                  </div>
-                  <p className="text-[12px] text-[#999999] mb-2">Yesterday</p>
-                  <div className="inline-flex items-center gap-2 bg-[#10B981]/10 text-[#10B981] px-3 py-1 rounded-full text-[12px] font-medium">
-                    Profile {profileCompletion}% complete
-                  </div>
-                </div>
-              </div>
-              
-              {/* Activity Item 3 */}
-              <div className="flex gap-4">
-                <div className="flex flex-col items-center">
-                  <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                    <Shield className="w-5 h-5 text-[#D4AF37]" />
-                  </div>
+        {/* Bottom Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Recent Activity */}
+          <div className="card-professional">
+            <h2 className="section-title">Recent Activity</h2>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 bg-blue-100 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <Eye className="text-blue-600" size={20} />
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[14px] font-medium text-[#1A1A1A]">You joined Investor Konnect</span>
-                    <span className="text-[20px]">👋</span>
-                  </div>
-                  <p className="text-[12px] text-[#999999]">3 days ago</p>
+                  <p className="text-gray-900 font-medium">An investor viewed your profile</p>
+                  <p className="text-sm text-gray-500">1 hour ago</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 pb-4 border-b border-gray-100">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex-shrink-0 flex items-center justify-center">
+                  <CheckCircle2 className="text-amber-600" size={20} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-900 font-medium">New connection request</p>
+                  <p className="text-sm text-gray-500">Yesterday</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0"></div>
+                <div className="flex-1">
+                  <p className="text-gray-900 font-medium">Alex T. sent you a message</p>
+                  <p className="text-sm text-gray-500">2 days ago</p>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Active Clients */}
+          <div className="card-professional">
+            <h2 className="section-title">Active Clients</h2>
+            <div className="mb-4">
+              <div className="metric-number">{userData.activeClients}</div>
+              <div className="text-sm text-gray-600 mt-2">{userData.pendingRequests} pending requests</div>
+            </div>
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-3">
+                <MapPin className="text-gray-400 flex-shrink-0" size={20} />
+                <div className="flex-1">
+                  <p className="text-sm text-gray-600">Primary Markets</p>
+                  <p className="text-gray-900 font-medium">{profile?.agent?.markets?.join(', ') || 'Not set'}</p>
+                </div>
+              </div>
+            </div>
+            <Link to={createPageUrl("DealRooms")} className="inline-flex items-center gap-2 text-amber-600 font-semibold hover:text-amber-700 transition">
+              Manage Clients <ArrowRight size={18} />
+            </Link>
+          </div>
         </div>
-      </section>
+      </div>
     </div>
   );
 }
