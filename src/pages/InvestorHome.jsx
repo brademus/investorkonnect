@@ -8,8 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp, Shield, FileText, Users, CheckCircle,
-  AlertCircle, Building, Target, DollarSign, ArrowRight, Star,
-  Loader2, RefreshCw, MapPin, Award, User
+  AlertCircle, Target, DollarSign, ArrowRight, Star,
+  Loader2, MapPin, User
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -26,14 +26,11 @@ export default function InvestorHome() {
     targetState
   } = useCurrentProfile();
 
-  // AI-powered suggested agents
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [loadingSuggestedAgents, setLoadingSuggestedAgents] = useState(true);
 
-  // Check if user is admin
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
-  // Load AI-matched agents when profile is ready
   useEffect(() => {
     if (!profileLoading && user && profile?.user_role === 'investor' && isInvestorReady) {
       loadAIMatches();
@@ -44,21 +41,12 @@ export default function InvestorHome() {
 
   const loadAIMatches = async () => {
     let cancelled = false;
-
     try {
       setLoadingSuggestedAgents(true);
-
-      // Step 1: Ensure investor has an embedding
       await embedProfile();
-
-      // Step 2: Get AI-matched agents
-      const matchResponse = await matchAgentsForInvestor({
-        limit: 6
-      });
-
+      const matchResponse = await matchAgentsForInvestor({ limit: 6 });
       if (!cancelled && matchResponse.data?.ok) {
-        const results = matchResponse.data.results || [];
-        setSuggestedAgents(results);
+        setSuggestedAgents(matchResponse.data.results || []);
       } else {
         setSuggestedAgents([]);
       }
@@ -68,28 +56,22 @@ export default function InvestorHome() {
     } finally {
       if (!cancelled) setLoadingSuggestedAgents(false);
     }
-
-    return () => {
-      cancelled = true;
-    };
+    return () => { cancelled = true; };
   };
 
   if (profileLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="animate-pulse text-slate-600">Loading dashboard...</div>
+      <div className="flex items-center justify-center py-20">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent mx-auto" style={{ borderColor: 'hsl(43 59% 52%)', borderTopColor: 'transparent' }}></div>
+          <p className="mt-4 ik-text-muted text-sm">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
-  // Helper to get plan display name
   const getPlanName = (plan) => {
-    const names = {
-      'starter': 'Starter',
-      'pro': 'Pro',
-      'enterprise': 'Enterprise',
-      'none': 'Free'
-    };
+    const names = { 'starter': 'Starter', 'pro': 'Pro', 'enterprise': 'Enterprise', 'none': 'Free' };
     return names[plan] || 'Free';
   };
 
@@ -98,330 +80,217 @@ export default function InvestorHome() {
   const docs = profile?.investor?.documents || [];
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
+            Welcome back, {user?.full_name || 'Investor'}! 👋
+          </h1>
+          <p className="ik-text-subtle text-sm sm:text-base">Your Investor Konnect dashboard</p>
+        </div>
+        {isAdmin && (
+          <Button onClick={() => navigate(createPageUrl("Admin"))} className="ik-btn-gold gap-2">
+            <Shield className="w-4 h-4" /> Admin Panel
+          </Button>
+        )}
+      </header>
 
-        {/* Header with Admin Button */}
-        <div className="mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-slate-900 mb-2">
-              Welcome back, {user?.full_name || 'Investor'}! 👋
-            </h1>
-            <p className="text-slate-600">
-              Your Investor Konnect dashboard
-            </p>
+      {/* Subscription Banner */}
+      {isPaidSubscriber ? (
+        <div className="ik-card p-4" style={{ background: 'hsl(48 100% 95%)', borderColor: 'hsl(44 68% 75%)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold" style={{ color: 'hsl(43 71% 25%)' }}>{getPlanName(subscriptionPlan)} Plan Active</p>
+                <p className="text-sm" style={{ color: 'hsl(43 71% 33%)' }}>
+                  {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
+                </p>
+              </div>
+            </div>
+            <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-pill text-sm">Manage Plan</button>
+          </div>
+        </div>
+      ) : (
+        <div className="ik-card p-6" style={{ background: 'linear-gradient(135deg, hsl(48 100% 95%) 0%, hsl(51 100% 98%) 100%)', borderColor: 'hsl(44 68% 75%)' }}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
+                <TrendingUp className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Upgrade to unlock full platform access</h3>
+                <p className="text-sm ik-text-muted">Get unlimited deal rooms, advanced analytics, and priority support</p>
+              </div>
+            </div>
+            <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-gold flex items-center gap-2">
+              View Plans <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* NDA Banner */}
+      {!hasNDA && (
+        <div className="ik-card p-6" style={{ background: 'hsl(30 100% 97%)', borderColor: 'hsl(30 80% 80%)' }}>
+          <div className="flex items-start gap-4">
+            <Shield className="w-6 h-6 flex-shrink-0 mt-1" style={{ color: 'hsl(30 80% 45%)' }} />
+            <div className="flex-1">
+              <h3 className="font-semibold mb-2" style={{ color: 'hsl(30 80% 25%)' }}>NDA Required</h3>
+              <p className="text-sm mb-4" style={{ color: 'hsl(30 60% 35%)' }}>
+                Accept our Non-Disclosure Agreement to access agent profiles and deal rooms.
+              </p>
+              <Link to={createPageUrl("NDA")}>
+                <button className="ik-btn-gold flex items-center gap-2">
+                  <Shield className="w-4 h-4" /> Sign NDA <ArrowRight className="w-4 h-4" />
+                </button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Suggested Agents */}
+        <div className="ik-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Suggested Agents</h3>
+                <span className="ik-badge-gold text-xs">AI Powered</span>
+              </div>
+              <p className="text-xs ik-text-muted mt-1">Smart matches based on your investment goals</p>
+            </div>
+            <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-xs font-medium" style={{ color: 'hsl(43 71% 42%)' }}>View All</button>
           </div>
 
-          {/* Admin Button - Only visible to admins */}
-          {isAdmin && (
-            <Button
-              onClick={() => navigate(createPageUrl("Admin"))}
-              className="bg-amber-500 hover:bg-amber-600 gap-2"
-            >
-              <Shield className="w-4 h-4" />
-              Admin Panel
-            </Button>
+          {loadingSuggestedAgents ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin mb-3" style={{ color: 'hsl(270 60% 55%)' }} />
+              <div className="text-xs ik-text-muted font-medium">AI is analyzing your profile...</div>
+            </div>
+          ) : suggestedAgents.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-8">
+              <Users className="w-12 h-12 mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
+              <p className="text-xs ik-text-muted mb-3 text-center">No AI matches yet. Complete your profile for better matching.</p>
+              <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="ik-btn-gold text-xs px-4 py-2">Browse all agents</button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {suggestedAgents.map(({ profile: agent, score }) => (
+                <div key={agent.id} className="flex items-center justify-between border rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors" style={{ borderColor: 'hsl(0 0% 92%)' }}>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>{agent.full_name || 'Investor-friendly agent'}</span>
+                      {score && score >= 0.8 && <span className="ik-badge-gold text-xs">Top Match</span>}
+                    </div>
+                    <div className="flex items-center gap-3 text-xs ik-text-muted mt-1">
+                      <span>{agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}</span>
+                      {score && <Badge variant="outline" className="text-xs">{(score * 100).toFixed(0)}% match</Badge>}
+                    </div>
+                  </div>
+                  <button onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)} className="text-xs font-medium" style={{ color: 'hsl(43 71% 42%)' }}>View profile</button>
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
-        {/* Subscription Status Banner */}
-        {isPaidSubscriber ? (
-          <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500 rounded-lg flex items-center justify-center">
-                  <Shield className="w-5 h-5 text-white" />
-                </div>
+        {/* Buy Box */}
+        <div className="ik-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Target className="w-5 h-5" style={{ color: 'hsl(43 71% 42%)' }} />
+              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Buy Box</h2>
+            </div>
+            <Link to={createPageUrl("InvestorBuyBox")}><button className="ik-btn-pill text-xs">Edit</button></Link>
+          </div>
+
+          {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
+            <div className="space-y-4">
+              {buyBox.asset_types?.length > 0 && (
                 <div>
-                  <p className="font-bold text-amber-900">
-                    {getPlanName(subscriptionPlan)} Plan Active
-                  </p>
-                  <p className="text-sm text-amber-700">
-                    {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
-                  </p>
+                  <p className="text-xs ik-text-muted mb-2">Asset Types</p>
+                  <div className="flex flex-wrap gap-2">
+                    {buyBox.asset_types.map((type, idx) => <Badge key={idx} variant="secondary">{type}</Badge>)}
+                  </div>
                 </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(createPageUrl("Pricing"))}
-                className="border-amber-300 text-amber-700 hover:bg-amber-100"
-              >
-                Manage Plan
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-gradient-to-r from-amber-50 to-amber-100 border-2 border-amber-200 rounded-xl p-6 mb-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-amber-500 rounded-xl flex items-center justify-center">
-                  <TrendingUp className="w-6 h-6 text-white" />
-                </div>
+              )}
+              {buyBox.markets?.length > 0 && (
                 <div>
-                  <h3 className="font-bold text-slate-900 mb-1">
-                    Upgrade to unlock full platform access
-                  </h3>
-                  <p className="text-sm text-slate-600">
-                    Get unlimited deal rooms, advanced analytics, and priority support
-                  </p>
+                  <p className="text-xs ik-text-muted mb-2">Target Markets</p>
+                  <div className="flex flex-wrap gap-2">
+                    {buyBox.markets.map((market, idx) => <Badge key={idx} variant="secondary">{market}</Badge>)}
+                  </div>
                 </div>
-              </div>
-              <Button
-                onClick={() => navigate(createPageUrl("Pricing"))}
-                className="bg-amber-500 hover:bg-amber-600"
-              >
-                View Plans
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* NDA Required Banner */}
-        {!hasNDA && (
-          <div className="bg-orange-50 border-2 border-orange-200 rounded-xl p-6 mb-8">
-            <div className="flex items-start gap-4">
-              <Shield className="w-6 h-6 text-orange-600 flex-shrink-0 mt-1" />
-              <div className="flex-1">
-                <h3 className="font-bold text-orange-900 mb-2">NDA Required</h3>
-                <p className="text-orange-800 mb-4">
-                  You need to accept our Non-Disclosure Agreement to access agent profiles and deal rooms.
-                </p>
-                <Link to={createPageUrl("NDA")}>
-                  <Button className="bg-amber-500 hover:bg-amber-600">
-                    <Shield className="w-4 h-4 mr-2" />
-                    Sign NDA
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </div>
-          </div>
-        )}
-
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* AI-Powered Suggested Agents */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-medium text-slate-800">Suggested Agents</h3>
-                  <Badge className="bg-purple-100 text-purple-800 text-xs">
-                    AI Powered
-                  </Badge>
+              )}
+              {(buyBox.min_budget || buyBox.max_budget) && (
+                <div>
+                  <p className="text-xs ik-text-muted mb-2">Budget Range</p>
+                  <p className="font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}</p>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Smart matches based on your investment goals and preferences
-                </p>
-              </div>
-              <button
-                type="button"
-                className="text-xs font-medium text-slate-700 hover:text-slate-900"
-                onClick={() => navigate(createPageUrl("AgentDirectory"))}
-              >
-                View All
-              </button>
+              )}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <DollarSign className="w-12 h-12 mx-auto mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
+              <p className="text-sm ik-text-muted mb-3">No buy box configured yet</p>
+              <Link to={createPageUrl("InvestorBuyBox")}><button className="ik-btn-gold text-xs px-4 py-2">Set Up Buy Box</button></Link>
+            </div>
+          )}
+        </div>
 
-            {loadingSuggestedAgents ? (
-              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
-                <Loader2 className="w-8 h-8 text-purple-600 animate-spin mb-3" />
-                <div className="font-medium">AI is analyzing your profile...</div>
-                <div className="mt-1">Finding the best agent matches for you</div>
-              </div>
-            ) : suggestedAgents.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-8 text-xs text-slate-500">
-                <Users className="w-12 h-12 text-slate-300 mb-3" />
-                <p className="mb-3 text-center">
-                  No AI matches yet. Complete your profile for better matching.
-                </p>
-                <button
-                  type="button"
-                  className="px-3 py-2 rounded-md bg-purple-600 text-white text-xs font-medium hover:bg-purple-700"
-                  onClick={() => navigate(createPageUrl("AgentDirectory"))}
-                >
-                  Browse all agents
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {suggestedAgents.map(({ profile: agent, score }) => (
-                  <div
-                    key={agent.id}
-                    className="flex items-center justify-between border border-slate-100 rounded-lg px-3 py-2 hover:bg-slate-50 transition-colors"
-                  >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium text-slate-900">
-                          {agent.full_name || 'Investor-friendly agent'}
-                        </div>
-                        {score && score >= 0.8 && (
-                          <Badge className="bg-emerald-100 text-emerald-800 text-xs">
-                            Top Match
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-slate-500 mt-1">
-                        <span>
-                          {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
-                        </span>
-                        {score && (
-                          <Badge variant="outline" className="text-xs">
-                            {(score * 100).toFixed(0)}% match
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      className="text-xs font-medium text-amber-600 hover:text-amber-800"
-                      onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)}
-                    >
-                      View profile
-                    </button>
-                  </div>
-                ))}
-
-                <div className="flex justify-end pt-1">
-                  <button
-                    type="button"
-                    className="inline-flex items-center text-xs text-slate-700 hover:text-slate-900"
-                    onClick={() => navigate(createPageUrl("AgentDirectory"))}
-                  >
-                    <span className="mr-1">Find more matches</span>
-                    <span className="text-slate-400">↗</span>
-                  </button>
-                </div>
-              </div>
-            )}
+        {/* Documents */}
+        <div className="ik-card p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5" style={{ color: 'hsl(270 60% 55%)' }} />
+              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Documents</h2>
+            </div>
+            <Link to={createPageUrl("InvestorDocuments")}><button className="ik-btn-pill text-xs">Manage</button></Link>
           </div>
 
-          {/* Buy Box Summary */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-amber-600" />
-                <h2 className="text-xl font-bold text-slate-900">Buy Box</h2>
-              </div>
-              <Link to={createPageUrl("InvestorBuyBox")}>
-                <Button variant="outline" size="sm">Edit</Button>
-              </Link>
-            </div>
-
-            {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
-              <div className="space-y-4">
-                {buyBox.asset_types && buyBox.asset_types.length > 0 && (
-                  <div>
-                    <p className="text-sm text-slate-600 mb-2">Asset Types</p>
-                    <div className="flex flex-wrap gap-2">
-                      {buyBox.asset_types.map((type, idx) => (
-                        <Badge key={idx} variant="secondary">{type}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {buyBox.markets && buyBox.markets.length > 0 && (
-                  <div>
-                    <p className="text-sm text-slate-600 mb-2">Target Markets</p>
-                    <div className="flex flex-wrap gap-2">
-                      {buyBox.markets.map((market, idx) => (
-                        <Badge key={idx} variant="secondary">{market}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {(buyBox.min_budget || buyBox.max_budget) && (
-                  <div>
-                    <p className="text-sm text-slate-600 mb-2">Budget Range</p>
-                    <p className="font-semibold text-slate-900">
-                      ${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}
-                    </p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <DollarSign className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 mb-3">No buy box configured yet</p>
-                <Link to={createPageUrl("InvestorBuyBox")}>
-                  <Button size="sm">Set Up Buy Box</Button>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Documents */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5 text-purple-600" />
-                <h2 className="text-xl font-bold text-slate-900">Documents</h2>
-              </div>
-              <Link to={createPageUrl("InvestorDocuments")}>
-                <Button variant="outline" size="sm">Manage</Button>
-              </Link>
-            </div>
-
-            {docs.length > 0 ? (
-              <div className="space-y-2">
-                {docs.slice(0, 3).map((doc, idx) => (
-                  <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                    <FileText className="w-4 h-4 text-slate-600" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-slate-900 truncate">{doc.name}</p>
-                      <p className="text-xs text-slate-500 capitalize">{doc.type}</p>
-                    </div>
-                  </div>
-                ))}
-                {docs.length > 3 && (
-                  <p className="text-xs text-slate-500 text-center pt-2">
-                    +{docs.length - 3} more documents
-                  </p>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-                <p className="text-slate-600 mb-3">No documents uploaded yet</p>
-                <Link to={createPageUrl("InvestorDocuments")}>
-                  <Button size="sm">Upload Documents</Button>
-                </Link>
-              </div>
-            )}
-          </div>
-
-          {/* Quick Links */}
-          <div className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900 mb-4">Quick Links</h2>
+          {docs.length > 0 ? (
             <div className="space-y-2">
-              <Link to={createPageUrl("Pricing")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <Star className="w-4 h-4 text-amber-600" />
-                  Subscription & Plans
-                </Button>
-              </Link>
-              <Link to={createPageUrl("MyProfile")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <User className="w-4 h-4 text-slate-700" />
-                  My Profile
-                </Button>
-              </Link>
-              <Link to={createPageUrl("DealRooms")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <FileText className="w-4 h-4 text-purple-600" />
-                  Deal Rooms
-                </Button>
-              </Link>
-              <Link to={createPageUrl("Billing")}>
-                <Button variant="outline" className="w-full justify-start gap-3">
-                  <DollarSign className="w-4 h-4 text-emerald-600" />
-                  Billing & Payment
-                </Button>
-              </Link>
+              {docs.slice(0, 3).map((doc, idx) => (
+                <div key={idx} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'hsl(0 0% 98%)' }}>
+                  <FileText className="w-4 h-4 ik-text-muted" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{doc.name}</p>
+                    <p className="text-xs ik-text-muted capitalize">{doc.type}</p>
+                  </div>
+                </div>
+              ))}
+              {docs.length > 3 && <p className="text-xs ik-text-muted text-center pt-2">+{docs.length - 3} more documents</p>}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
+              <p className="text-sm ik-text-muted mb-3">No documents uploaded yet</p>
+              <Link to={createPageUrl("InvestorDocuments")}><button className="ik-btn-gold text-xs px-4 py-2">Upload Documents</button></Link>
+            </div>
+          )}
+        </div>
+
+        {/* Quick Links */}
+        <div className="ik-card p-6">
+          <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Quick Links</h2>
+          <div className="space-y-2">
+            <Link to={createPageUrl("Pricing")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
+              <Star className="w-4 h-4" style={{ color: 'hsl(43 71% 42%)' }} /> <span className="text-sm font-medium">Subscription & Plans</span>
+            </Link>
+            <Link to={createPageUrl("MyProfile")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
+              <User className="w-4 h-4 ik-text-muted" /> <span className="text-sm font-medium">My Profile</span>
+            </Link>
+            <Link to={createPageUrl("DealRooms")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
+              <FileText className="w-4 h-4" style={{ color: 'hsl(270 60% 55%)' }} /> <span className="text-sm font-medium">Deal Rooms</span>
+            </Link>
+            <Link to={createPageUrl("Billing")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
+              <DollarSign className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} /> <span className="text-sm font-medium">Billing & Payment</span>
+            </Link>
           </div>
         </div>
       </div>
