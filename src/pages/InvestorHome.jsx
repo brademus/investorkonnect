@@ -85,9 +85,11 @@ export default function InvestorHome() {
       <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl sm:text-3xl font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
-            Welcome back, {user?.full_name || 'Investor'}! 👋
+            Your Investor Konnect dashboard
           </h1>
-          <p className="ik-text-subtle text-sm sm:text-base">Your Investor Konnect dashboard</p>
+          <p className="ik-text-subtle text-sm sm:text-base mt-1">
+            See your buy box, suggested agents, and deal tools in one place.
+          </p>
         </div>
         {isAdmin && (
           <Button onClick={() => navigate(createPageUrl("Admin"))} className="ik-btn-gold gap-2">
@@ -98,202 +100,227 @@ export default function InvestorHome() {
 
       {/* Subscription Banner */}
       {isPaidSubscriber ? (
-        <div className="ik-card p-4" style={{ background: 'hsl(48 100% 95%)', borderColor: 'hsl(44 68% 75%)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
-                <Shield className="w-5 h-5 text-white" />
-              </div>
-              <div>
-                <p className="font-semibold" style={{ color: 'hsl(43 71% 25%)' }}>{getPlanName(subscriptionPlan)} Plan Active</p>
-                <p className="text-sm" style={{ color: 'hsl(43 71% 33%)' }}>
-                  {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
-                </p>
-              </div>
+        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(48 100% 97%)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
+              <Shield className="w-5 h-5 text-white" />
             </div>
-            <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-pill text-sm">Manage Plan</button>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>{getPlanName(subscriptionPlan)} Plan Active</h2>
+              <p className="text-xs ik-text-muted mt-0.5">
+                {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
+              </p>
+            </div>
           </div>
-        </div>
+          <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-pill text-sm">Manage plan</button>
+        </section>
       ) : (
-        <div className="ik-card p-6" style={{ background: 'linear-gradient(135deg, hsl(48 100% 95%) 0%, hsl(51 100% 98%) 100%)', borderColor: 'hsl(44 68% 75%)' }}>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h3 className="font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Upgrade to unlock full platform access</h3>
-                <p className="text-sm ik-text-muted">Get unlimited deal rooms, advanced analytics, and priority support</p>
-              </div>
+        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(48 100% 97%)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
+              <TrendingUp className="w-5 h-5 text-white" />
             </div>
-            <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-gold flex items-center gap-2">
-              View Plans <ArrowRight className="w-4 h-4" />
-            </button>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Upgrade to unlock full platform access</h2>
+              <p className="text-xs ik-text-muted mt-0.5">Get unlimited deal rooms, advanced analytics, and priority support.</p>
+            </div>
           </div>
-        </div>
+          <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-gold text-sm flex items-center gap-2">
+            View plans <ArrowRight className="w-4 h-4" />
+          </button>
+        </section>
       )}
 
       {/* NDA Banner */}
       {!hasNDA && (
-        <div className="ik-card p-6" style={{ background: 'hsl(30 100% 97%)', borderColor: 'hsl(30 80% 80%)' }}>
-          <div className="flex items-start gap-4">
-            <Shield className="w-6 h-6 flex-shrink-0 mt-1" style={{ color: 'hsl(30 80% 45%)' }} />
-            <div className="flex-1">
-              <h3 className="font-semibold mb-2" style={{ color: 'hsl(30 80% 25%)' }}>NDA Required</h3>
-              <p className="text-sm mb-4" style={{ color: 'hsl(30 60% 35%)' }}>
-                Accept our Non-Disclosure Agreement to access agent profiles and deal rooms.
-              </p>
-              <Link to={createPageUrl("NDA")}>
-                <button className="ik-btn-gold flex items-center gap-2">
-                  <Shield className="w-4 h-4" /> Sign NDA <ArrowRight className="w-4 h-4" />
-                </button>
-              </Link>
+        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(30 100% 97%)', borderColor: 'hsl(30 80% 85%)' }}>
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 80% 90%)' }}>
+              <Shield className="w-5 h-5" style={{ color: 'hsl(30 80% 45%)' }} />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold" style={{ color: 'hsl(30 80% 25%)' }}>NDA Required</h2>
+              <p className="text-xs mt-0.5" style={{ color: 'hsl(30 60% 40%)' }}>Accept our NDA to access agent profiles and deal rooms.</p>
             </div>
           </div>
-        </div>
+          <Link to={createPageUrl("NDA")}>
+            <button className="ik-btn-gold text-sm flex items-center gap-2">
+              Sign NDA <ArrowRight className="w-4 h-4" />
+            </button>
+          </Link>
+        </section>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Suggested Agents */}
-        <div className="ik-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Suggested Agents</h3>
-                <span className="ik-badge-gold text-xs">AI Powered</span>
+      {/* Main Content Grid */}
+      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        {/* Left Column */}
+        <div className="space-y-5">
+          {/* Suggested Agents */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="flex items-center justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Suggested agents</h2>
+                  <span className="ik-badge-gold text-xs">AI Powered</span>
+                </div>
+                <p className="text-xs ik-text-muted mt-0.5">AI-powered matches based on your investment goals.</p>
               </div>
-              <p className="text-xs ik-text-muted mt-1">Smart matches based on your investment goals</p>
-            </div>
-            <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-xs font-medium" style={{ color: 'hsl(43 71% 42%)' }}>View All</button>
-          </div>
+              <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>View all</button>
+            </header>
 
-          {loadingSuggestedAgents ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Loader2 className="w-8 h-8 animate-spin mb-3" style={{ color: 'hsl(270 60% 55%)' }} />
-              <div className="text-xs ik-text-muted font-medium">AI is analyzing your profile...</div>
-            </div>
-          ) : suggestedAgents.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8">
-              <Users className="w-12 h-12 mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
-              <p className="text-xs ik-text-muted mb-3 text-center">No AI matches yet. Complete your profile for better matching.</p>
-              <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="ik-btn-gold text-xs px-4 py-2">Browse all agents</button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {suggestedAgents.map(({ profile: agent, score }) => (
-                <div key={agent.id} className="flex items-center justify-between border rounded-xl px-4 py-3 hover:bg-gray-50 transition-colors" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>{agent.full_name || 'Investor-friendly agent'}</span>
-                      {score && score >= 0.8 && <span className="ik-badge-gold text-xs">Top Match</span>}
+            {loadingSuggestedAgents ? (
+              <div className="flex flex-col items-center justify-center py-10">
+                <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: 'hsl(43 59% 52%)' }} />
+                <p className="text-xs ik-text-muted">AI is analyzing your profile...</p>
+              </div>
+            ) : suggestedAgents.length === 0 ? (
+              <p className="text-xs ik-text-muted py-4">No AI matches yet. Complete your profile for better matching.</p>
+            ) : (
+              <ul className="space-y-0 divide-y" style={{ borderColor: 'hsl(0 0% 92%)' }}>
+                {suggestedAgents.slice(0, 4).map(({ profile: agent, score }) => (
+                  <li key={agent.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{agent.full_name || 'Agent'}</p>
+                        {score && score >= 0.8 && <span className="ik-badge-gold text-xs flex-shrink-0">Top</span>}
+                      </div>
+                      <p className="text-xs ik-text-muted mt-0.5 truncate">
+                        {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
+                        {score && ` • ${(score * 100).toFixed(0)}% match`}
+                      </p>
                     </div>
-                    <div className="flex items-center gap-3 text-xs ik-text-muted mt-1">
-                      <span>{agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}</span>
-                      {score && <Badge variant="outline" className="text-xs">{(score * 100).toFixed(0)}% match</Badge>}
+                    <button onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)} className="ik-btn-pill text-xs flex-shrink-0">View</button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Documents */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="flex items-center justify-between mb-3">
+              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Documents</h2>
+              {docs.length > 0 && (
+                <Link to={createPageUrl("InvestorDocuments")}>
+                  <button className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Manage</button>
+                </Link>
+              )}
+            </header>
+
+            {docs.length > 0 ? (
+              <ul className="space-y-2 text-xs">
+                {docs.slice(0, 3).map((doc, idx) => (
+                  <li key={idx} className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: 'hsl(0 0% 98%)' }}>
+                    <FileText className="w-4 h-4 ik-text-muted flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{doc.name}</p>
+                      <p className="ik-text-muted capitalize">{doc.type}</p>
                     </div>
-                  </div>
-                  <button onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)} className="text-xs font-medium" style={{ color: 'hsl(43 71% 42%)' }}>View profile</button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Buy Box */}
-        <div className="ik-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Target className="w-5 h-5" style={{ color: 'hsl(43 71% 42%)' }} />
-              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Buy Box</h2>
-            </div>
-            <Link to={createPageUrl("InvestorBuyBox")}><button className="ik-btn-pill text-xs">Edit</button></Link>
-          </div>
-
-          {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
-            <div className="space-y-4">
-              {buyBox.asset_types?.length > 0 && (
-                <div>
-                  <p className="text-xs ik-text-muted mb-2">Asset Types</p>
-                  <div className="flex flex-wrap gap-2">
-                    {buyBox.asset_types.map((type, idx) => <Badge key={idx} variant="secondary">{type}</Badge>)}
-                  </div>
-                </div>
-              )}
-              {buyBox.markets?.length > 0 && (
-                <div>
-                  <p className="text-xs ik-text-muted mb-2">Target Markets</p>
-                  <div className="flex flex-wrap gap-2">
-                    {buyBox.markets.map((market, idx) => <Badge key={idx} variant="secondary">{market}</Badge>)}
-                  </div>
-                </div>
-              )}
-              {(buyBox.min_budget || buyBox.max_budget) && (
-                <div>
-                  <p className="text-xs ik-text-muted mb-2">Budget Range</p>
-                  <p className="font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}</p>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <DollarSign className="w-12 h-12 mx-auto mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
-              <p className="text-sm ik-text-muted mb-3">No buy box configured yet</p>
-              <Link to={createPageUrl("InvestorBuyBox")}><button className="ik-btn-gold text-xs px-4 py-2">Set Up Buy Box</button></Link>
-            </div>
-          )}
-        </div>
-
-        {/* Documents */}
-        <div className="ik-card p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <FileText className="w-5 h-5" style={{ color: 'hsl(270 60% 55%)' }} />
-              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Documents</h2>
-            </div>
-            <Link to={createPageUrl("InvestorDocuments")}><button className="ik-btn-pill text-xs">Manage</button></Link>
-          </div>
-
-          {docs.length > 0 ? (
-            <div className="space-y-2">
-              {docs.slice(0, 3).map((doc, idx) => (
-                <div key={idx} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'hsl(0 0% 98%)' }}>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="flex items-center gap-3 text-xs">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(0 0% 95%)' }}>
                   <FileText className="w-4 h-4 ik-text-muted" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{doc.name}</p>
-                    <p className="text-xs ik-text-muted capitalize">{doc.type}</p>
-                  </div>
                 </div>
-              ))}
-              {docs.length > 3 && <p className="text-xs ik-text-muted text-center pt-2">+{docs.length - 3} more documents</p>}
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 mx-auto mb-3" style={{ color: 'hsl(0 0% 87%)' }} />
-              <p className="text-sm ik-text-muted mb-3">No documents uploaded yet</p>
-              <Link to={createPageUrl("InvestorDocuments")}><button className="ik-btn-gold text-xs px-4 py-2">Upload Documents</button></Link>
-            </div>
-          )}
+                <div>
+                  <p className="font-medium" style={{ color: 'hsl(0 0% 28%)' }}>No documents uploaded yet</p>
+                  <Link to={createPageUrl("InvestorDocuments")}>
+                    <button className="font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Upload documents</button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </section>
         </div>
 
-        {/* Quick Links */}
-        <div className="ik-card p-6">
-          <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Quick Links</h2>
-          <div className="space-y-2">
-            <Link to={createPageUrl("Pricing")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
-              <Star className="w-4 h-4" style={{ color: 'hsl(43 71% 42%)' }} /> <span className="text-sm font-medium">Subscription & Plans</span>
-            </Link>
-            <Link to={createPageUrl("MyProfile")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
-              <User className="w-4 h-4 ik-text-muted" /> <span className="text-sm font-medium">My Profile</span>
-            </Link>
-            <Link to={createPageUrl("DealRooms")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
-              <FileText className="w-4 h-4" style={{ color: 'hsl(270 60% 55%)' }} /> <span className="text-sm font-medium">Deal Rooms</span>
-            </Link>
-            <Link to={createPageUrl("Billing")} className="ik-card ik-card-hover flex items-center gap-3 p-3">
-              <DollarSign className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} /> <span className="text-sm font-medium">Billing & Payment</span>
-            </Link>
-          </div>
+        {/* Right Column */}
+        <div className="space-y-5">
+          {/* Buy Box */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="flex items-center justify-between mb-3">
+              <div>
+                <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Buy box</h2>
+                <p className="text-xs ik-text-muted mt-0.5">Snapshot of what you're looking to buy.</p>
+              </div>
+              <Link to={createPageUrl("InvestorBuyBox")}>
+                <button className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Edit</button>
+              </Link>
+            </header>
+
+            {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
+              <dl className="space-y-3 text-xs">
+                {buyBox.asset_types?.length > 0 && (
+                  <div>
+                    <dt className="ik-text-muted mb-1.5">Asset types</dt>
+                    <dd className="flex flex-wrap gap-1.5">
+                      {buyBox.asset_types.map((type, idx) => <span key={idx} className="ik-btn-pill text-xs px-2.5 py-1">{type}</span>)}
+                    </dd>
+                  </div>
+                )}
+                {buyBox.markets?.length > 0 && (
+                  <div>
+                    <dt className="ik-text-muted mb-1.5">Target markets</dt>
+                    <dd className="flex flex-wrap gap-1.5">
+                      {buyBox.markets.map((market, idx) => <span key={idx} className="ik-btn-pill text-xs px-2.5 py-1">{market}</span>)}
+                    </dd>
+                  </div>
+                )}
+                {(buyBox.min_budget || buyBox.max_budget) && (
+                  <div>
+                    <dt className="ik-text-muted mb-1">Budget range</dt>
+                    <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}</dd>
+                  </div>
+                )}
+              </dl>
+            ) : (
+              <div className="flex items-center gap-3 text-xs">
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(0 0% 95%)' }}>
+                  <Target className="w-4 h-4 ik-text-muted" />
+                </div>
+                <div>
+                  <p className="font-medium" style={{ color: 'hsl(0 0% 28%)' }}>No buy box configured</p>
+                  <Link to={createPageUrl("InvestorBuyBox")}>
+                    <button className="font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Set up buy box</button>
+                  </Link>
+                </div>
+              </div>
+            )}
+          </section>
+
+          {/* Quick Links */}
+          <section className="ik-card p-5 sm:p-6">
+            <h2 className="text-sm font-semibold mb-3" style={{ color: 'hsl(0 0% 10%)' }}>Quick links</h2>
+            <ul className="space-y-1 text-sm">
+              <li>
+                <Link to={createPageUrl("Pricing")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
+                  <span>Subscription & plans</span>
+                  <ArrowRight className="w-4 h-4 ik-text-muted" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("MyProfile")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
+                  <span>My profile</span>
+                  <ArrowRight className="w-4 h-4 ik-text-muted" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("DealRooms")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
+                  <span>Deal rooms</span>
+                  <ArrowRight className="w-4 h-4 ik-text-muted" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("Billing")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
+                  <span>Billing & payment</span>
+                  <ArrowRight className="w-4 h-4 ik-text-muted" />
+                </Link>
+              </li>
+            </ul>
+          </section>
         </div>
-      </div>
+      </section>
     </div>
   );
 }
