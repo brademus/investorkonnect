@@ -136,7 +136,7 @@ export default function AgentProfile() {
     return [...Array(5)].map((_, i) => (
       <Star
         key={i}
-        className={`w-5 h-5 ${i < rating ? "fill-yellow-400 text-yellow-400" : "text-slate-300"}`}
+        className={`w-5 h-5 ${i < rating ? "fill-[#D3A029] text-[#D3A029]" : "text-gray-300"}`}
       />
     ));
   };
