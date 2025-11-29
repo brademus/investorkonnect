@@ -164,11 +164,12 @@ export default function AgentProfile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-slate-900 mb-4">Profile Not Found</h2>
-          <Link to={createPageUrl("Reviews")}>
-            <Button>Back to Agents</Button>
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <div className="ik-card p-8 text-center max-w-md">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Not Found</h2>
+          <p className="text-gray-600 mb-6">The agent profile you're looking for doesn't exist or has been removed.</p>
+          <Link to={createPageUrl("AgentDirectory")} className="ik-btn-primary">
+            Back to Agent Directory
           </Link>
         </div>
       </div>
