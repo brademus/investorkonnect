@@ -195,7 +195,7 @@ export default function AgentProfile() {
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-emerald-500 rounded-2xl flex items-center justify-center text-white text-4xl font-bold">
+              <div className="w-32 h-32 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-2xl flex items-center justify-center text-[#D3A029] text-4xl font-bold shadow-lg">
                 {profile.full_name?.charAt(0) || profile.email?.charAt(0).toUpperCase()}
               </div>
             </div>
