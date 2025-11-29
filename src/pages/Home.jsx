@@ -64,22 +64,22 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      {/* Public navbar */}
-      <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto max-w-7xl px-4 lg:px-8 h-16 flex items-center justify-between">
+    <div className="ik-shell">
+      {/* Top nav - fixed, minimal, Airbnb-like */}
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
           {/* Left: logo + brand */}
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FDE68A]">
-              <span className="text-sm font-bold text-[#D3A029]">IK</span>
+              <span className="text-xs font-bold tracking-tight text-[#D3A029]">IK</span>
             </div>
-            <span className="text-sm font-semibold tracking-tight">
+            <span className="text-sm font-semibold tracking-tight text-[#111827]">
               Investor Konnect
             </span>
           </div>
 
-          {/* Center: simple nav */}
-          <nav className="hidden gap-6 text-xs font-medium text-[#4B5563] md:flex">
+          {/* Center nav – simple, small text links */}
+          <nav className="hidden items-center gap-6 text-xs font-medium text-[#4B5563] md:flex">
             <Link to={createPageUrl("Home")} className="hover:text-[#111827]">Home</Link>
             <Link to={createPageUrl("HowItWorks")} className="hover:text-[#111827]">How it works</Link>
             <Link to={createPageUrl("Pricing")} className="hover:text-[#111827]">Pricing</Link>
@@ -87,7 +87,7 @@ export default function Home() {
             <Link to={createPageUrl("Agents")} className="hover:text-[#111827]">For agents</Link>
           </nav>
 
-          {/* Right: auth */}
+          {/* Right: Auth */}
           <div className="flex items-center gap-2">
             <button onClick={handleLogin} className="ik-btn-outline text-xs">
               Log in
@@ -96,93 +96,95 @@ export default function Home() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 lg:px-8 py-8 lg:py-10">
-        <div className="space-y-10 lg:space-y-14">
-          {/* HERO + MAP SECTION */}
-          <section className="grid gap-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1.1fr)] lg:items-start">
-            {/* LEFT: hero content */}
-            <div className="space-y-5">
-              <p className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-[#6B7280] shadow-sm">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#D3A029]" />
-                Built for real estate investors
-              </p>
+      {/* Page content – centered, offset for fixed header */}
+      <main className="mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24">
+        <div className="space-y-10 lg:space-y-12">
+          {/* HERO STRIP */}
+          <section className="space-y-4 text-center sm:text-left">
+            <p className="mx-auto inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-[0.7rem] font-medium text-[#6B7280] shadow-sm sm:mx-0">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#D3A029]" />
+              Verified investor-friendly agents
+            </p>
 
-              <h1 className="text-4xl font-semibold tracking-tight text-[#111827] sm:text-5xl lg:text-[2.9rem]">
+            <div className="mx-auto max-w-3xl sm:mx-0">
+              <h1 className="text-3xl font-semibold tracking-tight text-[#111827] sm:text-4xl lg:text-[2.7rem]">
                 Stop training retail agents.
                 <br />
                 <span className="text-[#D3A029]">Start closing investor deals.</span>
               </h1>
-
-              <p className="max-w-xl text-sm text-[#4B5563] sm:text-base">
-                Investor Konnect matches your strategy and market with agents who already
-                know how to work with real estate investors — then keeps everything in one
-                shared deal room.
+              <p className="mt-3 text-sm text-[#4B5563] sm:text-base">
+                Investor Konnect matches your strategy and market with agents who already know
+                how to work with real estate investors, then keeps everything in one shared
+                deal room.
               </p>
-
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={handleContinue}
-                  disabled={!localState}
-                  className="ik-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  Submit your first deal
-                </button>
-                <Link to={createPageUrl("Investors")}>
-                  <button className="ik-btn-outline">For investors</button>
-                </Link>
-                <Link to={createPageUrl("Agents")}>
-                  <button className="ik-btn-outline">For agents</button>
-                </Link>
-              </div>
-
-              <ul className="mt-4 space-y-1.5 text-sm text-[#4B5563]">
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#D3A029]" />
-                  Vetted agents with investor track records
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#D3A029]" />
-                  Shared deal rooms with chat & milestones
-                </li>
-                <li className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 text-[#D3A029]" />
-                  Contracts pre-filled from your conversation
-                </li>
-              </ul>
             </div>
 
-            {/* RIGHT: BIG "MAP" CARD */}
-            <div className="w-full">
-              <div className="ik-card h-full max-h-[560px] overflow-hidden border border-[#E5E7EB] bg-white">
-                {/* header */}
-                <div className="flex items-center justify-between border-b border-[#F3F4F6] px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEF3C7]">
-                      <MapPin className="w-5 h-5 text-[#D3A029]" />
-                    </div>
-                    <div>
-                      <h2 className="text-sm font-semibold text-[#111827]">
-                        Where are you looking to invest?
-                      </h2>
-                      <p className="text-xs text-[#6B7280]">
-                        Pick your target state to see investor-friendly agents.
-                      </p>
-                    </div>
-                  </div>
+            <div className="flex flex-wrap items-center justify-center gap-3 sm:justify-start">
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={!localState}
+                className="ik-btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Submit your first deal
+              </button>
+              <Link to={createPageUrl("Investors")}>
+                <button className="ik-btn-outline">For investors</button>
+              </Link>
+              <Link to={createPageUrl("Agents")}>
+                <button className="ik-btn-outline">For agents</button>
+              </Link>
+            </div>
+          </section>
 
-                  {localState && (
-                    <span className="ik-chip text-xs">
-                      Selected: {localState.code}
-                    </span>
-                  )}
+          {/* BIG MAP / STATE SELECTOR */}
+          <section className="ik-card border border-[#E5E7EB]">
+            {/* top row */}
+            <div className="flex flex-col gap-4 border-b border-[#F3F4F6] px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+              <div className="flex items-start gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <MapPin className="w-5 h-5 text-[#D3A029]" />
                 </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-[#111827]">
+                    Where are you looking to invest?
+                  </h2>
+                  <p className="text-xs text-[#6B7280]">
+                    Choose a state to see investor-friendly agents in that market.
+                  </p>
+                </div>
+              </div>
+              {localState && (
+                <span className="ik-chip text-xs">
+                  Selected: {localState.code}
+                </span>
+              )}
+            </div>
 
-                {/* search bar */}
-                <div className="flex items-center gap-2 border-b border-[#F3F4F6] px-5 py-3">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F3F4F6]">
-                    <Search className="w-4 h-4 text-[#6B7280]" />
+            {/* search + grid area */}
+            <div className="grid gap-4 px-4 py-4 sm:px-6 sm:py-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-6">
+              {/* LEFT: decorative map area */}
+              <div className="relative overflow-hidden rounded-2xl bg-[#F9FAFB]">
+                <div className="flex h-[260px] items-center justify-center sm:h-[300px] lg:h-[340px]">
+                  <div className="text-center">
+                    <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7]">
+                      <MapPin className="h-8 w-8 text-[#D3A029]" />
+                    </div>
+                    <p className="text-sm font-medium text-[#111827]">
+                      {localState ? localState.name : "Select a state"}
+                    </p>
+                    <p className="mt-1 text-xs text-[#6B7280]">
+                      {localState ? "Ready to find agents" : "Pick from the list →"}
+                    </p>
                   </div>
+                </div>
+              </div>
+
+              {/* RIGHT: state search and grid */}
+              <div className="flex flex-col">
+                {/* Search bar */}
+                <div className="mb-3 flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-3 py-2">
+                  <Search className="h-4 w-4 text-[#9CA3AF]" />
                   <input
                     type="text"
                     value={searchTerm}
@@ -192,69 +194,45 @@ export default function Home() {
                   />
                 </div>
 
-                {/* big grid "map" */}
-                <div className="h-[320px] overflow-y-auto px-5 py-4">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-5">
+                {/* Grid of states */}
+                <div className="flex-1 overflow-y-auto">
+                  <div className="grid max-h-[260px] grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
                     {filteredStates.map((state) => (
                       <button
                         key={state.code}
                         type="button"
                         onClick={() => setLocalState(state)}
                         className={
-                          "flex flex-col rounded-2xl border px-3 py-2 text-left text-xs transition " +
+                          "flex flex-col rounded-2xl border px-3 py-2 text-left text-[0.75rem] transition " +
                           (localState?.code === state.code
                             ? "border-[#D3A029] bg-[#FFFBEB] text-[#111827]"
-                            : "border-[#E5E7EB] bg-[#F9FAFB] hover:border-[#D3A029]/70 hover:bg-white")
+                            : "border-[#E5E7EB] bg-[#F9FAFB] hover:border-[#D3A029]/80 hover:bg-white")
                         }
                       >
                         <span className="text-[0.8rem] font-semibold">
                           {state.code}
                         </span>
-                        <span className="text-[0.7rem] text-[#6B7280]">
+                        <span className="mt-0.5 text-[0.7rem] text-[#6B7280]">
                           {state.name}
                         </span>
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* footer with continue button */}
-                <div className="flex items-center justify-between border-t border-[#F3F4F6] px-5 py-3">
-                  <p className="hidden text-[0.7rem] text-[#6B7280] sm:block">
-                    You can change markets later from your dashboard.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleContinue}
-                    disabled={!localState}
-                    className="ik-btn-primary disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    Continue →
-                  </button>
-                </div>
               </div>
             </div>
-          </section>
 
-          {/* Secondary section: 3-column "why Investor Konnect" cards */}
-          <section className="hidden gap-4 text-sm text-[#4B5563] lg:grid lg:grid-cols-3">
-            <div className="ik-card p-5">
-              <h3 className="mb-2 text-sm font-semibold text-[#111827]">
-                Built for investors
-              </h3>
-              <p>Agents are vetted for investor experience, not just retail deals.</p>
-            </div>
-            <div className="ik-card p-5">
-              <h3 className="mb-2 text-sm font-semibold text-[#111827]">
-                One shared deal room
-              </h3>
-              <p>Chat, milestones, documents, and contracts all live in one place.</p>
-            </div>
-            <div className="ik-card p-5">
-              <h3 className="mb-2 text-sm font-semibold text-[#111827]">
-                Simple pricing
-              </h3>
-              <p>Investors pay a simple subscription; agents stay free but vetted.</p>
+            {/* footer */}
+            <div className="flex flex-col items-center justify-between gap-3 border-t border-[#F3F4F6] px-4 py-3 text-xs text-[#6B7280] sm:flex-row sm:px-6">
+              <p>You can change your market later from your dashboard.</p>
+              <button
+                type="button"
+                onClick={handleContinue}
+                disabled={!localState}
+                className="ik-btn-primary disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Continue →
+              </button>
             </div>
           </section>
         </div>
