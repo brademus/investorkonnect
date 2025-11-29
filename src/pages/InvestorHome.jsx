@@ -61,10 +61,10 @@ export default function InvestorHome() {
 
   if (profileLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent mx-auto" style={{ borderColor: 'hsl(43 59% 52%)', borderTopColor: 'transparent' }}></div>
-          <p className="mt-4 ik-text-muted text-sm">Loading dashboard...</p>
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <p className="text-[#6B7280]">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -80,247 +80,284 @@ export default function InvestorHome() {
   const docs = profile?.investor?.documents || [];
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-[#FAF7F2]">
       {/* Header */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
-            Your Investor Konnect dashboard
-          </h1>
-          <p className="ik-text-subtle text-sm sm:text-base mt-1">
-            See your buy box, suggested agents, and deal tools in one place.
-          </p>
+      <header className="border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm sticky top-0 z-20">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE68A] shadow-sm">
+                <span className="text-sm font-bold text-[#D3A029]">IK</span>
+              </div>
+              <span className="text-base font-semibold text-[#111827]">Investor Konnect</span>
+            </div>
+            <div className="flex items-center gap-3">
+              {isAdmin && (
+                <button onClick={() => navigate(createPageUrl("Admin"))} className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#111827] shadow-sm hover:border-[#D3A029] hover:shadow-md transition-all">
+                  <Shield className="w-4 h-4" /> Admin
+                </button>
+              )}
+              <Link to={createPageUrl("MyProfile")}>
+                <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center hover:bg-[#E5E7EB] transition-colors">
+                  <User className="w-5 h-5 text-[#6B7280]" />
+                </div>
+              </Link>
+            </div>
+          </div>
         </div>
-        {isAdmin && (
-          <Button onClick={() => navigate(createPageUrl("Admin"))} className="ik-btn-gold gap-2">
-            <Shield className="w-4 h-4" /> Admin Panel
-          </Button>
-        )}
       </header>
 
-      {/* Subscription Banner */}
-      {isPaidSubscriber ? (
-        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(48 100% 97%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
-              <Shield className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>{getPlanName(subscriptionPlan)} Plan Active</h2>
-              <p className="text-xs ik-text-muted mt-0.5">
-                {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
-              </p>
-            </div>
+      <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:max-w-7xl lg:px-8">
+        <div className="space-y-8">
+          {/* Page Title */}
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight">
+              Your Investor Dashboard
+            </h1>
+            <p className="mt-2 text-lg text-[#6B7280]">
+              See your buy box, suggested agents, and deal tools in one place.
+            </p>
           </div>
-          <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-pill text-sm">Manage plan</button>
-        </section>
-      ) : (
-        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(48 100% 97%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(43 59% 52%)' }}>
-              <TrendingUp className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Upgrade to unlock full platform access</h2>
-              <p className="text-xs ik-text-muted mt-0.5">Get unlimited deal rooms, advanced analytics, and priority support.</p>
-            </div>
-          </div>
-          <button onClick={() => navigate(createPageUrl("Pricing"))} className="ik-btn-gold text-sm flex items-center gap-2">
-            View plans <ArrowRight className="w-4 h-4" />
-          </button>
-        </section>
-      )}
 
-      {/* NDA Banner */}
-      {!hasNDA && (
-        <section className="ik-card p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ background: 'hsl(30 100% 97%)', borderColor: 'hsl(30 80% 85%)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(30 80% 90%)' }}>
-              <Shield className="w-5 h-5" style={{ color: 'hsl(30 80% 45%)' }} />
-            </div>
-            <div>
-              <h2 className="text-sm font-semibold" style={{ color: 'hsl(30 80% 25%)' }}>NDA Required</h2>
-              <p className="text-xs mt-0.5" style={{ color: 'hsl(30 60% 40%)' }}>Accept our NDA to access agent profiles and deal rooms.</p>
-            </div>
-          </div>
-          <Link to={createPageUrl("NDA")}>
-            <button className="ik-btn-gold text-sm flex items-center gap-2">
-              Sign NDA <ArrowRight className="w-4 h-4" />
-            </button>
-          </Link>
-        </section>
-      )}
-
-      {/* Main Content Grid */}
-      <section className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
-        {/* Left Column */}
-        <div className="space-y-5">
-          {/* Suggested Agents */}
-          <section className="ik-card p-5 sm:p-6">
-            <header className="flex items-center justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Suggested agents</h2>
-                  <span className="ik-badge-gold text-xs">AI Powered</span>
+          {/* Subscription Banner */}
+          {isPaidSubscriber ? (
+            <section className="rounded-2xl border border-[#FCD34D] bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] p-6 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D3A029] flex items-center justify-center shadow-lg">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#111827]">{getPlanName(subscriptionPlan)} Plan Active</h2>
+                    <p className="text-sm text-[#92400E]">
+                      {subscriptionStatus === 'trialing' ? 'Free trial active' : 'Full access to all features'}
+                    </p>
+                  </div>
                 </div>
-                <p className="text-xs ik-text-muted mt-0.5">AI-powered matches based on your investment goals.</p>
+                <button onClick={() => navigate(createPageUrl("Pricing"))} className="inline-flex items-center justify-center rounded-full border-2 border-[#D3A029] bg-white px-6 py-2.5 text-sm font-semibold text-[#92400E] shadow-sm hover:bg-[#FFFBEB] transition-all">
+                  Manage plan
+                </button>
               </div>
-              <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>View all</button>
-            </header>
-
-            {loadingSuggestedAgents ? (
-              <div className="flex flex-col items-center justify-center py-10">
-                <Loader2 className="w-7 h-7 animate-spin mb-2" style={{ color: 'hsl(43 59% 52%)' }} />
-                <p className="text-xs ik-text-muted">AI is analyzing your profile...</p>
+            </section>
+          ) : (
+            <section className="rounded-2xl border border-[#FCD34D] bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] p-6 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#D3A029] flex items-center justify-center shadow-lg">
+                    <TrendingUp className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#111827]">Upgrade to unlock full platform access</h2>
+                    <p className="text-sm text-[#92400E]">Get unlimited deal rooms, advanced analytics, and priority support.</p>
+                  </div>
+                </div>
+                <button onClick={() => navigate(createPageUrl("Pricing"))} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] hover:shadow-xl transition-all">
+                  View plans <ArrowRight className="w-4 h-4" />
+                </button>
               </div>
-            ) : suggestedAgents.length === 0 ? (
-              <p className="text-xs ik-text-muted py-4">No AI matches yet. Complete your profile for better matching.</p>
-            ) : (
-              <ul className="space-y-0 divide-y" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-                {suggestedAgents.slice(0, 4).map(({ profile: agent, score }) => (
-                  <li key={agent.id} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{agent.full_name || 'Agent'}</p>
-                        {score && score >= 0.8 && <span className="ik-badge-gold text-xs flex-shrink-0">Top</span>}
-                      </div>
-                      <p className="text-xs ik-text-muted mt-0.5 truncate">
-                        {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
-                        {score && ` • ${(score * 100).toFixed(0)}% match`}
-                      </p>
-                    </div>
-                    <button onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)} className="ik-btn-pill text-xs flex-shrink-0">View</button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
+            </section>
+          )}
 
-          {/* Documents */}
-          <section className="ik-card p-5 sm:p-6">
-            <header className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Documents</h2>
-              {docs.length > 0 && (
-                <Link to={createPageUrl("InvestorDocuments")}>
-                  <button className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Manage</button>
+          {/* NDA Banner */}
+          {!hasNDA && (
+            <section className="rounded-2xl border border-[#FECACA] bg-gradient-to-r from-[#FEF2F2] to-[#FEE2E2] p-6 shadow-md">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-[#FCA5A5] flex items-center justify-center">
+                    <Shield className="w-6 h-6 text-[#991B1B]" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-semibold text-[#991B1B]">NDA Required</h2>
+                    <p className="text-sm text-[#B91C1C]">Accept our NDA to access agent profiles and deal rooms.</p>
+                  </div>
+                </div>
+                <Link to={createPageUrl("NDA")}>
+                  <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DC2626] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#B91C1C] transition-all">
+                    Sign NDA <ArrowRight className="w-4 h-4" />
+                  </button>
                 </Link>
-              )}
-            </header>
+              </div>
+            </section>
+          )}
 
-            {docs.length > 0 ? (
-              <ul className="space-y-2 text-xs">
-                {docs.slice(0, 3).map((doc, idx) => (
-                  <li key={idx} className="flex items-center gap-3 p-2.5 rounded-lg" style={{ background: 'hsl(0 0% 98%)' }}>
-                    <FileText className="w-4 h-4 ik-text-muted flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>{doc.name}</p>
-                      <p className="ik-text-muted capitalize">{doc.type}</p>
+          {/* Main Content Grid */}
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+            {/* Left Column */}
+            <div className="space-y-6">
+              {/* Suggested Agents */}
+              <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
+                <header className="flex items-center justify-between mb-5">
+                  <div>
+                    <div className="flex items-center gap-3">
+                      <h2 className="text-lg font-semibold text-[#111827]">Suggested Agents</h2>
+                      <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">AI Powered</span>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex items-center gap-3 text-xs">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(0 0% 95%)' }}>
-                  <FileText className="w-4 h-4 ik-text-muted" />
-                </div>
-                <div>
-                  <p className="font-medium" style={{ color: 'hsl(0 0% 28%)' }}>No documents uploaded yet</p>
-                  <Link to={createPageUrl("InvestorDocuments")}>
-                    <button className="font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Upload documents</button>
-                  </Link>
-                </div>
-              </div>
-            )}
-          </section>
-        </div>
+                    <p className="text-sm text-[#6B7280] mt-1">AI-powered matches based on your investment goals.</p>
+                  </div>
+                  <button onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">View all →</button>
+                </header>
 
-        {/* Right Column */}
-        <div className="space-y-5">
-          {/* Buy Box */}
-          <section className="ik-card p-5 sm:p-6">
-            <header className="flex items-center justify-between mb-3">
-              <div>
-                <h2 className="text-sm font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Buy box</h2>
-                <p className="text-xs ik-text-muted mt-0.5">Snapshot of what you're looking to buy.</p>
-              </div>
-              <Link to={createPageUrl("InvestorBuyBox")}>
-                <button className="text-xs font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Edit</button>
-              </Link>
-            </header>
+                {loadingSuggestedAgents ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader2 className="w-8 h-8 animate-spin text-[#D3A029] mb-3" />
+                    <p className="text-sm text-[#6B7280]">AI is analyzing your profile...</p>
+                  </div>
+                ) : suggestedAgents.length === 0 ? (
+                  <div className="text-center py-10">
+                    <Users className="w-12 h-12 text-[#E5E7EB] mx-auto mb-3" />
+                    <p className="text-sm text-[#6B7280]">No AI matches yet. Complete your profile for better matching.</p>
+                  </div>
+                ) : (
+                  <ul className="divide-y divide-[#F3F4F6]">
+                    {suggestedAgents.slice(0, 4).map(({ profile: agent, score }) => (
+                      <li key={agent.id} className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
+                            <User className="w-5 h-5 text-[#9CA3AF]" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium text-[#111827] truncate">{agent.full_name || 'Agent'}</p>
+                              {score && score >= 0.8 && <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#92400E]">Top</span>}
+                            </div>
+                            <p className="text-sm text-[#6B7280] truncate">
+                              {agent.agent?.markets?.[0] || agent.target_state || 'Market not set'}
+                              {score && ` • ${(score * 100).toFixed(0)}% match`}
+                            </p>
+                          </div>
+                        </div>
+                        <button onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${agent.id}`)} className="inline-flex items-center justify-center rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:border-[#D3A029] hover:shadow-sm transition-all flex-shrink-0">
+                          View
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
 
-            {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
-              <dl className="space-y-3 text-xs">
-                {buyBox.asset_types?.length > 0 && (
-                  <div>
-                    <dt className="ik-text-muted mb-1.5">Asset types</dt>
-                    <dd className="flex flex-wrap gap-1.5">
-                      {buyBox.asset_types.map((type, idx) => <span key={idx} className="ik-btn-pill text-xs px-2.5 py-1">{type}</span>)}
-                    </dd>
+              {/* Documents */}
+              <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
+                <header className="flex items-center justify-between mb-4">
+                  <h2 className="text-lg font-semibold text-[#111827]">Documents</h2>
+                  {docs.length > 0 && (
+                    <Link to={createPageUrl("InvestorDocuments")}>
+                      <button className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">Manage →</button>
+                    </Link>
+                  )}
+                </header>
+
+                {docs.length > 0 ? (
+                  <ul className="space-y-3">
+                    {docs.slice(0, 3).map((doc, idx) => (
+                      <li key={idx} className="flex items-center gap-4 p-4 rounded-xl bg-[#F9FAFB] border border-[#F3F4F6]">
+                        <div className="w-10 h-10 rounded-lg bg-white border border-[#E5E7EB] flex items-center justify-center">
+                          <FileText className="w-5 h-5 text-[#6B7280]" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-[#111827] truncate">{doc.name}</p>
+                          <p className="text-sm text-[#6B7280] capitalize">{doc.type}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F9FAFB] border border-[#F3F4F6]">
+                    <div className="w-12 h-12 rounded-xl bg-[#E5E7EB] flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-[#9CA3AF]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#374151]">No documents uploaded yet</p>
+                      <Link to={createPageUrl("InvestorDocuments")}>
+                        <button className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">Upload documents →</button>
+                      </Link>
+                    </div>
                   </div>
                 )}
-                {buyBox.markets?.length > 0 && (
+              </section>
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-6">
+              {/* Buy Box */}
+              <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
+                <header className="flex items-center justify-between mb-4">
                   <div>
-                    <dt className="ik-text-muted mb-1.5">Target markets</dt>
-                    <dd className="flex flex-wrap gap-1.5">
-                      {buyBox.markets.map((market, idx) => <span key={idx} className="ik-btn-pill text-xs px-2.5 py-1">{market}</span>)}
-                    </dd>
+                    <h2 className="text-lg font-semibold text-[#111827]">Buy Box</h2>
+                    <p className="text-sm text-[#6B7280] mt-1">Snapshot of what you're looking to buy.</p>
                   </div>
-                )}
-                {(buyBox.min_budget || buyBox.max_budget) && (
-                  <div>
-                    <dt className="ik-text-muted mb-1">Budget range</dt>
-                    <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}</dd>
-                  </div>
-                )}
-              </dl>
-            ) : (
-              <div className="flex items-center gap-3 text-xs">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'hsl(0 0% 95%)' }}>
-                  <Target className="w-4 h-4 ik-text-muted" />
-                </div>
-                <div>
-                  <p className="font-medium" style={{ color: 'hsl(0 0% 28%)' }}>No buy box configured</p>
                   <Link to={createPageUrl("InvestorBuyBox")}>
-                    <button className="font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Set up buy box</button>
+                    <button className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">Edit →</button>
                   </Link>
-                </div>
-              </div>
-            )}
-          </section>
+                </header>
 
-          {/* Quick Links */}
-          <section className="ik-card p-5 sm:p-6">
-            <h2 className="text-sm font-semibold mb-3" style={{ color: 'hsl(0 0% 10%)' }}>Quick links</h2>
-            <ul className="space-y-1 text-sm">
-              <li>
-                <Link to={createPageUrl("Pricing")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
-                  <span>Subscription & plans</span>
-                  <ArrowRight className="w-4 h-4 ik-text-muted" />
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("MyProfile")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
-                  <span>My profile</span>
-                  <ArrowRight className="w-4 h-4 ik-text-muted" />
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("DealRooms")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
-                  <span>Deal rooms</span>
-                  <ArrowRight className="w-4 h-4 ik-text-muted" />
-                </Link>
-              </li>
-              <li>
-                <Link to={createPageUrl("Billing")} className="flex items-center justify-between w-full py-2 hover:text-amber-700 transition-colors" style={{ color: 'hsl(0 0% 28%)' }}>
-                  <span>Billing & payment</span>
-                  <ArrowRight className="w-4 h-4 ik-text-muted" />
-                </Link>
-              </li>
-            </ul>
-          </section>
+                {buyBox.asset_types || buyBox.markets || buyBox.min_budget ? (
+                  <dl className="space-y-4">
+                    {buyBox.asset_types?.length > 0 && (
+                      <div>
+                        <dt className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wide mb-2">Asset types</dt>
+                        <dd className="flex flex-wrap gap-2">
+                          {buyBox.asset_types.map((type, idx) => (
+                            <span key={idx} className="inline-flex items-center rounded-full border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-sm font-medium text-[#374151]">{type}</span>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                    {buyBox.markets?.length > 0 && (
+                      <div>
+                        <dt className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wide mb-2">Target markets</dt>
+                        <dd className="flex flex-wrap gap-2">
+                          {buyBox.markets.map((market, idx) => (
+                            <span key={idx} className="inline-flex items-center rounded-full border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-1.5 text-sm font-medium text-[#374151]">{market}</span>
+                          ))}
+                        </dd>
+                      </div>
+                    )}
+                    {(buyBox.min_budget || buyBox.max_budget) && (
+                      <div>
+                        <dt className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wide mb-2">Budget range</dt>
+                        <dd className="text-xl font-bold text-[#111827]">${buyBox.min_budget?.toLocaleString() || '0'} - ${buyBox.max_budget?.toLocaleString() || '∞'}</dd>
+                      </div>
+                    )}
+                  </dl>
+                ) : (
+                  <div className="flex items-center gap-4 p-4 rounded-xl bg-[#F9FAFB] border border-[#F3F4F6]">
+                    <div className="w-12 h-12 rounded-xl bg-[#E5E7EB] flex items-center justify-center">
+                      <Target className="w-6 h-6 text-[#9CA3AF]" />
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#374151]">No buy box configured</p>
+                      <Link to={createPageUrl("InvestorBuyBox")}>
+                        <button className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">Set up buy box →</button>
+                      </Link>
+                    </div>
+                  </div>
+                )}
+              </section>
+
+              {/* Quick Links */}
+              <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
+                <h2 className="text-lg font-semibold text-[#111827] mb-4">Quick Links</h2>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Subscription & plans', icon: '💳', href: 'Pricing' },
+                    { label: 'My profile', icon: '👤', href: 'MyProfile' },
+                    { label: 'Deal rooms', icon: '💬', href: 'DealRooms' },
+                    { label: 'Billing & payment', icon: '📑', href: 'Billing' },
+                  ].map((link) => (
+                    <Link key={link.href} to={createPageUrl(link.href)} className="flex items-center justify-between w-full p-4 rounded-xl border border-[#F3F4F6] bg-[#F9FAFB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all group">
+                      <div className="flex items-center gap-3">
+                        <span className="text-xl">{link.icon}</span>
+                        <span className="font-medium text-[#374151] group-hover:text-[#111827]">{link.label}</span>
+                      </div>
+                      <ArrowRight className="w-5 h-5 text-[#9CA3AF] group-hover:text-[#D3A029] transition-colors" />
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
         </div>
-      </section>
+      </main>
     </div>
   );
 }
