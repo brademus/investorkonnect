@@ -72,21 +72,21 @@ export default function AgentDirectory() {
 
   const loadAgents = async () => {
     try {
-      if (DEMO_MODE && DEMO_CONFIG.useStaticData) {
-        setAgents(demoAgents);
-        setLoading(false);
-        return;
-      }
+      // Always try to load real agents first
       const allProfiles = await base44.entities.Profile.filter({});
-      const agentProfiles = allProfiles.filter(p => p.user_role === 'agent' || p.user_type === 'agent');
-      setAgents(agentProfiles);
+      const realAgents = allProfiles.filter(p => p.user_role === 'agent' || p.user_type === 'agent');
+      
+      // Merge with demo agents (avoid duplicates by ID)
+      const realIds = new Set(realAgents.map(a => String(a.id)));
+      const demosToShow = demoAgents.filter(a => !realIds.has(String(a.id)));
+      const combined = [...realAgents, ...demosToShow];
+      
+      setAgents(combined);
       setLoading(false);
     } catch (error) {
-      if (DEMO_MODE) setAgents(demoAgents);
-      else {
-        toast.error("Failed to load agents");
-        setAgents([]);
-      }
+      console.error("Error loading agents:", error);
+      // Fallback to demo agents only
+      setAgents(demoAgents);
       setLoading(false);
     }
   };
@@ -279,7 +279,8 @@ export default function AgentDirectory() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredAgents.map((agent) => {
                 const agentData = agent.agent || {};
-                const isVerified = agent.kyc_status === 'approved' || agent.verified;
+                const isVerified = agent.kyc_status === 'approved' || agent.verified || agent.vetted;
+                const isDemo = String(agent.id).startsWith('demo-');
                 const rating = agentData.rating || 4.9;
                 const deals = agentData.deals_closed || agentData.investor_clients_count || 15;
                 const years = agentData.experience_years || 8;
@@ -308,12 +309,19 @@ export default function AgentDirectory() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0 pt-2">
-                          <h2 className="text-lg font-bold text-gray-900 truncate">
-                            {agent.full_name || 'Agent'}
-                          </h2>
+                          <div className="flex items-center gap-2">
+                            <h2 className="text-lg font-bold text-gray-900 truncate">
+                              {agent.full_name || 'Agent'}
+                            </h2>
+                            {isDemo && (
+                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                                Demo
+                              </span>
+                            )}
+                          </div>
                           <p className="mt-0.5 text-sm text-gray-600 flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5" />
-                            {agentData.markets?.[0] || agent.target_state || 'Location TBD'}
+                            {agent.markets?.[0] || agentData.markets?.[0] || agent.target_state || 'Location TBD'}
                           </p>
                         </div>
                       </div>
