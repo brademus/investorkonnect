@@ -258,28 +258,28 @@ export default function AgentProfile() {
               <div className="space-y-3">
                 {profile.markets && profile.markets.length > 0 && (
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <MapPin className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-900">Markets</p>
-                      <p className="text-slate-600">{profile.markets.join(", ")}</p>
+                      <p className="text-sm font-medium text-gray-900">Markets</p>
+                      <p className="text-gray-600">{profile.markets.join(", ")}</p>
                     </div>
                   </div>
                 )}
                 {profile.broker && (
                   <div className="flex items-start gap-3">
-                    <Briefcase className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <Briefcase className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-900">Broker</p>
-                      <p className="text-slate-600">{profile.broker}</p>
+                      <p className="text-sm font-medium text-gray-900">Broker</p>
+                      <p className="text-gray-600">{profile.broker}</p>
                     </div>
                   </div>
                 )}
                 {profile.licenseNumber && profile.licenseState && (
                   <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-slate-400 mt-0.5" />
+                    <Shield className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-slate-900">License</p>
-                      <p className="text-slate-600">
+                      <p className="text-sm font-medium text-gray-900">License</p>
+                      <p className="text-gray-600">
                         {profile.licenseNumber} ({profile.licenseState})
                       </p>
                     </div>
@@ -291,9 +291,9 @@ export default function AgentProfile() {
 
           {/* Bio */}
           {profile.bio && (
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <h3 className="text-lg font-semibold text-slate-900 mb-3">About</h3>
-              <p className="text-slate-700 leading-relaxed">{profile.bio}</p>
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
+              <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
             </div>
           )}
         </div>
