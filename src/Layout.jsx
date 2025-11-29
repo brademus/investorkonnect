@@ -24,6 +24,10 @@ function LayoutContent({ children }) {
     '/matches'
   ];
 
+  // Full-bleed pages that handle their own layout completely
+  const fullBleedPages = ['/Room', '/InvestorHome', '/AgentHome', '/Dashboard'];
+  const isFullBleedPage = fullBleedPages.some(path => location.pathname.toLowerCase().includes(path.toLowerCase()));
+
   const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
   const showNav = !loading && user && onboarded && (hasRoom || location.pathname.startsWith('/room/'));
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
@@ -103,7 +107,7 @@ function LayoutContent({ children }) {
       )}
 
       {/* Page content – centered, offset for fixed header */}
-      <main className={showNav && !isNoNavPage ? "mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
+      <main className={showNav && !isNoNavPage && !isFullBleedPage ? "mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
         {children}
       </main>
 
