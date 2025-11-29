@@ -116,15 +116,30 @@
 
   /* Cards */
   .ik-card {
-    border-radius: 20px;
+    border-radius: 24px;
     background-color: #FFFFFF;
-    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
+    border: 1px solid #E5E7EB;
+    box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+  }
+
+  .ik-card-hover {
+    transition: transform 150ms ease, box-shadow 150ms ease,
+      background-color 150ms ease, border-color 150ms ease;
+  }
+
+  .ik-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 24px 55px rgba(15, 23, 42, 0.12);
+    border-color: #FACC15;
+    background-color: #FFFBEB;
   }
 
   .ik-shell {
     min-height: 100vh;
     background-color: #FAF7F2;
     color: #111827;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+      "Inter", "Segoe UI", sans-serif;
   }
 
   .ik-card-hover {
@@ -203,30 +218,127 @@
   }
 
   .ik-btn-primary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
     border-radius: 9999px;
     background-color: #D3A029;
     color: #111827;
-    font-weight: 500;
-    padding: 0.7rem 1.7rem;
-    font-size: 0.9rem;
+    font-weight: 600;
+    padding: 0.8rem 1.7rem;
+    font-size: 0.95rem;
+    box-shadow: 0 12px 30px rgba(202, 138, 4, 0.35);
+    transition: background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
   }
 
   .ik-btn-primary:hover {
     background-color: #B98413;
+    transform: translateY(-1px);
+    box-shadow: 0 18px 40px rgba(202, 138, 4, 0.45);
+  }
+
+  .ik-btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 10px 24px rgba(202, 138, 4, 0.35);
   }
 
   .ik-btn-outline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
     border-radius: 9999px;
     border: 1px solid #E5E7EB;
     background-color: #FFFFFF;
     color: #111827;
     font-weight: 500;
-    padding: 0.7rem 1.5rem;
-    font-size: 0.85rem;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.9rem;
+    transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease, box-shadow 150ms ease;
   }
 
   .ik-btn-outline:hover {
     background-color: #F9FAFB;
+    border-color: #D3A029;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+  }
+
+  /* Dashboard quick-link tiles */
+  .ik-tile {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    border-radius: 18px;
+    border: 1px solid #E5E7EB;
+    background-color: #FFFFFF;
+    padding: 0.9rem 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #111827;
+    cursor: pointer;
+    transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+  }
+
+  .ik-tile:hover {
+    border-color: #FACC15;
+    background-color: #FFFBEB;
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+    transform: translateY(-1px);
+  }
+
+  /* Small icon bubble used in tiles/cards */
+  .ik-icon-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 1.85rem;
+    width: 1.85rem;
+    border-radius: 9999px;
+    background-color: #FEF3C7;
+    color: #D3A029;
+    font-size: 0.95rem;
+  }
+
+  /* Typography helpers */
+  .ik-h1 {
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 650;
+  }
+
+  @media (min-width: 640px) {
+    .ik-h1 {
+      font-size: 2.1rem;
+    }
+  }
+
+  .ik-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #111827;
+  }
+
+  .ik-section-subtitle {
+    font-size: 0.8rem;
+    color: #6B7280;
+  }
+
+  /* Generic content card shell for other pages */
+  .ik-page-card {
+    border-radius: 24px;
+    background-color: #FFFFFF;
+    border: 1px solid #E5E7EB;
+    padding: 1.5rem 1.4rem;
+    box-shadow: 0 16px 40px rgba(15, 23, 42, 0.06);
+  }
+
+  @media (min-width: 640px) {
+    .ik-page-card {
+      padding: 1.8rem 1.9rem;
+    }
   }
 
   .ik-badge-gold {

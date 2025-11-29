@@ -36,8 +36,8 @@ function InvestorDashboardContent() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent mx-auto" style={{ borderColor: 'hsl(43 59% 52%)', borderTopColor: 'transparent' }}></div>
-          <p className="mt-4 ik-text-muted text-sm">Loading your dashboard...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto" style={{ borderColor: '#D3A029', borderTopColor: 'transparent' }}></div>
+          <p className="mt-4 text-[#6B7280] text-sm">Loading your dashboard...</p>
         </div>
       </div>
     );
@@ -53,62 +53,61 @@ function InvestorDashboardContent() {
 
   return (
     <div className="space-y-7 lg:space-y-9">
-      {/* Header row */}
-      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+      {/* HEADER */}
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-[#111827] sm:text-3xl">
+          <h1 className="ik-h1 text-[#111827]">
             Your Investor Konnect dashboard
           </h1>
-          <p className="text-sm text-[#6B7280]">
-            Keep your buy box, suggested agents, and deal tools in one place.
+          <p className="mt-1 text-sm text-[#6B7280] sm:text-[0.95rem]">
+            See your buy box, suggested agents, documents, and deal tools in one place.
           </p>
         </div>
-        <Link to={createPageUrl("Admin")} className="ik-btn-outline text-xs">
-          Admin panel
-        </Link>
+
+        <div className="flex items-center gap-2">
+          <Link to={createPageUrl("Pricing")} className="ik-btn-outline text-xs sm:text-[0.8rem]">
+            View plans
+          </Link>
+          <Link to={createPageUrl("Admin")} className="ik-btn-outline text-xs sm:text-[0.8rem]">
+            Admin panel
+          </Link>
+        </div>
       </header>
 
-      {/* Today strip */}
-      <section className="ik-card flex flex-col gap-3 border border-[#E5E7EB] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+      {/* TODAY STRIP / UPGRADE BANNER */}
+      <section className="ik-card ik-card-hover flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEF3C7]">
-            <span className="text-lg text-[#D3A029]">⭐</span>
-          </div>
+          <span className="ik-icon-pill">⚡</span>
           <div>
-            <h2 className="text-sm font-semibold text-[#111827]">
-              Today&apos;s overview
-            </h2>
-            <p className="text-xs text-[#6B7280]">
-              Review your buy box, explore suggested agents, or open your existing deal
-              rooms.
+            <p className="ik-section-title">
+              Upgrade to unlock full platform access
+            </p>
+            <p className="ik-section-subtitle mt-1">
+              Get unlimited deal rooms, advanced analytics, and priority support.
             </p>
           </div>
         </div>
-
-        <div className="flex flex-wrap gap-2 text-xs text-[#4B5563]">
-          <span className="ik-chip">Profile complete</span>
-          <Link to={createPageUrl("DealRooms")} className="ik-chip cursor-pointer hover:border-[#D3A029]">
-            View deal rooms →
-          </Link>
-        </div>
+        <Link to={createPageUrl("Pricing")} className="ik-btn-primary text-xs sm:text-[0.85rem]">
+          View plans
+        </Link>
       </section>
 
-      {/* Main grid: 3 big areas */}
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1.4fr)] lg:gap-5">
-        {/* LEFT COLUMN – suggested agents + documents */}
+      {/* MAIN CONTENT GRID */}
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1.35fr)] lg:gap-5">
+        {/* LEFT COLUMN: suggested agents + documents */}
         <div className="space-y-4">
           {/* Suggested agents */}
-          <section className="ik-card border border-[#E5E7EB] p-5 sm:p-6">
-            <header className="mb-3 flex items-center justify-between gap-2">
+          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
+            <header className="mb-4 flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-sm font-semibold text-[#111827]">
+                <h2 className="ik-section-title">
                   Suggested agents
                   <span className="ml-1 text-[0.7rem] font-normal text-[#6B7280]">
                     AI powered
                   </span>
                 </h2>
-                <p className="text-xs text-[#6B7280]">
-                  Recommendations based on your stated buy box.
+                <p className="ik-section-subtitle mt-1">
+                  Smart matches based on your investment goals.
                 </p>
               </div>
               <Link to={createPageUrl("AgentDirectory")} className="ik-link text-xs">
@@ -116,20 +115,20 @@ function InvestorDashboardContent() {
               </Link>
             </header>
 
-            <p className="text-xs text-[#6B7280]">
-              No matches yet. Complete your profile and buy box for better results.
+            <p className="text-sm text-[#6B7280]">
+              No matches yet. Complete your profile and buy box for better matching.
             </p>
           </section>
 
           {/* Documents */}
-          <section className="ik-card border border-[#E5E7EB] p-5 sm:p-6">
+          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
             <header className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="text-sm font-semibold text-[#111827]">Documents</h2>
+              <h2 className="ik-section-title">Documents</h2>
             </header>
 
-            <div className="flex items-center gap-3 text-xs text-[#6B7280]">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F3F4F6]">
-                <FileText className="w-4 h-4 text-[#9CA3AF]" />
+            <div className="flex items-center gap-3 text-sm text-[#6B7280]">
+              <div className="ik-icon-pill bg-[#F3F4F6] text-[#4B5563]">
+                <FileText className="w-4 h-4" />
               </div>
               <div>
                 <p className="font-medium text-[#374151]">
@@ -143,77 +142,88 @@ function InvestorDashboardContent() {
           </section>
         </div>
 
-        {/* RIGHT COLUMN – Buy box + quick links in one tall card */}
+        {/* RIGHT COLUMN: buy box + quick links */}
         <div className="space-y-4">
-          <section className="ik-card flex h-full flex-col justify-between border border-[#E5E7EB] p-5 sm:p-6">
-            <div className="space-y-4">
-              {/* Buy box */}
-              <header className="flex items-center justify-between gap-2">
-                <div>
-                  <h2 className="text-sm font-semibold text-[#111827]">Buy box</h2>
-                  <p className="text-xs text-[#6B7280]">
-                    High-level snapshot of what you&apos;re looking to buy.
-                  </p>
-                </div>
-                <Link to={createPageUrl("InvestorBuyBox")} className="ik-link text-xs">
-                  Edit
-                </Link>
-              </header>
+          {/* Buy box */}
+          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
+            <header className="mb-4 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="ik-section-title">Buy box</h2>
+                <p className="ik-section-subtitle mt-1">
+                  High-level snapshot of what you&apos;re looking to buy.
+                </p>
+              </div>
+              <Link to={createPageUrl("InvestorBuyBox")} className="ik-link text-xs">
+                Edit
+              </Link>
+            </header>
 
-              <dl className="space-y-3 text-xs text-[#374151]">
-                <div>
-                  <dt className="mb-1 text-[#6B7280]">Asset types</dt>
-                  <dd className="flex flex-wrap gap-2">
-                    <span className="ik-chip">Single Family</span>
-                    <span className="ik-chip">Land</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="mb-1 text-[#6B7280]">Target markets</dt>
-                  <dd className="flex flex-wrap gap-2">
-                    <span className="ik-chip">{profile?.target_state || 'Not set'}</span>
-                  </dd>
-                </div>
-                <div>
-                  <dt className="mb-1 text-[#6B7280]">Budget range</dt>
-                  <dd className="text-sm font-medium text-[#111827]">
-                    $100,000 - $500,000
-                  </dd>
-                </div>
-              </dl>
-            </div>
+            <dl className="space-y-3 text-sm text-[#374151]">
+              <div>
+                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
+                  Asset types
+                </dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5">
+                  <span className="ik-chip text-[0.75rem]">Single Family</span>
+                  <span className="ik-chip text-[0.75rem]">Land</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
+                  Target markets
+                </dt>
+                <dd className="mt-1 flex flex-wrap gap-1.5">
+                  <span className="ik-chip text-[0.75rem]">{profile?.target_state || 'Not set'}</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
+                  Budget range
+                </dt>
+                <dd className="mt-1 text-[0.95rem] font-semibold text-[#111827]">
+                  $100,000 - $500,000
+                </dd>
+              </div>
+            </dl>
+          </section>
 
-            {/* Quick links */}
-            <div className="mt-6 border-t border-[#F3F4F6] pt-4">
-              <h3 className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#9CA3AF]">
-                Quick links
-              </h3>
-              <ul className="space-y-1.5 text-sm text-[#374151]">
-                <li>
-                  <Link to={createPageUrl("Pricing")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029]">
-                    <span>Subscription & plans</span>
-                    <span>→</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to={createPageUrl("MyProfile")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029]">
-                    <span>My profile</span>
-                    <span>→</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to={createPageUrl("DealRooms")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029]">
-                    <span>Deal rooms</span>
-                    <span>→</span>
-                  </Link>
-                </li>
-                <li>
-                  <Link to={createPageUrl("Billing")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029]">
-                    <span>Billing & payment</span>
-                    <span>→</span>
-                  </Link>
-                </li>
-              </ul>
+          {/* Quick links – big, clickable tiles */}
+          <section className="ik-card px-5 py-4 sm:px-6 sm:py-5">
+            <h3 className="mb-3 text-[0.78rem] font-semibold uppercase tracking-wide text-[#9CA3AF]">
+              Quick links
+            </h3>
+            <div className="space-y-2">
+              <Link to={createPageUrl("Pricing")} className="ik-tile">
+                <div className="flex items-center gap-3">
+                  <span className="ik-icon-pill">💳</span>
+                  <span>Subscription & plans</span>
+                </div>
+                <span>→</span>
+              </Link>
+
+              <Link to={createPageUrl("MyProfile")} className="ik-tile">
+                <div className="flex items-center gap-3">
+                  <span className="ik-icon-pill">👤</span>
+                  <span>My profile</span>
+                </div>
+                <span>→</span>
+              </Link>
+
+              <Link to={createPageUrl("DealRooms")} className="ik-tile">
+                <div className="flex items-center gap-3">
+                  <span className="ik-icon-pill">💬</span>
+                  <span>Deal rooms</span>
+                </div>
+                <span>→</span>
+              </Link>
+
+              <Link to={createPageUrl("Billing")} className="ik-tile">
+                <div className="flex items-center gap-3">
+                  <span className="ik-icon-pill">📑</span>
+                  <span>Billing & payment</span>
+                </div>
+                <span>→</span>
+              </Link>
             </div>
           </section>
         </div>
