@@ -3,8 +3,7 @@ import { Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { 
-  Search, MessageSquare, Users, FileText, TrendingUp,
-  MapPin, DollarSign, ArrowRight
+  FileText, TrendingUp, ArrowRight
 } from "lucide-react";
 
 function InvestorDashboardContent() {
@@ -53,180 +52,160 @@ function InvestorDashboardContent() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
-          Your Investor Konnect dashboard
-        </h1>
-        <p className="text-base" style={{ color: 'hsl(0 0% 44%)' }}>
-          See your connections, suggested agents, and deal tools in one place.
-        </p>
+    <div className="space-y-6 lg:space-y-8">
+      {/* PAGE HEADER */}
+      <header className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="ik-section-title">Your Investor Konnect dashboard</h1>
+          <p className="ik-section-subtitle">
+            See your buy box, suggested agents, and deal tools in one place.
+          </p>
+        </div>
       </header>
 
-      {/* Top Stats Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="ik-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Profile Strength</span>
-            <TrendingUp className="w-5 h-5" style={{ color: 'hsl(43 59% 52%)' }} />
+      {/* UPGRADE BANNER */}
+      <section className="ik-card flex flex-col gap-3 border border-[#FCD34D] bg-[#FFFBEB] p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FCD34D] text-[#92400E]">
+            <TrendingUp className="w-5 h-5" />
           </div>
-          <div className="text-3xl font-bold mb-2" style={{ color: 'hsl(0 0% 10%)' }}>{profileCompletion}%</div>
-          <div className="ik-progress-bar h-1.5">
-            <div className="ik-progress-fill" style={{ width: `${profileCompletion}%` }}></div>
+          <div>
+            <h2 className="text-sm font-semibold text-[#111827]">
+              Upgrade to unlock full platform access
+            </h2>
+            <p className="text-xs text-[#6B7280] mt-1">
+              Get unlimited deal rooms, advanced analytics, and priority support.
+            </p>
           </div>
         </div>
+        <Link to={createPageUrl("Pricing")} className="ik-btn-gold text-sm">
+          View plans →
+        </Link>
+      </section>
 
-        <div className="ik-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Active Connections</span>
-            <Users className="w-5 h-5" style={{ color: 'hsl(217 91% 60%)' }} />
-          </div>
-          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.activeConnections}</div>
-          <p className="text-sm mt-1" style={{ color: 'hsl(0 0% 44%)' }}>{userData.pendingInvites} pending</p>
-        </div>
-
-        <div className="ik-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Unread Messages</span>
-            <MessageSquare className="w-5 h-5" style={{ color: 'hsl(270 60% 55%)' }} />
-          </div>
-          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.unreadMessages}</div>
-          <Link to={createPageUrl("Inbox")} className="text-sm font-medium mt-1 inline-block hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>View inbox</Link>
-        </div>
-
-        <div className="ik-card p-5">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-medium" style={{ color: 'hsl(0 0% 44%)' }}>Deal Rooms</span>
-            <FileText className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
-          </div>
-          <div className="text-3xl font-bold" style={{ color: 'hsl(0 0% 10%)' }}>{userData.activeDealRooms}</div>
-          <Link to={createPageUrl("DealRooms")} className="text-sm font-medium mt-1 inline-block hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>View rooms</Link>
-        </div>
-      </div>
-
-      {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        {/* Left Column */}
-        <div className="space-y-6">
-          {/* Quick Actions */}
-          <section className="ik-card p-6">
-            <h2 className="text-base font-semibold mb-5" style={{ color: 'hsl(0 0% 10%)' }}>Quick Actions</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Link to={createPageUrl("AgentDirectory")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(48 100% 95%)' }}>
-                  <Search className="w-6 h-6" style={{ color: 'hsl(43 71% 42%)' }} />
-                </div>
-                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Find Agents</h3>
-                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>Browse verified agents</p>
+      {/* MAIN GRID */}
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1.6fr)]">
+        {/* LEFT COLUMN: Suggested + Documents */}
+        <div className="space-y-4">
+          {/* Suggested agents */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-[#111827]">
+                  Suggested agents
+                  <span className="ml-1 text-[0.7rem] font-normal text-[#6B7280]">
+                    AI powered
+                  </span>
+                </h2>
+                <p className="text-xs text-[#6B7280]">
+                  AI-powered matches based on your investment goals.
+                </p>
+              </div>
+              <Link to={createPageUrl("AgentDirectory")} className="text-xs font-medium text-[#D3A029] hover:underline">
+                View all
               </Link>
+            </header>
 
-              <Link to={createPageUrl("Inbox")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(217 91% 95%)' }}>
-                  <MessageSquare className="w-6 h-6" style={{ color: 'hsl(217 91% 60%)' }} />
-                </div>
-                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Messages</h3>
-                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>{userData.unreadMessages} unread</p>
-              </Link>
-
-              <Link to={createPageUrl("DealRooms")} className="group p-4 rounded-xl border-2 text-center transition-all hover:border-amber-300 hover:shadow-sm" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-                <div className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3" style={{ background: 'hsl(270 91% 95%)' }}>
-                  <FileText className="w-6 h-6" style={{ color: 'hsl(270 60% 55%)' }} />
-                </div>
-                <h3 className="text-sm font-semibold mb-1" style={{ color: 'hsl(0 0% 10%)' }}>Deal Rooms</h3>
-                <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>{userData.activeDealRooms} active</p>
-              </Link>
-            </div>
+            <p className="text-xs text-[#6B7280]">
+              No AI matches yet. Complete your profile for better matching.
+            </p>
           </section>
 
-          {/* Recent Activity */}
-          <section className="ik-card p-6">
-            <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Recent Activity</h2>
-            <div className="space-y-0 divide-y" style={{ borderColor: 'hsl(0 0% 94%)' }}>
-              <div className="flex items-center gap-4 py-3 first:pt-0">
-                <div className="w-10 h-10 rounded-full flex-shrink-0" style={{ background: 'hsl(0 0% 92%)' }}></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>Sarah J. viewed your profile</p>
-                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>2 hours ago</p>
-                </div>
+          {/* Documents */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="mb-3 flex items-center justify-between gap-2">
+              <h2 className="text-sm font-semibold text-[#111827]">Documents</h2>
+            </header>
+
+            <div className="flex items-center gap-3 text-xs text-[#6B7280]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#F3F4F6]">
+                <FileText className="w-4 h-4 text-[#9CA3AF]" />
               </div>
-              <div className="flex items-center gap-4 py-3">
-                <div className="w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center" style={{ background: 'hsl(48 100% 95%)' }}>
-                  <TrendingUp className="w-4 h-4" style={{ color: 'hsl(43 71% 42%)' }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>New agent match available</p>
-                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>Yesterday</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 py-3 last:pb-0">
-                <div className="w-10 h-10 rounded-full flex-shrink-0" style={{ background: 'hsl(0 0% 92%)' }}></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate" style={{ color: 'hsl(0 0% 10%)' }}>Michael K. sent you a message</p>
-                  <p className="text-xs" style={{ color: 'hsl(0 0% 44%)' }}>2 days ago</p>
-                </div>
+              <div>
+                <p className="font-medium text-[#374151]">
+                  No documents uploaded yet
+                </p>
+                <Link to={createPageUrl("InvestorDocuments")} className="text-xs font-medium text-[#D3A029] hover:underline">
+                  Upload documents
+                </Link>
               </div>
             </div>
           </section>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Investment Preferences */}
-          <section className="ik-card p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold" style={{ color: 'hsl(0 0% 10%)' }}>Investment Preferences</h2>
-              <Link to={createPageUrl("MyProfile")} className="text-sm font-medium hover:underline" style={{ color: 'hsl(43 71% 42%)' }}>Edit</Link>
-            </div>
-            <dl className="space-y-4">
-              <div className="flex items-start gap-3">
-                <FileText className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'hsl(0 0% 69%)' }} />
-                <div>
-                  <dt className="text-xs mb-0.5" style={{ color: 'hsl(0 0% 44%)' }}>Asset Type</dt>
-                  <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>Single Family, Land</dd>
-                </div>
+        {/* RIGHT COLUMN: Buy box + Quick links */}
+        <div className="space-y-4">
+          {/* Buy box */}
+          <section className="ik-card p-5 sm:p-6">
+            <header className="mb-3 flex items-center justify-between gap-2">
+              <div>
+                <h2 className="text-sm font-semibold text-[#111827]">Buy box</h2>
+                <p className="text-xs text-[#6B7280]">
+                  Snapshot of what you're looking to buy.
+                </p>
               </div>
-              <div className="flex items-start gap-3">
-                <DollarSign className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'hsl(0 0% 69%)' }} />
-                <div>
-                  <dt className="text-xs mb-0.5" style={{ color: 'hsl(0 0% 44%)' }}>Budget Range</dt>
-                  <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>$100,000 - $500,000</dd>
-                </div>
+              <Link to={createPageUrl("InvestorBuyBox")} className="text-xs font-medium text-[#D3A029] hover:underline">
+                Edit
+              </Link>
+            </header>
+
+            <dl className="space-y-3 text-xs text-[#374151]">
+              <div>
+                <dt className="text-[#6B7280] mb-1">Asset types</dt>
+                <dd className="flex flex-wrap gap-2">
+                  <span className="ik-pill">Single Family</span>
+                  <span className="ik-pill">Land</span>
+                </dd>
               </div>
-              <div className="flex items-start gap-3">
-                <MapPin className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'hsl(0 0% 69%)' }} />
-                <div>
-                  <dt className="text-xs mb-0.5" style={{ color: 'hsl(0 0% 44%)' }}>Target Markets</dt>
-                  <dd className="text-sm font-medium" style={{ color: 'hsl(0 0% 10%)' }}>{profile?.target_state || 'Not set'}</dd>
-                </div>
+              <div>
+                <dt className="text-[#6B7280] mb-1">Target markets</dt>
+                <dd className="flex flex-wrap gap-2">
+                  <span className="ik-pill">{profile?.target_state || 'Not set'}</span>
+                </dd>
+              </div>
+              <div>
+                <dt className="text-[#6B7280] mb-1">Budget range</dt>
+                <dd className="text-sm font-medium text-[#111827]">
+                  $100,000 - $500,000
+                </dd>
               </div>
             </dl>
           </section>
 
-          {/* Quick Links */}
-          <section className="ik-card p-6">
-            <h2 className="text-base font-semibold mb-4" style={{ color: 'hsl(0 0% 10%)' }}>Quick Links</h2>
-            <nav className="space-y-1">
-              <Link to={createPageUrl("Pricing")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
-                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Subscription & plans</span>
-                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
-              </Link>
-              <Link to={createPageUrl("MyProfile")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
-                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>My profile</span>
-                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
-              </Link>
-              <Link to={createPageUrl("DealRooms")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
-                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Deal rooms</span>
-                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
-              </Link>
-              <Link to={createPageUrl("Billing")} className="flex items-center justify-between py-2.5 px-3 rounded-lg transition-colors hover:bg-gray-50">
-                <span className="text-sm" style={{ color: 'hsl(0 0% 28%)' }}>Billing & payment</span>
-                <ArrowRight className="w-4 h-4" style={{ color: 'hsl(0 0% 69%)' }} />
-              </Link>
-            </nav>
+          {/* Quick links */}
+          <section className="ik-card p-5 sm:p-6">
+            <h2 className="mb-3 text-sm font-semibold text-[#111827]">
+              Quick links
+            </h2>
+            <ul className="space-y-2 text-sm text-[#374151]">
+              <li>
+                <Link to={createPageUrl("Pricing")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029] py-1">
+                  <span>Subscription & plans</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("MyProfile")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029] py-1">
+                  <span>My profile</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("DealRooms")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029] py-1">
+                  <span>Deal rooms</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </li>
+              <li>
+                <Link to={createPageUrl("Billing")} className="flex w-full items-center justify-between text-left hover:text-[#D3A029] py-1">
+                  <span>Billing & payment</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </li>
+            </ul>
           </section>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

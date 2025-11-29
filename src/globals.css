@@ -70,30 +70,57 @@
 
 /* ====== Reusable Layout & Components ====== */
 @layer components {
-  /* Top navbar */
-  .ik-navbar {
-    @apply bg-white border-b sticky top-0 z-40;
-    border-color: hsl(0 0% 92%);
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-  }
+    /* Top navbar */
+    .ik-navbar {
+      @apply bg-white border-b sticky top-0 z-40;
+      border-color: #E5E7EB;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
 
-  .ik-container {
-    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
-  }
+    .ik-container {
+      @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+    }
 
-  .ik-body-shell {
-    @apply min-h-screen;
-    background-color: hsl(0 0% 98%);
-    color: hsl(0 0% 13%);
-  }
+    .ik-body-shell {
+      @apply min-h-screen;
+      background-color: #FAF7F2;
+      color: #111827;
+    }
+
+    /* Section typography */
+    .ik-section-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      color: #111827;
+    }
+
+    .ik-section-subtitle {
+      font-size: 0.9375rem;
+      color: #6B7280;
+    }
+
+    /* Pill button */
+    .ik-pill {
+      border-radius: 9999px;
+      padding: 0.35rem 0.9rem;
+      font-size: 0.8125rem;
+      border: 1px solid #E5E7EB;
+      background-color: #F9FAFB;
+      transition: all 150ms ease;
+    }
+
+    .ik-pill:hover {
+      border-color: #D1D5DB;
+    }
 
   /* Cards */
   .ik-card {
-    background: white;
+    background: #ffffff;
     border-radius: 16px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(15, 23, 42, 0.04);
     transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid hsl(0 0% 95%);
+    border: 1px solid #F3F4F6;
   }
 
   .ik-card-hover {
@@ -111,24 +138,21 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, hsl(43 71% 42%) 0%, hsl(43 59% 52%) 100%);
-    color: white;
-    font-weight: 600;
-    border-radius: 12px;
-    padding: 12px 24px;
-    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.25);
+    background-color: #D3A029;
+    color: #111827;
+    font-weight: 500;
+    border-radius: 9999px;
+    padding: 0.55rem 1.35rem;
+    transition: all 200ms ease;
     border: none;
   }
 
   .ik-btn-gold:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(212, 175, 55, 0.35);
-    background: linear-gradient(135deg, hsl(43 71% 38%) 0%, hsl(43 59% 48%) 100%);
+    background-color: #B98413;
   }
 
   .ik-btn-gold:focus-visible {
-    outline: 2px solid hsl(43 71% 42%);
+    outline: 2px solid #D3A029;
     outline-offset: 2px;
   }
 
@@ -136,23 +160,22 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: hsl(0 0% 96%);
-    color: hsl(0 0% 20%);
+    background: #F9FAFB;
+    color: #374151;
     font-weight: 500;
-    border-radius: 24px;
-    padding: 10px 20px;
-    transition: all 250ms cubic-bezier(0.4, 0, 0.2, 1);
-    border: 1px solid hsl(0 0% 90%);
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    transition: all 150ms ease;
+    border: 1px solid #E5E7EB;
   }
 
   .ik-btn-pill:hover {
-    background: hsl(0 0% 92%);
-    border-color: hsl(0 0% 80%);
-    transform: translateY(-1px);
+    background: #F3F4F6;
+    border-color: #D1D5DB;
   }
 
   .ik-btn-pill:focus-visible {
-    outline: 2px solid hsl(43 71% 42%);
+    outline: 2px solid #D3A029;
     outline-offset: 2px;
   }
 

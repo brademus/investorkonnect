@@ -64,141 +64,146 @@ export default function Home() {
   };
 
   return (
-    <div className="ik-body-shell ik-hero min-h-screen">
+    <div className="min-h-screen bg-[#FAF7F2]">
       {/* Public navbar */}
-      <nav className="ik-navbar">
-        <div className="ik-container flex items-center justify-between h-16">
+      <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
+        <div className="mx-auto max-w-6xl px-4 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: 'hsl(43 59% 52%)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: '#D3A029' }}>
               <HomeIcon className="w-5 h-5 text-white" />
             </div>
-            <span className="text-lg font-semibold tracking-tight" style={{ color: 'hsl(0 0% 10%)' }}>
+            <span className="text-lg font-semibold tracking-tight text-[#111827]">
               INVESTOR KONNECT
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Link to={createPageUrl("HowItWorks")} className="hidden sm:block">
-              <button className="ik-btn-pill">How it works</button>
+              <button className="ik-pill">How it works</button>
             </Link>
-            <button onClick={handleLogin} className="ik-btn-pill">
+            <button onClick={handleLogin} className="ik-pill">
               Log in
             </button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="ik-container py-16 sm:py-20 lg:py-24">
-        <div className="grid gap-16 lg:gap-20 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)] items-center">
+      <main className="mx-auto max-w-6xl px-4 lg:px-8 py-12 lg:py-20">
+        <div className="grid gap-10 lg:gap-16 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-center">
           {/* Left: copy */}
-          <section className="lg:pr-8">
-            <div className="ik-badge-gold mb-6 inline-flex items-center gap-2 text-sm">
-              <Shield className="w-4 h-4" />
-              <span>Verified investor-friendly agents</span>
-            </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-[56px] font-bold tracking-tight mb-6 leading-[1.1]" style={{ color: 'hsl(0 0% 0%)' }}>
+          <section>
+            <p className="mb-4 flex items-center gap-2">
+              <span className="inline-flex h-7 items-center rounded-full bg-white/80 px-3 text-xs font-medium text-[#6B7280] shadow-sm border border-[#E5E7EB]">
+                <Shield className="w-3.5 h-3.5 mr-1.5 text-[#D3A029]" />
+                Verified investor-friendly agents
+              </span>
+            </p>
+
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold leading-tight tracking-tight text-[#111827] mb-5">
               Stop training retail agents.
               <br />
-              <span style={{ color: 'hsl(43 71% 42%)' }}>Start closing investor deals.</span>
+              <span className="text-[#D3A029]">Start closing investor deals.</span>
             </h1>
-            <p className="text-lg sm:text-xl mb-8 leading-relaxed max-w-lg" style={{ color: 'hsl(0 0% 28%)' }}>
+
+            <p className="ik-section-subtitle max-w-xl mb-7 text-base sm:text-lg leading-relaxed">
               Investor Konnect matches your strategy and market with agents who already know how to work with real estate investors — then keeps everything in one shared deal room.
             </p>
 
-            <div className="flex flex-wrap gap-3 mb-8">
+            <div className="flex flex-wrap items-center gap-3 mb-8">
               <button
                 type="button"
                 onClick={handleContinue}
                 disabled={!localState}
-                className="ik-btn-gold flex items-center gap-2 text-base px-6 py-3 disabled:opacity-50"
+                className="ik-btn-gold text-base px-5 py-2.5 disabled:opacity-50"
               >
-                <MapPin className="w-5 h-5" />
                 Submit your first deal
               </button>
               <Link to={createPageUrl("Investors")}>
-                <button className="ik-btn-pill text-base px-5 py-2.5">For investors</button>
+                <button className="ik-pill text-sm">For investors</button>
               </Link>
               <Link to={createPageUrl("Agents")}>
-                <button className="ik-btn-pill text-base px-5 py-2.5">For agents</button>
+                <button className="ik-pill text-sm">For agents</button>
               </Link>
             </div>
 
-            <ul className="space-y-3 text-base" style={{ color: 'hsl(0 0% 28%)' }}>
-              <li className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+            <ul className="space-y-2.5 text-sm text-[#4B5563]">
+              <li className="flex items-center gap-2.5">
+                <CheckCircle className="w-4 h-4 flex-shrink-0 text-[#D3A029]" />
                 Vetted agents with investor track records
               </li>
-              <li className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+              <li className="flex items-center gap-2.5">
+                <CheckCircle className="w-4 h-4 flex-shrink-0 text-[#D3A029]" />
                 Shared deal rooms with chat & milestones
               </li>
-              <li className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(43 71% 42%)' }} />
+              <li className="flex items-center gap-2.5">
+                <CheckCircle className="w-4 h-4 flex-shrink-0 text-[#D3A029]" />
                 Contracts pre-filled from your conversation
               </li>
             </ul>
           </section>
 
           {/* Right: state selector card */}
-          <section className="ik-card p-6 sm:p-8 w-full max-w-[420px] lg:ml-auto shadow-lg" style={{ borderColor: 'hsl(0 0% 90%)' }}>
-            <header className="flex items-start gap-4 mb-6">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'hsl(48 100% 95%)' }}>
-                <MapPin className="w-6 h-6" style={{ color: 'hsl(43 71% 42%)' }} />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
-                  Where are you looking to invest?
-                </h2>
-                <p className="text-sm" style={{ color: 'hsl(0 0% 44%)' }}>
-                  Select your target state to see investor-friendly agents.
-                </p>
-              </div>
-            </header>
+          <div className="lg:justify-self-end w-full max-w-md">
+            <div className="ik-card p-5 sm:p-6">
+              <header className="flex items-center gap-3 mb-4">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FEF3C7]">
+                  <MapPin className="w-5 h-5 text-[#D3A029]" />
+                </div>
+                <div>
+                  <h2 className="text-sm font-semibold text-[#111827]">
+                    Where are you looking to invest?
+                  </h2>
+                  <p className="text-xs text-[#6B7280]">
+                    Select your target state to see investor-friendly agents.
+                  </p>
+                </div>
+              </header>
 
-            <div className="ik-search-bar mb-6">
-              <Search className="w-5 h-5 flex-shrink-0" style={{ color: 'hsl(0 0% 44%)' }} />
-              <input
-                type="text"
-                placeholder="Search for a state…"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="flex-1 bg-transparent outline-none text-base placeholder:text-gray-400"
-                style={{ color: 'hsl(0 0% 10%)' }}
-              />
-            </div>
+              {/* Search input */}
+              <div className="mb-4 flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-[#F9FAFB] px-3 py-2">
+                <Search className="w-4 h-4 text-[#9CA3AF]" />
+                <input
+                  type="text"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Search for a state..."
+                  className="flex-1 bg-transparent text-sm text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
+                />
+              </div>
 
-            <div className="max-h-64 overflow-y-auto -mx-1 px-1 mb-6">
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                {filteredStates.map((state) => (
-                  <button
-                    key={state.code}
-                    type="button"
-                    onClick={() => setLocalState(state)}
-                    className="p-3 text-left rounded-xl border-2 transition-all hover:shadow-sm"
-                    style={localState?.code === state.code 
-                      ? { borderColor: 'hsl(43 59% 52%)', background: 'hsl(51 100% 98%)' } 
-                      : { borderColor: 'hsl(0 0% 92%)', background: 'white' }}
-                  >
-                    <div className="text-base font-semibold" style={{ color: 'hsl(0 0% 0%)' }}>
-                      {state.code}
-                    </div>
-                    <div className="text-xs mt-0.5" style={{ color: 'hsl(0 0% 44%)' }}>{state.name}</div>
-                  </button>
-                ))}
+              {/* State grid */}
+              <div className="max-h-64 overflow-y-auto pb-1">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {filteredStates.map((state) => (
+                    <button
+                      key={state.code}
+                      type="button"
+                      onClick={() => setLocalState(state)}
+                      className={
+                        "rounded-xl border text-xs sm:text-sm px-3 py-2 text-left transition " +
+                        (localState?.code === state.code
+                          ? "border-[#D3A029] bg-[#FFFBEB] text-[#111827]"
+                          : "border-[#E5E7EB] bg-white hover:border-[#D3A029]/70")
+                      }
+                    >
+                      <div className="font-medium">{state.code}</div>
+                      <div className="text-[0.7rem] text-[#6B7280]">{state.name}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={!localState}
+                  className="ik-btn-gold text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continue →
+                </button>
               </div>
             </div>
-
-            <div className="flex justify-end pt-2 border-t" style={{ borderColor: 'hsl(0 0% 92%)' }}>
-              <button
-                type="button"
-                disabled={!localState}
-                onClick={handleContinue}
-                className="ik-btn-gold flex items-center gap-2 text-base px-6 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Continue
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
-          </section>
+          </div>
         </div>
       </main>
     </div>

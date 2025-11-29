@@ -41,19 +41,19 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className="ik-body-shell">
+    <div className="min-h-screen bg-[#FAF7F2] text-[#111827]">
       {showNav && !isNoNavPage && (
-        <nav className="ik-navbar">
-          <div className="ik-container flex items-center justify-between h-16">
+        <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
+          <div className="mx-auto max-w-6xl px-4 lg:px-8 h-16 flex items-center justify-between">
             <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: 'hsl(43 59% 52%)' }}>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: '#D3A029' }}>
                 <Shield className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-semibold tracking-tight" style={{ color: 'hsl(0 0% 10%)' }}>
+                <span className="text-base font-semibold tracking-tight text-[#111827]">
                   INVESTOR KONNECT
                 </span>
-                <span className="text-[11px] ik-text-muted -mt-1">
+                <span className="text-[11px] text-[#6B7280] -mt-0.5">
                   Verified agents. Protected deals.
                 </span>
               </div>
@@ -64,12 +64,11 @@ function LayoutContent({ children }) {
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`ik-btn-pill flex items-center gap-2 h-9 ${
+                  className={`ik-pill flex items-center gap-2 h-9 transition-colors ${
                     location.pathname === item.href
-                      ? "border-amber-300"
-                      : ""
+                      ? "bg-[#FFFBEB] border-[#D3A029] text-[#92400E]"
+                      : "hover:border-[#D3A029]/50"
                   }`}
-                  style={location.pathname === item.href ? { background: 'hsl(48 100% 95%)', color: 'hsl(43 71% 33%)', borderColor: 'hsl(44 68% 75%)' } : {}}
                 >
                   <item.icon className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm">{item.name}</span>
@@ -79,8 +78,7 @@ function LayoutContent({ children }) {
               {isAdmin && (
                 <Link
                   to={createPageUrl("Admin")}
-                  className="ik-btn-pill flex items-center gap-2 h-9"
-                  style={{ borderColor: 'hsl(43 67% 64%)', color: 'hsl(43 71% 33%)' }}
+                  className="ik-pill flex items-center gap-2 h-9 border-[#D3A029]/50 text-[#92400E]"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm">Admin</span>
@@ -88,16 +86,16 @@ function LayoutContent({ children }) {
               )}
 
               <Link to={createPageUrl("Profile")}>
-                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors" style={{ background: 'hsl(0 0% 92%)' }}>
-                  <User className="w-4 h-4" style={{ color: 'hsl(0 0% 13%)' }} />
+                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F3F4F6] hover:bg-[#E5E7EB]">
+                  <User className="w-4 h-4 text-[#374151]" />
                 </button>
               </Link>
             </div>
           </div>
-        </nav>
+        </header>
       )}
 
-      <main className={showNav && !isNoNavPage ? "ik-container py-6 sm:py-8" : ""}>
+      <main className={showNav && !isNoNavPage ? "mx-auto max-w-6xl px-4 lg:px-8 py-8 lg:py-12" : ""}>
         {children}
       </main>
 
