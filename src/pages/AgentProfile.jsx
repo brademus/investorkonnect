@@ -61,7 +61,7 @@ export default function AgentProfile() {
   const loadProfile = async () => {
     try {
       // Get agent profile
-      const profiles = await base44.entities.Profile.filter({ id });
+      const profiles = await base44.entities.Profile.filter({ id: agentId });
       
       if (profiles.length === 0) {
         toast.error("Agent not found");
