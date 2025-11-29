@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, Shield, MapPin, TrendingUp, Star,
-  Loader2, Search, Filter, CheckCircle, MessageCircle, Home as HomeIcon, User
+  Loader2, Search, Filter, CheckCircle, MessageCircle, Home as HomeIcon, User, ArrowRight
 } from "lucide-react";
 import { toast } from "sonner";
 
