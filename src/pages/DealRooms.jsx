@@ -205,39 +205,51 @@ export default function DealRooms() {
   if (!onboarded || !kycVerified || !hasNDA) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
-        <div className="ik-card p-8 max-w-md">
-          <h2 className="ik-h1 text-[#111827] mb-4">Complete Setup to Access Deal Rooms</h2>
-          <div className="space-y-3">
+        <div className="ik-card p-8 sm:p-10 max-w-lg w-full text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mx-auto mb-6">
+            <Lock className="w-8 h-8 text-[#D3A029]" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Complete Setup to Access Deal Rooms</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-8">
+            Finish the steps below to unlock secure deal room access.
+          </p>
+          <div className="space-y-4 text-left">
             {!onboarded && (
-              <div className="ik-tile flex-col items-start gap-2">
+              <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
                 <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">📋</span>
-                  <span className="font-medium text-[#111827]">Complete onboarding</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                    <FileText className="w-5 h-5 text-[#D3A029]" />
+                  </div>
+                  <span className="font-medium text-gray-900">Complete onboarding</span>
                 </div>
-                <button onClick={() => navigate(createPageUrl(role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding'))} className="ik-btn-primary text-sm mt-2">
-                  Start Onboarding
+                <button onClick={() => navigate(createPageUrl(role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding'))} className="ik-btn-primary text-sm px-4 py-2">
+                  Start
                 </button>
               </div>
             )}
-            {!kycVerified && (
-              <div className="ik-tile flex-col items-start gap-2">
+            {onboarded && !kycVerified && (
+              <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
                 <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">🛡️</span>
-                  <span className="font-medium text-[#111827]">Verify identity</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                    <Shield className="w-5 h-5 text-[#D3A029]" />
+                  </div>
+                  <span className="font-medium text-gray-900">Verify identity</span>
                 </div>
-                <button onClick={() => navigate(createPageUrl('Verify'))} className="ik-btn-primary text-sm mt-2">
-                  Verify Now
+                <button onClick={() => navigate(createPageUrl('Verify'))} className="ik-btn-primary text-sm px-4 py-2">
+                  Verify
                 </button>
               </div>
             )}
-            {!hasNDA && (
-              <div className="ik-tile flex-col items-start gap-2">
+            {onboarded && kycVerified && !hasNDA && (
+              <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
                 <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">🔒</span>
-                  <span className="font-medium text-[#111827]">Accept NDA</span>
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                    <Lock className="w-5 h-5 text-[#D3A029]" />
+                  </div>
+                  <span className="font-medium text-gray-900">Accept NDA</span>
                 </div>
-                <button onClick={() => navigate(createPageUrl('NDA'))} className="ik-btn-primary text-sm mt-2">
-                  Review NDA
+                <button onClick={() => navigate(createPageUrl('NDA'))} className="ik-btn-primary text-sm px-4 py-2">
+                  Review
                 </button>
               </div>
             )}
