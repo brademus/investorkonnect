@@ -116,23 +116,28 @@ export default function Room() {
   });
 
   return (
-    <div className="min-h-screen bg-white flex" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+    <div className="min-h-screen bg-[#FAF7F2] flex">
       {/* Left Sidebar - Conversation List */}
       <div 
-        className={`fixed inset-y-0 left-0 w-[360px] bg-[#F9F9F9] border-r border-[#E5E5E5] z-40 transform transition-transform ${
+        className={`fixed inset-y-0 left-0 w-[320px] bg-white border-r border-[#E5E7EB] z-40 transform transition-transform shadow-xl ${
           drawer ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 flex flex-col`}
       >
         {/* Sidebar Header */}
-        <div className="p-6 border-b border-[#E5E5E5]">
-          <h2 className="text-[24px] font-bold text-black mb-4">Messages</h2>
+        <div className="p-5 border-b border-[#E5E7EB]">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE68A] shadow-sm">
+              <span className="text-sm font-bold text-[#D3A029]">IK</span>
+            </div>
+            <h2 className="text-xl font-bold text-[#111827]">Messages</h2>
+          </div>
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#999999]" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9CA3AF]" />
             <Input
               placeholder="Search conversations..."
               value={searchConversations}
               onChange={(e) => setSearchConversations(e.target.value)}
-              className="h-10 pl-10 rounded-full bg-white border-none"
+              className="h-11 pl-11 rounded-full bg-[#F9FAFB] border-[#E5E7EB] focus:border-[#D3A029] focus:ring-[#D3A029]/20"
             />
           </div>
         </div>
@@ -148,28 +153,28 @@ export default function Room() {
                   navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
                   setDrawer(false);
                 }}
-                className={`w-full text-left px-6 py-4 transition-all duration-200 flex items-center gap-4 ${
+                className={`w-full text-left px-5 py-4 transition-all duration-200 flex items-center gap-4 border-b border-[#F3F4F6] ${
                   isActive 
-                    ? "bg-white border-l-4 border-l-[#D4AF37]" 
-                    : "hover:bg-white border-l-4 border-l-transparent"
+                    ? "bg-[#FFFBEB] border-l-4 border-l-[#D3A029]" 
+                    : "hover:bg-[#F9FAFB] border-l-4 border-l-transparent"
                 }`}
               >
                 {/* Avatar */}
-                <div className="w-12 h-12 bg-[#E5E5E5] rounded-full flex items-center justify-center flex-shrink-0">
-                  <User className="w-6 h-6 text-[#666666]" />
+                <div className="w-12 h-12 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <User className="w-6 h-6 text-[#D3A029]" />
                 </div>
                 
                 {/* Content */}
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-[16px] font-bold text-black truncate">
+                    <p className="text-[15px] font-semibold text-[#111827] truncate">
                       {r.counterparty_name || `Room ${r.id.slice(0, 6)}`}
                     </p>
-                    <span className="text-[12px] text-[#999999] flex-shrink-0 ml-2">
+                    <span className="text-xs text-[#9CA3AF] flex-shrink-0 ml-2">
                       {new Date(r.created_date || Date.now()).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-[14px] text-[#666666] truncate">
+                  <p className="text-sm text-[#6B7280] truncate">
                     {r.counterparty_role || "Active room"}
                   </p>
                 </div>
@@ -179,40 +184,43 @@ export default function Room() {
           
           <Link 
             to={createPageUrl("DealRooms")} 
-            className="block px-6 py-4 text-sm text-[#D4AF37] font-medium hover:bg-white"
+            className="flex items-center gap-2 px-5 py-4 text-sm font-semibold text-[#D3A029] hover:bg-[#FFFBEB] transition-colors"
           >
-            + New Deal Room
+            <span className="text-lg">+</span> New Deal Room
           </Link>
         </div>
       </div>
 
       {/* Right Main Area - Active Conversation */}
-      <div className="flex-1 md:ml-[360px] flex flex-col bg-white">
+      <div className="flex-1 md:ml-[320px] flex flex-col bg-[#FAF7F2]">
         {/* Conversation Header */}
-        <div className="h-20 border-b border-[#E5E5E5] flex items-center px-5 bg-white">
+        <div className="h-18 border-b border-[#E5E7EB] flex items-center px-5 bg-white shadow-sm">
           <button 
-            className="mr-4 md:hidden text-[#666666] hover:text-black"
+            className="mr-4 md:hidden text-[#6B7280] hover:text-[#111827] transition-colors"
             onClick={() => setDrawer(s => !s)}
           >
             <Menu className="w-6 h-6" />
           </button>
           <button
-            className="mr-4 text-[#666666] hover:text-black"
+            className="mr-4 w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center text-[#6B7280] hover:bg-[#E5E7EB] hover:text-[#111827] transition-all"
             onClick={() => navigate(createPageUrl("DealRooms"))}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           
           {/* Avatar */}
-          <div className="w-12 h-12 bg-[#E5E5E5] rounded-full flex items-center justify-center mr-4">
-            <User className="w-6 h-6 text-[#666666]" />
+          <div className="w-12 h-12 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mr-4 shadow-sm">
+            <User className="w-6 h-6 text-[#D3A029]" />
           </div>
           
           {/* Name and Status */}
           <div className="flex-1">
-            <h2 className="text-[16px] font-bold text-black">{counterpartName}</h2>
+            <h2 className="text-lg font-semibold text-[#111827]">{counterpartName}</h2>
             {currentRoom && (
-              <p className="text-[14px] text-[#00A699]">Active now</p>
+              <p className="text-sm text-[#10B981] flex items-center gap-1.5">
+                <span className="w-2 h-2 bg-[#10B981] rounded-full animate-pulse"></span>
+                Active now
+              </p>
             )}
           </div>
           
@@ -221,22 +229,24 @@ export default function Room() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowEscrow(!showEscrow)}
-                className={`p-2 rounded-lg transition-colors ${
-                  showEscrow ? "bg-[#D4AF37]/10 text-[#D4AF37]" : "text-[#666666] hover:bg-[#F9F9F9]"
+                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
+                  showEscrow 
+                    ? "bg-[#FEF3C7] text-[#D3A029] shadow-sm" 
+                    : "bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB]"
                 }`}
               >
                 <Shield className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setWizardOpen(true)}
-                className="p-2 rounded-lg text-[#666666] hover:bg-[#F9F9F9] transition-colors"
+                className="w-10 h-10 rounded-full bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] flex items-center justify-center transition-all"
               >
                 <FileText className="w-5 h-5" />
               </button>
-              <button className="p-2 rounded-lg text-[#666666] hover:bg-[#F9F9F9] transition-colors">
+              <button className="w-10 h-10 rounded-full bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] flex items-center justify-center transition-all">
                 <Info className="w-5 h-5" />
               </button>
-              <button className="p-2 rounded-lg text-[#666666] hover:bg-[#F9F9F9] transition-colors">
+              <button className="w-10 h-10 rounded-full bg-[#F3F4F6] text-[#6B7280] hover:bg-[#E5E7EB] flex items-center justify-center transition-all">
                 <MoreHorizontal className="w-5 h-5" />
               </button>
             </div>
@@ -245,7 +255,7 @@ export default function Room() {
 
         {/* Escrow Panel */}
         {showEscrow && currentRoom && (
-          <div className="px-4 py-3 bg-[#F9F9F9] border-b border-[#E5E5E5]">
+          <div className="px-5 py-4 bg-white border-b border-[#E5E7EB] shadow-sm">
             <EscrowPanel 
               room={currentRoom} 
               profile={profile}
@@ -255,17 +265,22 @@ export default function Room() {
         )}
 
         {/* Message Thread */}
-        <div className="flex-1 overflow-y-auto px-8 py-8 space-y-4 bg-white">
+        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <Loader2 className="w-8 h-8 text-[#D4AF37] animate-spin mx-auto mb-2" />
-                <p className="text-sm text-[#666666]">Loading messages...</p>
+                <Loader2 className="w-10 h-10 text-[#D3A029] animate-spin mx-auto mb-3" />
+                <p className="text-sm text-[#6B7280]">Loading messages...</p>
               </div>
             </div>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <p className="text-sm text-[#666666]">No messages yet. Say hello!</p>
+              <div className="text-center">
+                <div className="w-16 h-16 bg-[#FEF3C7] rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Send className="w-8 h-8 text-[#D3A029]" />
+                </div>
+                <p className="text-[#6B7280]">No messages yet. Say hello!</p>
+              </div>
             </div>
           ) : (
             <>
@@ -278,15 +293,15 @@ export default function Room() {
                   >
                     <div className="max-w-[70%]">
                       <div
-                        className={`px-4 py-3 ${
+                        className={`px-5 py-3.5 shadow-sm ${
                           isMe
-                            ? "bg-[#D4AF37] text-white rounded-[20px] rounded-br-sm"
-                            : "bg-[#F0F0F0] text-black rounded-[20px] rounded-bl-sm"
+                            ? "bg-[#D3A029] text-white rounded-2xl rounded-br-md"
+                            : "bg-white text-[#111827] rounded-2xl rounded-bl-md border border-[#E5E7EB]"
                         }`}
                       >
-                        <p className="text-[14px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                        <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
                       </div>
-                      <p className={`text-[12px] text-[#999999] mt-1 ${isMe ? 'text-right' : 'text-left'}`}>
+                      <p className={`text-xs text-[#9CA3AF] mt-1.5 ${isMe ? 'text-right' : 'text-left'}`}>
                         {new Date(m.created_date).toLocaleTimeString([], { 
                           hour: '2-digit', 
                           minute: '2-digit' 
@@ -302,25 +317,27 @@ export default function Room() {
         </div>
 
         {/* Message Input Area */}
-        <div className="h-20 border-t border-[#E5E5E5] px-4 py-4 bg-white flex items-center">
-          <div className="flex-1 relative">
-            <Input
-              value={text}
-              onChange={(e) => setText(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send();
-                }
-              }}
-              placeholder="Type a message..."
-              className="h-12 pl-5 pr-14 rounded-full bg-[#F5F5F5] border-none text-[14px]"
-              disabled={sending}
-            />
+        <div className="px-5 py-4 bg-white border-t border-[#E5E7EB] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+          <div className="flex items-center gap-3">
+            <div className="flex-1 relative">
+              <Input
+                value={text}
+                onChange={(e) => setText(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send();
+                  }
+                }}
+                placeholder="Type a message..."
+                className="h-12 pl-5 pr-4 rounded-full bg-[#F9FAFB] border-[#E5E7EB] text-[15px] focus:border-[#D3A029] focus:ring-[#D3A029]/20"
+                disabled={sending}
+              />
+            </div>
             <button
               onClick={send}
               disabled={!text.trim() || sending}
-              className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-[#D4AF37] hover:bg-[#C19A2E] disabled:bg-[#E5E5E5] rounded-full flex items-center justify-center transition-colors"
+              className="w-12 h-12 bg-[#D3A029] hover:bg-[#B98413] disabled:bg-[#E5E7EB] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#D3A029]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
             >
               {sending ? (
                 <Loader2 className="w-5 h-5 text-white animate-spin" />
