@@ -341,6 +341,44 @@
     }
   }
 
+  /* Chip color variants */
+  .ik-chip-success {
+    background-color: #ECFDF5;
+    color: #065F46;
+    border-color: #A7F3D0;
+  }
+
+  .ik-chip-warning {
+    background-color: #FFFBEB;
+    color: #92400E;
+    border-color: #FCD34D;
+  }
+
+  .ik-chip-muted {
+    background-color: #F3F4F6;
+    color: #6B7280;
+    border-color: #E5E7EB;
+  }
+
+  .ik-chip-danger {
+    background-color: #FEF2F2;
+    color: #991B1B;
+    border-color: #FECACA;
+  }
+
+  /* Skeleton loading animation */
+  .ik-skeleton {
+    background: linear-gradient(90deg, #F3F4F6 25%, #E5E7EB 50%, #F3F4F6 75%);
+    background-size: 200% 100%;
+    animation: ik-shimmer 1.5s infinite;
+    border-radius: 8px;
+  }
+
+  @keyframes ik-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
   .ik-badge-gold {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
     background: hsl(48 100% 95%);

@@ -114,10 +114,10 @@ function NDAContent() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="ik-shell flex items-center justify-center p-4">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <p className="text-[#6B7280]">Loading...</p>
         </div>
       </div>
     );
@@ -126,15 +126,15 @@ function NDAContent() {
   // Already accepted - show success message while redirecting
   if (hasNDA) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="ik-shell flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle className="w-10 h-10 text-emerald-600" />
+          <div className="ik-card p-8">
+            <div className="w-16 h-16 bg-[#D1FAE5] rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle className="w-10 h-10 text-[#10B981]" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">NDA Already Signed ✓</h2>
-            <p className="text-slate-600 mb-6">Redirecting to dashboard...</p>
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
+            <h2 className="text-2xl font-bold text-[#111827] mb-2">NDA Already Signed ✓</h2>
+            <p className="text-[#6B7280] mb-6">Redirecting to dashboard...</p>
+            <Loader2 className="w-8 h-8 text-[#D3A029] animate-spin mx-auto" />
           </div>
         </div>
       </div>
@@ -142,74 +142,68 @@ function NDAContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="ik-shell py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+          <div className="w-16 h-16 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
             <Shield className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Confidentiality & NDA Required</h1>
-          <p className="text-slate-600 max-w-2xl mx-auto">
+          <h1 className="ik-h1 text-[#111827] mb-2">Confidentiality & NDA Required</h1>
+          <p className="text-[#6B7280] max-w-2xl mx-auto">
             Required to access agent profiles and deal rooms
           </p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Lock className="w-5 h-5 text-blue-600" />
-            </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">Deal Protection</h4>
-            <p className="text-xs text-slate-600">Legally binding confidentiality</p>
+          <div className="ik-card p-5 text-center">
+            <div className="ik-icon-pill mx-auto mb-3">🔒</div>
+            <h4 className="ik-section-title mb-1">Deal Protection</h4>
+            <p className="ik-section-subtitle">Legally binding confidentiality</p>
           </div>
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <FileText className="w-5 h-5 text-emerald-600" />
-            </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">Enforceable</h4>
-            <p className="text-xs text-slate-600">Legal contract with remedies</p>
+          <div className="ik-card p-5 text-center">
+            <div className="ik-icon-pill mx-auto mb-3">📄</div>
+            <h4 className="ik-section-title mb-1">Enforceable</h4>
+            <p className="ik-section-subtitle">Legal contract with remedies</p>
           </div>
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Shield className="w-5 h-5 text-purple-600" />
-            </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">One-Time</h4>
-            <p className="text-xs text-slate-600">Accept once, valid forever</p>
+          <div className="ik-card p-5 text-center">
+            <div className="ik-icon-pill mx-auto mb-3">✓</div>
+            <h4 className="ik-section-title mb-1">One-Time</h4>
+            <p className="ik-section-subtitle">Accept once, valid forever</p>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+        <div className="ik-card p-6 sm:p-8">
           
           {/* Error Display */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-red-900 mb-1">Error</h4>
-                  <p className="text-sm text-red-700">{error}</p>
+                  <h4 className="font-semibold text-[#991B1B] mb-1">Error</h4>
+                  <p className="text-sm text-[#B91C1C]">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="bg-slate-50 rounded-xl p-6 max-h-96 overflow-y-auto border border-slate-200 mb-6">
-            <h3 className="text-lg font-bold text-slate-900 mb-4">Investor Konnect Non-Disclosure Agreement v1.0</h3>
+          <div className="bg-[#F9FAFB] rounded-xl p-6 max-h-96 overflow-y-auto border border-[#E5E7EB] mb-6">
+            <h3 className="text-lg font-bold text-[#111827] mb-4">Investor Konnect Non-Disclosure Agreement v1.0</h3>
             
-            <div className="prose prose-sm text-slate-700 space-y-4">
+            <div className="prose prose-sm text-[#374151] space-y-4">
               <p>
                 This Non-Disclosure Agreement ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
               </p>
               
-              <h4 className="font-semibold text-slate-900">1. Confidential Information</h4>
+              <h4 className="font-semibold text-[#111827]">1. Confidential Information</h4>
               <p>
                 "Confidential Information" means all deal information, property details, investment strategies, financial information, 
                 agent contact details, and any other information shared through the Platform that is marked as confidential or would 
                 reasonably be considered confidential.
               </p>
               
-              <h4 className="font-semibold text-slate-900">2. Obligations</h4>
+              <h4 className="font-semibold text-[#111827]">2. Obligations</h4>
               <p>User agrees to:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Maintain confidentiality of all Confidential Information</li>
@@ -219,19 +213,19 @@ function NDAContent() {
                 <li>Return or destroy Confidential Information upon request</li>
               </ul>
               
-              <h4 className="font-semibold text-slate-900">3. Term</h4>
+              <h4 className="font-semibold text-[#111827]">3. Term</h4>
               <p>
                 This Agreement remains in effect for 5 years from the date of acceptance or until Confidential Information 
                 becomes publicly available through no fault of User.
               </p>
               
-              <h4 className="font-semibold text-slate-900">4. Remedies</h4>
+              <h4 className="font-semibold text-[#111827]">4. Remedies</h4>
               <p>
                 User acknowledges that breach of this Agreement may cause irreparable harm to Platform and other users. 
                 Platform may seek injunctive relief, monetary damages, and attorney fees for any breach.
               </p>
               
-              <h4 className="font-semibold text-slate-900">5. Governing Law</h4>
+              <h4 className="font-semibold text-[#111827]">5. Governing Law</h4>
               <p>
                 This Agreement is governed by the laws of the State of Delaware, without regard to conflict of law principles.
               </p>
@@ -246,16 +240,16 @@ function NDAContent() {
               className="mt-1"
               disabled={accepting}
             />
-            <Label htmlFor="nda-agree" className="text-sm text-slate-700 cursor-pointer leading-relaxed">
+            <Label htmlFor="nda-agree" className="text-sm text-[#374151] cursor-pointer leading-relaxed">
               I have read and agree to the terms of this Non-Disclosure Agreement. I understand that this is a legally 
               binding contract and that I am responsible for maintaining confidentiality of all information accessed through Investor Konnect.
             </Label>
           </div>
 
-          <Button
+          <button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="w-full bg-blue-600 hover:bg-blue-700 h-14 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="ik-btn-primary w-full h-14 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {accepting ? (
               <>
@@ -268,10 +262,10 @@ function NDAContent() {
                 I Accept & Continue
               </>
             )}
-          </Button>
+          </button>
 
-          <p className="text-center text-xs text-slate-500 mt-4">
-            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-blue-600 hover:text-blue-700">legal@investorkonnect.com</a>
+          <p className="text-center text-xs text-[#6B7280] mt-4">
+            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="ik-link">legal@investorkonnect.com</a>
           </p>
         </div>
       </div>
