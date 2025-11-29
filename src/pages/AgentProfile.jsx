@@ -82,7 +82,7 @@ export default function AgentProfile() {
 
       // Load reviews for this agent
       const agentReviews = await base44.entities.Review.filter({
-        reviewee_profile_id: id,
+        reviewee_profile_id: agentId,
         verified: true,
         moderation_status: "approved"
       }, '-created_date');
