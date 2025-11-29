@@ -208,19 +208,19 @@ export default function AgentProfile() {
                     {profile.full_name || "Agent"}
                   </h1>
                   {profile.vetted && (
-                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    <span className="ik-chip ik-chip-success">
                       <Shield className="w-3 h-3 mr-1" />
                       Verified Agent
-                    </Badge>
+                    </span>
                   )}
                 </div>
-                <Button 
-                  className="bg-blue-600 hover:bg-blue-700"
+                <button 
+                  className="ik-btn-primary"
                   onClick={handleConnect}
                 >
                   <MessageCircle className="w-4 h-4 mr-2" />
                   Connect
-                </Button>
+                </button>
               </div>
 
               {/* Stats */}
