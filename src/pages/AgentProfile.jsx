@@ -26,7 +26,7 @@ export default function AgentProfile() {
 
   useEffect(() => {
     checkNDAAndLoadProfile();
-  }, [id]);
+  }, [agentId]);
 
   const checkNDAAndLoadProfile = async () => {
     try {
