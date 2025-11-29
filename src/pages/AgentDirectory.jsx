@@ -153,173 +153,214 @@ export default function AgentDirectory() {
     );
   }
 
+  const clearFilters = () => {
+    setSearchTerm("");
+    setLocationFilter("all");
+    setSpecialtyFilter("all");
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
-      <header>
-        <h1 className="ik-h1 text-[#111827] mb-2">Find Your Perfect Agent Match</h1>
-        <p className="text-[#6B7280]">Browse our network of verified, investor-friendly real estate agents</p>
-      </header>
+    <div className="min-h-screen bg-[#FAF7F2]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-12">
+        {/* Page Header */}
+        <header className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+            Find your perfect agent match
+          </h1>
+          <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-2xl">
+            Browse our network of verified, investor-friendly agents and connect with the ones who fit your strategy and market.
+          </p>
+        </header>
 
-      {/* Search & Filter Bar */}
-      <section className="ik-card p-4 sm:p-5">
-        <div className="flex flex-wrap gap-4 items-center">
-          <div className="flex-[2] min-w-[200px] relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
-            <Input
-              placeholder="Search by name, location, or specialty"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="h-12 pl-12 rounded-xl border-[#E5E7EB] focus:border-[#D3A029] focus:ring-[#D3A029]/20"
-            />
-          </div>
-          <div className="flex-1 min-w-[150px]">
-            <Select value={locationFilter} onValueChange={setLocationFilter}>
-              <SelectTrigger className="h-12 rounded-xl border-[#E5E7EB]">
-                <SelectValue placeholder="All Locations" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Locations</SelectItem>
-                <SelectItem value="arizona">Arizona</SelectItem>
-                <SelectItem value="texas">Texas</SelectItem>
-                <SelectItem value="florida">Florida</SelectItem>
-                <SelectItem value="california">California</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex-1 min-w-[150px]">
-            <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
-              <SelectTrigger className="h-12 rounded-xl border-[#E5E7EB]">
-                <SelectValue placeholder="All Specialties" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Specialties</SelectItem>
-                <SelectItem value="residential">Residential</SelectItem>
-                <SelectItem value="commercial">Commercial</SelectItem>
-                <SelectItem value="multifamily">Multifamily</SelectItem>
-                <SelectItem value="land">Land</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <button className="ik-btn-outline h-12">
-            <Filter className="w-4 h-4" />
-            More Filters
-          </button>
-        </div>
-      </section>
-
-      {/* Results Header */}
-      <section className="flex items-center justify-between">
-        <p className="text-sm text-[#6B7280]">Showing {filteredAgents.length} verified agents</p>
-        <Select defaultValue="recommended">
-          <SelectTrigger className="w-[200px] rounded-xl border-[#E5E7EB]">
-            <SelectValue placeholder="Sort by" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="recommended">Sort by: Recommended</SelectItem>
-            <SelectItem value="rating">Highest Rated</SelectItem>
-            <SelectItem value="deals">Most Deals</SelectItem>
-            <SelectItem value="newest">Newest</SelectItem>
-          </SelectContent>
-        </Select>
-      </section>
-
-      {/* Profile Cards Grid */}
-      <section>
-        {filteredAgents.length === 0 ? (
-          <div className="ik-card p-16 text-center">
-            <Users className="w-16 h-16 text-[#E5E7EB] mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-[#111827] mb-2">
-              {searchTerm ? 'No Agents Match Your Search' : 'No Agents Yet'}
-            </h3>
-            <p className="text-[#6B7280]">
-              {searchTerm ? 'Try adjusting your search terms' : 'Be the first to connect with agents when they join'}
-            </p>
-          </div>
-        ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
-            {filteredAgents.map((agent) => {
-              const agentData = agent.agent || {};
-              const isVerified = agent.kyc_status === 'approved' || agent.verified;
-              const rating = agentData.rating || 4.9;
-              const deals = agentData.deals_closed || agentData.investor_clients_count || 15;
-              const years = agentData.experience_years || 8;
-              
-              return (
-                <div
-                  key={agent.id}
-                  className="ik-card ik-card-hover overflow-hidden"
-                >
-                  {/* Header Image Section */}
-                  <div className="h-[140px] relative bg-gradient-to-br from-[#FEF3C7] to-[#FFFBEB]">
-                    {/* Profile Photo */}
-                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2">
-                      <div className="w-16 h-16 rounded-full bg-white border-4 border-white flex items-center justify-center shadow-lg">
-                        <User className="w-8 h-8 text-[#9CA3AF]" />
-                      </div>
-                      {/* Verified Badge */}
-                      {isVerified && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow">
-                          <CheckCircle className="w-4 h-4 text-[#10B981]" />
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Content Section */}
-                  <div className="p-5 pt-10">
-                    <h3 className="text-lg font-bold text-[#111827] text-center mb-1">
-                      {agent.full_name || 'Agent'}
-                    </h3>
-                    
-                    {/* Location */}
-                    <div className="flex items-center justify-center gap-1 text-sm text-[#6B7280] mb-1">
-                      <MapPin className="w-4 h-4" />
-                      <span>{agentData.markets?.[0] || agent.target_state || 'Location not set'}</span>
-                    </div>
-                    
-                    {/* Specialties */}
-                    {agentData.specialties && agentData.specialties.length > 0 && (
-                      <p className="text-sm text-[#6B7280] text-center mb-3">
-                        {agentData.specialties.slice(0, 2).join(', ')}
-                      </p>
-                    )}
-                    
-                    {/* Divider */}
-                    <div className="h-px bg-[#E5E7EB] my-4"></div>
-                    
-                    {/* Stats Row */}
-                    <div className="flex items-center justify-center gap-6 mb-4">
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-[#111827]">{deals}</p>
-                        <p className="text-xs text-[#6B7280]">Deals</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-[#111827] flex items-center justify-center gap-1">
-                          {rating}<Star className="w-3 h-3 text-[#D3A029] fill-[#D3A029]" />
-                        </p>
-                        <p className="text-xs text-[#6B7280]">Rating</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-sm font-bold text-[#111827]">{years}</p>
-                        <p className="text-xs text-[#6B7280]">Years</p>
-                      </div>
-                    </div>
-                    
-                    {/* View Profile Button */}
-                    <button
-                      onClick={() => handleOpenRoom(agent)}
-                      className="ik-btn-primary w-full"
-                    >
-                      View Profile
-                    </button>
-                  </div>
+        {/* Search & Filter Card */}
+        <section className="mb-6 sm:mb-8">
+          <div className="ik-card p-5 sm:p-6">
+            <div className="flex flex-col gap-4 sm:gap-3">
+              {/* Search row */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search by name, location, or specialty..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                  />
                 </div>
-              );
-            })}
+                <Select defaultValue="recommended">
+                  <SelectTrigger className="w-full sm:w-[180px] h-11 rounded-xl border-gray-200 bg-white text-sm">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="recommended">Recommended</SelectItem>
+                    <SelectItem value="rating">Highest Rated</SelectItem>
+                    <SelectItem value="deals">Most Deals</SelectItem>
+                    <SelectItem value="newest">Newest</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Filter row */}
+              <div className="flex flex-wrap items-center gap-3">
+                <Select value={locationFilter} onValueChange={setLocationFilter}>
+                  <SelectTrigger className="min-w-[160px] h-11 rounded-xl border-gray-200 bg-white text-sm">
+                    <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                    <SelectValue placeholder="All Locations" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Locations</SelectItem>
+                    <SelectItem value="arizona">Arizona</SelectItem>
+                    <SelectItem value="texas">Texas</SelectItem>
+                    <SelectItem value="florida">Florida</SelectItem>
+                    <SelectItem value="california">California</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={specialtyFilter} onValueChange={setSpecialtyFilter}>
+                  <SelectTrigger className="min-w-[160px] h-11 rounded-xl border-gray-200 bg-white text-sm">
+                    <HomeIcon className="w-4 h-4 mr-2 text-gray-400" />
+                    <SelectValue placeholder="All Specialties" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Specialties</SelectItem>
+                    <SelectItem value="residential">Residential</SelectItem>
+                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="multifamily">Multifamily</SelectItem>
+                    <SelectItem value="land">Land</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <button className="ik-btn-outline h-11 gap-2">
+                  <Filter className="w-4 h-4" />
+                  More filters
+                </button>
+              </div>
+            </div>
           </div>
-        )}
-      </section>
+        </section>
+
+        {/* Results Count */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-500">
+            Showing <span className="font-medium text-gray-900">{filteredAgents.length}</span> verified agents
+          </p>
+          {(searchTerm || locationFilter !== "all" || specialtyFilter !== "all") && (
+            <button 
+              onClick={clearFilters}
+              className="text-sm text-[#D3A029] hover:underline"
+            >
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Agent Cards Grid */}
+        <section>
+          {filteredAgents.length === 0 ? (
+            <div className="ik-card flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mb-5">
+                <Search className="w-8 h-8 text-[#D3A029]" />
+              </div>
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                No agents match your filters
+              </h2>
+              <p className="mt-2 max-w-md text-sm sm:text-base text-gray-600">
+                Try adjusting your location, specialty, or other filters to see more investor-friendly agents.
+              </p>
+              <button
+                onClick={clearFilters}
+                className="mt-6 ik-btn-outline"
+              >
+                Clear filters
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredAgents.map((agent) => {
+                const agentData = agent.agent || {};
+                const isVerified = agent.kyc_status === 'approved' || agent.verified;
+                const rating = agentData.rating || 4.9;
+                const deals = agentData.deals_closed || agentData.investor_clients_count || 15;
+                const years = agentData.experience_years || 8;
+                const initials = (agent.full_name || 'A').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                
+                return (
+                  <div
+                    key={agent.id}
+                    className="ik-card flex flex-col hover:shadow-md hover:-translate-y-[2px] transition-all duration-200 overflow-hidden"
+                  >
+                    {/* Header Band */}
+                    <div className="h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A]" />
+                    
+                    {/* Content */}
+                    <div className="p-5 -mt-8 flex flex-col flex-1">
+                      {/* Avatar + Info */}
+                      <div className="flex items-start gap-4">
+                        <div className="relative flex-shrink-0">
+                          <div className="h-14 w-14 rounded-full bg-[#FEF3C7] flex items-center justify-center text-base font-semibold text-[#D3A029] ring-4 ring-white shadow-lg">
+                            {initials}
+                          </div>
+                          {isVerified && (
+                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
+                              <CheckCircle className="w-4 h-4 text-[#10B981]" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 pt-2">
+                          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                            {agent.full_name || 'Agent'}
+                          </h2>
+                          <p className="mt-0.5 text-xs sm:text-sm text-gray-500 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5" />
+                            {agentData.markets?.[0] || agent.target_state || 'Location TBD'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Specialties */}
+                      {agentData.specialties && agentData.specialties.length > 0 && (
+                        <p className="mt-3 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                          {agentData.specialties.slice(0, 3).join(' • ')}
+                        </p>
+                      )}
+                      
+                      {/* Stats */}
+                      <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-3 text-center">
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{deals}</div>
+                          <div className="text-[11px] text-gray-500">Deals</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900 flex items-center justify-center gap-0.5">
+                            {rating}
+                            <Star className="w-3 h-3 text-[#D3A029] fill-[#D3A029]" />
+                          </div>
+                          <div className="text-[11px] text-gray-500">Rating</div>
+                        </div>
+                        <div>
+                          <div className="text-sm font-semibold text-gray-900">{years}+</div>
+                          <div className="text-[11px] text-gray-500">Years</div>
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="mt-5 pt-4 border-t border-gray-100">
+                        <button
+                          onClick={() => handleOpenRoom(agent)}
+                          className="ik-btn-primary w-full justify-center"
+                        >
+                          View Profile
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
