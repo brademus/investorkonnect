@@ -44,27 +44,33 @@ function LayoutContent({ children }) {
     <div className="min-h-screen bg-[#FAF7F2] text-[#111827]">
       {showNav && !isNoNavPage && (
         <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
-          <div className="mx-auto max-w-6xl px-4 lg:px-8 h-16 flex items-center justify-between">
-            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-sm" style={{ background: '#D3A029' }}>
-                <Shield className="w-5 h-5 text-white" />
+          <div className="mx-auto max-w-7xl px-4 lg:px-8 h-16 flex items-center justify-between">
+            {/* Left: logo + brand */}
+            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FDE68A]">
+                <span className="text-sm font-bold text-[#D3A029]">IK</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-base font-semibold tracking-tight text-[#111827]">
-                  INVESTOR KONNECT
-                </span>
-                <span className="text-[11px] text-[#6B7280] -mt-0.5">
-                  Verified agents. Protected deals.
-                </span>
-              </div>
+              <span className="text-sm font-semibold tracking-tight">
+                Investor Konnect
+              </span>
             </Link>
 
+            {/* Center: simple nav */}
+            <nav className="hidden gap-6 text-xs font-medium text-[#4B5563] md:flex">
+              <Link to={createPageUrl("Home")} className="hover:text-[#111827]">Home</Link>
+              <Link to={createPageUrl("HowItWorks")} className="hover:text-[#111827]">How it works</Link>
+              <Link to={createPageUrl("Pricing")} className="hover:text-[#111827]">Pricing</Link>
+              <Link to={createPageUrl("Investors")} className="hover:text-[#111827]">For investors</Link>
+              <Link to={createPageUrl("Agents")} className="hover:text-[#111827]">For agents</Link>
+            </nav>
+
+            {/* Right: auth / profile */}
             <div className="flex items-center gap-2">
               {currentNav.map((item) => (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`ik-pill flex items-center gap-2 h-9 transition-colors ${
+                  className={`ik-chip flex items-center gap-2 h-9 transition-colors ${
                     location.pathname === item.href
                       ? "bg-[#FFFBEB] border-[#D3A029] text-[#92400E]"
                       : "hover:border-[#D3A029]/50"
@@ -78,7 +84,7 @@ function LayoutContent({ children }) {
               {isAdmin && (
                 <Link
                   to={createPageUrl("Admin")}
-                  className="ik-pill flex items-center gap-2 h-9 border-[#D3A029]/50 text-[#92400E]"
+                  className="ik-chip flex items-center gap-2 h-9 border-[#D3A029]/50 text-[#92400E]"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm">Admin</span>
@@ -95,7 +101,7 @@ function LayoutContent({ children }) {
         </header>
       )}
 
-      <main className={showNav && !isNoNavPage ? "mx-auto max-w-6xl px-4 lg:px-8 py-8 lg:py-12" : ""}>
+      <main className={showNav && !isNoNavPage ? "mx-auto max-w-7xl px-4 lg:px-8 py-8 lg:py-10" : ""}>
         {children}
       </main>
 

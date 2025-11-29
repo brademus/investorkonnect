@@ -180,12 +180,43 @@
   }
 
   .ik-link {
-    font-size: 0.875rem;
+    font-size: 0.85rem;
     color: #D3A029;
   }
 
   .ik-link:hover {
     text-decoration: underline;
+  }
+
+  .ik-chip {
+    border-radius: 9999px;
+    border: 1px solid #E5E7EB;
+    background-color: #F9FAFB;
+    padding: 0.3rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  .ik-btn-primary {
+    border-radius: 9999px;
+    background-color: #D3A029;
+    color: #111827;
+    font-weight: 500;
+    padding: 0.7rem 1.6rem;
+    font-size: 0.9rem;
+  }
+
+  .ik-btn-primary:hover {
+    background-color: #B98413;
+  }
+
+  .ik-btn-outline {
+    border-radius: 9999px;
+    border: 1px solid #E5E7EB;
+    background-color: #ffffff;
+    color: #111827;
+    font-weight: 500;
+    padding: 0.7rem 1.3rem;
+    font-size: 0.85rem;
   }
 
   .ik-badge-gold {
