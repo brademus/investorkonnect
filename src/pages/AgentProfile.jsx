@@ -14,6 +14,9 @@ import { toast } from "sonner";
 
 export default function AgentProfile() {
   const { id } = useParams();
+  const [searchParams] = React.useState(() => new URLSearchParams(window.location.search));
+  const agentIdFromQuery = searchParams.get("id");
+  const agentId = id || agentIdFromQuery;
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
