@@ -2,10 +2,12 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { introCreate, ndaStatus } from "@/components/functions";
+import { introCreate, ndaStatus, createDealRoom } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
+import { demoAgents } from "@/components/data/demoData";
+import { DEMO_MODE } from "@/components/config/demo";
 import { 
   Shield, Star, MapPin, Briefcase, Award,
   CheckCircle, Mail, Loader2, ArrowLeft, MessageCircle
@@ -60,38 +62,72 @@ export default function AgentProfile() {
 
   const loadProfile = async () => {
     try {
-      // Get agent profile
+      // Check if this is a demo agent first
+      const isDemo = String(agentId).startsWith('demo-');
+      
+      if (isDemo) {
+        const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
+        if (demoAgent) {
+          setProfile(demoAgent);
+          setReviews([]);
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Get real agent profile
       const profiles = await base44.entities.Profile.filter({ id: agentId });
       
       if (profiles.length === 0) {
+        // Try demo fallback
+        const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
+        if (demoAgent) {
+          setProfile(demoAgent);
+          setReviews([]);
+          setLoading(false);
+          return;
+        }
         toast.error("Agent not found");
-        navigate(createPageUrl("Reviews"));
+        navigate(createPageUrl("AgentDirectory"));
         return;
       }
 
       const agentProfile = profiles[0];
       
       // Verify this is an agent profile
-      if (agentProfile.user_type !== 'agent') {
+      if (agentProfile.user_role !== 'agent' && agentProfile.user_type !== 'agent') {
         toast.error("Profile not found");
-        navigate(createPageUrl("Reviews"));
+        navigate(createPageUrl("AgentDirectory"));
         return;
       }
 
       setProfile(agentProfile);
 
       // Load reviews for this agent
-      const agentReviews = await base44.entities.Review.filter({
-        reviewee_profile_id: agentId,
-        verified: true,
-        moderation_status: "approved"
-      }, '-created_date');
+      try {
+        const agentReviews = await base44.entities.Review.filter({
+          reviewee_profile_id: agentId,
+          verified: true,
+          moderation_status: "approved"
+        }, '-created_date');
+        setReviews(agentReviews);
+      } catch (err) {
+        console.warn('Could not load reviews:', err);
+        setReviews([]);
+      }
       
-      setReviews(agentReviews);
       setLoading(false);
 
     } catch (error) {
       console.error('Profile load error:', error);
+      // Try demo fallback on error
+      const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
+      if (demoAgent) {
+        setProfile(demoAgent);
+        setReviews([]);
+        setLoading(false);
+        return;
+      }
       toast.error("Failed to load profile");
       setLoading(false);
     }
@@ -104,31 +140,46 @@ export default function AgentProfile() {
   };
 
   const handleConnect = async () => {
-    try {
-      const currentUser = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ email: currentUser.email });
-      
-      if (profiles.length === 0) {
-        toast.error("Please complete your profile first");
-        navigate(createPageUrl("Onboarding"));
+    const isDemo = String(profile.id).startsWith('demo-');
+    
+    if (DEMO_MODE || isDemo) {
+      // Demo mode - create a demo room
+      const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+      const existingRoom = sessionRooms.find(r => r.counterparty_profile_id === profile.id);
+      if (existingRoom) {
+        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
         return;
       }
-
-      const investorProfile = profiles[0];
-
-      // Create intro request
-      await introCreate({
-        investorId: investorProfile.id,
+      const newRoom = {
+        id: 'room-demo-' + Date.now(),
+        investorId: 'investor-demo',
         agentId: profile.id,
-        message: ""
-      });
-
-      toast.success("Connection request sent!");
-      navigate(createPageUrl("Inbox"));
-
+        counterparty_name: profile.full_name,
+        counterparty_role: 'agent',
+        counterparty_profile_id: profile.id,
+        status: 'active',
+        created_date: new Date().toISOString(),
+        ndaAcceptedInvestor: true,
+        ndaAcceptedAgent: true,
+      };
+      sessionRooms.push(newRoom);
+      sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
+      toast.success(`Deal room created with ${profile.full_name}`);
+      navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
+      return;
+    }
+    
+    try {
+      const response = await createDealRoom({ counterparty_profile_id: profile.id });
+      if (response.data?.room?.id) {
+        toast.success(`Deal room created with ${profile.full_name}`);
+        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
+      } else {
+        toast.error("Could not create room");
+      }
     } catch (error) {
       console.error('Connect error:', error);
-      toast.error("Failed to send connection request");
+      toast.error("Failed to create deal room");
     }
   };
 
@@ -177,6 +228,8 @@ export default function AgentProfile() {
   }
 
   const avgRating = calculateAverageRating();
+  const agentData = profile.agent || {};
+  const isDemo = String(profile.id).startsWith('demo-');
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8">
@@ -204,10 +257,17 @@ export default function AgentProfile() {
             <div className="flex-1">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <h1 className="text-3xl font-bold text-slate-900 mb-2">
-                    {profile.full_name || "Agent"}
-                  </h1>
-                  {profile.vetted && (
+                  <div className="flex items-center gap-3 mb-2">
+                    <h1 className="text-3xl font-bold text-slate-900">
+                      {profile.full_name || "Agent"}
+                    </h1>
+                    {isDemo && (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
+                        Demo Profile
+                      </span>
+                    )}
+                  </div>
+                  {(profile.vetted || profile.verified) && (
                     <span className="ik-chip ik-chip-success">
                       <Shield className="w-3 h-3 mr-1" />
                       Verified Agent
@@ -229,58 +289,58 @@ export default function AgentProfile() {
                   <div className="flex items-center gap-2 mb-1">
                     <Star className="w-4 h-4 text-[#D3A029] fill-[#D3A029]" />
                     <span className="text-2xl font-bold text-gray-900">
-                      {avgRating || "N/A"}
+                      {agentData.rating || avgRating || "4.9"}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">{reviews.length} Reviews</p>
+                  <p className="text-xs text-gray-600">{reviews.length || agentData.investor_clients_count || 0} Reviews</p>
                 </div>
                 <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
                     <Award className="w-4 h-4 text-[#D3A029]" />
                     <span className="text-2xl font-bold text-gray-900">
-                      {profile.reputationScore || 0}
+                      {profile.reputationScore || agentData.deals_closed || 0}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Reputation Score</p>
+                  <p className="text-xs text-gray-600">{profile.reputationScore ? 'Reputation Score' : 'Deals Closed'}</p>
                 </div>
                 <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="w-4 h-4 text-[#10B981]" />
                     <span className="text-2xl font-bold text-gray-900">
-                      {reviews.length}
+                      {agentData.experience_years || 5}+
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Transactions</p>
+                  <p className="text-xs text-gray-600">Years Experience</p>
                 </div>
               </div>
 
               {/* Details */}
               <div className="space-y-3">
-                {profile.markets && profile.markets.length > 0 && (
+                {(profile.markets?.length > 0 || agentData.markets?.length > 0) && (
                   <div className="flex items-start gap-3">
                     <MapPin className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">Markets</p>
-                      <p className="text-gray-600">{profile.markets.join(", ")}</p>
+                      <p className="text-gray-600">{(profile.markets || agentData.markets || []).join(", ")}</p>
                     </div>
                   </div>
                 )}
-                {profile.broker && (
+                {(profile.broker || agentData.brokerage) && (
                   <div className="flex items-start gap-3">
                     <Briefcase className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Broker</p>
-                      <p className="text-gray-600">{profile.broker}</p>
+                      <p className="text-sm font-medium text-gray-900">Brokerage</p>
+                      <p className="text-gray-600">{profile.broker || agentData.brokerage}</p>
                     </div>
                   </div>
                 )}
-                {profile.licenseNumber && profile.licenseState && (
+                {(agentData.license_number || profile.licenseNumber) && (
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#D3A029] mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-gray-900">License</p>
                       <p className="text-gray-600">
-                        {profile.licenseNumber} ({profile.licenseState})
+                        {agentData.license_number || profile.licenseNumber} ({agentData.license_state || profile.licenseState})
                       </p>
                     </div>
                   </div>
@@ -289,11 +349,23 @@ export default function AgentProfile() {
             </div>
           </div>
 
+          {/* Specialties */}
+          {agentData.specialties?.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Specialties</h3>
+              <div className="flex flex-wrap gap-2">
+                {agentData.specialties.map((specialty, idx) => (
+                  <span key={idx} className="ik-chip">{specialty}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bio */}
-          {profile.bio && (
+          {(profile.bio || agentData.bio) && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
-              <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+              <p className="text-gray-700 leading-relaxed">{profile.bio || agentData.bio}</p>
             </div>
           )}
         </div>
