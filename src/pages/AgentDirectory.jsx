@@ -288,7 +288,7 @@ export default function AgentDirectory() {
                 return (
                   <div
                     key={agent.id}
-                    className="ik-card flex flex-col hover:shadow-md hover:-translate-y-[2px] transition-all duration-200 overflow-hidden"
+                    className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
                   >
                     {/* Header Band */}
                     <div className="h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A]" />
@@ -308,10 +308,10 @@ export default function AgentDirectory() {
                           )}
                         </div>
                         <div className="flex-1 min-w-0 pt-2">
-                          <h2 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
+                          <h2 className="text-lg font-bold text-gray-900 truncate">
                             {agent.full_name || 'Agent'}
                           </h2>
-                          <p className="mt-0.5 text-xs sm:text-sm text-gray-500 flex items-center gap-1">
+                          <p className="mt-0.5 text-sm text-gray-600 flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5" />
                             {agentData.markets?.[0] || agent.target_state || 'Location TBD'}
                           </p>
@@ -320,7 +320,7 @@ export default function AgentDirectory() {
                       
                       {/* Specialties */}
                       {agentData.specialties && agentData.specialties.length > 0 && (
-                        <p className="mt-3 text-xs sm:text-sm text-gray-600 line-clamp-2">
+                        <p className="mt-3 text-sm text-gray-600 line-clamp-2">
                           {agentData.specialties.slice(0, 3).join(' • ')}
                         </p>
                       )}
@@ -329,28 +329,36 @@ export default function AgentDirectory() {
                       <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-3 gap-3 text-center">
                         <div>
                           <div className="text-sm font-semibold text-gray-900">{deals}</div>
-                          <div className="text-[11px] text-gray-500">Deals</div>
+                          <div className="text-xs text-gray-500">Deals</div>
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-gray-900 flex items-center justify-center gap-0.5">
                             {rating}
                             <Star className="w-3 h-3 text-[#D3A029] fill-[#D3A029]" />
                           </div>
-                          <div className="text-[11px] text-gray-500">Rating</div>
+                          <div className="text-xs text-gray-500">Rating</div>
                         </div>
                         <div>
                           <div className="text-sm font-semibold text-gray-900">{years}+</div>
-                          <div className="text-[11px] text-gray-500">Years</div>
+                          <div className="text-xs text-gray-500">Years</div>
                         </div>
                       </div>
                       
                       {/* Actions */}
-                      <div className="mt-5 pt-4 border-t border-gray-100">
-                        <button
-                          onClick={() => handleOpenRoom(agent)}
-                          className="ik-btn-primary w-full justify-center"
+                      <div className="mt-5 pt-4 border-t border-gray-100 flex gap-3">
+                        <Link
+                          to={`${createPageUrl("AgentProfile")}/${agent.id}`}
+                          className="ik-btn-outline flex-1 justify-center gap-1.5"
                         >
                           View Profile
+                          <ArrowRight className="w-4 h-4" />
+                        </Link>
+                        <button
+                          onClick={() => handleOpenRoom(agent)}
+                          className="ik-btn-primary flex-1 justify-center gap-1.5"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          Connect
                         </button>
                       </div>
                     </div>
