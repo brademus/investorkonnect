@@ -58,6 +58,7 @@ import MyProfile from './pages/MyProfile';
 import AgentPerformance from './pages/AgentPerformance';
 import InvestorPortfolio from './pages/InvestorPortfolio';
 import MarketIntel from './pages/MarketIntel';
+import InvestorProfile from './pages/InvestorProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -122,6 +123,7 @@ export const PAGES = {
     "AgentPerformance": AgentPerformance,
     "InvestorPortfolio": InvestorPortfolio,
     "MarketIntel": MarketIntel,
+    "InvestorProfile": InvestorProfile,
 }
 
 export const pagesConfig = {
