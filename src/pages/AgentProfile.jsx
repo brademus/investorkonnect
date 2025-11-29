@@ -299,47 +299,47 @@ export default function AgentProfile() {
         </div>
 
         {/* Reviews Section */}
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">
+        <div className="ik-card p-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">
             Verified Reviews ({reviews.length})
           </h2>
 
           {reviews.length === 0 ? (
             <div className="text-center py-12">
-              <Star className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-600">No reviews yet</p>
+              <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-600">No reviews yet</p>
             </div>
           ) : (
             <div className="space-y-6">
               {reviews.map((review) => (
                 <div 
                   key={review.id} 
-                  className="border-b border-slate-200 last:border-0 pb-6 last:pb-0"
+                  className="border-b border-gray-100 last:border-0 pb-6 last:pb-0"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex">{renderStars(review.rating)}</div>
-                        <span className="text-sm font-semibold text-slate-900">
+                        <span className="text-sm font-semibold text-gray-900">
                           {review.rating}.0
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-slate-900">
+                      <p className="text-sm font-medium text-gray-900">
                         {review.reviewer_name}
                       </p>
                     </div>
-                    <Badge className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                    <span className="ik-chip ik-chip-success text-xs">
                       <Shield className="w-3 h-3 mr-1" />
                       Verified
-                    </Badge>
+                    </span>
                   </div>
-                  <p className="text-slate-700 leading-relaxed mb-2">{review.body}</p>
+                  <p className="text-gray-700 leading-relaxed mb-2">{review.body}</p>
                   {review.market && (
-                    <Badge variant="secondary" className="text-xs">
+                    <span className="ik-chip text-xs">
                       {review.market}
-                    </Badge>
+                    </span>
                   )}
-                  <p className="text-xs text-slate-500 mt-2">
+                  <p className="text-xs text-gray-500 mt-2">
                     {new Date(review.created_date).toLocaleDateString()}
                   </p>
                 </div>
