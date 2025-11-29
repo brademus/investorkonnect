@@ -225,32 +225,32 @@ export default function AgentProfile() {
 
               {/* Stats */}
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-slate-50 rounded-lg p-4">
+                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
-                    <Star className="w-4 h-4 text-yellow-500" />
-                    <span className="text-2xl font-bold text-slate-900">
+                    <Star className="w-4 h-4 text-[#D3A029] fill-[#D3A029]" />
+                    <span className="text-2xl font-bold text-gray-900">
                       {avgRating || "N/A"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">{reviews.length} Reviews</p>
+                  <p className="text-xs text-gray-600">{reviews.length} Reviews</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-4">
+                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
-                    <Award className="w-4 h-4 text-blue-500" />
-                    <span className="text-2xl font-bold text-slate-900">
+                    <Award className="w-4 h-4 text-[#D3A029]" />
+                    <span className="text-2xl font-bold text-gray-900">
                       {profile.reputationScore || 0}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">Reputation Score</p>
+                  <p className="text-xs text-gray-600">Reputation Score</p>
                 </div>
-                <div className="bg-slate-50 rounded-lg p-4">
+                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle className="w-4 h-4 text-emerald-500" />
-                    <span className="text-2xl font-bold text-slate-900">
+                    <CheckCircle className="w-4 h-4 text-[#10B981]" />
+                    <span className="text-2xl font-bold text-gray-900">
                       {reviews.length}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600">Transactions</p>
+                  <p className="text-xs text-gray-600">Transactions</p>
                 </div>
               </div>
 
