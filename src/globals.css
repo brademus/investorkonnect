@@ -179,6 +179,15 @@
     outline-offset: 2px;
   }
 
+  .ik-link {
+    font-size: 0.875rem;
+    color: #D3A029;
+  }
+
+  .ik-link:hover {
+    text-decoration: underline;
+  }
+
   .ik-badge-gold {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
     background: hsl(48 100% 95%);
