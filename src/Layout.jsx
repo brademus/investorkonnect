@@ -41,22 +41,23 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#111827]">
+    <div className="ik-shell">
+      {/* Top nav - fixed, minimal, Airbnb-like */}
       {showNav && !isNoNavPage && (
-        <header className="sticky top-0 z-40 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
-          <div className="mx-auto max-w-7xl px-4 lg:px-8 h-16 flex items-center justify-between">
+        <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
+          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
             {/* Left: logo + brand */}
             <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
               <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FDE68A]">
-                <span className="text-sm font-bold text-[#D3A029]">IK</span>
+                <span className="text-xs font-bold tracking-tight text-[#D3A029]">IK</span>
               </div>
-              <span className="text-sm font-semibold tracking-tight">
+              <span className="text-sm font-semibold tracking-tight text-[#111827]">
                 Investor Konnect
               </span>
             </Link>
 
-            {/* Center: simple nav */}
-            <nav className="hidden gap-6 text-xs font-medium text-[#4B5563] md:flex">
+            {/* Center nav – simple, small text links */}
+            <nav className="hidden items-center gap-6 text-xs font-medium text-[#4B5563] md:flex">
               <Link to={createPageUrl("Home")} className="hover:text-[#111827]">Home</Link>
               <Link to={createPageUrl("HowItWorks")} className="hover:text-[#111827]">How it works</Link>
               <Link to={createPageUrl("Pricing")} className="hover:text-[#111827]">Pricing</Link>
@@ -64,7 +65,7 @@ function LayoutContent({ children }) {
               <Link to={createPageUrl("Agents")} className="hover:text-[#111827]">For agents</Link>
             </nav>
 
-            {/* Right: auth / profile */}
+            {/* Right: Auth / profile */}
             <div className="flex items-center gap-2">
               {currentNav.map((item) => (
                 <Link
@@ -101,7 +102,8 @@ function LayoutContent({ children }) {
         </header>
       )}
 
-      <main className={showNav && !isNoNavPage ? "mx-auto max-w-7xl px-4 lg:px-8 py-8 lg:py-10" : ""}>
+      {/* Page content – centered, offset for fixed header */}
+      <main className={showNav && !isNoNavPage ? "mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
         {children}
       </main>
 
