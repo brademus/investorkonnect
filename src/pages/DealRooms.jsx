@@ -248,107 +248,158 @@ export default function DealRooms() {
   }
 
   return (
-    <div className="space-y-7 lg:space-y-9">
-      {/* Header */}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="ik-h1 text-[#111827]">Deal Rooms</h1>
-          <p className="mt-1 text-sm text-[#6B7280] sm:text-[0.95rem]">
-            Secure collaboration spaces for your deals
-          </p>
-        </div>
-        <button 
-          className="ik-btn-primary"
-          onClick={() => setOpenNew(true)}
-        >
-          <Plus className="w-5 h-5" />
-          New Deal Room
-        </button>
-      </header>
-
-      {/* Protection Notice */}
-      <section className="ik-card ik-card-hover bg-[#FFFBEB] border-[#FCD34D] px-5 py-4">
-        <div className="flex items-center gap-3">
-          <span className="ik-icon-pill">🛡️</span>
-          <p className="text-sm text-[#92400E]">
-            <strong>Protected:</strong> All deal rooms are verified and NDA-protected. 
-            Information shared here is confidential.
-          </p>
-        </div>
-      </section>
-
-      {/* Rooms List */}
-      {rooms.length === 0 ? (
-        <section className="ik-card p-12 text-center">
-          <Users className="w-16 h-16 text-[#E5E7EB] mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-[#111827] mb-2">No Deal Rooms Yet</h3>
-          <p className="text-[#6B7280] mb-6">
-            Create your first deal room to start collaborating
-          </p>
-          <button 
-            className="ik-btn-primary"
-            onClick={() => setOpenNew(true)}
-          >
-            <Plus className="w-5 h-5" />
-            Create Deal Room
-          </button>
-        </section>
-      ) : (
-        <section className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rooms.map((room) => (
+    <div className="min-h-screen bg-[#FAF7F2]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-12">
+        {/* Header */}
+        <header className="mb-6 sm:mb-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+                Deal Rooms
+              </h1>
+              <p className="mt-2 text-sm sm:text-base text-gray-600">
+                Secure collaboration spaces for your investor–agent deals.
+              </p>
+            </div>
             <button 
-              key={room.id}
-              className="ik-tile flex-col items-start gap-3 text-left"
-              onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
+              className="ik-btn-primary gap-2"
+              onClick={() => setOpenNew(true)}
             >
-              <div className="flex items-start justify-between w-full">
-                <h3 className="font-bold text-[#111827] text-lg">
-                  {room.counterparty_name || `Room ${room.id.slice(0, 8)}`}
-                </h3>
-                <span className="ik-chip ik-chip-success text-xs">
-                  {room.counterparty_role || 'Active'}
-                </span>
-              </div>
-              
-              <div className="flex items-center gap-4 text-sm text-[#6B7280]">
-                <div className="flex items-center gap-1">
-                  <MessageCircle className="w-4 h-4" />
-                  Chat
-                </div>
-                <div className="flex items-center gap-1">
-                  <FileText className="w-4 h-4" />
-                  Docs
-                </div>
-              </div>
+              <Plus className="w-5 h-5" />
+              New Deal Room
             </button>
-          ))}
-        </section>
-      )}
+          </div>
+        </header>
 
-      {/* Features */}
-      <section className="grid md:grid-cols-3 gap-4">
-        <div className="ik-card p-5">
-          <div className="ik-icon-pill mb-3">🔒</div>
-          <h3 className="ik-section-title mb-2">NDA Protected</h3>
-          <p className="ik-section-subtitle">
-            All deal information is protected by legally binding NDAs
-          </p>
-        </div>
-        <div className="ik-card p-5">
-          <div className="ik-icon-pill mb-3">📋</div>
-          <h3 className="ik-section-title mb-2">Audit Trail</h3>
-          <p className="ik-section-subtitle">
-            Every action is logged for security and compliance
-          </p>
-        </div>
-        <div className="ik-card p-5">
-          <div className="ik-icon-pill mb-3">✓</div>
-          <h3 className="ik-section-title mb-2">Verified Users Only</h3>
-          <p className="ik-section-subtitle">
-            All participants are identity-verified and NDA-signed
-          </p>
-        </div>
-      </section>
+        {/* Protection Notice Banner */}
+        <section className="mb-6">
+          <div className="ik-card bg-[#FFFBEB] border-[#FDE68A] p-5 flex items-start gap-4">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+              <Shield className="w-5 h-5 text-[#D3A029]" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-[#92400E]">Protected Environment</h3>
+              <p className="mt-1 text-sm text-[#92400E]/80">
+                All deal rooms are verified and NDA-protected. Information shared here is confidential.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        {/* Main Content Card */}
+        <section className="mb-8">
+          <div className="ik-card">
+            {rooms.length === 0 ? (
+              /* Empty State */
+              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mb-5">
+                  <Users className="w-8 h-8 text-[#D3A029]" />
+                </div>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  No deal rooms yet
+                </h2>
+                <p className="mt-2 max-w-md text-sm sm:text-base text-gray-600">
+                  Create your first deal room to securely chat, track milestones, and manage contracts in one place.
+                </p>
+                <button 
+                  className="mt-6 ik-btn-primary gap-2"
+                  onClick={() => setOpenNew(true)}
+                >
+                  <Plus className="w-5 h-5" />
+                  Create Deal Room
+                </button>
+              </div>
+            ) : (
+              /* Rooms Grid */
+              <div className="p-5 sm:p-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                  {rooms.map((room) => (
+                    <button 
+                      key={room.id}
+                      className="ik-card ik-card-hover p-5 text-left flex flex-col gap-4 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200"
+                      onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
+                    >
+                      <div className="flex items-start justify-between w-full">
+                        <div className="flex items-center gap-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] flex-shrink-0">
+                            <Users className="w-5 h-5 text-[#D3A029]" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-gray-900">
+                              {room.counterparty_name || `Room ${room.id.slice(0, 8)}`}
+                            </h3>
+                            <p className="text-xs text-gray-500 capitalize">
+                              {room.counterparty_role || 'Counterparty'}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="ik-chip ik-chip-success text-xs px-2 py-1">
+                          Active
+                        </span>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <div className="flex items-center gap-1.5">
+                          <MessageCircle className="w-4 h-4" />
+                          <span>Chat</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <FileText className="w-4 h-4" />
+                          <span>Docs</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Shield className="w-4 h-4" />
+                          <span>Secure</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-gray-100">
+                        <span className="ik-btn-outline text-sm w-full justify-center gap-2">
+                          Open Room
+                          <ArrowRight className="w-4 h-4" />
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Features Strip */}
+        <section className="mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
+                <Lock className="w-5 h-5 text-[#D3A029]" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900">NDA Protected</h3>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+                Every deal room is covered by your signed NDA, so conversations stay private.
+              </p>
+            </div>
+            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
+                <FileText className="w-5 h-5 text-[#D3A029]" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900">Audit Trail</h3>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+                Every action is logged for complete security and compliance tracking.
+              </p>
+            </div>
+            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
+                <Shield className="w-5 h-5 text-[#D3A029]" />
+              </div>
+              <h3 className="text-sm font-semibold text-gray-900">Verified Users Only</h3>
+              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+                All participants are identity-verified and have signed the platform NDA.
+              </p>
+            </div>
+          </div>
+        </section>
+      </div>
 
       <NewRoomModal 
         open={openNew} 
