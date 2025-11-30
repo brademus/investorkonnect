@@ -13,6 +13,7 @@ const PUBLIC_APP_URL = "https://agent-vault-da3d088b.base44.app";
 
 export default function Pricing() {
   const [billingCycle, setBillingCycle] = useState("monthly");
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const navigate = useNavigate();
   
   const { 
@@ -54,6 +55,10 @@ export default function Pricing() {
       toast.info("Loading your account...");
       return;
     }
+
+    if (checkoutLoading) {
+      return; // Prevent double-clicks
+    }
     
     if (plan === 'enterprise') {
       navigate(createPageUrl("Contact"));
@@ -80,23 +85,59 @@ export default function Pricing() {
       return;
     }
 
-    toast.loading("Opening checkout...", { id: 'checkout-loading' });
+    setCheckoutLoading(true);
+    const toastId = 'checkout-' + Date.now();
+    toast.loading("Opening checkout...", { id: toastId });
 
     try {
       const response = await checkoutLite({ plan });
-      toast.dismiss('checkout-loading');
 
-      if (!response.data || !response.data.ok) {
-        toast.error(response.data?.message || "Failed to create checkout session");
+      // Validate response
+      if (!response || !response.data) {
+        toast.dismiss(toastId);
+        toast.error("No response from server. Please try again.");
+        setCheckoutLoading(false);
         return;
       }
 
-      if (response.data.url) {
-        window.location.href = response.data.url;
+      if (!response.data.ok) {
+        toast.dismiss(toastId);
+        toast.error(response.data?.message || "Failed to create checkout session");
+        setCheckoutLoading(false);
+        return;
       }
+
+      // Validate URL exists
+      if (!response.data.url) {
+        toast.dismiss(toastId);
+        toast.error("Checkout URL not provided. Please contact support.");
+        console.error('[Pricing] No checkout URL in response:', response.data);
+        setCheckoutLoading(false);
+        return;
+      }
+
+      // Show redirecting message
+      toast.dismiss(toastId);
+      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
+
+      // Add small delay to ensure toast is visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirect to Stripe
+      window.location.href = response.data.url;
+
+      // Fallback: If redirect doesn't happen in 3 seconds, show error
+      setTimeout(() => {
+        toast.dismiss(toastId + '-redirect');
+        toast.error("Redirect failed. Please try again or contact support.");
+        setCheckoutLoading(false);
+      }, 3000);
+
     } catch (error) {
-      toast.dismiss('checkout-loading');
+      toast.dismiss(toastId);
+      console.error('[Pricing] Checkout error:', error);
       toast.error("Failed to start checkout. Please try again.");
+      setCheckoutLoading(false);
     }
   };
 
@@ -328,17 +369,17 @@ export default function Pricing() {
                       onClick={() => handleGetStarted(tier.planId)}
                       className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#D4AF37] text-white hover:bg-[#C19A2E] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
                       style={{ boxShadow: '0 2px 8px rgba(212,175,55,0.3)' }}
-                      disabled={loading}
+                      disabled={loading || checkoutLoading}
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
+                      {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
                     </button>
                   ) : (
                     <button
                       onClick={() => handleGetStarted(tier.planId)}
                       className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#E5E5E5] text-black bg-transparent hover:bg-[#F9F9F9] hover:border-[#D4AF37] transition-all duration-200"
-                      disabled={loading}
+                      disabled={loading || checkoutLoading}
                     >
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
+                      {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
                     </button>
                   )}
                 </div>
@@ -388,9 +429,9 @@ export default function Pricing() {
             size="lg" 
             className="bg-[#D4AF37] hover:bg-[#C19A2E] text-white text-lg px-8 h-14 rounded-xl"
             onClick={() => handleGetStarted('starter')}
-            disabled={loading}
+            disabled={loading || checkoutLoading}
           >
-            {loading ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <>Get Started Free <ArrowRight className="w-5 h-5 ml-2" /></>}
+            {(loading || checkoutLoading) ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <>Get Started Free <ArrowRight className="w-5 h-5 ml-2" /></>}
           </Button>
         </div>
       </section>

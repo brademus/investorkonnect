@@ -34,23 +34,49 @@ export default function BillingSuccess() {
   }, []);
 
   useEffect(() => {
+    // Redirect immediately if no session_id
     if (!sessionId) {
+      console.log('[BillingSuccess] No session_id, redirecting to Dashboard');
       navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
 
+    // Wait for user and profile to load (with timeout)
     if (!user || !profile) {
-      return;
+      console.log('[BillingSuccess] Waiting for user/profile...', { user: !!user, profile: !!profile });
+      
+      // Timeout: If user/profile doesn't load in 10 seconds, redirect anyway
+      const timeout = setTimeout(() => {
+        console.error('[BillingSuccess] Timeout waiting for user/profile');
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }, 10000);
+      
+      return () => clearTimeout(timeout);
     }
 
+    // Prevent multiple executions
+    let executed = false;
+
     const syncAndRedirect = async () => {
+      if (executed) {
+        console.log('[BillingSuccess] Already executed, skipping');
+        return;
+      }
+      executed = true;
+      
+      console.log('[BillingSuccess] Starting subscription sync...', { sessionId });
+
       try {
         const response = await syncSubscription({
           session_id: sessionId
         });
 
+        console.log('[BillingSuccess] Sync response:', response.data);
+
         if (response.data?.ok) {
+          // Refresh profile to get updated subscription
           await refresh();
+          console.log('[BillingSuccess] Profile refreshed');
           
           // For READY investors, trigger AI matching
           if (profile.user_role === 'investor') {
@@ -62,42 +88,55 @@ export default function BillingSuccess() {
             const hasNDA = profile.nda_accepted;
             
             if (isOnboarded && isKYCVerified && hasNDA) {
+              console.log('[BillingSuccess] Starting AI matching...');
               setState(prev => ({ ...prev, syncing: false, matching: true }));
               
               try {
                 await matchInvestor();
                 await refresh();
+                console.log('[BillingSuccess] Matching complete');
               } catch (matchErr) {
+                console.error('[BillingSuccess] Matching failed:', matchErr);
                 // Don't block on match failure
               }
             }
           }
           
+          // Show success state
           setState({ syncing: false, matching: false, error: null, redirecting: false });
           
+          // Wait 2.5 seconds, then redirect
           setTimeout(() => {
+            console.log('[BillingSuccess] Starting redirect countdown...');
             setState(prev => ({ ...prev, redirecting: true }));
             
             setTimeout(() => {
+              console.log('[BillingSuccess] Redirecting to Dashboard');
               navigate(createPageUrl("Dashboard"), { replace: true });
             }, 500);
           }, 2500);
           
         } else {
+          // Sync failed but payment succeeded
           const errorMsg = response.data?.message || "Failed to sync subscription";
+          console.error('[BillingSuccess] Sync failed:', errorMsg);
           setState({ syncing: false, matching: false, error: errorMsg, redirecting: false });
           
+          // Try to refresh anyway
           try {
             await refresh();
           } catch (refreshErr) {
-            // Silent error
+            console.error('[BillingSuccess] Refresh failed:', refreshErr);
           }
           
+          // Redirect after 5 seconds even on error
           setTimeout(() => {
+            console.log('[BillingSuccess] Redirecting after error');
             navigate(createPageUrl("Dashboard"), { replace: true });
           }, 5000);
         }
       } catch (err) {
+        console.error('[BillingSuccess] Fatal error:', err);
         setState({ 
           syncing: false,
           matching: false,
@@ -105,20 +144,38 @@ export default function BillingSuccess() {
           redirecting: false 
         });
         
+        // Try to refresh anyway
         try {
           await refresh();
         } catch (refreshErr) {
-          // Silent error
+          console.error('[BillingSuccess] Refresh failed after error:', refreshErr);
         }
         
+        // Redirect after 5 seconds
         setTimeout(() => {
+          console.log('[BillingSuccess] Redirecting after fatal error');
           navigate(createPageUrl("Dashboard"), { replace: true });
         }, 5000);
       }
     };
 
     syncAndRedirect();
-  }, [sessionId, user, profile, refresh, navigate]);
+
+    // Cleanup function
+    return () => {
+      executed = true; // Prevent execution if component unmounts
+    };
+  }, [sessionId, user, profile]);
+
+  // Safety timeout: Force redirect after 30 seconds no matter what
+  useEffect(() => {
+    const safetyTimeout = setTimeout(() => {
+      console.warn('[BillingSuccess] Safety timeout triggered - forcing redirect');
+      navigate(createPageUrl("Dashboard"), { replace: true });
+    }, 30000); // 30 seconds
+
+    return () => clearTimeout(safetyTimeout);
+  }, [navigate]);
 
   const getPlanName = (plan) => {
     const names = {
