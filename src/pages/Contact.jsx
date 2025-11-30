@@ -113,8 +113,8 @@ export default function Contact() {
               <div className="bg-white rounded-xl p-6 border border-slate-200">
                 <Mail className="w-8 h-8 text-emerald-600 mb-3" />
                 <h3 className="font-semibold text-slate-900 mb-2">Support</h3>
-                <a href="mailto:support@agentvault.test" className="text-slate-700">
-                  support@agentvault.test
+                <a href="mailto:support@investorkonnect.com" className="text-slate-700">
+                  support@investorkonnect.com
                 </a>
                 <p className="text-xs text-slate-500 mt-2">Technical support</p>
               </div>

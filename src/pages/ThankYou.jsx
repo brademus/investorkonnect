@@ -45,7 +45,7 @@ export default function ThankYou() {
         </div>
         
         <p className="text-sm text-slate-500 mt-6">
-          Need urgent help? Email <a href="mailto:support@agentvault.test" className="text-blue-600 hover:text-blue-700">support@agentvault.test</a>
+          Need urgent help? Email <a href="mailto:support@investorkonnect.com" className="text-blue-600 hover:text-blue-700">support@investorkonnect.com</a>
         </p>
       </div>
     </div>

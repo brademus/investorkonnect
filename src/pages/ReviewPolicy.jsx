@@ -93,7 +93,7 @@ export default function ReviewPolicy() {
             <p>Reviewers may edit reviews within 7 days of posting. After 7 days, contact support for changes. Reviews cannot be deleted except for policy violations.</p>
 
             <h2>Questions?</h2>
-            <p>Contact us at <a href="mailto:reviews@agentvault.com">reviews@agentvault.com</a></p>
+            <p>Contact us at <a href="mailto:reviews@investorkonnect.com">reviews@investorkonnect.com</a></p>
           </div>
         </div>
       </div>

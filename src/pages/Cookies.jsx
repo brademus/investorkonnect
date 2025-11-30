@@ -81,7 +81,7 @@ export default function Cookies() {
             <p>We may update this policy and will notify you of material changes.</p>
 
             <h2>Questions?</h2>
-            <p>Contact us at <a href="mailto:privacy@agentvault.com">privacy@agentvault.com</a></p>
+            <p>Contact us at <a href="mailto:privacy@investorkonnect.com">privacy@investorkonnect.com</a></p>
           </div>
         </div>
       </div>
