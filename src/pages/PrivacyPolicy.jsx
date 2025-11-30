@@ -77,13 +77,13 @@ export default function PrivacyPolicy() {
             <h2>10. Contact Us</h2>
             <p>Questions about privacy? Contact us at:</p>
             <p>
-              <strong>Email:</strong> privacy@agentvault.com<br />
+              <strong>Email:</strong> privacy@investorkonnect.com<br />
               <strong>Address:</strong> 123 Main Street, San Francisco, CA 94102
             </p>
 
             <div className="bg-slate-50 border border-slate-200 rounded-lg p-6 mt-8">
               <p className="text-sm text-slate-700 mb-0">
-                <strong>GDPR & CCPA Compliance:</strong> We comply with GDPR and CCPA regulations. European and California users have additional rights under these laws. Contact privacy@agentvault.com for requests.
+                <strong>GDPR & CCPA Compliance:</strong> We comply with GDPR and CCPA regulations. European and California users have additional rights under these laws. Contact privacy@investorkonnect.com for requests.
               </p>
             </div>
           </div>

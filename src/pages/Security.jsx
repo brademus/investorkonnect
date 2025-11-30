@@ -195,10 +195,10 @@ export default function Security() {
                 If you discover a security vulnerability, please report it immediately to:
               </p>
               <a 
-                href="mailto:security@agentvault.com" 
+                href="mailto:security@investorkonnect.com" 
                 className="text-blue-600 hover:text-blue-700 font-medium"
               >
-                security@agentvault.com
+                security@investorkonnect.com
               </a>
             </div>
             <p className="text-sm text-slate-600">
@@ -242,7 +242,7 @@ export default function Security() {
               </li>
             </ul>
             <p className="text-sm text-slate-600 mt-6">
-              To report abuse: <a href="mailto:security@agentvault.com" className="text-blue-600 hover:text-blue-700">security@agentvault.com</a>
+              To report abuse: <a href="mailto:security@investorkonnect.com" className="text-blue-600 hover:text-blue-700">security@investorkonnect.com</a>
             </p>
           </div>
         </div>

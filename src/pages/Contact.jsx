@@ -61,7 +61,7 @@ export default function Contact() {
             from_email: formData.email,
             subject: formData.subject,
             message: formData.message,
-            to_email: 'hello@agentvault.test'
+            to_email: 'hello@investorkonnect.com'
           }
         );
       }
@@ -105,8 +105,8 @@ export default function Contact() {
               <div className="bg-white rounded-xl p-6 border border-slate-200">
                 <Mail className="w-8 h-8 text-blue-600 mb-3" />
                 <h3 className="font-semibold text-slate-900 mb-2">Email Us</h3>
-                <a href="mailto:hello@agentvault.test" className="text-blue-600 hover:text-blue-700">
-                  hello@agentvault.test
+                <a href="mailto:hello@investorkonnect.com" className="text-blue-600 hover:text-blue-700">
+                  hello@investorkonnect.com
                 </a>
                 <p className="text-xs text-slate-500 mt-2">General inquiries & support</p>
               </div>
@@ -121,8 +121,8 @@ export default function Contact() {
               <div className="bg-white rounded-xl p-6 border border-slate-200">
                 <Mail className="w-8 h-8 text-purple-600 mb-3" />
                 <h3 className="font-semibold text-slate-900 mb-2">Security</h3>
-                <a href="mailto:security@agentvault.test" className="text-slate-700">
-                  security@agentvault.test
+                <a href="mailto:security@investorkonnect.com" className="text-slate-700">
+                  security@investorkonnect.com
                 </a>
                 <p className="text-xs text-slate-500 mt-2">Report vulnerabilities</p>
               </div>
