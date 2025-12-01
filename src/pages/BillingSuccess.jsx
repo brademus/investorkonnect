@@ -65,6 +65,7 @@ export default function BillingSuccess() {
       executed = true;
       
       console.log('[BillingSuccess] Starting subscription sync...', { sessionId });
+      console.log('[BillingSuccess] syncSubscription function available:', typeof syncSubscription);
 
       try {
         const response = await syncSubscription({

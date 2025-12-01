@@ -127,9 +127,21 @@ function VerifyContent() {
         },
         
         onComplete: async ({ inquiryId, status, fields }) => {
+          console.log('[Verify] personaFinalize function available:', typeof personaFinalize);
+          console.log('[Verify] Inquiry completed:', { inquiryId, status });
+          
           setVerifying(true);
           
           try {
+            // Check if function exists
+            if (typeof personaFinalize !== 'function') {
+              toast.error("Verification system not configured. Please contact support.");
+              console.error('[Verify] personaFinalize function not available');
+              setVerifying(false);
+              setError('Verification system is not properly configured. Please contact support.');
+              return;
+            }
+            
             // Call backend to validate and update profile
             const response = await personaFinalize({
               inquiryId,
@@ -207,12 +219,12 @@ function VerifyContent() {
   // Verification in progress
   if (verifying) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-white flex items-center justify-center p-4" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
         <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <Loader2 className="w-16 h-16 text-blue-600 animate-spin mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Processing Verification...</h2>
-            <p className="text-slate-600">Please wait while we confirm your identity</p>
+          <div className="bg-white rounded-3xl border border-[#E5E5E5] p-12 shadow-lg">
+            <div className="animate-spin rounded-full h-16 w-16 border-2 border-t-transparent mx-auto mb-6" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
+            <h2 className="text-[28px] font-bold text-black mb-2">Processing Verification...</h2>
+            <p className="text-[#666666]">Please wait while we confirm your identity</p>
           </div>
         </div>
       </div>
@@ -243,145 +255,151 @@ function VerifyContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
-      {/* NO TOP NAV */}
-      
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
+    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+      {/* Header */}
+      <header className="h-20 flex items-center justify-center border-b border-[#E5E5E5]">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-[#D4AF37] rounded-xl flex items-center justify-center">
+            <Shield className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">Verify Your Identity</h1>
-          <p className="text-slate-600 max-w-2xl mx-auto">
+          <span className="text-xl font-bold text-black">INVESTOR KONNECT</span>
+        </div>
+      </header>
+
+      <div className="max-w-[600px] mx-auto px-4 py-12">
+        
+        {/* Title */}
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
+            <Shield className="w-10 h-10 text-[#92400E]" />
+          </div>
+          <h1 className="text-[32px] font-bold text-black mb-2">Verify Your Identity</h1>
+          <p className="text-[16px] text-[#666666] leading-relaxed max-w-md mx-auto">
             Required to access agent profiles and deal rooms. Your data is encrypted and used only for verification.
           </p>
         </div>
 
         {/* Trust Indicators */}
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Shield className="w-5 h-5 text-blue-600" />
+        <div className="grid grid-cols-3 gap-3 mb-8">
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
+            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center mx-auto mb-2">
+              <Shield className="w-5 h-5 text-[#D4AF37]" />
             </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">Secure & Private</h4>
-            <p className="text-xs text-slate-600">Bank-level encryption</p>
+            <h4 className="font-semibold text-sm text-black mb-1">Secure & Private</h4>
+            <p className="text-xs text-[#666666]">Bank-level encryption</p>
           </div>
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-emerald-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <CheckCircle className="w-5 h-5 text-emerald-600" />
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
+            <div className="w-10 h-10 bg-[#D1FAE5] rounded-lg flex items-center justify-center mx-auto mb-2">
+              <CheckCircle className="w-5 h-5 text-[#059669]" />
             </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">Fast & Easy</h4>
-            <p className="text-xs text-slate-600">Takes 2-3 minutes</p>
+            <h4 className="font-semibold text-sm text-black mb-1">Fast & Easy</h4>
+            <p className="text-xs text-[#666666]">Takes 2-3 minutes</p>
           </div>
-          <div className="bg-white rounded-lg border border-slate-200 p-4 text-center">
-            <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Shield className="w-5 h-5 text-purple-600" />
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
+            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center mx-auto mb-2">
+              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
             </div>
-            <h4 className="font-semibold text-sm text-slate-900 mb-1">One-Time Only</h4>
-            <p className="text-xs text-slate-600">Verify once, forever</p>
+            <h4 className="font-semibold text-sm text-black mb-1">One-Time Only</h4>
+            <p className="text-xs text-[#666666]">Verify once, forever</p>
           </div>
         </div>
 
-        {/* Main Action Area */}
-        <div className="bg-white rounded-xl shadow-lg border border-slate-200 p-8">
+        {/* Main Card */}
+        <div className="bg-white rounded-3xl border border-[#E5E5E5] p-8 shadow-lg">
           
           {/* Error State */}
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="bg-[#FEE2E2] border border-[#FCA5A5] rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
                 <div className="flex-1">
-                  <h4 className="font-semibold text-red-900 mb-1">Verification Error</h4>
-                  <p className="text-sm text-red-700">{error}</p>
+                  <h4 className="font-semibold text-[#991B1B] mb-1">Verification Error</h4>
+                  <p className="text-sm text-[#7F1D1D]">{error}</p>
                 </div>
               </div>
-              <Button
+              <button
                 onClick={handleRetry}
-                variant="outline"
-                className="mt-4 border-red-300 text-red-700 hover:bg-red-50"
+                className="mt-4 h-10 px-4 rounded-lg border-2 border-[#FCA5A5] text-[#DC2626] hover:bg-[#FEE2E2] font-medium transition-all"
               >
                 Retry Verification
-              </Button>
+              </button>
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading State: Script Loading */}
           {!scriptLoaded && !error && (
             <div className="text-center py-12">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
+              <h3 className="text-lg font-semibold text-black mb-2">
                 Preparing Secure Verification...
               </h3>
-              <p className="text-slate-600">Loading verification system</p>
+              <p className="text-[#666666]">Loading verification system</p>
             </div>
           )}
 
-          {/* Script Loaded but Client Not Ready */}
+          {/* Loading State: Client Initializing */}
           {scriptLoaded && !personaReady && !error && (
             <div className="text-center py-12">
-              <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
+              <h3 className="text-lg font-semibold text-black mb-2">
                 Initializing Verification...
               </h3>
-              <p className="text-slate-600">Setting up your secure session</p>
+              <p className="text-[#666666]">Setting up your secure session</p>
             </div>
           )}
 
           {/* Ready to Verify */}
           {personaReady && !error && (
             <div className="text-center py-8">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Shield className="w-12 h-12 text-blue-600" />
+              <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+                <Shield className="w-12 h-12 text-[#92400E]" />
               </div>
               
-              <h3 className="text-2xl font-bold text-slate-900 mb-3">
+              <h3 className="text-[24px] font-bold text-black mb-3">
                 Ready to Verify
               </h3>
               
-              <p className="text-slate-600 mb-8 max-w-md mx-auto">
+              <p className="text-[#666666] mb-8 max-w-md mx-auto">
                 Click below to open the secure verification window. You'll need:
               </p>
 
               <div className="grid gap-3 max-w-sm mx-auto mb-8 text-left">
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-700">A valid government-issued ID</span>
+                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-[#333333]">A valid government-issued ID</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-700">Your phone or webcam</span>
+                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-[#333333]">Your phone or webcam</span>
                 </div>
                 <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-slate-700">2-3 minutes of your time</span>
+                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-[#333333]">2-3 minutes of your time</span>
                 </div>
               </div>
 
-              <Button
+              <button
                 onClick={handleBeginVerification}
                 disabled={launching}
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-6 h-auto shadow-lg"
+                className="h-14 px-8 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:-translate-y-0.5"
               >
                 {launching ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin inline" />
                     Opening Verification...
                   </>
                 ) : (
                   <>
-                    <Shield className="w-5 h-5 mr-2" />
+                    <Shield className="w-5 h-5 mr-2 inline" />
                     Begin Verification
                   </>
                 )}
-              </Button>
+              </button>
             </div>
           )}
         </div>
 
-        <p className="text-xs text-slate-500 text-center mt-6">
+        <p className="text-xs text-[#999999] text-center mt-6">
           Powered by Persona. Your data is encrypted and never shared.
         </p>
       </div>

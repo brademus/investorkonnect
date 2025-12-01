@@ -51,6 +51,9 @@ export default function Pricing() {
   };
 
   const handleGetStarted = async (plan) => {
+    // Debug: Check if function exists
+    console.log('[Pricing] checkoutLite function available:', typeof checkoutLite);
+    
     if (loading) {
       toast.info("Loading your account...");
       return;
@@ -90,6 +93,15 @@ export default function Pricing() {
     toast.loading("Opening checkout...", { id: toastId });
 
     try {
+      // Check if function exists
+      if (typeof checkoutLite !== 'function') {
+        toast.dismiss(toastId);
+        toast.error("Payment system not configured. Please contact support.");
+        console.error('[Pricing] checkoutLite function not available');
+        setCheckoutLoading(false);
+        return;
+      }
+      
       const response = await checkoutLite({ plan });
 
       // Validate response
