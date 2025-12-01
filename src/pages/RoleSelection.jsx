@@ -30,7 +30,7 @@ export default function RoleSelection() {
   };
 
   return (
-    <div className="ik-shell flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
       <div className="max-w-5xl w-full">
         
         {/* Back Button */}

@@ -28,8 +28,8 @@ function DashboardContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-amber-600 animate-spin" />
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
       </div>
     );
   }
@@ -37,59 +37,58 @@ function DashboardContent() {
   // INVESTOR NOT ONBOARDED - Show blocking prompt
   if (role === 'investor' && !onboarded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-amber-50 to-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          <div className="bg-white rounded-3xl shadow-2xl border-2 border-amber-200 p-12">
+          <div className="rounded-3xl border border-[#E5E7EB] bg-white p-12 shadow-xl">
             {/* Icon */}
-            <div className="w-20 h-20 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <TrendingUp className="w-10 h-10 text-amber-600" />
+            <div className="w-20 h-20 bg-[#FEF3C7] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <TrendingUp className="w-10 h-10 text-[#D3A029]" />
             </div>
 
             {/* Heading */}
-            <h1 className="text-3xl font-bold text-slate-900 text-center mb-4">
+            <h1 className="text-3xl font-bold text-[#111827] text-center mb-4">
               One More Step to Get Started
             </h1>
-            <p className="text-lg text-slate-600 text-center mb-8 max-w-xl mx-auto">
+            <p className="text-lg text-[#6B7280] text-center mb-8 max-w-xl mx-auto">
               Before you can access Investor Konnect, we need a bit more information about your investment goals and preferences. This helps us match you with the right agents.
             </p>
 
             {/* Why we need this */}
-            <div className="bg-amber-50 rounded-xl p-6 mb-8 border border-amber-200">
-              <h3 className="font-bold text-amber-900 mb-3 flex items-center gap-2">
+            <div className="bg-[#FFFBEB] rounded-2xl p-6 mb-8 border border-[#FCD34D]">
+              <h3 className="font-bold text-[#92400E] mb-3 flex items-center gap-2">
                 <Shield className="w-5 h-5" />
                 Why we need this:
               </h3>
-              <ul className="space-y-2 text-sm text-amber-800">
+              <ul className="space-y-2 text-sm text-[#92400E]">
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span className="text-[#D3A029] mt-0.5">•</span>
                   <span>Find agents who specialize in your investment strategy</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span className="text-[#D3A029] mt-0.5">•</span>
                   <span>Match your budget and market preferences</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span className="text-[#D3A029] mt-0.5">•</span>
                   <span>Provide agents with context before connecting</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <span className="text-amber-600 mt-0.5">•</span>
+                  <span className="text-[#D3A029] mt-0.5">•</span>
                   <span>Unlock all platform features and deal rooms</span>
                 </li>
               </ul>
             </div>
 
             {/* CTA */}
-            <Button
+            <button
               onClick={() => navigate(createPageUrl("InvestorOnboarding"))}
-              size="lg"
-              className="w-full bg-amber-500 hover:bg-amber-600 h-16 text-lg font-semibold shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5 w-full h-16"
             >
               Complete My Investor Profile
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+              <ArrowRight className="w-5 h-5" />
+            </button>
 
-            <p className="text-sm text-slate-500 text-center mt-4">
+            <p className="text-sm text-[#6B7280] text-center mt-4">
               Takes about 5 minutes • You only need to do this once
             </p>
 
@@ -97,7 +96,7 @@ function DashboardContent() {
             <div className="text-center mt-6">
               <button
                 onClick={() => base44.auth.logout()}
-                className="text-sm text-slate-600 hover:text-slate-900 underline"
+                className="text-sm text-[#6B7280] hover:text-[#111827] underline"
               >
                 Sign out instead
               </button>
@@ -111,33 +110,32 @@ function DashboardContent() {
   // AGENT NOT ONBOARDED - Show blocking prompt
   if (role === 'agent' && !onboarded) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50 to-slate-50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
         <div className="max-w-2xl w-full">
-          <div className="bg-white rounded-3xl shadow-2xl border-2 border-emerald-200 p-12">
+          <div className="rounded-3xl border border-[#E5E7EB] bg-white p-12 shadow-xl">
             {/* Icon */}
-            <div className="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center mx-auto mb-6">
-              <Users className="w-10 h-10 text-emerald-600" />
+            <div className="w-20 h-20 bg-[#D1FAE5] rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <Users className="w-10 h-10 text-[#10B981]" />
             </div>
 
             {/* Heading */}
-            <h1 className="text-3xl font-bold text-slate-900 text-center mb-4">
+            <h1 className="text-3xl font-bold text-[#111827] text-center mb-4">
               Complete Your Agent Profile
             </h1>
-            <p className="text-lg text-slate-600 text-center mb-8 max-w-xl mx-auto">
+            <p className="text-lg text-[#6B7280] text-center mb-8 max-w-xl mx-auto">
               Before you can access Investor Konnect, please complete your agent profile so investors can learn about your expertise and services.
             </p>
 
             {/* CTA */}
-            <Button
+            <button
               onClick={() => navigate(createPageUrl("AgentOnboarding"))}
-              size="lg"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 h-16 text-lg font-semibold shadow-lg"
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#10B981] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#10B981]/30 transition-all hover:bg-[#059669] hover:shadow-xl hover:-translate-y-0.5 w-full h-16"
             >
               Complete My Agent Profile
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
+              <ArrowRight className="w-5 h-5" />
+            </button>
 
-            <p className="text-sm text-slate-500 text-center mt-4">
+            <p className="text-sm text-[#6B7280] text-center mt-4">
               Takes about 3 minutes • Required to connect with investors
             </p>
 
@@ -145,7 +143,7 @@ function DashboardContent() {
             <div className="text-center mt-6">
               <button
                 onClick={() => base44.auth.logout()}
-                className="text-sm text-slate-600 hover:text-slate-900 underline"
+                className="text-sm text-[#6B7280] hover:text-[#111827] underline"
               >
                 Sign out instead
               </button>
@@ -167,10 +165,10 @@ function DashboardContent() {
 
   // Fallback
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
       <div className="text-center max-w-md">
-        <Loader2 className="w-12 h-12 text-amber-600 animate-spin mx-auto mb-4" />
-        <p className="text-slate-600">Setting up your dashboard...</p>
+        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+        <p className="text-[#6B7280]">Setting up your dashboard...</p>
       </div>
     </div>
   );

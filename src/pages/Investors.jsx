@@ -98,48 +98,45 @@ export default function Investors() {
   ];
 
   return (
-    <div>
+    <div className="min-h-screen bg-[#FAF7F2]">
       {/* Hero */}
-      <section className="bg-gradient-to-br from-gold-900 via-slate-900 to-gold-900 text-white py-20">
+      <section className="bg-gradient-to-br from-[#111827] via-[#1F2937] to-[#D3A029]/80 text-white py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="inline-flex items-center gap-2 bg-gold-500/10 border border-gold-500/20 rounded-full px-4 py-2 mb-6">
-                <TrendingUp className="w-4 h-4 text-gold-400" />
-                <span className="text-sm text-gold-300">For Real Estate Investors</span>
+              <div className="inline-flex items-center gap-2 bg-[#D3A029]/10 border border-[#D3A029]/20 rounded-full px-4 py-2 mb-6">
+                <TrendingUp className="w-4 h-4 text-[#FDE68A]" />
+                <span className="text-sm text-[#FDE68A]">For Real Estate Investors</span>
               </div>
               <h1 className="text-4xl md:text-5xl font-bold mb-6 leading-tight">
                 Connect with Verified, Investor-Friendly Agents
               </h1>
-              <p className="text-xl text-slate-300 mb-8">
+              <p className="text-xl text-[#E5E7EB] mb-8">
                 Access a curated network of thoroughly vetted agents who specialize in protecting investor interests. Every connection protected by enterprise-grade security.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  size="lg" 
-                  className="bg-gold-600 hover:bg-gold-700 w-full sm:w-auto"
+                <button 
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5 w-full sm:w-auto"
                   onClick={() => navigate(createPageUrl("Pricing"))}
                 >
                   Start Free Trial
-                  <ArrowRight className="w-5 h-5 ml-2" />
-                </Button>
-                <Button 
-                  size="lg" 
-                  variant="outline" 
-                  className="border-white/20 hover:bg-white/10 text-white w-full sm:w-auto"
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+                <button 
+                  className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-white/20 bg-transparent px-6 py-3.5 text-base font-medium text-white shadow-sm transition-all hover:bg-white/10 hover:-translate-y-0.5 w-full sm:w-auto"
                   onClick={() => navigate(createPageUrl("Pricing"))}
                 >
                   View Pricing
-                </Button>
+                </button>
               </div>
             </div>
-            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl p-8">
+            <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8">
               <h3 className="text-2xl font-bold mb-6">What You Get</h3>
               <ul className="space-y-4">
                 {features.slice(0, 6).map((feature) => (
                   <li key={feature} className="flex items-start gap-3">
-                    <CheckCircle className="w-5 h-5 text-emerald-400 mt-0.5 flex-shrink-0" />
-                    <span className="text-slate-200">{feature}</span>
+                    <CheckCircle className="w-5 h-5 text-[#D3A029] mt-0.5 flex-shrink-0" />
+                    <span className="text-[#E5E7EB]">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -149,17 +146,17 @@ export default function Investors() {
       </section>
 
       {/* Interactive Map Section */}
-      <section className="py-20 bg-gradient-to-br from-slate-50 to-gold-50">
+      <section className="py-20 bg-gradient-to-br from-[#FAF7F2] to-[#FEF3C7]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-gold-100 rounded-full px-4 py-2 mb-4">
-              <MapPin className="w-4 h-4 text-gold-600" />
-              <span className="text-sm font-semibold text-gold-900">Get Started</span>
+            <div className="inline-flex items-center gap-2 bg-[#FEF3C7] rounded-full px-4 py-2 mb-4">
+              <MapPin className="w-4 h-4 text-[#D3A029]" />
+              <span className="text-sm font-semibold text-[#92400E]">Get Started</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#111827] mb-4">
               Select Your Investment Market
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            <p className="text-xl text-[#6B7280] max-w-2xl mx-auto">
               Click on a state to begin your journey with verified agents in your target market
             </p>
           </div>
@@ -182,10 +179,10 @@ export default function Investors() {
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">
+            <h2 className="text-3xl md:text-4xl font-bold text-[#111827] mb-4">
               Built for Investor Protection
             </h2>
-            <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+            <p className="text-xl text-[#6B7280] max-w-2xl mx-auto">
               Every feature designed to prevent deal manipulation and secure your investments.
             </p>
           </div>
@@ -194,13 +191,13 @@ export default function Investors() {
             {benefits.map((benefit) => (
               <div 
                 key={benefit.title}
-                className="bg-slate-50 rounded-xl p-8 border border-slate-200 hover:shadow-lg transition-shadow"
+                className="rounded-3xl border border-[#E5E7EB] bg-[#F9FAFB] p-8 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all"
               >
-                <div className="w-12 h-12 bg-gold-100 rounded-lg flex items-center justify-center mb-4">
-                  <benefit.icon className="w-6 h-6 text-gold-600" />
+                <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center mb-4">
+                  <benefit.icon className="w-6 h-6 text-[#D3A029]" />
                 </div>
-                <h3 className="text-xl font-bold text-slate-900 mb-3">{benefit.title}</h3>
-                <p className="text-slate-600 leading-relaxed">{benefit.description}</p>
+                <h3 className="text-xl font-bold text-[#111827] mb-3">{benefit.title}</h3>
+                <p className="text-[#6B7280] leading-relaxed">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -208,47 +205,46 @@ export default function Investors() {
       </section>
 
       {/* FAQs */}
-      <section className="py-20 bg-slate-50">
+      <section className="py-20 bg-[#FAF7F2]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-12 text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#111827] mb-12 text-center">
             Frequently Asked Questions
           </h2>
           <div className="space-y-6">
             {faqs.map((faq) => (
-              <div key={faq.q} className="bg-white rounded-xl p-6 border border-slate-200">
-                <h3 className="text-lg font-bold text-slate-900 mb-3">{faq.q}</h3>
-                <p className="text-slate-600 leading-relaxed">{faq.a}</p>
+              <div key={faq.q} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+                <h3 className="text-lg font-bold text-[#111827] mb-3">{faq.q}</h3>
+                <p className="text-[#6B7280] leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
           <div className="text-center mt-12">
             <Link to={createPageUrl("FAQ")}>
-              <Button variant="outline">
+              <button className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#E5E7EB] bg-white px-6 py-3.5 text-base font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md hover:-translate-y-0.5">
                 View All FAQs
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </Link>
           </div>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="py-20 bg-gradient-to-br from-slate-900 to-gold-900 text-white">
+      <section className="py-20 bg-gradient-to-br from-[#111827] via-[#1F2937] to-[#D3A029]/80 text-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Ready to Find Your Verified Agent?
           </h2>
-          <p className="text-xl text-slate-300 mb-8">
+          <p className="text-xl text-[#E5E7EB] mb-8">
             Join thousands of investors who trust Investor Konnect for secure connections.
           </p>
-          <Button 
-            size="lg" 
-            className="bg-gold-600 hover:bg-gold-700 text-lg px-8 h-14"
+          <button 
+            className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
             onClick={() => navigate(createPageUrl("Pricing"))}
           >
             See Pricing & Plans
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </Button>
+            <ArrowRight className="w-5 h-5" />
+          </button>
         </div>
       </section>
     </div>
