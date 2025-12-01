@@ -37,8 +37,9 @@ export default function Pricing() {
   const getBlockingStep = () => {
     if (role !== 'investor') return null;
     if (!onboarded) return 'onboarding';
-    if (!kycVerified) return 'verification';
-    if (!hasNDA) return 'nda';
+    // DEMO MODE: Skip verification and NDA requirements
+    // if (!kycVerified) return 'verification';
+    // if (!hasNDA) return 'nda';
     return null;
   };
 
@@ -364,7 +365,7 @@ export default function Pricing() {
                       <Check className="w-4 h-4" />
                       Your Current Plan
                     </button>
-                  ) : !loading && role === 'investor' && !isInvestorReady && tier.planId !== 'enterprise' ? (
+                  ) : !loading && role === 'investor' && !onboarded && tier.planId !== 'enterprise' ? (
                     <button
                       className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#E5E5E5] text-[#666666] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled

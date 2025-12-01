@@ -170,11 +170,12 @@ export default function DealRooms() {
   useEffect(() => {
     if (!profileLoading) {
       setLoading(false);
-      if (onboarded && kycVerified && hasNDA) {
+      // DEMO MODE: Only require onboarding to load rooms - skip KYC/NDA checks
+      if (onboarded) {
         loadRooms();
       }
     }
-  }, [profileLoading, onboarded, kycVerified, hasNDA]);
+  }, [profileLoading, onboarded]);
 
   const loadRooms = async () => {
     try {
