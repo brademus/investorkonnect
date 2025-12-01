@@ -169,11 +169,14 @@ export function useCurrentProfile() {
         // STEP 3: Derive role
         let role = profile?.user_role || profile?.user_type || user.role || 'member';
         
+        // ADMIN BYPASS: Check if user is admin (from user.role or profile.role)
+        const isAdmin = user.role === 'admin' || profile?.role === 'admin';
+        
         // Normalize role
-        if (role === 'investor' || role === 'agent') {
-          // Keep as is
-        } else if (user.role === 'admin') {
+        if (isAdmin) {
           role = 'admin';
+        } else if (role === 'investor' || role === 'agent') {
+          // Keep as is
         } else {
           role = 'member';
         }
@@ -195,21 +198,21 @@ export function useCurrentProfile() {
             profile?.user_role === 'agent';
         }
 
-        // needsOnboarding = user has a role but hasn't completed onboarding
-        const needsOnboarding = (role === 'investor' || role === 'agent') && !onboarded;
+        // needsOnboarding = user has a role but hasn't completed onboarding (EXCEPT admins)
+        const needsOnboarding = !isAdmin && (role === 'investor' || role === 'agent') && !onboarded;
 
-        // STEP 5: KYC status
-        const kycStatus = profile?.kyc_status || 'unverified';
-        const kycVerified = kycStatus === 'approved';
+        // STEP 5: KYC status (admins auto-approved)
+        const kycStatus = isAdmin ? 'approved' : (profile?.kyc_status || 'unverified');
+        const kycVerified = isAdmin || kycStatus === 'approved';
         
-        // needsKyc = onboarding complete but KYC not verified
-        const needsKyc = onboarded && !kycVerified;
+        // needsKyc = onboarding complete but KYC not verified (EXCEPT admins)
+        const needsKyc = !isAdmin && onboarded && !kycVerified;
 
-        // STEP 6: NDA status
-        const hasNDA = profile?.nda_accepted || false;
+        // STEP 6: NDA status (admins auto-accepted)
+        const hasNDA = isAdmin || profile?.nda_accepted || false;
         
-        // needsNda = onboarding + KYC complete but NDA not accepted
-        const needsNda = onboarded && kycVerified && !hasNDA;
+        // needsNda = onboarding + KYC complete but NDA not accepted (EXCEPT admins)
+        const needsNda = !isAdmin && onboarded && kycVerified && !hasNDA;
 
         // STEP 7: Target state
         const targetState = profile?.target_state || profile?.markets?.[0] || null;
@@ -224,12 +227,13 @@ export function useCurrentProfile() {
           console.warn('[useCurrentProfile] Could not check rooms:', roomErr);
         }
 
-        // STEP 9: Determine if investor is fully ready
+        // STEP 9: Determine if investor is fully ready (admins are always ready)
         const isInvestorReady = 
-          role === 'investor' &&
+          isAdmin ||
+          (role === 'investor' &&
           onboarded &&
           kycVerified &&
-          hasNDA;
+          hasNDA);
 
         // STEP 10: Extract subscription info
         const subscriptionPlan = profile?.subscription_tier || 'none';

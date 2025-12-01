@@ -19,7 +19,7 @@ import ExperienceAccreditationStep from "@/components/investor-onboarding/Experi
 
 function InvestorOnboardingContent() {
   const navigate = useNavigate();
-  const { profile, refresh, kycVerified } = useCurrentProfile();
+  const { profile, refresh, kycVerified, user } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -72,6 +72,15 @@ function InvestorOnboardingContent() {
     AgentWorkingStep,
     ExperienceAccreditationStep
   ];
+
+  // ADMIN BYPASS: Skip onboarding for admin users
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      console.log('[InvestorOnboarding] Admin user - skipping to dashboard');
+      toast.success('Admin access granted - onboarding bypassed');
+      navigate(createPageUrl("Dashboard"), { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     document.title = "Complete Your Investor Profile - Investor Konnect";

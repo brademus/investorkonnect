@@ -29,6 +29,18 @@ function AdminContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [adminEmail, setAdminEmail] = useState("");
   const [ndaUpdating, setNdaUpdating] = useState({});
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalInvestors: 0,
+    totalAgents: 0,
+    totalDeals: 0,
+    activeDeals: 0,
+    completedDeals: 0,
+    verifiedUsers: 0,
+    pendingVerification: 0,
+    ndaSigned: 0,
+    recentActivity: []
+  });
 
   useEffect(() => {
     checkAdminAccess();
@@ -83,6 +95,40 @@ function AdminContent() {
 
       const allUsers = await base44.entities.User.filter({});
       setUsers(allUsers);
+
+      // Calculate stats
+      const totalUsers = allUsers.length;
+      const totalInvestors = allProfiles.filter(p => p.user_role === 'investor').length;
+      const totalAgents = allProfiles.filter(p => p.user_role === 'agent').length;
+      const verifiedUsers = allProfiles.filter(p => p.kyc_status === 'approved').length;
+      const pendingVerification = allProfiles.filter(p => !p.kyc_status || p.kyc_status === 'pending' || p.kyc_status === 'unverified').length;
+      const ndaSigned = allProfiles.filter(p => p.nda_accepted).length;
+
+      // Get deals if available
+      let totalDeals = 0;
+      let activeDeals = 0;
+      let completedDeals = 0;
+      try {
+        const allDeals = await base44.entities.Deal.filter({});
+        totalDeals = allDeals.length;
+        activeDeals = allDeals.filter(d => d.status === 'active').length;
+        completedDeals = allDeals.filter(d => d.status === 'completed' || d.status === 'closed').length;
+      } catch (e) {
+        // Deal entity might not exist
+      }
+
+      setStats({
+        totalUsers,
+        totalInvestors,
+        totalAgents,
+        totalDeals,
+        activeDeals,
+        completedDeals,
+        verifiedUsers,
+        pendingVerification,
+        ndaSigned,
+        recentActivity: allUsers.slice(0, 10).reverse() // Last 10 users
+      });
 
       console.log('[Admin] Data loaded:', {
         profiles: allProfiles.length,
@@ -249,10 +295,10 @@ Type "RESET" to confirm:`;
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Checking access...</p>
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <p className="text-[#6B7280]">Checking access...</p>
         </div>
       </div>
     );
@@ -260,11 +306,11 @@ Type "RESET" to confirm:`;
 
   if (!isAdmin) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <Card className="max-w-md w-full">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+        <Card className="max-w-md w-full rounded-3xl border border-[#E5E7EB] shadow-xl">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Shield className="w-6 h-6 text-red-600" />
+              <Shield className="w-6 h-6 text-[#DC2626]" />
               Access Denied
             </CardTitle>
             <CardDescription>
@@ -273,12 +319,12 @@ Type "RESET" to confirm:`;
           </CardHeader>
           <CardContent>
             <div className="space-y-3 text-sm">
-              <p className="text-slate-600">Your current status:</p>
-              <div className="bg-slate-50 p-3 rounded-lg">
+              <p className="text-[#6B7280]">Your current status:</p>
+              <div className="bg-[#F9FAFB] p-3 rounded-lg">
                 <p><strong>Email:</strong> {currentUser?.email || 'Not signed in'}</p>
                 <p><strong>User Role:</strong> {currentUser?.role || 'None'}</p>
               </div>
-              <p className="text-slate-600 mt-4">
+              <p className="text-[#6B7280] mt-4">
                 If you should have admin access, contact support or run the admin setup tool.
               </p>
             </div>
@@ -338,14 +384,156 @@ Type "RESET" to confirm:`;
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-[#FAF7F2] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-slate-900 mb-2 flex items-center gap-2">
-            <Shield className="w-8 h-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-[#111827] mb-2 flex items-center gap-2">
+            <Shield className="w-8 h-8 text-[#D3A029]" />
             Admin Panel
           </h1>
-          <p className="text-slate-600">System management and diagnostics</p>
+          <p className="text-[#6B7280]">System management and diagnostics</p>
+        </div>
+
+        {/* STATS DASHBOARD */}
+        <div className="mb-8">
+          <h2 className="text-xl font-bold text-[#111827] mb-4">Platform Statistics</h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {/* Total Users */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <Users className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Total Users</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.totalUsers}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Investors */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <Shield className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Investors</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.totalInvestors}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Agents */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <Users className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Agents</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.totalAgents}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Total Deals */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <FileText className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Total Deals</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.totalDeals}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Active Deals */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <CheckCircle className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Active Deals</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.activeDeals}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Verified Users */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <Shield className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Verified Users</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.verifiedUsers}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Pending Verification */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <AlertTriangle className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">Pending Verification</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.pendingVerification}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* NDA Signed */}
+            <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7]">
+                  <FileText className="h-6 w-6 text-[#D3A029]" />
+                </div>
+                <div>
+                  <p className="text-sm text-[#6B7280]">NDA Signed</p>
+                  <p className="text-2xl font-bold text-[#111827]">{stats.ndaSigned}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RECENT ACTIVITY */}
+        <div className="mb-8">
+          <div className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xl overflow-hidden">
+            <div className="border-b border-[#F3F4F6] px-6 py-5 sm:px-8">
+              <h2 className="text-lg font-semibold text-[#111827]">Recent Activity</h2>
+              <p className="text-sm text-[#6B7280] mt-1">Last 10 user signups</p>
+            </div>
+            <div className="px-6 py-6 sm:px-8">
+              <div className="space-y-4">
+                {stats.recentActivity.map((user, idx) => (
+                  <div key={idx} className="flex items-center justify-between border-b border-[#F3F4F6] pb-4 last:border-0 last:pb-0">
+                    <div>
+                      <p className="text-base font-medium text-[#111827]">{user.email}</p>
+                      <p className="text-sm text-[#6B7280]">
+                        {user.role || 'No role'} • {new Date(user.created_date).toLocaleDateString()}
+                      </p>
+                    </div>
+                    <span className={
+                      "inline-flex items-center rounded-full px-3 py-1 text-sm font-medium " +
+                      (user.role === 'admin' 
+                        ? "bg-[#FFFBEB] text-[#D3A029] border border-[#D3A029]"
+                        : "bg-[#F3F4F6] text-[#6B7280] border border-[#E5E7EB]")
+                    }>
+                      {user.role || 'user'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* DANGER ZONE */}

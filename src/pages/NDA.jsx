@@ -20,10 +20,41 @@ import { devLog } from "@/components/devLogger";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { loading, hasNDA, refresh, profile } = useCurrentProfile(); // Destructure profile
+  const { loading, hasNDA, refresh, profile, user } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
+
+  // ADMIN BYPASS: Auto-sign NDA for admin users
+  useEffect(() => {
+    const handleAdminNDA = async () => {
+      if (!loading && user?.role === 'admin') {
+        console.log('[NDA] Admin user detected - auto-signing NDA');
+        
+        try {
+          // Auto-sign NDA for admin if not already signed
+          if (profile && !profile.nda_accepted) {
+            await base44.entities.Profile.update(profile.id, {
+              nda_accepted: true,
+              nda_accepted_at: new Date().toISOString(),
+              nda_version: 'v1.0'
+            });
+            await refresh();
+          }
+          
+          // Redirect to Dashboard
+          toast.success('Admin access granted - NDA bypassed');
+          setTimeout(() => {
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          }, 500);
+        } catch (err) {
+          console.error('[NDA] Admin auto-sign error:', err);
+        }
+      }
+    };
+    
+    handleAdminNDA();
+  }, [loading, user, profile, navigate, refresh]);
 
   useEffect(() => {
     document.title = "NDA Required - Investor Konnect";

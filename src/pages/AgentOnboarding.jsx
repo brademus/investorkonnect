@@ -18,7 +18,7 @@ const COMMUNICATION_CHANNELS = ["Email", "Phone", "SMS/Text", "Video calls", "In
 
 function AgentOnboardingContent() {
   const navigate = useNavigate();
-  const { profile, refresh } = useCurrentProfile();
+  const { profile, refresh, user } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -35,6 +35,15 @@ function AgentOnboardingContent() {
   });
 
   const TOTAL_STEPS = 5;
+
+  // ADMIN BYPASS: Skip onboarding for admin users
+  useEffect(() => {
+    if (user?.role === 'admin') {
+      console.log('[AgentOnboarding] Admin user - skipping to dashboard');
+      toast.success('Admin access granted - onboarding bypassed');
+      navigate(createPageUrl("Dashboard"), { replace: true });
+    }
+  }, [user, navigate]);
 
   useEffect(() => {
     document.title = "Agent Onboarding - Investor Konnect";
