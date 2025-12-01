@@ -122,26 +122,6 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-4 sm:justify-start pt-2">
-              <button
-                type="button"
-                onClick={handleContinue}
-                disabled={!localState}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:shadow-[#D3A029]/40 hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-lg"
-              >
-                Submit your first deal
-              </button>
-              <Link to={createPageUrl("Investors")}>
-                <button className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#E5E7EB] bg-white px-6 py-3.5 text-base font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md hover:-translate-y-0.5">
-                  For investors
-                </button>
-              </Link>
-              <Link to={createPageUrl("Agents")}>
-                <button className="inline-flex items-center justify-center gap-2 rounded-full border-2 border-[#E5E7EB] bg-white px-6 py-3.5 text-base font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md hover:-translate-y-0.5">
-                  For agents
-                </button>
-              </Link>
-            </div>
           </section>
 
           {/* BIG MAP / STATE SELECTOR */}
