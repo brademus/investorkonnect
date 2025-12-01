@@ -79,7 +79,7 @@ export default function BillingSetup() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-blue-600" />
+            <Shield className="w-8 h-8 text-[#D3A029]" />
             <h1 className="text-3xl font-bold text-slate-900">Stripe Billing Setup</h1>
           </div>
           <p className="text-slate-600">Configure and validate Stripe integration</p>
@@ -237,7 +237,7 @@ export default function BillingSetup() {
                   <Button
                     onClick={handleValidate}
                     disabled={validating}
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className="bg-[#D3A029] hover:bg-[#B98413]"
                   >
                     {validating ? (
                       <>
@@ -398,14 +398,14 @@ export default function BillingSetup() {
 
               {/* Webhook Setup Instructions */}
               {validation?.ok && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
-                  <h3 className="font-semibold text-blue-900 mb-3">🎉 Configuration Valid!</h3>
-                  <p className="text-blue-800 mb-4">
+                <div className="bg-[#FEF3C7] border border-[#D3A029] rounded-xl p-6">
+                  <h3 className="font-semibold text-[#78350F] mb-3">🎉 Configuration Valid!</h3>
+                  <p className="text-[#78350F] mb-4">
                     Your pricing page is now wired. To complete the setup:
                   </p>
-                  <ol className="space-y-2 text-sm text-blue-800 ml-5 list-decimal">
+                  <ol className="space-y-2 text-sm text-[#78350F] ml-5 list-decimal">
                     <li>Go to Stripe Dashboard → Developers → Webhooks</li>
-                    <li>Add endpoint: <code className="bg-blue-100 px-2 py-0.5 rounded">
+                    <li>Add endpoint: <code className="bg-[#FDE68A] px-2 py-0.5 rounded">
                       https://investor-konnect-da3d088b.base44.app/functions/stripeWebhook
                     </code></li>
                     <li>Listen for events: checkout.session.completed, customer.subscription.updated, customer.subscription.deleted</li>

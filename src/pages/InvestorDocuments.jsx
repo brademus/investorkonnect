@@ -15,7 +15,7 @@ function InvestorDocumentsContent() {
         </Link>
         
         <div className="flex items-center gap-3 mb-8">
-          <FileText className="w-8 h-8 text-purple-600" />
+          <FileText className="w-8 h-8 text-[#D3A029]" />
           <h1 className="text-3xl font-bold text-slate-900">Documents</h1>
         </div>
 

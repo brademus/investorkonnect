@@ -78,14 +78,14 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Center nav – simple, small text links */}
-          <nav className="hidden items-center gap-8 text-sm font-medium text-[#4B5563] md:flex">
+          {/* Center nav – removed for cleaner homepage header */}
+          {/* <nav className="hidden items-center gap-8 text-sm font-medium text-[#4B5563] md:flex">
             <Link to={createPageUrl("Home")} className="hover:text-[#D3A029] transition-colors">Home</Link>
             <Link to={createPageUrl("HowItWorks")} className="hover:text-[#D3A029] transition-colors">How it works</Link>
             <Link to={createPageUrl("Pricing")} className="hover:text-[#D3A029] transition-colors">Pricing</Link>
             <Link to={createPageUrl("Investors")} className="hover:text-[#D3A029] transition-colors">For investors</Link>
             <Link to={createPageUrl("Agents")} className="hover:text-[#D3A029] transition-colors">For agents</Link>
-          </nav>
+          </nav> */}
 
           {/* Right: Auth */}
           <div className="flex items-center gap-3">

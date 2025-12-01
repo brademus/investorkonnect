@@ -67,7 +67,7 @@ export default function AccountBilling() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading your account...</p>
         </div>
       </div>
@@ -162,7 +162,7 @@ export default function AccountBilling() {
                 <AlertCircle className="w-12 h-12 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-slate-900 mb-2">No Active Subscription</h3>
                 <p className="text-slate-600 mb-6">Subscribe to access verified agents and deal rooms</p>
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => navigate(createPageUrl("Pricing"))}>
+                <Button className="bg-[#D3A029] hover:bg-[#B98413]" onClick={() => navigate(createPageUrl("Pricing"))}>
                   View Plans
                 </Button>
               </div>

@@ -51,7 +51,7 @@ export default function MyProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+        <Loader2 className="w-8 h-8 text-[#D3A029] animate-spin" />
       </div>
     );
   }
@@ -68,8 +68,8 @@ export default function MyProfile() {
 
         <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-              <User className="w-6 h-6 text-blue-600" />
+            <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
+              <User className="w-6 h-6 text-[#D3A029]" />
             </div>
             <div>
               <h2 className="text-xl font-semibold text-slate-900">
@@ -88,9 +88,9 @@ export default function MyProfile() {
               <Button 
                 onClick={toAccountEdit}
                 variant="outline"
-                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-blue-400 hover:bg-blue-50 transition-all"
+                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-[#D3A029] hover:bg-[#FEF3C7] transition-all"
               >
-                <Edit className="w-5 h-5 text-blue-600" />
+                <Edit className="w-5 h-5 text-[#D3A029]" />
                 <div className="text-left">
                   <div className="font-semibold text-slate-900">Edit Basic Profile</div>
                   <div className="text-xs text-slate-600">Name, email, contact info</div>
@@ -100,9 +100,9 @@ export default function MyProfile() {
               <Button 
                 onClick={toFullOnboarding}
                 variant="outline"
-                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-purple-400 hover:bg-purple-50 transition-all"
+                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-[#D3A029] hover:bg-[#FEF3C7] transition-all"
               >
-                <Layers className="w-5 h-5 text-purple-600" />
+                <Layers className="w-5 h-5 text-[#D3A029]" />
                 <div className="text-left">
                   <div className="font-semibold text-slate-900">Open Full Onboarding</div>
                   <div className="text-xs text-slate-600">Update all matching criteria</div>

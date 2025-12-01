@@ -70,14 +70,14 @@ function NewRoomModal({ open, onClose, onCreated }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="ik-card w-full max-w-lg overflow-hidden">
-        <div className="bg-[#D3A029] text-white p-6">
+        <div className="bg-white border-b border-[#E5E7EB] p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold">Create Deal Room</h3>
-            <button onClick={onClose} className="text-white/80 hover:text-white">
+            <h3 className="text-xl font-bold text-[#111827]">Create Deal Room</h3>
+            <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827]">
               <X className="w-6 h-6" />
             </button>
           </div>
-          <p className="text-white/80 text-sm mt-2">
+          <p className="text-[#6B7280] text-sm mt-2">
             Select a counterparty to start a secure deal room
           </p>
         </div>
