@@ -69,15 +69,15 @@ function NewRoomModal({ open, onClose, onCreated }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="ik-card w-full max-w-lg overflow-hidden">
-        <div className="bg-white border-b border-[#E5E7EB] p-6">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden">
+        <div className="bg-white border-b border-gray-200 p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-[#111827]">Create Deal Room</h3>
-            <button onClick={onClose} className="text-[#6B7280] hover:text-[#111827]">
+            <h3 className="text-xl font-bold text-gray-900">Create Deal Room</h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
               <X className="w-6 h-6" />
             </button>
           </div>
-          <p className="text-[#6B7280] text-sm mt-2">
+          <p className="text-gray-600 text-sm mt-2">
             Select a counterparty to start a secure deal room
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function DealRooms() {
   if (!onboarded) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
-        <div className="ik-card p-8 sm:p-10 max-w-lg w-full text-center">
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 sm:p-10 max-w-lg w-full text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mx-auto mb-6">
             <Lock className="w-8 h-8 text-[#D3A029]" />
           </div>
@@ -215,7 +215,7 @@ export default function DealRooms() {
             Finish onboarding to unlock secure deal room access.
           </p>
           <div className="space-y-4 text-left">
-            <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
+            <div className="bg-white rounded-3xl border border-gray-200 p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
                   <FileText className="w-5 h-5 text-[#D3A029]" />
@@ -263,35 +263,37 @@ export default function DealRooms() {
     <div className="min-h-screen bg-[#FAF7F2]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-12">
         {/* Header */}
-        <header className="mb-6 sm:mb-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
-                Deal Rooms
-              </h1>
-              <p className="mt-2 text-sm sm:text-base text-gray-600">
-                Secure collaboration spaces for your investor–agent deals.
-              </p>
+        <header className="mb-8 sm:mb-10">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                  Deal Rooms
+                </h1>
+                <p className="text-base sm:text-lg text-gray-600">
+                  Secure collaboration spaces for your investor–agent deals.
+                </p>
+              </div>
+              <button 
+                className="ik-btn-primary gap-2 px-6 py-3 text-base font-semibold shadow-md hover:shadow-lg transition-all"
+                onClick={() => setOpenNew(true)}
+              >
+                <Plus className="w-5 h-5" />
+                New Deal Room
+              </button>
             </div>
-            <button 
-              className="ik-btn-primary gap-2"
-              onClick={() => setOpenNew(true)}
-            >
-              <Plus className="w-5 h-5" />
-              New Deal Room
-            </button>
           </div>
         </header>
 
         {/* Protection Notice Banner */}
-        <section className="mb-6">
-          <div className="ik-card bg-[#FFFBEB] border-[#FDE68A] p-5 flex items-start gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
-              <Shield className="w-5 h-5 text-[#D3A029]" />
+        <section className="mb-8">
+          <div className="bg-gradient-to-r from-[#FFFBEB] to-[#FEF3C7] rounded-3xl border border-[#FDE68A] p-6 sm:p-8 flex items-start gap-5 shadow-sm">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-md flex-shrink-0">
+              <Shield className="w-7 h-7 text-[#D3A029]" />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-[#92400E]">Protected Environment</h3>
-              <p className="mt-1 text-sm text-[#92400E]/80">
+              <h3 className="text-lg font-bold text-[#92400E] mb-1">Protected Environment</h3>
+              <p className="text-base text-[#92400E]/90 leading-relaxed">
                 All deal rooms are verified and NDA-protected. Information shared here is confidential.
               </p>
             </div>
@@ -300,24 +302,24 @@ export default function DealRooms() {
 
         {/* Main Content Card */}
         <section className="mb-8">
-          <div className="ik-card">
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
             {rooms.length === 0 ? (
               /* Empty State */
-              <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mb-5">
-                  <Users className="w-8 h-8 text-[#D3A029]" />
+              <div className="flex flex-col items-center justify-center py-20 sm:py-24 px-6 text-center">
+                <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-lg mb-6">
+                  <Users className="w-12 h-12 text-[#D3A029]" />
                 </div>
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
                   No deal rooms yet
                 </h2>
-                <p className="mt-2 max-w-md text-sm sm:text-base text-gray-600">
+                <p className="mt-2 max-w-lg text-base sm:text-lg text-gray-600 leading-relaxed">
                   Create your first deal room to securely chat, track milestones, and manage contracts in one place.
                 </p>
                 <button 
-                  className="mt-6 ik-btn-primary gap-2"
+                  className="mt-8 ik-btn-primary gap-2 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
                   onClick={() => setOpenNew(true)}
                 >
-                  <Plus className="w-5 h-5" />
+                  <Plus className="w-6 h-6" />
                   Create Deal Room
                 </button>
               </div>
@@ -328,7 +330,7 @@ export default function DealRooms() {
                   {rooms.map((room) => (
                     <button 
                       key={room.id}
-                      className="ik-card ik-card-hover p-5 text-left flex flex-col gap-4 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200"
+                      className="bg-white rounded-3xl border border-gray-200 p-6 text-left flex flex-col gap-4 hover:shadow-xl hover:-translate-y-1 hover:border-[#D3A029] transition-all duration-300"
                       onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
                     >
                       <div className="flex items-start justify-between w-full">
@@ -382,30 +384,30 @@ export default function DealRooms() {
         {/* Features Strip */}
         <section className="mt-8">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
-                <Lock className="w-5 h-5 text-[#D3A029]" />
+            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 hover:shadow-xl hover:-translate-y-1 hover:border-[#D3A029] transition-all duration-300">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
+                <Lock className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900">NDA Protected</h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+              <h3 className="text-base font-bold text-gray-900 mb-2">NDA Protected</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 Every deal room is covered by your signed NDA, so conversations stay private.
               </p>
             </div>
-            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
-                <FileText className="w-5 h-5 text-[#D3A029]" />
+            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 hover:shadow-xl hover:-translate-y-1 hover:border-[#D3A029] transition-all duration-300">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
+                <FileText className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900">Audit Trail</h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+              <h3 className="text-base font-bold text-gray-900 mb-2">Audit Trail</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 Every action is logged for complete security and compliance tracking.
               </p>
             </div>
-            <div className="ik-card p-5 hover:shadow-md hover:-translate-y-[2px] transition-all duration-200">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] mb-3">
-                <Shield className="w-5 h-5 text-[#D3A029]" />
+            <div className="bg-white rounded-3xl border border-gray-200 p-6 sm:p-7 hover:shadow-xl hover:-translate-y-1 hover:border-[#D3A029] transition-all duration-300">
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
+                <Shield className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-sm font-semibold text-gray-900">Verified Users Only</h3>
-              <p className="mt-1 text-xs sm:text-sm text-gray-600">
+              <h3 className="text-base font-bold text-gray-900 mb-2">Verified Users Only</h3>
+              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
                 All participants are identity-verified and have signed the platform NDA.
               </p>
             </div>
