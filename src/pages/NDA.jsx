@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { devLog } from "@/components/devLogger";
+import { DEMO_MODE } from "@/components/config/demo";
 
 /**
  * STEP 6: NDA ACCEPTANCE
