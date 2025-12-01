@@ -201,8 +201,8 @@ export default function DealRooms() {
     );
   }
 
-  // Show gate if not ready
-  if (!onboarded || !kycVerified || !hasNDA) {
+  // DEMO MODE: Show gate only if not onboarded - skip verification/NDA checks
+  if (!onboarded) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
         <div className="ik-card p-8 sm:p-10 max-w-lg w-full text-center">
@@ -211,23 +211,22 @@ export default function DealRooms() {
           </div>
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">Complete Setup to Access Deal Rooms</h2>
           <p className="text-sm sm:text-base text-gray-600 mb-8">
-            Finish the steps below to unlock secure deal room access.
+            Finish onboarding to unlock secure deal room access.
           </p>
           <div className="space-y-4 text-left">
-            {!onboarded && (
-              <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
-                    <FileText className="w-5 h-5 text-[#D3A029]" />
-                  </div>
-                  <span className="font-medium text-gray-900">Complete onboarding</span>
+            <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                  <FileText className="w-5 h-5 text-[#D3A029]" />
                 </div>
-                <button onClick={() => navigate(createPageUrl(role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding'))} className="ik-btn-primary text-sm px-4 py-2">
-                  Start
-                </button>
+                <span className="font-medium text-gray-900">Complete onboarding</span>
               </div>
-            )}
-            {onboarded && !kycVerified && (
+              <button onClick={() => navigate(createPageUrl(role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding'))} className="ik-btn-primary text-sm px-4 py-2">
+                Start
+              </button>
+            </div>
+            {/* DEMO MODE: Verification and NDA steps hidden - not required */}
+            {/* {onboarded && !kycVerified && (
               <div className="ik-card p-4 flex items-center justify-between gap-4 hover:shadow-md transition-all">
                 <div className="flex items-center gap-3">
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
@@ -252,7 +251,7 @@ export default function DealRooms() {
                   Review
                 </button>
               </div>
-            )}
+            )} */}
           </div>
         </div>
       </div>
