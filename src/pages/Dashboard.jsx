@@ -34,6 +34,13 @@ function DashboardContent() {
     );
   }
 
+  // ADMIN BYPASS: Skip all checks for admins
+  if (user?.role === 'admin') {
+    console.log('[Dashboard] Admin user - bypassing all checks');
+    // Show investor dashboard by default for admins
+    return <InvestorHome />;
+  }
+
   // INVESTOR NOT ONBOARDED - Show blocking prompt
   if (role === 'investor' && !onboarded) {
     return (

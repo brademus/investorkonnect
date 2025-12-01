@@ -269,7 +269,7 @@ export default function Pricing() {
               }`}
             >
               Annual
-              <span className="text-xs bg-[#00A699] text-white px-2 py-0.5 rounded-full">Save 20%</span>
+              <span className="text-xs bg-[#D3A029] text-white px-2 py-0.5 rounded-full">Save 20%</span>
             </button>
           </div>
         </div>
@@ -298,7 +298,7 @@ export default function Pricing() {
                   {/* Most Popular Badge */}
                   {isPro && !isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-[#00A699] text-white text-sm font-medium px-4 py-1 rounded-full">
+                      <span className="bg-[#D3A029] text-white text-sm font-medium px-4 py-1 rounded-full">
                         Most Popular
                       </span>
                     </div>
@@ -333,7 +333,7 @@ export default function Pricing() {
                   <ul className="space-y-4 mb-8">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[#00A699] flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <div className="w-5 h-5 rounded-full bg-[#D3A029] flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Check className="w-3 h-3 text-white" />
                         </div>
                         <span className="text-[14px] text-[#333333]">{feature}</span>

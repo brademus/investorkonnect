@@ -15,18 +15,73 @@ export default function RoleSelection() {
     document.title = "Choose Your Role - Investor Konnect";
   }, []);
 
-  const handleRoleSelection = (chosenRole) => {
+  const handleRoleSelection = async (chosenRole) => {
     setSelectedChoice(chosenRole);
     setSelectedRole(chosenRole);
 
-    const params = new URLSearchParams();
-    if (selectedState) {
-      params.set('state', selectedState);
+    try {
+      // Check if user is already logged in
+      const user = await base44.auth.me();
+      
+      if (user) {
+        // User is logged in - update profile and go to onboarding
+        console.log('[RoleSelection] User already logged in, updating profile...');
+        
+        // Get or create profile
+        let profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        let profile = profiles[0];
+        
+        if (profile) {
+          // Update existing profile with role and state
+          await base44.entities.Profile.update(profile.id, {
+            user_role: chosenRole,
+            target_state: selectedState || profile.target_state,
+            markets: selectedState ? [selectedState] : profile.markets
+          });
+        } else {
+          // Create new profile
+          await base44.entities.Profile.create({
+            user_id: user.id,
+            email: user.email,
+            user_role: chosenRole,
+            role: 'member',
+            target_state: selectedState || null,
+            markets: selectedState ? [selectedState] : []
+          });
+        }
+        
+        // Navigate to appropriate onboarding
+        if (chosenRole === 'investor') {
+          navigate(createPageUrl("InvestorOnboarding"));
+        } else if (chosenRole === 'agent') {
+          navigate(createPageUrl("AgentOnboarding"));
+        }
+        
+      } else {
+        // User is NOT logged in - redirect to login with callback
+        console.log('[RoleSelection] User not logged in, redirecting to login...');
+        
+        const params = new URLSearchParams();
+        if (selectedState) {
+          params.set('state', selectedState);
+        }
+        params.set('intendedRole', chosenRole);
+        
+        const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
+        base44.auth.redirectToLogin(callbackUrl);
+      }
+    } catch (error) {
+      console.error('[RoleSelection] Error:', error);
+      // On error, try login flow
+      const params = new URLSearchParams();
+      if (selectedState) {
+        params.set('state', selectedState);
+      }
+      params.set('intendedRole', chosenRole);
+      
+      const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
+      base44.auth.redirectToLogin(callbackUrl);
     }
-    params.set('intendedRole', chosenRole);
-    
-    const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
-    base44.auth.redirectToLogin(callbackUrl);
   };
 
   return (
