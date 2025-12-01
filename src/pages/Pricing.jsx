@@ -76,13 +76,17 @@ export default function Pricing() {
       if (!onboarded) {
         toast.error("Please complete your investor profile first");
         navigate(createPageUrl("InvestorOnboarding"));
-      } else if (!kycVerified) {
-        toast.error("Please verify your identity first");
-        navigate(createPageUrl("Verify"));
-      } else if (!hasNDA) {
-        toast.error("Please accept the NDA first");
-        navigate(createPageUrl("NDA"));
       }
+      // DEMO MODE: Skip verification check - users can subscribe without KYC
+      // else if (!kycVerified) {
+      //   toast.error("Please verify your identity first");
+      //   navigate(createPageUrl("Verify"));
+      // }
+      // DEMO MODE: NDA not required for pricing - optional from dashboard only
+      // else if (!hasNDA) {
+      //   toast.error("Please accept the NDA first");
+      //   navigate(createPageUrl("NDA"));
+      // }
       return;
     }
 
@@ -149,10 +153,12 @@ export default function Pricing() {
     switch (blockingStep) {
       case 'onboarding':
         return { icon: Lock, text: "Complete your investor profile to unlock subscriptions", buttonText: "Complete Profile", onClick: () => navigate(createPageUrl("InvestorOnboarding")) };
-      case 'verification':
-        return { icon: Shield, text: "Verify your identity to unlock subscriptions", buttonText: "Verify Identity", onClick: () => navigate(createPageUrl("Verify")) };
-      case 'nda':
-        return { icon: Lock, text: "Accept the NDA to unlock subscriptions", buttonText: "Sign NDA", onClick: () => navigate(createPageUrl("NDA")) };
+      // DEMO MODE: Skip verification requirement
+      // case 'verification':
+      //   return { icon: Shield, text: "Verify your identity to unlock subscriptions", buttonText: "Verify Identity", onClick: () => navigate(createPageUrl("Verify")) };
+      // DEMO MODE: NDA not required for subscriptions
+      // case 'nda':
+      //   return { icon: Lock, text: "Accept the NDA to unlock subscriptions", buttonText: "Sign NDA", onClick: () => navigate(createPageUrl("NDA")) };
       default:
         return null;
     }

@@ -55,18 +55,20 @@ export default function AgentDirectory() {
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       return;
     }
-    const isKycVerified = kycVerified || profile?.kyc_status === 'approved';
-    if (!isKycVerified) {
-      toast.info("Verify your identity to access agent profiles");
-      navigate(createPageUrl("Verify"), { replace: true });
-      return;
-    }
-    const hasAcceptedNDA = hasNDA || profile?.nda_accepted;
-    if (!hasAcceptedNDA) {
-      toast.info("Accept NDA to access agent profiles");
-      navigate(createPageUrl("NDA"), { replace: true });
-      return;
-    }
+    // DEMO MODE: Skip verification check - users can access directory without KYC
+    // const isKycVerified = kycVerified || profile?.kyc_status === 'approved';
+    // if (!isKycVerified) {
+    //   toast.info("Verify your identity to access agent profiles");
+    //   navigate(createPageUrl("Verify"), { replace: true });
+    //   return;
+    // }
+    // DEMO MODE: NDA not required to access directories - optional from dashboard only
+    // const hasAcceptedNDA = hasNDA || profile?.nda_accepted;
+    // if (!hasAcceptedNDA) {
+    //   toast.info("Accept NDA to access agent profiles");
+    //   navigate(createPageUrl("NDA"), { replace: true });
+    //   return;
+    // }
     await loadAgents();
   };
 

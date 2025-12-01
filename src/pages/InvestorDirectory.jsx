@@ -55,16 +55,18 @@ export default function InvestorDirectory() {
       navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
-    if (!kycVerified) {
-      toast.info("Verify your identity to access investor profiles");
-      navigate(createPageUrl("Verify"), { replace: true });
-      return;
-    }
-    if (!hasNDA) {
-      toast.info("Accept NDA to access investor profiles");
-      navigate(createPageUrl("NDA"), { replace: true });
-      return;
-    }
+    // DEMO MODE: Skip verification check - users can access directory without KYC
+    // if (!kycVerified) {
+    //   toast.info("Verify your identity to access investor profiles");
+    //   navigate(createPageUrl("Verify"), { replace: true });
+    //   return;
+    // }
+    // DEMO MODE: NDA not required to access directories - optional from dashboard only
+    // if (!hasNDA) {
+    //   toast.info("Accept NDA to access investor profiles");
+    //   navigate(createPageUrl("NDA"), { replace: true });
+    //   return;
+    // }
     await loadInvestors();
   };
 
