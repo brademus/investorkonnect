@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { checkoutLite } from "@/components/functions";
+import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, X, ArrowRight, Shield, Zap, Crown, Lock, AlertCircle, Loader2, Check } from "lucide-react";
@@ -51,8 +51,7 @@ export default function Pricing() {
   };
 
   const handleGetStarted = async (plan) => {
-    // Debug: Check if function exists
-    console.log('[Pricing] checkoutLite function available:', typeof checkoutLite);
+    console.log('[Pricing] handleGetStarted called with plan:', plan);
     
     if (loading) {
       toast.info("Loading your account...");
@@ -93,16 +92,8 @@ export default function Pricing() {
     toast.loading("Opening checkout...", { id: toastId });
 
     try {
-      // Check if function exists
-      if (typeof checkoutLite !== 'function') {
-        toast.dismiss(toastId);
-        toast.error("Payment system not configured. Please contact support.");
-        console.error('[Pricing] checkoutLite function not available');
-        setCheckoutLoading(false);
-        return;
-      }
-      
-      const response = await checkoutLite({ plan });
+      console.log('[Pricing] Calling checkoutLite with plan:', plan);
+      const response = await base44.functions.invoke('checkoutLite', { plan });
 
       // Validate response
       if (!response || !response.data) {
