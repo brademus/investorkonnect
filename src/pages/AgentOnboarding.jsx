@@ -71,12 +71,10 @@ function AgentOnboardingContent() {
       const response = await upsertAgentOnboarding(formData);
       if (response.data?.ok) {
         await refresh();
-        toast.success("Profile completed! Next: verify your identity.");
+        toast.success("Profile completed! Welcome to Investor Konnect.");
         await new Promise(resolve => setTimeout(resolve, 300));
-        const nextStep = response.data.nextStep;
-        if (nextStep === 'verify') navigate(createPageUrl("Verify"), { replace: true });
-        else if (nextStep === 'nda') navigate(createPageUrl("NDA"), { replace: true });
-        else navigate(createPageUrl("Dashboard"), { replace: true });
+        // DEMO MODE: Skip Verify and NDA, go straight to Dashboard
+        navigate(createPageUrl("Dashboard"), { replace: true });
       } else { throw new Error(response.data?.message || 'Failed to save onboarding'); }
     } catch (error) {
       toast.error(error.message || "Failed to save. Please try again.");

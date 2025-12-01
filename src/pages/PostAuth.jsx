@@ -124,25 +124,8 @@ export default function PostAuth() {
           return;
         }
 
-        // STEP 6: Onboarding complete - check KYC
-        const kycVerified = profile?.kyc_status === 'approved';
-
-        if (!kycVerified) {
-          navigate(createPageUrl("Verify"), { replace: true });
-          setHasRouted(true);
-          return;
-        }
-
-        // STEP 7: KYC complete - check NDA
-        const hasNDA = profile?.nda_accepted;
-
-        if (!hasNDA) {
-          navigate(createPageUrl("NDA"), { replace: true });
-          setHasRouted(true);
-          return;
-        }
-
-        // STEP 8: All complete - go to Dashboard
+        // DEMO MODE: Skip KYC and NDA checks, go straight to Dashboard
+        // STEP 6-7: Skipped for demo purposes
         navigate(createPageUrl("Dashboard"), { replace: true });
         setHasRouted(true);
 

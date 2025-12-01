@@ -141,12 +141,9 @@ function InvestorOnboardingContent() {
       });
       await refresh();
       await new Promise(resolve => setTimeout(resolve, 300));
-      toast.success("Profile completed! Next: verify your identity.");
-      if (kycVerified) {
-        navigate(createPageUrl("NDA"), { replace: true });
-      } else {
-        navigate(createPageUrl("Verify"), { replace: true });
-      }
+      toast.success("Profile completed! Welcome to Investor Konnect.");
+      // DEMO MODE: Skip Verify and NDA, go straight to Dashboard
+      navigate(createPageUrl("Dashboard"), { replace: true });
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
