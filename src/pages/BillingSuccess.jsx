@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { matchInvestor, syncSubscription } from "@/components/functions";
+import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { CheckCircle, Loader2, ArrowRight, AlertCircle } from "lucide-react";
 
@@ -65,10 +65,9 @@ export default function BillingSuccess() {
       executed = true;
       
       console.log('[BillingSuccess] Starting subscription sync...', { sessionId });
-      console.log('[BillingSuccess] syncSubscription function available:', typeof syncSubscription);
 
       try {
-        const response = await syncSubscription({
+        const response = await base44.functions.invoke('syncSubscription', {
           session_id: sessionId
         });
 
@@ -93,7 +92,7 @@ export default function BillingSuccess() {
               setState(prev => ({ ...prev, syncing: false, matching: true }));
               
               try {
-                await matchInvestor();
+                await base44.functions.invoke('matchInvestor', {});
                 await refresh();
                 console.log('[BillingSuccess] Matching complete');
               } catch (matchErr) {

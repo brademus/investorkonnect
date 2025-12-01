@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { personaFinalize } from "@/components/functions";
+import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
 import { Loader2, Shield, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
@@ -127,23 +127,14 @@ function VerifyContent() {
         },
         
         onComplete: async ({ inquiryId, status, fields }) => {
-          console.log('[Verify] personaFinalize function available:', typeof personaFinalize);
           console.log('[Verify] Inquiry completed:', { inquiryId, status });
           
           setVerifying(true);
           
           try {
-            // Check if function exists
-            if (typeof personaFinalize !== 'function') {
-              toast.error("Verification system not configured. Please contact support.");
-              console.error('[Verify] personaFinalize function not available');
-              setVerifying(false);
-              setError('Verification system is not properly configured. Please contact support.');
-              return;
-            }
-            
             // Call backend to validate and update profile
-            const response = await personaFinalize({
+            console.log('[Verify] Calling personaFinalize...');
+            const response = await base44.functions.invoke('personaFinalize', {
               inquiryId,
               status
             });
