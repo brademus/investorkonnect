@@ -166,7 +166,7 @@ function InvestorBuyBoxContent() {
         </Link>
         
         <div className="flex items-center gap-3 mb-2">
-          <Target className="w-8 h-8 text-blue-600" />
+          <Target className="w-8 h-8 text-[#D3A029]" />
           <h1 className="text-3xl font-bold text-slate-900">Buy Box</h1>
         </div>
         <p className="text-slate-600 mb-8">Define your deal-level filters for property matching</p>
@@ -397,7 +397,7 @@ function InvestorBuyBoxContent() {
               <Button
                 type="submit"
                 disabled={saving || formData.asset_types.length === 0 || !formData.markets}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 bg-[#D3A029] hover:bg-[#B98413]"
               >
                 {saving ? (
                   <>

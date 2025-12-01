@@ -141,7 +141,7 @@ function AccountProfileContent() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading your profile...</p>
         </div>
       </div>
@@ -160,7 +160,7 @@ function AccountProfileContent() {
             Back to Profile
           </Link>
           <div className="flex items-center gap-3 mb-2">
-            <User className="w-8 h-8 text-blue-600" />
+            <User className="w-8 h-8 text-[#D3A029]" />
             <h1 className="text-3xl font-bold text-slate-900">Edit Profile</h1>
           </div>
           <p className="text-slate-600">Update your account information</p>
@@ -205,7 +205,7 @@ function AccountProfileContent() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                     formData.role === "investor" 
-                      ? "border-blue-600 bg-blue-50" 
+                      ? "border-[#D3A029] bg-[#FEF3C7]" 
                       : "border-slate-200 hover:border-slate-300"
                   } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center gap-3">
@@ -299,7 +299,7 @@ function AccountProfileContent() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
+                className="flex-1 bg-[#D3A029] hover:bg-[#B98413]"
               >
                 {saving ? (
                   <>
