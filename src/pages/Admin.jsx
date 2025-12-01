@@ -504,6 +504,50 @@ Type "RESET" to confirm:`;
           </div>
         </div>
 
+        {/* GRANT ADMIN ACCESS */}
+        <div className="mb-8">
+          <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-[#111827] mb-4">Grant Admin Access</h3>
+            <p className="text-sm text-[#6B7280] mb-4">
+              Make users admins to give them instant access without onboarding, verification, or NDA.
+            </p>
+            <div className="flex gap-3">
+              <input
+                type="email"
+                value={adminEmail}
+                onChange={(e) => setAdminEmail(e.target.value)}
+                placeholder="user@example.com"
+                className="flex-1 rounded-full border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 text-base focus:border-[#D3A029] focus:ring-2 focus:ring-[#D3A029]/20 focus:outline-none"
+              />
+              <button
+                onClick={async () => {
+                  if (!adminEmail) {
+                    toast.error('Please enter an email');
+                    return;
+                  }
+                  try {
+                    const foundUsers = await base44.entities.User.filter({ email: adminEmail });
+                    if (foundUsers.length > 0) {
+                      await base44.entities.User.update(foundUsers[0].id, { role: 'admin' });
+                      toast.success(`${adminEmail} is now an admin`);
+                      setAdminEmail('');
+                      await loadData();
+                    } else {
+                      toast.error('User not found');
+                    }
+                  } catch (err) {
+                    console.error('[Admin] Make admin error:', err);
+                    toast.error('Failed to grant admin access');
+                  }
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+              >
+                Make Admin
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* RECENT ACTIVITY */}
         <div className="mb-8">
           <div className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xl overflow-hidden">
