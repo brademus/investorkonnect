@@ -159,23 +159,26 @@ function MatchesContent() {
     }
   };
 
-  // Locked into existing room
+  // Locked into existing room - removed redirect logic, just show info
   if (existingRoom) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Lock className="w-10 h-10 text-blue-600" />
+      <>
+        <Header profile={profile} />
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              <div className="w-16 h-16 bg-[#FEF3C7] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Lock className="w-10 h-10 text-[#D3A029]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#111827] mb-2">Active Deal Room</h2>
+              <p className="text-[#6B7280] mb-6">
+                You already have an active deal room for {targetState}. Redirecting...
+              </p>
+              <Loader2 className="w-8 h-8 text-[#D3A029] animate-spin mx-auto" />
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">Active Deal Room</h2>
-            <p className="text-slate-600 mb-6">
-              You already have an active deal room for {targetState}. Redirecting...
-            </p>
-            <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto" />
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
