@@ -349,11 +349,11 @@ function AgentOnboardingContent() {
       </div>
       <div className="max-w-[600px] mx-auto px-4 pb-12">
         <div className="bg-white rounded-3xl p-12 border border-[#E5E5E5] max-h-[calc(100vh-220px)] overflow-y-auto" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          {step === 1 && <Step1 />}
-          {step === 2 && <Step2 />}
-          {step === 3 && <Step3 />}
-          {step === 4 && <Step4 />}
-          {step === 5 && <Step5 />}
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
+          {step === 5 && renderStep5()}
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E5E5]">
             {step > 1 ? (<button onClick={handleBack} disabled={saving} className="text-[#666666] hover:text-black font-medium transition-colors">← Back</button>) : <div />}
             <div className="flex gap-3">
