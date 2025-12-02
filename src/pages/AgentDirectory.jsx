@@ -166,17 +166,17 @@ export default function AgentDirectory() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-12">
         {/* Page Header */}
         <header className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827]">
             Find your perfect agent match
           </h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-2xl">
+          <p className="mt-2 text-sm sm:text-base text-[#4B5563] max-w-2xl">
             Browse our network of verified, investor-friendly agents and connect with the ones who fit your strategy and market.
           </p>
         </header>
 
         {/* Search & Filter Card */}
         <section className="mb-6 sm:mb-8">
-          <div className="ik-card p-5 sm:p-6">
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-5 sm:p-6">
             <div className="flex flex-col gap-4 sm:gap-3">
               {/* Search row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -260,7 +260,7 @@ export default function AgentDirectory() {
         {/* Agent Cards Grid */}
         <section>
           {filteredAgents.length === 0 ? (
-            <div className="ik-card flex flex-col items-center justify-center py-16 px-6 text-center">
+            <div className="bg-white border border-gray-200 rounded-3xl flex flex-col items-center justify-center py-16 px-6 text-center">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mb-5">
                 <Search className="w-8 h-8 text-[#D3A029]" />
               </div>
@@ -291,7 +291,7 @@ export default function AgentDirectory() {
                 return (
                   <div
                     key={agent.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
+                    className="bg-white rounded-3xl shadow-sm border border-gray-200 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
                   >
                     {/* Header Band */}
                     <div className="h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A]" />
