@@ -74,29 +74,13 @@ export default function PostAuth() {
             profile?.user_role === 'agent';
         }
 
-        // STEP 5: If no onboarding, route to onboarding
-        if (!hasNewOnboarding) {
-          
-          // Update profile with role + state if provided
-          if (profile && (intendedRole || stateParam)) {
-            const updates = {};
-            
-            if (intendedRole) {
-              updates.user_role = intendedRole;
-            }
-            
-            if (stateParam) {
-              updates.target_state = stateParam;
-              updates.markets = [stateParam];
-            }
-            
-            try {
-              await base44.entities.Profile.update(profile.id, updates);
-            } catch (updateErr) {
-              // Silent fail - will retry on next attempt
-            }
-          } else if (!profile && user) {
-            // Create profile if doesn't exist
+        // STEP 5: Check if user has simple onboarding (location + role)
+        const hasSimpleOnboarding = !!(profile?.target_state && profile?.user_role);
+        
+        // If no simple onboarding, redirect to SimpleOnboarding
+        if (!hasSimpleOnboarding) {
+          // Create profile if doesn't exist
+          if (!profile && user) {
             try {
               await base44.entities.Profile.create({
                 user_id: user.id,
@@ -111,13 +95,20 @@ export default function PostAuth() {
             }
           }
           
+          navigate(createPageUrl("SimpleOnboarding"), { replace: true });
+          setHasRouted(true);
+          return;
+        }
+        
+        // If simple onboarding done but full onboarding not done, route to full onboarding
+        if (!hasNewOnboarding) {
           // Route to onboarding based on role
           if (effectiveRole === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (effectiveRole === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            navigate(createPageUrl("RoleSelection"), { replace: true });
+            navigate(createPageUrl("Dashboard"), { replace: true });
           }
           
           setHasRouted(true);

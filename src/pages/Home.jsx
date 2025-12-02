@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useWizard } from "@/components/WizardContext";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { MapPin, Shield, CheckCircle, Search, Home as HomeIcon, ChevronRight } from "lucide-react";
+import { MapPin, Shield, CheckCircle, Search, Home as HomeIcon, ChevronRight, ArrowRight } from "lucide-react";
 
 const US_STATES = [
   { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
@@ -53,9 +53,26 @@ export default function Home() {
           markets: [localState.code]
         });
       } catch (err) {}
+      // Go to simple onboarding to pick role
+      navigate(createPageUrl("SimpleOnboarding"));
+    } else {
+      // Not logged in - redirect to login first
+      const callbackUrl = `${createPageUrl("PostAuth")}?state=${localState.code}`;
+      base44.auth.redirectToLogin(callbackUrl);
     }
+  };
 
-    navigate(createPageUrl("RoleSelection"));
+  const handleSubmitDeal = () => {
+    if (user && profile?.target_state && profile?.user_role) {
+      // Fully onboarded, go to deal wizard
+      navigate(createPageUrl("DealWizard"));
+    } else if (user) {
+      // Logged in but needs onboarding
+      navigate(createPageUrl("SimpleOnboarding"));
+    } else {
+      // Not logged in
+      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+    }
   };
 
   const handleLogin = () => {
@@ -120,6 +137,17 @@ export default function Home() {
                 how to work with real estate investors, then keeps everything in one shared
                 deal room.
               </p>
+              
+              {/* Primary CTA */}
+              <div className="mt-8">
+                <button
+                  onClick={handleSubmitDeal}
+                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  Submit Your First Deal
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </div>
             </div>
 
           </section>
