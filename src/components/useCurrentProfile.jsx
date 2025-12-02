@@ -153,7 +153,7 @@ export function useCurrentProfile() {
             profile = meData.profile;
           }
         } catch (fetchErr) {
-          console.log('[useCurrentProfile] /functions/me not available, querying Profile directly');
+          // Silent fallback - no logging for regular users
         }
         
         // Fallback: query Profile entity directly
