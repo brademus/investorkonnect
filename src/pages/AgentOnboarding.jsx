@@ -91,7 +91,21 @@ function AgentOnboardingContent() {
     }
   };
 
-  const Step1 = () => (
+  // Helper to update form field without losing focus
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleArrayItem = (field, item) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].includes(item)
+        ? prev[field].filter(i => i !== item)
+        : [...prev[field], item]
+    }));
+  };
+
+  const renderStep1 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-black mb-2">Basic info & work style</h3>
       <p className="text-[16px] text-[#666666] mb-8 leading-relaxed">Tell us about yourself and how you work</p>
@@ -99,33 +113,33 @@ function AgentOnboardingContent() {
       <div className="space-y-6">
         <div>
           <Label htmlFor="full_name">Full Name *</Label>
-          <Input id="full_name" value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} placeholder="Your full name" required className="h-12 text-[16px]" />
+          <Input id="full_name" value={formData.full_name} onChange={(e) => updateField('full_name', e.target.value)} placeholder="Your full name" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="phone">Phone Number *</Label>
-          <Input id="phone" type="tel" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="(555) 123-4567" required className="h-12 text-[16px]" />
+          <Input id="phone" type="tel" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} placeholder="(555) 123-4567" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label>Are you a full-time real estate agent? *</Label>
           <div className="flex gap-4 mt-2">
-            <button type="button" onClick={() => setFormData({ ...formData, is_full_time_agent: true })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.is_full_time_agent === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
-            <button type="button" onClick={() => setFormData({ ...formData, is_full_time_agent: false })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.is_full_time_agent === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
+            <button type="button" onClick={() => updateField('is_full_time_agent', true)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.is_full_time_agent === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
+            <button type="button" onClick={() => updateField('is_full_time_agent', false)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.is_full_time_agent === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
           </div>
         </div>
         <div>
           <Label htmlFor="experience_years">Years of Real Estate Experience *</Label>
-          <Input id="experience_years" type="number" min="0" value={formData.experience_years} onChange={(e) => setFormData({ ...formData, experience_years: e.target.value })} placeholder="e.g., 5" required className="h-12 text-[16px]" />
+          <Input id="experience_years" type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} placeholder="e.g., 5" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="investor_experience_years">Years Working with Investors *</Label>
-          <Input id="investor_experience_years" type="number" min="0" value={formData.investor_experience_years} onChange={(e) => setFormData({ ...formData, investor_experience_years: e.target.value })} placeholder="e.g., 3" required className="h-12 text-[16px]" />
+          <Input id="investor_experience_years" type="number" min="0" value={formData.investor_experience_years} onChange={(e) => updateField('investor_experience_years', e.target.value)} placeholder="e.g., 3" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label>Languages Spoken *</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {LANGUAGES.map((lang) => (
               <div key={lang} className="flex items-center gap-2">
-                <Checkbox id={`lang-${lang}`} checked={formData.languages_spoken.includes(lang)} onCheckedChange={(checked) => { if (checked) { setFormData({ ...formData, languages_spoken: [...formData.languages_spoken, lang] }); } else { setFormData({ ...formData, languages_spoken: formData.languages_spoken.filter(l => l !== lang) }); } }} />
+                <Checkbox id={`lang-${lang}`} checked={formData.languages_spoken.includes(lang)} onCheckedChange={() => toggleArrayItem('languages_spoken', lang)} />
                 <Label htmlFor={`lang-${lang}`} className="text-sm font-normal cursor-pointer">{lang}</Label>
               </div>
             ))}
@@ -136,7 +150,7 @@ function AgentOnboardingContent() {
           <div className="grid grid-cols-2 gap-2 mt-2">
             {COMMUNICATION_CHANNELS.map((channel) => (
               <div key={channel} className="flex items-center gap-2">
-                <Checkbox id={`comm-${channel}`} checked={formData.preferred_communication_channels.includes(channel)} onCheckedChange={(checked) => { if (checked) { setFormData({ ...formData, preferred_communication_channels: [...formData.preferred_communication_channels, channel] }); } else { setFormData({ ...formData, preferred_communication_channels: formData.preferred_communication_channels.filter(c => c !== channel) }); } }} />
+                <Checkbox id={`comm-${channel}`} checked={formData.preferred_communication_channels.includes(channel)} onCheckedChange={() => toggleArrayItem('preferred_communication_channels', channel)} />
                 <Label htmlFor={`comm-${channel}`} className="text-sm font-normal cursor-pointer">{channel}</Label>
               </div>
             ))}
@@ -145,21 +159,21 @@ function AgentOnboardingContent() {
         <div>
           <Label>Do you work in a team? *</Label>
           <div className="flex gap-4 mt-2">
-            <button type="button" onClick={() => setFormData({ ...formData, works_in_team: true })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.works_in_team === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
-            <button type="button" onClick={() => setFormData({ ...formData, works_in_team: false })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.works_in_team === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
+            <button type="button" onClick={() => updateField('works_in_team', true)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.works_in_team === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
+            <button type="button" onClick={() => updateField('works_in_team', false)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.works_in_team === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
           </div>
         </div>
         {formData.works_in_team && (
           <div>
             <Label htmlFor="team_role_notes">Describe your role in the team</Label>
-            <Textarea id="team_role_notes" value={formData.team_role_notes} onChange={(e) => setFormData({ ...formData, team_role_notes: e.target.value })} placeholder="e.g., Lead buyer's agent, transaction coordinator, etc." rows={3} className="text-[16px]" />
+            <Textarea id="team_role_notes" value={formData.team_role_notes} onChange={(e) => updateField('team_role_notes', e.target.value)} placeholder="e.g., Lead buyer's agent, transaction coordinator, etc." rows={3} className="text-[16px]" />
           </div>
         )}
       </div>
     </div>
   );
 
-  const Step2 = () => (
+  const renderStep2 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-black mb-2">License & credentials</h3>
       <p className="text-[16px] text-[#666666] mb-8 leading-relaxed">We'll verify your license later</p>
@@ -167,25 +181,25 @@ function AgentOnboardingContent() {
       <div className="space-y-6">
         <div>
           <Label htmlFor="license_number">License Number *</Label>
-          <Input id="license_number" value={formData.license_number} onChange={(e) => setFormData({ ...formData, license_number: e.target.value })} placeholder="e.g., TX-123456" required className="h-12 text-[16px]" />
+          <Input id="license_number" value={formData.license_number} onChange={(e) => updateField('license_number', e.target.value)} placeholder="e.g., TX-123456" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="license_state">License State *</Label>
-          <select id="license_state" value={formData.license_state} onChange={(e) => setFormData({ ...formData, license_state: e.target.value })} required className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px]">
+          <select id="license_state" value={formData.license_state} onChange={(e) => updateField('license_state', e.target.value)} required className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px]">
             <option value="">Select state</option>
             {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </div>
         <div>
           <Label htmlFor="license_type">License Type *</Label>
-          <Input id="license_type" value={formData.license_type} onChange={(e) => setFormData({ ...formData, license_type: e.target.value })} placeholder="e.g., Broker, Salesperson" required className="h-12 text-[16px]" />
+          <Input id="license_type" value={formData.license_type} onChange={(e) => updateField('license_type', e.target.value)} placeholder="e.g., Broker, Salesperson" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label>Licensed in other states?</Label>
           <div className="grid grid-cols-4 gap-2 mt-2 max-h-48 overflow-y-auto">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-2">
-                <Checkbox id={`state-${state}`} checked={formData.licensed_states.includes(state)} onCheckedChange={(checked) => { if (checked) { setFormData({ ...formData, licensed_states: [...formData.licensed_states, state] }); } else { setFormData({ ...formData, licensed_states: formData.licensed_states.filter(s => s !== state) }); } }} />
+                <Checkbox id={`state-${state}`} checked={formData.licensed_states.includes(state)} onCheckedChange={() => toggleArrayItem('licensed_states', state)} />
                 <Label htmlFor={`state-${state}`} className="text-sm font-normal cursor-pointer">{state}</Label>
               </div>
             ))}
@@ -194,15 +208,15 @@ function AgentOnboardingContent() {
         <div>
           <Label>Any disciplinary history? *</Label>
           <div className="flex gap-4 mt-2">
-            <button type="button" onClick={() => setFormData({ ...formData, has_discipline_history: true })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.has_discipline_history === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
-            <button type="button" onClick={() => setFormData({ ...formData, has_discipline_history: false })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.has_discipline_history === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
+            <button type="button" onClick={() => updateField('has_discipline_history', true)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.has_discipline_history === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
+            <button type="button" onClick={() => updateField('has_discipline_history', false)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.has_discipline_history === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
           </div>
         </div>
       </div>
     </div>
   );
 
-  const Step3 = () => (
+  const renderStep3 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-black mb-2">Your markets & specialties</h3>
       <p className="text-[16px] text-[#666666] mb-8 leading-relaxed">What markets and property types do you focus on?</p>
@@ -213,7 +227,7 @@ function AgentOnboardingContent() {
           <div className="grid grid-cols-4 gap-2 mt-2 max-h-48 overflow-y-auto">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-2">
-                <Checkbox id={`market-${state}`} checked={formData.markets.includes(state)} onCheckedChange={(checked) => { if (checked) { setFormData({ ...formData, markets: [...formData.markets, state] }); } else { setFormData({ ...formData, markets: formData.markets.filter(s => s !== state) }); } }} />
+                <Checkbox id={`market-${state}`} checked={formData.markets.includes(state)} onCheckedChange={() => toggleArrayItem('markets', state)} />
                 <Label htmlFor={`market-${state}`} className="text-sm font-normal cursor-pointer">{state}</Label>
               </div>
             ))}
@@ -221,26 +235,26 @@ function AgentOnboardingContent() {
         </div>
         <div>
           <Label htmlFor="neighborhoods">Key neighborhoods or areas of expertise</Label>
-          <Textarea id="neighborhoods" value={formData.primary_neighborhoods_notes} onChange={(e) => setFormData({ ...formData, primary_neighborhoods_notes: e.target.value })} placeholder="e.g., Downtown Austin, East Nashville, etc." rows={3} className="text-[16px]" />
+          <Textarea id="neighborhoods" value={formData.primary_neighborhoods_notes} onChange={(e) => updateField('primary_neighborhoods_notes', e.target.value)} placeholder="e.g., Downtown Austin, East Nashville, etc." rows={3} className="text-[16px]" />
         </div>
         <div>
           <Label>Do you source off-market deals? *</Label>
           <div className="flex gap-4 mt-2">
-            <button type="button" onClick={() => setFormData({ ...formData, sources_off_market: true })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.sources_off_market === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
-            <button type="button" onClick={() => setFormData({ ...formData, sources_off_market: false })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.sources_off_market === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
+            <button type="button" onClick={() => updateField('sources_off_market', true)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.sources_off_market === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
+            <button type="button" onClick={() => updateField('sources_off_market', false)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.sources_off_market === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
           </div>
         </div>
         {formData.sources_off_market && (
           <div>
             <Label htmlFor="off_market_methods">How do you source off-market deals?</Label>
-            <Textarea id="off_market_methods" value={formData.off_market_methods_notes} onChange={(e) => setFormData({ ...formData, off_market_methods_notes: e.target.value })} placeholder="Direct mail, networking, wholesalers, etc." rows={3} className="text-[16px]" />
+            <Textarea id="off_market_methods" value={formData.off_market_methods_notes} onChange={(e) => updateField('off_market_methods_notes', e.target.value)} placeholder="Direct mail, networking, wholesalers, etc." rows={3} className="text-[16px]" />
           </div>
         )}
       </div>
     </div>
   );
 
-  const Step4 = () => (
+  const renderStep4 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-black mb-2">Your investor clients</h3>
       <p className="text-[16px] text-[#666666] mb-8 leading-relaxed">Help us understand your investor experience</p>
@@ -248,38 +262,38 @@ function AgentOnboardingContent() {
       <div className="space-y-6">
         <div>
           <Label htmlFor="investor_clients_count">How many investor clients have you worked with? *</Label>
-          <Input id="investor_clients_count" type="number" min="0" value={formData.investor_clients_count} onChange={(e) => setFormData({ ...formData, investor_clients_count: e.target.value })} placeholder="e.g., 15" required className="h-12 text-[16px]" />
+          <Input id="investor_clients_count" type="number" min="0" value={formData.investor_clients_count} onChange={(e) => updateField('investor_clients_count', e.target.value)} placeholder="e.g., 15" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="active_client_count">Current active clients</Label>
-          <Input id="active_client_count" type="number" min="0" value={formData.active_client_count} onChange={(e) => setFormData({ ...formData, active_client_count: e.target.value })} placeholder="e.g., 5" className="h-12 text-[16px]" />
+          <Input id="active_client_count" type="number" min="0" value={formData.active_client_count} onChange={(e) => updateField('active_client_count', e.target.value)} placeholder="e.g., 5" className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="investment_deals_last_12m">Investment deals closed in last 12 months *</Label>
-          <Input id="investment_deals_last_12m" type="number" min="0" value={formData.investment_deals_last_12m} onChange={(e) => setFormData({ ...formData, investment_deals_last_12m: e.target.value })} placeholder="e.g., 8" required className="h-12 text-[16px]" />
+          <Input id="investment_deals_last_12m" type="number" min="0" value={formData.investment_deals_last_12m} onChange={(e) => updateField('investment_deals_last_12m', e.target.value)} placeholder="e.g., 8" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label>Do you personally invest in real estate? *</Label>
           <div className="flex gap-4 mt-2">
-            <button type="button" onClick={() => setFormData({ ...formData, personally_invests: true })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.personally_invests === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
-            <button type="button" onClick={() => setFormData({ ...formData, personally_invests: false })} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.personally_invests === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
+            <button type="button" onClick={() => updateField('personally_invests', true)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.personally_invests === true ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>Yes</button>
+            <button type="button" onClick={() => updateField('personally_invests', false)} className={`flex-1 py-3 px-4 rounded-lg border-2 transition-all ${formData.personally_invests === false ? 'border-[#D4AF37] bg-[#FFFBEB] text-[#92400E] font-semibold' : 'border-[#E5E5E5] bg-white text-[#666666] hover:border-[#D4AF37]'}`}>No</button>
           </div>
         </div>
         {formData.personally_invests && (
           <div>
             <Label htmlFor="personal_investing_notes">Tell us about your personal investing experience</Label>
-            <Textarea id="personal_investing_notes" value={formData.personal_investing_notes} onChange={(e) => setFormData({ ...formData, personal_investing_notes: e.target.value })} placeholder="What properties do you own? What strategies?" rows={3} className="text-[16px]" />
+            <Textarea id="personal_investing_notes" value={formData.personal_investing_notes} onChange={(e) => updateField('personal_investing_notes', e.target.value)} placeholder="What properties do you own? What strategies?" rows={3} className="text-[16px]" />
           </div>
         )}
         <div>
           <Label htmlFor="what_sets_apart">What sets you apart for investors? *</Label>
-          <Textarea id="what_sets_apart" value={formData.what_sets_you_apart} onChange={(e) => setFormData({ ...formData, what_sets_you_apart: e.target.value })} placeholder="Your unique value proposition..." rows={4} required className="text-[16px]" />
+          <Textarea id="what_sets_apart" value={formData.what_sets_you_apart} onChange={(e) => updateField('what_sets_you_apart', e.target.value)} placeholder="Your unique value proposition..." rows={4} required className="text-[16px]" />
         </div>
       </div>
     </div>
   );
 
-  const Step5 = () => (
+  const renderStep5 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-black mb-2">Final details</h3>
       <p className="text-[16px] text-[#666666] mb-8 leading-relaxed">Last few questions and your bio</p>
@@ -287,19 +301,19 @@ function AgentOnboardingContent() {
       <div className="space-y-6">
         <div>
           <Label htmlFor="commission_structure">Commission structure *</Label>
-          <Input id="commission_structure" value={formData.commission_structure} onChange={(e) => setFormData({ ...formData, commission_structure: e.target.value })} placeholder="e.g., Standard 3%, negotiable on volume" required className="h-12 text-[16px]" />
+          <Input id="commission_structure" value={formData.commission_structure} onChange={(e) => updateField('commission_structure', e.target.value)} placeholder="e.g., Standard 3%, negotiable on volume" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="typical_response_time">Typical response time to investor inquiries *</Label>
-          <Input id="typical_response_time" value={formData.typical_response_time} onChange={(e) => setFormData({ ...formData, typical_response_time: e.target.value })} placeholder="e.g., Within 2 hours" required className="h-12 text-[16px]" />
+          <Input id="typical_response_time" value={formData.typical_response_time} onChange={(e) => updateField('typical_response_time', e.target.value)} placeholder="e.g., Within 2 hours" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="update_frequency">How often do you update clients? *</Label>
-          <Input id="update_frequency" value={formData.update_frequency} onChange={(e) => setFormData({ ...formData, update_frequency: e.target.value })} placeholder="e.g., Weekly or as needed" required className="h-12 text-[16px]" />
+          <Input id="update_frequency" value={formData.update_frequency} onChange={(e) => updateField('update_frequency', e.target.value)} placeholder="e.g., Weekly or as needed" required className="h-12 text-[16px]" />
         </div>
         <div>
           <Label htmlFor="bio">Your bio (for your profile) *</Label>
-          <Textarea id="bio" value={formData.bio} onChange={(e) => setFormData({ ...formData, bio: e.target.value })} placeholder="Introduce yourself and highlight your experience with investor clients..." rows={5} required className="text-[16px]" />
+          <Textarea id="bio" value={formData.bio} onChange={(e) => updateField('bio', e.target.value)} placeholder="Introduce yourself and highlight your experience with investor clients..." rows={5} required className="text-[16px]" />
           <p className="text-sm text-[#666666] mt-1">This will appear on your public profile</p>
         </div>
         <div className="bg-emerald-50 border-2 border-emerald-200 rounded-lg p-6">
