@@ -74,8 +74,7 @@ export default function AgentHome() {
   const handleStartKyc = () => {
     if (!user) { base44.auth.redirectToLogin(createPageUrl("PostAuth")); return; }
     if (needsOnboarding) { navigate(createPageUrl("AgentOnboarding")); return; }
-    // DEMO MODE: Skip verification check
-    // if (needsKyc) { navigate(createPageUrl("Verify")); return; }
+    if (needsKyc) { navigate(createPageUrl("Verify")); return; }
   };
 
   return (
