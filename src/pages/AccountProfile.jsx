@@ -70,50 +70,28 @@ function AccountProfileContent() {
     setSaving(true);
 
     try {
-      const payload = {
+      const updateData = {
         full_name: formData.full_name.trim(),
-        user_role: formData.role,  // Changed from 'role' to 'user_role'
-        user_type: formData.role,  // Also set user_type for consistency
+        user_role: formData.role,
+        user_type: formData.role,
         company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
-        goals: formData.goals.trim(),
-        complete: false // Don't reset onboarding status
+        goals: formData.goals.trim()
       };
 
-      console.log('[AccountProfile] 📤 Payload:', payload);
+      console.log('[AccountProfile] 📤 Updating profile:', updateData);
 
-      // Call onboardingComplete to update profile
-      const response = await fetch('/functions/onboardingComplete', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
-
-      const responseText = await response.text();
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (parseError) {
-        throw new Error('Invalid server response');
-      }
-
-      if (!response.ok || (!result.ok && !result.success)) {
-        throw new Error(result.message || result.error || 'Save failed');
-      }
+      // Directly update the Profile entity
+      await base44.entities.Profile.update(profile.id, updateData);
 
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // After save, always go back to the previous page
-      console.log('[AccountProfile] ✅ Profile saved, navigating back');
+      // Navigate to MyProfile page
       setTimeout(() => {
-        navigate(-1); // Go back to previous page
+        navigate(createPageUrl("MyProfile"));
       }, 500);
 
     } catch (error) {
