@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
@@ -6,17 +5,12 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, MapPin, FileText, Users, Building2, Star, 
-  CheckCircle, ArrowRight, Search
+  CheckCircle, ArrowRight
 } from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
   const { loading, user, profile } = useCurrentProfile();
-  const [selectedMarket, setSelectedMarket] = useState("");
-
-  const handleFindAgents = () => {
-    navigate(createPageUrl("AgentDirectory"));
-  };
 
   const handleLogin = () => {
     base44.auth.redirectToLogin(createPageUrl("PostAuth"));
@@ -77,29 +71,14 @@ export default function Home() {
             Find vetted investor-friendly agents in your target market instantly.
           </p>
 
-          {/* Search Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <select
-                value={selectedMarket}
-                onChange={(e) => setSelectedMarket(e.target.value)}
-                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D3A029] text-[#111827]"
-              >
-                <option value="">Select a target market...</option>
-                <option value="phoenix">Phoenix, AZ</option>
-                <option value="dallas">Dallas, TX</option>
-                <option value="atlanta">Atlanta, GA</option>
-                <option value="tampa">Tampa, FL</option>
-                <option value="austin">Austin, TX</option>
-                <option value="denver">Denver, CO</option>
-              </select>
-              <Button
-                onClick={handleFindAgents}
-                className="bg-[#111827] hover:bg-[#1F2937] text-white px-8 py-3 rounded-xl font-medium"
-              >
-                Find Agents
-              </Button>
-            </div>
+          {/* CTA Button */}
+          <div className="mb-8">
+            <Button
+              onClick={handleGetStarted}
+              className="bg-[#D3A029] hover:bg-[#B8941F] text-white px-12 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+            >
+              Submit Your First Deal
+            </Button>
           </div>
 
           {/* Trust Badges */}
