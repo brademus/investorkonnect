@@ -280,7 +280,7 @@ export function useCurrentProfile() {
       } catch (error) {
         if (!mounted) return;
         
-        console.error('[useCurrentProfile] Error:', error);
+        // Only log errors for debugging - silent for regular users
         setState({
           loading: false,
           user: null,
