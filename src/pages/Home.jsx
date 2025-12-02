@@ -1,91 +1,40 @@
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { useWizard } from "@/components/WizardContext";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { MapPin, Shield, CheckCircle, Search, Home as HomeIcon, ChevronRight, ArrowRight } from "lucide-react";
-
-const US_STATES = [
-  { code: "AL", name: "Alabama" }, { code: "AK", name: "Alaska" }, { code: "AZ", name: "Arizona" },
-  { code: "AR", name: "Arkansas" }, { code: "CA", name: "California" }, { code: "CO", name: "Colorado" },
-  { code: "CT", name: "Connecticut" }, { code: "DE", name: "Delaware" }, { code: "FL", name: "Florida" },
-  { code: "GA", name: "Georgia" }, { code: "HI", name: "Hawaii" }, { code: "ID", name: "Idaho" },
-  { code: "IL", name: "Illinois" }, { code: "IN", name: "Indiana" }, { code: "IA", name: "Iowa" },
-  { code: "KS", name: "Kansas" }, { code: "KY", name: "Kentucky" }, { code: "LA", name: "Louisiana" },
-  { code: "ME", name: "Maine" }, { code: "MD", name: "Maryland" }, { code: "MA", name: "Massachusetts" },
-  { code: "MI", name: "Michigan" }, { code: "MN", name: "Minnesota" }, { code: "MS", name: "Mississippi" },
-  { code: "MO", name: "Missouri" }, { code: "MT", name: "Montana" }, { code: "NE", name: "Nebraska" },
-  { code: "NV", name: "Nevada" }, { code: "NH", name: "New Hampshire" }, { code: "NJ", name: "New Jersey" },
-  { code: "NM", name: "New Mexico" }, { code: "NY", name: "New York" }, { code: "NC", name: "North Carolina" },
-  { code: "ND", name: "North Dakota" }, { code: "OH", name: "Ohio" }, { code: "OK", name: "Oklahoma" },
-  { code: "OR", name: "Oregon" }, { code: "PA", name: "Pennsylvania" }, { code: "RI", name: "Rhode Island" },
-  { code: "SC", name: "South Carolina" }, { code: "SD", name: "South Dakota" }, { code: "TN", name: "Tennessee" },
-  { code: "TX", name: "Texas" }, { code: "UT", name: "Utah" }, { code: "VT", name: "Vermont" },
-  { code: "VA", name: "Virginia" }, { code: "WA", name: "Washington" }, { code: "WV", name: "West Virginia" },
-  { code: "WI", name: "Wisconsin" }, { code: "WY", name: "Wyoming" }
-];
+import { Button } from "@/components/ui/button";
+import { 
+  Shield, MapPin, FileText, Users, Building2, Star, 
+  CheckCircle, ArrowRight, Search
+} from "lucide-react";
 
 export default function Home() {
   const navigate = useNavigate();
-  const { setSelectedState } = useWizard();
   const { loading, user, profile } = useCurrentProfile();
-  const [localState, setLocalState] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedMarket, setSelectedMarket] = useState("");
 
-  useEffect(() => {
-    document.title = "Investor Konnect – Connect with investor-friendly agents";
-  }, []);
-
-  const filteredStates = US_STATES.filter(state =>
-    state.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    state.code.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const handleContinue = async () => {
-    if (!localState) return;
-    setSelectedState(localState.code);
-
-    if (user && profile) {
-      try {
-        await base44.entities.Profile.update(profile.id, {
-          target_state: localState.code,
-          markets: [localState.code]
-        });
-      } catch (err) {}
-      // Go to simple onboarding to pick role
-      navigate(createPageUrl("SimpleOnboarding"));
-    } else {
-      // Not logged in - redirect to login first
-      const callbackUrl = `${createPageUrl("PostAuth")}?state=${localState.code}`;
-      base44.auth.redirectToLogin(callbackUrl);
-    }
+  const handleFindAgents = () => {
+    navigate(createPageUrl("AgentDirectory"));
   };
 
-  const handleSubmitDeal = () => {
-    if (user && profile?.target_state && profile?.user_role) {
-      // Fully onboarded, go to deal wizard
-      navigate(createPageUrl("DealWizard"));
-    } else if (user) {
-      // Logged in but needs onboarding
-      navigate(createPageUrl("SimpleOnboarding"));
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+  };
+
+  const handleGetStarted = () => {
+    if (user) {
+      navigate(createPageUrl("Dashboard"));
     } else {
-      // Not logged in
       base44.auth.redirectToLogin(createPageUrl("PostAuth"));
     }
   };
 
-  const handleLogin = () => {
-    const callbackUrl = createPageUrl("PostAuth") || createPageUrl("Dashboard") || window.location.pathname;
-    base44.auth.redirectToLogin(callbackUrl);
-  };
-
   return (
     <div className="min-h-screen bg-[#FAF7F2]">
-      {/* Top nav - fixed, minimal, Airbnb-like */}
+      {/* Fixed Header */}
       <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:h-18 sm:px-6 lg:max-w-7xl lg:px-8">
-          {/* Left: logo + brand */}
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE68A] shadow-sm">
               <span className="text-sm font-bold tracking-tight text-[#D3A029]">IK</span>
@@ -94,21 +43,10 @@ export default function Home() {
               Investor Konnect
             </span>
           </div>
-
-          {/* Center nav – removed for cleaner homepage header */}
-          {/* <nav className="hidden items-center gap-8 text-sm font-medium text-[#4B5563] md:flex">
-            <Link to={createPageUrl("Home")} className="hover:text-[#D3A029] transition-colors">Home</Link>
-            <Link to={createPageUrl("HowItWorks")} className="hover:text-[#D3A029] transition-colors">How it works</Link>
-            <Link to={createPageUrl("Pricing")} className="hover:text-[#D3A029] transition-colors">Pricing</Link>
-            <Link to={createPageUrl("Investors")} className="hover:text-[#D3A029] transition-colors">For investors</Link>
-            <Link to={createPageUrl("Agents")} className="hover:text-[#D3A029] transition-colors">For agents</Link>
-          </nav> */}
-
-          {/* Right: Auth */}
           <div className="flex items-center gap-3">
             <button 
               onClick={handleLogin} 
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-5 py-2.5 text-sm font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md hover:-translate-y-0.5"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-5 py-2.5 text-sm font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md"
             >
               Log in
             </button>
@@ -116,142 +54,171 @@ export default function Home() {
         </div>
       </header>
 
-      {/* Page content – centered, offset for fixed header */}
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-24 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-28">
-        <div className="space-y-12 lg:space-y-16">
-          {/* HERO STRIP */}
-          <section className="space-y-6 text-center sm:text-left">
-            <p className="mx-auto inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-[#6B7280] shadow-md border border-[#E5E7EB] sm:mx-0">
-              <span className="h-2 w-2 rounded-full bg-[#D3A029] animate-pulse" />
-              Verified investor-friendly agents
-            </p>
+      {/* Hero Section */}
+      <section className="pt-32 pb-16 px-4">
+        <div className="max-w-4xl mx-auto text-center">
+          {/* Top Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#FEF3C7] rounded-full mb-8">
+            <div className="w-2 h-2 rounded-full bg-[#D3A029]" />
+            <span className="text-sm font-medium text-[#111827]">
+              The #1 Network for Investor-Friendly Agents
+            </span>
+          </div>
 
-            <div className="mx-auto max-w-3xl sm:mx-0">
-              <h1 className="text-4xl font-bold tracking-tight text-[#111827] sm:text-5xl lg:text-6xl leading-tight">
-                Stop training retail agents.
-                <br />
-                <span className="text-[#D3A029]">Start closing investor deals.</span>
-              </h1>
-              <p className="mt-6 text-lg text-[#4B5563] sm:text-xl leading-relaxed">
-                Investor Konnect matches your strategy and market with agents who already know
-                how to work with real estate investors, then keeps everything in one shared
-                deal room.
-              </p>
-              
-              {/* Primary CTA */}
-              <div className="mt-8">
-                <button
-                  onClick={handleSubmitDeal}
-                  className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-4 text-lg font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
-                >
-                  Submit Your First Deal
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
+          {/* Headline */}
+          <h1 className="text-5xl md:text-6xl font-bold text-[#111827] mb-6 leading-tight">
+            Connect with agents who{" "}
+            <span className="text-[#D3A029]">speak your language</span>
+          </h1>
 
-          </section>
+          {/* Subheadline */}
+          <p className="text-lg text-[#4B5563] mb-10 max-w-2xl mx-auto">
+            Stop wasting time explaining cap rates and BRRRR to residential agents. 
+            Find vetted investor-friendly agents in your target market instantly.
+          </p>
 
-          {/* BIG MAP / STATE SELECTOR */}
-          <section className="rounded-3xl border border-[#E5E7EB] bg-white shadow-xl overflow-hidden">
-            {/* top row */}
-            <div className="flex flex-col gap-4 border-b border-[#F3F4F6] px-6 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-8">
-              <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FEF3C7] shadow-sm">
-                  <MapPin className="w-6 h-6 text-[#D3A029]" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-[#111827]">
-                    Where are you looking to invest?
-                  </h2>
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    Choose a state to see investor-friendly agents in that market.
-                  </p>
-                </div>
-              </div>
-              {localState && (
-                <span className="inline-flex items-center rounded-full border border-[#D3A029] bg-[#FFFBEB] px-4 py-2 text-sm font-medium text-[#92400E]">
-                  ✓ Selected: {localState.name}
-                </span>
-              )}
-            </div>
-
-            {/* search + grid area */}
-            <div className="grid gap-6 px-6 py-6 sm:px-8 sm:py-8 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] lg:gap-8">
-              {/* LEFT: decorative map area */}
-              <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FFFBEB] border border-[#FDE68A]">
-                <div className="flex h-[280px] items-center justify-center sm:h-[320px] lg:h-[360px]">
-                  <div className="text-center">
-                    <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-white shadow-lg">
-                      <MapPin className="h-10 w-10 text-[#D3A029]" />
-                    </div>
-                    <p className="text-xl font-semibold text-[#111827]">
-                      {localState ? localState.name : "Select a state"}
-                    </p>
-                    <p className="mt-2 text-sm text-[#6B7280]">
-                      {localState ? "Ready to find agents" : "Pick from the list →"}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* RIGHT: state search and grid */}
-              <div className="flex flex-col">
-                {/* Search bar */}
-                <div className="mb-4 flex items-center gap-3 rounded-full border border-[#E5E7EB] bg-[#F9FAFB] px-4 py-3 shadow-sm focus-within:border-[#D3A029] focus-within:ring-2 focus-within:ring-[#D3A029]/20 transition-all">
-                  <Search className="h-5 w-5 text-[#9CA3AF]" />
-                  <input
-                    type="text"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    placeholder="Search for a state…"
-                    className="flex-1 border-none bg-transparent text-base text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none"
-                  />
-                </div>
-
-                {/* Grid of states */}
-                <div className="flex-1 overflow-y-auto">
-                  <div className="grid max-h-[280px] grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                    {filteredStates.map((state) => (
-                      <button
-                        key={state.code}
-                        type="button"
-                        onClick={() => setLocalState(state)}
-                        className={
-                          "flex flex-col rounded-xl border-2 px-3 py-3 text-left transition-all duration-200 " +
-                          (localState?.code === state.code
-                            ? "border-[#D3A029] bg-[#FFFBEB] text-[#111827] shadow-md ring-2 ring-[#D3A029]/20"
-                            : "border-[#E5E7EB] bg-white hover:border-[#D3A029] hover:bg-[#FFFBEB] hover:shadow-sm")
-                        }
-                      >
-                        <span className="text-base font-bold text-[#111827]">
-                          {state.code}
-                        </span>
-                        <span className="mt-0.5 text-sm text-[#6B7280]">
-                          {state.name}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* footer */}
-            <div className="flex flex-col items-center justify-between gap-4 border-t border-[#F3F4F6] bg-[#F9FAFB] px-6 py-5 sm:flex-row sm:px-8">
-              <p className="text-sm text-[#6B7280]">You can change your market later from your dashboard.</p>
-              <button
-                type="button"
-                onClick={handleContinue}
-                disabled={!localState}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+          {/* Search Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 max-w-2xl mx-auto mb-8">
+            <div className="flex flex-col sm:flex-row gap-4">
+              <select
+                value={selectedMarket}
+                onChange={(e) => setSelectedMarket(e.target.value)}
+                className="flex-1 px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D3A029] text-[#111827]"
               >
-                Continue →
-              </button>
+                <option value="">Select a target market...</option>
+                <option value="phoenix">Phoenix, AZ</option>
+                <option value="dallas">Dallas, TX</option>
+                <option value="atlanta">Atlanta, GA</option>
+                <option value="tampa">Tampa, FL</option>
+                <option value="austin">Austin, TX</option>
+                <option value="denver">Denver, CO</option>
+              </select>
+              <Button
+                onClick={handleFindAgents}
+                className="bg-[#111827] hover:bg-[#1F2937] text-white px-8 py-3 rounded-xl font-medium"
+              >
+                Find Agents
+              </Button>
             </div>
-          </section>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#4B5563]">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <span>Vetted Experience</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <span>Market Data Access</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <span>Off-Market Deals</span>
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* Visual Proof Section */}
+      <section className="py-12 px-4">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { title: "Institutional Grade", subtitle: "Access partners used by top firms", bg: "from-slate-700 to-slate-900" },
+              { title: "Trusted Network", subtitle: "Verified track records only", bg: "from-amber-600 to-amber-800" },
+              { title: "Data Driven", subtitle: "Make decisions based on facts", bg: "from-slate-800 to-slate-950" }
+            ].map((item, idx) => (
+              <div key={idx} className={`relative h-64 rounded-3xl overflow-hidden bg-gradient-to-br ${item.bg}`}>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-6 left-6 text-white">
+                  <h3 className="text-2xl font-bold mb-1">{item.title}</h3>
+                  <p className="text-sm text-white/90">{item.subtitle}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Section */}
+      <section className="py-16 px-4 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-[#111827] mb-4">
+              Why investors choose our network
+            </h2>
+            <p className="text-lg text-[#4B5563]">
+              We've built the ecosystem you need to scale your portfolio efficiently.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[
+              { 
+                icon: Shield, 
+                title: "Vetted Agents Only", 
+                desc: "Every agent is interviewed and verified for investment experience." 
+              },
+              { 
+                icon: MapPin, 
+                title: "Local Market Experts", 
+                desc: "Partners who know the neighborhoods, rents, and regulations." 
+              },
+              { 
+                icon: FileText, 
+                title: "Deal Flow Access", 
+                desc: "Get access to off-market and pocket listings before they hit the MLS." 
+              },
+              { 
+                icon: Users, 
+                title: "Contractor Network", 
+                desc: "Tap into trusted vendor lists for renovations and repairs." 
+              },
+              { 
+                icon: Building2, 
+                title: "Property Management", 
+                desc: "Seamless handoff to reliable property management partners." 
+              },
+              { 
+                icon: Star, 
+                title: "Performance Rated", 
+                desc: "Agents are rated by other investors on actual deal performance." 
+              }
+            ].map((feature, idx) => {
+              const Icon = feature.icon;
+              return (
+                <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
+                  <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-[#D3A029]" />
+                  </div>
+                  <h3 className="text-xl font-bold text-[#111827] mb-2">{feature.title}</h3>
+                  <p className="text-[#4B5563]">{feature.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 px-4 bg-[#111827]">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            Ready to find your next deal?
+          </h2>
+          <p className="text-lg text-gray-300 mb-8">
+            Join thousands of investors who are scaling their portfolios with the right partners.
+          </p>
+          <Button
+            onClick={handleGetStarted}
+            className="bg-[#D3A029] hover:bg-[#B8941F] text-white px-8 py-4 rounded-xl font-medium text-lg"
+          >
+            Get Started Now
+            <ArrowRight className="ml-2 w-5 h-5" />
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }

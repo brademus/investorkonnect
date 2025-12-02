@@ -214,7 +214,7 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+    <div className="min-h-screen bg-[#FAF7F2]" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
       {/* Subscription Status Banner */}
       {!loading && isPaidSubscriber && (
         <div className="bg-[#D4AF37] text-white py-3">
@@ -245,7 +245,7 @@ export default function Pricing() {
       )}
 
       {/* Hero Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(180deg, #F9F9F9 0%, #FFFFFF 100%)' }}>
+      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(180deg, #FAF7F2 0%, #FFFFFF 100%)' }}>
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-[48px] font-bold text-black mb-4">Simple, Transparent Pricing</h1>
           <p className="text-[20px] text-[#666666] mb-8">
@@ -293,13 +293,13 @@ export default function Pricing() {
               return (
                 <div
                   key={tier.name}
-                  className={`bg-white rounded-[20px] relative transition-all duration-250 ${
+                  className={`bg-white rounded-3xl relative transition-all duration-250 ${
                     isPro ? 'scale-105 z-10' : ''
                   }`}
                   style={{
-                    border: isPro ? '2px solid #D4AF37' : '1px solid #E5E5E5',
+                    border: isPro ? '2px solid #D3A029' : '1px solid #E5E7EB',
                     padding: '40px 32px',
-                    boxShadow: isPro ? '0 4px 16px rgba(212,175,55,0.15)' : '0 2px 8px rgba(0,0,0,0.06)'
+                    boxShadow: isPro ? '0 4px 16px rgba(211,160,41,0.15)' : '0 2px 8px rgba(0,0,0,0.06)'
                   }}
                 >
                   {/* Most Popular Badge */}

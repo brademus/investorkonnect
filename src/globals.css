@@ -1,3 +1,4 @@
+css
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -5,49 +6,39 @@
 /* ====== Design Tokens (Investor Konnect - Airbnb Style) ====== */
 @layer base {
   :root {
-    /* Gold palette based on logo */
-    --gold-50: 51 100% 98%;
-    --gold-100: 48 100% 95%;
-    --gold-200: 44 75% 84%;
-    --gold-300: 44 68% 75%;
-    --gold-400: 43 67% 64%;
-    --gold-500: 43 59% 52%;
-    --gold-600: 43 71% 42%;
-    --gold-700: 43 71% 33%;
-    --gold-800: 43 71% 25%;
-    --gold-900: 43 71% 17%;
-
-    /* Airbnb-style neutrals */
-    --gray-50: 0 0% 98%;
-    --gray-100: 0 0% 97%;
-    --gray-200: 0 0% 92%;
-    --gray-300: 0 0% 87%;
-    --gray-400: 0 0% 69%;
-    --gray-500: 0 0% 44%;
-    --gray-600: 0 0% 28%;
-    --gray-700: 0 0% 13%;
-    --gray-800: 0 0% 10%;
-    --gray-900: 0 0% 0%;
-
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
-    --primary: 43 59% 52%;
+    /* Backgrounds */
+    --background: 42 16% 97%; /* #FAF7F2 cream */
+    --foreground: 220 26% 14%; /* #111827 dark */
+    
+    /* Cards */
+    --card: 0 0% 100%; /* White */
+    --card-foreground: 220 26% 14%;
+    
+    /* Primary (Gold) */
+    --primary: 43 77% 49%; /* #D3A029 */
     --primary-foreground: 0 0% 100%;
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 44%;
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
+    
+    /* Secondary */
+    --secondary: 220 14% 96%;
+    --secondary-foreground: 220 26% 14%;
+    
+    /* Muted */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%; /* #6B7280 */
+    
+    /* Accent (Amber) */
+    --accent: 48 96% 89%; /* #FEF3C7 */
+    --accent-foreground: 220 26% 14%;
+    
+    /* Borders */
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 43 77% 49%; /* Gold ring */
+    
+    /* Destructive */
     --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
-    --ring: 43 59% 52%;
+    --destructive-foreground: 0 0% 98%;
+    
     --radius: 0.75rem;
   }
 
@@ -56,7 +47,8 @@
   }
 
   body {
-    @apply bg-background text-foreground;
+    background-color: #FAF7F2;
+    @apply text-foreground;
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -64,7 +56,7 @@
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-semibold;
-    color: hsl(0 0% 10%);
+    color: #111827;
   }
 }
 
