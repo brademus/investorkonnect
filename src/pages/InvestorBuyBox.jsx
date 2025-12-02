@@ -131,14 +131,18 @@ function InvestorBuyBoxContent() {
 
       console.log('[InvestorBuyBox] Saving buy box:', buyBox);
 
-      // Call backend function to save
-      const response = await upsertBuyBox({
-        buy_box: buyBox
-      });
-
-      console.log('[InvestorBuyBox] Response:', response.data);
-
-      if (response.data?.ok) {
+      // Directly update the Profile entity with the buy box
+      if (profile && profile.id) {
+        const updatedInvestor = {
+          ...(profile.investor || {}),
+          buy_box: buyBox
+        };
+        
+        await base44.entities.Profile.update(profile.id, {
+          investor: updatedInvestor
+        });
+        
+        console.log('[InvestorBuyBox] ✅ Buy box saved successfully');
         toast.success("Buy box saved successfully!");
         await refresh();
         
@@ -146,7 +150,7 @@ function InvestorBuyBoxContent() {
           navigate(createPageUrl("InvestorHome"));
         }, 500);
       } else {
-        throw new Error(response.data?.message || 'Failed to save buy box');
+        throw new Error('Profile not found');
       }
 
     } catch (error) {
