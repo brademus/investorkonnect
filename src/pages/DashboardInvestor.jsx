@@ -115,7 +115,7 @@ function InvestorDashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         
         {/* Box 1: Start New Deal */}
-        <div className="ik-card p-6 hover:shadow-lg transition-shadow">
+        <div className="bg-white border border-gray-200 rounded-3xl p-6 hover:shadow-lg transition-shadow">
           <div className="flex items-start justify-between mb-4">
             <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
               <Plus className="w-6 h-6 text-[#D3A029]" />
@@ -138,7 +138,7 @@ function InvestorDashboardContent() {
         </div>
 
         {/* Box 2: Deal Pipeline */}
-        <div className="ik-card p-6">
+        <div className="bg-white border border-gray-200 rounded-3xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="w-12 h-12 bg-[#E0E7FF] rounded-xl flex items-center justify-center">
               <TrendingUp className="w-6 h-6 text-[#4F46E5]" />
@@ -183,7 +183,7 @@ function InvestorDashboardContent() {
         </div>
 
         {/* Box 3: Recent Messages */}
-        <div className="ik-card p-6">
+        <div className="bg-white border border-gray-200 rounded-3xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="w-12 h-12 bg-[#FCE7F3] rounded-xl flex items-center justify-center">
               <MessageSquare className="w-6 h-6 text-[#DB2777]" />
@@ -220,7 +220,7 @@ function InvestorDashboardContent() {
         </div>
 
         {/* Box 4: Suggested Agents */}
-        <div className="ik-card p-6">
+        <div className="bg-white border border-gray-200 rounded-3xl p-6">
           <div className="flex items-start justify-between mb-4">
             <div className="flex items-center gap-2">
               <div className="w-12 h-12 bg-[#D1FAE5] rounded-xl flex items-center justify-center">
@@ -278,7 +278,7 @@ function InvestorDashboardContent() {
       </div>
 
       {/* Buy Box Section */}
-      <div className="ik-card p-6">
+      <div className="bg-white border border-gray-200 rounded-3xl p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
@@ -335,7 +335,7 @@ function InvestorDashboardContent() {
           <Link 
             key={link.href} 
             to={createPageUrl(link.href)} 
-            className="ik-tile flex items-center gap-3 p-4"
+            className="bg-white border border-gray-200 rounded-xl flex items-center gap-3 p-4 hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all"
           >
             <span className="text-xl">{link.icon}</span>
             <span className="font-medium text-[#374151]">{link.label}</span>
