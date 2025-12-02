@@ -224,7 +224,7 @@ export function useCurrentProfile() {
           const rooms = roomsResponse.data || [];
           hasRoom = rooms.length > 0;
         } catch (roomErr) {
-          console.warn('[useCurrentProfile] Could not check rooms:', roomErr);
+          // Silent fail - rooms check is optional
         }
 
         // STEP 9: Determine if investor is fully ready (admins are always ready)
