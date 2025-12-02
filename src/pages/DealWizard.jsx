@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { upsertInvestorOnboarding, matchInvestor } from '@/components/functions';
 import { createPageUrl } from '@/components/utils';
+import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -200,9 +201,7 @@ export default function DealWizard() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#D3A029] rounded-xl flex items-center justify-center">
-              <span className="text-sm font-bold text-white">IK</span>
-            </div>
+            <Logo size="default" showText={false} linkTo={createPageUrl("DealRooms")} />
             <h1 className="text-lg font-semibold text-slate-900">Submit New Deal</h1>
           </div>
           <Button variant="ghost" size="icon" onClick={handleClose}>

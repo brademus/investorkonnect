@@ -5,6 +5,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
 import { embedProfile, matchAgentsForInvestor } from "@/components/functions";
 import { SetupChecklist } from "@/components/SetupChecklist";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -86,12 +87,7 @@ export default function InvestorHome() {
       <header className="border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE68A] shadow-sm">
-                <span className="text-sm font-bold text-[#D3A029]">IK</span>
-              </div>
-              <span className="text-base font-semibold text-[#111827]">Investor Konnect</span>
-            </div>
+            <Logo size="default" showText={true} linkTo={createPageUrl("DashboardInvestor")} />
             <div className="flex items-center gap-3">
               {isAdmin && (
                 <button onClick={() => navigate(createPageUrl("Admin"))} className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#111827] shadow-sm hover:border-[#D3A029] hover:shadow-md transition-all">

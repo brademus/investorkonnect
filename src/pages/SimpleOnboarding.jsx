@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { profileUpsert } from '@/components/functions';
 import { createPageUrl } from '@/components/utils';
+import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin, User, Briefcase, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
@@ -127,8 +128,8 @@ export default function SimpleOnboarding() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <span className="text-2xl font-bold text-white">IK</span>
+          <div className="flex justify-center mb-4">
+            <Logo size="large" showText={false} linkTo={null} />
           </div>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">
             Welcome to Investor Konnect!
