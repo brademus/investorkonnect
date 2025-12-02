@@ -100,19 +100,47 @@ export default function Home() {
       <section className="py-12 px-4">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              { title: "Institutional Grade", subtitle: "Access partners used by top firms", bg: "from-slate-700 to-slate-900" },
-              { title: "Trusted Network", subtitle: "Verified track records only", bg: "from-amber-600 to-amber-800" },
-              { title: "Data Driven", subtitle: "Make decisions based on facts", bg: "from-slate-800 to-slate-950" }
-            ].map((item, idx) => (
-              <div key={idx} className={`relative h-64 rounded-3xl overflow-hidden bg-gradient-to-br ${item.bg}`}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                <div className="absolute bottom-6 left-6 text-white">
-                  <h3 className="text-2xl font-bold mb-1">{item.title}</h3>
-                  <p className="text-sm text-white/90">{item.subtitle}</p>
-                </div>
+            {/* Institutional Grade - Building image */}
+            <div className="relative h-64 rounded-3xl overflow-hidden">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/c287eab81_hero-office.jpg" 
+                alt="Institutional Grade"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
+              <div className="absolute bottom-6 left-6 text-white">
+                <h3 className="text-2xl font-bold mb-1">Institutional Grade</h3>
+                <p className="text-sm text-white/90">Access partners used by top firms</p>
               </div>
-            ))}
+            </div>
+
+            {/* Trusted Network - Handshake image */}
+            <div className="relative h-64 rounded-3xl overflow-hidden">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/971d5cd2d_handshake.jpg" 
+                alt="Trusted Network"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
+              <div className="absolute bottom-6 left-6 text-white">
+                <h3 className="text-2xl font-bold mb-1">Trusted Network</h3>
+                <p className="text-sm text-white/90">Verified track records only</p>
+              </div>
+            </div>
+
+            {/* Data Driven - Blueprints image */}
+            <div className="relative h-64 rounded-3xl overflow-hidden">
+              <img 
+                src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/17f0e3058_blueprints.jpg" 
+                alt="Data Driven"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-black/20" />
+              <div className="absolute bottom-6 left-6 text-white">
+                <h3 className="text-2xl font-bold mb-1">Data Driven</h3>
+                <p className="text-sm text-white/90">Make decisions based on facts</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
