@@ -308,7 +308,7 @@ export default function DealRooms() {
                       </div>
 
                       <div className="pt-3 border-t border-gray-100">
-                        <span className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:bg-gray-50 w-full"
+                        <span className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:bg-gray-50 w-full">
                           Open Room
                           <ArrowRight className="w-4 h-4" />
                         </span>
