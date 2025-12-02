@@ -110,14 +110,58 @@ function InvestorDashboardContent() {
                   Smart matches based on your investment goals.
                 </p>
               </div>
-              <Link to={createPageUrl("AgentDirectory")} className="ik-link text-xs">
+              <Link to={createPageUrl("Matches")} className="ik-link text-xs">
                 View all
               </Link>
             </header>
 
-            <p className="text-sm text-[#6B7280]">
-              No matches yet. Complete your profile and buy box for better matching.
-            </p>
+            {/* Example agents for demo */}
+            <div className="space-y-3">
+              {/* Agent 1 */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                  <span className="text-sm font-semibold text-[#D3A029]">JD</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-[#111827] text-sm">John Davis</h3>
+                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">98% match</span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Phoenix, AZ • 15 years exp</p>
+                  <p className="text-xs text-[#6B7280] mt-1">Specializes in multi-family and fix-and-flip investments</p>
+                </div>
+              </div>
+
+              {/* Agent 2 */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                  <span className="text-sm font-semibold text-[#D3A029]">SM</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-[#111827] text-sm">Sarah Martinez</h3>
+                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">95% match</span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Dallas, TX • 12 years exp</p>
+                  <p className="text-xs text-[#6B7280] mt-1">Expert in single-family rentals and BRRRR strategy</p>
+                </div>
+              </div>
+
+              {/* Agent 3 */}
+              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
+                  <span className="text-sm font-semibold text-[#D3A029]">MC</span>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between gap-2">
+                    <h3 className="font-semibold text-[#111827] text-sm">Michael Chen</h3>
+                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">92% match</span>
+                  </div>
+                  <p className="text-xs text-[#6B7280] mt-0.5">Atlanta, GA • 10 years exp</p>
+                  <p className="text-xs text-[#6B7280] mt-1">Focuses on commercial properties and value-add opportunities</p>
+                </div>
+              </div>
+            </div>
           </section>
 
           {/* Documents */}

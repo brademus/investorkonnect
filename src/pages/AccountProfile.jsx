@@ -72,7 +72,8 @@ function AccountProfileContent() {
     try {
       const payload = {
         full_name: formData.full_name.trim(),
-        role: formData.role,
+        user_role: formData.role,  // Changed from 'role' to 'user_role'
+        user_type: formData.role,  // Also set user_type for consistency
         company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
@@ -109,25 +110,11 @@ function AccountProfileContent() {
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // CRITICAL: After save, if investor not onboarded, send to NEW onboarding
-      if (role === 'investor' && !onboarded) {
-        console.log('[AccountProfile] Investor not onboarded, redirecting to InvestorOnboarding');
-        toast.info('Please complete your full investor profile');
-        setTimeout(() => {
-          navigate(createPageUrl("InvestorOnboarding"));
-        }, 1000);
-      } else if (role === 'agent' && !onboarded) {
-        console.log('[AccountProfile] Agent not onboarded, redirecting to AgentOnboarding');
-        toast.info('Please complete your agent profile');
-        setTimeout(() => {
-          navigate(createPageUrl("AgentOnboarding"));
-        }, 1000);
-      } else {
-        // Already onboarded, go to profile view
-        setTimeout(() => {
-          navigate(createPageUrl("Profile"));
-        }, 500);
-      }
+      // After save, always go back to the previous page
+      console.log('[AccountProfile] ✅ Profile saved, navigating back');
+      setTimeout(() => {
+        navigate(-1); // Go back to previous page
+      }, 500);
 
     } catch (error) {
       console.error("[AccountProfile] ❌ Save error:", error);
