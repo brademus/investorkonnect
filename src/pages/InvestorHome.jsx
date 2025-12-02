@@ -4,12 +4,13 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
 import { embedProfile, matchAgentsForInvestor } from "@/components/functions";
+import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp, Shield, FileText, Users, CheckCircle,
   AlertCircle, Target, DollarSign, ArrowRight, Star,
-  Loader2, MapPin, User
+  Loader2, MapPin, User, Plus, Sparkles
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -110,14 +111,26 @@ export default function InvestorHome() {
       <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:max-w-7xl lg:px-8">
         <div className="space-y-8">
           {/* Page Title */}
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight">
-              Your Investor Dashboard
-            </h1>
-            <p className="mt-2 text-lg text-[#6B7280]">
-              See your buy box, suggested agents, and deal tools in one place.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] tracking-tight">
+                Your Investor Dashboard
+              </h1>
+              <p className="mt-2 text-lg text-[#6B7280]">
+                See your buy box, suggested agents, and deal tools in one place.
+              </p>
+            </div>
+            <Button
+              onClick={() => navigate(createPageUrl("DealWizard"))}
+              className="bg-[#D3A029] hover:bg-[#B8902A] text-white shadow-lg shadow-[#D3A029]/30"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Submit New Deal
+            </Button>
           </div>
+
+          {/* Setup Checklist */}
+          <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />
 
           {/* Subscription Banner */}
           {isPaidSubscriber ? (
