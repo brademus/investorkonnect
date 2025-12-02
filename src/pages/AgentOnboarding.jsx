@@ -77,15 +77,60 @@ function AgentOnboardingContent() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      const response = await upsertAgentOnboarding(formData);
-      if (response.data?.ok) {
+      // Build agent data object
+      const agentData = {
+        is_full_time_agent: formData.is_full_time_agent,
+        experience_years: formData.experience_years,
+        investor_experience_years: formData.investor_experience_years,
+        languages_spoken: formData.languages_spoken,
+        preferred_communication_channels: formData.preferred_communication_channels,
+        works_in_team: formData.works_in_team,
+        team_role_notes: formData.team_role_notes,
+        license_number: formData.license_number,
+        license_state: formData.license_state,
+        license_type: formData.license_type,
+        licensed_states: formData.licensed_states,
+        has_discipline_history: formData.has_discipline_history,
+        markets: formData.markets,
+        primary_neighborhoods_notes: formData.primary_neighborhoods_notes,
+        sources_off_market: formData.sources_off_market,
+        off_market_methods_notes: formData.off_market_methods_notes,
+        investor_clients_count: formData.investor_clients_count,
+        active_client_count: formData.active_client_count,
+        investment_deals_last_12m: formData.investment_deals_last_12m,
+        personally_invests: formData.personally_invests,
+        personal_investing_notes: formData.personal_investing_notes,
+        what_sets_you_apart: formData.what_sets_you_apart,
+        commission_structure: formData.commission_structure,
+        typical_response_time: formData.typical_response_time,
+        update_frequency: formData.update_frequency,
+        bio: formData.bio
+      };
+
+      // Directly update profile entity
+      if (profile && profile.id) {
+        await base44.entities.Profile.update(profile.id, {
+          full_name: formData.full_name,
+          phone: formData.phone,
+          user_role: 'agent',
+          user_type: 'agent',
+          agent: agentData,
+          markets: formData.markets,
+          onboarding_version: 'agent-v2-deep',
+          onboarding_completed_at: new Date().toISOString(),
+          license_number: formData.license_number,
+          license_state: formData.license_state
+        });
+
         await refresh();
         toast.success("Profile completed! Welcome to Investor Konnect.");
         await new Promise(resolve => setTimeout(resolve, 300));
-        // DEMO MODE: Skip Verify and NDA, go straight to Dashboard
         navigate(createPageUrl("Dashboard"), { replace: true });
-      } else { throw new Error(response.data?.message || 'Failed to save onboarding'); }
+      } else {
+        throw new Error('Profile not found');
+      }
     } catch (error) {
+      console.error('[AgentOnboarding] Submit error:', error);
       toast.error(error.message || "Failed to save. Please try again.");
       setSaving(false);
     }
