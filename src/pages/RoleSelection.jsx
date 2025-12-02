@@ -19,13 +19,23 @@ export default function RoleSelection() {
     setSelectedChoice(chosenRole);
     setSelectedRole(chosenRole);
 
+    // Build callback URL with role info
+    const params = new URLSearchParams();
+    if (selectedState) {
+      params.set('state', selectedState);
+    }
+    params.set('intendedRole', chosenRole);
+    const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
+
     try {
       // Check if user is already logged in
-      const user = await base44.auth.me();
+      const isAuthenticated = await base44.auth.isAuthenticated();
       
-      if (user) {
+      if (isAuthenticated) {
         // User is logged in - update profile and go to onboarding
         console.log('[RoleSelection] User already logged in, updating profile...');
+        
+        const user = await base44.auth.me();
         
         // Get or create profile
         let profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -35,6 +45,7 @@ export default function RoleSelection() {
           // Update existing profile with role and state
           await base44.entities.Profile.update(profile.id, {
             user_role: chosenRole,
+            user_type: chosenRole,
             target_state: selectedState || profile.target_state,
             markets: selectedState ? [selectedState] : profile.markets
           });
@@ -44,6 +55,7 @@ export default function RoleSelection() {
             user_id: user.id,
             email: user.email,
             user_role: chosenRole,
+            user_type: chosenRole,
             role: 'member',
             target_state: selectedState || null,
             markets: selectedState ? [selectedState] : []
@@ -51,6 +63,7 @@ export default function RoleSelection() {
         }
         
         // Navigate to appropriate onboarding
+        console.log('[RoleSelection] Navigating to onboarding for role:', chosenRole);
         if (chosenRole === 'investor') {
           navigate(createPageUrl("InvestorOnboarding"));
         } else if (chosenRole === 'agent') {
@@ -60,26 +73,11 @@ export default function RoleSelection() {
       } else {
         // User is NOT logged in - redirect to login with callback
         console.log('[RoleSelection] User not logged in, redirecting to login...');
-        
-        const params = new URLSearchParams();
-        if (selectedState) {
-          params.set('state', selectedState);
-        }
-        params.set('intendedRole', chosenRole);
-        
-        const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
         base44.auth.redirectToLogin(callbackUrl);
       }
     } catch (error) {
       console.error('[RoleSelection] Error:', error);
       // On error, try login flow
-      const params = new URLSearchParams();
-      if (selectedState) {
-        params.set('state', selectedState);
-      }
-      params.set('intendedRole', chosenRole);
-      
-      const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
       base44.auth.redirectToLogin(callbackUrl);
     }
   };
