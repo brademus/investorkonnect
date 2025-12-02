@@ -133,13 +133,13 @@ function NewRoomModal({ open, onClose, onCreated }) {
           )}
 
           <div className="mt-6 flex justify-end gap-3">
-            <button onClick={onClose} className="ik-btn-outline">
+            <button onClick={onClose} className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:bg-gray-50 transition-all">
               Cancel
             </button>
             <button 
               onClick={createRoom} 
               disabled={!selected || creating}
-              className="ik-btn-primary disabled:opacity-50"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#D3A029] hover:bg-[#B8941F] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 transition-all"
             >
               {creating ? (
                 <>
@@ -207,15 +207,15 @@ export default function DealRooms() {
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#111827] mb-2">
                   Deal Rooms
                 </h1>
-                <p className="text-base sm:text-lg text-gray-600">
+                <p className="text-base sm:text-lg text-[#4B5563]">
                   Secure collaboration spaces for your investor–agent deals.
                 </p>
               </div>
               <button 
-                className="ik-btn-primary gap-2 px-6 py-3 text-base font-semibold shadow-md hover:shadow-lg transition-all"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#D3A029] hover:bg-[#B8941F] px-6 py-3 text-base font-semibold text-white shadow-md hover:shadow-lg transition-all"
                 onClick={() => setOpenNew(true)}
               >
                 <Plus className="w-5 h-5" />
@@ -249,14 +249,14 @@ export default function DealRooms() {
                 <div className="flex h-24 w-24 items-center justify-center rounded-3xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-lg mb-6">
                   <Users className="w-12 h-12 text-[#D3A029]" />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-3">
+                <h2 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-3">
                   No deal rooms yet
                 </h2>
-                <p className="mt-2 max-w-lg text-base sm:text-lg text-gray-600 leading-relaxed">
+                <p className="mt-2 max-w-lg text-base sm:text-lg text-[#4B5563] leading-relaxed">
                   Create your first deal room to securely chat, track milestones, and manage contracts in one place.
                 </p>
                 <button 
-                  className="mt-8 ik-btn-primary gap-2 px-8 py-4 text-lg font-semibold shadow-lg hover:shadow-xl transition-all"
+                  className="mt-8 inline-flex items-center justify-center gap-2 rounded-xl bg-[#D3A029] hover:bg-[#B8941F] px-8 py-4 text-lg font-semibold text-white shadow-lg hover:shadow-xl transition-all"
                   onClick={() => setOpenNew(true)}
                 >
                   <Plus className="w-6 h-6" />
@@ -279,7 +279,7 @@ export default function DealRooms() {
                             <Users className="w-5 h-5 text-[#D3A029]" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-900">
+                            <h3 className="font-semibold text-[#111827]">
                               {room.counterparty_name || `Room ${room.id.slice(0, 8)}`}
                             </h3>
                             <p className="text-xs text-gray-500 capitalize">
@@ -287,7 +287,7 @@ export default function DealRooms() {
                             </p>
                           </div>
                         </div>
-                        <span className="ik-chip ik-chip-success text-xs px-2 py-1">
+                        <span className="inline-flex items-center rounded-full bg-[#ECFDF5] text-[#065F46] border border-[#A7F3D0] text-xs px-2 py-1">
                           Active
                         </span>
                       </div>
@@ -308,7 +308,7 @@ export default function DealRooms() {
                       </div>
 
                       <div className="pt-3 border-t border-gray-100">
-                        <span className="ik-btn-outline text-sm w-full justify-center gap-2">
+                        <span className="inline-flex items-center justify-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-[#111827] hover:bg-gray-50 w-full"
                           Open Room
                           <ArrowRight className="w-4 h-4" />
                         </span>
@@ -328,8 +328,8 @@ export default function DealRooms() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
                 <Lock className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">NDA Protected</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              <h3 className="text-base font-bold text-[#111827] mb-2">NDA Protected</h3>
+              <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">
                 Every deal room is covered by your signed NDA, so conversations stay private.
               </p>
             </div>
@@ -337,8 +337,8 @@ export default function DealRooms() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
                 <FileText className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">Audit Trail</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              <h3 className="text-base font-bold text-[#111827] mb-2">Audit Trail</h3>
+              <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">
                 Every action is logged for complete security and compliance tracking.
               </p>
             </div>
@@ -346,8 +346,8 @@ export default function DealRooms() {
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] shadow-md mb-4">
                 <Shield className="w-7 h-7 text-[#D3A029]" />
               </div>
-              <h3 className="text-base font-bold text-gray-900 mb-2">Verified Users Only</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed">
+              <h3 className="text-base font-bold text-[#111827] mb-2">Verified Users Only</h3>
+              <p className="text-sm sm:text-base text-[#4B5563] leading-relaxed">
                 All participants are identity-verified and have signed the platform NDA.
               </p>
             </div>
