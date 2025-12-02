@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
 import { embedProfile, matchInvestorsForAgent } from "@/components/functions";
+import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -116,6 +117,9 @@ export default function AgentHome() {
               Welcome back, {profile?.full_name || 'Agent'}!
             </p>
           </div>
+
+          {/* Setup Checklist */}
+          <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />
 
           {/* Status Pills */}
           <div className="flex gap-3 flex-wrap">
