@@ -51,14 +51,15 @@ function LayoutContent({ children }) {
         <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
             {/* Left: logo + brand */}
-            <Link to={createPageUrl("Dashboard")} className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#FDE68A]">
-                <span className="text-xs font-bold tracking-tight text-[#D3A029]">IK</span>
-              </div>
-              <span className="text-sm font-semibold tracking-tight text-[#111827]">
-                Investor Konnect
-              </span>
-            </Link>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/247ab9fb4_IMG_1778.jpg"
+              alt="Investor Konnect"
+              className="h-8 w-8 object-contain cursor-pointer"
+              onClick={() => window.location.href = createPageUrl("Dashboard")}
+            />
+            <span className="text-sm font-semibold tracking-tight text-[#111827]">
+              Investor Konnect
+            </span>
 
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#4B5563] md:flex">

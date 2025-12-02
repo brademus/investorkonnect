@@ -212,7 +212,7 @@ html {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: #D3A029;
+    background-color: #D4AF37;
     color: #111827;
     font-weight: 500;
     border-radius: 9999px;
@@ -222,7 +222,7 @@ html {
   }
 
   .ik-btn-gold:hover {
-    background-color: #B98413;
+    background-color: #B8941F;
   }
 
   .ik-btn-gold:focus-visible {
@@ -255,7 +255,7 @@ html {
 
   .ik-link {
     font-size: 0.85rem;
-    color: #D3A029;
+    color: #D4AF37;
   }
 
   .ik-link:hover {
@@ -278,24 +278,24 @@ html {
     justify-content: center;
     gap: 0.4rem;
     border-radius: 9999px;
-    background-color: #D3A029;
-    color: #111827;
+    background-color: #D4AF37;
+    color: #FFFFFF;
     font-weight: 600;
     padding: 0.8rem 1.7rem;
     font-size: 0.95rem;
-    box-shadow: 0 12px 30px rgba(202, 138, 4, 0.35);
+    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.35);
     transition: background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
   }
 
   .ik-btn-primary:hover {
-    background-color: #B98413;
+    background-color: #B8941F;
     transform: translateY(-1px);
-    box-shadow: 0 18px 40px rgba(202, 138, 4, 0.45);
+    box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45);
   }
 
   .ik-btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 10px 24px rgba(202, 138, 4, 0.35);
+    box-shadow: 0 10px 24px rgba(212, 175, 55, 0.35);
   }
 
   .ik-btn-outline {
@@ -352,8 +352,8 @@ html {
     height: 1.85rem;
     width: 1.85rem;
     border-radius: 9999px;
-    background-color: #FEF3C7;
-    color: #D3A029;
+    background-color: #F5E6B3;
+    color: #D4AF37;
     font-size: 0.95rem;
   }
 
@@ -436,8 +436,8 @@ html {
 
   .ik-badge-gold {
     @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-medium;
-    background: hsl(48 100% 95%);
-    color: hsl(43 71% 33%);
+    background: #F5E6B3;
+    color: #B8941F;
   }
 
   /* Search bar shell */
