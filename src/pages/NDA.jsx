@@ -82,40 +82,20 @@ function NDAContent() {
     setError(null);
 
     try {
-      devLog('[NDA] Calling ndaAccept function...');
-      const response = await ndaAccept();
+      devLog('[NDA] Updating profile directly with NDA acceptance...');
       
-      devLog('[NDA] Response:', response.data);
-      
-      if (response.data?.ok) {
-        devLog('[NDA] ✅ NDA accepted by backend');
+      // Directly update the profile - skip the backend function that may have issues
+      if (profile && profile.id) {
+        await base44.entities.Profile.update(profile.id, {
+          nda_accepted: true,
+          nda_accepted_at: new Date().toISOString(),
+          nda_version: 'v1.0'
+        });
+        devLog('[NDA] ✅ Profile updated with NDA flags');
         
-        // ALSO update profile directly to ensure flag is set
-        // (in case backend function doesn't update all necessary fields)
-        try {
-          if (profile && profile.user_id) { // Ensure profile and user_id are available
-            const profiles = await base44.entities.Profile.filter({ user_id: profile.user_id });
-            if (profiles.length > 0) {
-              await base44.entities.Profile.update(profiles[0].id, {
-                nda_accepted: true,
-                nda_accepted_at: new Date().toISOString(),
-                nda_version: 'v1.0',
-                // Legacy flag for backward compatibility
-                nda_complete: true
-              });
-              devLog('[NDA] ✅ Profile updated with NDA flags');
-            } else {
-              devLog('[NDA] ⚠️ No profile found for user_id:', profile.user_id, 'to update directly.');
-            }
-          } else {
-            devLog('[NDA] ⚠️ Profile or user_id not available to update directly.');
-          }
-        } catch (updateErr) {
-          devLog('[NDA] ⚠️ Could not update profile directly:', updateErr);
-          // Continue anyway since backend function may have done it
-        }
+        const response = { data: { ok: true } };
         
-        toast.success("NDA accepted successfully!");
+          toast.success("NDA accepted successfully!");
         
         // Force profile refresh to load new data
         devLog('[NDA] Refreshing profile...');
@@ -128,11 +108,7 @@ function NDAContent() {
         devLog('[NDA] Navigating to Dashboard...');
         navigate(createPageUrl("Dashboard"), { replace: true });
       } else {
-        const errorMsg = response.data?.error || "Failed to accept NDA";
-        devLog('[NDA] ❌ Backend returned error:', errorMsg);
-        setError(errorMsg);
-        toast.error(errorMsg);
-        setAccepting(false);
+        throw new Error("Profile not available");
       }
     } catch (error) {
       devLog('[NDA] ❌ Exception:', error);

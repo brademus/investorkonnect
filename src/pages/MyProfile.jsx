@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { createPageUrl } from "@/components/utils";
 import { embedProfile } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { User, Edit, Layers, Loader2, RefreshCw } from "lucide-react";
+import { User, Edit, Layers, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 /**
@@ -60,6 +60,13 @@ export default function MyProfile() {
     <div className="min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back
+          </button>
           <h1 className="text-3xl font-bold text-slate-900 mb-2">My Profile</h1>
           <p className="text-slate-600">
             Edit your basics or open the full onboarding to adjust matching inputs

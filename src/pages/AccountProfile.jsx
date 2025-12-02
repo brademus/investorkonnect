@@ -89,10 +89,29 @@ function AccountProfileContent() {
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // Navigate to MyProfile page
-      setTimeout(() => {
-        navigate(createPageUrl("MyProfile"));
-      }, 500);
+      // Check if role changed - if so, redirect to appropriate onboarding
+      const originalRole = profile?.user_role || profile?.user_type;
+      const newRole = formData.role;
+      
+      if (originalRole !== newRole) {
+        // Role changed - redirect to onboarding for new role
+        console.log('[AccountProfile] Role changed from', originalRole, 'to', newRole, '- redirecting to onboarding');
+        toast.info(`Switching to ${newRole} account - please complete onboarding`);
+        setTimeout(() => {
+          if (newRole === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"));
+          } else if (newRole === 'agent') {
+            navigate(createPageUrl("AgentOnboarding"));
+          } else {
+            navigate(createPageUrl("MyProfile"));
+          }
+        }, 500);
+      } else {
+        // No role change - go back to MyProfile
+        setTimeout(() => {
+          navigate(createPageUrl("MyProfile"));
+        }, 500);
+      }
 
     } catch (error) {
       console.error("[AccountProfile] ❌ Save error:", error);
