@@ -1,15 +1,28 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
+import { SetupChecklist } from "@/components/SetupChecklist";
+import { base44 } from "@/api/base44Client";
+import { getInvestorMatches, inboxList } from "@/components/functions";
 import { 
-  FileText, TrendingUp, ArrowRight
+  FileText, TrendingUp, ArrowRight, Plus, MessageSquare, Users,
+  Target, Loader2, Sparkles, Home, DollarSign
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 function InvestorDashboardContent() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [profileCompletion] = useState(85);
+  const [suggestedAgents, setSuggestedAgents] = useState([]);
+  const [loadingAgents, setLoadingAgents] = useState(true);
+  const [recentMessages, setRecentMessages] = useState([]);
+  const [dealStats, setDealStats] = useState({
+    active: 0,
+    pending: 0,
+    closed: 0
+  });
 
   useEffect(() => {
     loadProfile();
@@ -25,6 +38,12 @@ function InvestorDashboardContent() {
       if (response.ok) {
         const state = await response.json();
         setProfile(state.profile);
+        
+        // Load suggested agents
+        loadSuggestedAgents();
+        
+        // Load recent messages
+        loadRecentMessages();
       }
       setLoading(false);
     } catch (error) {
@@ -32,11 +51,40 @@ function InvestorDashboardContent() {
     }
   };
 
+  const loadSuggestedAgents = async () => {
+    try {
+      const response = await getInvestorMatches({ limit: 3 });
+      if (response.data?.ok) {
+        setSuggestedAgents(response.data.results || []);
+      }
+    } catch (err) {
+      // Use demo data
+      setSuggestedAgents([
+        { profile: { id: '1', full_name: 'John Davis', agent: { markets: ['Phoenix, AZ'], experience_years: 15 } }, score: 0.98 },
+        { profile: { id: '2', full_name: 'Sarah Martinez', agent: { markets: ['Dallas, TX'], experience_years: 12 } }, score: 0.95 },
+        { profile: { id: '3', full_name: 'Michael Chen', agent: { markets: ['Atlanta, GA'], experience_years: 10 } }, score: 0.92 }
+      ]);
+    } finally {
+      setLoadingAgents(false);
+    }
+  };
+
+  const loadRecentMessages = async () => {
+    try {
+      const response = await inboxList();
+      if (response.data) {
+        setRecentMessages(response.data.slice(0, 3));
+      }
+    } catch (err) {
+      // Silent fail
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto" style={{ borderColor: '#D3A029', borderTopColor: 'transparent' }}></div>
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
           <p className="mt-4 text-[#6B7280] text-sm">Loading your dashboard...</p>
         </div>
       </div>
@@ -44,234 +92,256 @@ function InvestorDashboardContent() {
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
-  const userData = {
-    activeConnections: 3,
-    pendingInvites: 2,
-    unreadMessages: 2,
-    activeDealRooms: 1
-  };
+  const buyBox = profile?.investor?.buy_box || {};
 
   return (
-    <div className="space-y-7 lg:space-y-9">
-      {/* HEADER */}
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div className="space-y-6 lg:space-y-8">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
         <div>
-          <h1 className="ik-h1 text-[#111827]">
-            Your Investor Konnect dashboard
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827]">
+            Your Investor Dashboard
           </h1>
-          <p className="mt-1 text-sm text-[#6B7280] sm:text-[0.95rem]">
-            See your buy box, suggested agents, documents, and deal tools in one place.
+          <p className="mt-1 text-sm text-[#6B7280]">
+            See your buy box, suggested agents, and deal tools in one place.
           </p>
         </div>
+      </div>
 
-        <div className="flex items-center gap-2">
-          <Link to={createPageUrl("Pricing")} className="ik-btn-outline text-xs sm:text-[0.8rem]">
-            View plans
-          </Link>
-          <Link to={createPageUrl("Admin")} className="ik-btn-outline text-xs sm:text-[0.8rem]">
-            Admin panel
+      {/* Setup Checklist */}
+      <SetupChecklist profile={profile} onRefresh={loadProfile} />
+
+      {/* 4-Box Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+        
+        {/* Box 1: Start New Deal */}
+        <div className="ik-card p-6 hover:shadow-lg transition-shadow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
+              <Plus className="w-6 h-6 text-[#D3A029]" />
+            </div>
+            <span className="px-3 py-1 bg-[#D1FAE5] text-[#065F46] text-xs font-medium rounded-full">
+              Primary Action
+            </span>
+          </div>
+          <h3 className="text-lg font-bold text-[#111827] mb-2">Start New Deal</h3>
+          <p className="text-sm text-[#6B7280] mb-4">
+            Submit a new deal and get matched with investor-friendly agents in your market.
+          </p>
+          <Button 
+            onClick={() => navigate(createPageUrl("DealWizard"))}
+            className="w-full bg-[#D3A029] hover:bg-[#B8902A] text-white"
+          >
+            <Sparkles className="w-4 h-4 mr-2" />
+            Submit Your First Deal
+          </Button>
+        </div>
+
+        {/* Box 2: Deal Pipeline */}
+        <div className="ik-card p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 bg-[#E0E7FF] rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-6 h-6 text-[#4F46E5]" />
+            </div>
+            <Link to={createPageUrl("DealRooms")} className="text-sm text-[#D3A029] hover:underline">
+              View all →
+            </Link>
+          </div>
+          <h3 className="text-lg font-bold text-[#111827] mb-4">Deal Pipeline</h3>
+          
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-[#FEF3C7] rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#D3A029] rounded-lg flex items-center justify-center">
+                  <Home className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-medium text-[#111827]">Active Deals</span>
+              </div>
+              <span className="text-xl font-bold text-[#D3A029]">{dealStats.active}</span>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-slate-400 rounded-lg flex items-center justify-center">
+                  <FileText className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-medium text-[#111827]">Pending</span>
+              </div>
+              <span className="text-xl font-bold text-slate-600">{dealStats.pending}</span>
+            </div>
+            
+            <div className="flex items-center justify-between p-3 bg-[#D1FAE5] rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-[#10B981] rounded-lg flex items-center justify-center">
+                  <DollarSign className="w-4 h-4 text-white" />
+                </div>
+                <span className="font-medium text-[#111827]">Closed</span>
+              </div>
+              <span className="text-xl font-bold text-[#10B981]">{dealStats.closed}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Box 3: Recent Messages */}
+        <div className="ik-card p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 bg-[#FCE7F3] rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-6 h-6 text-[#DB2777]" />
+            </div>
+            <Link to={createPageUrl("DealRooms")} className="text-sm text-[#D3A029] hover:underline">
+              View all →
+            </Link>
+          </div>
+          <h3 className="text-lg font-bold text-[#111827] mb-4">Recent Messages</h3>
+          
+          {recentMessages.length > 0 ? (
+            <div className="space-y-3">
+              {recentMessages.map((msg, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
+                  <div className="w-8 h-8 bg-[#FEF3C7] rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-xs font-bold text-[#D3A029]">
+                      {msg.senderName?.charAt(0) || 'A'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[#111827] truncate">{msg.senderName || 'Agent'}</p>
+                    <p className="text-xs text-[#6B7280] truncate">{msg.preview || 'New message'}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <MessageSquare className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-[#6B7280]">No messages yet</p>
+              <p className="text-xs text-[#9CA3AF]">Start a deal to connect with agents</p>
+            </div>
+          )}
+        </div>
+
+        {/* Box 4: Suggested Agents */}
+        <div className="ik-card p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="w-12 h-12 bg-[#D1FAE5] rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-[#10B981]" />
+              </div>
+              <span className="px-2 py-0.5 bg-[#FEF3C7] text-[#92400E] text-xs font-medium rounded-full">
+                AI Powered
+              </span>
+            </div>
+            <Link to={createPageUrl("AgentDirectory")} className="text-sm text-[#D3A029] hover:underline">
+              View all →
+            </Link>
+          </div>
+          <h3 className="text-lg font-bold text-[#111827] mb-4">Suggested Agents</h3>
+          
+          {loadingAgents ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-6 h-6 text-[#D3A029] animate-spin" />
+            </div>
+          ) : suggestedAgents.length > 0 ? (
+            <div className="space-y-3">
+              {suggestedAgents.slice(0, 3).map((match, idx) => (
+                <div 
+                  key={match.profile?.id || idx}
+                  className="flex items-start gap-3 p-3 rounded-lg border border-slate-200 hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer"
+                  onClick={() => navigate(`${createPageUrl("AgentDirectory")}?highlight=${match.profile?.id}`)}
+                >
+                  <div className="w-10 h-10 bg-[#FEF3C7] rounded-full flex items-center justify-center flex-shrink-0">
+                    <span className="text-sm font-bold text-[#D3A029]">
+                      {match.profile?.full_name?.split(' ').map(n => n[0]).join('') || 'AG'}
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-[#111827] truncate">{match.profile?.full_name || 'Agent'}</p>
+                      <span className="px-2 py-0.5 bg-[#D1FAE5] text-[#065F46] text-xs font-medium rounded-full">
+                        {Math.round((match.score || 0.9) * 100)}% match
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#6B7280]">
+                      {match.profile?.agent?.markets?.[0] || 'Your market'} • {match.profile?.agent?.experience_years || '10'}+ years
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-6">
+              <Users className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+              <p className="text-sm text-[#6B7280]">No matches yet</p>
+              <p className="text-xs text-[#9CA3AF]">Complete your buy box for better matches</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Buy Box Section */}
+      <div className="ik-card p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
+              <Target className="w-5 h-5 text-[#D3A029]" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-[#111827]">Your Buy Box</h3>
+              <p className="text-sm text-[#6B7280]">Investment criteria for agent matching</p>
+            </div>
+          </div>
+          <Link to={createPageUrl("InvestorBuyBox")} className="text-sm text-[#D3A029] hover:underline">
+            Edit →
           </Link>
         </div>
-      </header>
 
-      {/* TODAY STRIP / UPGRADE BANNER */}
-      <section className="ik-card ik-card-hover flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <div className="flex items-start gap-3">
-          <span className="ik-icon-pill">⚡</span>
-          <div>
-            <p className="ik-section-title">
-              Upgrade to unlock full platform access
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="p-4 bg-slate-50 rounded-xl">
+            <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">Markets</p>
+            <p className="font-semibold text-[#111827]">
+              {profile?.target_state || profile?.markets?.[0] || 'Not set'}
             </p>
-            <p className="ik-section-subtitle mt-1">
-              Get unlimited deal rooms, advanced analytics, and priority support.
+          </div>
+          <div className="p-4 bg-slate-50 rounded-xl">
+            <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">Property Types</p>
+            <p className="font-semibold text-[#111827]">
+              {buyBox?.asset_types?.slice(0, 2).join(', ') || 'Any'}
+            </p>
+          </div>
+          <div className="p-4 bg-slate-50 rounded-xl">
+            <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">Budget</p>
+            <p className="font-semibold text-[#111827]">
+              {buyBox?.budget_min && buyBox?.budget_max 
+                ? `$${(buyBox.budget_min/1000).toFixed(0)}K - $${(buyBox.budget_max/1000).toFixed(0)}K`
+                : 'Not set'}
+            </p>
+          </div>
+          <div className="p-4 bg-slate-50 rounded-xl">
+            <p className="text-xs text-[#6B7280] uppercase tracking-wide mb-1">Strategy</p>
+            <p className="font-semibold text-[#111827]">
+              {buyBox?.deal_profiles?.[0] || 'Any'}
             </p>
           </div>
         </div>
-        <Link to={createPageUrl("Pricing")} className="ik-btn-primary text-xs sm:text-[0.85rem]">
-          View plans
-        </Link>
-      </section>
+      </div>
 
-      {/* MAIN CONTENT GRID */}
-      <section className="grid gap-4 lg:grid-cols-[minmax(0,1.65fr)_minmax(0,1.35fr)] lg:gap-5">
-        {/* LEFT COLUMN: suggested agents + documents */}
-        <div className="space-y-4">
-          {/* Suggested agents */}
-          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
-            <header className="mb-4 flex items-center justify-between gap-2">
-              <div>
-                <h2 className="ik-section-title">
-                  Suggested agents
-                  <span className="ml-1 text-[0.7rem] font-normal text-[#6B7280]">
-                    AI powered
-                  </span>
-                </h2>
-                <p className="ik-section-subtitle mt-1">
-                  Smart matches based on your investment goals.
-                </p>
-              </div>
-              <Link to={createPageUrl("Matches")} className="ik-link text-xs">
-                View all
-              </Link>
-            </header>
-
-            {/* Example agents for demo */}
-            <div className="space-y-3">
-              {/* Agent 1 */}
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
-                  <span className="text-sm font-semibold text-[#D3A029]">JD</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-[#111827] text-sm">John Davis</h3>
-                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">98% match</span>
-                  </div>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Phoenix, AZ • 15 years exp</p>
-                  <p className="text-xs text-[#6B7280] mt-1">Specializes in multi-family and fix-and-flip investments</p>
-                </div>
-              </div>
-
-              {/* Agent 2 */}
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
-                  <span className="text-sm font-semibold text-[#D3A029]">SM</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-[#111827] text-sm">Sarah Martinez</h3>
-                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">95% match</span>
-                  </div>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Dallas, TX • 12 years exp</p>
-                  <p className="text-xs text-[#6B7280] mt-1">Expert in single-family rentals and BRRRR strategy</p>
-                </div>
-              </div>
-
-              {/* Agent 3 */}
-              <div className="flex items-start gap-3 p-3 rounded-lg border border-[#E5E7EB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all cursor-pointer">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FEF3C7] flex-shrink-0">
-                  <span className="text-sm font-semibold text-[#D3A029]">MC</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-[#111827] text-sm">Michael Chen</h3>
-                    <span className="text-xs font-medium text-[#059669] bg-[#D1FAE5] px-2 py-0.5 rounded-full">92% match</span>
-                  </div>
-                  <p className="text-xs text-[#6B7280] mt-0.5">Atlanta, GA • 10 years exp</p>
-                  <p className="text-xs text-[#6B7280] mt-1">Focuses on commercial properties and value-add opportunities</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Documents */}
-          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
-            <header className="mb-3 flex items-center justify-between gap-2">
-              <h2 className="ik-section-title">Documents</h2>
-            </header>
-
-            <div className="flex items-center gap-3 text-sm text-[#6B7280]">
-              <div className="ik-icon-pill bg-[#F3F4F6] text-[#4B5563]">
-                <FileText className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="font-medium text-[#374151]">
-                  No documents uploaded yet
-                </p>
-                <Link to={createPageUrl("InvestorDocuments")} className="ik-link text-xs">
-                  Upload documents
-                </Link>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        {/* RIGHT COLUMN: buy box + quick links */}
-        <div className="space-y-4">
-          {/* Buy box */}
-          <section className="ik-card px-5 py-5 sm:px-6 sm:py-6">
-            <header className="mb-4 flex items-center justify-between gap-2">
-              <div>
-                <h2 className="ik-section-title">Buy box</h2>
-                <p className="ik-section-subtitle mt-1">
-                  High-level snapshot of what you&apos;re looking to buy.
-                </p>
-              </div>
-              <Link to={createPageUrl("InvestorBuyBox")} className="ik-link text-xs">
-                Edit
-              </Link>
-            </header>
-
-            <dl className="space-y-3 text-sm text-[#374151]">
-              <div>
-                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
-                  Asset types
-                </dt>
-                <dd className="mt-1 flex flex-wrap gap-1.5">
-                  <span className="ik-chip text-[0.75rem]">Single Family</span>
-                  <span className="ik-chip text-[0.75rem]">Land</span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
-                  Target markets
-                </dt>
-                <dd className="mt-1 flex flex-wrap gap-1.5">
-                  <span className="ik-chip text-[0.75rem]">{profile?.target_state || 'Not set'}</span>
-                </dd>
-              </div>
-              <div>
-                <dt className="text-[0.78rem] uppercase tracking-wide text-[#9CA3AF]">
-                  Budget range
-                </dt>
-                <dd className="mt-1 text-[0.95rem] font-semibold text-[#111827]">
-                  $100,000 - $500,000
-                </dd>
-              </div>
-            </dl>
-          </section>
-
-          {/* Quick links – big, clickable tiles */}
-          <section className="ik-card px-5 py-4 sm:px-6 sm:py-5">
-            <h3 className="mb-3 text-[0.78rem] font-semibold uppercase tracking-wide text-[#9CA3AF]">
-              Quick links
-            </h3>
-            <div className="space-y-2">
-              <Link to={createPageUrl("Pricing")} className="ik-tile">
-                <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">💳</span>
-                  <span>Subscription & plans</span>
-                </div>
-                <span>→</span>
-              </Link>
-
-              <Link to={createPageUrl("MyProfile")} className="ik-tile">
-                <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">👤</span>
-                  <span>My profile</span>
-                </div>
-                <span>→</span>
-              </Link>
-
-              <Link to={createPageUrl("DealRooms")} className="ik-tile">
-                <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">💬</span>
-                  <span>Deal rooms</span>
-                </div>
-                <span>→</span>
-              </Link>
-
-              <Link to={createPageUrl("Billing")} className="ik-tile">
-                <div className="flex items-center gap-3">
-                  <span className="ik-icon-pill">📑</span>
-                  <span>Billing & payment</span>
-                </div>
-                <span>→</span>
-              </Link>
-            </div>
-          </section>
-        </div>
-      </section>
+      {/* Quick Links */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: 'Subscription', icon: '💳', href: 'Pricing' },
+          { label: 'My Profile', icon: '👤', href: 'AccountProfile' },
+          { label: 'Deal Rooms', icon: '💬', href: 'DealRooms' },
+          { label: 'Documents', icon: '📄', href: 'InvestorDocuments' },
+        ].map((link) => (
+          <Link 
+            key={link.href} 
+            to={createPageUrl(link.href)} 
+            className="ik-tile flex items-center gap-3 p-4"
+          >
+            <span className="text-xl">{link.icon}</span>
+            <span className="font-medium text-[#374151]">{link.label}</span>
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
