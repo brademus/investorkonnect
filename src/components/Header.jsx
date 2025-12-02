@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from './utils';
 import { base44 } from '@/api/base44Client';
+import { Logo } from './Logo';
 import { Button } from './ui/button';
 import { 
   Home, Users, MessageSquare, FileText, CreditCard, 
@@ -64,15 +65,11 @@ export function Header({ profile }) {
         <div className="flex items-center justify-between h-16">
           
           {/* Logo */}
-          <Link 
-            to={createPageUrl(isInvestor ? "DashboardInvestor" : "Dashboard")} 
-            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
-          >
-            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center">
-              <span className="text-[#D3A029] font-bold text-lg">IK</span>
-            </div>
-            <span className="font-bold text-[#111827] hidden sm:block text-lg">Investor Konnect</span>
-          </Link>
+          <Logo 
+            size="default"
+            showText={true}
+            linkTo={createPageUrl(isInvestor ? "DashboardInvestor" : "Dashboard")}
+          />
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-1">

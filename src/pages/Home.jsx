@@ -2,6 +2,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { 
   Shield, MapPin, FileText, Users, Building2, Star, 
@@ -29,14 +30,7 @@ export default function Home() {
       {/* Fixed Header */}
       <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:max-w-7xl lg:px-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FDE68A] shadow-sm">
-              <span className="text-sm font-bold tracking-tight text-[#D3A029]">IK</span>
-            </div>
-            <span className="text-base font-semibold tracking-tight text-[#111827]">
-              Investor Konnect
-            </span>
-          </div>
+          <Logo size="default" showText={true} linkTo="/" />
           <div className="flex items-center gap-3">
             <button 
               onClick={handleLogin} 
@@ -52,8 +46,8 @@ export default function Home() {
       <section className="pt-32 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#FEF3C7] rounded-full mb-8">
-            <div className="w-2 h-2 rounded-full bg-[#D3A029]" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F5E6B3] to-[#FAF7F2] rounded-full mb-8">
+            <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
             <span className="text-sm font-medium text-[#111827]">
               The #1 Network for Investor-Friendly Agents
             </span>
@@ -62,7 +56,10 @@ export default function Home() {
           {/* Headline */}
           <h1 className="text-5xl md:text-6xl font-bold text-[#111827] mb-6 leading-tight">
             Connect with agents who{" "}
-            <span className="text-[#D3A029]">speak your language</span>
+            <span className="relative inline-block">
+              <span className="relative z-10 text-[#D4AF37]">speak your language</span>
+              <span className="absolute inset-x-0 bottom-2 h-4 bg-[#D4AF37] opacity-30 -rotate-1"></span>
+            </span>
           </h1>
 
           {/* Subheadline */}
@@ -75,7 +72,7 @@ export default function Home() {
           <div className="mb-8">
             <Button
               onClick={handleGetStarted}
-              className="bg-[#D3A029] hover:bg-[#B8941F] text-white px-12 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+              className="bg-[#D4AF37] hover:bg-[#B8941F] text-white px-12 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
             >
               Submit Your First Deal
             </Button>
@@ -84,15 +81,15 @@ export default function Home() {
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-[#4B5563]">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
               <span>Vetted Experience</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
               <span>Market Data Access</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D3A029]" />
+              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
               <span>Off-Market Deals</span>
             </div>
           </div>

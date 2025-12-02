@@ -77,8 +77,8 @@ html {
     --card: 0 0% 100%; /* White */
     --card-foreground: 220 26% 14%;
     
-    /* Primary (Gold) */
-    --primary: 43 77% 49%; /* #D3A029 */
+    /* Primary (Gold from logo) */
+    --primary: 45 65% 52%; /* #D4AF37 */
     --primary-foreground: 0 0% 100%;
     
     /* Secondary */
@@ -96,7 +96,7 @@ html {
     /* Borders */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 43 77% 49%; /* Gold ring */
+    --ring: 45 65% 52%; /* Logo gold ring */
     
     /* Destructive */
     --destructive: 0 84% 60%;
