@@ -242,16 +242,19 @@ export function useCurrentProfile() {
           subscriptionStatus === 'active' || 
           subscriptionStatus === 'trialing';
 
-        console.log('[useCurrentProfile] 📊 Profile state:', {
-          role,
-          onboarded,
-          needsOnboarding,
-          kycVerified,
-          needsKyc,
-          hasNDA,
-          needsNda,
-          onboarding_version: profile?.onboarding_version,
-        });
+        // Debug logging only for admin users
+        if (isAdmin) {
+          console.log('[useCurrentProfile] 📊 Profile state:', {
+            role,
+            onboarded,
+            needsOnboarding,
+            kycVerified,
+            needsKyc,
+            hasNDA,
+            needsNda,
+            onboarding_version: profile?.onboarding_version,
+          });
+        }
 
         setState({
           loading: false,
