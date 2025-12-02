@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
+import { Header } from "@/components/Header";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { base44 } from "@/api/base44Client";
 import { getInvestorMatches, inboxList } from "@/components/functions";
 import { 
   FileText, TrendingUp, ArrowRight, Plus, MessageSquare, Users,
-  Target, Loader2, Sparkles, Home, DollarSign
+  Target, Loader2, Sparkles, Home, DollarSign, MapPin, CreditCard
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -82,31 +83,40 @@ function InvestorDashboardContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
-          <p className="mt-4 text-[#6B7280] text-sm">Loading your dashboard...</p>
+      <>
+        <Header profile={profile} />
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+            <p className="text-[#6B7280] text-sm">Loading your dashboard...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
   const buyBox = profile?.investor?.buy_box || {};
+  const hasBuyBox = buyBox && Object.keys(buyBox).length > 0 && (buyBox.markets || buyBox.asset_types || buyBox.budget_min);
 
   return (
-    <div className="space-y-6 lg:space-y-8">
-      {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827]">
-            Your Investor Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-[#6B7280]">
-            See your buy box, suggested agents, and deal tools in one place.
-          </p>
-        </div>
-      </div>
+    <>
+      <Header profile={profile} />
+      <div className="min-h-screen bg-[#FAF7F2]">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="space-y-6 lg:space-y-8">
+      
+            {/* Page Header */}
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#111827]">
+                  Welcome back, {firstName}!
+                </h1>
+                <p className="mt-2 text-base text-[#6B7280]">
+                  Your investment dashboard - track deals, connect with agents, and grow your portfolio.
+                </p>
+              </div>
+            </div>
 
       {/* Setup Checklist */}
       <SetupChecklist profile={profile} onRefresh={loadProfile} />
@@ -324,25 +334,33 @@ function InvestorDashboardContent() {
         </div>
       </div>
 
-      {/* Quick Links */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: 'Subscription', icon: '💳', href: 'Pricing' },
-          { label: 'My Profile', icon: '👤', href: 'AccountProfile' },
-          { label: 'Deal Rooms', icon: '💬', href: 'DealRooms' },
-          { label: 'Documents', icon: '📄', href: 'InvestorDocuments' },
-        ].map((link) => (
-          <Link 
-            key={link.href} 
-            to={createPageUrl(link.href)} 
-            className="bg-white border border-gray-200 rounded-xl flex items-center gap-3 p-4 hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all"
-          >
-            <span className="text-xl">{link.icon}</span>
-            <span className="font-medium text-[#374151]">{link.label}</span>
-          </Link>
-        ))}
+            {/* Quick Links */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
+                { label: 'My Profile', icon: Users, href: 'AccountProfile' },
+                { label: 'Deal Rooms', icon: MessageSquare, href: 'DealRooms' },
+                { label: 'Documents', icon: FileText, href: 'InvestorDocuments' },
+              ].map((link) => {
+                const Icon = link.icon;
+                return (
+                  <Link 
+                    key={link.href} 
+                    to={createPageUrl(link.href)} 
+                    className="bg-white border border-gray-200 rounded-xl flex items-center gap-3 p-4 hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all"
+                  >
+                    <div className="w-8 h-8 bg-[#FEF3C7] rounded-lg flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-[#D3A029]" />
+                    </div>
+                    <span className="font-medium text-[#374151]">{link.label}</span>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

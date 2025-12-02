@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { inboxList, introCreate, matchList, getInvestorMatches } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { StepGuard } from "@/components/StepGuard";
+import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { 
   Loader2, MapPin, Star, TrendingUp, Users, 
@@ -31,57 +31,20 @@ function MatchesContent() {
     document.title = "Your Top Matches - Investor Konnect";
   }, []);
 
-  // GATE: Redirect to NEW onboarding if not completed
+  // Simple gating - redirect non-investors, load matches immediately
   useEffect(() => {
     if (loading) return;
 
-    if (role === 'investor' && !onboarded) {
-      toast.error('Please complete your investor profile first');
-      navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+    // Redirect non-investors
+    if (role !== 'investor') {
+      toast.error('This page is for investors only');
+      navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
-  }, [loading, role, onboarded, navigate]);
 
-  // Check for existing room lock-in
-  useEffect(() => {
-    if (loading || !profile || !onboarded) return;
-
-    const checkLockIn = async () => {
-      try {
-        // Get all investor's rooms
-        const response = await inboxList();
-        const rooms = response.data || [];
-        
-        // Check if any room exists for this state
-        const roomInState = rooms.find(room => {
-          // Room metadata should include state
-          const roomState = room.state || room.targetState || room.metadata?.state;
-          return roomState === targetState && !room.closedAt;
-        });
-
-        if (roomInState) {
-          toast.info('You already have an active deal room for this market');
-          
-          // Redirect to existing room
-          setTimeout(() => {
-            navigate(createPageUrl(`Room?id=${roomInState.id}`), { replace: true });
-          }, 1500);
-          
-          setExistingRoom(roomInState);
-          return;
-        }
-
-        // No lock-in, fetch matches
-        await fetchMatches();
-
-      } catch (error) {
-        toast.error('Failed to load matches');
-        setLoadingMatches(false);
-      }
-    };
-
-    checkLockIn();
-  }, [loading, profile, onboarded, targetState, navigate]);
+    // Load matches immediately
+    fetchMatches();
+  }, [loading, role]);
 
   const fetchMatches = async () => {
     try {
@@ -217,71 +180,77 @@ function MatchesContent() {
   }
 
   // Loading state
-  if (loading || loadingMatches || !onboarded) {
+  if (loading || loadingMatches) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Finding your top matches...</p>
+      <>
+        <Header profile={profile} />
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+            <p className="text-[#6B7280]">Finding your top matches...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   // No matches found
   if (matches.length === 0) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Users className="w-10 h-10 text-slate-400" />
+      <>
+        <Header profile={profile} />
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
+              <div className="w-16 h-16 bg-[#FEF3C7] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Users className="w-10 h-10 text-[#D3A029]" />
+              </div>
+              <h2 className="text-2xl font-bold text-[#111827] mb-2">No Matches Yet</h2>
+              <p className="text-[#6B7280] mb-6">
+                We're working on finding agents in {targetState || 'your area'}. Check back soon!
+              </p>
+              <Button
+                onClick={() => navigate(createPageUrl("DashboardInvestor"))}
+                className="bg-[#D3A029] hover:bg-[#B8902A] text-white"
+              >
+                Go to Dashboard
+              </Button>
             </div>
-            <h2 className="text-2xl font-bold text-slate-900 mb-2">No Matches Yet</h2>
-            <p className="text-slate-600 mb-6">
-              We're working on finding agents in {targetState}. Check back soon!
-            </p>
-            <Button
-              onClick={() => navigate(createPageUrl("Dashboard"))}
-              variant="outline"
-            >
-              Go to Dashboard
-            </Button>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-50 py-8">
-      {/* NO TOP NAV */}
-      
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <>
+      <Header profile={profile} />
+      <div className="min-h-screen bg-[#FAF7F2] py-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
-            <Shield className="w-10 h-10 text-white" />
+          <div className="w-16 h-16 bg-gradient-to-br from-[#D3A029] to-[#F59E0B] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-xl">
+            <Users className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-slate-900 mb-3">
-            Your Top Matches in {targetState}
+          <h1 className="text-4xl font-bold text-[#111827] mb-3">
+            Your Top Matches{targetState ? ` in ${targetState}` : ''}
           </h1>
-          <p className="text-xl text-slate-600 max-w-2xl mx-auto">
+          <p className="text-xl text-[#6B7280] max-w-2xl mx-auto">
             We've found the best verified agents for your investment goals
           </p>
         </div>
 
         {/* Lock-in Notice */}
-        <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6 mb-8 max-w-3xl mx-auto">
+        <div className="bg-[#FFFBEB] border-2 border-[#D3A029]/30 rounded-xl p-6 mb-8 max-w-3xl mx-auto">
           <div className="flex items-start gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-10 h-10 bg-[#D3A029] rounded-lg flex items-center justify-center flex-shrink-0">
               <Shield className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h3 className="font-bold text-blue-900 mb-1">Exclusive Partnership Model</h3>
-              <p className="text-sm text-blue-800">
-                Once you engage an agent for {targetState}, they become your exclusive partner for that market. 
+              <h3 className="font-bold text-[#92400E] mb-1">Exclusive Partnership Model</h3>
+              <p className="text-sm text-[#B45309]">
+                Once you engage an agent{targetState ? ` for ${targetState}` : ''}, they become your exclusive partner for that market. 
                 This ensures focused attention and alignment on your investment goals.
               </p>
             </div>
@@ -426,28 +395,28 @@ function MatchesContent() {
         </div>
 
         {/* Footer Info */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 max-w-3xl mx-auto">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 max-w-3xl mx-auto">
           <div className="flex items-start gap-4">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-              <MapPin className="w-5 h-5 text-blue-600" />
+            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center flex-shrink-0">
+              <MapPin className="w-5 h-5 text-[#D3A029]" />
             </div>
             <div>
-              <h4 className="font-bold text-slate-900 mb-2">What happens next?</h4>
-              <ul className="space-y-2 text-sm text-slate-700">
+              <h4 className="font-bold text-[#111827] mb-2">What happens next?</h4>
+              <ul className="space-y-2 text-sm text-[#6B7280]">
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
                   <span>You'll enter a secure deal room with your chosen agent</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
                   <span>Both parties sign mutual NDA for protection</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
                   <span>Share documents, communicate, and collaborate on deals</span>
                 </li>
                 <li className="flex items-start gap-2">
-                  <CheckCircle className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4 h-4 text-[#10B981] flex-shrink-0 mt-0.5" />
                   <span>All activity is logged and auditable</span>
                 </li>
               </ul>
@@ -456,6 +425,7 @@ function MatchesContent() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 
