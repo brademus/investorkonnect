@@ -4,28 +4,37 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useWizard } from "@/components/WizardContext";
-
-import { ArrowRight, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 
-import BasicProfileStep from "@/components/investor-onboarding/BasicProfileStep";
-import CapitalFinancingStep from "@/components/investor-onboarding/CapitalFinancingStep";
-import StrategyDealsStep from "@/components/investor-onboarding/StrategyDealsStep";
-import MarketsStep from "@/components/investor-onboarding/MarketsStep";
-import DealStructureStep from "@/components/investor-onboarding/DealStructureStep";
-import RiskSpeedStep from "@/components/investor-onboarding/RiskSpeedStep";
-import AgentWorkingStep from "@/components/investor-onboarding/AgentWorkingStep";
-import ExperienceAccreditationStep from "@/components/investor-onboarding/ExperienceAccreditationStep";
+const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "HI", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"];
 
-function InvestorOnboardingContent() {
+/**
+ * INVESTOR ONBOARDING - Simple 3-step initial onboarding
+ * Full 8-step onboarding is available from Dashboard checklist
+ */
+export default function InvestorOnboarding() {
   const navigate = useNavigate();
-  const { profile, refresh, user, loading: profileLoading } = useCurrentProfile();
+  const { profile, refresh, user } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    company: '',
+    primary_state: selectedState || '',
+    investment_experience: '',
+    goals: ''
+  });
 
-  // Check if user should be here
+  const TOTAL_STEPS = 3;
+
+  // Check access
   useEffect(() => {
     const checkAccess = async () => {
       try {
@@ -34,100 +43,44 @@ function InvestorOnboardingContent() {
           base44.auth.redirectToLogin(createPageUrl("PostAuth"));
           return;
         }
+        // Admin bypass
+        if (authUser.role === 'admin') {
+          toast.success('Admin access granted');
+          navigate(createPageUrl("Dashboard"), { replace: true });
+          return;
+        }
         setChecking(false);
       } catch (e) {
         base44.auth.redirectToLogin(createPageUrl("PostAuth"));
       }
     };
     checkAccess();
-  }, []);
-  const [formData, setFormData] = useState({
-    investor_description: '',
-    deals_closed_24mo: '',
-    typical_deal_size: '',
-    capital_available_12mo: '',
-    financing_methods: [],
-    financing_other: '',
-    financing_lined_up: '',
-    pof_verification_intent: '',
-    investment_strategies: [],
-    strategy_other: '',
-    primary_strategy: '',
-    property_types: [],
-    property_type_other: '',
-    property_condition: '',
-    specific_cities_counties: '',
-    market_area_importance: '',
-    state_price_min: '',
-    state_price_max: '',
-    primary_state: selectedState || '',
-    deal_types_open_to: [],
-    preferred_deal_structure: [],
-    most_important_now: '',
-    target_hold_period: '',
-    decision_speed_on_deal: '',
-    typical_earnest_money_pct: '',
-    comfortable_non_refundable_em: '',
-    most_recent_deal: '',
-    what_from_agent: [],
-    communication_preferences: [],
-    preferred_agent_response_time: '',
-    agent_deal_breakers: '',
-    accredited_investor: '',
-    investment_holding_structures: [],
-    background_links: '',
-    anything_else_for_agent: '',
-  });
+  }, [navigate]);
 
-  const TOTAL_STEPS = 8;
-  const STEP_COMPONENTS = [
-    BasicProfileStep,
-    CapitalFinancingStep,
-    StrategyDealsStep,
-    MarketsStep,
-    DealStructureStep,
-    RiskSpeedStep,
-    AgentWorkingStep,
-    ExperienceAccreditationStep
-  ];
-
-  // ADMIN BYPASS: Skip onboarding for admin users
+  // Load existing data
   useEffect(() => {
-    if (user?.role === 'admin') {
-      console.log('[InvestorOnboarding] Admin user - skipping to dashboard');
-      toast.success('Admin access granted - onboarding bypassed');
-      navigate(createPageUrl("Dashboard"), { replace: true });
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    document.title = "Complete Your Investor Profile - Investor Konnect";
+    document.title = "Complete Your Profile - Investor Konnect";
     if (profile) {
-      const metadata = profile.metadata || {};
-      const savedData = {
-        primary_state: selectedState || profile.markets?.[0] || '',
-        ...metadata.basicProfile,
-        ...metadata.capitalFinancing,
-        ...metadata.strategyDeals,
-        ...metadata.targetMarkets,
-        ...metadata.dealStructure,
-        ...metadata.riskSpeed,
-        ...metadata.agentWorking,
-        ...metadata.experienceAccreditation,
-      };
-      setFormData(prev => ({ ...prev, ...savedData }));
+      setFormData(prev => ({
+        ...prev,
+        full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        company: profile.company || '',
+        primary_state: selectedState || profile.target_state || profile.markets?.[0] || '',
+        investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
+        goals: profile.goals || ''
+      }));
     }
   }, [profile, selectedState]);
 
-  const updateFormData = (updates) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+  const updateField = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNext = async () => {
     if (step === TOTAL_STEPS) {
       await handleSubmit();
     } else {
-      await saveProgress();
       setStep(step + 1);
     }
   };
@@ -136,48 +89,41 @@ function InvestorOnboardingContent() {
     if (step > 1) setStep(step - 1);
   };
 
-  const saveProgress = async () => {
-    try {
-      if (!profile) return;
-      const metadata = {
-        basicProfile: { investor_description: formData.investor_description, deals_closed_24mo: formData.deals_closed_24mo, typical_deal_size: formData.typical_deal_size },
-        capitalFinancing: { capital_available_12mo: formData.capital_available_12mo, financing_methods: formData.financing_methods, financing_other: formData.financing_other, financing_lined_up: formData.financing_lined_up, pof_verification_intent: formData.pof_verification_intent },
-        strategyDeals: { investment_strategies: formData.investment_strategies, strategy_other: formData.strategy_other, primary_strategy: formData.primary_strategy, property_types: formData.property_types, property_type_other: formData.property_type_other, property_condition: formData.property_condition },
-        targetMarkets: { specific_cities_counties: formData.specific_cities_counties, market_area_importance: formData.market_area_importance, state_price_min: formData.state_price_min, state_price_max: formData.state_price_max, primary_state: formData.primary_state },
-        dealStructure: { deal_types_open_to: formData.deal_types_open_to, preferred_deal_structure: formData.preferred_deal_structure, most_important_now: formData.most_important_now, target_hold_period: formData.target_hold_period },
-        riskSpeed: { decision_speed_on_deal: formData.decision_speed_on_deal, typical_earnest_money_pct: formData.typical_earnest_money_pct, comfortable_non_refundable_em: formData.comfortable_non_refundable_em, most_recent_deal: formData.most_recent_deal },
-        agentWorking: { what_from_agent: formData.what_from_agent, communication_preferences: formData.communication_preferences, preferred_agent_response_time: formData.preferred_agent_response_time, agent_deal_breakers: formData.agent_deal_breakers },
-        experienceAccreditation: { accredited_investor: formData.accredited_investor, investment_holding_structures: formData.investment_holding_structures, background_links: formData.background_links, anything_else_for_agent: formData.anything_else_for_agent },
-      };
-      await base44.entities.Profile.update(profile.id, { markets: [formData.primary_state], metadata: { ...profile.metadata, ...metadata } });
-    } catch (error) {
-      // Non-blocking error
-    }
-  };
-
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      await saveProgress();
+      if (!profile) {
+        throw new Error('Profile not found');
+      }
+
       await base44.entities.Profile.update(profile.id, {
+        full_name: formData.full_name,
+        phone: formData.phone,
+        company: formData.company,
+        goals: formData.goals,
         user_role: 'investor',
+        target_state: formData.primary_state,
+        markets: [formData.primary_state].filter(Boolean),
         onboarding_completed_at: new Date().toISOString(),
         onboarding_version: 'v2',
-        target_state: formData.primary_state || selectedState,
-        markets: [formData.primary_state || selectedState].filter(Boolean)
+        onboarding_step: 'simple_complete',
+        metadata: {
+          ...profile.metadata,
+          basicProfile: {
+            investment_experience: formData.investment_experience
+          }
+        }
       });
+
       await refresh();
-      toast.success("Profile completed! Welcome to Investor Konnect.");
-      await new Promise(resolve => setTimeout(resolve, 500));
-      // Force full page reload to refresh all components including checklist
+      toast.success("Welcome to Investor Konnect!");
+      await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl("Dashboard");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
     }
   };
-  
-  const CurrentStepComponent = STEP_COMPONENTS[step - 1];
 
   if (checking) {
     return (
@@ -186,6 +132,111 @@ function InvestorOnboardingContent() {
       </div>
     );
   }
+
+  const renderStep1 = () => (
+    <div>
+      <h3 className="text-[28px] font-bold text-black mb-2">Let's get started</h3>
+      <p className="text-[16px] text-[#666666] mb-8">Tell us a bit about yourself</p>
+      
+      <div className="space-y-5">
+        <div>
+          <Label htmlFor="full_name">Full Name *</Label>
+          <Input 
+            id="full_name" 
+            value={formData.full_name} 
+            onChange={(e) => updateField('full_name', e.target.value)} 
+            placeholder="Your full name" 
+            className="h-12 text-[16px] mt-1" 
+          />
+        </div>
+        <div>
+          <Label htmlFor="phone">Phone Number</Label>
+          <Input 
+            id="phone" 
+            type="tel" 
+            value={formData.phone} 
+            onChange={(e) => updateField('phone', e.target.value)} 
+            placeholder="(555) 123-4567" 
+            className="h-12 text-[16px] mt-1" 
+          />
+        </div>
+        <div>
+          <Label htmlFor="company">Company (optional)</Label>
+          <Input 
+            id="company" 
+            value={formData.company} 
+            onChange={(e) => updateField('company', e.target.value)} 
+            placeholder="Your company name" 
+            className="h-12 text-[16px] mt-1" 
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div>
+      <h3 className="text-[28px] font-bold text-black mb-2">Your investment focus</h3>
+      <p className="text-[16px] text-[#666666] mb-8">Where are you looking to invest?</p>
+      
+      <div className="space-y-5">
+        <div>
+          <Label htmlFor="primary_state">Primary Market / State *</Label>
+          <select 
+            id="primary_state" 
+            value={formData.primary_state} 
+            onChange={(e) => updateField('primary_state', e.target.value)} 
+            className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px] mt-1"
+          >
+            <option value="">Select your target state</option>
+            {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor="investment_experience">Investment Experience</Label>
+          <select 
+            id="investment_experience" 
+            value={formData.investment_experience} 
+            onChange={(e) => updateField('investment_experience', e.target.value)} 
+            className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px] mt-1"
+          >
+            <option value="">Select your experience level</option>
+            <option value="beginner">Beginner (0-2 deals)</option>
+            <option value="intermediate">Intermediate (3-10 deals)</option>
+            <option value="experienced">Experienced (10+ deals)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div>
+      <h3 className="text-[28px] font-bold text-black mb-2">What are your goals?</h3>
+      <p className="text-[16px] text-[#666666] mb-8">Help us understand what you're looking for</p>
+      
+      <div className="space-y-5">
+        <div>
+          <Label htmlFor="goals">Investment Goals</Label>
+          <Textarea 
+            id="goals" 
+            value={formData.goals} 
+            onChange={(e) => updateField('goals', e.target.value)} 
+            placeholder="e.g., Looking for buy-and-hold rentals in growing markets, interested in multifamily properties..." 
+            rows={5}
+            className="text-[16px] mt-1" 
+          />
+        </div>
+
+        <div className="bg-[#FFFBEB] border border-[#FCD34D] rounded-xl p-5 mt-6">
+          <h4 className="font-semibold text-[#92400E] mb-2">🎉 You're almost done!</h4>
+          <p className="text-sm text-[#92400E]">
+            After completing this, you can refine your matching criteria from your dashboard to get better agent recommendations.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
@@ -216,9 +267,12 @@ function InvestorOnboardingContent() {
         <p className="text-[14px] text-[#666666]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
-      <div className="max-w-[600px] mx-auto px-4 pb-12">
-        <div className="bg-white rounded-3xl p-12 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
-          <CurrentStepComponent data={formData} onChange={updateFormData} />
+      <div className="max-w-[500px] mx-auto px-4 pb-12">
+        <div className="bg-white rounded-2xl p-8 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
+
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E5E5]">
             {step > 1 ? (
               <button onClick={handleBack} disabled={saving} className="text-[#666666] hover:text-black font-medium transition-colors">
@@ -227,13 +281,13 @@ function InvestorOnboardingContent() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving}
+              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && !formData.primary_state)}
               className="h-12 px-8 rounded-lg bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold transition-all duration-200 disabled:bg-[#E5E5E5] disabled:text-[#999999]"
             >
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Saving...</>
               ) : step === TOTAL_STEPS ? (
-                'Complete Onboarding →'
+                'Complete Setup →'
               ) : (
                 'Continue →'
               )}
@@ -243,8 +297,4 @@ function InvestorOnboardingContent() {
       </div>
     </div>
   );
-}
-
-export default function InvestorOnboarding() {
-  return <InvestorOnboardingContent />;
 }
