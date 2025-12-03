@@ -13,8 +13,14 @@ export default function Home() {
   const navigate = useNavigate();
   const { loading, user, profile } = useCurrentProfile();
 
-  const handleLogin = () => {
-    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+  const handleLogin = async () => {
+    // If already logged in, go to dashboard
+    const isAuth = await base44.auth.isAuthenticated();
+    if (isAuth) {
+      navigate(createPageUrl("Dashboard"));
+    } else {
+      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+    }
   };
 
   const handleGetStarted = () => {

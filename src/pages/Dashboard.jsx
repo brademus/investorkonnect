@@ -18,17 +18,17 @@ import AgentHome from "./AgentHome";
 function DashboardContent() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded, profile } = useCurrentProfile();
+  const [hasRedirected, setHasRedirected] = React.useState(false);
 
   // HARD GATE - Block dashboard access until role is selected AND onboarding is complete
   useEffect(() => {
-    // Skip check while loading or if no user
-    if (loading || !user) return;
+    // Skip check while loading or if no user or already redirected
+    if (loading || !user || hasRedirected) return;
 
     // Admin bypass
     if (user?.role === 'admin') return;
     
     // IMPORTANT: Wait for profile to load before checking
-    // This prevents race conditions
     if (!profile) return;
 
     const hasRole = profile.user_role && profile.user_role !== 'member';
@@ -36,20 +36,19 @@ function DashboardContent() {
 
     // Use if-else logic to prevent double-redirects
     if (!hasRole) {
-      // No role selected - send to RoleSelection
       console.log('[Dashboard] No role selected - redirecting to role selection');
+      setHasRedirected(true);
       navigate(createPageUrl("RoleSelection"), { replace: true });
     } else if (!isOnboarded) {
-      // Has role but not onboarded - send to onboarding
       console.log('[Dashboard] Simple onboarding not complete - redirecting to onboarding');
+      setHasRedirected(true);
       if (profile.user_role === 'investor') {
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       } else if (profile.user_role === 'agent') {
         navigate(createPageUrl("AgentOnboarding"), { replace: true });
       }
     }
-    // If both hasRole and isOnboarded are true, do nothing (show dashboard)
-  }, [loading, user, profile, navigate]);
+  }, [loading, user, profile, navigate, hasRedirected]);
 
   if (loading) {
     return (

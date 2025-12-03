@@ -71,52 +71,38 @@ export function AuthGuard({
       currentPath === route || currentPath.startsWith(route + '/')
     );
 
-    // 1. Check auth requirement
+    // 1. Check auth requirement - ONLY redirect to login if not authenticated
+    // Do NOT redirect anywhere else from here - let components handle their own routing
     if (requireAuth && !user && !isPublicRoute) {
-      base44.auth.redirectToLogin(currentPath);
+      // Redirect to PostAuth after login
+      base44.auth.redirectToLogin(createPageUrl('PostAuth'));
       return;
     }
 
-    // 2. Check onboarding requirement
-    if (requireOnboarding && user && !onboarded) {
-      // Send to role selection if no role
-      if (!role || role === 'member') {
-        navigate(createPageUrl('RoleSelection'), { replace: true });
-        return;
-      }
-      
-      // Send to appropriate onboarding
-      if (role === 'investor') {
-        navigate(createPageUrl('InvestorOnboarding'), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl('AgentOnboarding'), { replace: true });
-      }
-      return;
-    }
+    // 2-5: Let individual pages handle their own routing logic
+    // This prevents redirect loops
 
-    // 3. Check role requirement
-    if (requireRole && role !== requireRole) {
-      navigate(createPageUrl('Home'), { replace: true });
-      return;
-    }
-
-    // 4. Check KYC requirement
-    if (requireKYC && !kycVerified) {
-      navigate(createPageUrl('Verify'), { replace: true });
-      return;
-    }
-
-    // 5. Check NDA requirement (no redirect - let component handle)
-
-  }, [loading, user, profile, role, onboarded, kycVerified, hasNDA, location.pathname, requireAuth, requireOnboarding, requireRole, requireKYC, requireNDA, navigate]);
+  }, [loading, user, location.pathname, requireAuth, navigate]);
 
   // Show loading spinner while checking auth
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <p className="text-[#6B7280]">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If auth required but no user, show nothing (redirect is happening)
+  if (requireAuth && !user) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <p className="text-[#6B7280]">Redirecting to login...</p>
         </div>
       </div>
     );
