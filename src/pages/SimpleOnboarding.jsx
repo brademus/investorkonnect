@@ -82,6 +82,8 @@ export default function SimpleOnboarding() {
   };
 
   const handleComplete = async () => {
+    console.log('handleComplete called, role:', role);
+    
     if (!role) {
       toast.error('Please select your role');
       return;
@@ -91,6 +93,7 @@ export default function SimpleOnboarding() {
 
     try {
       // Update profile with location and role
+      console.log('Calling profileUpsert...');
       await profileUpsert({
         target_state: location,
         markets: [location],
@@ -98,13 +101,12 @@ export default function SimpleOnboarding() {
         user_type: role,
         onboarding_step: 'simple_complete'
       });
+      console.log('profileUpsert complete, navigating...');
 
       // Redirect to role-specific onboarding
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      }
+      const targetPage = role === 'investor' ? 'InvestorOnboarding' : 'AgentOnboarding';
+      console.log('Navigating to:', targetPage);
+      window.location.href = createPageUrl(targetPage);
     } catch (error) {
       console.error('Error completing onboarding:', error);
       toast.error('Failed to save. Please try again.');
