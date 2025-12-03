@@ -127,7 +127,7 @@ export function SetupChecklist({ profile, onRefresh }) {
   const completedCount = steps.filter(s => s.completed).length;
   const totalSteps = steps.length;
   const progress = totalSteps > 0 ? (completedCount / totalSteps) * 100 : 0;
-  const allComplete = completedCount === totalSteps;
+  const allComplete = completedCount === totalSteps && totalSteps > 0;
 
   // Auto-collapse if all complete
   useEffect(() => {
@@ -136,9 +136,29 @@ export function SetupChecklist({ profile, onRefresh }) {
     }
   }, [allComplete, steps.length]);
 
-  // Don't render if no profile or no role - show nothing
-  if (!profile || !hasRole) {
+  // Don't render if no profile at all
+  if (!profile) {
     return null;
+  }
+
+  // If no role detected, show a default checklist anyway (assume investor for now)
+  // This ensures the checklist is always visible on dashboard
+  if (!hasRole && steps.length === 0) {
+    return (
+      <div className="bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-3xl p-5">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-[#D3A029] rounded-xl flex items-center justify-center">
+            <Sparkles className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-[#111827]">Complete Your Setup</h3>
+            <p className="text-sm text-[#6B7280]">
+              Finish setting up your profile to unlock all features
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // If steps not calculated yet, show loading placeholder
