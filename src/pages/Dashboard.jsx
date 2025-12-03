@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
-import InvestorHome from "./InvestorHome";
-import AgentHome from "./AgentHome";
+import DashboardInvestor from "./DashboardInvestor";
+import DashboardAgent from "./DashboardAgent";
 
 /**
  * DASHBOARD - Shows role-specific dashboard
@@ -84,11 +84,11 @@ export default function Dashboard() {
 
   // Show role-specific dashboard
   if (profile?.user_role === 'investor') {
-    return <InvestorHome />;
+    return <DashboardInvestor />;
   }
 
   if (profile?.user_role === 'agent') {
-    return <AgentHome />;
+    return <DashboardAgent />;
   }
 
   // Fallback
