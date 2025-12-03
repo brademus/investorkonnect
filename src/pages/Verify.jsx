@@ -63,13 +63,8 @@ export default function Verify() {
         setProfile(currentProfile);
 
         // Get Persona config from backend
-        const configResponse = await fetch('/functions/personaConfig', {
-          method: 'POST',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({})
-        });
-        const configData = await configResponse.json();
+        const configResponse = await base44.functions.invoke('personaConfig', {});
+        const configData = configResponse.data;
         
         if (configData?.templateId && configData?.environmentId) {
           setPersonaConfig(configData);
