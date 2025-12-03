@@ -29,11 +29,23 @@ export default function RoleSelection() {
         
         const profile = profiles[0];
         
-        // If user already has a role set (not 'member'), redirect to dashboard
-        // This makes role selection PERMANENT
+        // Check if user has a role (not 'member')
         if (profile?.user_role && profile.user_role !== 'member') {
-          console.log('[RoleSelection] User already has role:', profile.user_role, '- redirecting to dashboard');
-          navigate(createPageUrl("Dashboard"), { replace: true });
+          const isOnboarded = !!profile.onboarding_completed_at;
+          
+          if (isOnboarded) {
+            // User has role AND completed onboarding - go to dashboard
+            console.log('[RoleSelection] User already has role and onboarding complete - redirecting to dashboard');
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          } else {
+            // User has role but NOT onboarded - go to onboarding
+            console.log('[RoleSelection] User has role but not onboarded - redirecting to onboarding');
+            if (profile.user_role === 'investor') {
+              navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+            } else if (profile.user_role === 'agent') {
+              navigate(createPageUrl("AgentOnboarding"), { replace: true });
+            }
+          }
           return;
         }
       } catch (err) {

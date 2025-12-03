@@ -54,7 +54,9 @@ export default function PostAuth() {
         }
 
         // STEP 3: Determine effective role
-        let effectiveRole = intendedRole || profile?.user_role || null;
+        // SECURITY: Use profile.user_role first to prevent URL manipulation
+        // Only use intendedRole for NEW users without a profile role
+        let effectiveRole = profile?.user_role || intendedRole || null;
 
         // STEP 4: Check if user has selected a role
         const hasRole = profile?.user_role && profile.user_role !== 'member';
@@ -87,13 +89,15 @@ export default function PostAuth() {
 
         // If not onboarded, route to role-specific onboarding
         if (!isOnboarded) {
-          // Route to onboarding based on role
-          if (effectiveRole === 'investor') {
+          // SECURITY: Use profile.user_role directly (not effectiveRole from URL)
+          // This prevents URL parameter manipulation
+          if (profile.user_role === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          } else if (effectiveRole === 'agent') {
+          } else if (profile.user_role === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            navigate(createPageUrl("Dashboard"), { replace: true });
+            // Fallback: no role set, go to RoleSelection
+            navigate(createPageUrl("RoleSelection"), { replace: true });
           }
           
           setHasRouted(true);

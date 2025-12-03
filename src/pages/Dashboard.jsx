@@ -26,32 +26,29 @@ function DashboardContent() {
 
     // Admin bypass
     if (user?.role === 'admin') return;
-
-    // Check if user has selected a role
-    const hasRole = profile?.user_role && profile.user_role !== 'member';
     
-    // Check if simple onboarding is complete
-    const isOnboarded = !!profile?.onboarding_completed_at;
+    // IMPORTANT: Wait for profile to load before checking
+    // This prevents race conditions
+    if (!profile) return;
 
-    // If no role selected, send to RoleSelection
+    const hasRole = profile.user_role && profile.user_role !== 'member';
+    const isOnboarded = !!profile.onboarding_completed_at;
+
+    // Use if-else logic to prevent double-redirects
     if (!hasRole) {
+      // No role selected - send to RoleSelection
       console.log('[Dashboard] No role selected - redirecting to role selection');
       navigate(createPageUrl("RoleSelection"), { replace: true });
-      return;
-    }
-
-    // If user has role but hasn't completed simple onboarding, redirect to onboarding
-    if (hasRole && !isOnboarded) {
+    } else if (!isOnboarded) {
+      // Has role but not onboarded - send to onboarding
       console.log('[Dashboard] Simple onboarding not complete - redirecting to onboarding');
-
-      // Route to role-specific onboarding
       if (profile.user_role === 'investor') {
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       } else if (profile.user_role === 'agent') {
         navigate(createPageUrl("AgentOnboarding"), { replace: true });
       }
-      return;
     }
+    // If both hasRole and isOnboarded are true, do nothing (show dashboard)
   }, [loading, user, profile, navigate]);
 
   if (loading) {
