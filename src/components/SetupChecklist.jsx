@@ -148,13 +148,16 @@ export function SetupChecklist({ profile, onRefresh }) {
             });
             
             const handleClick = () => {
+              console.log(`[SetupChecklist] Clicked step: ${step.id}, isLocked: ${isLocked}, link: ${step.link}`);
               if (isLocked) {
                 // Navigate to the first incomplete step
                 const firstIncomplete = steps.find(s => !s.completed);
                 if (firstIncomplete) {
+                  console.log(`[SetupChecklist] Redirecting to first incomplete: ${firstIncomplete.link}`);
                   navigate(createPageUrl(firstIncomplete.link));
                 }
               } else {
+                console.log(`[SetupChecklist] Navigating to: ${step.link}`);
                 navigate(createPageUrl(step.link));
               }
             };
