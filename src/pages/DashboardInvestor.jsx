@@ -4,7 +4,6 @@ import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { SetupChecklist } from "@/components/SetupChecklist";
-import { Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getInvestorMatches, inboxList } from "@/components/functions";
 import { 
