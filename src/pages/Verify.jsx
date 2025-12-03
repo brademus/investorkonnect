@@ -26,6 +26,13 @@ function VerifyContent() {
   const [error, setError] = useState(null);
   const [ready, setReady] = useState(false);
 
+  // Mark ready once we have user and profile
+  useEffect(() => {
+    if (user && profile) {
+      setReady(true);
+    }
+  }, [user, profile]);
+
   // DEMO MODE: Auto-approve KYC
   useEffect(() => {
     if (!user || !profile) return;
@@ -34,7 +41,6 @@ function VerifyContent() {
       setVerifying(true);
       
       setTimeout(async () => {
-        // Update demo profile in sessionStorage
         const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || '{}');
         demoProfile.kyc_status = 'approved';
         demoProfile.identity_verified = true;
@@ -43,8 +49,7 @@ function VerifyContent() {
         
         toast.success('Identity verified successfully!');
         await refresh();
-        
-        navigate(createPageUrl("NDA"), { replace: true });
+        navigate(createPageUrl("Dashboard"), { replace: true });
       }, 2000);
       
       return;
@@ -56,30 +61,18 @@ function VerifyContent() {
     if (!user || !profile) return;
     
     if (kycVerified) {
-      if (hasNDA) {
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      } else {
-        navigate(createPageUrl("NDA"), { replace: true });
-      }
+      navigate(createPageUrl("Dashboard"), { replace: true });
     }
-  }, [user, profile, kycVerified, hasNDA, navigate]);
+  }, [user, profile, kycVerified, navigate]);
 
-  // Redirect if not onboarded - but be lenient, check if onboarding_completed_at exists
+  // Redirect if not onboarded
   useEffect(() => {
     if (!user || !profile) return;
     
-    // Check if user has ANY onboarding completed (not just specific version)
     const hasCompletedOnboarding = !!profile.onboarding_completed_at;
-    
-    console.log('[Verify] Checking onboarding status:', {
-      hasCompletedOnboarding,
-      onboarding_completed_at: profile.onboarding_completed_at,
-      kycVerified
-    });
     
     if (!hasCompletedOnboarding) {
       const role = profile.user_role || profile.user_type;
-      console.log('[Verify] User not onboarded, redirecting based on role:', role);
       if (role === 'investor') {
         navigate(createPageUrl("InvestorDeepOnboarding"), { replace: true });
       } else if (role === 'agent') {
@@ -88,138 +81,7 @@ function VerifyContent() {
         navigate(createPageUrl("Dashboard"), { replace: true });
       }
     }
-  }, [user, profile, kycVerified, navigate]);
-
-  // Load Persona script
-  useEffect(() => {
-    if (window.Persona) {
-      setScriptLoaded(true);
-      return;
-    }
-    
-    const script = document.createElement('script');
-    script.src = 'https://cdn.withpersona.com/dist/persona-v5.1.2.js';
-    script.async = true;
-    script.crossOrigin = 'anonymous';
-    
-    script.onload = () => {
-      setScriptLoaded(true);
-    };
-    
-    script.onerror = () => {
-      setError('Failed to load verification system. Please refresh the page.');
-    };
-
-    document.body.appendChild(script);
-
-    return () => {
-      if (!scriptLoaded && script.parentNode) {
-        document.body.removeChild(script);
-      }
-    };
-  }, [scriptLoaded]); // Added scriptLoaded to deps to ensure cleanup logic is current
-
-  // Initialize Persona client when script is loaded
-  useEffect(() => {
-    if (!scriptLoaded || !window.Persona || !user || !profile) {
-      return;
-    }
-
-    if (kycVerified) {
-      return;
-    }
-
-    try {
-      const client = new window.Persona.Client({
-        templateId: 'itmpl_S55mLQgAGrNb2VbRzCjKN9xSv6xM',
-        environmentId: 'env_JYPpWD9CCQRPNSQ2hy6A26czau5H',
-        referenceId: user.id,
-        
-        onReady: () => {
-          setPersonaReady(true);
-          setLaunching(false);
-        },
-        
-        onComplete: async ({ inquiryId, status, fields }) => {
-          console.log('[Verify] Inquiry completed:', { inquiryId, status });
-          
-          setVerifying(true);
-          
-          try {
-            // Call backend to validate and update profile
-            console.log('[Verify] Calling personaFinalize...');
-            const response = await base44.functions.invoke('personaFinalize', {
-              inquiryId,
-              status
-            });
-
-            if (response.data?.ok) {
-              const kycStatus = response.data.kyc_status;
-              
-              // ALSO update profile directly to ensure all flags are set
-              try {
-                const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-                if (profiles.length > 0) {
-                  await base44.entities.Profile.update(profiles[0].id, {
-                    kyc_status: kycStatus,
-                    kyc_inquiry_id: inquiryId,
-                    kyc_last_checked: new Date().toISOString(),
-                  });
-                }
-              } catch (updateErr) {
-                // Continue anyway since backend function may have done it
-              }
-              
-              if (kycStatus === 'approved') {
-                toast.success('Identity verified successfully!');
-                
-                // Force profile refresh
-                await refresh();
-                
-                // Small delay to ensure state is updated
-                await new Promise(resolve => setTimeout(resolve, 500));
-                
-                navigate(createPageUrl("NDA"), { replace: true });
-              } else if (kycStatus === 'needs_review') {
-                toast.info('Verification under review. We\'ll notify you when complete.');
-                navigate(createPageUrl("Dashboard"), { replace: true });
-              } else if (kycStatus === 'failed') {
-                toast.error('Verification failed. Please contact support.');
-                setVerifying(false);
-                setError('Verification could not be completed. Please contact support for assistance.');
-              } else {
-                toast.info('Verification in progress. This may take a few moments.');
-                setVerifying(false);
-              }
-            } else {
-              throw new Error('Failed to update verification status');
-            }
-          } catch (err) {
-            toast.error('Could not complete verification. Please try again.');
-            setVerifying(false);
-            setError('We verified your identity but encountered an error saving it. Please refresh and try again.');
-          }
-        },
-        
-        onCancel: ({ inquiryId }) => {
-          toast.info('Verification cancelled');
-          setLaunching(false);
-        },
-        
-        onError: (error) => {
-          toast.error('Verification error occurred');
-          setLaunching(false);
-          setError('An error occurred during verification. Please try again.');
-        }
-      });
-
-      personaClientRef.current = client;
-
-    } catch (err) {
-      setError('Failed to initialize verification. Please refresh the page.');
-    }
-
-  }, [scriptLoaded, user, profile, kycVerified, navigate, refresh]);
+  }, [user, profile, navigate]);
 
   // Verification in progress
   if (verifying) {
