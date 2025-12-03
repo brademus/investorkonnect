@@ -32,31 +32,36 @@ function InvestorDashboardContent() {
 
   const loadProfile = async () => {
     try {
-      const response = await fetch('/functions/me', {
-        method: 'POST',
-        credentials: 'include',
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
-      if (response.ok) {
-        const state = await response.json();
-        console.log('[DashboardInvestor] Profile loaded:', {
-          id: state.profile?.id,
-          onboarding_completed_at: state.profile?.onboarding_completed_at,
-          kyc_status: state.profile?.kyc_status,
-          nda_accepted: state.profile?.nda_accepted
-        });
-        setProfile(state.profile);
-        
-        // Load suggested agents
-        loadSuggestedAgents();
-        
-        // Load recent messages
-        loadRecentMessages();
-        
-        // Load deals
-        loadDeals();
+      // Get current user
+      const user = await base44.auth.me();
+      if (!user) {
+        setLoading(false);
+        return;
       }
+      
+      // Load profile directly from entity for most accurate data
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const directProfile = profiles[0];
+      
+      console.log('[DashboardInvestor] Profile loaded from entity:', {
+        id: directProfile?.id,
+        onboarding_completed_at: directProfile?.onboarding_completed_at,
+        kyc_status: directProfile?.kyc_status,
+        nda_accepted: directProfile?.nda_accepted,
+        subscription_status: directProfile?.subscription_status
+      });
+      
+      setProfile(directProfile);
+      
+      // Load suggested agents
+      loadSuggestedAgents();
+      
+      // Load recent messages
+      loadRecentMessages();
+      
+      // Load deals
+      loadDeals();
+      
       setLoading(false);
     } catch (error) {
       console.error('[DashboardInvestor] Error loading profile:', error);
