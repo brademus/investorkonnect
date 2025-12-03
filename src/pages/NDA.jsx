@@ -21,7 +21,7 @@ import { DEMO_MODE } from "@/components/config/demo";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { loading, hasNDA, refresh, profile, user } = useCurrentProfile();
+  const { loading, hasNDA, refresh, profile, user, kycVerified } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
@@ -70,6 +70,15 @@ function NDAContent() {
       }, 500);
     }
   }, [loading, hasNDA, navigate]);
+
+  // Block access if KYC not verified - redirect to Verify page
+  useEffect(() => {
+    if (!loading && profile && !kycVerified) {
+      devLog('[NDA] KYC not verified, redirecting to Verify...');
+      toast.info('Please complete identity verification first');
+      navigate(createPageUrl("Verify"), { replace: true });
+    }
+  }, [loading, profile, kycVerified, navigate]);
 
   const handleAccept = async () => {
     if (!agreed) {
