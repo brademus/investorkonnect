@@ -187,7 +187,14 @@ function VerifyContent() {
   // Redirect if already verified
   useEffect(() => {
     if (user && profile && kycVerified) {
-      navigate(createPageUrl("Dashboard"), { replace: true });
+      console.log('[Verify] Already verified, redirecting...', { 
+        kyc_status: profile.kyc_status,
+        kycVerified 
+      });
+      // Only redirect if actually verified in database
+      if (profile.kyc_status === 'approved') {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
     }
   }, [user, profile, kycVerified, navigate]);
 
