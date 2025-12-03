@@ -42,7 +42,6 @@ function InvestorDirectoryContent() {
   }, [profileLoading]);
 
   const checkAccessAndLoad = async () => {
-    // Check if user AND profile exist
     if (!user || !profile) {
       toast.info("Please sign in to browse investors");
       base44.auth.redirectToLogin(createPageUrl("InvestorDirectory"));
@@ -58,28 +57,14 @@ function InvestorDirectoryContent() {
       navigate(createPageUrl("AgentOnboarding"), { replace: true });
       return;
     }
-    // DEMO MODE: Skip verification check - users can access directory without KYC
-    // if (!kycVerified) {
-    //   toast.info("Verify your identity to access investor profiles");
-    //   navigate(createPageUrl("Verify"), { replace: true });
-    //   return;
-    // }
-    // DEMO MODE: NDA not required to access directories - optional from dashboard only
-    // if (!hasNDA) {
-    //   toast.info("Accept NDA to access investor profiles");
-    //   navigate(createPageUrl("NDA"), { replace: true });
-    //   return;
-    // }
     await loadInvestors();
   };
 
   const loadInvestors = async () => {
     try {
-      // Always try to load real investors first
       const allProfiles = await base44.entities.Profile.filter({});
       const realInvestors = allProfiles.filter(p => p.user_role === 'investor' || p.user_type === 'investor');
       
-      // Merge with demo investors (avoid duplicates by ID)
       const realIds = new Set(realInvestors.map(i => String(i.id)));
       const demosToShow = demoInvestors.filter(i => !realIds.has(String(i.id)));
       const combined = [...realInvestors, ...demosToShow];
@@ -88,7 +73,6 @@ function InvestorDirectoryContent() {
       setLoading(false);
     } catch (error) {
       console.error("Error loading investors:", error);
-      // Fallback to demo investors only
       setInvestors(demoInvestors);
       setLoading(false);
     }
@@ -167,7 +151,6 @@ function InvestorDirectoryContent() {
       <Header profile={profile} />
       <div className="min-h-screen bg-[#FAF7F2]">
         <div className="max-w-7xl mx-auto px-4 py-8">
-          {/* Back Button */}
           <Link 
             to={createPageUrl("Dashboard")} 
             className="inline-flex items-center gap-2 text-[#6B7280] hover:text-[#111827] mb-6"
@@ -176,7 +159,6 @@ function InvestorDirectoryContent() {
             Back to Dashboard
           </Link>
 
-          {/* Page Header */}
           <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-[#111827]">
@@ -188,10 +170,8 @@ function InvestorDirectoryContent() {
             </div>
           </div>
 
-          {/* Search & Filter Card */}
           <div className="bg-white border border-gray-200 rounded-3xl p-6 mb-6">
             <div className="flex flex-col gap-4">
-              {/* Search row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
@@ -216,7 +196,6 @@ function InvestorDirectoryContent() {
                 </Select>
               </div>
               
-              {/* Filter row */}
               <div className="flex flex-wrap items-center gap-3">
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
                   <SelectTrigger className="min-w-[160px] h-12 rounded-xl border-gray-200 bg-white text-sm">
@@ -255,7 +234,6 @@ function InvestorDirectoryContent() {
             </div>
           </div>
 
-          {/* Results Count */}
           <div className="flex items-center justify-between mb-6">
             <p className="text-sm text-[#6B7280]">
               Showing <span className="font-medium text-[#111827]">{filteredInvestors.length}</span> verified investors
@@ -270,7 +248,6 @@ function InvestorDirectoryContent() {
             )}
           </div>
 
-          {/* Investor Cards Grid */}
           {filteredInvestors.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-3xl flex flex-col items-center justify-center py-16 px-6 text-center">
               <div className="w-16 h-16 bg-[#FEF3C7] rounded-2xl flex items-center justify-center mb-5">
@@ -306,12 +283,9 @@ function InvestorDirectoryContent() {
                     key={investor.id}
                     className="bg-white border border-gray-200 rounded-3xl flex flex-col hover:shadow-lg hover:border-[#D3A029] hover:-translate-y-1 transition-all duration-200 overflow-hidden"
                   >
-                    {/* Header Band */}
                     <div className="h-16 bg-gradient-to-br from-[#D1FAE5] to-[#A7F3D0]" />
                     
-                    {/* Content */}
                     <div className="p-6 -mt-8 flex flex-col flex-1">
-                      {/* Avatar + Info */}
                       <div className="flex items-start gap-4">
                         <div className="relative flex-shrink-0">
                           <div className="h-14 w-14 rounded-full bg-[#D1FAE5] flex items-center justify-center text-base font-semibold text-[#059669] ring-4 ring-white shadow-lg">
@@ -341,12 +315,10 @@ function InvestorDirectoryContent() {
                         </div>
                       </div>
                       
-                      {/* Strategy */}
                       <p className="mt-3 text-sm text-[#6B7280] line-clamp-2">
                         {strategy}
                       </p>
                       
-                      {/* Stats */}
                       <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
                         <div className="p-3 bg-slate-50 rounded-xl text-center">
                           <div className="text-sm font-semibold text-[#111827]">{capital}</div>
@@ -358,7 +330,6 @@ function InvestorDirectoryContent() {
                         </div>
                       </div>
                       
-                      {/* Actions */}
                       <div className="mt-5 pt-4 border-t border-gray-100 flex gap-3">
                         <Link
                           to={`${createPageUrl("InvestorProfile")}?id=${investor.id}`}
