@@ -237,16 +237,20 @@ Type "RESET" to confirm:`;
       
       console.log('[Admin] Reset result:', data);
       
-      if (data.ok) {
-        // Show simple success toast
-        toast.success(`✅ Wiped ${data.deletedUsers} users and ${data.deletedProfiles} profiles`, {
+      if (data.success || data.ok) {
+        // Show detailed success toast
+        const userCount = data.deletedUsers ?? 0;
+        const profileCount = data.deletedProfiles ?? 0;
+        const remaining = data.details?.remainingUsers ?? '?';
+        
+        toast.success(`✅ Wiped ${userCount} users and ${profileCount} profiles. ${remaining} users remain (admins).`, {
           duration: 5000,
         });
         
         // Immediately reload data to show updated counts
         await loadData();
       } else {
-        toast.error("Reset failed: " + (data.message || 'Unknown error'));
+        toast.error("Reset failed: " + (data.message || data.error || 'Unknown error'));
         console.error('[Admin] Reset failed:', data);
       }
     } catch (error) {

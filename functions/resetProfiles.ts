@@ -491,6 +491,7 @@ Deno.serve(async (req) => {
     console.log('');
     
     return Response.json({
+      success: true,
       ok: true,
       message: `Successfully deleted ${stats.profiles} profiles and ${stats.users} users for ${nonAdminUserIds.size} non-admin accounts`,
       deletedProfiles: stats.profiles,
@@ -511,6 +512,8 @@ Deno.serve(async (req) => {
         deletedPaymentMilestones: stats.paymentMilestones || 0,
         deletedNDAs: stats.ndas || 0,
         userDeleteErrors: userDeleteErrors.length > 0 ? userDeleteErrors : undefined,
+        remainingUsers: remainingUsers.length,
+        remainingProfiles: remainingProfiles.length,
       }
     });
     
@@ -520,6 +523,7 @@ Deno.serve(async (req) => {
     console.error('');
     
     return Response.json({ 
+      success: false,
       ok: false,
       error: error.message,
       message: 'Reset failed: ' + error.message,
