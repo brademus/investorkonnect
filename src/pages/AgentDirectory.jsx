@@ -36,41 +36,36 @@ export default function AgentDirectory() {
 
   useEffect(() => {
     document.title = "Find Your Perfect Agent Match - Investor Konnect";
-    if (!profileLoading) checkAccessAndLoad();
-  }, [profileLoading]);
+  }, []);
 
-  const checkAccessAndLoad = async () => {
+  useEffect(() => {
+    // Only run access checks after profile is done loading
+    if (profileLoading) return;
+    
+    // If no user after loading complete, redirect to login
     if (!user) {
       toast.info("Please sign in to browse agents");
-      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+      base44.auth.redirectToLogin(createPageUrl("AgentDirectory"));
       return;
     }
-    if (role !== 'investor') {
+    
+    // Only investors can access
+    if (role && role !== 'investor' && role !== 'admin') {
       toast.error("Only investors can browse agents");
       navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
-    if (!onboarded) {
+    
+    // If not onboarded, send to onboarding
+    if (!onboarded && role === 'investor') {
       toast.info("Complete onboarding to access agent directory");
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       return;
     }
-    // DEMO MODE: Skip verification check - users can access directory without KYC
-    // const isKycVerified = kycVerified || profile?.kyc_status === 'approved';
-    // if (!isKycVerified) {
-    //   toast.info("Verify your identity to access agent profiles");
-    //   navigate(createPageUrl("Verify"), { replace: true });
-    //   return;
-    // }
-    // DEMO MODE: NDA not required to access directories - optional from dashboard only
-    // const hasAcceptedNDA = hasNDA || profile?.nda_accepted;
-    // if (!hasAcceptedNDA) {
-    //   toast.info("Accept NDA to access agent profiles");
-    //   navigate(createPageUrl("NDA"), { replace: true });
-    //   return;
-    // }
-    await loadAgents();
-  };
+    
+    // All checks passed, load agents
+    loadAgents();
+  }, [profileLoading, user, role, onboarded]);
 
   const loadAgents = async () => {
     try {
