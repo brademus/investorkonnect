@@ -328,7 +328,7 @@ Deno.serve(async (req) => {
     console.log('Summary:');
     console.log(`  • Protected admins: ${adminUserIds.size}`);
     console.log(`  • Deleted profiles: ${stats.profiles}`);
-    console.log(`  • Affected users: ${nonAdminUserIds.size}`);
+    console.log(`  • Deleted users: ${stats.users}`);
     console.log(`  • Deleted matches: ${stats.matches}`);
     console.log(`  • Deleted intro requests: ${stats.introRequests}`);
     console.log(`  • Deleted rooms: ${stats.rooms}`);
