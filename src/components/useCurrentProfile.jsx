@@ -181,22 +181,9 @@ export function useCurrentProfile() {
           role = 'member';
         }
 
-        // STEP 4: Determine onboarded status (v2 for investor, agent-v2-deep for agent)
-        let onboarded = false;
-        
-        if (role === 'investor') {
-          // Investor must have v2 onboarding
-          onboarded = 
-            profile?.onboarding_version === 'v2' &&
-            !!profile?.onboarding_completed_at &&
-            profile?.user_role === 'investor';
-        } else if (role === 'agent') {
-          // Agent must have EXACTLY "agent-v2-deep" onboarding
-          onboarded = 
-            profile?.onboarding_version === 'agent-v2-deep' &&
-            !!profile?.onboarding_completed_at &&
-            profile?.user_role === 'agent';
-        }
+        // STEP 4: Determine onboarded status - simplified: just check if onboarding_completed_at exists
+        // Previously required specific versions, but that caused issues when users completed onboarding
+        let onboarded = !!profile?.onboarding_completed_at;
 
         // needsOnboarding = user has a role but hasn't completed onboarding (EXCEPT admins)
         const needsOnboarding = !isAdmin && (role === 'investor' || role === 'agent') && !onboarded;
