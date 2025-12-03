@@ -26,7 +26,13 @@ export function SetupChecklist({ profile, onRefresh }) {
   }, [profile, steps.length]);
 
   const calculateSteps = () => {
+    if (!profile) return;
+    
     const isInvestor = profile.user_role === 'investor' || profile.user_type === 'investor';
+    const isAgent = profile.user_role === 'agent' || profile.user_type === 'agent';
+    
+    // Default to investor if no role is set
+    const useInvestorSteps = isInvestor || (!isInvestor && !isAgent);
     
     const investorSteps = [
       {
