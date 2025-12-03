@@ -204,30 +204,19 @@ function VerifyContent() {
             </div>
           )}
 
-          {/* Loading State: Script Loading */}
-          {!scriptLoaded && !error && (
+          {/* Loading State */}
+          {!ready && !error && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
               <h3 className="text-lg font-semibold text-black mb-2">
-                Preparing Secure Verification...
+                Loading...
               </h3>
-              <p className="text-[#666666]">Loading verification system</p>
-            </div>
-          )}
-
-          {/* Loading State: Client Initializing */}
-          {scriptLoaded && !personaReady && !error && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
-              <h3 className="text-lg font-semibold text-black mb-2">
-                Initializing Verification...
-              </h3>
-              <p className="text-[#666666]">Setting up your secure session</p>
+              <p className="text-[#666666]">Preparing verification</p>
             </div>
           )}
 
           {/* Ready to Verify */}
-          {personaReady && !error && (
+          {ready && !error && (
             <div className="text-center py-8">
               <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <Shield className="w-12 h-12 text-[#92400E]" />
