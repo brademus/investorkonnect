@@ -299,10 +299,20 @@ Deno.serve(async (req) => {
     const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 1000);
     console.log('  ✓ Found', allUsers.length, 'total users in system');
     
+    // Also add users with role='admin' to the protected set
     for (const user of allUsers) {
-      // Skip if this user is an admin
-      if (adminUserIds.has(user.id)) {
-        console.log(`  → SKIPPING admin user: ${user.email}`);
+      if (user.role === 'admin') {
+        adminUserIds.add(user.id);
+        console.log(`  → Added admin from User.role: ${user.email}`);
+      }
+    }
+    
+    console.log('  ✓ Total protected admins:', adminUserIds.size);
+    
+    for (const user of allUsers) {
+      // Skip if this user is an admin (by profile or by user.role)
+      if (adminUserIds.has(user.id) || user.role === 'admin') {
+        console.log(`  → SKIPPING admin user: ${user.email} (role: ${user.role})`);
         continue;
       }
       
@@ -320,6 +330,7 @@ Deno.serve(async (req) => {
     console.log('  ✓ Deleted', stats.users, 'users');
     if (userDeleteErrors.length > 0) {
       console.log('  ⚠️ Failed to delete', userDeleteErrors.length, 'users');
+      console.log('  Errors:', JSON.stringify(userDeleteErrors));
     }
     console.log('');
     
