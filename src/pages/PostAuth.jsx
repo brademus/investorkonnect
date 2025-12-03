@@ -28,14 +28,26 @@ export default function PostAuth() {
           return;
         }
 
-        // Step 2: Get profile
+        // Step 2: Get or create profile
         setStatus("Loading your profile...");
         let profile = null;
         try {
           const profiles = await base44.entities.Profile.filter({ user_id: user.id });
           profile = profiles[0] || null;
+          
+          // Create profile if it doesn't exist
+          if (!profile) {
+            setStatus("Setting up your account...");
+            profile = await base44.entities.Profile.create({
+              user_id: user.id,
+              email: user.email,
+              full_name: user.full_name,
+              role: 'member',
+              user_role: 'member',
+            });
+          }
         } catch (e) {
-          // No profile yet
+          console.error('[PostAuth] Profile error:', e);
         }
 
         // Step 3: Route based on state
