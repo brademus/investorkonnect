@@ -525,23 +525,30 @@ Type "RESET" to confirm:`;
                     toast.error('Please enter an email');
                     return;
                   }
+                  setProcessing(true);
                   try {
-                    const foundUsers = await base44.entities.User.filter({ email: adminEmail });
-                    if (foundUsers.length > 0) {
-                      await base44.entities.User.update(foundUsers[0].id, { role: 'admin' });
-                      toast.success(`${adminEmail} is now an admin`);
+                    // Use adminSetup function which has service role permissions
+                    const response = await adminSetup({ adminEmail: adminEmail });
+                    const data = response.data;
+                    
+                    if (data.success) {
+                      toast.success(`${adminEmail} is now an admin! Page will reload...`);
                       setAdminEmail('');
-                      await loadData();
+                      setTimeout(() => window.location.reload(), 1500);
                     } else {
-                      toast.error('User not found');
+                      toast.error('Failed to grant admin: ' + (data.error || 'Unknown error'));
                     }
                   } catch (err) {
                     console.error('[Admin] Make admin error:', err);
-                    toast.error('Failed to grant admin access');
+                    toast.error('Failed to grant admin access: ' + err.message);
+                  } finally {
+                    setProcessing(false);
                   }
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+                disabled={processing}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50"
               >
+                {processing ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
                 Make Admin
               </button>
             </div>
