@@ -139,6 +139,14 @@ export function SetupChecklist({ profile, onRefresh }) {
             const prevStepsComplete = steps.slice(0, idx).every(s => s.completed);
             const isLocked = !step.completed && !prevStepsComplete;
             
+            // Debug logging
+            console.log(`[SetupChecklist] Step ${step.id}:`, {
+              completed: step.completed,
+              isNext,
+              prevStepsComplete,
+              isLocked
+            });
+            
             const handleClick = () => {
               if (isLocked) {
                 // Navigate to the first incomplete step
