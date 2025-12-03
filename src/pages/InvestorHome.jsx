@@ -46,15 +46,38 @@ export default function InvestorHome() {
     let cancelled = false;
     try {
       setLoadingSuggestedAgents(true);
-      await embedProfile();
-      const matchResponse = await matchAgentsForInvestor({ limit: 6 });
-      if (!cancelled && matchResponse.data?.ok) {
-        setSuggestedAgents(matchResponse.data.results || []);
-      } else {
-        setSuggestedAgents([]);
+      
+      // Try embedding first (may fail for incomplete profiles, that's OK)
+      try {
+        await embedProfile();
+      } catch (embErr) {
+        console.log('Embedding skipped:', embErr.message);
+      }
+      
+      // Try AI-powered matching first
+      let results = [];
+      try {
+        const aiResponse = await findBestAgents({ limit: 6 });
+        if (aiResponse.data?.ok && aiResponse.data?.results?.length > 0) {
+          results = aiResponse.data.results;
+        }
+      } catch (aiErr) {
+        console.log('AI matching failed, trying fallback:', aiErr.message);
+      }
+      
+      // Fallback to embedding-based matching
+      if (results.length === 0) {
+        const matchResponse = await matchAgentsForInvestor({ limit: 6 });
+        if (matchResponse.data?.ok) {
+          results = matchResponse.data.results || [];
+        }
+      }
+      
+      if (!cancelled) {
+        setSuggestedAgents(results);
       }
     } catch (err) {
-      toast.error("Failed to load agent matches");
+      console.error("Failed to load agent matches:", err);
       if (!cancelled) setSuggestedAgents([]);
     } finally {
       if (!cancelled) setLoadingSuggestedAgents(false);

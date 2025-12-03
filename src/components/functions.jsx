@@ -82,3 +82,4 @@ export const initiateEscrowTransaction = base44.functions.initiateEscrowTransact
 export const getEscrowStatus = base44.functions.getEscrowStatus;
 export const fundEscrow = base44.functions.fundEscrow;
 export const releaseEscrow = base44.functions.releaseEscrow;
+export const findBestAgents = base44.functions.findBestAgents;

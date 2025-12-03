@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList, introCreate, matchList, getInvestorMatches } from "@/components/functions";
+import { inboxList, introCreate, matchList, getInvestorMatches, findBestAgents } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -48,11 +48,11 @@ function MatchesContent() {
 
   const fetchMatches = async () => {
     try {
-      // Try getInvestorMatches first (AI-powered)
+      // Try AI-powered matching first
       let matchResults = [];
       
       try {
-        const aiResponse = await getInvestorMatches({ limit: 3 });
+        const aiResponse = await findBestAgents({ limit: 3 });
         if (aiResponse.data?.ok && aiResponse.data?.results?.length > 0) {
           matchResults = aiResponse.data.results.map(r => ({
             ...r.profile,
@@ -61,7 +61,23 @@ function MatchesContent() {
           }));
         }
       } catch (aiErr) {
-        // Fall back to matchList
+        console.log('AI matching failed:', aiErr.message);
+      }
+      
+      // Try getInvestorMatches as fallback
+      if (matchResults.length === 0) {
+        try {
+          const invResponse = await getInvestorMatches({ limit: 3 });
+          if (invResponse.data?.ok && invResponse.data?.results?.length > 0) {
+            matchResults = invResponse.data.results.map(r => ({
+              ...r.profile,
+              score: Math.round((r.score || 0.9) * 100),
+              matchReason: r.reason || 'Strong market and strategy alignment'
+            }));
+          }
+        } catch (invErr) {
+          // Continue to next fallback
+        }
       }
 
       // Fallback to matchList

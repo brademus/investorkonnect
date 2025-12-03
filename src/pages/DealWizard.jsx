@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { upsertInvestorOnboarding, matchInvestor } from '@/components/functions';
+import { upsertInvestorOnboarding, matchInvestor, findBestAgents } from '@/components/functions';
 import { createPageUrl } from '@/components/utils';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
@@ -139,27 +139,41 @@ export default function DealWizard() {
     setSubmitting(true);
     
     try {
-      // Save deal details
-      await upsertInvestorOnboarding({
-        deal_submission: {
-          ...formData,
-          submitted_at: new Date().toISOString()
-        }
-      });
+      // Save deal details to profile
+      try {
+        await upsertInvestorOnboarding({
+          deal_submission: {
+            ...formData,
+            submitted_at: new Date().toISOString()
+          }
+        });
+      } catch (saveErr) {
+        console.log('Could not save deal submission:', saveErr.message);
+        // Continue anyway - the deal data will be used for matching
+      }
 
       toast.success('Deal submitted successfully!');
       
       // Show finding matches animation
       setFindingMatches(true);
       
-      // Trigger AI matching
+      // Trigger AI matching with the deal data
       try {
-        await matchInvestor();
+        await findBestAgents({ 
+          limit: 3,
+          dealSubmission: formData 
+        });
       } catch (matchErr) {
-        // Continue even if matching fails
+        console.log('AI matching:', matchErr.message);
+        // Try fallback matching
+        try {
+          await matchInvestor();
+        } catch (fallbackErr) {
+          // Continue even if matching fails
+        }
       }
       
-      // Wait for animation
+      // Wait for animation then navigate
       setTimeout(() => {
         navigate(createPageUrl("Matches"), { replace: true });
       }, 2500);
@@ -168,6 +182,7 @@ export default function DealWizard() {
       console.error('Error submitting deal:', error);
       toast.error('Failed to submit deal. Please try again.');
       setSubmitting(false);
+      setFindingMatches(false);
     }
   };
 
