@@ -164,12 +164,30 @@ export default function Verify() {
           setVerifying(true);
 
           try {
-            await base44.entities.Profile.update(profile.id, {
-              kyc_status: status === 'completed' ? 'approved' : 'pending',
-              kyc_inquiry_id: inquiryId,
-              kyc_provider: 'persona',
-              kyc_last_checked: new Date().toISOString(),
-            });
+            // Re-fetch profile to ensure we have latest data
+            const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            let currentProfile = profiles[0];
+            
+            // If profile doesn't exist, create it
+            if (!currentProfile) {
+              console.log('[Verify] Profile not found, creating new one...');
+              currentProfile = await base44.entities.Profile.create({
+                user_id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                kyc_status: status === 'completed' ? 'approved' : 'pending',
+                kyc_inquiry_id: inquiryId,
+                kyc_provider: 'persona',
+                kyc_last_checked: new Date().toISOString(),
+              });
+            } else {
+              await base44.entities.Profile.update(currentProfile.id, {
+                kyc_status: status === 'completed' ? 'approved' : 'pending',
+                kyc_inquiry_id: inquiryId,
+                kyc_provider: 'persona',
+                kyc_last_checked: new Date().toISOString(),
+              });
+            }
 
             toast.success('Identity verified successfully!');
             navigate(createPageUrl("Dashboard"), { replace: true });
