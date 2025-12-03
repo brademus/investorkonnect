@@ -22,32 +22,35 @@ function DashboardContent() {
 
   // HARD GATE - Block dashboard access until role is selected AND onboarding is complete
   useEffect(() => {
-    // Skip check while loading or if no user or already redirected
-    if (loading || !user || hasRedirected) return;
+    // Skip check while loading or already redirected
+    if (loading || hasRedirected) return;
+    
+    // If no user, AuthGuard will handle redirect to login
+    if (!user) return;
 
     // Admin bypass
     if (user?.role === 'admin') return;
     
-    // IMPORTANT: Wait for profile to load before checking
-    if (!profile) return;
+    // Wait for profile check to complete (profile can be null for new users)
+    // Give it a moment to load
+    const timer = setTimeout(() => {
+      const hasRole = profile?.user_role && profile.user_role !== 'member';
+      const isOnboarded = !!profile?.onboarding_completed_at;
 
-    const hasRole = profile.user_role && profile.user_role !== 'member';
-    const isOnboarded = !!profile.onboarding_completed_at;
-
-    // Use if-else logic to prevent double-redirects
-    if (!hasRole) {
-      console.log('[Dashboard] No role selected - redirecting to role selection');
-      setHasRedirected(true);
-      navigate(createPageUrl("RoleSelection"), { replace: true });
-    } else if (!isOnboarded) {
-      console.log('[Dashboard] Simple onboarding not complete - redirecting to onboarding');
-      setHasRedirected(true);
-      if (profile.user_role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (profile.user_role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      if (!hasRole) {
+        setHasRedirected(true);
+        navigate(createPageUrl("RoleSelection"), { replace: true });
+      } else if (!isOnboarded) {
+        setHasRedirected(true);
+        if (profile.user_role === 'investor') {
+          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+        } else if (profile.user_role === 'agent') {
+          navigate(createPageUrl("AgentOnboarding"), { replace: true });
+        }
       }
-    }
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, [loading, user, profile, navigate, hasRedirected]);
 
   if (loading) {
