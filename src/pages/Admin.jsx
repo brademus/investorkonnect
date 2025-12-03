@@ -239,13 +239,15 @@ Type "RESET" to confirm:`;
       
       if (data.success || data.ok) {
         // Show detailed success toast
-        const userCount = data.deletedUsers ?? 0;
         const profileCount = data.deletedProfiles ?? 0;
-        const remaining = data.details?.remainingUsers ?? '?';
+        const remainingProfiles = data.details?.remainingProfiles ?? '?';
         
-        toast.success(`✅ Wiped ${userCount} users and ${profileCount} profiles. ${remaining} users remain (admins).`, {
+        toast.success(`✅ Wiped ${profileCount} profiles and all related data. ${remainingProfiles} admin profiles remain.`, {
           duration: 5000,
         });
+        
+        // Show detailed breakdown in console
+        console.log('[Admin] Reset complete:', data.details);
         
         // Immediately reload data to show updated counts
         await loadData();
