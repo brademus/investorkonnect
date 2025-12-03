@@ -215,9 +215,9 @@ function AdminContent() {
   };
 
   const resetAllNonAdminProfiles = async () => {
-    const confirmText = `⚠️ DANGER: This will DELETE all investor and agent profiles for non-admin users.
+    const confirmText = `⚠️ DANGER: This will COMPLETELY DELETE all non-admin users and their profiles.
 
-This is irreversible and should only be used for test environments.
+They will be removed from the app entirely and can start fresh.
 
 Type "RESET" to confirm:`;
 
@@ -238,27 +238,13 @@ Type "RESET" to confirm:`;
       console.log('[Admin] Reset result:', data);
       
       if (data.ok) {
-        let message = `Reset complete!\n\n`;
-        message += `✅ Deleted ${data.deletedProfiles} profiles for ${data.deletedUsers} users\n\n`;
-        message += `Related data deleted:\n`;
-        message += `- Matches: ${data.deletedRelated?.matches || 0}\n`;
-        message += `- Intro requests: ${data.deletedRelated?.introRequests || 0}\n`;
-        message += `- Rooms: ${data.deletedRelated?.rooms || 0}\n`;
-        message += `- Messages: ${data.deletedRelated?.roomMessages || 0}\n`;
-        message += `- Deals: ${data.deletedRelated?.deals || 0}\n`;
-        message += `- Reviews: ${data.deletedRelated?.reviews || 0}\n`;
+        // Show simple success toast
+        toast.success(`✅ Wiped ${data.deletedUsers} users and ${data.deletedProfiles} profiles`, {
+          duration: 5000,
+        });
         
-        if (data.errors && data.errors.length > 0) {
-          message += `\n⚠️ ${data.errors.length} errors occurred (check console)`;
-          console.warn('[Admin] Reset errors:', data.errors);
-        }
-        
-        alert(message);
-        toast.success(`Deleted ${data.deletedProfiles} non-admin profiles`);
-        
-        setTimeout(async () => {
-          await loadData();
-        }, 1000);
+        // Immediately reload data to show updated counts
+        await loadData();
       } else {
         toast.error("Reset failed: " + (data.message || 'Unknown error'));
         console.error('[Admin] Reset failed:', data);
