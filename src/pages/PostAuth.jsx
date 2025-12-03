@@ -106,8 +106,23 @@ export default function PostAuth() {
         setHasRouted(true);
 
       } catch (error) {
-        // On error, don't hang - redirect somewhere safe
-        navigate(createPageUrl("Home"), { replace: true });
+        console.error('[PostAuth] Error during post-auth flow:', error);
+        
+        // Try to recover: if user exists, go to dashboard
+        // Otherwise, go to RoleSelection to start fresh
+        try {
+          const user = await base44.auth.me();
+          if (user) {
+            console.log('[PostAuth] Error recovery: user exists, sending to dashboard');
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          } else {
+            console.log('[PostAuth] Error recovery: no user, sending to home');
+            navigate(createPageUrl("Home"), { replace: true });
+          }
+        } catch (recoveryError) {
+          console.error('[PostAuth] Error recovery failed:', recoveryError);
+          navigate(createPageUrl("Home"), { replace: true });
+        }
         setHasRouted(true);
       }
     };

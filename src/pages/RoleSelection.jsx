@@ -17,20 +17,24 @@ export default function RoleSelection() {
 
   // Prevent users from changing their role after it's been set
   useEffect(() => {
+    let isMounted = true;
+    
     const checkExistingRole = async () => {
       try {
         const user = await base44.auth.me();
-        if (user) {
-          const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-          const profile = profiles[0];
-          
-          // If user already has a role set (not 'member'), redirect to dashboard
-          // This makes role selection PERMANENT
-          if (profile?.user_role && profile.user_role !== 'member') {
-            console.log('[RoleSelection] User already has role:', profile.user_role, '- redirecting to dashboard');
-            navigate(createPageUrl("Dashboard"), { replace: true });
-            return;
-          }
+        if (!isMounted || !user) return;
+        
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        if (!isMounted) return;
+        
+        const profile = profiles[0];
+        
+        // If user already has a role set (not 'member'), redirect to dashboard
+        // This makes role selection PERMANENT
+        if (profile?.user_role && profile.user_role !== 'member') {
+          console.log('[RoleSelection] User already has role:', profile.user_role, '- redirecting to dashboard');
+          navigate(createPageUrl("Dashboard"), { replace: true });
+          return;
         }
       } catch (err) {
         console.error('[RoleSelection] Error checking role:', err);
@@ -38,6 +42,10 @@ export default function RoleSelection() {
     };
     
     checkExistingRole();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [navigate]);
 
   const handleRoleSelection = async (chosenRole) => {

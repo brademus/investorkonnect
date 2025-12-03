@@ -19,17 +19,6 @@ function DashboardContent() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded, profile } = useCurrentProfile();
 
-  useEffect(() => {
-    // Check if user has selected a role
-    const hasRole = profile?.user_role && profile.user_role !== 'member';
-
-    // If no role selected, send to RoleSelection
-    if (!loading && user && !hasRole) {
-      navigate(createPageUrl("RoleSelection"), { replace: true });
-      return;
-    }
-  }, [loading, user, profile, navigate]);
-
   // HARD GATE - Block dashboard access until simple onboarding is complete
   useEffect(() => {
     // Skip check while loading or if no user

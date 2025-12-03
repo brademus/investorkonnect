@@ -21,6 +21,9 @@ import { Loader2 } from 'lucide-react';
 const PUBLIC_ROUTES = [
   '/',
   '/role',
+  '/postauth',              // OAuth callback must be public
+  '/investor-onboarding',   // Onboarding pages need access before full profile
+  '/agent-onboarding',      // Onboarding pages need access before full profile
   '/how-it-works',
   '/investors',
   '/agents',
