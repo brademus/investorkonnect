@@ -7,8 +7,8 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { base44 } from "@/api/base44Client";
 import { getInvestorMatches, inboxList } from "@/components/functions";
 import { 
-  FileText, TrendingUp, ArrowRight, Plus, MessageSquare, Users,
-  Target, Loader2, Sparkles, Home, DollarSign, MapPin, CreditCard, Bot
+  FileText, TrendingUp, Plus, MessageSquare, Users,
+  Target, Loader2, Sparkles, Home, DollarSign, CreditCard, Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
