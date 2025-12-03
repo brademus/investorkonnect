@@ -227,6 +227,7 @@ export default function AgentDeepOnboarding() {
         what_sets_you_apart: formData.what_sets_you_apart,
       };
 
+      // CRITICAL: Set onboarding_completed_at to mark onboarding as complete
       await base44.entities.Profile.update(profile.id, {
         full_name: formData.full_name,
         phone: formData.phone,
@@ -234,6 +235,8 @@ export default function AgentDeepOnboarding() {
         license_state: formData.license_state,
         markets: formData.markets,
         onboarding_step: 'deep_complete',
+        onboarding_version: 'agent-v2-deep',
+        onboarding_completed_at: new Date().toISOString(),
         agent: {
           ...profile.agent,
           ...agentData,
@@ -241,8 +244,8 @@ export default function AgentDeepOnboarding() {
       });
 
       await refresh();
-      toast.success("Profile updated successfully!");
-      navigate(createPageUrl("Dashboard"));
+      toast.success("Profile completed successfully!");
+      navigate(createPageUrl("Dashboard"), { replace: true });
     } catch (error) {
       console.error('Save error:', error);
       toast.error("Failed to save. Please try again.");
