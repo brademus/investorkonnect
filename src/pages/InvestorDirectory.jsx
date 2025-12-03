@@ -386,3 +386,11 @@ function InvestorDirectoryContent() {
     </>
   );
 }
+
+export default function InvestorDirectory() {
+  return (
+    <AuthGuard requireAuth={true}>
+      <InvestorDirectoryContent />
+    </AuthGuard>
+  );
+}
