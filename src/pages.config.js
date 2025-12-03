@@ -59,7 +59,6 @@ import AgentPerformance from './pages/AgentPerformance';
 import InvestorPortfolio from './pages/InvestorPortfolio';
 import MarketIntel from './pages/MarketIntel';
 import InvestorProfile from './pages/InvestorProfile';
-import SimpleOnboarding from './pages/SimpleOnboarding';
 import DealWizard from './pages/DealWizard';
 import __Layout from './Layout.jsx';
 
@@ -126,7 +125,6 @@ export const PAGES = {
     "InvestorPortfolio": InvestorPortfolio,
     "MarketIntel": MarketIntel,
     "InvestorProfile": InvestorProfile,
-    "SimpleOnboarding": SimpleOnboarding,
     "DealWizard": DealWizard,
 }
 

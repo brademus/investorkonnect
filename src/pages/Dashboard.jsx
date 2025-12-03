@@ -20,21 +20,15 @@ function DashboardContent() {
   const { loading, user, role, onboarded, profile } = useCurrentProfile();
 
   useEffect(() => {
-    // Check if simple onboarding is complete (location + role)
-    const hasSimpleOnboarding = !!(profile?.target_state && profile?.user_role);
-    
-    // If no simple onboarding, send to SimpleOnboarding
-    if (!loading && user && !hasSimpleOnboarding) {
-      navigate(createPageUrl("SimpleOnboarding"), { replace: true });
+    // Check if user has selected a role
+    const hasRole = profile?.user_role && profile.user_role !== 'member';
+
+    // If no role selected, send to RoleSelection
+    if (!loading && user && !hasRole) {
+      navigate(createPageUrl("RoleSelection"), { replace: true });
       return;
     }
-    
-    // If no role set at all (shouldn't happen after simple onboarding), fallback
-    if (!loading && user && (!role || role === 'member') && hasSimpleOnboarding) {
-      // Role should be set after simple onboarding, but just in case
-      navigate(createPageUrl("SimpleOnboarding"), { replace: true });
-    }
-  }, [loading, user, role, profile, navigate]);
+  }, [loading, user, profile, navigate]);
 
   if (loading) {
     return (

@@ -56,29 +56,11 @@ export default function PostAuth() {
         // STEP 3: Determine effective role
         let effectiveRole = intendedRole || profile?.user_role || null;
 
-        // STEP 4: Check if NEW onboarding is complete (role-specific versions)
-        let hasNewOnboarding = false;
-        
-        if (effectiveRole === 'investor') {
-          // Investor needs v2 onboarding
-          hasNewOnboarding = 
-            profile?.onboarding_version === 'v2' &&
-            !!profile?.onboarding_completed_at &&
-            profile?.user_role === 'investor';
-        } else if (effectiveRole === 'agent') {
-          // CRITICAL: Agent needs EXACTLY "agent-v2-deep" onboarding
-          // Old agents with "v2-agent" or null are NOT considered complete
-          hasNewOnboarding = 
-            profile?.onboarding_version === 'agent-v2-deep' &&
-            !!profile?.onboarding_completed_at &&
-            profile?.user_role === 'agent';
-        }
+        // STEP 4: Check if user has selected a role
+        const hasRole = profile?.user_role && profile.user_role !== 'member';
 
-        // STEP 5: Check if user has simple onboarding (location + role)
-        const hasSimpleOnboarding = !!(profile?.target_state && profile?.user_role);
-        
-        // If no simple onboarding, redirect to SimpleOnboarding
-        if (!hasSimpleOnboarding) {
+        // If no role selected, send to RoleSelection
+        if (!hasRole) {
           // Create profile if doesn't exist
           if (!profile && user) {
             try {
@@ -94,14 +76,17 @@ export default function PostAuth() {
               // Silent fail - will retry on next attempt
             }
           }
-          
-          navigate(createPageUrl("SimpleOnboarding"), { replace: true });
+
+          navigate(createPageUrl("RoleSelection"), { replace: true });
           setHasRouted(true);
           return;
         }
-        
-        // If simple onboarding done but full onboarding not done, route to full onboarding
-        if (!hasNewOnboarding) {
+
+        // STEP 5: Check if onboarding is complete
+        const isOnboarded = !!profile?.onboarding_completed_at;
+
+        // If not onboarded, route to role-specific onboarding
+        if (!isOnboarded) {
           // Route to onboarding based on role
           if (effectiveRole === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
