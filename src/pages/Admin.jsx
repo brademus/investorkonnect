@@ -30,6 +30,7 @@ function AdminContent() {
   const [currentUser, setCurrentUser] = useState(null);
   const [adminEmail, setAdminEmail] = useState("");
   const [ndaUpdating, setNdaUpdating] = useState({});
+  const [wipingData, setWipingData] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalInvestors: 0,
@@ -625,23 +626,109 @@ Type "RESET" to confirm:`;
               </p>
             </div>
             
-            <Button 
-              onClick={resetAllNonAdminProfiles}
-              disabled={resetting}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {resetting ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Resetting...
-                </>
-              ) : (
-                <>
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Reset All Non-Admin Profiles
-                </>
-              )}
-            </Button>
+            <div className="flex gap-3">
+              <Button 
+                onClick={resetAllNonAdminProfiles}
+                disabled={resetting}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {resetting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Resetting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Reset All Non-Admin Profiles
+                  </>
+                )}
+              </Button>
+
+              <Button 
+                onClick={async () => {
+                  const confirmText = `🔥 NUCLEAR OPTION: This will WIPE ALL related data:
+- All Rooms
+- All Messages  
+- All Deals
+- Reset non-admin profiles to blank state
+
+Type "WIPE" to confirm:`;
+
+                  const userInput = prompt(confirmText);
+                  if (userInput !== "WIPE") {
+                    toast.info("Wipe cancelled");
+                    return;
+                  }
+
+                  setWipingData(true);
+                  try {
+                    // Get non-admin profile IDs
+                    const nonAdminProfileIds = nonAdminProfiles.map(p => p.id);
+                    
+                    // Delete all rooms
+                    const rooms = await base44.entities.Room.filter({});
+                    for (const room of rooms) {
+                      await base44.entities.Room.delete(room.id);
+                    }
+                    
+                    // Delete all messages
+                    const messages = await base44.entities.Message.filter({});
+                    for (const msg of messages) {
+                      await base44.entities.Message.delete(msg.id);
+                    }
+                    
+                    // Delete all deals
+                    const deals = await base44.entities.Deal.filter({});
+                    for (const deal of deals) {
+                      await base44.entities.Deal.delete(deal.id);
+                    }
+
+                    // Reset non-admin profiles to blank state
+                    for (const profile of nonAdminProfiles) {
+                      await base44.entities.Profile.update(profile.id, {
+                        role: 'member',
+                        user_role: 'member',
+                        onboarding_completed_at: null,
+                        onboarding_version: null,
+                        onboarding_step: null,
+                        metadata: null,
+                        onboarding: null,
+                        nda_accepted: false,
+                        nda_accepted_at: null,
+                        kyc_status: 'unverified',
+                        kyc_provider: null,
+                        kyc_inquiry_id: null,
+                        kyc_last_checked: null,
+                      });
+                    }
+
+                    toast.success(`Wiped ${rooms.length} rooms, ${messages.length} messages, ${deals.length} deals. Reset ${nonAdminProfiles.length} profiles.`);
+                    await loadData();
+                  } catch (error) {
+                    console.error('[Admin] Wipe error:', error);
+                    toast.error("Wipe failed: " + error.message);
+                  } finally {
+                    setWipingData(false);
+                  }
+                }}
+                disabled={wipingData}
+                variant="outline"
+                className="border-red-600 text-red-600 hover:bg-red-100"
+              >
+                {wipingData ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Wiping...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Wipe All Data (Rooms, Messages, Deals)
+                  </>
+                )}
+              </Button>
+            </div>
           </CardContent>
         </Card>
 
