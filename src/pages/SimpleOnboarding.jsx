@@ -99,12 +99,12 @@ export default function SimpleOnboarding() {
         onboarding_step: 'simple_complete'
       });
 
-      toast.success('Welcome to Investor Konnect!');
-      
-      // Redirect to dashboard
-      setTimeout(() => {
-        navigate(createPageUrl("Dashboard"), { replace: true });
-      }, 500);
+      // Redirect to role-specific onboarding
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
     } catch (error) {
       console.error('Error completing onboarding:', error);
       toast.error('Failed to save. Please try again.');
