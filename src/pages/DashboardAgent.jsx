@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
+import { Header } from "@/components/Header";
+import { SetupChecklist } from "@/components/SetupChecklist";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
   MapPin, ArrowRight
@@ -35,12 +37,15 @@ function AgentDashboardContent() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent mx-auto" style={{ borderColor: 'hsl(43 59% 52%)', borderTopColor: 'transparent' }}></div>
-          <p className="mt-4 ik-text-muted text-sm">Loading your dashboard...</p>
+      <>
+        <Header profile={profile} />
+        <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-10 w-10 border-2 border-t-transparent mx-auto" style={{ borderColor: 'hsl(43 59% 52%)', borderTopColor: 'transparent' }}></div>
+            <p className="mt-4 ik-text-muted text-sm">Loading your dashboard...</p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -54,16 +59,23 @@ function AgentDashboardContent() {
   };
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
-          Your Agent dashboard
-        </h1>
-        <p className="text-base" style={{ color: 'hsl(0 0% 44%)' }}>
-          Track your profile performance and connect with investors.
-        </p>
-      </header>
+    <>
+      <Header profile={profile} />
+      <div className="min-h-screen bg-[#FAF7F2]">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="space-y-8">
+            {/* Header */}
+            <header>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-1" style={{ color: 'hsl(0 0% 0%)' }}>
+                Welcome back, {firstName}!
+              </h1>
+              <p className="text-base" style={{ color: 'hsl(0 0% 44%)' }}>
+                Track your profile performance and connect with investors.
+              </p>
+            </header>
+
+            {/* Setup Checklist */}
+            <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
       {/* Top Stats Row */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -217,7 +229,10 @@ function AgentDashboardContent() {
           </section>
         </div>
       </div>
-    </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
 
