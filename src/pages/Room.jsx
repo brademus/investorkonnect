@@ -21,9 +21,22 @@ function useMyRooms() {
     let cancelled = false;
     const loadRooms = async () => {
       try {
+        // Load demo rooms from sessionStorage
+        const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+        
         const response = await listMyRooms();
-        if (!cancelled) setRooms(response.data?.items || []);
-      } catch (error) {}
+        const apiRooms = response.data?.items || [];
+        
+        // Merge demo rooms with API rooms (avoid duplicates)
+        const apiIds = new Set(apiRooms.map(r => r.id));
+        const uniqueDemoRooms = demoRooms.filter(r => !apiIds.has(r.id));
+        
+        if (!cancelled) setRooms([...apiRooms, ...uniqueDemoRooms]);
+      } catch (error) {
+        // Fallback to demo rooms only
+        const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+        if (!cancelled) setRooms(demoRooms);
+      }
       finally { if (!cancelled) setLoading(false); }
     };
     loadRooms();
