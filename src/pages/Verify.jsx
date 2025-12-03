@@ -6,6 +6,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
 import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { personaConfig } from "@/components/functions";
 
 /**
  * IDENTITY VERIFICATION (Persona Embedded Flow)
@@ -20,50 +21,86 @@ function VerifyContent() {
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
-  const [ready, setReady] = useState(false);
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const [personaReady, setPersonaReady] = useState(false);
+  const [config, setConfig] = useState(null);
   
   const personaClientRef = useRef(null);
 
   // Load Persona SDK script
   useEffect(() => {
     if (window.Persona) {
+      console.log('[Verify] Persona SDK already loaded');
       setScriptLoaded(true);
       return;
     }
 
+    console.log('[Verify] Loading Persona SDK...');
     const script = document.createElement('script');
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.0.0.js';
     script.async = true;
     script.onload = () => {
-      console.log('[Verify] Persona SDK loaded');
+      console.log('[Verify] Persona SDK loaded successfully');
       setScriptLoaded(true);
     };
-    script.onerror = () => {
-      console.error('[Verify] Failed to load Persona SDK');
+    script.onerror = (e) => {
+      console.error('[Verify] Failed to load Persona SDK:', e);
       setError('Failed to load verification system. Please refresh the page.');
     };
     document.head.appendChild(script);
-
-    return () => {
-      // Cleanup script if component unmounts before load
-    };
   }, []);
 
-  // Initialize Persona client once SDK is loaded and we have profile
+  // Fetch Persona config from backend
   useEffect(() => {
-    if (!scriptLoaded || !user || !profile || personaClientRef.current) return;
+    if (!user || !profile || config) return;
 
-    const templateId = 'itmpl_8nKgVFgnwC1iGv6ZBHmJaSnn';
-    const environmentId = 'env_vSBBJVqRsaNLyvJ7C7vN8C5c';
+    const fetchConfig = async () => {
+      try {
+        console.log('[Verify] Fetching Persona config...');
+        const response = await personaConfig();
+        console.log('[Verify] Config response:', response);
+        
+        if (response.data?.templateId && response.data?.environmentId) {
+          setConfig({
+            templateId: response.data.templateId,
+            environmentId: response.data.environmentId
+          });
+          console.log('[Verify] Config set:', response.data.templateId, response.data.environmentId);
+        } else {
+          console.error('[Verify] Invalid config response:', response);
+          setError(response.data?.error || 'Failed to get verification configuration.');
+        }
+      } catch (err) {
+        console.error('[Verify] Error fetching config:', err);
+        setError('Failed to load verification configuration. Please try again.');
+      }
+    };
 
-    console.log('[Verify] Initializing Persona client...');
+    fetchConfig();
+  }, [user, profile, config]);
+
+  // Initialize Persona client once SDK is loaded, we have config and profile
+  useEffect(() => {
+    if (!scriptLoaded || !config || !user || !profile) {
+      console.log('[Verify] Not ready to init:', { scriptLoaded, hasConfig: !!config, hasUser: !!user, hasProfile: !!profile });
+      return;
+    }
+    
+    if (personaClientRef.current) {
+      console.log('[Verify] Client already exists');
+      return;
+    }
+
+    console.log('[Verify] Initializing Persona client with:', {
+      templateId: config.templateId,
+      environmentId: config.environmentId,
+      referenceId: user.id
+    });
 
     try {
       personaClientRef.current = new window.Persona.Client({
-        templateId,
-        environmentId,
+        templateId: config.templateId,
+        environmentId: config.environmentId,
         referenceId: user.id,
         prefill: {
           emailAddress: user.email,
@@ -71,7 +108,7 @@ function VerifyContent() {
           nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
         },
         onReady: () => {
-          console.log('[Verify] Persona client ready');
+          console.log('[Verify] ✅ Persona client ready!');
           setPersonaReady(true);
         },
         onComplete: async ({ inquiryId, status }) => {
@@ -97,7 +134,7 @@ function VerifyContent() {
           }
         },
         onCancel: () => {
-          console.log('[Verify] Persona cancelled');
+          console.log('[Verify] Persona cancelled by user');
           setLaunching(false);
         },
         onError: (error) => {
@@ -107,12 +144,12 @@ function VerifyContent() {
         },
       });
 
-      setReady(true);
+      console.log('[Verify] Persona client created');
     } catch (err) {
-      console.error('[Verify] Failed to initialize Persona:', err);
+      console.error('[Verify] Failed to create Persona client:', err);
       setError('Failed to initialize verification. Please refresh the page.');
     }
-  }, [scriptLoaded, user, profile, navigate, refresh]);
+  }, [scriptLoaded, config, user, profile, navigate, refresh]);
 
   // DEMO MODE: Auto-approve KYC
   useEffect(() => {
@@ -180,8 +217,10 @@ function VerifyContent() {
   }
 
   const handleBeginVerification = () => {
+    console.log('[Verify] Begin clicked, client ref:', !!personaClientRef.current);
+    
     if (!personaClientRef.current) {
-      setError('Verification system not ready. Please refresh the page.');
+      setError('Verification system not ready. Please wait or refresh the page.');
       return;
     }
 
@@ -189,6 +228,7 @@ function VerifyContent() {
     setError(null);
     
     try {
+      console.log('[Verify] Opening Persona modal...');
       personaClientRef.current.open();
     } catch (err) {
       console.error('[Verify] Failed to open Persona:', err);
@@ -202,6 +242,8 @@ function VerifyContent() {
     setLaunching(false);
     window.location.reload();
   };
+
+  const isLoading = !scriptLoaded || !config || !personaReady;
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
@@ -275,30 +317,21 @@ function VerifyContent() {
             </div>
           )}
 
-          {/* Loading State: Script Loading */}
-          {!scriptLoaded && !error && (
+          {/* Loading State */}
+          {isLoading && !error && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
               <h3 className="text-lg font-semibold text-black mb-2">
-                Loading Verification System...
+                {!scriptLoaded ? 'Loading Verification System...' : 
+                 !config ? 'Fetching Configuration...' : 
+                 'Preparing Verification...'}
               </h3>
               <p className="text-[#666666]">Please wait</p>
             </div>
           )}
 
-          {/* Loading State: Client Initializing */}
-          {scriptLoaded && !personaReady && !error && (
-            <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
-              <h3 className="text-lg font-semibold text-black mb-2">
-                Preparing Verification...
-              </h3>
-              <p className="text-[#666666]">Setting up your secure session</p>
-            </div>
-          )}
-
           {/* Ready to Verify */}
-          {personaReady && !error && (
+          {!isLoading && !error && (
             <div className="text-center py-8">
               <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <Shield className="w-12 h-12 text-[#92400E]" />
