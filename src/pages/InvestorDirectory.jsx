@@ -15,7 +15,6 @@ import {
   Loader2, Search, Filter, CheckCircle, Home as HomeIcon, User, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
-import { Header } from "@/components/Header";
 import { AuthGuard } from "@/components/AuthGuard";
 
 function InvestorDirectoryContent() {
@@ -147,44 +146,34 @@ function InvestorDirectoryContent() {
   }
 
   return (
-    <>
-      <Header profile={profile} />
-      <div className="min-h-screen bg-[#FAF7F2]">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <Link 
-            to={createPageUrl("Dashboard")} 
-            className="inline-flex items-center gap-2 text-[#6B7280] hover:text-[#111827] mb-6"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Dashboard
-          </Link>
+    <div className="min-h-screen bg-[#FAF7F2] py-6 sm:py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page Header */}
+        <header className="mb-6">
+          <h1 className="text-2xl font-bold text-[#111827]">Investor Directory</h1>
+          <p className="mt-1 text-sm text-[#6B7280]">
+            Connect with verified investors looking for agents
+          </p>
+        </header>
 
-          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-[#111827]">
-                Find Investors
-              </h1>
-              <p className="mt-2 text-base text-[#6B7280]">
-                Connect with verified investors looking for agents to help them find their next deal.
-              </p>
-            </div>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-3xl p-6 mb-6">
-            <div className="flex flex-col gap-4">
+        {/* Search & Filter Card */}
+        <section className="mb-5">
+          <div className="bg-white border border-gray-200 rounded-xl p-4">
+            <div className="flex flex-col gap-3">
+              {/* Search row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search by name, location, or strategy..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-slate-50 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D3A029] focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-200 bg-gray-50 pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#D3A029] focus:border-transparent"
                   />
                 </div>
                 <Select defaultValue="recommended">
-                  <SelectTrigger className="w-full sm:w-[180px] h-12 rounded-xl border-gray-200 bg-white text-sm">
+                  <SelectTrigger className="w-full sm:w-[160px] h-10 rounded-lg border-gray-200 bg-white text-sm">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -196,11 +185,12 @@ function InvestorDirectoryContent() {
                 </Select>
               </div>
               
-              <div className="flex flex-wrap items-center gap-3">
+              {/* Filter row */}
+              <div className="flex flex-wrap items-center gap-2">
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger className="min-w-[160px] h-12 rounded-xl border-gray-200 bg-white text-sm">
-                    <MapPin className="w-4 h-4 mr-2 text-[#9CA3AF]" />
-                    <SelectValue placeholder="All Locations" />
+                  <SelectTrigger className="h-9 rounded-lg border-gray-200 bg-white text-sm px-3">
+                    <MapPin className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                    <SelectValue placeholder="Location" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Locations</SelectItem>
@@ -213,9 +203,9 @@ function InvestorDirectoryContent() {
                 </Select>
                 
                 <Select value={strategyFilter} onValueChange={setStrategyFilter}>
-                  <SelectTrigger className="min-w-[160px] h-12 rounded-xl border-gray-200 bg-white text-sm">
-                    <TrendingUp className="w-4 h-4 mr-2 text-[#9CA3AF]" />
-                    <SelectValue placeholder="All Strategies" />
+                  <SelectTrigger className="h-9 rounded-lg border-gray-200 bg-white text-sm px-3">
+                    <TrendingUp className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
+                    <SelectValue placeholder="Strategy" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Strategies</SelectItem>
@@ -225,50 +215,38 @@ function InvestorDirectoryContent() {
                     <SelectItem value="value-add">Value-Add</SelectItem>
                   </SelectContent>
                 </Select>
-                
-                <Button variant="outline" className="h-12 rounded-xl gap-2 border-gray-200">
-                  <Filter className="w-4 h-4" />
-                  More filters
-                </Button>
               </div>
             </div>
           </div>
+        </section>
 
-          <div className="flex items-center justify-between mb-6">
-            <p className="text-sm text-[#6B7280]">
-              Showing <span className="font-medium text-[#111827]">{filteredInvestors.length}</span> verified investors
-            </p>
-            {(searchTerm || locationFilter !== "all" || strategyFilter !== "all") && (
-              <button 
-                onClick={clearFilters}
-                className="text-sm text-[#D3A029] hover:underline"
-              >
+        {/* Results Count */}
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-[#6B7280]">
+            <span className="font-medium text-[#111827]">{filteredInvestors.length}</span> investors
+          </p>
+          {(searchTerm || locationFilter !== "all" || strategyFilter !== "all") && (
+            <button onClick={clearFilters} className="text-sm text-[#D3A029] hover:underline">
+              Clear filters
+            </button>
+          )}
+        </div>
+
+        {/* Investor Cards Grid */}
+        <section>
+          {filteredInvestors.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-xl flex flex-col items-center justify-center py-12 px-6 text-center">
+              <div className="w-12 h-12 bg-[#D1FAE5] rounded-xl flex items-center justify-center mb-4">
+                <Search className="w-6 h-6 text-[#059669]" />
+              </div>
+              <h2 className="text-base font-semibold text-[#111827]">No investors match your filters</h2>
+              <p className="mt-1 text-sm text-[#6B7280]">Try adjusting your filters</p>
+              <button onClick={clearFilters} className="mt-4 text-sm text-[#D3A029] hover:underline">
                 Clear filters
               </button>
-            )}
-          </div>
-
-          {filteredInvestors.length === 0 ? (
-            <div className="bg-white border border-gray-200 rounded-3xl flex flex-col items-center justify-center py-16 px-6 text-center">
-              <div className="w-16 h-16 bg-[#FEF3C7] rounded-2xl flex items-center justify-center mb-5">
-                <Search className="w-8 h-8 text-[#D3A029]" />
-              </div>
-              <h2 className="text-xl font-bold text-[#111827]">
-                No investors match your filters
-              </h2>
-              <p className="mt-2 max-w-md text-[#6B7280]">
-                Try adjusting your location, strategy, or other filters to see more investors.
-              </p>
-              <Button
-                onClick={clearFilters}
-                variant="outline"
-                className="mt-6 border-[#D3A029] text-[#D3A029] hover:bg-[#FFFBEB]"
-              >
-                Clear filters
-              </Button>
             </div>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredInvestors.map((investor) => {
                 const investorData = investor.investor || {};
                 const metadata = investor.metadata || {};
@@ -281,80 +259,74 @@ function InvestorDirectoryContent() {
                 return (
                   <div
                     key={investor.id}
-                    className="bg-white border border-gray-200 rounded-3xl flex flex-col hover:shadow-lg hover:border-[#D3A029] hover:-translate-y-1 transition-all duration-200 overflow-hidden"
+                    className="bg-white rounded-xl border border-gray-200 p-4 hover:border-[#10B981] hover:shadow-md transition-all"
                   >
-                    <div className="h-16 bg-gradient-to-br from-[#D1FAE5] to-[#A7F3D0]" />
-                    
-                    <div className="p-6 -mt-8 flex flex-col flex-1">
-                      <div className="flex items-start gap-4">
-                        <div className="relative flex-shrink-0">
-                          <div className="h-14 w-14 rounded-full bg-[#D1FAE5] flex items-center justify-center text-base font-semibold text-[#059669] ring-4 ring-white shadow-lg">
-                            {initials}
+                    {/* Avatar + Info */}
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="relative flex-shrink-0">
+                        <div className="h-11 w-11 rounded-full bg-[#D1FAE5] flex items-center justify-center text-sm font-semibold text-[#059669]">
+                          {initials}
+                        </div>
+                        {isVerified && (
+                          <div className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+                            <CheckCircle className="w-3.5 h-3.5 text-[#10B981]" />
                           </div>
-                          {isVerified && (
-                            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center shadow-sm">
-                              <CheckCircle className="w-4 h-4 text-[#10B981]" />
-                            </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <h2 className="text-sm font-semibold text-[#111827] truncate">
+                            {investor.full_name || 'Investor'}
+                          </h2>
+                          {isDemo && (
+                            <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded">Demo</span>
                           )}
                         </div>
-                        <div className="flex-1 min-w-0 pt-2">
-                          <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-bold text-[#111827] truncate">
-                              {investor.full_name || 'Investor'}
-                            </h2>
-                            {isDemo && (
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">
-                                Demo
-                              </span>
-                            )}
-                          </div>
-                          <p className="mt-0.5 text-sm text-[#6B7280] flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5" />
-                            {investor.markets?.[0] || investor.target_state || 'Location TBD'}
-                          </p>
-                        </div>
+                        <p className="text-xs text-[#6B7280] flex items-center gap-1 mt-0.5">
+                          <MapPin className="w-3 h-3" />
+                          {investor.markets?.[0] || investor.target_state || 'Location TBD'}
+                        </p>
                       </div>
-                      
-                      <p className="mt-3 text-sm text-[#6B7280] line-clamp-2">
-                        {strategy}
-                      </p>
-                      
-                      <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
-                        <div className="p-3 bg-slate-50 rounded-xl text-center">
-                          <div className="text-sm font-semibold text-[#111827]">{capital}</div>
-                          <div className="text-xs text-[#6B7280]">Budget</div>
-                        </div>
-                        <div className="p-3 bg-slate-50 rounded-xl text-center">
-                          <div className="text-sm font-semibold text-[#111827]">{metadata.experience_years || 3}+ yrs</div>
-                          <div className="text-xs text-[#6B7280]">Experience</div>
-                        </div>
+                    </div>
+                    
+                    {/* Strategy */}
+                    <p className="text-xs text-[#6B7280] mb-3 line-clamp-1">{strategy}</p>
+                    
+                    {/* Stats */}
+                    <div className="grid grid-cols-2 gap-2 py-3 border-t border-gray-100">
+                      <div className="text-center">
+                        <div className="text-sm font-semibold text-[#111827]">{capital}</div>
+                        <div className="text-[10px] text-[#6B7280]">Budget</div>
                       </div>
-                      
-                      <div className="mt-5 pt-4 border-t border-gray-100 flex gap-3">
-                        <Link
-                          to={`${createPageUrl("InvestorProfile")}?id=${investor.id}`}
-                          className="flex-1"
-                        >
-                          <Button variant="outline" className="w-full border-gray-200 hover:border-[#D3A029] hover:bg-[#FFFBEB]">
-                            View Profile
-                          </Button>
-                        </Link>
-                        <Button
-                          onClick={() => handleOpenRoom(investor)}
-                          className="flex-1 bg-[#D3A029] hover:bg-[#B8902A] text-white"
-                        >
-                          Connect
-                        </Button>
+                      <div className="text-center">
+                        <div className="text-sm font-semibold text-[#111827]">{metadata.experience_years || 3}+ yrs</div>
+                        <div className="text-[10px] text-[#6B7280]">Experience</div>
                       </div>
+                    </div>
+                    
+                    {/* Actions */}
+                    <div className="flex gap-2 pt-3 border-t border-gray-100">
+                      <Link
+                        to={`${createPageUrl("InvestorProfile")}?id=${investor.id}`}
+                        className="flex-1 h-9 text-sm font-medium border border-gray-200 rounded-lg flex items-center justify-center hover:bg-gray-50 transition-colors"
+                      >
+                        View
+                      </Link>
+                      <button
+                        onClick={() => handleOpenRoom(investor)}
+                        className="flex-1 h-9 text-sm font-medium bg-[#10B981] text-white rounded-lg flex items-center justify-center hover:bg-[#059669] transition-colors"
+                      >
+                        Connect
+                      </button>
                     </div>
                   </div>
                 );
               })}
             </div>
           )}
-        </div>
+        </section>
       </div>
-    </>
+    </div>
   );
 }
 
