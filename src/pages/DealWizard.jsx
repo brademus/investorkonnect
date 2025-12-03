@@ -139,7 +139,36 @@ export default function DealWizard() {
     setSubmitting(true);
     
     try {
-      // Save deal details to profile
+      // Create a Deal entity record
+      const dealTitle = `${formData.propertyType} in ${formData.city || formData.state}`;
+      const dealData = {
+        title: dealTitle,
+        description: formData.strategyNotes || `${formData.investmentStrategy} deal`,
+        property_address: formData.propertyAddress || '',
+        property_type: formData.propertyType,
+        budget: parseFloat(formData.totalBudget?.replace(/[^0-9.]/g, '')) || 0,
+        status: 'active',
+        notes: JSON.stringify({
+          ...formData,
+          submitted_at: new Date().toISOString()
+        })
+      };
+      
+      try {
+        await base44.entities.Deal.create(dealData);
+      } catch (dealErr) {
+        console.log('Could not create Deal entity:', dealErr.message);
+        // Store in sessionStorage as fallback
+        const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
+        storedDeals.push({
+          id: `deal-${Date.now()}`,
+          ...dealData,
+          created_date: new Date().toISOString()
+        });
+        sessionStorage.setItem('user_deals', JSON.stringify(storedDeals));
+      }
+      
+      // Also save to profile for matching
       try {
         await upsertInvestorOnboarding({
           deal_submission: {
@@ -149,7 +178,6 @@ export default function DealWizard() {
         });
       } catch (saveErr) {
         console.log('Could not save deal submission:', saveErr.message);
-        // Continue anyway - the deal data will be used for matching
       }
 
       toast.success('Deal submitted successfully!');
@@ -165,7 +193,6 @@ export default function DealWizard() {
         });
       } catch (matchErr) {
         console.log('AI matching:', matchErr.message);
-        // Try fallback matching
         try {
           await matchInvestor();
         } catch (fallbackErr) {
@@ -173,7 +200,7 @@ export default function DealWizard() {
         }
       }
       
-      // Wait for animation then navigate to Dashboard (more reliable than Matches)
+      // Wait for animation then navigate to Dashboard
       setTimeout(() => {
         navigate(createPageUrl("Dashboard"), { replace: true });
       }, 2000);

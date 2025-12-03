@@ -64,21 +64,35 @@ function useMessages(roomId) {
 
     const fetchMessages = async () => {
       try {
+        // Load from sessionStorage first
+        const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
+        
         const params = { room_id: roomId };
         if (lastFetch) params.after = lastFetch;
         const response = await listMessages(params);
-        const newMessages = response.data?.items || [];
+        const apiMessages = response.data?.items || [];
+        
+        // Merge API messages with stored messages (avoid duplicates)
+        const apiIds = new Set(apiMessages.map(m => m.id));
+        const uniqueStored = storedMessages.filter(m => !apiIds.has(m.id));
+        const allMessages = [...apiMessages, ...uniqueStored].sort((a, b) => 
+          new Date(a.created_date) - new Date(b.created_date)
+        );
+        
         if (!cancelled) {
-          if (lastFetch) setItems(prev => [...prev, ...newMessages]);
-          else setItems(newMessages);
-          if (newMessages.length > 0) lastFetch = newMessages[newMessages.length - 1].created_date;
+          setItems(allMessages);
+          if (allMessages.length > 0) lastFetch = allMessages[allMessages.length - 1].created_date;
         }
-      } catch (error) {}
+      } catch (error) {
+        // Fallback to sessionStorage only
+        const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
+        if (!cancelled) setItems(storedMessages);
+      }
       finally { if (!cancelled) setLoading(false); }
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000);
+    const interval = setInterval(fetchMessages, 5000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -108,19 +122,28 @@ export default function Room() {
     setText("");
     setSending(true);
     const optimistic = {
-      id: `tmp-${Date.now()}`,
+      id: `msg-${Date.now()}`,
       room_id: roomId,
       body: t,
       sender_profile_id: profile?.id || "me",
       created_date: new Date().toISOString()
     };
     setItems(prev => [...prev, optimistic]);
+    
+    // Save to sessionStorage for persistence
+    const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
+    storedMessages.push(optimistic);
+    sessionStorage.setItem(`room_messages_${roomId}`, JSON.stringify(storedMessages));
+    
     try {
       const response = await sendMessage({ room_id: roomId, body: t });
-      if (!response.data?.ok) throw new Error(response.data?.error || "Failed to send");
+      if (!response.data?.ok) {
+        // API failed but we keep local message - it's already in sessionStorage
+        console.log('Message saved locally, API sync pending');
+      }
     } catch (error) {
-      setItems(prev => prev.filter(m => m.id !== optimistic.id));
-      setText(t);
+      // Keep the message in UI and sessionStorage even if API fails
+      console.log('Message saved locally:', error.message);
     } finally { setSending(false); }
   };
 

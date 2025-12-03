@@ -24,6 +24,7 @@ function InvestorDashboardContent() {
     pending: 0,
     closed: 0
   });
+  const [deals, setDeals] = useState([]);
 
   useEffect(() => {
     loadProfile();
@@ -45,6 +46,9 @@ function InvestorDashboardContent() {
         
         // Load recent messages
         loadRecentMessages();
+        
+        // Load deals
+        loadDeals();
       }
       setLoading(false);
     } catch (error) {
@@ -78,6 +82,39 @@ function InvestorDashboardContent() {
       }
     } catch (err) {
       // Silent fail
+    }
+  };
+
+  const loadDeals = async () => {
+    try {
+      // Load from Deal entity
+      const apiDeals = await base44.entities.Deal.list('-created_date', 50);
+      
+      // Also load from sessionStorage fallback
+      const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
+      
+      // Merge (avoid duplicates)
+      const apiIds = new Set(apiDeals.map(d => d.id));
+      const uniqueStored = storedDeals.filter(d => !apiIds.has(d.id));
+      const allDeals = [...apiDeals, ...uniqueStored];
+      
+      setDeals(allDeals);
+      
+      // Calculate stats
+      const active = allDeals.filter(d => d.status === 'active' || d.status === 'draft').length;
+      const pending = allDeals.filter(d => d.status === 'pending').length;
+      const closed = allDeals.filter(d => d.status === 'closed' || d.status === 'archived').length;
+      
+      setDealStats({ active, pending, closed });
+    } catch (err) {
+      // Fallback to sessionStorage only
+      const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
+      setDeals(storedDeals);
+      setDealStats({ 
+        active: storedDeals.filter(d => d.status === 'active').length,
+        pending: 0,
+        closed: 0
+      });
     }
   };
 
@@ -160,7 +197,10 @@ function InvestorDashboardContent() {
           <h3 className="text-lg font-bold text-[#111827] mb-4">Deal Pipeline</h3>
           
           <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-[#FEF3C7] rounded-lg">
+            <button 
+              onClick={() => navigate(createPageUrl("ActiveDeals"))}
+              className="w-full flex items-center justify-between p-3 bg-[#FEF3C7] rounded-lg hover:bg-[#FDE68A] transition-colors cursor-pointer"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-[#D3A029] rounded-lg flex items-center justify-center">
                   <Home className="w-4 h-4 text-white" />
@@ -168,7 +208,7 @@ function InvestorDashboardContent() {
                 <span className="font-medium text-[#111827]">Active Deals</span>
               </div>
               <span className="text-xl font-bold text-[#D3A029]">{dealStats.active}</span>
-            </div>
+            </button>
             
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
               <div className="flex items-center gap-3">

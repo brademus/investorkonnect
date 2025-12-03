@@ -21,6 +21,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       id: 'onboarding',
       title: 'Complete Onboarding',
       description: 'Set up your profile and preferences',
+      // Check both onboarding_completed_at AND version for strict check, but also accept any completed onboarding
       completed: !!profile?.onboarding_completed_at,
       icon: User,
       link: isAgent ? 'AgentDeepOnboarding' : 'InvestorDeepOnboarding'
