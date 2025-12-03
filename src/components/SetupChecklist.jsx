@@ -18,6 +18,13 @@ export function SetupChecklist({ profile, onRefresh }) {
     }
   }, [profile]);
 
+  // Force recalculate when profile changes to ensure steps are populated
+  useEffect(() => {
+    if (profile && steps.length === 0) {
+      calculateSteps();
+    }
+  }, [profile, steps.length]);
+
   const calculateSteps = () => {
     const isInvestor = profile.user_role === 'investor' || profile.user_type === 'investor';
     
