@@ -238,10 +238,10 @@ export default function InvestorDeepOnboarding() {
       // Refresh profile to get updated state
       await refresh();
       
-      toast.success("Profile completed! Next: verify your identity.");
+      toast.success("Profile completed successfully!");
       
-      // Navigate to Verify page (next step in checklist)
-      navigate(createPageUrl("Verify"), { replace: true });
+      // Navigate back to Dashboard so user can proceed through checklist
+      navigate(createPageUrl("Dashboard"), { replace: true });
     } catch (error) {
       console.error('Save error:', error);
       toast.error("Failed to save. Please try again.");
