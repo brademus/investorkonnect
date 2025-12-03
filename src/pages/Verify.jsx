@@ -1,12 +1,12 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
-import { Loader2, Shield, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Loader2, Shield, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
+import { personaStart } from "@/components/functions";
 
 /**
  * IDENTITY VERIFICATION (Persona Embedded Flow)
