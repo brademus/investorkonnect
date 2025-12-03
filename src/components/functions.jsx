@@ -86,4 +86,13 @@ export const findBestAgents = base44.functions.findBestAgents;
 export const grantAdmin = base44.functions.grantAdmin;
 
 // Persona KYC functions
-export const personaConfig = (params) => base44.functions.invoke('personaConfig', params || {});
+export const personaConfig = async (params) => {
+  const response = await fetch('/functions/personaConfig', {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params || {})
+  });
+  const data = await response.json();
+  return { data };
+};
