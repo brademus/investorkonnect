@@ -356,8 +356,8 @@ Type "RESET" to confirm:`;
         role: 'agent' 
       });
       const data = response.data;
-      toast.success(`Agent vectors updated: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped`);
-      alert(JSON.stringify(data, null, 2));
+      toast.success(`Agent vectors updated: ${data.created || 0} created, ${data.updated || 0} updated, ${data.skipped || 0} skipped`);
+      console.log('[Admin] Agent vectors result:', data);
     } catch (error) {
       console.error('[Admin] Refresh agent vectors error:', error);
       toast.error("Failed to refresh agent vectors: " + error.message);
@@ -373,8 +373,8 @@ Type "RESET" to confirm:`;
         role: 'investor' 
       });
       const data = response.data;
-      toast.success(`Investor vectors updated: ${data.created} created, ${data.updated} updated, ${data.skipped} skipped`);
-      alert(JSON.stringify(data, null, 2));
+      toast.success(`Investor vectors updated: ${data.created || 0} created, ${data.updated || 0} updated, ${data.skipped || 0} skipped`);
+      console.log('[Admin] Investor vectors result:', data);
     } catch (error) {
       console.error('[Admin] Refresh investor vectors error:', error);
       toast.error("Failed to refresh investor vectors: " + error.message);
@@ -632,15 +632,15 @@ Type "RESET" to confirm:`;
           </CardContent>
         </Card>
 
-        {/* Quick Admin Setup */}
+        {/* Quick Admin Setup - Full Reset */}
         <Card className="mb-8 border-orange-200 bg-orange-50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-orange-900">
               <Settings className="w-5 h-5" />
-              Quick Admin Setup
+              ⚠️ Reset Database & Grant Admin
             </CardTitle>
             <CardDescription className="text-orange-700">
-              Having trouble accessing admin? Use this to reset all profiles and set admin role.
+              <strong>WARNING:</strong> This will DELETE ALL profiles and recreate them from scratch. Only use if you need a complete reset.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
