@@ -61,6 +61,7 @@ import InvestorProfile from './pages/InvestorProfile';
 import DealWizard from './pages/DealWizard';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
+import AIAssistant from './pages/AIAssistant';
 import __Layout from './Layout.jsx';
 
 
@@ -128,6 +129,7 @@ export const PAGES = {
     "DealWizard": DealWizard,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
     "AgentDeepOnboarding": AgentDeepOnboarding,
+    "AIAssistant": AIAssistant,
 }
 
 export const pagesConfig = {

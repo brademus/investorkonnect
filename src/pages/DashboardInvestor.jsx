@@ -4,11 +4,12 @@ import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { SetupChecklist } from "@/components/SetupChecklist";
+import { Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { getInvestorMatches, inboxList } from "@/components/functions";
 import { 
   FileText, TrendingUp, ArrowRight, Plus, MessageSquare, Users,
-  Target, Loader2, Sparkles, Home, DollarSign, MapPin, CreditCard
+  Target, Loader2, Sparkles, Home, DollarSign, MapPin, CreditCard, Bot
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -335,12 +336,13 @@ function InvestorDashboardContent() {
       </div>
 
             {/* Quick Links */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
               {[
                 { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
                 { label: 'My Profile', icon: Users, href: 'AccountProfile' },
                 { label: 'Deal Rooms', icon: MessageSquare, href: 'DealRooms' },
                 { label: 'Documents', icon: FileText, href: 'InvestorDocuments' },
+                { label: 'AI Assistant', icon: Bot, href: 'AIAssistant' },
               ].map((link) => {
                 const Icon = link.icon;
                 return (

@@ -125,11 +125,22 @@ export function SetupChecklist({ profile, onRefresh }) {
     }
   }, [allComplete, steps.length]);
 
-  // Don't render if no profile or no role
-  if (!profile || !hasRole) return null;
-  
-  // Wait for steps to be calculated
-  if (steps.length === 0) return null;
+  // Don't render if no profile or no role - show nothing
+  if (!profile || !hasRole) {
+    return null;
+  }
+
+  // If steps not calculated yet, show loading placeholder
+  if (steps.length === 0) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
+        <div className="animate-pulse">
+          <div className="h-4 bg-gray-200 rounded w-1/3 mb-2"></div>
+          <div className="h-2 bg-gray-200 rounded w-full"></div>
+        </div>
+      </div>
+    );
+  }
 
   // Collapsed state - minimal banner
   if (collapsed) {

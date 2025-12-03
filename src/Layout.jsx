@@ -3,7 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
-import { AIChatbot } from "@/components/AIChatbot";
+
 import { Shield, FileText, User, Settings, ShieldCheck } from "lucide-react";
 
 /**
@@ -112,7 +112,7 @@ function LayoutContent({ children }) {
         {children}
       </main>
 
-      {user && <AIChatbot />}
+
     </div>
   );
 }
