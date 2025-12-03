@@ -92,8 +92,23 @@ export default function Verify() {
   useEffect(() => {
     if (!personaConfig || personaReady) return;
 
-    if (window.Persona) {
+    // Check if already loaded
+    if (window.Persona && window.Persona.Client) {
+      console.log('[Verify] Persona SDK already available');
       setPersonaReady(true);
+      return;
+    }
+
+    // Check if script already exists
+    const existingScript = document.querySelector('script[src*="persona"]');
+    if (existingScript) {
+      // Wait for it to load
+      const checkLoaded = setInterval(() => {
+        if (window.Persona && window.Persona.Client) {
+          clearInterval(checkLoaded);
+          setPersonaReady(true);
+        }
+      }, 100);
       return;
     }
 
@@ -101,10 +116,20 @@ export default function Verify() {
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.0.0.js';
     script.async = true;
     script.onload = () => {
-      console.log('[Verify] Persona SDK loaded');
-      setPersonaReady(true);
+      console.log('[Verify] Persona SDK script loaded');
+      // Give it a moment to initialize
+      setTimeout(() => {
+        if (window.Persona && window.Persona.Client) {
+          console.log('[Verify] Persona SDK ready');
+          setPersonaReady(true);
+        } else {
+          console.error('[Verify] Persona SDK loaded but Client not available');
+          setError('Verification system failed to initialize. Please refresh.');
+        }
+      }, 100);
     };
-    script.onerror = () => {
+    script.onerror = (e) => {
+      console.error('[Verify] Failed to load Persona SDK:', e);
       setError('Failed to load verification system. Please refresh.');
     };
     document.head.appendChild(script);
@@ -112,54 +137,65 @@ export default function Verify() {
 
   // Handle verification button click
   const startVerification = () => {
-    if (!window.Persona || !personaConfig) {
-      setError('Verification system not ready. Please refresh.');
+    if (!personaConfig) {
+      setError('Verification config not loaded. Please refresh.');
+      return;
+    }
+
+    // Check if Persona SDK is available
+    if (typeof window.Persona === 'undefined' || !window.Persona.Client) {
+      setError('Verification system not loaded. Please refresh the page.');
       return;
     }
 
     setError(null);
 
-    const client = new window.Persona.Client({
-      templateId: personaConfig.templateId,
-      environmentId: personaConfig.environmentId,
-      referenceId: user.id,
-      prefill: {
-        emailAddress: user.email,
-        nameFirst: profile.full_name?.split(' ')[0] || '',
-        nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
-      },
-      onReady: () => {
-        console.log('[Verify] Persona ready, opening modal...');
-        client.open();
-      },
-      onComplete: async ({ inquiryId, status }) => {
-        console.log('[Verify] Verification complete:', { inquiryId, status });
-        setVerifying(true);
+    try {
+      const client = new window.Persona.Client({
+        templateId: personaConfig.templateId,
+        environmentId: personaConfig.environmentId,
+        referenceId: user.id,
+        prefill: {
+          emailAddress: user.email,
+          nameFirst: profile.full_name?.split(' ')[0] || '',
+          nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
+        },
+        onReady: () => {
+          console.log('[Verify] Persona client ready, opening modal...');
+          client.open();
+        },
+        onComplete: async ({ inquiryId, status }) => {
+          console.log('[Verify] Verification complete:', { inquiryId, status });
+          setVerifying(true);
 
-        try {
-          await base44.entities.Profile.update(profile.id, {
-            kyc_status: status === 'completed' ? 'approved' : 'pending',
-            kyc_inquiry_id: inquiryId,
-            kyc_provider: 'persona',
-            kyc_last_checked: new Date().toISOString(),
-          });
+          try {
+            await base44.entities.Profile.update(profile.id, {
+              kyc_status: status === 'completed' ? 'approved' : 'pending',
+              kyc_inquiry_id: inquiryId,
+              kyc_provider: 'persona',
+              kyc_last_checked: new Date().toISOString(),
+            });
 
-          toast.success('Identity verified successfully!');
-          navigate(createPageUrl("Dashboard"), { replace: true });
-        } catch (err) {
-          console.error('[Verify] Profile update failed:', err);
-          setError('Verification completed but failed to save. Contact support.');
-          setVerifying(false);
-        }
-      },
-      onCancel: () => {
-        console.log('[Verify] User cancelled');
-      },
-      onError: (err) => {
-        console.error('[Verify] Persona error:', err);
-        setError('Verification failed. Please try again.');
-      },
-    });
+            toast.success('Identity verified successfully!');
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          } catch (err) {
+            console.error('[Verify] Profile update failed:', err);
+            setError('Verification completed but failed to save. Contact support.');
+            setVerifying(false);
+          }
+        },
+        onCancel: () => {
+          console.log('[Verify] User cancelled');
+        },
+        onError: (err) => {
+          console.error('[Verify] Persona error:', err);
+          setError('Verification failed. Please try again.');
+        },
+      });
+    } catch (err) {
+      console.error('[Verify] Failed to create Persona client:', err);
+      setError('Failed to start verification. Please refresh.');
+    }
   };
 
   // Loading state
