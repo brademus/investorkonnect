@@ -248,16 +248,16 @@ function VerifyContent() {
               <button
                 onClick={handleBeginVerification}
                 disabled={launching}
-                className="h-14 px-8 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:-translate-y-0.5"
+                className="h-14 px-8 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:-translate-y-0.5 flex items-center justify-center mx-auto"
               >
                 {launching ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin inline" />
-                    Opening Verification...
+                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    Launching Persona...
                   </>
                 ) : (
                   <>
-                    <Shield className="w-5 h-5 mr-2 inline" />
+                    <ExternalLink className="w-5 h-5 mr-2" />
                     Begin Verification
                   </>
                 )}
