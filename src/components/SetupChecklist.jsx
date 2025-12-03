@@ -60,35 +60,24 @@ export function SetupChecklist({ profile, onRefresh }) {
   // Collapsed state - minimal banner
   if (collapsed) {
     return (
-      <div className="bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-3xl p-4">
+      <div className="bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-2xl px-4 py-2.5">
         <button
           onClick={() => setCollapsed(false)}
           className="flex items-center justify-between w-full"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#D3A029] rounded-xl flex items-center justify-center">
-              {allComplete ? <CheckCircle2 className="w-5 h-5 text-white" /> : <Sparkles className="w-5 h-5 text-white" />}
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 bg-[#D3A029] rounded-lg flex items-center justify-center">
+              {allComplete ? <CheckCircle2 className="w-3.5 h-3.5 text-white" /> : <Sparkles className="w-3.5 h-3.5 text-white" />}
             </div>
-            <div className="text-left">
-              <p className="text-sm font-semibold text-[#111827]">
-                {allComplete ? 'Setup Complete!' : 'Setup Progress'}
-              </p>
-              <p className="text-xs text-[#6B7280]">
-                {completedCount} of {totalSteps} steps complete
-              </p>
-            </div>
+            <p className="text-sm font-medium text-[#111827]">
+              {allComplete ? 'Setup Complete!' : `Setup: ${completedCount}/${totalSteps} done`}
+            </p>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:flex items-center gap-2">
-              <div className="w-24 h-2 bg-[#FDE68A] rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#D3A029] rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-              <span className="text-xs font-medium text-[#D3A029]">{Math.round(progress)}%</span>
+          <div className="flex items-center gap-2">
+            <div className="w-16 h-1.5 bg-[#FDE68A] rounded-full overflow-hidden">
+              <div className="h-full bg-[#D3A029] rounded-full" style={{ width: `${progress}%` }} />
             </div>
-            <ChevronDown className="w-5 h-5 text-[#D3A029]" />
+            <ChevronDown className="w-4 h-4 text-[#D3A029]" />
           </div>
         </button>
       </div>
