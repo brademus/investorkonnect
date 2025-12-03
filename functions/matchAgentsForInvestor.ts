@@ -71,6 +71,31 @@ Deno.serve(async (req) => {
         console.log('[matchAgentsForInvestor] Found', candidates.length, 'total agents');
       }
       
+      // If still no candidates with embeddings, fall back to profile-based matching
+      if (candidates.length === 0) {
+        console.log('[matchAgentsForInvestor] No agent embeddings found, falling back to profile matching');
+        const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+        
+        if (allAgents.length > 0) {
+          // Sort and return top agents
+          allAgents.sort((a, b) => {
+            const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
+            const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
+            if (verA !== verB) return verB - verA;
+            return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
+          });
+          
+          results = allAgents.slice(0, limit).map(agent => ({
+            profile: agent,
+            score: 0.6,
+            region: agent.target_state || agent.agent?.markets?.[0] || null
+          }));
+          
+          console.log('[matchAgentsForInvestor] Returning', results.length, 'fallback results');
+          return Response.json({ ok: true, results, total: allAgents.length });
+        }
+      }
+      
       // Calculate similarity scores
       const scored = candidates
         .filter(a => Array.isArray(a.embedding) && a.embedding.length > 0)
@@ -106,32 +131,56 @@ Deno.serve(async (req) => {
       const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
       console.log('[matchAgentsForInvestor] Found', allAgents.length, 'total agents');
       
-      // Filter by region if investor has one, otherwise show all
+      // If no agents with user_role, try broader search
       let matchedAgents = allAgents;
-      if (investorRegion) {
-        // Prioritize agents in the same region
-        const sameRegionAgents = allAgents.filter(a => 
-          a.target_state === investorRegion || 
-          a.markets?.includes(investorRegion) ||
-          a.agent?.markets?.includes(investorRegion)
-        );
-        
-        if (sameRegionAgents.length > 0) {
-          matchedAgents = sameRegionAgents;
-          console.log('[matchAgentsForInvestor] Found', sameRegionAgents.length, 'agents in investor region');
-        }
+      if (allAgents.length === 0) {
+        console.log('[matchAgentsForInvestor] No agents with user_role=agent, trying all profiles with agent data');
+        const allProfiles = await base44.entities.Profile.filter({});
+        matchedAgents = allProfiles.filter(p => p.agent || p.user_type === 'agent');
+        console.log('[matchAgentsForInvestor] Found', matchedAgents.length, 'profiles with agent data');
       }
       
-      // Sort by verification status and creation date
-      matchedAgents.sort((a, b) => {
-        // Prefer verified agents
-        if (a.agent?.verification_status === 'verified' && b.agent?.verification_status !== 'verified') return -1;
-        if (b.agent?.verification_status === 'verified' && a.agent?.verification_status !== 'verified') return 1;
-        // Then by experience
-        const expA = a.agent?.experience_years || 0;
-        const expB = b.agent?.experience_years || 0;
-        return expB - expA;
-      });
+      // If still no agents, return empty
+      if (matchedAgents.length === 0) {
+        console.log('[matchAgentsForInvestor] No agents found at all');
+        return Response.json({ ok: true, results: [], total: 0 });
+      }
+      
+      // Prioritize by region if investor has one, but always include all agents
+      if (investorRegion) {
+        // Score agents by region match
+        matchedAgents = matchedAgents.map(a => ({
+          ...a,
+          _regionMatch: (
+            a.target_state === investorRegion || 
+            a.markets?.includes(investorRegion) ||
+            a.agent?.markets?.includes(investorRegion)
+          ) ? 1 : 0
+        }));
+        
+        // Sort by region match first, then by other criteria
+        matchedAgents.sort((a, b) => {
+          if (a._regionMatch !== b._regionMatch) return b._regionMatch - a._regionMatch;
+          // Then by verification status
+          const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
+          const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
+          if (verA !== verB) return verB - verA;
+          // Then by experience
+          const expA = a.agent?.experience_years || 0;
+          const expB = b.agent?.experience_years || 0;
+          return expB - expA;
+        });
+      } else {
+        // No region preference, sort by verification and experience
+        matchedAgents.sort((a, b) => {
+          const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
+          const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
+          if (verA !== verB) return verB - verA;
+          const expA = a.agent?.experience_years || 0;
+          const expB = b.agent?.experience_years || 0;
+          return expB - expA;
+        });
+      }
       
       // Take top N
       const topAgents = matchedAgents.slice(0, limit);
@@ -143,7 +192,7 @@ Deno.serve(async (req) => {
           agent.target_state === investorRegion || 
           agent.markets?.includes(investorRegion) ||
           agent.agent?.markets?.includes(investorRegion)
-        ) ? 0.75 : 0.5, // Higher score for region match
+        ) ? 0.75 : 0.6, // Base score for any agent match
         region: agent.target_state || agent.agent?.markets?.[0] || null
       }));
     }
