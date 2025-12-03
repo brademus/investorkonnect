@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { personaConfig } from "@/components/functions";
 import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -64,11 +63,18 @@ export default function Verify() {
         setProfile(currentProfile);
 
         // Get Persona config from backend
-        const configResponse = await personaConfig();
-        if (configResponse.data?.templateId && configResponse.data?.environmentId) {
-          setPersonaConfig(configResponse.data);
+        const configResponse = await fetch('/functions/personaConfig', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({})
+        });
+        const configData = await configResponse.json();
+        
+        if (configData?.templateId && configData?.environmentId) {
+          setPersonaConfig(configData);
         } else {
-          throw new Error(configResponse.data?.error || 'Failed to load verification config');
+          throw new Error(configData?.error || 'Failed to load verification config');
         }
 
         setLoading(false);
