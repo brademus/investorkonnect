@@ -59,6 +59,8 @@ import InvestorPortfolio from './pages/InvestorPortfolio';
 import MarketIntel from './pages/MarketIntel';
 import InvestorProfile from './pages/InvestorProfile';
 import DealWizard from './pages/DealWizard';
+import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
+import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
 import __Layout from './Layout.jsx';
 
 
@@ -124,6 +126,8 @@ export const PAGES = {
     "MarketIntel": MarketIntel,
     "InvestorProfile": InvestorProfile,
     "DealWizard": DealWizard,
+    "InvestorDeepOnboarding": InvestorDeepOnboarding,
+    "AgentDeepOnboarding": AgentDeepOnboarding,
 }
 
 export const pagesConfig = {

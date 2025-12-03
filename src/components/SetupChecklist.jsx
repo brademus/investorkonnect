@@ -4,7 +4,7 @@ import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, Circle, ChevronUp, ChevronDown, 
-  User, Target, FileText, Shield, CreditCard, Sparkles, MapPin
+  User, Target, FileText, Shield, CreditCard, Sparkles, MapPin, ClipboardList
 } from 'lucide-react';
 
 export function SetupChecklist({ profile, onRefresh }) {
@@ -28,6 +28,13 @@ export function SetupChecklist({ profile, onRefresh }) {
         completed: !!(profile.full_name && profile.email && profile.phone),
         icon: User,
         link: 'AccountProfile'
+      },
+      {
+        id: 'deep_onboarding',
+        title: 'In-depth profile',
+        completed: !!(profile.onboarding_step === 'deep_complete' || profile.metadata?.experienceAccreditation),
+        icon: ClipboardList,
+        link: 'InvestorDeepOnboarding'
       },
       {
         id: 'buy_box',
@@ -67,6 +74,13 @@ export function SetupChecklist({ profile, onRefresh }) {
         completed: !!(profile.full_name && profile.email && profile.phone),
         icon: User,
         link: 'AccountProfile'
+      },
+      {
+        id: 'deep_onboarding',
+        title: 'In-depth profile',
+        completed: !!(profile.onboarding_step === 'deep_complete' || profile.agent?.what_sets_you_apart),
+        icon: ClipboardList,
+        link: 'AgentDeepOnboarding'
       },
       {
         id: 'markets',
