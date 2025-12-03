@@ -71,7 +71,7 @@ export default function RoleSelection() {
     setSelectedChoice(chosenRole);
     setSelectedRole(chosenRole);
 
-    // Build callback URL with role info
+    // Build callback URL with role info - this is where user lands AFTER login
     const params = new URLSearchParams();
     if (selectedState) {
       params.set('state', selectedState);
@@ -85,8 +85,6 @@ export default function RoleSelection() {
       
       if (isAuthenticated) {
         // User is logged in - update profile and go to onboarding
-        console.log('[RoleSelection] User already logged in, updating profile...');
-        
         const user = await base44.auth.me();
         
         // Get or create profile
@@ -94,7 +92,7 @@ export default function RoleSelection() {
         let profile = profiles[0];
         
         if (profile) {
-          // Update existing profile with role and state
+          // Update existing profile with role
           await base44.entities.Profile.update(profile.id, {
             user_role: chosenRole,
             user_type: chosenRole,
@@ -115,16 +113,15 @@ export default function RoleSelection() {
         }
         
         // Navigate to appropriate onboarding
-        console.log('[RoleSelection] Navigating to onboarding for role:', chosenRole);
         if (chosenRole === 'investor') {
-          navigate(createPageUrl("InvestorOnboarding"));
+          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
         } else if (chosenRole === 'agent') {
-          navigate(createPageUrl("AgentOnboarding"));
+          navigate(createPageUrl("AgentOnboarding"), { replace: true });
         }
         
       } else {
-        // User is NOT logged in - redirect to login with callback
-        console.log('[RoleSelection] User not logged in, redirecting to login...');
+        // User is NOT logged in - redirect to login
+        // IMPORTANT: After login, Base44 redirects to callbackUrl which includes the role
         base44.auth.redirectToLogin(callbackUrl);
       }
     } catch (error) {

@@ -10,11 +10,10 @@ import { Loader2 } from "lucide-react";
  * After OAuth login, users land here with optional query params:
  * - ?state=CO&intendedRole=investor
  * 
- * CRITICAL: This handles the complete flow after login:
- * 1. Onboarding (if not complete)
- * 2. Persona/KYC verification (if onboarded but not verified)
- * 3. NDA (if onboarded + verified but no NDA)
- * 4. Dashboard (if all complete)
+ * FLOW:
+ * 1. No profile or no role → RoleSelection
+ * 2. Has role but no onboarding → Onboarding
+ * 3. Has onboarding → Dashboard
  */
 export default function PostAuth() {
   const navigate = useNavigate();
@@ -30,120 +29,95 @@ export default function PostAuth() {
 
     const handlePostAuth = async () => {
       try {
-        // Get query params
+        // Get query params passed from RoleSelection
         const stateParam = searchParams.get('state');
         const intendedRole = searchParams.get('intendedRole');
 
-        // STEP 1: Get authenticated user
+        // STEP 1: Check if user is authenticated
         const user = await base44.auth.me();
         
         if (!user) {
+          // Not logged in - send to Home
           navigate(createPageUrl("Home"), { replace: true });
           setHasRouted(true);
           return;
         }
 
-        // STEP 2: Get profile
+        // STEP 2: Get or create profile
         let profile = null;
         
         try {
           const profiles = await base44.entities.Profile.filter({ user_id: user.id });
           profile = profiles[0] || null;
         } catch (err) {
-          // Silent fail - will create profile if needed
+          // Silent fail
         }
 
-        // STEP 3: Determine effective role
-        // SECURITY: Use profile.user_role first to prevent URL manipulation
-        // Only use intendedRole for NEW users without a profile role
-        let effectiveRole = profile?.user_role || intendedRole || null;
-
-        // STEP 4: Check if user has selected a role
-        const hasRole = profile?.user_role && profile.user_role !== 'member';
-
-        // If no role selected, send to RoleSelection
-        if (!hasRole) {
-          // Create profile if doesn't exist with the intended role from URL
-          if (!profile && user) {
-            try {
-              const newRole = intendedRole || 'member';
-              await base44.entities.Profile.create({
-                user_id: user.id,
-                email: user.email,
-                user_role: newRole,
-                role: 'member',
-                target_state: stateParam || null,
-                markets: stateParam ? [stateParam] : []
-              });
-              
-              // If we created profile with a valid role, go straight to onboarding
-              if (newRole === 'investor') {
-                navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-                setHasRouted(true);
-                return;
-              } else if (newRole === 'agent') {
-                navigate(createPageUrl("AgentOnboarding"), { replace: true });
-                setHasRouted(true);
-                return;
-              }
-            } catch (createErr) {
-              // Silent fail - will retry on next attempt
-            }
+        // STEP 3: If no profile exists, create one
+        if (!profile) {
+          const newRole = intendedRole || 'member';
+          try {
+            profile = await base44.entities.Profile.create({
+              user_id: user.id,
+              email: user.email,
+              user_role: newRole,
+              role: 'member',
+              target_state: stateParam || null,
+              markets: stateParam ? [stateParam] : []
+            });
+          } catch (createErr) {
+            // Profile might already exist (race condition) - try to fetch again
+            const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            profile = profiles[0] || null;
           }
-
-          navigate(createPageUrl("RoleSelection"), { replace: true });
-          setHasRouted(true);
-          return;
+        }
+        
+        // STEP 4: If profile exists but has no role, and we have intendedRole, update it
+        if (profile && (!profile.user_role || profile.user_role === 'member') && intendedRole) {
+          try {
+            await base44.entities.Profile.update(profile.id, {
+              user_role: intendedRole,
+              user_type: intendedRole,
+              target_state: stateParam || profile.target_state,
+              markets: stateParam ? [stateParam] : profile.markets
+            });
+            profile.user_role = intendedRole;
+          } catch (updateErr) {
+            // Silent fail
+          }
         }
 
-        // STEP 5: Check if onboarding is complete
+        // STEP 5: Route based on profile state
+        const hasRole = profile?.user_role && profile.user_role !== 'member';
         const isOnboarded = !!profile?.onboarding_completed_at;
 
-        // If not onboarded, route to role-specific onboarding
-        if (!isOnboarded) {
-          // SECURITY: Use profile.user_role directly (not effectiveRole from URL)
-          // This prevents URL parameter manipulation
+        if (!hasRole) {
+          // No role - go to RoleSelection
+          navigate(createPageUrl("RoleSelection"), { replace: true });
+        } else if (!isOnboarded) {
+          // Has role but not onboarded - go to onboarding
           if (profile.user_role === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (profile.user_role === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            // Fallback: no role set, go to RoleSelection
             navigate(createPageUrl("RoleSelection"), { replace: true });
           }
-          
-          setHasRouted(true);
-          return;
+        } else {
+          // Fully onboarded - go to Dashboard
+          navigate(createPageUrl("Dashboard"), { replace: true });
         }
-
-        // DEMO MODE: Skip KYC and NDA checks, go straight to Dashboard
-        // STEP 6-7: Skipped for demo purposes
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        
         setHasRouted(true);
 
       } catch (error) {
-        console.error('[PostAuth] Error during post-auth flow:', error);
-        
-        // Try to recover: if user exists, go to dashboard
-        // Otherwise, go to RoleSelection to start fresh
-        try {
-          const user = await base44.auth.me();
-          if (user) {
-            console.log('[PostAuth] Error recovery: user exists, sending to dashboard');
-            navigate(createPageUrl("Dashboard"), { replace: true });
-          } else {
-            console.log('[PostAuth] Error recovery: no user, sending to home');
-            navigate(createPageUrl("Home"), { replace: true });
-          }
-        } catch (recoveryError) {
-          console.error('[PostAuth] Error recovery failed:', recoveryError);
-          navigate(createPageUrl("Home"), { replace: true });
-        }
+        console.error('[PostAuth] Error:', error);
+        // On any error, try to go to Dashboard (AuthGuard will handle redirect if needed)
+        navigate(createPageUrl("Dashboard"), { replace: true });
         setHasRouted(true);
       }
     };
 
-    // Start the flow
     handlePostAuth();
   }, [searchParams, navigate, hasRouted]);
 

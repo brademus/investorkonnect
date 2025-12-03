@@ -23,9 +23,16 @@ export default function Home() {
     }
   };
 
-  const handleGetStarted = () => {
-    // Route to RoleSelection - it will handle login if needed
-    navigate(createPageUrl("RoleSelection"));
+  const handleGetStarted = async () => {
+    // Check if already logged in
+    const isAuth = await base44.auth.isAuthenticated();
+    if (isAuth) {
+      // Already logged in - go to PostAuth to route them properly
+      navigate(createPageUrl("PostAuth"));
+    } else {
+      // Not logged in - go to RoleSelection first
+      navigate(createPageUrl("RoleSelection"));
+    }
   };
 
   return (
