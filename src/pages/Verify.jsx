@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
@@ -6,117 +6,116 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
 import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { personaConfig } from "@/components/functions";
+
+// Persona configuration - using your secrets
+const PERSONA_TEMPLATE_ID = 'itmpl_8nKgVFgnwC1iGv6ZBHmJaSnn';
+const PERSONA_ENV_ID = 'env_vSBBJVqRsaNLyvJ7C7vN8C5c';
 
 /**
  * IDENTITY VERIFICATION (Persona Embedded Flow)
- * 
- * Uses the Persona embedded SDK to display the verification modal
- * directly on this page (not a redirect).
  */
 function VerifyContent() {
   const navigate = useNavigate();
-  const { user, profile, kycVerified, refresh } = useCurrentProfile();
+  const { user, profile, kycVerified, refresh, loading: profileLoading } = useCurrentProfile();
   
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
   const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [personaReady, setPersonaReady] = useState(false);
-  const [config, setConfig] = useState(null);
+  const [clientReady, setClientReady] = useState(false);
+  const [debugInfo, setDebugInfo] = useState('Initializing...');
   
   const personaClientRef = useRef(null);
+  const initAttempted = useRef(false);
 
   // Load Persona SDK script
   useEffect(() => {
+    // Check if already loaded
     if (window.Persona) {
-      console.log('[Verify] Persona SDK already loaded');
+      console.log('[Verify] Persona already on window');
       setScriptLoaded(true);
+      setDebugInfo('SDK already loaded');
       return;
     }
 
-    console.log('[Verify] Loading Persona SDK...');
+    // Check if script tag already exists
+    const existingScript = document.querySelector('script[src*="persona"]');
+    if (existingScript) {
+      console.log('[Verify] Script tag exists, waiting...');
+      existingScript.onload = () => {
+        setScriptLoaded(true);
+        setDebugInfo('SDK loaded from existing script');
+      };
+      return;
+    }
+
+    console.log('[Verify] Adding Persona script...');
+    setDebugInfo('Loading SDK...');
+    
     const script = document.createElement('script');
     script.src = 'https://cdn.withpersona.com/dist/persona-v5.0.0.js';
     script.async = true;
+    
     script.onload = () => {
-      console.log('[Verify] Persona SDK loaded successfully');
+      console.log('[Verify] Script onload fired, window.Persona:', !!window.Persona);
       setScriptLoaded(true);
+      setDebugInfo('SDK loaded');
     };
+    
     script.onerror = (e) => {
-      console.error('[Verify] Failed to load Persona SDK:', e);
-      setError('Failed to load verification system. Please refresh the page.');
+      console.error('[Verify] Script load error:', e);
+      setError('Failed to load Persona SDK. Please check your internet connection.');
+      setDebugInfo('SDK load failed');
     };
+    
     document.head.appendChild(script);
   }, []);
 
-  // Fetch Persona config from backend
-  useEffect(() => {
-    if (!user || !profile || config) return;
-
-    const fetchConfig = async () => {
-      try {
-        console.log('[Verify] Fetching Persona config...');
-        const response = await personaConfig();
-        console.log('[Verify] Config response:', response);
-        
-        if (response.data?.templateId && response.data?.environmentId) {
-          setConfig({
-            templateId: response.data.templateId,
-            environmentId: response.data.environmentId
-          });
-          console.log('[Verify] Config set:', response.data.templateId, response.data.environmentId);
-        } else {
-          console.error('[Verify] Invalid config response:', response);
-          setError(response.data?.error || 'Failed to get verification configuration.');
-        }
-      } catch (err) {
-        console.error('[Verify] Error fetching config:', err);
-        setError('Failed to load verification configuration. Please try again.');
-      }
-    };
-
-    fetchConfig();
-  }, [user, profile, config]);
-
-  // Initialize Persona client once SDK is loaded, we have config and profile
-  useEffect(() => {
-    if (!scriptLoaded || !config || !user || !profile) {
-      console.log('[Verify] Not ready to init:', { scriptLoaded, hasConfig: !!config, hasUser: !!user, hasProfile: !!profile });
-      return;
+  // Initialize Persona client
+  const initializeClient = useCallback(() => {
+    if (!window.Persona) {
+      console.log('[Verify] No window.Persona yet');
+      return false;
+    }
+    
+    if (!user?.id || !profile?.id) {
+      console.log('[Verify] No user/profile yet');
+      return false;
     }
     
     if (personaClientRef.current) {
       console.log('[Verify] Client already exists');
-      return;
+      return true;
     }
 
-    console.log('[Verify] Initializing Persona client with:', {
-      templateId: config.templateId,
-      environmentId: config.environmentId,
-      referenceId: user.id
+    console.log('[Verify] Creating Persona.Client...', {
+      templateId: PERSONA_TEMPLATE_ID,
+      environmentId: PERSONA_ENV_ID,
+      userId: user.id
     });
+    
+    setDebugInfo('Creating client...');
 
     try {
-      personaClientRef.current = new window.Persona.Client({
-        templateId: config.templateId,
-        environmentId: config.environmentId,
+      const client = new window.Persona.Client({
+        templateId: PERSONA_TEMPLATE_ID,
+        environmentId: PERSONA_ENV_ID,
         referenceId: user.id,
         prefill: {
-          emailAddress: user.email,
+          emailAddress: user.email || '',
           nameFirst: profile.full_name?.split(' ')[0] || '',
           nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
         },
         onReady: () => {
-          console.log('[Verify] ✅ Persona client ready!');
-          setPersonaReady(true);
+          console.log('[Verify] ✅ onReady callback fired!');
+          setClientReady(true);
+          setDebugInfo('Ready!');
         },
         onComplete: async ({ inquiryId, status }) => {
-          console.log('[Verify] Persona complete:', { inquiryId, status });
+          console.log('[Verify] onComplete:', { inquiryId, status });
           setVerifying(true);
           
           try {
-            // Update profile with KYC status
             await base44.entities.Profile.update(profile.id, {
               kyc_status: status === 'completed' ? 'approved' : 'pending',
               kyc_inquiry_id: inquiryId,
@@ -128,57 +127,66 @@ function VerifyContent() {
             await refresh();
             navigate(createPageUrl("Dashboard"), { replace: true });
           } catch (err) {
-            console.error('[Verify] Error updating profile:', err);
-            setError('Verification completed but failed to update profile. Please contact support.');
+            console.error('[Verify] Update error:', err);
+            setError('Verification completed but failed to save. Please contact support.');
             setVerifying(false);
           }
         },
         onCancel: () => {
-          console.log('[Verify] Persona cancelled by user');
+          console.log('[Verify] onCancel');
           setLaunching(false);
         },
-        onError: (error) => {
-          console.error('[Verify] Persona error:', error);
-          setError('Verification encountered an error. Please try again.');
+        onError: (err) => {
+          console.error('[Verify] onError:', err);
+          setError('Verification error. Please try again.');
           setLaunching(false);
         },
       });
-
-      console.log('[Verify] Persona client created');
+      
+      personaClientRef.current = client;
+      console.log('[Verify] Client created successfully');
+      setDebugInfo('Client created, waiting for onReady...');
+      return true;
     } catch (err) {
-      console.error('[Verify] Failed to create Persona client:', err);
-      setError('Failed to initialize verification. Please refresh the page.');
+      console.error('[Verify] Client creation failed:', err);
+      setError(`Failed to initialize: ${err.message}`);
+      setDebugInfo(`Error: ${err.message}`);
+      return false;
     }
-  }, [scriptLoaded, config, user, profile, navigate, refresh]);
+  }, [user, profile, navigate, refresh]);
 
-  // DEMO MODE: Auto-approve KYC
+  // Try to initialize when ready
+  useEffect(() => {
+    if (scriptLoaded && user && profile && !initAttempted.current) {
+      initAttempted.current = true;
+      // Small delay to ensure Persona is fully ready
+      setTimeout(() => {
+        initializeClient();
+      }, 100);
+    }
+  }, [scriptLoaded, user, profile, initializeClient]);
+
+  // DEMO MODE: Auto-approve
   useEffect(() => {
     if (!user || !profile) return;
     
     if (DEMO_MODE && DEMO_CONFIG.autoApproveKYC && !kycVerified) {
       setVerifying(true);
-      
       setTimeout(async () => {
         const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || '{}');
         demoProfile.kyc_status = 'approved';
         demoProfile.identity_verified = true;
-        demoProfile.kyc_last_checked = new Date().toISOString();
         sessionStorage.setItem('demo_profile', JSON.stringify(demoProfile));
-        
-        toast.success('Identity verified successfully!');
+        toast.success('Identity verified!');
         await refresh();
         navigate(createPageUrl("Dashboard"), { replace: true });
       }, 2000);
-      
-      return;
     }
   }, [user, profile, kycVerified, navigate, refresh]);
 
   // Redirect if already verified
   useEffect(() => {
-    if (!user || !profile) return;
-    
-    if (kycVerified) {
+    if (user && profile && kycVerified) {
       navigate(createPageUrl("Dashboard"), { replace: true });
     }
   }, [user, profile, kycVerified, navigate]);
@@ -186,64 +194,61 @@ function VerifyContent() {
   // Redirect if not onboarded
   useEffect(() => {
     if (!user || !profile) return;
-    
-    const hasCompletedOnboarding = !!profile.onboarding_completed_at;
-    
-    if (!hasCompletedOnboarding) {
+    if (!profile.onboarding_completed_at) {
       const role = profile.user_role || profile.user_type;
       if (role === 'investor') {
         navigate(createPageUrl("InvestorDeepOnboarding"), { replace: true });
       } else if (role === 'agent') {
         navigate(createPageUrl("AgentDeepOnboarding"), { replace: true });
-      } else {
-        navigate(createPageUrl("Dashboard"), { replace: true });
       }
     }
   }, [user, profile, navigate]);
 
-  // Verification in progress
-  if (verifying) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
-        <div className="text-center max-w-md">
-          <div className="bg-white rounded-3xl border border-[#E5E5E5] p-12 shadow-lg">
-            <div className="animate-spin rounded-full h-16 w-16 border-2 border-t-transparent mx-auto mb-6" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
-            <h2 className="text-[28px] font-bold text-black mb-2">Processing Verification...</h2>
-            <p className="text-[#666666]">Please wait while we confirm your identity</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Handle button click
   const handleBeginVerification = () => {
-    console.log('[Verify] Begin clicked, client ref:', !!personaClientRef.current);
+    console.log('[Verify] Button clicked');
+    console.log('[Verify] clientRef:', !!personaClientRef.current);
+    console.log('[Verify] clientReady:', clientReady);
     
     if (!personaClientRef.current) {
-      setError('Verification system not ready. Please wait or refresh the page.');
-      return;
+      // Try to init again
+      const success = initializeClient();
+      if (!success) {
+        setError('Verification not ready. Please refresh the page.');
+        return;
+      }
     }
 
     setLaunching(true);
     setError(null);
     
     try {
-      console.log('[Verify] Opening Persona modal...');
+      console.log('[Verify] Calling client.open()...');
       personaClientRef.current.open();
+      console.log('[Verify] open() called');
     } catch (err) {
-      console.error('[Verify] Failed to open Persona:', err);
-      setError('Failed to start verification. Please refresh and try again.');
+      console.error('[Verify] open() failed:', err);
+      setError(`Failed to open: ${err.message}`);
       setLaunching(false);
     }
   };
 
-  const handleRetry = () => {
-    setError(null);
-    setLaunching(false);
-    window.location.reload();
-  };
+  // Verifying state
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-3xl border border-[#E5E5E5] p-12 shadow-lg">
+            <Loader2 className="w-16 h-16 text-[#D4AF37] animate-spin mx-auto mb-6" />
+            <h2 className="text-2xl font-bold text-black mb-2">Processing...</h2>
+            <p className="text-gray-600">Please wait</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-  const isLoading = !scriptLoaded || !config || !personaReady;
+  const isLoading = profileLoading || !scriptLoaded || (!clientReady && !error);
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
@@ -258,112 +263,80 @@ function VerifyContent() {
       </header>
 
       <div className="max-w-[600px] mx-auto px-4 py-12">
-        
-        {/* Title */}
         <div className="text-center mb-8">
           <div className="w-16 h-16 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-md">
             <Shield className="w-10 h-10 text-[#92400E]" />
           </div>
           <h1 className="text-[32px] font-bold text-black mb-2">Verify Your Identity</h1>
-          <p className="text-[16px] text-[#666666] leading-relaxed max-w-md mx-auto">
-            Required to access agent profiles and deal rooms. Your data is encrypted and used only for verification.
+          <p className="text-[16px] text-[#666666]">
+            Required to access agent profiles and deal rooms.
           </p>
         </div>
 
         {/* Trust Indicators */}
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
-            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center mx-auto mb-2">
-              <Shield className="w-5 h-5 text-[#D4AF37]" />
-            </div>
-            <h4 className="font-semibold text-sm text-black mb-1">Secure & Private</h4>
-            <p className="text-xs text-[#666666]">Bank-level encryption</p>
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center">
+            <Shield className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
+            <h4 className="font-semibold text-sm">Secure</h4>
           </div>
-          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
-            <div className="w-10 h-10 bg-[#D1FAE5] rounded-lg flex items-center justify-center mx-auto mb-2">
-              <CheckCircle className="w-5 h-5 text-[#059669]" />
-            </div>
-            <h4 className="font-semibold text-sm text-black mb-1">Fast & Easy</h4>
-            <p className="text-xs text-[#666666]">Takes 2-3 minutes</p>
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#059669] mx-auto mb-2" />
+            <h4 className="font-semibold text-sm">2-3 min</h4>
           </div>
-          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center hover:border-[#D4AF37] transition-all">
-            <div className="w-10 h-10 bg-[#FEF3C7] rounded-lg flex items-center justify-center mx-auto mb-2">
-              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
-            </div>
-            <h4 className="font-semibold text-sm text-black mb-1">One-Time Only</h4>
-            <p className="text-xs text-[#666666]">Verify once, forever</p>
+          <div className="bg-white rounded-xl border border-[#E5E5E5] p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
+            <h4 className="font-semibold text-sm">One-time</h4>
           </div>
         </div>
 
         {/* Main Card */}
         <div className="bg-white rounded-3xl border border-[#E5E5E5] p-8 shadow-lg">
           
-          {/* Error State */}
+          {/* Error */}
           {error && (
-            <div className="bg-[#FEE2E2] border border-[#FCA5A5] rounded-xl p-4 mb-6">
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
-                <div className="flex-1">
-                  <h4 className="font-semibold text-[#991B1B] mb-1">Verification Error</h4>
-                  <p className="text-sm text-[#7F1D1D]">{error}</p>
+                <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
+                <div>
+                  <h4 className="font-semibold text-red-800">Error</h4>
+                  <p className="text-sm text-red-700">{error}</p>
                 </div>
               </div>
               <button
-                onClick={handleRetry}
-                className="mt-4 h-10 px-4 rounded-lg border-2 border-[#FCA5A5] text-[#DC2626] hover:bg-[#FEE2E2] font-medium transition-all"
+                onClick={() => window.location.reload()}
+                className="mt-3 px-4 py-2 text-sm border border-red-300 text-red-700 rounded-lg hover:bg-red-50"
               >
-                Retry Verification
+                Refresh Page
               </button>
             </div>
           )}
 
-          {/* Loading State */}
+          {/* Loading */}
           {isLoading && !error && (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
+              <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-black mb-2">
-                {!scriptLoaded ? 'Loading Verification System...' : 
-                 !config ? 'Fetching Configuration...' : 
-                 'Preparing Verification...'}
+                Preparing Verification...
               </h3>
-              <p className="text-[#666666]">Please wait</p>
+              <p className="text-gray-500 text-sm">{debugInfo}</p>
             </div>
           )}
 
-          {/* Ready to Verify */}
+          {/* Ready */}
           {!isLoading && !error && (
-            <div className="text-center py-8">
-              <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
+            <div className="text-center py-6">
+              <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6">
                 <Shield className="w-12 h-12 text-[#92400E]" />
               </div>
               
-              <h3 className="text-[24px] font-bold text-black mb-3">
-                Ready to Verify
-              </h3>
+              <h3 className="text-2xl font-bold text-black mb-3">Ready to Verify</h3>
               
-              <p className="text-[#666666] mb-8 max-w-md mx-auto">
-                Click below to open the secure verification window. You'll need:
-              </p>
-
-              <div className="grid gap-3 max-w-sm mx-auto mb-8 text-left">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-[#333333]">A valid government-issued ID</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-[#333333]">Your phone or webcam</span>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#059669] flex-shrink-0 mt-0.5" />
-                  <span className="text-sm text-[#333333]">2-3 minutes of your time</span>
-                </div>
-              </div>
+              <p className="text-gray-600 mb-6">You'll need a government ID and camera access.</p>
 
               <button
                 onClick={handleBeginVerification}
                 disabled={launching}
-                className="h-14 px-8 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold text-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:-translate-y-0.5 flex items-center justify-center mx-auto"
+                className="h-14 px-8 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold text-lg disabled:opacity-50 shadow-lg flex items-center justify-center mx-auto"
               >
                 {launching ? (
                   <>
@@ -381,8 +354,8 @@ function VerifyContent() {
           )}
         </div>
 
-        <p className="text-xs text-[#999999] text-center mt-6">
-          Powered by Persona. Your data is encrypted and never shared.
+        <p className="text-xs text-gray-400 text-center mt-6">
+          Powered by Persona • {debugInfo}
         </p>
       </div>
     </div>
