@@ -30,6 +30,32 @@ function DashboardContent() {
     }
   }, [loading, user, profile, navigate]);
 
+  // HARD GATE - Block dashboard access until simple onboarding is complete
+  useEffect(() => {
+    // Skip check while loading or if no user
+    if (loading || !user) return;
+
+    // Admin bypass
+    if (user?.role === 'admin') return;
+
+    // Check if simple onboarding is complete
+    const isOnboarded = !!profile?.onboarding_completed_at;
+    const hasRole = profile?.user_role && profile.user_role !== 'member';
+
+    // If user has role but hasn't completed simple onboarding, redirect to onboarding
+    if (hasRole && !isOnboarded) {
+      console.log('[Dashboard] Simple onboarding not complete - redirecting to onboarding');
+
+      // Route to role-specific onboarding
+      if (profile.user_role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (profile.user_role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+      return;
+    }
+  }, [loading, user, profile, navigate]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
