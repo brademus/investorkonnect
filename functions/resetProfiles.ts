@@ -288,23 +288,40 @@ Deno.serve(async (req) => {
     console.log('  ✓ Deleted', stats.profiles, 'profiles\n');
 
     // ========================================
-    // STEP 5b: DELETE USER RECORDS
+    // STEP 5b: DELETE USER RECORDS (COMPLETE WIPE)
     // ========================================
     console.log('STEP 5b: Deleting User records (complete wipe)...');
     
     stats.users = 0;
+    const userDeleteErrors = [];
     
-    for (const userId of nonAdminUserIdArray) {
+    // Get all users to find the ones to delete
+    const allUsers = await base44.asServiceRole.entities.User.list('-created_date', 1000);
+    console.log('  ✓ Found', allUsers.length, 'total users in system');
+    
+    for (const user of allUsers) {
+      // Skip if this user is an admin
+      if (adminUserIds.has(user.id)) {
+        console.log(`  → SKIPPING admin user: ${user.email}`);
+        continue;
+      }
+      
+      // Delete this non-admin user
       try {
-        console.log(`  → Deleting user: ${userId}`);
-        await base44.asServiceRole.entities.User.delete(userId);
+        console.log(`  → Deleting user: ${user.email} (id: ${user.id})`);
+        await base44.asServiceRole.entities.User.delete(user.id);
         stats.users++;
       } catch (err) {
-        console.log(`    ❌ FAILED to delete user ${userId}: ${err.message}`);
+        console.log(`    ❌ FAILED to delete user ${user.email}: ${err.message}`);
+        userDeleteErrors.push({ email: user.email, error: err.message });
       }
     }
     
-    console.log('  ✓ Deleted', stats.users, 'users\n');
+    console.log('  ✓ Deleted', stats.users, 'users');
+    if (userDeleteErrors.length > 0) {
+      console.log('  ⚠️ Failed to delete', userDeleteErrors.length, 'users');
+    }
+    console.log('');
     
     // ========================================
     // STEP 6: VERIFY DELETION
