@@ -12,11 +12,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Users, Shield, MapPin, TrendingUp, DollarSign, Star,
-  Loader2, Search, Filter, CheckCircle, Home as HomeIcon, User, ArrowRight
+  Loader2, Search, Filter, CheckCircle, Home as HomeIcon, User, ArrowLeft
 } from "lucide-react";
 import { toast } from "sonner";
+import { Header } from "@/components/Header";
+import { AuthGuard } from "@/components/AuthGuard";
 
-export default function InvestorDirectory() {
+function InvestorDirectoryContent() {
   const navigate = useNavigate();
   const { 
     user, 
@@ -161,36 +163,48 @@ export default function InvestorDirectory() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 sm:mt-10 mb-12">
-        {/* Page Header */}
-        <header className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
-            Find investors in your market
-          </h1>
-          <p className="mt-2 text-sm sm:text-base text-gray-600 max-w-2xl">
-            Connect with verified investors looking for agents to help them find their next deal.
-          </p>
-        </header>
+    <>
+      <Header profile={profile} />
+      <div className="min-h-screen bg-[#FAF7F2]">
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          {/* Back Button */}
+          <Link 
+            to={createPageUrl("Dashboard")} 
+            className="inline-flex items-center gap-2 text-[#6B7280] hover:text-[#111827] mb-6"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Dashboard
+          </Link>
 
-        {/* Search & Filter Card */}
-        <section className="mb-6 sm:mb-8">
-          <div className="ik-card p-5 sm:p-6">
-            <div className="flex flex-col gap-4 sm:gap-3">
+          {/* Page Header */}
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#111827]">
+                Find Investors
+              </h1>
+              <p className="mt-2 text-base text-[#6B7280]">
+                Connect with verified investors looking for agents to help them find their next deal.
+              </p>
+            </div>
+          </div>
+
+          {/* Search & Filter Card */}
+          <div className="bg-white border border-gray-200 rounded-3xl p-6 mb-6">
+            <div className="flex flex-col gap-4">
               {/* Search row */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="flex-1 relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#9CA3AF]" />
                   <input
                     type="text"
                     placeholder="Search by name, location, or strategy..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 bg-gray-50 pl-12 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
+                    className="w-full rounded-xl border border-gray-200 bg-slate-50 pl-12 pr-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#D3A029] focus:border-transparent"
                   />
                 </div>
                 <Select defaultValue="recommended">
-                  <SelectTrigger className="w-full sm:w-[180px] h-11 rounded-xl border-gray-200 bg-white text-sm">
+                  <SelectTrigger className="w-full sm:w-[180px] h-12 rounded-xl border-gray-200 bg-white text-sm">
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,8 +219,8 @@ export default function InvestorDirectory() {
               {/* Filter row */}
               <div className="flex flex-wrap items-center gap-3">
                 <Select value={locationFilter} onValueChange={setLocationFilter}>
-                  <SelectTrigger className="min-w-[160px] h-11 rounded-xl border-gray-200 bg-white text-sm">
-                    <MapPin className="w-4 h-4 mr-2 text-gray-400" />
+                  <SelectTrigger className="min-w-[160px] h-12 rounded-xl border-gray-200 bg-white text-sm">
+                    <MapPin className="w-4 h-4 mr-2 text-[#9CA3AF]" />
                     <SelectValue placeholder="All Locations" />
                   </SelectTrigger>
                   <SelectContent>
@@ -220,8 +234,8 @@ export default function InvestorDirectory() {
                 </Select>
                 
                 <Select value={strategyFilter} onValueChange={setStrategyFilter}>
-                  <SelectTrigger className="min-w-[160px] h-11 rounded-xl border-gray-200 bg-white text-sm">
-                    <TrendingUp className="w-4 h-4 mr-2 text-gray-400" />
+                  <SelectTrigger className="min-w-[160px] h-12 rounded-xl border-gray-200 bg-white text-sm">
+                    <TrendingUp className="w-4 h-4 mr-2 text-[#9CA3AF]" />
                     <SelectValue placeholder="All Strategies" />
                   </SelectTrigger>
                   <SelectContent>
@@ -233,49 +247,48 @@ export default function InvestorDirectory() {
                   </SelectContent>
                 </Select>
                 
-                <button className="ik-btn-outline h-11 gap-2">
+                <Button variant="outline" className="h-12 rounded-xl gap-2 border-gray-200">
                   <Filter className="w-4 h-4" />
                   More filters
-                </button>
+                </Button>
               </div>
             </div>
           </div>
-        </section>
 
-        {/* Results Count */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-sm text-gray-500">
-            Showing <span className="font-medium text-gray-900">{filteredInvestors.length}</span> verified investors
-          </p>
-          {(searchTerm || locationFilter !== "all" || strategyFilter !== "all") && (
-            <button 
-              onClick={clearFilters}
-              className="text-sm text-[#D3A029] hover:underline"
-            >
-              Clear filters
-            </button>
-          )}
-        </div>
-
-        {/* Investor Cards Grid */}
-        <section>
-          {filteredInvestors.length === 0 ? (
-            <div className="ik-card flex flex-col items-center justify-center py-16 px-6 text-center">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-[#FEF3C7] mb-5">
-                <Search className="w-8 h-8 text-[#D3A029]" />
-              </div>
-              <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
-                No investors match your filters
-              </h2>
-              <p className="mt-2 max-w-md text-sm sm:text-base text-gray-600">
-                Try adjusting your location, strategy, or other filters to see more investors.
-              </p>
-              <button
+          {/* Results Count */}
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm text-[#6B7280]">
+              Showing <span className="font-medium text-[#111827]">{filteredInvestors.length}</span> verified investors
+            </p>
+            {(searchTerm || locationFilter !== "all" || strategyFilter !== "all") && (
+              <button 
                 onClick={clearFilters}
-                className="mt-6 ik-btn-outline"
+                className="text-sm text-[#D3A029] hover:underline"
               >
                 Clear filters
               </button>
+            )}
+          </div>
+
+          {/* Investor Cards Grid */}
+          {filteredInvestors.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-3xl flex flex-col items-center justify-center py-16 px-6 text-center">
+              <div className="w-16 h-16 bg-[#FEF3C7] rounded-2xl flex items-center justify-center mb-5">
+                <Search className="w-8 h-8 text-[#D3A029]" />
+              </div>
+              <h2 className="text-xl font-bold text-[#111827]">
+                No investors match your filters
+              </h2>
+              <p className="mt-2 max-w-md text-[#6B7280]">
+                Try adjusting your location, strategy, or other filters to see more investors.
+              </p>
+              <Button
+                onClick={clearFilters}
+                variant="outline"
+                className="mt-6 border-[#D3A029] text-[#D3A029] hover:bg-[#FFFBEB]"
+              >
+                Clear filters
+              </Button>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -284,7 +297,6 @@ export default function InvestorDirectory() {
                 const metadata = investor.metadata || {};
                 const isVerified = investor.kyc_status === 'approved' || investor.verified;
                 const isDemo = String(investor.id).startsWith('demo-');
-                const deals = investorData.deals_closed_24mo || metadata.experience_years || 5;
                 const capital = investorData.capital_available_12mo || "$250K-$500K";
                 const strategy = investorData.primary_strategy || metadata.strategies?.[0] || 'Buy & Hold';
                 const initials = (investor.full_name || 'I').split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -292,13 +304,13 @@ export default function InvestorDirectory() {
                 return (
                   <div
                     key={investor.id}
-                    className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col hover:shadow-lg hover:-translate-y-1 transition-all duration-200 overflow-hidden"
+                    className="bg-white border border-gray-200 rounded-3xl flex flex-col hover:shadow-lg hover:border-[#D3A029] hover:-translate-y-1 transition-all duration-200 overflow-hidden"
                   >
                     {/* Header Band */}
-                    <div className="h-20 bg-gradient-to-br from-[#D1FAE5] to-[#A7F3D0]" />
+                    <div className="h-16 bg-gradient-to-br from-[#D1FAE5] to-[#A7F3D0]" />
                     
                     {/* Content */}
-                    <div className="p-5 -mt-8 flex flex-col flex-1">
+                    <div className="p-6 -mt-8 flex flex-col flex-1">
                       {/* Avatar + Info */}
                       <div className="flex items-start gap-4">
                         <div className="relative flex-shrink-0">
@@ -313,16 +325,16 @@ export default function InvestorDirectory() {
                         </div>
                         <div className="flex-1 min-w-0 pt-2">
                           <div className="flex items-center gap-2">
-                            <h2 className="text-lg font-bold text-gray-900 truncate">
+                            <h2 className="text-lg font-bold text-[#111827] truncate">
                               {investor.full_name || 'Investor'}
                             </h2>
                             {isDemo && (
-                              <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500">
+                              <span className="px-2 py-0.5 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">
                                 Demo
                               </span>
                             )}
                           </div>
-                          <p className="mt-0.5 text-sm text-gray-600 flex items-center gap-1">
+                          <p className="mt-0.5 text-sm text-[#6B7280] flex items-center gap-1">
                             <MapPin className="w-3.5 h-3.5" />
                             {investor.markets?.[0] || investor.target_state || 'Location TBD'}
                           </p>
@@ -330,19 +342,19 @@ export default function InvestorDirectory() {
                       </div>
                       
                       {/* Strategy */}
-                      <p className="mt-3 text-sm text-gray-600 line-clamp-2">
+                      <p className="mt-3 text-sm text-[#6B7280] line-clamp-2">
                         {strategy}
                       </p>
                       
                       {/* Stats */}
-                      <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3 text-center">
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">{capital}</div>
-                          <div className="text-xs text-gray-500">Budget</div>
+                      <div className="mt-4 pt-4 border-t border-gray-100 grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-slate-50 rounded-xl text-center">
+                          <div className="text-sm font-semibold text-[#111827]">{capital}</div>
+                          <div className="text-xs text-[#6B7280]">Budget</div>
                         </div>
-                        <div>
-                          <div className="text-sm font-semibold text-gray-900">{metadata.experience_years || 3}+ yrs</div>
-                          <div className="text-xs text-gray-500">Experience</div>
+                        <div className="p-3 bg-slate-50 rounded-xl text-center">
+                          <div className="text-sm font-semibold text-[#111827]">{metadata.experience_years || 3}+ yrs</div>
+                          <div className="text-xs text-[#6B7280]">Experience</div>
                         </div>
                       </div>
                       
@@ -350,16 +362,18 @@ export default function InvestorDirectory() {
                       <div className="mt-5 pt-4 border-t border-gray-100 flex gap-3">
                         <Link
                           to={`${createPageUrl("InvestorProfile")}?id=${investor.id}`}
-                          className="ik-btn-outline flex-1 justify-center gap-1.5"
+                          className="flex-1"
                         >
-                          View Profile
+                          <Button variant="outline" className="w-full border-gray-200 hover:border-[#D3A029] hover:bg-[#FFFBEB]">
+                            View Profile
+                          </Button>
                         </Link>
-                        <button
+                        <Button
                           onClick={() => handleOpenRoom(investor)}
-                          className="ik-btn-primary flex-1 justify-center gap-1.5"
+                          className="flex-1 bg-[#D3A029] hover:bg-[#B8902A] text-white"
                         >
                           Connect
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -367,8 +381,8 @@ export default function InvestorDirectory() {
               })}
             </div>
           )}
-        </section>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
