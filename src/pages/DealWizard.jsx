@@ -173,10 +173,10 @@ export default function DealWizard() {
         }
       }
       
-      // Wait for animation then navigate
+      // Wait for animation then navigate to Dashboard (more reliable than Matches)
       setTimeout(() => {
-        navigate(createPageUrl("Matches"), { replace: true });
-      }, 2500);
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }, 2000);
       
     } catch (error) {
       console.error('Error submitting deal:', error);

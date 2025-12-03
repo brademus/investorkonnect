@@ -150,38 +150,35 @@ function NDAContent() {
   }
 
   return (
-    <div className="ik-shell py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#FAF7F2] py-8">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Shield className="w-10 h-10 text-white" />
+          <div className="w-14 h-14 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Shield className="w-8 h-8 text-white" />
           </div>
-          <h1 className="ik-h1 text-[#111827] mb-2">Confidentiality & NDA Required</h1>
-          <p className="text-[#6B7280] max-w-2xl mx-auto">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-2">Non-Disclosure Agreement</h1>
+          <p className="text-[#6B7280]">
             Required to access agent profiles and deal rooms
           </p>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-8">
-          <div className="ik-card p-5 text-center">
-            <div className="ik-icon-pill mx-auto mb-3">🔒</div>
-            <h4 className="ik-section-title mb-1">Deal Protection</h4>
-            <p className="ik-section-subtitle">Legally binding confidentiality</p>
+        <div className="grid grid-cols-3 gap-3 mb-6">
+          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+            <Lock className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#111827]">Deal Protection</p>
           </div>
-          <div className="ik-card p-5 text-center">
-            <div className="ik-icon-pill mx-auto mb-3">📄</div>
-            <h4 className="ik-section-title mb-1">Enforceable</h4>
-            <p className="ik-section-subtitle">Legal contract with remedies</p>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+            <FileText className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#111827]">Enforceable</p>
           </div>
-          <div className="ik-card p-5 text-center">
-            <div className="ik-icon-pill mx-auto mb-3">✓</div>
-            <h4 className="ik-section-title mb-1">One-Time</h4>
-            <p className="ik-section-subtitle">Accept once, valid forever</p>
+          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#111827]">One-Time</p>
           </div>
         </div>
 
-        <div className="ik-card p-6 sm:p-8">
+        <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
           
           {/* Error Display */}
           {error && (
@@ -196,8 +193,8 @@ function NDAContent() {
             </div>
           )}
 
-          <div className="bg-[#F9FAFB] rounded-xl p-6 max-h-96 overflow-y-auto border border-[#E5E7EB] mb-6">
-            <h3 className="text-lg font-bold text-[#111827] mb-4">Investor Konnect Non-Disclosure Agreement v1.0</h3>
+          <div className="bg-slate-50 rounded-xl p-5 max-h-64 overflow-y-auto border border-slate-200 mb-5">
+            <h3 className="text-base font-bold text-[#111827] mb-3">Investor Konnect Non-Disclosure Agreement v1.0</h3>
             
             <div className="prose prose-sm text-[#374151] space-y-4">
               <p>
@@ -240,40 +237,39 @@ function NDAContent() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 mb-6">
+          <div className="flex items-start gap-3 mb-5 p-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-xl">
             <Checkbox
               id="nda-agree"
               checked={agreed}
               onCheckedChange={setAgreed}
-              className="mt-1"
+              className="mt-0.5"
               disabled={accepting}
             />
             <Label htmlFor="nda-agree" className="text-sm text-[#374151] cursor-pointer leading-relaxed">
-              I have read and agree to the terms of this Non-Disclosure Agreement. I understand that this is a legally 
-              binding contract and that I am responsible for maintaining confidentiality of all information accessed through Investor Konnect.
+              I have read and agree to the terms of this Non-Disclosure Agreement. I understand this is a legally binding contract.
             </Label>
           </div>
 
-          <button
+          <Button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="ik-btn-primary w-full h-14 text-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white font-medium rounded-xl disabled:opacity-50"
           >
             {accepting ? (
               <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 Accepting...
               </>
             ) : (
               <>
-                <Shield className="w-5 h-5 mr-2" />
-                I Accept & Continue
+                <Shield className="w-4 h-4 mr-2" />
+                Accept & Continue
               </>
             )}
-          </button>
+          </Button>
 
           <p className="text-center text-xs text-[#6B7280] mt-4">
-            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="ik-link">legal@investorkonnect.com</a>
+            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-[#D3A029] hover:underline">legal@investorkonnect.com</a>
           </p>
         </div>
       </div>
