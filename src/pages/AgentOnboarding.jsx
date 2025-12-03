@@ -21,6 +21,24 @@ function AgentOnboardingContent() {
   const { profile, refresh, user } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Check if user should be here
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const authUser = await base44.auth.me();
+        if (!authUser) {
+          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+          return;
+        }
+        setChecking(false);
+      } catch (e) {
+        base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+      }
+    };
+    checkAccess();
+  }, []);
   const [formData, setFormData] = useState({
     full_name: '', phone: '', is_full_time_agent: null, experience_years: '', investor_experience_years: '',
     languages_spoken: [], preferred_communication_channels: [], works_in_team: null, team_role_notes: '',
@@ -374,6 +392,14 @@ function AgentOnboardingContent() {
       </div>
     </div>
   );
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
