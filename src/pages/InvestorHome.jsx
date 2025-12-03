@@ -34,12 +34,13 @@ export default function InvestorHome() {
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
   useEffect(() => {
-    if (!profileLoading && user && profile?.user_role === 'investor' && isInvestorReady) {
+    // Load AI matches for any investor with a profile, even if not fully ready
+    if (!profileLoading && user && profile?.user_role === 'investor') {
       loadAIMatches();
     } else if (!profileLoading) {
       setLoadingSuggestedAgents(false);
     }
-  }, [profileLoading, user, profile, isInvestorReady]);
+  }, [profileLoading, user, profile]);
 
   const loadAIMatches = async () => {
     let cancelled = false;
