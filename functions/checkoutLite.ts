@@ -102,58 +102,21 @@ Deno.serve(async (req) => {
           kyc_status: profile.kyc_status
         });
         
-        // Check if investor role
-        if (profile.user_role === 'investor') {
-          // For investors, check FULL readiness
-          
-          // 1. Check onboarding
-          if (!profile.onboarding_completed_at || !profile.user_role) {
-            console.log('❌ Onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete your investor profile first',
-              redirect: `${base}/onboarding/investor`
-            }, { status: 403 });
-          }
-          
-          // 2. Check KYC - DEMO MODE: Skip KYC requirement
-          // if (profile.kyc_status !== 'approved') {
-          //   console.log('❌ KYC not verified (status:', profile.kyc_status, ')');
-          //   return Response.json({ 
-          //     ok: false, 
-          //     reason: 'VERIFICATION_REQUIRED',
-          //     message: 'Please complete identity verification first',
-          //     redirect: `${base}/verify`
-          //   }, { status: 403 });
-          // }
-          
-          // 3. Check NDA - DEMO MODE: Skip NDA requirement
-          // if (!profile.nda_accepted) {
-          //   console.log('❌ NDA not accepted');
-          //   return Response.json({ 
-          //     ok: false, 
-          //     reason: 'NDA_REQUIRED',
-          //     message: 'Please accept the NDA first',
-          //     redirect: `${base}/nda`
-          //   }, { status: 403 });
-          // }
-          
-          console.log('✅ Investor ready (KYC/NDA checks disabled for demo)');
-        } else {
-          // For non-investors (agents, etc.), just check basic onboarding
-          if (!profile.onboarding_completed_at) {
-            console.log('❌ Basic onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete onboarding before subscribing',
-              redirect: `${base}/onboarding`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Non-investor user ready');
+        // Check onboarding for both investors and agents
+        if (!profile.onboarding_completed_at) {
+          console.log('❌ Onboarding not completed for user_role:', profile.user_role);
+          const redirectPath = profile.user_role === 'agent' 
+            ? `${base}/AgentOnboarding` 
+            : `${base}/InvestorOnboarding`;
+          return Response.json({ 
+            ok: false, 
+            reason: 'ONBOARDING_REQUIRED',
+            message: 'Please complete your profile first',
+            redirect: redirectPath
+          }, { status: 403 });
         }
+        
+        console.log('✅ User ready:', profile.user_role);
         
       } catch (gateError) {
         console.error('❌ Gating check failed:', gateError);
