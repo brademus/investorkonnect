@@ -1,57 +1,78 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
-import { AuthGuard } from "@/components/AuthGuard";
-import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { Button } from "@/components/ui/button";
-import { Loader2, Shield, ArrowRight, TrendingUp, Users } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Loader2 } from "lucide-react";
 import InvestorHome from "./InvestorHome";
 import AgentHome from "./AgentHome";
 
 /**
- * DASHBOARD - Smart Role Router with Onboarding Gates
+ * DASHBOARD - Shows role-specific dashboard
  * 
- * After login, users land here. If they haven't completed NEW onboarding,
- * we show a blocking "Complete your profile" prompt with a clear CTA.
- * Only after onboarding completion do they see the real dashboard.
+ * Guards:
+ * 1. Must be logged in
+ * 2. Must have role selected
+ * 3. Must have completed onboarding
  */
-function DashboardContent() {
+export default function Dashboard() {
   const navigate = useNavigate();
-  const { loading, user, role, onboarded, profile } = useCurrentProfile();
-  const [hasRedirected, setHasRedirected] = React.useState(false);
+  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(null);
 
-  // HARD GATE - Block dashboard access until role is selected AND onboarding is complete
   useEffect(() => {
-    // Skip check while loading or already redirected
-    if (loading || hasRedirected) return;
-    
-    // If no user, AuthGuard will handle redirect to login
-    if (!user) return;
-
-    // Admin bypass
-    if (user?.role === 'admin') return;
-    
-    // Wait for profile check to complete (profile can be null for new users)
-    // Give it a moment to load
-    const timer = setTimeout(() => {
-      const hasRole = profile?.user_role && profile.user_role !== 'member';
-      const isOnboarded = !!profile?.onboarding_completed_at;
-
-      if (!hasRole) {
-        setHasRedirected(true);
-        navigate(createPageUrl("RoleSelection"), { replace: true });
-      } else if (!isOnboarded) {
-        setHasRedirected(true);
-        if (profile.user_role === 'investor') {
-          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-        } else if (profile.user_role === 'agent') {
-          navigate(createPageUrl("AgentOnboarding"), { replace: true });
+    const checkAccess = async () => {
+      try {
+        const user = await base44.auth.me();
+        
+        if (!user) {
+          // Not logged in
+          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+          return;
         }
+
+        // Admin bypass
+        if (user.role === 'admin') {
+          setProfile({ user_role: 'investor' }); // Show investor dashboard for admin
+          setLoading(false);
+          return;
+        }
+
+        // Get profile
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        const userProfile = profiles[0];
+
+        const role = userProfile?.user_role;
+        const hasRole = role && role !== 'member';
+        const isOnboarded = !!userProfile?.onboarding_completed_at;
+
+        if (!hasRole) {
+          // No role - go to RoleSelection
+          navigate(createPageUrl("RoleSelection"), { replace: true });
+          return;
+        }
+
+        if (!isOnboarded) {
+          // Has role but not onboarded
+          if (role === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+          } else if (role === 'agent') {
+            navigate(createPageUrl("AgentOnboarding"), { replace: true });
+          }
+          return;
+        }
+
+        // All good - show dashboard
+        setProfile(userProfile);
+        setLoading(false);
+
+      } catch (error) {
+        console.error('[Dashboard] Error:', error);
+        navigate(createPageUrl("Home"), { replace: true });
       }
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, [loading, user, profile, navigate, hasRedirected]);
+    };
+
+    checkAccess();
+  }, [navigate]);
 
   if (loading) {
     return (
@@ -61,38 +82,19 @@ function DashboardContent() {
     );
   }
 
-  // ADMIN BYPASS: Skip all checks for admins
-  if (user?.role === 'admin') {
-    console.log('[Dashboard] Admin user - bypassing all checks');
-    // Show investor dashboard by default for admins
+  // Show role-specific dashboard
+  if (profile?.user_role === 'investor') {
     return <InvestorHome />;
   }
 
-  // NON-BLOCKING: Show appropriate dashboard based on role
-  // Setup checklist will appear at top of dashboard, not blocking
-  if (role === 'investor') {
-    return <InvestorHome />;
-  }
-
-  if (role === 'agent') {
+  if (profile?.user_role === 'agent') {
     return <AgentHome />;
   }
 
   // Fallback
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
-      <div className="text-center max-w-md">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
-        <p className="text-[#6B7280]">Setting up your dashboard...</p>
-      </div>
+    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+      <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
     </div>
-  );
-}
-
-export default function Dashboard() {
-  return (
-    <AuthGuard requireAuth={true}>
-      <DashboardContent />
-    </AuthGuard>
   );
 }

@@ -13,26 +13,14 @@ export default function Home() {
   const navigate = useNavigate();
   const { loading, user, profile } = useCurrentProfile();
 
-  const handleLogin = async () => {
-    // If already logged in, go to dashboard
-    const isAuth = await base44.auth.isAuthenticated();
-    if (isAuth) {
-      navigate(createPageUrl("Dashboard"));
-    } else {
-      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
-    }
+  const handleLogin = () => {
+    // Always go through PostAuth - it handles all routing
+    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
   };
 
-  const handleGetStarted = async () => {
-    // Check if already logged in
-    const isAuth = await base44.auth.isAuthenticated();
-    if (isAuth) {
-      // Already logged in - go to PostAuth to route them properly
-      navigate(createPageUrl("PostAuth"));
-    } else {
-      // Not logged in - go to RoleSelection first
-      navigate(createPageUrl("RoleSelection"));
-    }
+  const handleGetStarted = () => {
+    // Always go through PostAuth - it handles all routing
+    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
   };
 
   return (

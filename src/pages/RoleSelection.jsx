@@ -2,134 +2,108 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { useWizard } from "@/components/WizardContext";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, Users, ArrowLeft, Shield, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 
+/**
+ * ROLE SELECTION - User picks investor or agent
+ * 
+ * Only accessible to logged-in users without a role.
+ * After selection, creates/updates profile and routes to onboarding.
+ */
 export default function RoleSelection() {
   const navigate = useNavigate();
-  const { selectedState, setSelectedRole } = useWizard();
   const [selectedChoice, setSelectedChoice] = useState(null);
+  const [checking, setChecking] = useState(true);
 
   useEffect(() => {
     document.title = "Choose Your Role - Investor Konnect";
-  }, []);
-
-  // Check existing role - redirect if user already has one
-  useEffect(() => {
-    let isMounted = true;
     
-    const checkExistingRole = async () => {
+    // Check if user should be here
+    const checkAccess = async () => {
       try {
-        // First check if user is authenticated
-        const isAuth = await base44.auth.isAuthenticated();
-        if (!isMounted) return;
-        
-        // If not authenticated, stay on this page (they'll login when selecting role)
-        if (!isAuth) return;
-        
         const user = await base44.auth.me();
-        if (!isMounted || !user) return;
         
+        if (!user) {
+          // Not logged in - send to login
+          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+          return;
+        }
+
+        // Check if user already has a role
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        if (!isMounted) return;
-        
         const profile = profiles[0];
         
-        // Check if user has a role (not 'member')
         if (profile?.user_role && profile.user_role !== 'member') {
-          const isOnboarded = !!profile.onboarding_completed_at;
-          
-          if (isOnboarded) {
-            console.log('[RoleSelection] User already has role and onboarding complete - redirecting to dashboard');
+          // Already has role - route appropriately
+          if (profile.onboarding_completed_at) {
             navigate(createPageUrl("Dashboard"), { replace: true });
-          } else {
-            console.log('[RoleSelection] User has role but not onboarded - redirecting to onboarding');
-            if (profile.user_role === 'investor') {
-              navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-            } else if (profile.user_role === 'agent') {
-              navigate(createPageUrl("AgentOnboarding"), { replace: true });
-            }
+          } else if (profile.user_role === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+          } else if (profile.user_role === 'agent') {
+            navigate(createPageUrl("AgentOnboarding"), { replace: true });
           }
           return;
         }
-        // If no role, stay on this page to let user choose
+        
+        // User can select role
+        setChecking(false);
       } catch (err) {
-        // Silent fail - user can still select role
-        console.error('[RoleSelection] Error checking role:', err);
+        console.error('[RoleSelection] Error:', err);
+        setChecking(false);
       }
     };
-    
-    checkExistingRole();
-    
-    return () => {
-      isMounted = false;
-    };
+
+    checkAccess();
   }, [navigate]);
 
   const handleRoleSelection = async (chosenRole) => {
     setSelectedChoice(chosenRole);
-    setSelectedRole(chosenRole);
-
-    // Build callback URL with role info - this is where user lands AFTER login
-    const params = new URLSearchParams();
-    if (selectedState) {
-      params.set('state', selectedState);
-    }
-    params.set('intendedRole', chosenRole);
-    const callbackUrl = createPageUrl("PostAuth") + '?' + params.toString();
 
     try {
-      // Check if user is already logged in
-      const isAuthenticated = await base44.auth.isAuthenticated();
+      const user = await base44.auth.me();
       
-      if (isAuthenticated) {
-        // User is logged in - update profile and go to onboarding
-        const user = await base44.auth.me();
-        
-        // Get or create profile
-        let profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        let profile = profiles[0];
-        
-        if (profile) {
-          // Update existing profile with role
-          await base44.entities.Profile.update(profile.id, {
-            user_role: chosenRole,
-            user_type: chosenRole,
-            target_state: selectedState || profile.target_state,
-            markets: selectedState ? [selectedState] : profile.markets
-          });
-        } else {
-          // Create new profile
-          await base44.entities.Profile.create({
-            user_id: user.id,
-            email: user.email,
-            user_role: chosenRole,
-            user_type: chosenRole,
-            role: 'member',
-            target_state: selectedState || null,
-            markets: selectedState ? [selectedState] : []
-          });
-        }
-        
-        // Navigate to appropriate onboarding
-        if (chosenRole === 'investor') {
-          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-        } else if (chosenRole === 'agent') {
-          navigate(createPageUrl("AgentOnboarding"), { replace: true });
-        }
-        
+      // Get or create profile
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      let profile = profiles[0];
+
+      if (profile) {
+        // Update existing profile
+        await base44.entities.Profile.update(profile.id, {
+          user_role: chosenRole,
+          user_type: chosenRole
+        });
       } else {
-        // User is NOT logged in - redirect to login
-        // IMPORTANT: After login, Base44 redirects to callbackUrl which includes the role
-        base44.auth.redirectToLogin(callbackUrl);
+        // Create new profile
+        await base44.entities.Profile.create({
+          user_id: user.id,
+          email: user.email,
+          user_role: chosenRole,
+          user_type: chosenRole,
+          role: 'member'
+        });
       }
+
+      // Navigate to onboarding
+      if (chosenRole === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (chosenRole === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+
     } catch (error) {
       console.error('[RoleSelection] Error:', error);
-      // On error, try login flow
-      base44.auth.redirectToLogin(callbackUrl);
+      setSelectedChoice(null);
     }
   };
+
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
@@ -139,19 +113,16 @@ export default function RoleSelection() {
         <div className="mb-8">
           <button
             onClick={() => navigate(createPageUrl("Home"))}
-            className="ik-btn-outline text-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E5E7EB] bg-white text-sm font-medium hover:border-[#D3A029]"
           >
             <ArrowLeft className="w-4 h-4" />
-            Back to Map
+            Back
           </button>
         </div>
 
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="w-16 h-16 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl">
-            <Shield className="w-10 h-10 text-white" />
-          </div>
-          <h1 className="ik-h1 text-[#111827] mb-4">
+          <h1 className="text-4xl font-bold text-[#111827] mb-4">
             How will you use Investor Konnect?
           </h1>
           <p className="text-lg text-[#6B7280]">
@@ -166,17 +137,15 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('investor')}
             disabled={selectedChoice !== null}
-            className={`ik-card ik-card-hover p-8 text-left transition-all ${
-              selectedChoice === 'investor' ? 'border-[#D3A029] border-2 ring-4 ring-[#D3A029]/20' : ''
-            } ${selectedChoice && selectedChoice !== 'investor' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`bg-white border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
+              selectedChoice === 'investor' ? 'border-[#D3A029] border-2 ring-4 ring-[#D3A029]/20' : 'border-[#E5E7EB]'
+            } ${selectedChoice && selectedChoice !== 'investor' ? 'opacity-50' : ''}`}
           >
-            <div className="ik-icon-pill w-14 h-14 text-2xl mb-6">📈</div>
+            <div className="w-14 h-14 rounded-full bg-[#FEF3C7] flex items-center justify-center mb-6 text-2xl">📈</div>
             
-            <h2 className="text-2xl font-bold text-[#111827] mb-3">
-              I'm an Investor
-            </h2>
+            <h2 className="text-2xl font-bold text-[#111827] mb-3">I'm an Investor</h2>
             
-            <p className="text-[#6B7280] mb-6 leading-relaxed">
+            <p className="text-[#6B7280] mb-6">
               Looking to find verified, investor-friendly agents to help me identify and close deals
             </p>
 
@@ -187,15 +156,11 @@ export default function RoleSelection() {
               </li>
               <li className="flex items-start gap-3 text-[#374151]">
                 <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
-                <span>Get matched with top agents in your market</span>
+                <span>Get matched with top agents</span>
               </li>
               <li className="flex items-start gap-3 text-[#374151]">
                 <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
-                <span>Secure deal rooms with NDA protection</span>
-              </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
-                <span>AI-powered contract drafting (Pro plan)</span>
+                <span>Secure deal rooms with NDA</span>
               </li>
             </ul>
 
@@ -203,7 +168,7 @@ export default function RoleSelection() {
               {selectedChoice === 'investor' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Redirecting to sign in...
+                  Setting up...
                 </>
               ) : (
                 'Select Investor →'
@@ -215,36 +180,30 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('agent')}
             disabled={selectedChoice !== null}
-            className={`ik-card ik-card-hover p-8 text-left transition-all ${
-              selectedChoice === 'agent' ? 'border-[#10B981] border-2 ring-4 ring-[#10B981]/20' : ''
-            } ${selectedChoice && selectedChoice !== 'agent' ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+            className={`bg-white border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
+              selectedChoice === 'agent' ? 'border-[#10B981] border-2 ring-4 ring-[#10B981]/20' : 'border-[#E5E7EB]'
+            } ${selectedChoice && selectedChoice !== 'agent' ? 'opacity-50' : ''}`}
           >
             <div className="w-14 h-14 rounded-full bg-[#D1FAE5] flex items-center justify-center mb-6 text-2xl">👥</div>
             
-            <h2 className="text-2xl font-bold text-[#111827] mb-3">
-              I'm an Agent
-            </h2>
+            <h2 className="text-2xl font-bold text-[#111827] mb-3">I'm an Agent</h2>
             
-            <p className="text-[#6B7280] mb-6 leading-relaxed">
+            <p className="text-[#6B7280] mb-6">
               Join a selective network of investor-focused agents and connect with serious buyers
             </p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3 text-[#374151]">
                 <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
-                <span>Access serious, pre-qualified investors</span>
+                <span>Access pre-qualified investors</span>
               </li>
               <li className="flex items-start gap-3 text-[#374151]">
                 <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
-                <span>Build reputation with verified reviews</span>
+                <span>Build verified reputation</span>
               </li>
               <li className="flex items-start gap-3 text-[#374151]">
                 <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
-                <span>Manage leads in your dashboard</span>
-              </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
-                <span>Free membership (always)</span>
+                <span>Free membership always</span>
               </li>
             </ul>
 
@@ -252,7 +211,7 @@ export default function RoleSelection() {
               {selectedChoice === 'agent' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Redirecting to sign in...
+                  Setting up...
                 </>
               ) : (
                 'Select Agent →'
