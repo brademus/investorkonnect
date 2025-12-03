@@ -333,7 +333,19 @@ Type "RESET" to confirm:`;
     .map(([user_id, count]) => ({ user_id, count }));
 
   const orphanedProfiles = profiles.filter(p => !p.user_id || !users.find(u => u.id === p.user_id));
-  const nonAdminProfiles = profiles.filter(p => p.role !== 'admin');
+  
+  // Calculate non-admin profiles using BOTH User.role AND Profile.role checks
+  // A user is admin if EITHER User.role === 'admin' OR Profile.role === 'admin'
+  const adminUserIdSet = new Set();
+  users.forEach(u => {
+    if (u.role === 'admin') adminUserIdSet.add(u.id);
+  });
+  profiles.forEach(p => {
+    if (p.role === 'admin' && p.user_id) adminUserIdSet.add(p.user_id);
+  });
+  
+  const nonAdminProfiles = profiles.filter(p => !adminUserIdSet.has(p.user_id));
+  const nonAdminUsers = users.filter(u => !adminUserIdSet.has(u.id));
 
   // AI Embedding functions
   const refreshAgentVectors = async () => {
@@ -603,7 +615,7 @@ Type "RESET" to confirm:`;
                 <li className="text-emerald-700 font-semibold">✅ Admin accounts are safe</li>
               </ul>
               <p className="text-sm text-red-900 font-bold mt-3">
-                📊 {nonAdminProfiles.length} non-admin profiles will be deleted
+                📊 {nonAdminUsers.length} non-admin users and {nonAdminProfiles.length} non-admin profiles will be deleted
               </p>
             </div>
             

@@ -268,6 +268,117 @@ Deno.serve(async (req) => {
       console.log('    ⚠️ Error:', err.message);
     }
     
+    // Delete ProfileVectors
+    console.log('  → Deleting ProfileVectors...');
+    stats.profileVectors = 0;
+    try {
+      const vectors = await base44.asServiceRole.entities.ProfileVector.list('-created_date', 1000);
+      for (const vec of vectors) {
+        if (nonAdminUserIdArray.includes(vec.profile_id)) {
+          await base44.asServiceRole.entities.ProfileVector.delete(vec.id);
+          stats.profileVectors++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.profileVectors, 'profile vectors');
+    } catch (err) {
+      console.log('    ⚠️ ProfileVector entity not found or error:', err.message);
+    }
+    
+    // Delete Messages (newer Message entity)
+    console.log('  → Deleting Messages...');
+    stats.messages = 0;
+    try {
+      const msgs = await base44.asServiceRole.entities.Message.list('-created_date', 1000);
+      for (const msg of msgs) {
+        if (nonAdminUserIdArray.includes(msg.sender_profile_id)) {
+          await base44.asServiceRole.entities.Message.delete(msg.id);
+          stats.messages++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.messages, 'messages');
+    } catch (err) {
+      console.log('    ⚠️ Message entity not found or error:', err.message);
+    }
+    
+    // Delete RoomParticipants
+    console.log('  → Deleting RoomParticipants...');
+    stats.roomParticipants = 0;
+    try {
+      const participants = await base44.asServiceRole.entities.RoomParticipant.list('-created_date', 1000);
+      for (const part of participants) {
+        if (nonAdminUserIdArray.includes(part.profile_id)) {
+          await base44.asServiceRole.entities.RoomParticipant.delete(part.id);
+          stats.roomParticipants++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.roomParticipants, 'room participants');
+    } catch (err) {
+      console.log('    ⚠️ RoomParticipant entity not found or error:', err.message);
+    }
+    
+    // Delete Contracts
+    console.log('  → Deleting Contracts...');
+    stats.contracts = 0;
+    try {
+      const contracts = await base44.asServiceRole.entities.Contract.list('-created_date', 1000);
+      for (const contract of contracts) {
+        if (nonAdminUserIdArray.includes(contract.created_by_profile_id)) {
+          await base44.asServiceRole.entities.Contract.delete(contract.id);
+          stats.contracts++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.contracts, 'contracts');
+    } catch (err) {
+      console.log('    ⚠️ Contract entity not found or error:', err.message);
+    }
+    
+    // Delete PaymentSchedules and PaymentMilestones
+    console.log('  → Deleting PaymentSchedules...');
+    stats.paymentSchedules = 0;
+    try {
+      const schedules = await base44.asServiceRole.entities.PaymentSchedule.list('-created_date', 1000);
+      for (const sched of schedules) {
+        if (nonAdminUserIdArray.includes(sched.owner_profile_id)) {
+          await base44.asServiceRole.entities.PaymentSchedule.delete(sched.id);
+          stats.paymentSchedules++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.paymentSchedules, 'payment schedules');
+    } catch (err) {
+      console.log('    ⚠️ PaymentSchedule entity not found or error:', err.message);
+    }
+    
+    console.log('  → Deleting PaymentMilestones...');
+    stats.paymentMilestones = 0;
+    try {
+      const milestones = await base44.asServiceRole.entities.PaymentMilestone.list('-created_date', 1000);
+      for (const ms of milestones) {
+        if (nonAdminUserIdArray.includes(ms.payer_profile_id) || nonAdminUserIdArray.includes(ms.payee_profile_id)) {
+          await base44.asServiceRole.entities.PaymentMilestone.delete(ms.id);
+          stats.paymentMilestones++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.paymentMilestones, 'payment milestones');
+    } catch (err) {
+      console.log('    ⚠️ PaymentMilestone entity not found or error:', err.message);
+    }
+    
+    // Delete NDAs
+    console.log('  → Deleting NDAs...');
+    stats.ndas = 0;
+    try {
+      const ndas = await base44.asServiceRole.entities.NDA.list('-created_date', 1000);
+      for (const nda of ndas) {
+        if (nonAdminUserIdArray.includes(nda.user_id)) {
+          await base44.asServiceRole.entities.NDA.delete(nda.id);
+          stats.ndas++;
+        }
+      }
+      console.log('    ✓ Deleted', stats.ndas, 'NDAs');
+    } catch (err) {
+      console.log('    ⚠️ NDA entity not found or error:', err.message);
+    }
+    
     console.log('');
     
     // ========================================
@@ -367,10 +478,16 @@ Deno.serve(async (req) => {
     console.log(`  • Deleted matches: ${stats.matches}`);
     console.log(`  • Deleted intro requests: ${stats.introRequests}`);
     console.log(`  • Deleted rooms: ${stats.rooms}`);
-    console.log(`  • Deleted messages: ${stats.roomMessages}`);
+    console.log(`  • Deleted room messages: ${stats.roomMessages}`);
+    console.log(`  • Deleted messages: ${stats.messages || 0}`);
     console.log(`  • Deleted deals: ${stats.deals}`);
     console.log(`  • Deleted reviews: ${stats.reviews}`);
     console.log(`  • Deleted audit logs: ${stats.auditLogs}`);
+    console.log(`  • Deleted profile vectors: ${stats.profileVectors || 0}`);
+    console.log(`  • Deleted contracts: ${stats.contracts || 0}`);
+    console.log(`  • Deleted payment schedules: ${stats.paymentSchedules || 0}`);
+    console.log(`  • Deleted payment milestones: ${stats.paymentMilestones || 0}`);
+    console.log(`  • Deleted NDAs: ${stats.ndas || 0}`);
     console.log('');
     
     return Response.json({
@@ -384,9 +501,16 @@ Deno.serve(async (req) => {
         deletedIntroRequests: stats.introRequests,
         deletedRooms: stats.rooms,
         deletedRoomMessages: stats.roomMessages,
+        deletedMessages: stats.messages || 0,
         deletedDeals: stats.deals,
         deletedReviews: stats.reviews,
         deletedAuditLogs: stats.auditLogs,
+        deletedProfileVectors: stats.profileVectors || 0,
+        deletedContracts: stats.contracts || 0,
+        deletedPaymentSchedules: stats.paymentSchedules || 0,
+        deletedPaymentMilestones: stats.paymentMilestones || 0,
+        deletedNDAs: stats.ndas || 0,
+        userDeleteErrors: userDeleteErrors.length > 0 ? userDeleteErrors : undefined,
       }
     });
     
