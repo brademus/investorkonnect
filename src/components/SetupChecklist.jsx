@@ -130,7 +130,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       }
     ];
 
-    const stepsToSet = isInvestor ? investorSteps : agentSteps;
+    const stepsToSet = useInvestorSteps ? investorSteps : agentSteps;
     setSteps(stepsToSet);
   };
 
