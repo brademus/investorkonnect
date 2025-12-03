@@ -19,7 +19,7 @@ export function SetupChecklist({ profile, onRefresh }) {
   }, [profile]);
 
   const calculateSteps = () => {
-    const isInvestor = profile.user_role === 'investor';
+    const isInvestor = profile.user_role === 'investor' || profile.user_type === 'investor';
     
     const investorSteps = [
       {
@@ -106,8 +106,12 @@ export function SetupChecklist({ profile, onRefresh }) {
       }
     ];
 
-    setSteps(isInvestor ? investorSteps : agentSteps);
+    const stepsToSet = isInvestor ? investorSteps : agentSteps;
+    setSteps(stepsToSet);
   };
+
+  // Also check if profile has a valid role
+  const hasRole = profile?.user_role === 'investor' || profile?.user_role === 'agent' || profile?.user_type === 'investor' || profile?.user_type === 'agent';
 
   const completedCount = steps.filter(s => s.completed).length;
   const totalSteps = steps.length;
@@ -121,7 +125,11 @@ export function SetupChecklist({ profile, onRefresh }) {
     }
   }, [allComplete, steps.length]);
 
-  if (!profile || steps.length === 0) return null;
+  // Don't render if no profile or no role
+  if (!profile || !hasRole) return null;
+  
+  // Wait for steps to be calculated
+  if (steps.length === 0) return null;
 
   // Collapsed state - minimal banner
   if (collapsed) {
