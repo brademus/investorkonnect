@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useWizard } from "@/components/WizardContext";
-import { StepGuard } from "@/components/StepGuard";
+
 import { ArrowRight, ArrowLeft, Loader2, CheckCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -19,10 +19,28 @@ import ExperienceAccreditationStep from "@/components/investor-onboarding/Experi
 
 function InvestorOnboardingContent() {
   const navigate = useNavigate();
-  const { profile, refresh, kycVerified, user } = useCurrentProfile();
+  const { profile, refresh, user, loading: profileLoading } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [checking, setChecking] = useState(true);
+
+  // Check if user should be here
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const authUser = await base44.auth.me();
+        if (!authUser) {
+          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+          return;
+        }
+        setChecking(false);
+      } catch (e) {
+        base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+      }
+    };
+    checkAccess();
+  }, []);
   const [formData, setFormData] = useState({
     investor_description: '',
     deals_closed_24mo: '',
@@ -161,6 +179,14 @@ function InvestorOnboardingContent() {
   
   const CurrentStepComponent = STEP_COMPONENTS[step - 1];
 
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
       <header className="h-20 flex items-center justify-center border-b border-[#E5E5E5]">
@@ -220,9 +246,5 @@ function InvestorOnboardingContent() {
 }
 
 export default function InvestorOnboarding() {
-  return (
-    <StepGuard requiredStep={3}>
-      <InvestorOnboardingContent />
-    </StepGuard>
-  );
+  return <InvestorOnboardingContent />;
 }
