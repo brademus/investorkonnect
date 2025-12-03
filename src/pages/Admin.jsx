@@ -511,6 +511,7 @@ Type "RESET" to confirm:`;
             <h3 className="text-lg font-semibold text-[#111827] mb-4">Grant Admin Access</h3>
             <p className="text-sm text-[#6B7280] mb-4">
               Make users admins to give them instant access without onboarding, verification, or NDA.
+              <strong className="text-emerald-600 ml-1">This does NOT delete any data.</strong>
             </p>
             <div className="flex gap-3">
               <input
@@ -528,16 +529,16 @@ Type "RESET" to confirm:`;
                   }
                   setProcessing(true);
                   try {
-                    // Use adminSetup function which has service role permissions
-                    const response = await adminSetup({ adminEmail: adminEmail });
+                    // Use grantAdmin function which ONLY updates role, no data deletion
+                    const response = await grantAdmin({ email: adminEmail });
                     const data = response.data;
                     
-                    if (data.success) {
+                    if (data.ok) {
                       toast.success(`${adminEmail} is now an admin! Page will reload...`);
                       setAdminEmail('');
                       setTimeout(() => window.location.reload(), 1500);
                     } else {
-                      toast.error('Failed to grant admin: ' + (data.error || 'Unknown error'));
+                      toast.error('Failed to grant admin: ' + (data.error || data.message || 'Unknown error'));
                     }
                   } catch (err) {
                     console.error('[Admin] Make admin error:', err);
