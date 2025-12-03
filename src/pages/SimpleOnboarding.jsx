@@ -213,17 +213,15 @@ export default function SimpleOnboarding() {
 
                 <div className="space-y-4 mb-6">
                   {/* Investor Option */}
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('investor')}
-                    onTouchEnd={(e) => { e.preventDefault(); handleRoleSelect('investor'); }}
-                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left touch-manipulation ${
+                  <div
+                    onClick={() => setRole('investor')}
+                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left cursor-pointer ${
                       role === 'investor'
                         ? 'border-[#D3A029] bg-[#FEF3C7]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <div className="flex items-start gap-4 pointer-events-none">
+                    <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-[#D3A029] rounded-xl flex items-center justify-center flex-shrink-0">
                         <User className="w-6 h-6 text-white" />
                       </div>
@@ -243,20 +241,18 @@ export default function SimpleOnboarding() {
                         </div>
                       )}
                     </div>
-                  </button>
+                  </div>
 
                   {/* Agent Option */}
-                  <button
-                    type="button"
-                    onClick={() => handleRoleSelect('agent')}
-                    onTouchEnd={(e) => { e.preventDefault(); handleRoleSelect('agent'); }}
-                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left touch-manipulation ${
+                  <div
+                    onClick={() => setRole('agent')}
+                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left cursor-pointer ${
                       role === 'agent'
                         ? 'border-[#D3A029] bg-[#FEF3C7]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
+                        : 'border-slate-200 hover:border-slate-300 bg-white'
                     }`}
                   >
-                    <div className="flex items-start gap-4 pointer-events-none">
+                    <div className="flex items-start gap-4">
                       <div className="w-12 h-12 bg-[#D3A029] rounded-xl flex items-center justify-center flex-shrink-0">
                         <Briefcase className="w-6 h-6 text-white" />
                       </div>
@@ -276,7 +272,7 @@ export default function SimpleOnboarding() {
                         </div>
                       )}
                     </div>
-                  </button>
+                  </div>
                 </div>
 
                 <div className="flex gap-3">
@@ -291,15 +287,9 @@ export default function SimpleOnboarding() {
                   </Button>
                   <Button
                     type="button"
-                    onClick={() => {
-                      if (!role) {
-                        toast.error('Please select your role');
-                        return;
-                      }
-                      handleComplete();
-                    }}
-                    disabled={loading}
-                    className="flex-1 h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white text-base font-semibold relative z-10"
+                    disabled={loading || !role}
+                    onClick={handleComplete}
+                    className="flex-1 h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white text-base font-semibold disabled:opacity-50"
                   >
                     {loading ? (
                       <>
