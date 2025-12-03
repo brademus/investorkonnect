@@ -212,14 +212,16 @@ export default function SimpleOnboarding() {
                 <div className="space-y-4 mb-6">
                   {/* Investor Option */}
                   <button
+                    type="button"
                     onClick={() => handleRoleSelect('investor')}
-                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left ${
+                    onTouchEnd={(e) => { e.preventDefault(); handleRoleSelect('investor'); }}
+                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left touch-manipulation ${
                       role === 'investor'
                         ? 'border-[#D3A029] bg-[#FEF3C7]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-4 pointer-events-none">
                       <div className="w-12 h-12 bg-[#D3A029] rounded-xl flex items-center justify-center flex-shrink-0">
                         <User className="w-6 h-6 text-white" />
                       </div>
@@ -243,14 +245,16 @@ export default function SimpleOnboarding() {
 
                   {/* Agent Option */}
                   <button
+                    type="button"
                     onClick={() => handleRoleSelect('agent')}
-                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left ${
+                    onTouchEnd={(e) => { e.preventDefault(); handleRoleSelect('agent'); }}
+                    className={`w-full p-6 rounded-2xl border-2 transition-all text-left touch-manipulation ${
                       role === 'agent'
                         ? 'border-[#D3A029] bg-[#FEF3C7]'
-                        : 'border-slate-200 hover:border-slate-300 bg-white'
+                        : 'border-slate-200 hover:border-slate-300 bg-white active:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-4 pointer-events-none">
                       <div className="w-12 h-12 bg-[#D3A029] rounded-xl flex items-center justify-center flex-shrink-0">
                         <Briefcase className="w-6 h-6 text-white" />
                       </div>
