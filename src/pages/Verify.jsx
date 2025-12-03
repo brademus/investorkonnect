@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
+import { personaConfig } from "@/components/functions";
 import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
@@ -63,7 +64,7 @@ export default function Verify() {
         setProfile(currentProfile);
 
         // Get Persona config from backend
-        const configResponse = await base44.functions.personaConfig();
+        const configResponse = await personaConfig();
         if (configResponse.data?.templateId && configResponse.data?.environmentId) {
           setPersonaConfig(configResponse.data);
         } else {
