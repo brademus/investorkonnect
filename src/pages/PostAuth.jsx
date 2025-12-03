@@ -63,17 +63,29 @@ export default function PostAuth() {
 
         // If no role selected, send to RoleSelection
         if (!hasRole) {
-          // Create profile if doesn't exist
+          // Create profile if doesn't exist with the intended role from URL
           if (!profile && user) {
             try {
+              const newRole = intendedRole || 'member';
               await base44.entities.Profile.create({
                 user_id: user.id,
                 email: user.email,
-                user_role: intendedRole || 'member',
+                user_role: newRole,
                 role: 'member',
                 target_state: stateParam || null,
                 markets: stateParam ? [stateParam] : []
               });
+              
+              // If we created profile with a valid role, go straight to onboarding
+              if (newRole === 'investor') {
+                navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+                setHasRouted(true);
+                return;
+              } else if (newRole === 'agent') {
+                navigate(createPageUrl("AgentOnboarding"), { replace: true });
+                setHasRouted(true);
+                return;
+              }
             } catch (createErr) {
               // Silent fail - will retry on next attempt
             }

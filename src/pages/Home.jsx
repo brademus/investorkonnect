@@ -18,11 +18,8 @@ export default function Home() {
   };
 
   const handleGetStarted = () => {
-    // Always redirect to login/auth flow
-    // PostAuth will handle routing based on user state:
-    // - New users → RoleSelection → Onboarding → Dashboard
-    // - Returning users → Dashboard directly
-    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+    // Route to RoleSelection - it will handle login if needed
+    navigate(createPageUrl("RoleSelection"));
   };
 
   return (
