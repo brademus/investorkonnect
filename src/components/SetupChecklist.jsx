@@ -6,6 +6,7 @@ import {
   CheckCircle2, Circle, ChevronUp, ChevronDown, 
   User, Target, FileText, Shield, CreditCard, Sparkles, MapPin, ClipboardList
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 export function SetupChecklist({ profile, onRefresh }) {
   const navigate = useNavigate();
