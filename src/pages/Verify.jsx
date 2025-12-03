@@ -21,12 +21,10 @@ function VerifyContent() {
   const navigate = useNavigate();
   const { user, profile, kycVerified, hasNDA, onboarded, refresh } = useCurrentProfile();
   
-  const personaClientRef = useRef(null);
-  const [scriptLoaded, setScriptLoaded] = useState(false);
-  const [personaReady, setPersonaReady] = useState(false);
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
+  const [ready, setReady] = useState(false);
 
   // DEMO MODE: Auto-approve KYC
   useEffect(() => {
