@@ -30,8 +30,12 @@ export default function RoleSelection() {
           return;
         }
 
-        // Check if user already has a role
-        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        // Check if user already has a role - USE EMAIL AS PRIMARY KEY
+        const emailLower = user.email.toLowerCase().trim();
+        let profiles = await base44.entities.Profile.filter({ email: emailLower });
+        if (!profiles || profiles.length === 0) {
+          profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        }
         const profile = profiles[0];
         
         if (profile?.user_role && profile.user_role !== 'member') {
@@ -62,14 +66,19 @@ export default function RoleSelection() {
 
     try {
       const user = await base44.auth.me();
+      const emailLower = user.email.toLowerCase().trim();
       
-      // Get or create profile
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      // Get or create profile - USE EMAIL AS PRIMARY KEY
+      let profiles = await base44.entities.Profile.filter({ email: emailLower });
+      if (!profiles || profiles.length === 0) {
+        profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      }
       let profile = profiles[0];
 
       if (profile) {
-        // Update existing profile
+        // Update existing profile - ensure user_id is synced
         await base44.entities.Profile.update(profile.id, {
+          user_id: user.id,
           user_role: chosenRole,
           user_type: chosenRole
         });
@@ -77,7 +86,7 @@ export default function RoleSelection() {
         // Create new profile
         await base44.entities.Profile.create({
           user_id: user.id,
-          email: user.email,
+          email: emailLower,
           user_role: chosenRole,
           user_type: chosenRole,
           role: 'member'

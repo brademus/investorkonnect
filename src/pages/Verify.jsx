@@ -32,8 +32,12 @@ export default function Verify() {
         }
         setUser(currentUser);
 
-        // Get profile
-        const profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
+        // Get profile - USE EMAIL AS PRIMARY KEY
+        const emailLower = currentUser.email.toLowerCase().trim();
+        let profiles = await base44.entities.Profile.filter({ email: emailLower });
+        if (!profiles || profiles.length === 0) {
+          profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
+        }
         const currentProfile = profiles[0];
         
         if (!currentProfile) {
@@ -164,16 +168,20 @@ export default function Verify() {
           setVerifying(true);
 
           try {
-            // Re-fetch profile to ensure we have latest data
-            const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            // Re-fetch profile to ensure we have latest data - USE EMAIL AS PRIMARY KEY
+            const emailLower = user.email.toLowerCase().trim();
+            let profiles = await base44.entities.Profile.filter({ email: emailLower });
+            if (!profiles || profiles.length === 0) {
+              profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            }
             let currentProfile = profiles[0];
             
             // If profile doesn't exist, create it
             if (!currentProfile) {
-              console.log('[Verify] Profile not found, creating new one...');
+              console.log('[Verify] Profile not found, creating new one for:', emailLower);
               currentProfile = await base44.entities.Profile.create({
                 user_id: user.id,
-                email: user.email,
+                email: emailLower,
                 full_name: user.full_name,
                 kyc_status: status === 'completed' ? 'approved' : 'pending',
                 kyc_inquiry_id: inquiryId,
@@ -182,6 +190,7 @@ export default function Verify() {
               });
             } else {
               await base44.entities.Profile.update(currentProfile.id, {
+                user_id: user.id, // Ensure user_id is synced
                 kyc_status: status === 'completed' ? 'approved' : 'pending',
                 kyc_inquiry_id: inquiryId,
                 kyc_provider: 'persona',

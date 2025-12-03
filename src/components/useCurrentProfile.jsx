@@ -156,12 +156,29 @@ export function useCurrentProfile() {
           // Silent fallback - no logging for regular users
         }
         
-        // Fallback: query Profile entity directly
+        // Fallback: query Profile entity directly - USE EMAIL AS PRIMARY KEY
         if (!profile) {
-          const profiles = await base44.entities.Profile.filter({ 
-            user_id: user.id 
-          });
+          const emailLower = user.email.toLowerCase().trim();
+          
+          // First try by email (canonical)
+          let profiles = await base44.entities.Profile.filter({ email: emailLower });
+          
+          // Fallback to user_id
+          if (!profiles || profiles.length === 0) {
+            profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          }
+          
           profile = profiles[0] || null;
+          
+          // If found by email but user_id mismatch, update it
+          if (profile && profile.user_id !== user.id) {
+            try {
+              await base44.entities.Profile.update(profile.id, { user_id: user.id });
+              profile.user_id = user.id;
+            } catch (e) {
+              // Silent fail on update
+            }
+          }
         }
 
         if (!mounted) return;

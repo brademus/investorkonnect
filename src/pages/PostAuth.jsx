@@ -28,11 +28,19 @@ export default function PostAuth() {
           return;
         }
 
-        // Step 2: Get or create profile
+        // Step 2: Get or create profile - USE EMAIL AS PRIMARY KEY
         setStatus("Loading your profile...");
         let profile = null;
         try {
-          const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          // First try to find by email (canonical lookup)
+          const emailLower = user.email.toLowerCase().trim();
+          let profiles = await base44.entities.Profile.filter({ email: emailLower });
+          
+          // Fallback to user_id if not found by email
+          if (!profiles || profiles.length === 0) {
+            profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          }
+          
           profile = profiles[0] || null;
           
           // Create profile if it doesn't exist
@@ -40,11 +48,17 @@ export default function PostAuth() {
             setStatus("Setting up your account...");
             profile = await base44.entities.Profile.create({
               user_id: user.id,
-              email: user.email,
+              email: emailLower,
               full_name: user.full_name,
               role: 'member',
               user_role: 'member',
             });
+            console.log('[PostAuth] Created new profile for:', emailLower);
+          } else if (!profile.user_id || profile.user_id !== user.id) {
+            // Update user_id if profile exists but user_id is different (email match)
+            await base44.entities.Profile.update(profile.id, { user_id: user.id });
+            profile.user_id = user.id;
+            console.log('[PostAuth] Updated user_id for existing profile:', emailLower);
           }
         } catch (e) {
           console.error('[PostAuth] Profile error:', e);
