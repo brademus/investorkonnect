@@ -39,9 +39,9 @@ export default function MyProfile() {
   
   const toFullOnboarding = () => {
     if (role === "agent") {
-      navigate(createPageUrl("AgentOnboarding"));
+      navigate(createPageUrl("AgentDeepOnboarding"));
     } else if (role === "investor") {
-      navigate(createPageUrl("InvestorOnboarding"));
+      navigate(createPageUrl("InvestorDeepOnboarding"));
     } else {
       toast.info("Please complete role selection first");
       navigate(createPageUrl("RoleSelection"));
