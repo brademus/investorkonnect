@@ -35,6 +35,8 @@ export default function AgentProfile() {
       // Check if authenticated
       const isAuth = await base44.auth.isAuthenticated();
       
+      // Only redirect to login if not authenticated
+      // Public profiles should still be viewable (NDA check happens next)
       if (!isAuth) {
         toast.info("Please sign in to view agent profiles");
         base44.auth.redirectToLogin(window.location.pathname);

@@ -40,9 +40,10 @@ export default function InvestorDirectory() {
   }, [profileLoading]);
 
   const checkAccessAndLoad = async () => {
-    if (!user) {
+    // Check if user AND profile exist
+    if (!user || !profile) {
       toast.info("Please sign in to browse investors");
-      base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+      base44.auth.redirectToLogin(createPageUrl("InvestorDirectory"));
       return;
     }
     if (role !== 'agent') {

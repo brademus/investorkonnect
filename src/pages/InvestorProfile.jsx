@@ -35,6 +35,7 @@ export default function InvestorProfile() {
     try {
       const isAuth = await base44.auth.isAuthenticated();
       
+      // Only redirect to login if not authenticated
       if (!isAuth) {
         toast.info("Please sign in to view investor profiles");
         base44.auth.redirectToLogin(window.location.href);

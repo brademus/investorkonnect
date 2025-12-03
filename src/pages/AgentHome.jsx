@@ -74,7 +74,7 @@ export default function AgentHome() {
   const needsLicense = !agentData.license_number || !agentData.license_state || agentData.verification_status !== 'verified';
 
   const handleStartKyc = () => {
-    if (!user) { base44.auth.redirectToLogin(createPageUrl("PostAuth")); return; }
+    if (!user || !profile) { base44.auth.redirectToLogin(createPageUrl("AgentHome")); return; }
     if (needsOnboarding) { navigate(createPageUrl("AgentOnboarding")); return; }
     if (needsKyc) { navigate(createPageUrl("Verify")); return; }
   };
