@@ -39,33 +39,33 @@ export default function AgentDirectory() {
   }, []);
 
   useEffect(() => {
-    // Only run access checks after profile is done loading
+    // Wait for profile to finish loading before doing ANY checks
     if (profileLoading) return;
-    
-    // If no user after loading complete, redirect to login
-    if (!user) {
+
+    // After loading complete, check if user and profile exist
+    if (!user || !profile) {
       toast.info("Please sign in to browse agents");
       base44.auth.redirectToLogin(createPageUrl("AgentDirectory"));
       return;
     }
-    
+
     // Only investors can access
-    if (role && role !== 'investor' && role !== 'admin') {
+    if (role !== 'investor' && role !== 'admin') {
       toast.error("Only investors can browse agents");
       navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
-    
+
     // If not onboarded, send to onboarding
-    if (!onboarded && role === 'investor') {
+    if (!onboarded) {
       toast.info("Complete onboarding to access agent directory");
       navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       return;
     }
-    
+
     // All checks passed, load agents
     loadAgents();
-  }, [profileLoading, user, role, onboarded]);
+  }, [profileLoading, user, profile, role, onboarded]);
 
   const loadAgents = async () => {
     try {
