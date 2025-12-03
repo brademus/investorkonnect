@@ -149,10 +149,10 @@ function InvestorOnboardingContent() {
         markets: [formData.primary_state || selectedState].filter(Boolean)
       });
       await refresh();
-      await new Promise(resolve => setTimeout(resolve, 300));
       toast.success("Profile completed! Welcome to Investor Konnect.");
-      // DEMO MODE: Skip Verify and NDA, go straight to Dashboard
-      navigate(createPageUrl("Dashboard"), { replace: true });
+      await new Promise(resolve => setTimeout(resolve, 500));
+      // Force full page reload to refresh all components including checklist
+      window.location.href = createPageUrl("Dashboard");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);

@@ -124,8 +124,9 @@ function AgentOnboardingContent() {
 
         await refresh();
         toast.success("Profile completed! Welcome to Investor Konnect.");
-        await new Promise(resolve => setTimeout(resolve, 300));
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        await new Promise(resolve => setTimeout(resolve, 500));
+        // Force full page reload to refresh all components including checklist
+        window.location.href = createPageUrl("Dashboard");
       } else {
         throw new Error('Profile not found');
       }

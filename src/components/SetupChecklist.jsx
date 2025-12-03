@@ -23,13 +23,6 @@ export function SetupChecklist({ profile, onRefresh }) {
     
     const investorSteps = [
       {
-        id: 'simple_onboarding',
-        title: 'Location & role',
-        completed: !!(profile.target_state && profile.user_role),
-        icon: Sparkles,
-        link: 'SimpleOnboarding'
-      },
-      {
         id: 'complete_profile',
         title: 'Complete profile',
         completed: !!(profile.full_name && profile.email && profile.phone),
@@ -68,13 +61,6 @@ export function SetupChecklist({ profile, onRefresh }) {
     ];
 
     const agentSteps = [
-      {
-        id: 'simple_onboarding',
-        title: 'Location & role',
-        completed: !!(profile.target_state && profile.user_role),
-        icon: Sparkles,
-        link: 'SimpleOnboarding'
-      },
       {
         id: 'complete_profile',
         title: 'Complete profile',
