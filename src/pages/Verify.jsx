@@ -98,27 +98,38 @@ function VerifyContent() {
     );
   }
 
-  const handleBeginVerification = () => {
-    if (!personaClientRef.current) {
-      setError('Verification system not ready. Please refresh the page.');
+  // Use hosted Persona flow via backend function
+  const handleBeginVerification = async () => {
+    if (!profile?.id) {
+      setError('Profile not loaded. Please refresh the page.');
       return;
     }
 
     setLaunching(true);
+    setError(null);
     
     try {
-      personaClientRef.current.open();
+      console.log('[Verify] Calling personaStart for profile:', profile.id);
+      const response = await personaStart({ profile_id: profile.id });
+      
+      console.log('[Verify] personaStart response:', response);
+      
+      if (response.data?.persona_url) {
+        // Redirect to Persona hosted verification
+        window.location.href = response.data.persona_url;
+      } else {
+        throw new Error(response.data?.error || 'Failed to get verification URL');
+      }
     } catch (err) {
-      setError('Failed to start verification. Please refresh and try again.');
+      console.error('[Verify] Error starting verification:', err);
+      setError('Failed to start verification. Please try again.');
       setLaunching(false);
     }
   };
 
   const handleRetry = () => {
     setError(null);
-    setScriptLoaded(false);
-    setPersonaReady(false);
-    window.location.reload();
+    setLaunching(false);
   };
 
   return (
