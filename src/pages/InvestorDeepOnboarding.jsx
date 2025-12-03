@@ -218,7 +218,8 @@ export default function InvestorDeepOnboarding() {
         },
       };
 
-      await base44.entities.Profile.update(profile.id, {
+      // CRITICAL: Set onboarding_completed_at to mark onboarding as complete
+      const updatePayload = {
         full_name: formData.full_name,
         phone: formData.phone,
         company: formData.company,
@@ -226,11 +227,21 @@ export default function InvestorDeepOnboarding() {
         markets: formData.primary_state ? [formData.primary_state] : [],
         metadata,
         onboarding_step: 'deep_complete',
-      });
+        onboarding_version: 'v2',
+        onboarding_completed_at: new Date().toISOString(),
+      };
+      
+      console.log('[InvestorDeepOnboarding] Saving profile with:', updatePayload);
+      
+      await base44.entities.Profile.update(profile.id, updatePayload);
 
+      // Refresh profile to get updated state
       await refresh();
-      toast.success("Profile updated successfully!");
-      navigate(createPageUrl("Dashboard"));
+      
+      toast.success("Profile completed! Next: verify your identity.");
+      
+      // Navigate to Verify page (next step in checklist)
+      navigate(createPageUrl("Verify"), { replace: true });
     } catch (error) {
       console.error('Save error:', error);
       toast.error("Failed to save. Please try again.");
