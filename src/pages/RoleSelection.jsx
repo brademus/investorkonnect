@@ -15,12 +15,19 @@ export default function RoleSelection() {
     document.title = "Choose Your Role - Investor Konnect";
   }, []);
 
-  // Prevent users from changing their role after it's been set
+  // Check existing role - redirect if user already has one
   useEffect(() => {
     let isMounted = true;
     
     const checkExistingRole = async () => {
       try {
+        // First check if user is authenticated
+        const isAuth = await base44.auth.isAuthenticated();
+        if (!isMounted) return;
+        
+        // If not authenticated, stay on this page (they'll login when selecting role)
+        if (!isAuth) return;
+        
         const user = await base44.auth.me();
         if (!isMounted || !user) return;
         
@@ -34,11 +41,9 @@ export default function RoleSelection() {
           const isOnboarded = !!profile.onboarding_completed_at;
           
           if (isOnboarded) {
-            // User has role AND completed onboarding - go to dashboard
             console.log('[RoleSelection] User already has role and onboarding complete - redirecting to dashboard');
             navigate(createPageUrl("Dashboard"), { replace: true });
           } else {
-            // User has role but NOT onboarded - go to onboarding
             console.log('[RoleSelection] User has role but not onboarded - redirecting to onboarding');
             if (profile.user_role === 'investor') {
               navigate(createPageUrl("InvestorOnboarding"), { replace: true });
@@ -48,7 +53,9 @@ export default function RoleSelection() {
           }
           return;
         }
+        // If no role, stay on this page to let user choose
       } catch (err) {
+        // Silent fail - user can still select role
         console.error('[RoleSelection] Error checking role:', err);
       }
     };
