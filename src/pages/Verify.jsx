@@ -73,8 +73,15 @@ function VerifyContent() {
     // Check if user has ANY onboarding completed (not just specific version)
     const hasCompletedOnboarding = !!profile.onboarding_completed_at;
     
+    console.log('[Verify] Checking onboarding status:', {
+      hasCompletedOnboarding,
+      onboarding_completed_at: profile.onboarding_completed_at,
+      kycVerified
+    });
+    
     if (!hasCompletedOnboarding) {
       const role = profile.user_role || profile.user_type;
+      console.log('[Verify] User not onboarded, redirecting based on role:', role);
       if (role === 'investor') {
         navigate(createPageUrl("InvestorDeepOnboarding"), { replace: true });
       } else if (role === 'agent') {
@@ -83,7 +90,7 @@ function VerifyContent() {
         navigate(createPageUrl("Dashboard"), { replace: true });
       }
     }
-  }, [user, profile, navigate]);
+  }, [user, profile, kycVerified, navigate]);
 
   // Load Persona script
   useEffect(() => {
