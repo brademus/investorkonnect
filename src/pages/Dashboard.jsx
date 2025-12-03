@@ -19,7 +19,7 @@ function DashboardContent() {
   const navigate = useNavigate();
   const { loading, user, role, onboarded, profile } = useCurrentProfile();
 
-  // HARD GATE - Block dashboard access until simple onboarding is complete
+  // HARD GATE - Block dashboard access until role is selected AND onboarding is complete
   useEffect(() => {
     // Skip check while loading or if no user
     if (loading || !user) return;
@@ -27,9 +27,18 @@ function DashboardContent() {
     // Admin bypass
     if (user?.role === 'admin') return;
 
+    // Check if user has selected a role
+    const hasRole = profile?.user_role && profile.user_role !== 'member';
+    
     // Check if simple onboarding is complete
     const isOnboarded = !!profile?.onboarding_completed_at;
-    const hasRole = profile?.user_role && profile.user_role !== 'member';
+
+    // If no role selected, send to RoleSelection
+    if (!hasRole) {
+      console.log('[Dashboard] No role selected - redirecting to role selection');
+      navigate(createPageUrl("RoleSelection"), { replace: true });
+      return;
+    }
 
     // If user has role but hasn't completed simple onboarding, redirect to onboarding
     if (hasRole && !isOnboarded) {
