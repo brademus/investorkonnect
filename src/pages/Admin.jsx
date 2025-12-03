@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import {
   adminNdaSet,
   adminSetup,
+  grantAdmin,
   profileDedup,
   profileHealthCheck,
   refreshAllEmbeddings,
