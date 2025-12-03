@@ -66,14 +66,24 @@ function VerifyContent() {
     }
   }, [user, profile, kycVerified, hasNDA, navigate]);
 
-  // Redirect if not onboarded
+  // Redirect if not onboarded - but be lenient, check if onboarding_completed_at exists
   useEffect(() => {
     if (!user || !profile) return;
     
-    if (!onboarded) {
-      navigate(createPageUrl("Dashboard"), { replace: true });
+    // Check if user has ANY onboarding completed (not just specific version)
+    const hasCompletedOnboarding = !!profile.onboarding_completed_at;
+    
+    if (!hasCompletedOnboarding) {
+      const role = profile.user_role || profile.user_type;
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorDeepOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentDeepOnboarding"), { replace: true });
+      } else {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
     }
-  }, [user, profile, onboarded, navigate]);
+  }, [user, profile, navigate]);
 
   // Load Persona script
   useEffect(() => {
