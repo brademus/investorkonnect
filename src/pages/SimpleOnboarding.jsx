@@ -279,6 +279,7 @@ export default function SimpleOnboarding() {
 
                 <div className="flex gap-3">
                   <Button
+                    type="button"
                     onClick={() => setStep(1)}
                     variant="outline"
                     className="flex-1 h-12 text-base font-semibold"
@@ -287,9 +288,16 @@ export default function SimpleOnboarding() {
                     Back
                   </Button>
                   <Button
-                    onClick={handleComplete}
-                    disabled={loading || !role}
-                    className="flex-1 h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white text-base font-semibold"
+                    type="button"
+                    onClick={() => {
+                      if (!role) {
+                        toast.error('Please select your role');
+                        return;
+                      }
+                      handleComplete();
+                    }}
+                    disabled={loading}
+                    className="flex-1 h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white text-base font-semibold relative z-10"
                   >
                     {loading ? (
                       <>
