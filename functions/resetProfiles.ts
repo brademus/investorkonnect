@@ -340,9 +340,9 @@ Deno.serve(async (req) => {
     
     return Response.json({
       ok: true,
-      message: `Successfully deleted ${stats.profiles} profiles for ${nonAdminUserIds.size} non-admin users`,
+      message: `Successfully deleted ${stats.profiles} profiles and ${stats.users} users for ${nonAdminUserIds.size} non-admin accounts`,
       deletedProfiles: stats.profiles,
-      deletedUsers: nonAdminUserIds.size,
+      deletedUsers: stats.users,
       details: {
         protectedAdmins: adminUserIds.size,
         deletedMatches: stats.matches,
