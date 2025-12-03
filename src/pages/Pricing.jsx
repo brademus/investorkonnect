@@ -70,17 +70,11 @@ export default function Pricing() {
       return;
     }
 
-    // Check if investor has completed onboarding
-    if (role === 'investor' && !onboarded) {
-      toast.error("Please complete your investor profile first");
-      navigate(createPageUrl("InvestorOnboarding"));
-      return;
-    }
-    
-    // Check if agent has completed onboarding
-    if (role === 'agent' && !onboarded) {
-      toast.error("Please complete your agent profile first");
-      navigate(createPageUrl("AgentOnboarding"));
+    // Check if user has completed onboarding (for both investor and agent)
+    if ((role === 'investor' || role === 'agent') && !onboarded) {
+      const onboardingPage = role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding';
+      toast.error(`Please complete your ${role} profile first`);
+      navigate(createPageUrl(onboardingPage));
       return;
     }
 
