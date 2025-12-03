@@ -329,11 +329,18 @@ Deno.serve(async (req) => {
     console.log('STEP 6: Verifying deletion...');
     
     const remainingProfiles = await base44.asServiceRole.entities.Profile.list('-created_date', 1000);
+    const remainingUsers = await base44.asServiceRole.entities.User.list('-created_date', 1000);
+    
     console.log('✓ Profiles remaining in database:', remainingProfiles.length);
-    console.log('  (Should only be admin profiles)');
+    console.log('✓ Users remaining in database:', remainingUsers.length);
+    console.log('  (Should only be admin accounts)');
     
     remainingProfiles.forEach(p => {
-      console.log(`  - ${p.email} (role: ${p.role}, user_role: ${p.user_role})`);
+      console.log(`  - Profile: ${p.email} (role: ${p.role}, user_role: ${p.user_role})`);
+    });
+    
+    remainingUsers.forEach(u => {
+      console.log(`  - User: ${u.email} (role: ${u.role})`);
     });
     
     console.log('');
