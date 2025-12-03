@@ -1,37 +1,118 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
-import { Loader2, Shield, CheckCircle, AlertCircle, ExternalLink } from "lucide-react";
+import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { personaStart } from "@/components/functions";
 
 /**
  * IDENTITY VERIFICATION (Persona Embedded Flow)
  * 
- * CRITICAL: This page should ONLY be shown to users who have:
- * - Completed onboarding
- * - NOT yet verified KYC
- * 
- * Once KYC is verified, redirect immediately to NDA or Dashboard
+ * Uses the Persona embedded SDK to display the verification modal
+ * directly on this page (not a redirect).
  */
 function VerifyContent() {
   const navigate = useNavigate();
-  const { user, profile, kycVerified, hasNDA, onboarded, refresh } = useCurrentProfile();
+  const { user, profile, kycVerified, refresh } = useCurrentProfile();
   
   const [launching, setLaunching] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [error, setError] = useState(null);
   const [ready, setReady] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [personaReady, setPersonaReady] = useState(false);
+  
+  const personaClientRef = useRef(null);
 
-  // Mark ready once we have user and profile
+  // Load Persona SDK script
   useEffect(() => {
-    if (user && profile) {
-      setReady(true);
+    if (window.Persona) {
+      setScriptLoaded(true);
+      return;
     }
-  }, [user, profile]);
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.withpersona.com/dist/persona-v5.0.0.js';
+    script.async = true;
+    script.onload = () => {
+      console.log('[Verify] Persona SDK loaded');
+      setScriptLoaded(true);
+    };
+    script.onerror = () => {
+      console.error('[Verify] Failed to load Persona SDK');
+      setError('Failed to load verification system. Please refresh the page.');
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup script if component unmounts before load
+    };
+  }, []);
+
+  // Initialize Persona client once SDK is loaded and we have profile
+  useEffect(() => {
+    if (!scriptLoaded || !user || !profile || personaClientRef.current) return;
+
+    const templateId = 'itmpl_8nKgVFgnwC1iGv6ZBHmJaSnn';
+    const environmentId = 'env_vSBBJVqRsaNLyvJ7C7vN8C5c';
+
+    console.log('[Verify] Initializing Persona client...');
+
+    try {
+      personaClientRef.current = new window.Persona.Client({
+        templateId,
+        environmentId,
+        referenceId: user.id,
+        prefill: {
+          emailAddress: user.email,
+          nameFirst: profile.full_name?.split(' ')[0] || '',
+          nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
+        },
+        onReady: () => {
+          console.log('[Verify] Persona client ready');
+          setPersonaReady(true);
+        },
+        onComplete: async ({ inquiryId, status }) => {
+          console.log('[Verify] Persona complete:', { inquiryId, status });
+          setVerifying(true);
+          
+          try {
+            // Update profile with KYC status
+            await base44.entities.Profile.update(profile.id, {
+              kyc_status: status === 'completed' ? 'approved' : 'pending',
+              kyc_inquiry_id: inquiryId,
+              kyc_provider: 'persona',
+              kyc_last_checked: new Date().toISOString(),
+            });
+            
+            toast.success('Identity verified successfully!');
+            await refresh();
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          } catch (err) {
+            console.error('[Verify] Error updating profile:', err);
+            setError('Verification completed but failed to update profile. Please contact support.');
+            setVerifying(false);
+          }
+        },
+        onCancel: () => {
+          console.log('[Verify] Persona cancelled');
+          setLaunching(false);
+        },
+        onError: (error) => {
+          console.error('[Verify] Persona error:', error);
+          setError('Verification encountered an error. Please try again.');
+          setLaunching(false);
+        },
+      });
+
+      setReady(true);
+    } catch (err) {
+      console.error('[Verify] Failed to initialize Persona:', err);
+      setError('Failed to initialize verification. Please refresh the page.');
+    }
+  }, [scriptLoaded, user, profile, navigate, refresh]);
 
   // DEMO MODE: Auto-approve KYC
   useEffect(() => {
@@ -98,10 +179,9 @@ function VerifyContent() {
     );
   }
 
-  // Use hosted Persona flow via backend function
-  const handleBeginVerification = async () => {
-    if (!profile?.id) {
-      setError('Profile not loaded. Please refresh the page.');
+  const handleBeginVerification = () => {
+    if (!personaClientRef.current) {
+      setError('Verification system not ready. Please refresh the page.');
       return;
     }
 
@@ -109,20 +189,10 @@ function VerifyContent() {
     setError(null);
     
     try {
-      console.log('[Verify] Calling personaStart for profile:', profile.id);
-      const response = await personaStart({ profile_id: profile.id });
-      
-      console.log('[Verify] personaStart response:', response);
-      
-      if (response.data?.persona_url) {
-        // Redirect to Persona hosted verification
-        window.location.href = response.data.persona_url;
-      } else {
-        throw new Error(response.data?.error || 'Failed to get verification URL');
-      }
+      personaClientRef.current.open();
     } catch (err) {
-      console.error('[Verify] Error starting verification:', err);
-      setError('Failed to start verification. Please try again.');
+      console.error('[Verify] Failed to open Persona:', err);
+      setError('Failed to start verification. Please refresh and try again.');
       setLaunching(false);
     }
   };
@@ -130,6 +200,7 @@ function VerifyContent() {
   const handleRetry = () => {
     setError(null);
     setLaunching(false);
+    window.location.reload();
   };
 
   return (
@@ -204,19 +275,30 @@ function VerifyContent() {
             </div>
           )}
 
-          {/* Loading State */}
-          {!ready && !error && (
+          {/* Loading State: Script Loading */}
+          {!scriptLoaded && !error && (
             <div className="text-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
               <h3 className="text-lg font-semibold text-black mb-2">
-                Loading...
+                Loading Verification System...
               </h3>
-              <p className="text-[#666666]">Preparing verification</p>
+              <p className="text-[#666666]">Please wait</p>
+            </div>
+          )}
+
+          {/* Loading State: Client Initializing */}
+          {scriptLoaded && !personaReady && !error && (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-2 border-t-transparent mx-auto mb-4" style={{ borderColor: '#D4AF37', borderTopColor: 'transparent' }}></div>
+              <h3 className="text-lg font-semibold text-black mb-2">
+                Preparing Verification...
+              </h3>
+              <p className="text-[#666666]">Setting up your secure session</p>
             </div>
           )}
 
           {/* Ready to Verify */}
-          {ready && !error && (
+          {personaReady && !error && (
             <div className="text-center py-8">
               <div className="w-20 h-20 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-full flex items-center justify-center mx-auto mb-6 shadow-md">
                 <Shield className="w-12 h-12 text-[#92400E]" />
@@ -253,11 +335,11 @@ function VerifyContent() {
                 {launching ? (
                   <>
                     <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Launching Persona...
+                    Opening...
                   </>
                 ) : (
                   <>
-                    <ExternalLink className="w-5 h-5 mr-2" />
+                    <Shield className="w-5 h-5 mr-2" />
                     Begin Verification
                   </>
                 )}
