@@ -35,11 +35,8 @@ export default function Pricing() {
   }, []);
 
   const getBlockingStep = () => {
-    if (role !== 'investor') return null;
-    if (!onboarded) return 'onboarding';
-    // DEMO MODE: Skip verification and NDA requirements
-    // if (!kycVerified) return 'verification';
-    // if (!hasNDA) return 'nda';
+    if (role === 'investor' && !onboarded) return 'onboarding';
+    if (role === 'agent' && !onboarded) return 'agent-onboarding';
     return null;
   };
 
@@ -73,21 +70,17 @@ export default function Pricing() {
       return;
     }
 
-    if (role === 'investor' && !isInvestorReady) {
-      if (!onboarded) {
-        toast.error("Please complete your investor profile first");
-        navigate(createPageUrl("InvestorOnboarding"));
-      }
-      // DEMO MODE: Skip verification check - users can subscribe without KYC
-      // else if (!kycVerified) {
-      //   toast.error("Please verify your identity first");
-      //   navigate(createPageUrl("Verify"));
-      // }
-      // DEMO MODE: NDA not required for pricing - optional from dashboard only
-      // else if (!hasNDA) {
-      //   toast.error("Please accept the NDA first");
-      //   navigate(createPageUrl("NDA"));
-      // }
+    // Check if investor has completed onboarding
+    if (role === 'investor' && !onboarded) {
+      toast.error("Please complete your investor profile first");
+      navigate(createPageUrl("InvestorOnboarding"));
+      return;
+    }
+    
+    // Check if agent has completed onboarding
+    if (role === 'agent' && !onboarded) {
+      toast.error("Please complete your agent profile first");
+      navigate(createPageUrl("AgentOnboarding"));
       return;
     }
 
@@ -154,12 +147,8 @@ export default function Pricing() {
     switch (blockingStep) {
       case 'onboarding':
         return { icon: Lock, text: "Complete your investor profile to unlock subscriptions", buttonText: "Complete Profile", onClick: () => navigate(createPageUrl("InvestorOnboarding")) };
-      // DEMO MODE: Skip verification requirement
-      // case 'verification':
-      //   return { icon: Shield, text: "Verify your identity to unlock subscriptions", buttonText: "Verify Identity", onClick: () => navigate(createPageUrl("Verify")) };
-      // DEMO MODE: NDA not required for subscriptions
-      // case 'nda':
-      //   return { icon: Lock, text: "Accept the NDA to unlock subscriptions", buttonText: "Sign NDA", onClick: () => navigate(createPageUrl("NDA")) };
+      case 'agent-onboarding':
+        return { icon: Lock, text: "Complete your agent profile to unlock subscriptions", buttonText: "Complete Profile", onClick: () => navigate(createPageUrl("AgentOnboarding")) };
       default:
         return null;
     }
@@ -229,7 +218,7 @@ export default function Pricing() {
       )}
 
       {/* Blocking Step Banner */}
-      {!loading && role === 'investor' && !isInvestorReady && !isPaidSubscriber && bannerConfig && (
+      {!loading && (role === 'investor' || role === 'agent') && !onboarded && !isPaidSubscriber && bannerConfig && (
         <div className="bg-orange-600 text-white py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -365,7 +354,7 @@ export default function Pricing() {
                       <Check className="w-4 h-4" />
                       Your Current Plan
                     </button>
-                  ) : !loading && role === 'investor' && !onboarded && tier.planId !== 'enterprise' ? (
+                  ) : !loading && (role === 'investor' || role === 'agent') && !onboarded && tier.planId !== 'enterprise' ? (
                     <button
                       className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#E5E5E5] text-[#666666] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
