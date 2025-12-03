@@ -184,15 +184,19 @@ function VerifyContent() {
     }
   }, [user, profile, kycVerified, navigate, refresh]);
 
-  // Redirect if already verified
+  // Redirect if already verified - check DATABASE status only, not derived kycVerified
   useEffect(() => {
-    if (user && profile && kycVerified) {
-      console.log('[Verify] Already verified, redirecting...', { 
-        kyc_status: profile.kyc_status,
-        kycVerified 
+    if (user && profile) {
+      const actualKycStatus = profile.kyc_status;
+      console.log('[Verify] Checking KYC status:', { 
+        kyc_status: actualKycStatus,
+        derivedKycVerified: kycVerified,
+        isAdmin: user.role === 'admin' || profile.role === 'admin'
       });
-      // Only redirect if actually verified in database
-      if (profile.kyc_status === 'approved') {
+      
+      // Only redirect if ACTUALLY approved in database (not admin bypass)
+      if (actualKycStatus === 'approved') {
+        console.log('[Verify] KYC is approved in DB, redirecting to dashboard');
         navigate(createPageUrl("Dashboard"), { replace: true });
       }
     }
