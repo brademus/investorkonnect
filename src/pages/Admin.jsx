@@ -647,11 +647,15 @@ Type "RESET" to confirm:`;
 
               <Button 
                 onClick={async () => {
-                  const confirmText = `🔥 NUCLEAR OPTION: This will WIPE ALL related data:
+                  const confirmText = `🔥 NUCLEAR OPTION: This will COMPLETELY DELETE:
 - All Rooms
 - All Messages  
 - All Deals
-- Reset non-admin profiles to blank state
+- All Matches
+- All IntroRequests
+- All NDAs
+- All ProfileVectors
+- All non-admin PROFILES (completely removed from system)
 
 Type "WIPE" to confirm:`;
 
@@ -663,47 +667,72 @@ Type "WIPE" to confirm:`;
 
                   setWipingData(true);
                   try {
-                    // Get non-admin profile IDs
-                    const nonAdminProfileIds = nonAdminProfiles.map(p => p.id);
+                    let deletedCounts = { rooms: 0, messages: 0, deals: 0, matches: 0, intros: 0, ndas: 0, vectors: 0, profiles: 0 };
                     
                     // Delete all rooms
                     const rooms = await base44.entities.Room.filter({});
                     for (const room of rooms) {
                       await base44.entities.Room.delete(room.id);
                     }
+                    deletedCounts.rooms = rooms.length;
                     
                     // Delete all messages
                     const messages = await base44.entities.Message.filter({});
                     for (const msg of messages) {
                       await base44.entities.Message.delete(msg.id);
                     }
+                    deletedCounts.messages = messages.length;
                     
                     // Delete all deals
                     const deals = await base44.entities.Deal.filter({});
                     for (const deal of deals) {
                       await base44.entities.Deal.delete(deal.id);
                     }
+                    deletedCounts.deals = deals.length;
 
-                    // Reset non-admin profiles to blank state
+                    // Delete all matches
+                    try {
+                      const matches = await base44.entities.Match.filter({});
+                      for (const match of matches) {
+                        await base44.entities.Match.delete(match.id);
+                      }
+                      deletedCounts.matches = matches.length;
+                    } catch (e) { console.log('No matches to delete'); }
+
+                    // Delete all intro requests
+                    try {
+                      const intros = await base44.entities.IntroRequest.filter({});
+                      for (const intro of intros) {
+                        await base44.entities.IntroRequest.delete(intro.id);
+                      }
+                      deletedCounts.intros = intros.length;
+                    } catch (e) { console.log('No intros to delete'); }
+
+                    // Delete all NDAs
+                    try {
+                      const ndas = await base44.entities.NDA.filter({});
+                      for (const nda of ndas) {
+                        await base44.entities.NDA.delete(nda.id);
+                      }
+                      deletedCounts.ndas = ndas.length;
+                    } catch (e) { console.log('No NDAs to delete'); }
+
+                    // Delete all profile vectors
+                    try {
+                      const vectors = await base44.entities.ProfileVector.filter({});
+                      for (const vec of vectors) {
+                        await base44.entities.ProfileVector.delete(vec.id);
+                      }
+                      deletedCounts.vectors = vectors.length;
+                    } catch (e) { console.log('No vectors to delete'); }
+
+                    // COMPLETELY DELETE non-admin profiles
                     for (const profile of nonAdminProfiles) {
-                      await base44.entities.Profile.update(profile.id, {
-                        role: 'member',
-                        user_role: 'member',
-                        onboarding_completed_at: null,
-                        onboarding_version: null,
-                        onboarding_step: null,
-                        metadata: null,
-                        onboarding: null,
-                        nda_accepted: false,
-                        nda_accepted_at: null,
-                        kyc_status: 'unverified',
-                        kyc_provider: null,
-                        kyc_inquiry_id: null,
-                        kyc_last_checked: null,
-                      });
+                      await base44.entities.Profile.delete(profile.id);
                     }
+                    deletedCounts.profiles = nonAdminProfiles.length;
 
-                    toast.success(`Wiped ${rooms.length} rooms, ${messages.length} messages, ${deals.length} deals. Reset ${nonAdminProfiles.length} profiles.`);
+                    toast.success(`🔥 Wiped: ${deletedCounts.profiles} profiles, ${deletedCounts.rooms} rooms, ${deletedCounts.messages} messages, ${deletedCounts.deals} deals, ${deletedCounts.matches} matches`);
                     await loadData();
                   } catch (error) {
                     console.error('[Admin] Wipe error:', error);
@@ -724,7 +753,7 @@ Type "WIPE" to confirm:`;
                 ) : (
                   <>
                     <Trash2 className="w-4 h-4 mr-2" />
-                    Wipe All Data (Rooms, Messages, Deals)
+                    Wipe All Data & Delete Profiles
                   </>
                 )}
               </Button>
