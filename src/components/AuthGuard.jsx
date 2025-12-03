@@ -21,10 +21,12 @@ import { Loader2 } from 'lucide-react';
 const PUBLIC_ROUTES = [
   '/',
   '/role',
-  '/postauth',              // OAuth callback must be public
-  '/investor-onboarding',   // Onboarding pages need access before full profile
-  '/agent-onboarding',      // Onboarding pages need access before full profile
+  '/roleselection',
+  '/postauth',
+  '/investoronboarding',
+  '/agentonboarding',
   '/how-it-works',
+  '/howitworks',
   '/investors',
   '/agents',
   '/pricing',
@@ -36,12 +38,17 @@ const PUBLIC_ROUTES = [
   '/security',
   '/nda',
   '/privacy-policy',
+  '/privacypolicy',
   '/terms',
   '/review-policy',
+  '/reviewpolicy',
   '/cookies',
   '/thank-you',
+  '/thankyou',
   '/not-found',
-  '/debug-auth'
+  '/notfound',
+  '/debug-auth',
+  '/debugauth'
 ];
 
 export function AuthGuard({ 
@@ -59,7 +66,7 @@ export function AuthGuard({
   useEffect(() => {
     if (loading) return;
 
-    const currentPath = location.pathname;
+    const currentPath = location.pathname.toLowerCase();
     const isPublicRoute = PUBLIC_ROUTES.some(route => 
       currentPath === route || currentPath.startsWith(route + '/')
     );
