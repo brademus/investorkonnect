@@ -1,3 +1,4 @@
+
 import { base44 } from '@/api/base44Client';
 
 // Typed wrappers for all Base44 functions used by the frontend.
@@ -86,13 +87,4 @@ export const findBestAgents = base44.functions.findBestAgents;
 export const grantAdmin = base44.functions.grantAdmin;
 
 // Persona KYC functions
-export const personaConfig = async (params) => {
-  const response = await fetch('/functions/personaConfig', {
-    method: 'POST',
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params || {})
-  });
-  const data = await response.json();
-  return { data };
-};
+export const personaConfig = base44.functions.personaConfig;
