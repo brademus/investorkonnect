@@ -16,10 +16,8 @@ function ProfileContent() {
   const [refreshing, setRefreshing] = useState(false);
   const [profile, setProfile] = useState(null);
   const [user, setUser] = useState(null);
-  const [subscription, setSubscription] = useState(null); // Added subscription state
-  const [debugInfo, setDebugInfo] = useState("");
+  const [subscription, setSubscription] = useState(null);
   const [error, setError] = useState(null);
-  const [renderKey, setRenderKey] = useState(0); // Force re-render
 
   useEffect(() => {
     loadProfile();
@@ -29,125 +27,41 @@ function ProfileContent() {
     try {
       setLoading(true);
       setError(null);
-      setSubscription(null); // Reset subscription on load
-      
-      console.log('[Profile] 🔄 Loading profile data DIRECTLY from database...');
-      setDebugInfo("Step 1: Getting authenticated user...");
+      setSubscription(null);
 
-      // STEP 1: Get current authenticated user
       const currentUser = await base44.auth.me();
-      console.log('[Profile] ✅ Got authenticated user:', currentUser);
 
       if (!currentUser || !currentUser.id) {
         throw new Error('No authenticated user found. Please log in.');
       }
 
       setUser(currentUser);
-      setDebugInfo(`Step 2: Authenticated as ${currentUser.email} (ID: ${currentUser.id})\nStep 3: Querying Profile entity...`);
-
-      // STEP 2: Query Profile entity DIRECTLY from database - FORCE FRESH DATA
-      console.log('[Profile] 📊 Querying Profile entity with user_id:', currentUser.id);
 
       const profiles = await base44.entities.Profile.filter({
         user_id: currentUser.id
       });
 
-      console.log('[Profile] 📥 Query result:', profiles);
-      console.log('[Profile] 📊 Found', profiles.length, 'profile(s)');
-
       if (!profiles || profiles.length === 0) {
-        console.warn('[Profile] ⚠️ No profile found for user_id:', currentUser.id);
-
-        setDebugInfo(
-          `✅ Authenticated as: ${currentUser.email}\n` +
-          `✅ User ID: ${currentUser.id}\n` +
-          `❌ No profile found in database\n` +
-          `💡 You may need to complete onboarding first`
-        );
-
         setError('No profile found. Please complete your onboarding.');
         setProfile(null);
         setLoading(false);
         return;
       }
 
-      // Got profile!
       const profileData = profiles[0];
-      console.log('[Profile] ✅ Found profile:', profileData);
-      console.log('[Profile] 📋 Profile fields:', Object.keys(profileData));
 
-      // Extract subscription info
       const subInfo = {
         tier: profileData.subscription_tier || 'none',
         status: profileData.subscription_status || 'none'
       };
       setSubscription(subInfo);
 
-      // Build comprehensive debug info
-      const debugLines = [
-        `✅ Successfully loaded profile from database!`,
-        ``,
-        `USER INFO:`,
-        `  Email: ${currentUser.email}`,
-        `  User ID: ${currentUser.id}`,
-        `  Platform Role: ${currentUser.role || 'member'}`, // Updated debug info
-        ``,
-        `PROFILE DATA (from database):`,
-        `  Profile ID: ${profileData.id}`,
-        `  Full Name: ${profileData.full_name || 'NOT SET'}`,
-        `  User Type: ${profileData.user_type || 'NOT SET'}`,
-        `  Platform Role: ${profileData.role || 'NOT SET'}`, // Added Platform Role to debug info
-        `  Email: ${profileData.email || 'NOT SET'}`,
-        `  Phone: ${profileData.phone || 'NOT SET'}`,
-        `  Company: ${profileData.company || 'NOT SET'}`,
-        `  Markets: ${profileData.markets ? JSON.stringify(profileData.markets) : 'NOT SET'}`,
-        `  Goals: ${profileData.goals ? `YES (${profileData.goals.length} chars)` : 'NOT SET'}`,
-        `  Accreditation: ${profileData.accreditation || 'NOT SET'}`,
-        `  Bio: ${profileData.bio || 'NOT SET'}`,
-        `  Headshot URL: ${profileData.headshotUrl || 'NOT SET'}`,
-        `  License Number: ${profileData.licenseNumber || 'NOT SET'}`,
-        `  License State: ${profileData.licenseState || 'NOT SET'}`,
-        `  Broker: ${profileData.broker || 'NOT SET'}`,
-        `  Reputation Score: ${profileData.reputationScore !== undefined ? profileData.reputationScore : 'NOT SET'}`,
-        `  Status: ${profileData.status || 'NOT SET'}`,
-        `  Vetted: ${profileData.vetted ? 'YES' : 'NO'}`,
-        ``,
-        `SUBSCRIPTION:`, // Added Subscription debug info
-        `  Tier: ${subInfo.tier}`,
-        `  Status: ${subInfo.status}`,
-        ``,
-        `NDA & ONBOARDING:`, // Grouped NDA & Onboarding
-        `  NDA Accepted: ${profileData.nda_accepted ? 'YES' : 'NO'}`,
-        `  NDA Accepted At: ${profileData.nda_accepted_at || 'NOT SET'}`,
-        `  Onboarding Completed: ${profileData.onboarding_completed_at || 'NOT SET'}`,
-        `  Created: ${profileData.created_date || 'NOT SET'}`,
-        `  Updated: ${profileData.updated_date || 'NOT SET'}`,
-        ``,
-        `ALL FIELDS: ${Object.keys(profileData).join(', ')}`
-      ];
-
-      setDebugInfo(debugLines.join('\n'));
       setProfile(profileData);
       setError(null);
-      setRenderKey(prev => prev + 1); // Force React to re-render
       setLoading(false);
 
-      console.log('[Profile] ✅ State updated with profile data');
-      console.log('[Profile] Profile state:', profileData);
-
     } catch (error) {
-      console.error('[Profile] ❌ Load error:', error);
-
       setError(`Failed to load profile: ${error.message}`);
-      setDebugInfo(
-        `❌ ERROR OCCURRED:\n` +
-        `\n` +
-        `Error Type: ${error.constructor.name}\n` +
-        `Error Message: ${error.message}\n` +
-        `\n` +
-        `Stack Trace:\n${error.stack}`
-      );
-
       setProfile(null);
       setLoading(false);
     }
@@ -159,57 +73,23 @@ function ProfileContent() {
     setRefreshing(false);
   };
 
-  // Determine onboarding completion status
   const hasCompletedOnboarding = profile?.onboarding_completed_at ? true : false;
-  const isAdmin = profile?.role === 'admin'; // Derived state for admin role
-
-  console.log('[Profile] Render - Loading:', loading, 'Profile exists:', !!profile, 'Error:', !!error);
+  const isAdmin = profile?.role === 'admin';
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
           <p className="text-slate-600">Loading profile...</p>
-          {debugInfo && (
-            <div className="mt-4 p-4 bg-white rounded-lg border border-slate-200 text-left max-w-xl mx-auto">
-              <p className="text-xs text-slate-600 font-mono whitespace-pre-wrap">{debugInfo}</p>
-            </div>
-          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8" key={renderKey}>
+    <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Debug Info Box - ALWAYS VISIBLE */}
-        <div className="mb-6 bg-slate-900 text-white rounded-xl p-6 border-2 border-slate-700">
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="font-bold text-lg">🔍 Debug Info (shows what's in the database)</h3>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="gap-2 bg-white text-slate-900"
-            >
-              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Reload
-            </Button>
-          </div>
-          <pre className="text-xs font-mono whitespace-pre-wrap text-emerald-300 bg-slate-800 rounded p-4 max-h-96 overflow-y-auto">
-            {debugInfo || "Loading..."}
-          </pre>
-          {error && (
-            <div className="mt-3 p-3 bg-red-900 border border-red-700 rounded text-red-100 text-sm">
-              ❌ {error}
-            </div>
-          )}
-        </div>
-
         {/* Error State */}
         {error && !profile ? (
           <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6 mb-6">
