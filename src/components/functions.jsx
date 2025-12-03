@@ -84,4 +84,6 @@ export const fundEscrow = base44.functions.fundEscrow;
 export const releaseEscrow = base44.functions.releaseEscrow;
 export const findBestAgents = base44.functions.findBestAgents;
 export const grantAdmin = base44.functions.grantAdmin;
-export const personaConfig = base44.functions.personaConfig;
+
+// Persona KYC functions
+export const personaConfig = (params) => base44.functions.invoke('personaConfig', params || {});
