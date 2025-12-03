@@ -11,9 +11,25 @@ export function SetupChecklist({ profile, onRefresh }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
+  // Debug: log what profile we're receiving
+  console.log('[SetupChecklist] Profile received:', {
+    id: profile?.id,
+    onboarding_completed_at: profile?.onboarding_completed_at,
+    kyc_status: profile?.kyc_status,
+    nda_accepted: profile?.nda_accepted,
+    subscription_status: profile?.subscription_status,
+    user_role: profile?.user_role
+  });
+
   // Determine user role
   const isInvestor = profile?.user_role === 'investor' || profile?.user_type === 'investor';
   const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
+
+  // Check completion states
+  const onboardingComplete = !!profile?.onboarding_completed_at;
+  const kycComplete = profile?.kyc_status === 'approved';
+  const ndaComplete = !!profile?.nda_accepted;
+  const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
 
   // Core steps that apply to everyone - always visible
   const steps = [
@@ -21,8 +37,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       id: 'onboarding',
       title: 'Complete Onboarding',
       description: 'Set up your profile and preferences',
-      // Check both onboarding_completed_at AND version for strict check, but also accept any completed onboarding
-      completed: !!profile?.onboarding_completed_at,
+      completed: onboardingComplete,
       icon: User,
       link: isAgent ? 'AgentDeepOnboarding' : 'InvestorDeepOnboarding'
     },
@@ -30,7 +45,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       id: 'verify',
       title: 'Verify Identity',
       description: 'Complete KYC verification',
-      completed: profile?.kyc_status === 'approved',
+      completed: kycComplete,
       icon: Shield,
       link: 'Verify'
     },
@@ -38,7 +53,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       id: 'nda',
       title: 'Sign NDA',
       description: 'Review and accept confidentiality agreement',
-      completed: !!profile?.nda_accepted,
+      completed: ndaComplete,
       icon: FileText,
       link: 'NDA'
     },
@@ -46,7 +61,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       id: 'subscription',
       title: 'Select Subscription',
       description: 'Choose a plan to unlock all features',
-      completed: profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing',
+      completed: subscriptionComplete,
       icon: CreditCard,
       link: 'Pricing'
     }
