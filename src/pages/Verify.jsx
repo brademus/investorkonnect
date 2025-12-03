@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 /**
  * IDENTITY VERIFICATION PAGE
- * Uses Persona embedded SDK (inline modal)
+ * Uses Persona embedded SDK with config from backend secrets
  */
 export default function Verify() {
   const navigate = useNavigate();
@@ -18,11 +18,13 @@ export default function Verify() {
   const [error, setError] = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [personaReady, setPersonaReady] = useState(false);
+  const [personaConfig, setPersonaConfig] = useState(null);
 
-  // Step 1: Load user and profile
+  // Step 1: Load user, profile, and Persona config
   useEffect(() => {
     const init = async () => {
       try {
+        // Get current user
         const currentUser = await base44.auth.me();
         if (!currentUser) {
           base44.auth.redirectToLogin(createPageUrl("Verify"));
@@ -30,6 +32,7 @@ export default function Verify() {
         }
         setUser(currentUser);
 
+        // Get profile
         const profiles = await base44.entities.Profile.filter({ user_id: currentUser.id });
         const currentProfile = profiles[0];
         
@@ -58,10 +61,19 @@ export default function Verify() {
         }
 
         setProfile(currentProfile);
+
+        // Get Persona config from backend
+        const configResponse = await base44.functions.personaConfig();
+        if (configResponse.data?.templateId && configResponse.data?.environmentId) {
+          setPersonaConfig(configResponse.data);
+        } else {
+          throw new Error(configResponse.data?.error || 'Failed to load verification config');
+        }
+
         setLoading(false);
       } catch (err) {
         console.error('[Verify] Init error:', err);
-        setError('Failed to load profile. Please refresh.');
+        setError(err.message || 'Failed to load. Please refresh.');
         setLoading(false);
       }
     };
@@ -69,11 +81,10 @@ export default function Verify() {
     init();
   }, [navigate]);
 
-  // Step 2: Load Persona SDK once we have profile
+  // Step 2: Load Persona SDK once we have config
   useEffect(() => {
-    if (!profile || personaReady) return;
+    if (!personaConfig || personaReady) return;
 
-    // Check if already loaded
     if (window.Persona) {
       setPersonaReady(true);
       return;
@@ -90,15 +101,11 @@ export default function Verify() {
       setError('Failed to load verification system. Please refresh.');
     };
     document.head.appendChild(script);
-
-    return () => {
-      // Cleanup if needed
-    };
-  }, [profile, personaReady]);
+  }, [personaConfig, personaReady]);
 
   // Handle verification button click
   const startVerification = () => {
-    if (!window.Persona) {
+    if (!window.Persona || !personaConfig) {
       setError('Verification system not ready. Please refresh.');
       return;
     }
@@ -106,8 +113,8 @@ export default function Verify() {
     setError(null);
 
     const client = new window.Persona.Client({
-      templateId: 'itmpl_8nKgVFgnwC1iGv6ZBHmJaSnn',
-      environmentId: 'env_vSBBJVqRsaNLyvJ7C7vN8C5c',
+      templateId: personaConfig.templateId,
+      environmentId: personaConfig.environmentId,
       referenceId: user.id,
       prefill: {
         emailAddress: user.email,
@@ -115,11 +122,11 @@ export default function Verify() {
         nameLast: profile.full_name?.split(' ').slice(1).join(' ') || '',
       },
       onReady: () => {
-        console.log('[Verify] Persona ready, opening...');
+        console.log('[Verify] Persona ready, opening modal...');
         client.open();
       },
       onComplete: async ({ inquiryId, status }) => {
-        console.log('[Verify] Complete:', { inquiryId, status });
+        console.log('[Verify] Verification complete:', { inquiryId, status });
         setVerifying(true);
 
         try {
@@ -133,13 +140,13 @@ export default function Verify() {
           toast.success('Identity verified successfully!');
           navigate(createPageUrl("Dashboard"), { replace: true });
         } catch (err) {
-          console.error('[Verify] Update failed:', err);
-          setError('Verification completed but failed to save. Please contact support.');
+          console.error('[Verify] Profile update failed:', err);
+          setError('Verification completed but failed to save. Contact support.');
           setVerifying(false);
         }
       },
       onCancel: () => {
-        console.log('[Verify] Cancelled');
+        console.log('[Verify] User cancelled');
       },
       onError: (err) => {
         console.error('[Verify] Persona error:', err);
