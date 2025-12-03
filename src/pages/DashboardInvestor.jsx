@@ -35,10 +35,17 @@ function InvestorDashboardContent() {
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
       });
       if (response.ok) {
         const state = await response.json();
+        console.log('[DashboardInvestor] Profile loaded:', {
+          id: state.profile?.id,
+          onboarding_completed_at: state.profile?.onboarding_completed_at,
+          kyc_status: state.profile?.kyc_status,
+          nda_accepted: state.profile?.nda_accepted
+        });
         setProfile(state.profile);
         
         // Load suggested agents
@@ -52,6 +59,7 @@ function InvestorDashboardContent() {
       }
       setLoading(false);
     } catch (error) {
+      console.error('[DashboardInvestor] Error loading profile:', error);
       setLoading(false);
     }
   };
