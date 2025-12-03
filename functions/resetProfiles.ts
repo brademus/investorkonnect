@@ -277,15 +277,34 @@ Deno.serve(async (req) => {
     
     for (const profile of profilesToDelete) {
       try {
-        console.log(`  → Deleting: ${profile.email} (id: ${profile.id})`);
+        console.log(`  → Deleting profile: ${profile.email} (id: ${profile.id})`);
         await base44.asServiceRole.entities.Profile.delete(profile.id);
         stats.profiles++;
       } catch (err) {
-        console.log(`    ❌ FAILED to delete ${profile.email}: ${err.message}`);
+        console.log(`    ❌ FAILED to delete profile ${profile.email}: ${err.message}`);
       }
     }
     
     console.log('  ✓ Deleted', stats.profiles, 'profiles\n');
+
+    // ========================================
+    // STEP 5b: DELETE USER RECORDS
+    // ========================================
+    console.log('STEP 5b: Deleting User records (complete wipe)...');
+    
+    stats.users = 0;
+    
+    for (const userId of nonAdminUserIdArray) {
+      try {
+        console.log(`  → Deleting user: ${userId}`);
+        await base44.asServiceRole.entities.User.delete(userId);
+        stats.users++;
+      } catch (err) {
+        console.log(`    ❌ FAILED to delete user ${userId}: ${err.message}`);
+      }
+    }
+    
+    console.log('  ✓ Deleted', stats.users, 'users\n');
     
     // ========================================
     // STEP 6: VERIFY DELETION
