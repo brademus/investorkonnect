@@ -119,15 +119,33 @@ export function SetupChecklist({ profile, onRefresh }) {
             const Icon = step.icon;
             const isNext = nextStep?.id === step.id;
             
+            // Determine if step is locked (previous steps not complete)
+            const prevStepsComplete = steps.slice(0, idx).every(s => s.completed);
+            const isLocked = !step.completed && !prevStepsComplete;
+            
+            const handleClick = () => {
+              if (isLocked) {
+                // Navigate to the first incomplete step
+                const firstIncomplete = steps.find(s => !s.completed);
+                if (firstIncomplete) {
+                  navigate(createPageUrl(firstIncomplete.link));
+                }
+              } else {
+                navigate(createPageUrl(step.link));
+              }
+            };
+            
             return (
               <button
                 key={step.id}
-                onClick={() => navigate(createPageUrl(step.link))}
+                onClick={handleClick}
                 className={`group flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all duration-200 cursor-pointer ${
                   step.completed
                     ? 'bg-[#D1FAE5] border border-[#A7F3D0]'
                     : isNext
                     ? 'bg-[#FFFBEB] border border-[#D3A029]'
+                    : isLocked
+                    ? 'bg-slate-100 border border-transparent opacity-60'
                     : 'bg-slate-50 border border-transparent hover:border-[#D3A029] hover:bg-[#FFFBEB]'
                 }`}
               >
@@ -149,12 +167,12 @@ export function SetupChecklist({ profile, onRefresh }) {
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <p className={`text-xs font-medium truncate ${
-                    step.completed ? 'text-[#065F46]' : 'text-[#111827]'
+                    step.completed ? 'text-[#065F46]' : isLocked ? 'text-slate-400' : 'text-[#111827]'
                   }`}>
                     {step.title}
                   </p>
                   <p className="text-[10px] text-[#6B7280] truncate">
-                    {step.completed ? 'Done ✓' : isNext ? 'Up next' : 'Click to start'}
+                    {step.completed ? 'Done ✓' : isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'}
                   </p>
                 </div>
               </button>
