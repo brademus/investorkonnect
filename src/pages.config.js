@@ -33,7 +33,6 @@ import Vetting from './pages/Vetting';
 import AdminSeed from './pages/AdminSeed';
 import AgentProfile from './pages/AgentProfile';
 import Admin from './pages/Admin';
-import Profile from './pages/Profile';
 import DashboardInvestor from './pages/DashboardInvestor';
 import DashboardAgent from './pages/DashboardAgent';
 import InvestorHome from './pages/InvestorHome';
@@ -102,7 +101,6 @@ export const PAGES = {
     "AdminSeed": AdminSeed,
     "AgentProfile": AgentProfile,
     "Admin": Admin,
-    "Profile": Profile,
     "DashboardInvestor": DashboardInvestor,
     "DashboardAgent": DashboardAgent,
     "InvestorHome": InvestorHome,
