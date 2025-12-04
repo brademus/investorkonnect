@@ -77,17 +77,53 @@ export default function DealWizard() {
 
   useEffect(() => {
     document.title = "Submit New Deal - Investor Konnect";
-    checkAuth();
+    loadExistingData();
   }, []);
 
-  const checkAuth = async () => {
+  const loadExistingData = async () => {
     try {
       const user = await base44.auth.me();
       if (!user) {
         toast.error('Please sign in to submit a deal');
         navigate(createPageUrl("Home"));
+        return;
+      }
+      
+      // Load existing buy box data from profile
+      const emailLower = user.email.toLowerCase().trim();
+      let profiles = await base44.entities.Profile.filter({ email: emailLower });
+      if (!profiles || profiles.length === 0) {
+        profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      }
+      const profile = profiles[0];
+      
+      if (profile?.investor?.buy_box) {
+        const buyBox = profile.investor.buy_box;
+        setFormData(prev => ({
+          ...prev,
+          propertyAddress: buyBox.propertyAddress || '',
+          city: buyBox.city || '',
+          state: buyBox.state || '',
+          zip: buyBox.zip || '',
+          propertyType: buyBox.propertyType || '',
+          priceMin: buyBox.priceMin || '',
+          priceMax: buyBox.priceMax || '',
+          investmentStrategy: buyBox.investmentStrategy || '',
+          targetReturn: buyBox.targetReturn || '',
+          holdPeriod: buyBox.holdPeriod || '',
+          strategyNotes: buyBox.strategyNotes || '',
+          totalBudget: buyBox.totalBudget || '',
+          downPayment: buyBox.downPayment || '',
+          financingType: buyBox.financingType || '',
+          timeline: buyBox.timeline || '',
+          mustHaves: buyBox.mustHaves || [],
+          niceToHaves: buyBox.niceToHaves || [],
+          dealBreakers: buyBox.dealBreakers || '',
+          additionalNotes: buyBox.additionalNotes || ''
+        }));
       }
     } catch (err) {
+      console.error('Error loading data:', err);
       navigate(createPageUrl("Home"));
     }
   };
