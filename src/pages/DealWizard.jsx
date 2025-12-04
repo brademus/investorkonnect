@@ -250,9 +250,9 @@ export default function DealWizard() {
         }
       }
       
-      // Wait for animation then navigate to Matches page to see suggested agents
+      // Wait for animation then navigate to AgentDirectory to see suggested agents
       setTimeout(() => {
-        navigate(createPageUrl("Matches"), { replace: true });
+        navigate(createPageUrl("AgentDirectory"), { replace: true });
       }, 2000);
       
     } catch (error) {
