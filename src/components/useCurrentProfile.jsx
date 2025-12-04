@@ -198,8 +198,9 @@ export function useCurrentProfile() {
           role = 'member';
         }
 
-        // STEP 4: Determine onboarded status - simplified: just check if onboarding_completed_at exists
-        // Previously required specific versions, but that caused issues when users completed onboarding
+        // STEP 4: Determine onboarded status
+        // onboarding_completed_at is ONLY set when user completes the full 8-step deep onboarding
+        // Basic 3-step onboarding sets onboarding_step='basic_complete' but NOT onboarding_completed_at
         let onboarded = !!profile?.onboarding_completed_at;
 
         // needsOnboarding = user has a role but hasn't completed onboarding (EXCEPT admins)

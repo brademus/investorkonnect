@@ -96,6 +96,8 @@ export default function InvestorOnboarding() {
         throw new Error('Profile not found');
       }
 
+      // Save basic info but DON'T mark onboarding as complete
+      // User must complete full 8-step deep onboarding from Dashboard checklist
       await base44.entities.Profile.update(profile.id, {
         full_name: formData.full_name,
         phone: formData.phone,
@@ -104,9 +106,8 @@ export default function InvestorOnboarding() {
         user_role: 'investor',
         target_state: formData.primary_state,
         markets: [formData.primary_state].filter(Boolean),
-        onboarding_completed_at: new Date().toISOString(),
-        onboarding_version: 'v2',
-        onboarding_step: 'simple_complete',
+        // NOT setting onboarding_completed_at - that happens in deep onboarding
+        onboarding_step: 'basic_complete',
         metadata: {
           ...profile.metadata,
           basicProfile: {

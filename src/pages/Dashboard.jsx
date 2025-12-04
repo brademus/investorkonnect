@@ -43,6 +43,7 @@ export default function Dashboard() {
 
         const role = userProfile?.user_role;
         const hasRole = role && role !== 'member';
+        const hasBasicOnboarding = userProfile?.onboarding_step === 'basic_complete' || userProfile?.onboarding_step === 'deep_complete';
         const isOnboarded = !!userProfile?.onboarding_completed_at;
 
         if (!hasRole) {
@@ -51,8 +52,8 @@ export default function Dashboard() {
           return;
         }
 
-        if (!isOnboarded) {
-          // Has role but not onboarded
+        if (!hasBasicOnboarding) {
+          // Has role but hasn't done basic 3-step onboarding yet
           if (role === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (role === 'agent') {
@@ -60,6 +61,9 @@ export default function Dashboard() {
           }
           return;
         }
+
+        // If they've done basic but not deep onboarding, show Dashboard with checklist
+        // (isOnboarded will be false, so checklist will show "Complete Profile" step)
 
         // All good - show dashboard
         setProfile(userProfile);
