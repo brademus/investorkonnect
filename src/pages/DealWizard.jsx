@@ -204,16 +204,30 @@ export default function DealWizard() {
         sessionStorage.setItem('user_deals', JSON.stringify(storedDeals));
       }
       
-      // Also save to profile for matching
+      // Save buy box and deal submission to profile for matching
       try {
-        await upsertInvestorOnboarding({
-          deal_submission: {
-            ...formData,
-            submitted_at: new Date().toISOString()
-          }
-        });
+        const user = await base44.auth.me();
+        const emailLower = user.email.toLowerCase().trim();
+        let profiles = await base44.entities.Profile.filter({ email: emailLower });
+        if (!profiles || profiles.length === 0) {
+          profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        }
+        const profile = profiles[0];
+        
+        if (profile) {
+          await base44.entities.Profile.update(profile.id, {
+            investor: {
+              ...profile.investor,
+              buy_box: { ...formData },
+              deal_submission: {
+                ...formData,
+                submitted_at: new Date().toISOString()
+              }
+            }
+          });
+        }
       } catch (saveErr) {
-        console.log('Could not save deal submission:', saveErr.message);
+        console.log('Could not save buy box:', saveErr.message);
       }
 
       toast.success('Deal submitted successfully!');
