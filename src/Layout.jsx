@@ -97,7 +97,7 @@ function LayoutContent({ children }) {
                 </Link>
               )}
 
-              <Link to={createPageUrl("Profile")}>
+              <Link to={createPageUrl("AccountProfile")}>
                 <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#F3F4F6] hover:bg-[#E5E7EB]">
                   <User className="w-4 h-4 text-[#374151]" />
                 </button>

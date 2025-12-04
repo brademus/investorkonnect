@@ -107,9 +107,9 @@ function AccountProfileContent() {
           }
         }, 500);
       } else {
-        // No role change - go back to MyProfile
+        // No role change - go back to Dashboard
         setTimeout(() => {
-          navigate(createPageUrl("MyProfile"));
+          navigate(createPageUrl("Dashboard"));
         }, 500);
       }
 
@@ -139,9 +139,9 @@ function AccountProfileContent() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to={createPageUrl("Profile")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+          <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
             <ArrowLeft className="w-4 h-4" />
-            Back to Profile
+            Dashboard
           </Link>
           <div className="flex items-center gap-3 mb-2">
             <User className="w-8 h-8 text-[#D3A029]" />
@@ -297,7 +297,7 @@ function AccountProfileContent() {
                   </>
                 )}
               </Button>
-              <Link to={createPageUrl("Profile")}>
+              <Link to={createPageUrl("Dashboard")}>
                 <Button
                   type="button"
                   variant="outline"
