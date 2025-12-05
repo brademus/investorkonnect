@@ -22,17 +22,44 @@ function AgentDashboardContent() {
 
   const loadProfile = async () => {
     try {
+      // First try the /functions/me endpoint
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
-        cache: 'no-store'
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
+        }
       });
+      
       if (response.ok) {
         const state = await response.json();
-        setProfile(state.profile);
+        if (state.profile) {
+          console.log('[DashboardAgent] Profile from /functions/me:', state.profile);
+          setProfile(state.profile);
+          setLoading(false);
+          return;
+        }
+      }
+      
+      // Fallback: fetch profile directly from entity
+      const { base44 } = await import('@/api/base44Client');
+      const user = await base44.auth.me();
+      if (user) {
+        const emailLower = user.email.toLowerCase().trim();
+        let profiles = await base44.entities.Profile.filter({ email: emailLower });
+        if (!profiles?.length) {
+          profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        }
+        if (profiles?.length > 0) {
+          console.log('[DashboardAgent] Profile from direct fetch:', profiles[0]);
+          setProfile(profiles[0]);
+        }
       }
       setLoading(false);
     } catch (error) {
+      console.error('[DashboardAgent] Error loading profile:', error);
       setLoading(false);
     }
   };
