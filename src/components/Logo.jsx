@@ -24,7 +24,7 @@ export function Logo({ size = 'default', showText = true, linkTo = '/', classNam
       
       {/* Company Name */}
       {showText && (
-        <span className={`font-bold text-[#111827] ${sizeClasses.text} hidden sm:block`}>
+        <span className={`font-bold text-[#E5C37F] ${sizeClasses.text} hidden sm:block`}>
           Investor Konnect
         </span>
       )}
