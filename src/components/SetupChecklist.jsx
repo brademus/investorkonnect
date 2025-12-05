@@ -31,8 +31,8 @@ export function SetupChecklist({ profile, onRefresh }) {
   const ndaComplete = !!profile?.nda_accepted;
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
 
-  // Core steps that apply to everyone - always visible
-  const steps = [
+  // Core steps - subscription only for investors, agents are always free
+  const baseSteps = [
     {
       id: 'onboarding',
       title: 'Complete Onboarding',
@@ -56,7 +56,12 @@ export function SetupChecklist({ profile, onRefresh }) {
       completed: ndaComplete,
       icon: FileText,
       link: 'NDA'
-    },
+    }
+  ];
+
+  // Only add subscription step for investors, not agents
+  const steps = isAgent ? baseSteps : [
+    ...baseSteps,
     {
       id: 'subscription',
       title: 'Select Subscription',
