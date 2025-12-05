@@ -144,13 +144,13 @@ export default function Home() {
       </section>
 
       {/* Why Section */}
-      <section className="py-16 px-4 bg-white">
+      <section className="py-16 px-4 bg-[#0F0F0F]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-[#111827] mb-4">
+            <h2 className="text-4xl font-bold text-[#E5C37F] mb-4">
               Why investors choose our network
             </h2>
-            <p className="text-lg text-[#4B5563]">
+            <p className="text-lg text-[#A6A6A6]">
               We've built the ecosystem you need to scale your portfolio efficiently.
             </p>
           </div>
@@ -190,12 +190,12 @@ export default function Home() {
             ].map((feature, idx) => {
               const Icon = feature.icon;
               return (
-                <div key={idx} className="bg-white border border-gray-200 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                  <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center mb-4">
-                    <Icon className="w-6 h-6 text-[#D3A029]" />
+                <div key={idx} className="bg-[#1A1A1A] border border-[#333333] rounded-2xl p-6 hover:shadow-[0_10px_25px_rgba(229,195,127,0.2)] hover:border-[#E5C37F] transition-all">
+                  <div className="w-12 h-12 bg-[#E5C37F]/15 rounded-xl flex items-center justify-center mb-4">
+                    <Icon className="w-6 h-6 text-[#E5C37F]" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#111827] mb-2">{feature.title}</h3>
-                  <p className="text-[#4B5563]">{feature.desc}</p>
+                  <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">{feature.title}</h3>
+                  <p className="text-[#A6A6A6]">{feature.desc}</p>
                 </div>
               );
             })}
