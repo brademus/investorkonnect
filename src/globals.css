@@ -215,17 +215,20 @@ html {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: #D4AF37;
-    color: #111827;
-    font-weight: 500;
+    background: linear-gradient(135deg, #E5C37F 0%, #C9A961 100%);
+    color: #0F0F0F;
+    font-weight: 600;
     border-radius: 9999px;
     padding: 0.55rem 1.35rem;
     transition: all 200ms ease;
     border: none;
+    font-family: 'Cormorant Garamond', serif;
+    letter-spacing: 0.02em;
   }
 
   .ik-btn-gold:hover {
-    background-color: #B8941F;
+    background: linear-gradient(135deg, #F0D699 0%, #D4AF37 100%);
+    box-shadow: 0 8px 20px rgba(229, 195, 127, 0.4);
   }
 
   .ik-btn-gold:focus-visible {
