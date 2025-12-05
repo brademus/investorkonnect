@@ -311,20 +311,21 @@ html {
     justify-content: center;
     gap: 0.35rem;
     border-radius: 9999px;
-    border: 1px solid #E5E7EB;
-    background-color: #FFFFFF;
-    color: #111827;
+    border: 1px solid #333333;
+    background-color: transparent;
+    color: #FAFAFA;
     font-weight: 500;
     padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
+    font-family: 'Cormorant Garamond', serif;
     transition: background-color 150ms ease, border-color 150ms ease, transform 120ms ease, box-shadow 150ms ease;
   }
 
   .ik-btn-outline:hover {
-    background-color: #F9FAFB;
-    border-color: #D3A029;
+    background-color: #1A1A1A;
+    border-color: #E5C37F;
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgba(15, 23, 42, 0.1);
+    box-shadow: 0 10px 25px rgba(229, 195, 127, 0.2);
   }
 
   /* Dashboard quick-link tiles */
