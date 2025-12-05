@@ -195,10 +195,9 @@ html {
 
   .ik-shell {
     min-height: 100vh;
-    background-color: #FAF7F2;
-    color: #111827;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
-      "Inter", "Segoe UI", sans-serif;
+    background-color: #0F0F0F;
+    color: #FAFAFA;
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
 
   .ik-card-hover {
