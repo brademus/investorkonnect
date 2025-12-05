@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { introCreate, ndaStatus, createDealRoom } from "@/components/functions";
@@ -15,10 +15,8 @@ import {
 import { toast } from "sonner";
 
 export default function AgentProfile() {
-  const { id } = useParams();
-  const [searchParams] = React.useState(() => new URLSearchParams(window.location.search));
-  const agentIdFromQuery = searchParams.get("id");
-  const agentId = id || agentIdFromQuery;
+  const urlParams = new URLSearchParams(window.location.search);
+  const agentId = urlParams.get("id");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
