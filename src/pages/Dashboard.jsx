@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import DashboardInvestor from "./DashboardInvestor";
-import DashboardAgent from "./DashboardAgent";
+import AgentHome from "./AgentHome";
 
 /**
  * DASHBOARD - Shows role-specific dashboard
@@ -92,7 +92,7 @@ export default function Dashboard() {
   }
 
   if (profile?.user_role === 'agent') {
-    return <DashboardAgent />;
+    return <AgentHome />;
   }
 
   // Fallback
