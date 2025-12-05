@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import DashboardInvestor from "./DashboardInvestor";
-import AgentHome from "./AgentHome";
+import DashboardAgent from "./DashboardAgent";
 
 /**
  * DASHBOARD - Shows role-specific dashboard
@@ -43,7 +43,7 @@ export default function Dashboard() {
 
         const role = userProfile?.user_role;
         const hasRole = role && role !== 'member';
-        const hasBasicOnboarding = ['basic_complete', 'deep_complete', 'simple_complete', 'profile_complete'].includes(userProfile?.onboarding_step);
+        const hasBasicOnboarding = userProfile?.onboarding_step === 'basic_complete' || userProfile?.onboarding_step === 'deep_complete';
         const isOnboarded = !!userProfile?.onboarding_completed_at;
 
         if (!hasRole) {
@@ -92,7 +92,7 @@ export default function Dashboard() {
   }
 
   if (profile?.user_role === 'agent') {
-    return <AgentHome />;
+    return <DashboardAgent />;
   }
 
   // Fallback

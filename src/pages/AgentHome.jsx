@@ -139,7 +139,7 @@ export default function AgentHome() {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-[#991B1B] mb-2">Complete your agent onboarding</h3>
                   <p className="text-sm text-[#B91C1C] mb-4">Complete the new questions so we can verify your profile and match you with the right investors.</p>
-                  <button onClick={() => navigate(createPageUrl("AgentDeepOnboarding"))} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DC2626] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#B91C1C] transition-all">
+                  <button onClick={() => navigate(createPageUrl("AgentOnboarding"))} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DC2626] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#B91C1C] transition-all">
                     Continue onboarding <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
@@ -293,7 +293,7 @@ export default function AgentHome() {
                 <div className="text-center py-10">
                   <AlertCircle className="w-12 h-12 mx-auto mb-3 text-[#FCD34D]" />
                   <p className="text-sm text-[#6B7280] mb-3">Complete onboarding to access investors</p>
-                  <button onClick={() => navigate(createPageUrl("AgentDeepOnboarding"))} className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Complete Onboarding</button>
+                  <button onClick={() => navigate(createPageUrl("AgentOnboarding"))} className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Complete Onboarding</button>
                 </div>
               ) : needsKyc ? (
                 <div className="text-center py-10">

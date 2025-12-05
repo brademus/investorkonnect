@@ -34,6 +34,7 @@ import AdminSeed from './pages/AdminSeed';
 import AgentProfile from './pages/AgentProfile';
 import Admin from './pages/Admin';
 import DashboardInvestor from './pages/DashboardInvestor';
+import DashboardAgent from './pages/DashboardAgent';
 import InvestorHome from './pages/InvestorHome';
 import AgentHome from './pages/AgentHome';
 import InvestorBuyBox from './pages/InvestorBuyBox';
@@ -101,6 +102,7 @@ export const PAGES = {
     "AgentProfile": AgentProfile,
     "Admin": Admin,
     "DashboardInvestor": DashboardInvestor,
+    "DashboardAgent": DashboardAgent,
     "InvestorHome": InvestorHome,
     "AgentHome": AgentHome,
     "InvestorBuyBox": InvestorBuyBox,
