@@ -103,21 +103,36 @@ export default function AgentOnboarding() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      // If profile not loaded from hook, fetch it directly
-      let profileToUpdate = profile;
+      // Get authenticated user
+      const authUser = await base44.auth.me();
+      if (!authUser) {
+        throw new Error('Not authenticated');
+      }
+      
+      // Find profile by email (canonical) or user_id
+      const emailLower = authUser.email.toLowerCase().trim();
+      let profiles = await base44.entities.Profile.filter({ email: emailLower });
+      
+      if (!profiles || profiles.length === 0) {
+        profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
+      }
+      
+      let profileToUpdate = profiles[0];
+      
+      // If no profile exists, create one
       if (!profileToUpdate) {
-        const authUser = await base44.auth.me();
-        if (!authUser) {
-          throw new Error('Not authenticated');
-        }
-        const profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
-        profileToUpdate = profiles[0];
-        if (!profileToUpdate) {
-          throw new Error('Profile not found');
-        }
+        console.log('[AgentOnboarding] No profile found, creating new one');
+        profileToUpdate = await base44.entities.Profile.create({
+          user_id: authUser.id,
+          email: emailLower,
+          full_name: formData.full_name || authUser.full_name || '',
+          user_role: 'agent',
+          user_type: 'agent'
+        });
+        console.log('[AgentOnboarding] Created new profile:', profileToUpdate.id);
       }
 
-      // Save basic info and mark onboarding as complete
+      // Build the complete update data
       const updateData = {
         full_name: formData.full_name,
         phone: formData.phone,
@@ -126,7 +141,7 @@ export default function AgentOnboarding() {
         license_number: formData.license_number,
         license_state: formData.license_state,
         markets: formData.markets,
-        target_state: formData.license_state,
+        target_state: formData.license_state || formData.markets[0] || '',
         onboarding_step: 'basic_complete',
         onboarding_completed_at: new Date().toISOString(),
         onboarding_version: 'agent-v1',
@@ -137,26 +152,25 @@ export default function AgentOnboarding() {
           markets: formData.markets,
           experience_years: parseInt(formData.experience_years) || 0,
           bio: formData.bio,
-          investor_friendly: true
+          investor_friendly: true,
+          brokerage: profileToUpdate.agent?.brokerage || ''
         }
       };
       
-      console.log('[AgentOnboarding] Saving profile with data:', updateData);
-      await base44.entities.Profile.update(profileToUpdate.id, updateData);
-      console.log('[AgentOnboarding] Profile saved successfully');
+      console.log('[AgentOnboarding] Saving profile ID:', profileToUpdate.id);
+      console.log('[AgentOnboarding] Update data:', JSON.stringify(updateData, null, 2));
+      
+      const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
+      console.log('[AgentOnboarding] Profile saved successfully:', result);
 
-      toast.success("Welcome to Investor Konnect!");
+      toast.success("Profile saved! Welcome to Investor Konnect!");
       
-      // Refresh the profile data before navigating
-      if (refresh) {
-        await refresh();
-      }
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Force a full page reload to refresh all state
+      await new Promise(resolve => setTimeout(resolve, 500));
       window.location.href = createPageUrl("Dashboard");
     } catch (error) {
-      console.error('Agent onboarding error:', error);
-      toast.error("Failed to save. Please try again.");
+      console.error('[AgentOnboarding] Error saving profile:', error);
+      toast.error("Failed to save: " + (error.message || "Please try again."));
       setSaving(false);
     }
   };
