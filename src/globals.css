@@ -66,37 +66,37 @@ html {
   animation: slideIn 0.2s ease-out;
 }
 
-/* ====== Design Tokens (Investor Konnect - Airbnb Style) ====== */
+/* ====== Design Tokens (Dark Luxury Theme) ====== */
 @layer base {
   :root {
-    /* Backgrounds */
-    --background: 42 16% 97%; /* #FAF7F2 cream */
-    --foreground: 220 26% 14%; /* #111827 dark */
+    /* Backgrounds - Dark luxury */
+    --background: 0 0% 6%; /* #0F0F0F very dark */
+    --foreground: 0 0% 98%; /* #FAFAFA light */
     
-    /* Cards */
-    --card: 0 0% 100%; /* White */
-    --card-foreground: 220 26% 14%;
+    /* Cards - Slightly lighter dark */
+    --card: 0 0% 10%; /* #1A1A1A */
+    --card-foreground: 0 0% 98%;
     
-    /* Primary (Gold from logo) */
-    --primary: 45 65% 52%; /* #D4AF37 */
-    --primary-foreground: 0 0% 100%;
+    /* Primary - Champagne Gold */
+    --primary: 43 74% 66%; /* #E5C37F */
+    --primary-foreground: 0 0% 10%;
     
     /* Secondary */
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 26% 14%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
     
     /* Muted */
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 9% 46%; /* #6B7280 */
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%; /* #A6A6A6 */
     
-    /* Accent (Amber) */
-    --accent: 48 96% 89%; /* #FEF3C7 */
-    --accent-foreground: 220 26% 14%;
+    /* Accent - Gold */
+    --accent: 43 74% 66%; /* #E5C37F */
+    --accent-foreground: 0 0% 10%;
     
-    /* Borders */
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 45 65% 52%; /* Logo gold ring */
+    /* Borders - Subtle dark */
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 43 74% 66%;
     
     /* Destructive */
     --destructive: 0 84% 60%;
@@ -110,16 +110,18 @@ html {
   }
 
   body {
-    background-color: #FAF7F2;
+    background-color: #0F0F0F;
     @apply text-foreground;
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     @apply font-semibold;
-    color: #111827;
+    color: #E5C37F;
+    letter-spacing: 0.02em;
   }
 }
 
