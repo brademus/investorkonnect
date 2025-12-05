@@ -286,7 +286,7 @@ export default function AgentProfile() {
               </div>
 
               {/* Stats */}
-              <div className="grid grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
                 <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
                     <Star className="w-4 h-4 text-[#D3A029] fill-[#D3A029]" />
@@ -300,10 +300,10 @@ export default function AgentProfile() {
                   <div className="flex items-center gap-2 mb-1">
                     <Award className="w-4 h-4 text-[#D3A029]" />
                     <span className="text-2xl font-bold text-gray-900">
-                      {profile.reputationScore || agentData.deals_closed || 0}
+                      {agentData.deals_closed || agentData.investment_deals_last_12m || 0}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">{profile.reputationScore ? 'Reputation Score' : 'Deals Closed'}</p>
+                  <p className="text-xs text-gray-600">Deals Closed</p>
                 </div>
                 <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
                   <div className="flex items-center gap-2 mb-1">
@@ -313,6 +313,15 @@ export default function AgentProfile() {
                     </span>
                   </div>
                   <p className="text-xs text-gray-600">Years Experience</p>
+                </div>
+                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Briefcase className="w-4 h-4 text-[#D3A029]" />
+                    <span className="text-2xl font-bold text-gray-900">
+                      {agentData.investor_clients_count || 0}
+                    </span>
+                  </div>
+                  <p className="text-xs text-gray-600">Investor Clients</p>
                 </div>
               </div>
 
@@ -343,7 +352,17 @@ export default function AgentProfile() {
                       <p className="text-sm font-medium text-gray-900">License</p>
                       <p className="text-gray-600">
                         {agentData.license_number || profile.licenseNumber} ({agentData.license_state || profile.licenseState})
+                        {agentData.license_type && <span className="text-gray-400"> • {agentData.license_type}</span>}
                       </p>
+                    </div>
+                  </div>
+                )}
+                {agentData.typical_deal_price_range && (
+                  <div className="flex items-start gap-3">
+                    <Award className="w-5 h-5 text-[#D3A029] mt-0.5" />
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">Typical Deal Size</p>
+                      <p className="text-gray-600">{agentData.typical_deal_price_range}</p>
                     </div>
                   </div>
                 )}
@@ -363,11 +382,170 @@ export default function AgentProfile() {
             </div>
           )}
 
+          {/* Investment Strategies */}
+          {agentData.investment_strategies?.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Investment Strategies</h3>
+              <div className="flex flex-wrap gap-2">
+                {agentData.investment_strategies.map((strategy, idx) => (
+                  <span key={idx} className="px-3 py-1.5 bg-[#D1FAE5] text-[#065F46] rounded-full text-sm font-medium">{strategy}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Bio */}
           {(profile.bio || agentData.bio) && (
             <div className="mt-6 pt-6 border-t border-gray-100">
               <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
               <p className="text-gray-700 leading-relaxed">{profile.bio || agentData.bio}</p>
+            </div>
+          )}
+
+          {/* What Sets Them Apart */}
+          {agentData.what_sets_you_apart && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">What Sets Them Apart</h3>
+              <p className="text-gray-700 leading-relaxed">{agentData.what_sets_you_apart}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Experience & Expertise */}
+        <div className="ik-card p-8 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Experience & Expertise</h2>
+          
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Left Column */}
+            <div className="space-y-4">
+              {agentData.investor_experience_years && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500 mb-1">Investor Experience</p>
+                  <p className="font-semibold text-gray-900">{agentData.investor_experience_years}+ years working with investors</p>
+                </div>
+              )}
+              {agentData.investment_deals_last_12m && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500 mb-1">Recent Activity</p>
+                  <p className="font-semibold text-gray-900">{agentData.investment_deals_last_12m} investment deals in last 12 months</p>
+                </div>
+              )}
+              {agentData.investor_types_served?.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500 mb-2">Investor Types Served</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {agentData.investor_types_served.map((type, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-700">{type}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {agentData.metrics_used?.length > 0 && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500 mb-2">Investment Metrics Used</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {agentData.metrics_used.map((metric, idx) => (
+                      <span key={idx} className="px-2 py-1 bg-[#FEF3C7] border border-[#FDE68A] rounded-md text-xs text-[#92400E]">{metric}</span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column */}
+            <div className="space-y-4">
+              {agentData.personally_invests && (
+                <div className="p-4 bg-[#D1FAE5] border border-[#A7F3D0] rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="w-4 h-4 text-[#065F46]" />
+                    <p className="font-semibold text-[#065F46]">Active Investor</p>
+                  </div>
+                  {agentData.personal_investing_notes && (
+                    <p className="text-sm text-[#047857] mt-2">{agentData.personal_investing_notes}</p>
+                  )}
+                </div>
+              )}
+              {agentData.sources_off_market && (
+                <div className="p-4 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl">
+                  <div className="flex items-center gap-2 mb-1">
+                    <CheckCircle className="w-4 h-4 text-[#92400E]" />
+                    <p className="font-semibold text-[#92400E]">Sources Off-Market Deals</p>
+                  </div>
+                  {agentData.off_market_methods_notes && (
+                    <p className="text-sm text-[#B45309] mt-2">{agentData.off_market_methods_notes}</p>
+                  )}
+                </div>
+              )}
+              {agentData.primary_neighborhoods_notes && (
+                <div className="p-4 bg-gray-50 rounded-xl">
+                  <p className="text-sm text-gray-500 mb-1">Areas of Expertise</p>
+                  <p className="text-gray-700">{agentData.primary_neighborhoods_notes}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Case Study */}
+          {agentData.case_study_best_deal && (
+            <div className="mt-6 p-5 bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-xl">
+              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#D3A029]" />
+                Success Story
+              </h4>
+              <p className="text-gray-700">{agentData.case_study_best_deal}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Working Style & Communication */}
+        <div className="ik-card p-8 mb-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-6">Working Style</h2>
+          
+          <div className="grid md:grid-cols-3 gap-4">
+            {agentData.typical_response_time && (
+              <div className="p-4 bg-gray-50 rounded-xl text-center">
+                <p className="text-sm text-gray-500 mb-1">Response Time</p>
+                <p className="font-semibold text-gray-900">{agentData.typical_response_time}</p>
+              </div>
+            )}
+            {agentData.update_frequency && (
+              <div className="p-4 bg-gray-50 rounded-xl text-center">
+                <p className="text-sm text-gray-500 mb-1">Update Frequency</p>
+                <p className="font-semibold text-gray-900">{agentData.update_frequency}</p>
+              </div>
+            )}
+            {agentData.preferred_communication_channels?.length > 0 && (
+              <div className="p-4 bg-gray-50 rounded-xl text-center">
+                <p className="text-sm text-gray-500 mb-1">Preferred Contact</p>
+                <p className="font-semibold text-gray-900">{agentData.preferred_communication_channels.join(', ')}</p>
+              </div>
+            )}
+          </div>
+
+          {agentData.languages_spoken?.length > 0 && (
+            <div className="mt-4 p-4 bg-gray-50 rounded-xl">
+              <p className="text-sm text-gray-500 mb-2">Languages</p>
+              <div className="flex flex-wrap gap-2">
+                {agentData.languages_spoken.map((lang, idx) => (
+                  <span key={idx} className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-700">{lang}</span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Professional Network */}
+          {agentData.pro_network_types?.length > 0 && (
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Professional Network</h3>
+              <p className="text-sm text-gray-500 mb-3">Can connect you with trusted:</p>
+              <div className="flex flex-wrap gap-2">
+                {agentData.pro_network_types.map((type, idx) => (
+                  <span key={idx} className="px-3 py-1.5 bg-[#E0E7FF] text-[#3730A3] rounded-full text-sm font-medium">{type}</span>
+                ))}
+              </div>
+              {agentData.refer_professionals_notes && (
+                <p className="text-sm text-gray-600 mt-3">{agentData.refer_professionals_notes}</p>
+              )}
             </div>
           )}
         </div>
