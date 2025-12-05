@@ -15,22 +15,33 @@ import {
 import { toast } from "sonner";
 
 export default function AgentProfile() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const agentId = urlParams.get("id");
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
   const [profile, setProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
+  const [agentId, setAgentId] = useState(null);
 
   useEffect(() => {
-    if (!agentId) {
+    // Parse URL params on mount
+    const urlParams = new URLSearchParams(window.location.search);
+    const id = urlParams.get("id");
+    console.log("AgentProfile: URL params id =", id);
+    
+    if (!id) {
       toast.error("No agent ID provided");
       navigate(createPageUrl("AgentDirectory"));
       return;
     }
-    checkNDAAndLoadProfile();
+    setAgentId(id);
+  }, []);
+
+  useEffect(() => {
+    if (agentId) {
+      console.log("AgentProfile: Loading profile for agentId =", agentId);
+      checkNDAAndLoadProfile();
+    }
   }, [agentId]);
 
   const checkNDAAndLoadProfile = async () => {
