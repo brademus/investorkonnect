@@ -7,7 +7,7 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
-  MapPin, Loader2, Sparkles, CreditCard, Bot
+  MapPin, Loader2, Sparkles, Bot
 } from "lucide-react";
 
 function AgentDashboardContent() {
@@ -236,9 +236,8 @@ function AgentDashboardContent() {
             </div>
 
             {/* Quick Links */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
                 { label: 'My Profile', icon: Users, href: 'AccountProfile' },
                 { label: 'Deal Rooms', icon: MessageSquare, href: 'DealRooms' },
                 { label: 'Documents', icon: FileText, href: 'AgentDocuments' },

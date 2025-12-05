@@ -378,11 +378,10 @@ export default function AgentHome() {
               <h2 className="text-lg font-semibold text-[#111827] mb-4">Quick Links</h2>
               <div className="space-y-2">
                 {[
-                  { label: 'Subscription & Plans', icon: '⭐', href: 'Pricing' },
                   { label: 'My Profile', icon: '👤', href: 'AccountProfile' },
                   { label: 'Browse Investors', icon: '👥', href: 'InvestorDirectory' },
                   { label: 'Deal Rooms', icon: '💬', href: 'DealRooms' },
-                  { label: 'Billing & Payment', icon: '💳', href: 'Billing' },
+                  { label: 'Documents', icon: '📄', href: 'AgentDocuments' },
                 ].map((link) => (
                   <Link key={link.href} to={createPageUrl(link.href)} className="flex items-center justify-between w-full p-4 rounded-xl border border-[#F3F4F6] bg-[#F9FAFB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all group">
                     <div className="flex items-center gap-3">
