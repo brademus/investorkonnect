@@ -103,13 +103,23 @@ export default function AgentOnboarding() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      if (!profile) {
-        throw new Error('Profile not found');
+      // If profile not loaded from hook, fetch it directly
+      let profileToUpdate = profile;
+      if (!profileToUpdate) {
+        const authUser = await base44.auth.me();
+        if (!authUser) {
+          throw new Error('Not authenticated');
+        }
+        const profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
+        profileToUpdate = profiles[0];
+        if (!profileToUpdate) {
+          throw new Error('Profile not found');
+        }
       }
 
       // Save basic info but DON'T mark onboarding as complete
       // User must complete full 8-step deep onboarding from Dashboard checklist
-      await base44.entities.Profile.update(profile.id, {
+      await base44.entities.Profile.update(profileToUpdate.id, {
         full_name: formData.full_name,
         phone: formData.phone,
         user_role: 'agent',
@@ -120,7 +130,7 @@ export default function AgentOnboarding() {
         // NOT setting onboarding_completed_at - that happens in deep onboarding
         onboarding_step: 'basic_complete',
         agent: {
-          ...profile.agent,
+          ...(profileToUpdate.agent || {}),
           license_number: formData.license_number,
           license_state: formData.license_state,
           markets: formData.markets,
@@ -129,11 +139,11 @@ export default function AgentOnboarding() {
         }
       });
 
-      await refresh();
       toast.success("Welcome to Investor Konnect!");
       await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl("Dashboard");
     } catch (error) {
+      console.error('Agent onboarding error:', error);
       toast.error("Failed to save. Please try again.");
       setSaving(false);
     }
