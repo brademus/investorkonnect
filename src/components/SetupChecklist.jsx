@@ -25,8 +25,10 @@ export function SetupChecklist({ profile, onRefresh }) {
   const isInvestor = profile?.user_role === 'investor' || profile?.user_type === 'investor';
   const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
 
-  // Check completion states
-  const onboardingComplete = !!profile?.onboarding_completed_at;
+  // Check completion states - check multiple indicators for onboarding
+  const onboardingComplete = !!profile?.onboarding_completed_at || 
+    profile?.onboarding_step === 'basic_complete' || 
+    profile?.onboarding_step === 'deep_complete';
   const kycComplete = profile?.kyc_status === 'approved';
   const ndaComplete = !!profile?.nda_accepted;
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
