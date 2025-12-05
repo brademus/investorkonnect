@@ -167,13 +167,15 @@ html {
       border-radius: 9999px;
       padding: 0.35rem 0.9rem;
       font-size: 0.8125rem;
-      border: 1px solid #E5E7EB;
-      background-color: #F9FAFB;
+      border: 1px solid #333333;
+      background-color: #1A1A1A;
+      color: #FAFAFA;
       transition: all 150ms ease;
     }
 
     .ik-pill:hover {
-      border-color: #D1D5DB;
+      border-color: #E5C37F;
+      background-color: #262626;
     }
 
   /* Cards */
