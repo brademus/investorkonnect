@@ -67,7 +67,9 @@ export default function PostAuth() {
         // Step 3: Route based on state
         const role = profile?.user_role;
         const hasRole = role && role !== 'member';
-        const isOnboarded = !!profile?.onboarding_completed_at;
+        // Check for basic onboarding completion (onboarding_step) OR full onboarding (onboarding_completed_at)
+        const hasBasicOnboarding = ['basic_complete', 'deep_complete', 'simple_complete', 'profile_complete'].includes(profile?.onboarding_step);
+        const isOnboarded = hasBasicOnboarding || !!profile?.onboarding_completed_at;
 
         if (!hasRole) {
           // No role selected - go to RoleSelection
@@ -82,7 +84,7 @@ export default function PostAuth() {
             navigate(createPageUrl("RoleSelection"), { replace: true });
           }
         } else {
-          // Fully onboarded - go to Dashboard
+          // Has completed at least basic onboarding - go to Dashboard
           navigate(createPageUrl("Dashboard"), { replace: true });
         }
 
