@@ -365,8 +365,8 @@ html {
     height: 1.85rem;
     width: 1.85rem;
     border-radius: 9999px;
-    background-color: #F5E6B3;
-    color: #D4AF37;
+    background-color: rgba(229, 195, 127, 0.15);
+    color: #E5C37F;
     font-size: 0.95rem;
   }
 
