@@ -70,7 +70,12 @@ export function useCurrentProfile() {
           
           if (demoUser && demoProfile) {
             const role = demoProfile.user_role || 'member';
-            const onboarded = !!demoProfile.onboarding_completed_at;
+            const onboarded = !!(
+              demoProfile.onboarding_completed_at || 
+              demoProfile.onboarding_step === 'basic_complete' || 
+              demoProfile.onboarding_step === 'deep_complete' ||
+              demoProfile.onboarding_version
+            );
             const kycStatus = demoProfile.kyc_status || 'unverified';
             const kycVerified = kycStatus === 'approved' || demoProfile.identity_verified;
             const hasNDA = demoProfile.nda_accepted || false;
@@ -330,7 +335,12 @@ export function useCurrentProfile() {
       const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || 'null');
       if (demoProfile) {
         const role = demoProfile.user_role || 'member';
-        const onboarded = !!demoProfile.onboarding_completed_at;
+        const onboarded = !!(
+          demoProfile.onboarding_completed_at || 
+          demoProfile.onboarding_step === 'basic_complete' || 
+          demoProfile.onboarding_step === 'deep_complete' ||
+          demoProfile.onboarding_version
+        );
         const kycStatus = demoProfile.kyc_status || 'unverified';
         const kycVerified = kycStatus === 'approved' || demoProfile.identity_verified;
         const hasNDA = demoProfile.nda_accepted || false;
