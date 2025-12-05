@@ -186,24 +186,85 @@ Date: _______________
     }
 
     setSaving(true);
-    try {
-      const response = await contractGenerateDraft({
-        room_id: roomId,
-        template_id: templateId,
-        terms
-      });
+    // Simulate loading delay
+    await new Promise(resolve => setTimeout(resolve, 1200));
+    
+    // Generate placeholder contract from template
+    const templateName = CONTRACT_TEMPLATES.find(t => t.id === templateId)?.name || "Contract";
+    
+    const generatedDraft = `# ${templateName.toUpperCase()}
 
-      if (response.data?.content) {
-        setDraft(response.data.content);
-        setStep(4);
-      } else {
-        alert(response.data?.error || "Generate failed");
-      }
-    } catch (error) {
-      alert("Failed to generate contract");
-    } finally {
-      setSaving(false);
-    }
+**Generated from Template: ${templateId}**
+
+---
+
+## PARTIES
+
+**BUYER/INVESTOR:** ${terms["Investor Name"] || "[Investor Name]"}  
+**AGENT:** ${terms["Agent Name"] || "[Agent Name]"}, ${terms["Brokerage"] || "[Brokerage]"}
+
+---
+
+## 1. PURPOSE
+
+This ${templateName} is entered into for the purpose of establishing a professional relationship between the parties for real estate investment services.
+
+## 2. SCOPE
+
+**Target Markets:** ${terms["Target Markets"] || "[Markets]"}  
+**Property Types:** ${terms["Property Types"] || "[Property Types]"}  
+**Price Range:** ${terms["Price Range"] || "[Price Range]"}
+
+## 3. COMPENSATION
+
+**Commission Rate:** ${terms["Commission Rate"] || "3%"} of purchase price, payable at closing.
+
+## 4. TERM
+
+This Agreement shall be effective for ${terms["Agreement Term"] || "12 months"} from the date of execution.
+
+## 5. DUTIES AND OBLIGATIONS
+
+### Agent Responsibilities:
+- Identify suitable investment properties
+- Provide market analysis and due diligence support
+- Negotiate on behalf of the investor
+- Coordinate inspections and closing
+
+### Investor Responsibilities:
+- Provide clear investment criteria
+- Respond to opportunities in a timely manner
+- Provide proof of funds when required
+
+## 6. CONFIDENTIALITY
+
+Both parties agree to maintain strict confidentiality regarding all proprietary information, deal terms, and financial details shared during this engagement.
+
+## 7. TERMINATION
+
+Either party may terminate this Agreement with 30 days written notice.
+
+---
+
+**SIGNATURES:**
+
+_________________________  
+${terms["Investor Name"] || "Investor"}  
+Date: _______________
+
+_________________________  
+${terms["Agent Name"] || "Agent"}  
+License #: ${terms["Agent License Number"] || "_______________"}  
+Date: _______________
+
+---
+
+*This is a placeholder contract generated from template for demonstration purposes.*
+`;
+    
+    setDraft(generatedDraft);
+    setStep(4);
+    setSaving(false);
   };
 
   if (!open) return null;
