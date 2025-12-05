@@ -411,27 +411,27 @@ html {
 
   /* Chip color variants */
   .ik-chip-success {
-    background-color: #ECFDF5;
-    color: #065F46;
-    border-color: #A7F3D0;
+    background-color: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+    border-color: rgba(16, 185, 129, 0.3);
   }
 
   .ik-chip-warning {
-    background-color: #FFFBEB;
-    color: #92400E;
-    border-color: #FCD34D;
+    background-color: rgba(229, 195, 127, 0.15);
+    color: #E5C37F;
+    border-color: rgba(229, 195, 127, 0.3);
   }
 
   .ik-chip-muted {
-    background-color: #F3F4F6;
-    color: #6B7280;
-    border-color: #E5E7EB;
+    background-color: #1A1A1A;
+    color: #A6A6A6;
+    border-color: #333333;
   }
 
   .ik-chip-danger {
-    background-color: #FEF2F2;
-    color: #991B1B;
-    border-color: #FECACA;
+    background-color: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    border-color: rgba(239, 68, 68, 0.3);
   }
 
   /* Skeleton loading animation */
