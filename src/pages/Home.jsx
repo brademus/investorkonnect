@@ -52,7 +52,7 @@ export default function Home() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl md:text-6xl font-bold text-[#FAFAFA] mb-6 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-light text-[#FAFAFA] mb-6 leading-tight tracking-wide">
             Connect with agents who{" "}
             <span className="relative inline-block">
               <span className="relative z-10 text-[#E5C37F]">speak your language</span>
@@ -147,10 +147,10 @@ export default function Home() {
       <section className="py-16 px-4 bg-[#0F0F0F]">
         <div className="max-w-6xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-[#E5C37F] mb-4">
+            <h2 className="text-4xl font-light text-[#E5C37F] mb-4 tracking-wide">
               Why investors choose our network
             </h2>
-            <p className="text-lg text-[#A6A6A6]">
+            <p className="text-lg text-[#A6A6A6] font-light tracking-wide">
               We've built the ecosystem you need to scale your portfolio efficiently.
             </p>
           </div>
@@ -194,8 +194,8 @@ export default function Home() {
                   <div className="w-12 h-12 bg-[#E5C37F]/15 rounded-xl flex items-center justify-center mb-4">
                     <Icon className="w-6 h-6 text-[#E5C37F]" />
                   </div>
-                  <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">{feature.title}</h3>
-                  <p className="text-[#A6A6A6]">{feature.desc}</p>
+                  <h3 className="text-xl font-light text-[#FAFAFA] mb-2 tracking-wide">{feature.title}</h3>
+                  <p className="text-[#A6A6A6] font-light tracking-wide">{feature.desc}</p>
                 </div>
               );
             })}
@@ -206,10 +206,10 @@ export default function Home() {
       {/* CTA Section */}
       <section className="py-20 px-4 bg-[#0F0F0F] border-t border-[#333333]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-[#E5C37F] mb-4">
+          <h2 className="text-4xl font-light text-[#E5C37F] mb-4 tracking-wide">
             Ready to find your next deal?
           </h2>
-          <p className="text-lg text-[#A6A6A6] mb-8">
+          <p className="text-lg text-[#A6A6A6] mb-8 font-light tracking-wide">
             Join thousands of investors who are scaling their portfolios with the right partners.
           </p>
           <Button
