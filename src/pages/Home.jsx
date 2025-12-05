@@ -204,17 +204,17 @@ export default function Home() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 px-4 bg-[#111827]">
+      <section className="py-20 px-4 bg-[#0F0F0F] border-t border-[#333333]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-4xl font-bold text-white mb-4">
+          <h2 className="text-4xl font-bold text-[#E5C37F] mb-4">
             Ready to find your next deal?
           </h2>
-          <p className="text-lg text-gray-300 mb-8">
+          <p className="text-lg text-[#A6A6A6] mb-8">
             Join thousands of investors who are scaling their portfolios with the right partners.
           </p>
           <Button
             onClick={handleGetStarted}
-            className="bg-[#D3A029] hover:bg-[#B8941F] text-white px-8 py-4 rounded-xl font-medium text-lg"
+            className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] hover:from-[#F0D699] hover:to-[#D4AF37] text-[#0F0F0F] px-8 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(229,195,127,0.4)] transition-all"
           >
             Get Started Now
             <ArrowRight className="ml-2 w-5 h-5" />
