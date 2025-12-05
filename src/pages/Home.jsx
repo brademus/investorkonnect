@@ -91,6 +91,18 @@ export default function Home() {
               <span>Off-Market Deals</span>
             </div>
           </div>
+
+          {/* Video Section */}
+          <div className="mt-16 max-w-4xl mx-auto">
+            <div className="relative rounded-3xl overflow-hidden shadow-2xl border border-[#333333]">
+              <iframe 
+                src="https://drive.google.com/file/d/1TZXb6W9V5_vVITTIxt7tEXLtoFarKzAf/preview" 
+                className="w-full aspect-video"
+                allow="autoplay"
+                allowFullScreen
+              />
+            </div>
+          </div>
         </div>
       </section>
 
