@@ -24,15 +24,15 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
+    <div className="min-h-screen bg-[#0F0F0F]">
       {/* Fixed Header */}
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#333333] bg-[#0F0F0F]/95 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <Logo size="default" showText={true} linkTo="/" />
           <div className="flex items-center gap-3">
             <button 
               onClick={handleLogin} 
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#E5E7EB] bg-white px-5 py-2.5 text-sm font-medium text-[#111827] shadow-sm transition-all hover:border-[#D3A029] hover:shadow-md"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#333333] bg-[#1A1A1A] px-5 py-2.5 text-sm font-medium text-[#FAFAFA] shadow-sm transition-all hover:border-[#E5C37F] hover:bg-[#262626]"
             >
               Log in
             </button>
