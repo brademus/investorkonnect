@@ -199,9 +199,16 @@ export function useCurrentProfile() {
         }
 
         // STEP 4: Determine onboarded status
-        // onboarding_completed_at is ONLY set when user completes the full 8-step deep onboarding
-        // Basic 3-step onboarding sets onboarding_step='basic_complete' but NOT onboarding_completed_at
-        let onboarded = !!profile?.onboarding_completed_at;
+        // Check multiple indicators for onboarding completion:
+        // - onboarding_completed_at timestamp
+        // - onboarding_step = 'basic_complete' or 'deep_complete'
+        // - onboarding_version exists
+        let onboarded = !!(
+          profile?.onboarding_completed_at || 
+          profile?.onboarding_step === 'basic_complete' || 
+          profile?.onboarding_step === 'deep_complete' ||
+          profile?.onboarding_version
+        );
 
         // needsOnboarding = user has a role but hasn't completed onboarding (EXCEPT admins)
         const needsOnboarding = !isAdmin && (role === 'investor' || role === 'agent') && !onboarded;
@@ -247,19 +254,19 @@ export function useCurrentProfile() {
           subscriptionStatus === 'active' || 
           subscriptionStatus === 'trialing';
 
-        // Debug logging only for admin users
-        if (isAdmin) {
-          console.log('[useCurrentProfile] 📊 Profile state:', {
-            role,
-            onboarded,
-            needsOnboarding,
-            kycVerified,
-            needsKyc,
-            hasNDA,
-            needsNda,
-            onboarding_version: profile?.onboarding_version,
-          });
-        }
+        // Debug logging
+        console.log('[useCurrentProfile] 📊 Profile state:', {
+          role,
+          onboarded,
+          needsOnboarding,
+          kycVerified,
+          needsKyc,
+          hasNDA,
+          needsNda,
+          onboarding_step: profile?.onboarding_step,
+          onboarding_completed_at: profile?.onboarding_completed_at,
+          onboarding_version: profile?.onboarding_version,
+        });
 
         setState({
           loading: false,
