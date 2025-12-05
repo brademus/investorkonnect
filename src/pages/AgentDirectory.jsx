@@ -327,12 +327,15 @@ export default function AgentDirectory() {
                     
                     {/* Actions */}
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
-                      <Link
-                        to={`${createPageUrl("AgentProfile")}?id=${agent.id}`}
+                      <button
+                        onClick={() => {
+                          console.log("Navigating to agent:", agent.id);
+                          navigate(`/AgentProfile?id=${agent.id}`);
+                        }}
                         className="flex-1 h-9 text-sm font-medium border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                       >
-                        View
-                      </Link>
+                        View Profile
+                      </button>
                       <button
                         onClick={() => handleOpenRoom(agent)}
                         className="flex-1 h-9 text-sm font-medium bg-[#D3A029] text-white rounded-lg flex items-center justify-center gap-1.5 hover:bg-[#B8902A] transition-colors"
