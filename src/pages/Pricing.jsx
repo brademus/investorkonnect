@@ -197,10 +197,10 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
+    <div className="min-h-screen bg-[#0F0F0F]" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
       {/* Subscription Status Banner */}
       {!loading && isPaidSubscriber && (
-        <div className="bg-[#D4AF37] text-white py-3">
+        <div className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-sm font-medium flex items-center justify-center gap-2">
               <Check className="w-4 h-4" />
@@ -213,7 +213,7 @@ export default function Pricing() {
 
       {/* Blocking Step Banner */}
       {!loading && (role === 'investor' || role === 'agent') && !onboarded && !isPaidSubscriber && bannerConfig && (
-        <div className="bg-orange-600 text-white py-3">
+        <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
               <bannerConfig.icon className="w-5 h-5" />
@@ -228,24 +228,24 @@ export default function Pricing() {
       )}
 
       {/* Hero Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ background: 'linear-gradient(180deg, #FAF7F2 0%, #FFFFFF 100%)' }}>
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#0F0F0F]">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-[48px] font-bold text-black mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-[20px] text-[#666666] mb-8">
+          <h1 className="text-[48px] font-bold text-[#E5C37F] mb-4">Simple, Transparent Pricing</h1>
+          <p className="text-[20px] text-[#A6A6A6] mb-8">
             Choose the plan that fits your investment needs. All plans include 14-day free trial.
           </p>
 
           {/* Billing Toggle */}
           <div 
-            className="inline-flex items-center rounded-full p-1"
-            style={{ backgroundColor: '#F7F7F7', width: '280px', height: '48px' }}
+            className="inline-flex items-center rounded-full p-1 border border-[#333333]"
+            style={{ backgroundColor: '#1A1A1A', width: '280px', height: '48px' }}
           >
             <button
               onClick={() => setBillingCycle("monthly")}
               className={`flex-1 h-full rounded-full text-sm font-medium transition-all duration-300 ${
                 billingCycle === "monthly"
-                  ? "bg-white text-black shadow-md"
-                  : "text-[#666666] hover:text-black"
+                  ? "bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] shadow-md"
+                  : "text-[#A6A6A6] hover:text-[#E5C37F]"
               }`}
             >
               Monthly
@@ -254,12 +254,12 @@ export default function Pricing() {
               onClick={() => setBillingCycle("annual")}
               className={`flex-1 h-full rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
                 billingCycle === "annual"
-                  ? "bg-white text-black shadow-md"
-                  : "text-[#666666] hover:text-black"
+                  ? "bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] shadow-md"
+                  : "text-[#A6A6A6] hover:text-[#E5C37F]"
               }`}
             >
               Annual
-              <span className="text-xs bg-[#D3A029] text-white px-2 py-0.5 rounded-full">Save 20%</span>
+              <span className="text-xs bg-[#E5C37F] text-[#0F0F0F] px-2 py-0.5 rounded-full">Save 20%</span>
             </button>
           </div>
         </div>
@@ -276,19 +276,19 @@ export default function Pricing() {
               return (
                 <div
                   key={tier.name}
-                  className={`bg-white rounded-3xl relative transition-all duration-250 ${
+                  className={`bg-[#1A1A1A] rounded-3xl relative transition-all duration-250 ${
                     isPro ? 'scale-105 z-10' : ''
                   }`}
                   style={{
-                    border: isPro ? '2px solid #D3A029' : '1px solid #E5E7EB',
+                    border: isPro ? '2px solid #E5C37F' : '1px solid #333333',
                     padding: '40px 32px',
-                    boxShadow: isPro ? '0 4px 16px rgba(211,160,41,0.15)' : '0 2px 8px rgba(0,0,0,0.06)'
+                    boxShadow: isPro ? '0 4px 16px rgba(229,195,127,0.3)' : '0 2px 8px rgba(0,0,0,0.3)'
                   }}
                 >
                   {/* Most Popular Badge */}
                   {isPro && !isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-[#D3A029] text-white text-sm font-medium px-4 py-1 rounded-full">
+                      <span className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] text-sm font-medium px-4 py-1 rounded-full">
                         Most Popular
                       </span>
                     </div>
@@ -297,7 +297,7 @@ export default function Pricing() {
                   {/* Current Plan Badge */}
                   {isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-[#D4AF37] text-white text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
+                      <span className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
                         <Check className="w-4 h-4" />
                         Current Plan
                       </span>
@@ -305,36 +305,36 @@ export default function Pricing() {
                   )}
 
                   {/* Plan Name */}
-                  <p className="text-[16px] uppercase text-[#666666] tracking-wider mb-4">{tier.name}</p>
+                  <p className="text-[16px] uppercase text-[#A6A6A6] tracking-wider mb-4">{tier.name}</p>
                   
                   {/* Price */}
                   <div className="mb-4">
-                    <span className="text-[48px] font-bold text-black">${tier.price[billingCycle]}</span>
-                    <span className="text-[16px] text-[#666666]">/month</span>
+                    <span className="text-[48px] font-bold text-[#E5C37F]">${tier.price[billingCycle]}</span>
+                    <span className="text-[16px] text-[#A6A6A6]">/month</span>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-[14px] text-[#666666] mb-6">{tier.description}</p>
+                  <p className="text-[14px] text-[#A6A6A6] mb-6">{tier.description}</p>
                   
                   {/* Divider */}
-                  <div className="h-px bg-[#E5E5E5] my-6"></div>
+                  <div className="h-px bg-[#333333] my-6"></div>
                   
                   {/* Features */}
                   <ul className="space-y-4 mb-8">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[#D3A029] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check className="w-3 h-3 text-white" />
+                        <div className="w-5 h-5 rounded-full bg-[#E5C37F] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-[#0F0F0F]" />
                         </div>
-                        <span className="text-[14px] text-[#333333]">{feature}</span>
+                        <span className="text-[14px] text-[#FAFAFA]">{feature}</span>
                       </li>
                     ))}
                     {tier.notIncluded.map((feature) => (
                       <li key={feature} className="flex items-start gap-3 opacity-40">
-                        <div className="w-5 h-5 rounded-full bg-[#E5E5E5] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <X className="w-3 h-3 text-[#999999]" />
+                        <div className="w-5 h-5 rounded-full bg-[#333333] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <X className="w-3 h-3 text-[#666666]" />
                         </div>
-                        <span className="text-[14px] text-[#666666]">{feature}</span>
+                        <span className="text-[14px] text-[#A6A6A6]">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -342,7 +342,7 @@ export default function Pricing() {
                   {/* CTA Button */}
                   {isCurrentPlan ? (
                     <button
-                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#E5E5E5] text-[#666666] cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#333333] text-[#A6A6A6] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
                     >
                       <Check className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function Pricing() {
                     </button>
                   ) : !loading && (role === 'investor' || role === 'agent') && !onboarded && tier.planId !== 'enterprise' ? (
                     <button
-                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#E5E5E5] text-[#666666] cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#333333] text-[#A6A6A6] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
                     >
                       <Lock className="w-4 h-4" />
@@ -359,8 +359,8 @@ export default function Pricing() {
                   ) : isPro ? (
                     <button
                       onClick={() => handleGetStarted(tier.planId)}
-                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#D4AF37] text-white hover:bg-[#C19A2E] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                      style={{ boxShadow: '0 2px 8px rgba(212,175,55,0.3)' }}
+                      className="w-full h-12 rounded-full font-bold text-[16px] bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] hover:from-[#F0D699] hover:to-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                      style={{ boxShadow: '0 4px 12px rgba(229,195,127,0.4)' }}
                       disabled={loading || checkoutLoading}
                     >
                       {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
@@ -368,7 +368,7 @@ export default function Pricing() {
                   ) : (
                     <button
                       onClick={() => handleGetStarted(tier.planId)}
-                      className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#E5E5E5] text-black bg-transparent hover:bg-[#F9F9F9] hover:border-[#D4AF37] transition-all duration-200"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#333333] text-[#FAFAFA] bg-transparent hover:bg-[#1A1A1A] hover:border-[#E5C37F] transition-all duration-200"
                       disabled={loading || checkoutLoading}
                     >
                       {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
@@ -381,13 +381,13 @@ export default function Pricing() {
 
           {/* Sign In Box for unauthenticated */}
           {!loading && !user && (
-            <div className="mt-12 bg-[#FFF8E6] border-2 border-[#D4AF37]/30 rounded-xl p-6">
+            <div className="mt-12 bg-[#1A1A1A] border-2 border-[#E5C37F]/30 rounded-xl p-6">
               <div className="flex items-start gap-4">
-                <AlertCircle className="w-6 h-6 text-[#D4AF37] flex-shrink-0 mt-1" />
+                <AlertCircle className="w-6 h-6 text-[#E5C37F] flex-shrink-0 mt-1" />
                 <div className="flex-1">
-                  <h3 className="font-bold text-black mb-2">Sign In to Subscribe</h3>
-                  <p className="text-[#666666] mb-4">Create a free account to start your 14-day trial. No credit card required.</p>
-                  <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname)} className="bg-[#D4AF37] hover:bg-[#C19A2E] text-white">
+                  <h3 className="font-bold text-[#E5C37F] mb-2">Sign In to Subscribe</h3>
+                  <p className="text-[#A6A6A6] mb-4">Create a free account to start your 14-day trial. No credit card required.</p>
+                  <Button onClick={() => base44.auth.redirectToLogin(window.location.pathname)} className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] hover:from-[#F0D699] hover:to-[#D4AF37] text-[#0F0F0F]">
                     Sign In / Create Account
                   </Button>
                 </div>
@@ -398,14 +398,14 @@ export default function Pricing() {
       </section>
 
       {/* FAQs */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#F9F9F9]">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0F0F0F] border-t border-[#333333]">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-[36px] font-bold text-black mb-12 text-center">Pricing FAQs</h2>
+          <h2 className="text-[36px] font-bold text-[#E5C37F] mb-12 text-center">Pricing FAQs</h2>
           <div className="space-y-4">
             {faqs.map((faq) => (
-              <div key={faq.q} className="bg-white rounded-xl p-6 border border-[#E5E5E5]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.06)' }}>
-                <h3 className="text-[18px] font-bold text-black mb-3">{faq.q}</h3>
-                <p className="text-[#666666] leading-relaxed">{faq.a}</p>
+              <div key={faq.q} className="bg-[#1A1A1A] rounded-xl p-6 border border-[#333333]" style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.3)' }}>
+                <h3 className="text-[18px] font-bold text-[#E5C37F] mb-3">{faq.q}</h3>
+                <p className="text-[#A6A6A6] leading-relaxed">{faq.a}</p>
               </div>
             ))}
           </div>
@@ -413,13 +413,13 @@ export default function Pricing() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-br from-slate-900 to-[#D4AF37]/80 text-white">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-[#0F0F0F] border-t border-[#333333]">
         <div className="max-w-4xl mx-auto text-center">
-          <h2 className="text-[36px] font-bold mb-6">Start Your Free Trial Today</h2>
-          <p className="text-xl text-white/80 mb-8">No credit card required. Cancel anytime. 30-day money-back guarantee.</p>
+          <h2 className="text-[36px] font-bold mb-6 text-[#E5C37F]">Start Your Free Trial Today</h2>
+          <p className="text-xl text-[#A6A6A6] mb-8">No credit card required. Cancel anytime. 30-day money-back guarantee.</p>
           <Button 
             size="lg" 
-            className="bg-[#D4AF37] hover:bg-[#C19A2E] text-white text-lg px-8 h-14 rounded-xl"
+            className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] hover:from-[#F0D699] hover:to-[#D4AF37] text-[#0F0F0F] text-lg px-8 h-14 rounded-full shadow-lg"
             onClick={() => handleGetStarted('starter')}
             disabled={loading || checkoutLoading}
           >
