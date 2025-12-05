@@ -117,9 +117,8 @@ export default function AgentOnboarding() {
         }
       }
 
-      // Save basic info but DON'T mark onboarding as complete
-      // User must complete full 8-step deep onboarding from Dashboard checklist
-      await base44.entities.Profile.update(profileToUpdate.id, {
+      // Save basic info and mark onboarding as complete
+      const updateData = {
         full_name: formData.full_name,
         phone: formData.phone,
         user_role: 'agent',
@@ -127,17 +126,24 @@ export default function AgentOnboarding() {
         license_number: formData.license_number,
         license_state: formData.license_state,
         markets: formData.markets,
-        // NOT setting onboarding_completed_at - that happens in deep onboarding
+        target_state: formData.license_state,
         onboarding_step: 'basic_complete',
+        onboarding_completed_at: new Date().toISOString(),
+        onboarding_version: 'agent-v1',
         agent: {
           ...(profileToUpdate.agent || {}),
           license_number: formData.license_number,
           license_state: formData.license_state,
           markets: formData.markets,
-          experience_years: formData.experience_years,
-          bio: formData.bio
+          experience_years: parseInt(formData.experience_years) || 0,
+          bio: formData.bio,
+          investor_friendly: true
         }
-      });
+      };
+      
+      console.log('[AgentOnboarding] Saving profile with data:', updateData);
+      await base44.entities.Profile.update(profileToUpdate.id, updateData);
+      console.log('[AgentOnboarding] Profile saved successfully');
 
       toast.success("Welcome to Investor Konnect!");
       await new Promise(resolve => setTimeout(resolve, 300));
