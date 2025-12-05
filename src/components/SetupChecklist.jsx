@@ -15,6 +15,8 @@ export function SetupChecklist({ profile, onRefresh }) {
   console.log('[SetupChecklist] Profile received:', {
     id: profile?.id,
     onboarding_completed_at: profile?.onboarding_completed_at,
+    onboarding_step: profile?.onboarding_step,
+    onboarding_version: profile?.onboarding_version,
     kyc_status: profile?.kyc_status,
     nda_accepted: profile?.nda_accepted,
     subscription_status: profile?.subscription_status,
@@ -26,9 +28,14 @@ export function SetupChecklist({ profile, onRefresh }) {
   const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
 
   // Check completion states - check multiple indicators for onboarding
-  const onboardingComplete = !!profile?.onboarding_completed_at || 
+  const onboardingComplete = !!(
+    profile?.onboarding_completed_at || 
     profile?.onboarding_step === 'basic_complete' || 
-    profile?.onboarding_step === 'deep_complete';
+    profile?.onboarding_step === 'deep_complete' ||
+    profile?.onboarding_version
+  );
+  
+  console.log('[SetupChecklist] onboardingComplete:', onboardingComplete);
   const kycComplete = profile?.kyc_status === 'approved';
   const ndaComplete = !!profile?.nda_accepted;
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
