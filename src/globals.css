@@ -340,20 +340,20 @@ html {
     justify-content: space-between;
     width: 100%;
     border-radius: 18px;
-    border: 1px solid #E5E7EB;
-    background-color: #FFFFFF;
+    border: 1px solid #333333;
+    background-color: #1A1A1A;
     padding: 0.9rem 1rem;
     font-size: 0.95rem;
     font-weight: 500;
-    color: #111827;
+    color: #FAFAFA;
     cursor: pointer;
     transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
   }
 
   .ik-tile:hover {
-    border-color: #FACC15;
-    background-color: #FFFBEB;
-    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+    border-color: #E5C37F;
+    background-color: #262626;
+    box-shadow: 0 14px 30px rgba(229, 195, 127, 0.3);
     transform: translateY(-1px);
   }
 
