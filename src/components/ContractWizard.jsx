@@ -147,23 +147,32 @@ Date: _______________
   // Template flow: Analyze first
   const analyze = async () => {
     setLoading(true);
-    try {
-      const response = await contractAnalyzeChat({ room_id: roomId });
-      
-      if (response.data?.analysis) {
-        setAnalysis(response.data.analysis);
-        setTemplateId(response.data.analysis.suggested_template_id || "");
-        setTerms(response.data.analysis.terms || {});
-        setMissing(response.data.analysis.missing_fields || []);
-        setStep(2);
-      } else {
-        alert(response.data?.error || "Could not analyze chat");
-      }
-    } catch (error) {
-      alert("Failed to analyze chat");
-    } finally {
-      setLoading(false);
-    }
+    // Simulate loading delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    // Use placeholder data for demo
+    const placeholderAnalysis = {
+      suggested_template_id: "buyer_rep_v1",
+      plain_summary: "Based on your conversation, this appears to be a buyer representation agreement for investment property acquisition. The investor is looking for multifamily properties with a focus on cash flow.",
+      terms: {
+        "Investor Name": "Demo Investor",
+        "Agent Name": "Demo Agent",
+        "Brokerage": "Premier Realty Group",
+        "Target Markets": "Texas, Florida",
+        "Property Types": "Multifamily, Single Family",
+        "Price Range": "$200,000 - $800,000",
+        "Commission Rate": "3%",
+        "Agreement Term": "12 months"
+      },
+      missing_fields: ["Investor Address", "Agent License Number"]
+    };
+    
+    setAnalysis(placeholderAnalysis);
+    setTemplateId(placeholderAnalysis.suggested_template_id);
+    setTerms(placeholderAnalysis.terms);
+    setMissing(placeholderAnalysis.missing_fields);
+    setStep(2);
+    setLoading(false);
   };
 
   const updateTerm = (k, v) => {
