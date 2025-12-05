@@ -328,7 +328,7 @@ export default function AgentDirectory() {
                     {/* Actions */}
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
                       <Link
-                        to={`${createPageUrl("AgentProfile")}/${agent.id}`}
+                        to={`${createPageUrl("AgentProfile")}?id=${agent.id}`}
                         className="flex-1 h-9 text-sm font-medium border border-gray-200 rounded-lg flex items-center justify-center gap-1.5 hover:bg-gray-50 transition-colors"
                       >
                         View
