@@ -129,8 +129,8 @@ export default function AgentHome() {
             </div>
           </div>
 
-          {/* Onboarding Banner */}
-          {needsOnboarding && (
+          {/* Onboarding Banner - only show if truly not onboarded */}
+          {needsOnboarding && !onboarded && (
             <section className="rounded-2xl border border-[#FECACA] bg-gradient-to-r from-[#FEF2F2] to-[#FEE2E2] p-6 shadow-md">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 rounded-xl bg-[#FCA5A5] flex items-center justify-center flex-shrink-0">
