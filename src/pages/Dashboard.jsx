@@ -43,7 +43,7 @@ export default function Dashboard() {
 
         const role = userProfile?.user_role;
         const hasRole = role && role !== 'member';
-        const hasBasicOnboarding = userProfile?.onboarding_step === 'basic_complete' || userProfile?.onboarding_step === 'deep_complete';
+        const hasBasicOnboarding = ['basic_complete', 'deep_complete', 'simple_complete', 'profile_complete'].includes(userProfile?.onboarding_step);
         const isOnboarded = !!userProfile?.onboarding_completed_at;
 
         if (!hasRole) {
