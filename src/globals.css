@@ -284,19 +284,20 @@ html {
     justify-content: center;
     gap: 0.4rem;
     border-radius: 9999px;
-    background-color: #D4AF37;
-    color: #FFFFFF;
+    background: linear-gradient(135deg, #E5C37F 0%, #C9A961 100%);
+    color: #0F0F0F;
     font-weight: 600;
     padding: 0.8rem 1.7rem;
     font-size: 0.95rem;
-    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.35);
-    transition: background-color 150ms ease, box-shadow 150ms ease, transform 120ms ease;
+    font-family: 'Cormorant Garamond', serif;
+    box-shadow: 0 12px 30px rgba(229, 195, 127, 0.4);
+    transition: background 150ms ease, box-shadow 150ms ease, transform 120ms ease;
   }
 
   .ik-btn-primary:hover {
-    background-color: #B8941F;
+    background: linear-gradient(135deg, #F0D699 0%, #D4AF37 100%);
     transform: translateY(-1px);
-    box-shadow: 0 18px 40px rgba(212, 175, 55, 0.45);
+    box-shadow: 0 18px 40px rgba(229, 195, 127, 0.5);
   }
 
   .ik-btn-primary:active {
