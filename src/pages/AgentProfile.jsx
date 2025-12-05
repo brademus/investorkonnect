@@ -25,6 +25,11 @@ export default function AgentProfile() {
   const [reviews, setReviews] = useState([]);
 
   useEffect(() => {
+    if (!agentId) {
+      toast.error("No agent ID provided");
+      navigate(createPageUrl("AgentDirectory"));
+      return;
+    }
     checkNDAAndLoadProfile();
   }, [agentId]);
 
