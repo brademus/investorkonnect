@@ -44,24 +44,24 @@ export default function Home() {
       <section className="pt-32 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#F5E6B3] to-[#FAF7F2] rounded-full mb-8">
-            <div className="w-2 h-2 rounded-full bg-[#D4AF37]" />
-            <span className="text-sm font-medium text-[#111827]">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E5C37F]/20 to-[#D4AF37]/10 border border-[#E5C37F]/30 rounded-full mb-8">
+            <div className="w-2 h-2 rounded-full bg-[#E5C37F]" />
+            <span className="text-sm font-medium text-[#E5C37F]">
               The #1 Network for Investor-Friendly Agents
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-5xl md:text-6xl font-bold text-[#111827] mb-6 leading-tight">
+          <h1 className="text-5xl md:text-6xl font-bold text-[#FAFAFA] mb-6 leading-tight">
             Connect with agents who{" "}
             <span className="relative inline-block">
-              <span className="relative z-10 text-[#D4AF37]">speak your language</span>
-              <span className="absolute inset-x-0 bottom-2 h-4 bg-[#D4AF37] opacity-30 -rotate-1"></span>
+              <span className="relative z-10 text-[#E5C37F]">speak your language</span>
+              <span className="absolute inset-x-0 bottom-2 h-4 bg-[#E5C37F] opacity-30 -rotate-1"></span>
             </span>
           </h1>
 
           {/* Subheadline */}
-          <p className="text-lg text-[#4B5563] mb-10 max-w-2xl mx-auto">
+          <p className="text-lg text-[#A6A6A6] mb-10 max-w-2xl mx-auto">
             Stop wasting time explaining cap rates and BRRRR to residential agents. 
             Find vetted investor-friendly agents in your target market instantly.
           </p>
