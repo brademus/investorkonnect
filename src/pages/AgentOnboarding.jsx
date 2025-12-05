@@ -146,6 +146,12 @@ export default function AgentOnboarding() {
       console.log('[AgentOnboarding] Profile saved successfully');
 
       toast.success("Welcome to Investor Konnect!");
+      
+      // Refresh the profile data before navigating
+      if (refresh) {
+        await refresh();
+      }
+      
       await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl("Dashboard");
     } catch (error) {
