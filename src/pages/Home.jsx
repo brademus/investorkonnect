@@ -70,24 +70,24 @@ export default function Home() {
           <div className="mb-8">
             <Button
               onClick={handleGetStarted}
-              className="bg-[#D4AF37] hover:bg-[#B8941F] text-white px-12 py-4 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all"
+              className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] hover:from-[#F0D699] hover:to-[#D4AF37] text-[#0F0F0F] px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(229,195,127,0.4)] transition-all"
             >
               Submit Your First Deal
             </Button>
           </div>
 
           {/* Trust Badges */}
-          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#4B5563]">
+          <div className="flex flex-wrap justify-center gap-6 text-sm text-[#A6A6A6]">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
+              <CheckCircle className="w-5 h-5 text-[#E5C37F]" />
               <span>Vetted Experience</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
+              <CheckCircle className="w-5 h-5 text-[#E5C37F]" />
               <span>Market Data Access</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#D4AF37]" />
+              <CheckCircle className="w-5 h-5 text-[#E5C37F]" />
               <span>Off-Market Deals</span>
             </div>
           </div>
