@@ -78,11 +78,16 @@ export default function AgentProfile() {
 
   const loadProfile = async () => {
     try {
+      console.log("loadProfile called with agentId:", agentId);
+      
       // Check if this is a demo agent first
       const isDemo = String(agentId).startsWith('demo-');
+      console.log("Is demo agent:", isDemo);
       
       if (isDemo) {
+        console.log("Looking for demo agent in demoAgents array:", demoAgents.map(a => a.id));
         const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
+        console.log("Found demo agent:", demoAgent?.full_name);
         if (demoAgent) {
           setProfile(demoAgent);
           setReviews([]);
@@ -91,25 +96,48 @@ export default function AgentProfile() {
         }
       }
 
-      // Get real agent profile
-      const profiles = await base44.entities.Profile.filter({ id: agentId });
+      // Get real agent profile - try multiple approaches
+      let agentProfile = null;
       
-      if (profiles.length === 0) {
+      // First try filtering by id
+      try {
+        const profiles = await base44.entities.Profile.filter({ id: agentId });
+        console.log("Profiles found by id filter:", profiles.length);
+        if (profiles.length > 0) {
+          agentProfile = profiles[0];
+        }
+      } catch (err) {
+        console.log("Filter by id failed, trying list approach");
+      }
+      
+      // If not found, try listing all and finding
+      if (!agentProfile) {
+        try {
+          const allProfiles = await base44.entities.Profile.filter({});
+          agentProfile = allProfiles.find(p => String(p.id) === String(agentId));
+          console.log("Found via list approach:", !!agentProfile);
+        } catch (err) {
+          console.log("List approach failed too");
+        }
+      }
+      
+      if (!agentProfile) {
         // Try demo fallback
+        console.log("No real profile found, trying demo fallback");
         const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
         if (demoAgent) {
+          console.log("Using demo agent fallback:", demoAgent.full_name);
           setProfile(demoAgent);
           setReviews([]);
           setLoading(false);
           return;
         }
+        console.log("No demo agent found either");
         toast.error("Agent not found");
         navigate(createPageUrl("AgentDirectory"));
         return;
       }
 
-      const agentProfile = profiles[0];
-      
       // Verify this is an agent profile
       if (agentProfile.user_role !== 'agent' && agentProfile.user_type !== 'agent') {
         toast.error("Profile not found");
@@ -139,6 +167,7 @@ export default function AgentProfile() {
       // Try demo fallback on error
       const demoAgent = demoAgents.find(a => String(a.id) === String(agentId));
       if (demoAgent) {
+        console.log("Error occurred, using demo fallback:", demoAgent.full_name);
         setProfile(demoAgent);
         setReviews([]);
         setLoading(false);
