@@ -131,9 +131,11 @@ html {
 @layer components {
     /* Top navbar */
     .ik-navbar {
-      @apply bg-white border-b sticky top-0 z-40;
-      border-color: #E5E7EB;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+      @apply border-b sticky top-0 z-40;
+      background-color: rgba(15, 15, 15, 0.95);
+      backdrop-filter: blur(10px);
+      border-color: #333333;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
     }
 
     .ik-container {
@@ -142,8 +144,8 @@ html {
 
     .ik-body-shell {
       @apply min-h-screen;
-      background-color: #FAF7F2;
-      color: #111827;
+      background-color: #0F0F0F;
+      color: #FAFAFA;
     }
 
     /* Section typography */
