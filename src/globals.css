@@ -152,13 +152,14 @@ html {
     .ik-section-title {
       font-size: 1.5rem;
       font-weight: 600;
-      letter-spacing: -0.02em;
-      color: #111827;
+      letter-spacing: 0.02em;
+      color: #E5C37F;
+      font-family: 'Cormorant Garamond', serif;
     }
 
     .ik-section-subtitle {
       font-size: 0.9375rem;
-      color: #6B7280;
+      color: #A6A6A6;
     }
 
     /* Pill button */
