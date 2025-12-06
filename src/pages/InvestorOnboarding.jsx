@@ -141,34 +141,34 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="full_name">Full Name *</Label>
+          <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
           <Input 
             id="full_name" 
             value={formData.full_name} 
             onChange={(e) => updateField('full_name', e.target.value)} 
             placeholder="Your full name" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
+          <Label htmlFor="phone" className="text-[#FAFAFA]">Phone Number</Label>
           <Input 
             id="phone" 
             type="tel" 
             value={formData.phone} 
             onChange={(e) => updateField('phone', e.target.value)} 
             placeholder="(555) 123-4567" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
         <div>
-          <Label htmlFor="company">Company (optional)</Label>
+          <Label htmlFor="company" className="text-[#FAFAFA]">Company (optional)</Label>
           <Input 
             id="company" 
             value={formData.company} 
             onChange={(e) => updateField('company', e.target.value)} 
             placeholder="Your company name" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
       </div>
@@ -182,24 +182,24 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="primary_state">Primary Market / State *</Label>
+          <Label htmlFor="primary_state" className="text-[#FAFAFA]">Primary Market / State *</Label>
           <select 
             id="primary_state" 
             value={formData.primary_state} 
             onChange={(e) => updateField('primary_state', e.target.value)} 
-            className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px] mt-1"
+            className="h-12 w-full rounded-lg border border-[#1F1F1F] px-4 text-[16px] mt-1 bg-[#141414] text-[#FAFAFA]"
           >
             <option value="">Select your target state</option>
             {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </div>
         <div>
-          <Label htmlFor="investment_experience">Investment Experience</Label>
+          <Label htmlFor="investment_experience" className="text-[#FAFAFA]">Investment Experience</Label>
           <select 
             id="investment_experience" 
             value={formData.investment_experience} 
             onChange={(e) => updateField('investment_experience', e.target.value)} 
-            className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px] mt-1"
+            className="h-12 w-full rounded-lg border border-[#1F1F1F] px-4 text-[16px] mt-1 bg-[#141414] text-[#FAFAFA]"
           >
             <option value="">Select your experience level</option>
             <option value="beginner">Beginner (0-2 deals)</option>
@@ -218,14 +218,14 @@ export default function InvestorOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="goals">Investment Goals</Label>
+          <Label htmlFor="goals" className="text-[#FAFAFA]">Investment Goals</Label>
           <Textarea 
             id="goals" 
             value={formData.goals} 
             onChange={(e) => updateField('goals', e.target.value)} 
             placeholder="e.g., Looking for buy-and-hold rentals in growing markets, interested in multifamily properties..." 
             rows={5}
-            className="text-[16px] mt-1" 
+            className="text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
 

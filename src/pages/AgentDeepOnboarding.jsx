@@ -268,16 +268,16 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Full Name *</Label>
-          <Input value={formData.full_name} onChange={(e) => updateField('full_name', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Full Name *</Label>
+          <Input value={formData.full_name} onChange={(e) => updateField('full_name', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Phone *</Label>
-          <Input type="tel" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Phone *</Label>
+          <Input type="tel" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Brokerage</Label>
-          <Input value={formData.brokerage} onChange={(e) => updateField('brokerage', e.target.value)} placeholder="Your brokerage name" className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Brokerage</Label>
+          <Input value={formData.brokerage} onChange={(e) => updateField('brokerage', e.target.value)} placeholder="Your brokerage name" className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
       </div>
     </div>
@@ -290,25 +290,25 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>License Number *</Label>
-          <Input value={formData.license_number} onChange={(e) => updateField('license_number', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">License Number *</Label>
+          <Input value={formData.license_number} onChange={(e) => updateField('license_number', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>License State *</Label>
-          <select value={formData.license_state} onChange={(e) => updateField('license_state', e.target.value)} className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 mt-1">
+          <Label className="text-[#FAFAFA]">License State *</Label>
+          <select value={formData.license_state} onChange={(e) => updateField('license_state', e.target.value)} className="h-12 w-full rounded-lg border border-[#1F1F1F] px-4 mt-1 bg-[#141414] text-[#FAFAFA]">
             <option value="">Select state</option>
             {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
-          <Label>Years of Experience</Label>
-          <Input type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Years of Experience</Label>
+          <Input type="number" min="0" value={formData.experience_years} onChange={(e) => updateField('experience_years', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Are you a full-time agent?</Label>
+          <Label className="text-[#FAFAFA]">Are you a full-time agent?</Label>
           <RadioGroup value={formData.is_full_time_agent} onValueChange={(v) => updateField('is_full_time_agent', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="ft1" /><Label htmlFor="ft1" className="font-normal">Yes, full-time</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="ft2" /><Label htmlFor="ft2" className="font-normal">Part-time</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="ft1" /><Label htmlFor="ft1" className="font-normal text-[#FAFAFA]">Yes, full-time</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="ft2" /><Label htmlFor="ft2" className="font-normal text-[#FAFAFA]">Part-time</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -322,30 +322,30 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Markets you serve (select all) *</Label>
-          <div className="grid grid-cols-4 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border border-[#E5E5E5] rounded-lg">
+          <Label className="text-[#FAFAFA]">Markets you serve (select all) *</Label>
+          <div className="grid grid-cols-4 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border border-[#1F1F1F] rounded-lg">
             {US_STATES.map(state => (
               <div key={state} className="flex items-center gap-2">
                 <Checkbox checked={formData.markets?.includes(state)} onCheckedChange={() => toggleArrayField('markets', state)} />
-                <Label className="font-normal text-sm">{state}</Label>
+                <Label className="font-normal text-sm text-[#FAFAFA]">{state}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Property specialties (select all)</Label>
+          <Label className="text-[#FAFAFA]">Property specialties (select all)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {PROPERTY_TYPES.map(p => (
               <div key={p.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.specialties?.includes(p.value)} onCheckedChange={() => toggleArrayField('specialties', p.value)} />
-                <Label className="font-normal">{p.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{p.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Key neighborhoods/areas (optional)</Label>
-          <Textarea value={formData.primary_neighborhoods_notes} onChange={(e) => updateField('primary_neighborhoods_notes', e.target.value)} placeholder="e.g., Downtown Austin, East Dallas..." rows={2} className="mt-1" />
+          <Label className="text-[#FAFAFA]">Key neighborhoods/areas (optional)</Label>
+          <Textarea value={formData.primary_neighborhoods_notes} onChange={(e) => updateField('primary_neighborhoods_notes', e.target.value)} placeholder="e.g., Downtown Austin, East Dallas..." rows={2} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
       </div>
     </div>
@@ -358,28 +358,28 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Years working with investors</Label>
-          <Input type="number" min="0" value={formData.investor_experience_years} onChange={(e) => updateField('investor_experience_years', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Years working with investors</Label>
+          <Input type="number" min="0" value={formData.investor_experience_years} onChange={(e) => updateField('investor_experience_years', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Investor clients served (total)</Label>
-          <Input type="number" min="0" value={formData.investor_clients_count} onChange={(e) => updateField('investor_clients_count', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Investor clients served (total)</Label>
+          <Input type="number" min="0" value={formData.investor_clients_count} onChange={(e) => updateField('investor_clients_count', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Investment deals closed (last 12 months)</Label>
-          <Input type="number" min="0" value={formData.investment_deals_last_12m} onChange={(e) => updateField('investment_deals_last_12m', e.target.value)} className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Investment deals closed (last 12 months)</Label>
+          <Input type="number" min="0" value={formData.investment_deals_last_12m} onChange={(e) => updateField('investment_deals_last_12m', e.target.value)} className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>Do you personally invest in real estate?</Label>
+          <Label className="text-[#FAFAFA]">Do you personally invest in real estate?</Label>
           <RadioGroup value={formData.personally_invests} onValueChange={(v) => updateField('personally_invests', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="pi1" /><Label htmlFor="pi1" className="font-normal">Yes</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="pi2" /><Label htmlFor="pi2" className="font-normal">No</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="pi1" /><Label htmlFor="pi1" className="font-normal text-[#FAFAFA]">Yes</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="pi2" /><Label htmlFor="pi2" className="font-normal text-[#FAFAFA]">No</Label></div>
           </RadioGroup>
         </div>
         {formData.personally_invests === 'yes' && (
           <div>
-            <Label>Tell us about your investing (optional)</Label>
-            <Textarea value={formData.personal_investing_notes} onChange={(e) => updateField('personal_investing_notes', e.target.value)} rows={2} className="mt-1" />
+            <Label className="text-[#FAFAFA]">Tell us about your investing (optional)</Label>
+            <Textarea value={formData.personal_investing_notes} onChange={(e) => updateField('personal_investing_notes', e.target.value)} rows={2} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
           </div>
         )}
       </div>
@@ -393,18 +393,18 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Investment strategies you support (select all)</Label>
+          <Label className="text-[#FAFAFA]">Investment strategies you support (select all)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {INVESTMENT_STRATEGIES.map(s => (
               <div key={s.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.investment_strategies?.includes(s.value)} onCheckedChange={() => toggleArrayField('investment_strategies', s.value)} />
-                <Label className="font-normal">{s.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{s.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Investor types you've worked with (select all)</Label>
+          <Label className="text-[#FAFAFA]">Investor types you've worked with (select all)</Label>
           <div className="grid grid-cols-1 gap-2 mt-2">
             {[
               { value: 'first_time', label: 'First-time investors' },
@@ -414,14 +414,14 @@ export default function AgentDeepOnboarding() {
             ].map(i => (
               <div key={i.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.investor_types_served?.includes(i.value)} onCheckedChange={() => toggleArrayField('investor_types_served', i.value)} />
-                <Label className="font-normal">{i.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{i.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Typical deal price range</Label>
-          <Input value={formData.typical_deal_price_range} onChange={(e) => updateField('typical_deal_price_range', e.target.value)} placeholder="e.g., $150K - $500K" className="h-12 mt-1" />
+          <Label className="text-[#FAFAFA]">Typical deal price range</Label>
+          <Input value={formData.typical_deal_price_range} onChange={(e) => updateField('typical_deal_price_range', e.target.value)} placeholder="e.g., $150K - $500K" className="h-12 mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
       </div>
     </div>
@@ -434,25 +434,25 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Do you source off-market deals?</Label>
+          <Label className="text-[#FAFAFA]">Do you source off-market deals?</Label>
           <RadioGroup value={formData.sources_off_market} onValueChange={(v) => updateField('sources_off_market', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="om1" /><Label htmlFor="om1" className="font-normal">Yes</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="om2" /><Label htmlFor="om2" className="font-normal">No</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="om1" /><Label htmlFor="om1" className="font-normal text-[#FAFAFA]">Yes</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="om2" /><Label htmlFor="om2" className="font-normal text-[#FAFAFA]">No</Label></div>
           </RadioGroup>
         </div>
         {formData.sources_off_market === 'yes' && (
           <div>
-            <Label>How do you find off-market deals?</Label>
-            <Textarea value={formData.off_market_methods_notes} onChange={(e) => updateField('off_market_methods_notes', e.target.value)} rows={2} className="mt-1" />
+            <Label className="text-[#FAFAFA]">How do you find off-market deals?</Label>
+            <Textarea value={formData.off_market_methods_notes} onChange={(e) => updateField('off_market_methods_notes', e.target.value)} rows={2} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
           </div>
         )}
         <div>
-          <Label>Deal sourcing methods (select all)</Label>
+          <Label className="text-[#FAFAFA]">Deal sourcing methods (select all)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {DEAL_SOURCING.map(d => (
               <div key={d.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.deal_sourcing_methods?.includes(d.value)} onCheckedChange={() => toggleArrayField('deal_sourcing_methods', d.value)} />
-                <Label className="font-normal">{d.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{d.label}</Label>
               </div>
             ))}
           </div>
@@ -468,33 +468,33 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Professionals in your network (select all)</Label>
+          <Label className="text-[#FAFAFA]">Professionals in your network (select all)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {PRO_NETWORK.map(p => (
               <div key={p.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.pro_network_types?.includes(p.value)} onCheckedChange={() => toggleArrayField('pro_network_types', p.value)} />
-                <Label className="font-normal">{p.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{p.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Can you refer clients to these professionals?</Label>
+          <Label className="text-[#FAFAFA]">Can you refer clients to these professionals?</Label>
           <RadioGroup value={formData.can_refer_professionals} onValueChange={(v) => updateField('can_refer_professionals', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="rp1" /><Label htmlFor="rp1" className="font-normal">Yes</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="rp2" /><Label htmlFor="rp2" className="font-normal">No</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="rp1" /><Label htmlFor="rp1" className="font-normal text-[#FAFAFA]">Yes</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="rp2" /><Label htmlFor="rp2" className="font-normal text-[#FAFAFA]">No</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label>Can you provide investor client references?</Label>
+          <Label className="text-[#FAFAFA]">Can you provide investor client references?</Label>
           <RadioGroup value={formData.can_provide_investor_references} onValueChange={(v) => updateField('can_provide_investor_references', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="ir1" /><Label htmlFor="ir1" className="font-normal">Yes</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="ir2" /><Label htmlFor="ir2" className="font-normal">No</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="yes" id="ir1" /><Label htmlFor="ir1" className="font-normal text-[#FAFAFA]">Yes</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="no" id="ir2" /><Label htmlFor="ir2" className="font-normal text-[#FAFAFA]">No</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label>Tell us about your best investment deal (optional)</Label>
-          <Textarea value={formData.case_study_best_deal} onChange={(e) => updateField('case_study_best_deal', e.target.value)} placeholder="Brief case study..." rows={3} className="mt-1" />
+          <Label className="text-[#FAFAFA]">Tell us about your best investment deal (optional)</Label>
+          <Textarea value={formData.case_study_best_deal} onChange={(e) => updateField('case_study_best_deal', e.target.value)} placeholder="Brief case study..." rows={3} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
       </div>
     </div>
@@ -507,42 +507,42 @@ export default function AgentDeepOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label>Preferred communication (select all)</Label>
+          <Label className="text-[#FAFAFA]">Preferred communication (select all)</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {COMMUNICATION_PREFS.map(c => (
               <div key={c.value} className="flex items-center gap-2">
                 <Checkbox checked={formData.preferred_communication_channels?.includes(c.value)} onCheckedChange={() => toggleArrayField('preferred_communication_channels', c.value)} />
-                <Label className="font-normal">{c.label}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{c.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Typical response time</Label>
+          <Label className="text-[#FAFAFA]">Typical response time</Label>
           <RadioGroup value={formData.typical_response_time} onValueChange={(v) => updateField('typical_response_time', v)} className="mt-2 space-y-2">
-            <div className="flex items-center gap-2"><RadioGroupItem value="1" id="tr1" /><Label htmlFor="tr1" className="font-normal">Within 1 hour</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="2" id="tr2" /><Label htmlFor="tr2" className="font-normal">Same day</Label></div>
-            <div className="flex items-center gap-2"><RadioGroupItem value="3" id="tr3" /><Label htmlFor="tr3" className="font-normal">Within 24 hours</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="1" id="tr1" /><Label htmlFor="tr1" className="font-normal text-[#FAFAFA]">Within 1 hour</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="2" id="tr2" /><Label htmlFor="tr2" className="font-normal text-[#FAFAFA]">Same day</Label></div>
+            <div className="flex items-center gap-2"><RadioGroupItem value="3" id="tr3" /><Label htmlFor="tr3" className="font-normal text-[#FAFAFA]">Within 24 hours</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label>Languages spoken</Label>
+          <Label className="text-[#FAFAFA]">Languages spoken</Label>
           <div className="grid grid-cols-2 gap-2 mt-2">
             {['English', 'Spanish', 'Chinese', 'Vietnamese', 'Korean', 'Other'].map(lang => (
               <div key={lang} className="flex items-center gap-2">
                 <Checkbox checked={formData.languages_spoken?.includes(lang)} onCheckedChange={() => toggleArrayField('languages_spoken', lang)} />
-                <Label className="font-normal">{lang}</Label>
+                <Label className="font-normal text-[#FAFAFA]">{lang}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label>Professional bio</Label>
-          <Textarea value={formData.bio} onChange={(e) => updateField('bio', e.target.value)} placeholder="Tell investors about yourself..." rows={3} className="mt-1" />
+          <Label className="text-[#FAFAFA]">Professional bio</Label>
+          <Textarea value={formData.bio} onChange={(e) => updateField('bio', e.target.value)} placeholder="Tell investors about yourself..." rows={3} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
         <div>
-          <Label>What sets you apart for investor clients?</Label>
-          <Textarea value={formData.what_sets_you_apart} onChange={(e) => updateField('what_sets_you_apart', e.target.value)} rows={2} className="mt-1" />
+          <Label className="text-[#FAFAFA]">What sets you apart for investor clients?</Label>
+          <Textarea value={formData.what_sets_you_apart} onChange={(e) => updateField('what_sets_you_apart', e.target.value)} rows={2} className="mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" />
         </div>
 
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">

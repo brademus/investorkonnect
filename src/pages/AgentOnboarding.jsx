@@ -190,28 +190,28 @@ export default function AgentOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="full_name">Full Name *</Label>
+          <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
           <Input 
             id="full_name" 
             value={formData.full_name} 
             onChange={(e) => updateField('full_name', e.target.value)} 
             placeholder="Your full name" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number *</Label>
+          <Label htmlFor="phone" className="text-[#FAFAFA]">Phone Number *</Label>
           <Input 
             id="phone" 
             type="tel" 
             value={formData.phone} 
             onChange={(e) => updateField('phone', e.target.value)} 
             placeholder="(555) 123-4567" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
         <div>
-          <Label htmlFor="experience_years">Years of Experience</Label>
+          <Label htmlFor="experience_years" className="text-[#FAFAFA]">Years of Experience</Label>
           <Input 
             id="experience_years" 
             type="number"
@@ -219,7 +219,7 @@ export default function AgentOnboarding() {
             value={formData.experience_years} 
             onChange={(e) => updateField('experience_years', e.target.value)} 
             placeholder="e.g., 5" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
       </div>
@@ -233,30 +233,30 @@ export default function AgentOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="license_number">License Number *</Label>
+          <Label htmlFor="license_number" className="text-[#FAFAFA]">License Number *</Label>
           <Input 
             id="license_number" 
             value={formData.license_number} 
             onChange={(e) => updateField('license_number', e.target.value)} 
             placeholder="e.g., TX-123456" 
-            className="h-12 text-[16px] mt-1" 
+            className="h-12 text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
         </div>
         <div>
-          <Label htmlFor="license_state">License State *</Label>
+          <Label htmlFor="license_state" className="text-[#FAFAFA]">License State *</Label>
           <select 
             id="license_state" 
             value={formData.license_state} 
             onChange={(e) => updateField('license_state', e.target.value)} 
-            className="h-12 w-full rounded-lg border border-[#E5E5E5] px-4 text-[16px] mt-1"
+            className="h-12 w-full rounded-lg border border-[#1F1F1F] px-4 text-[16px] mt-1 bg-[#141414] text-[#FAFAFA]"
           >
             <option value="">Select state</option>
             {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </div>
         <div>
-          <Label>Markets You Serve *</Label>
-          <div className="grid grid-cols-4 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border border-[#E5E5E5] rounded-lg">
+          <Label className="text-[#FAFAFA]">Markets You Serve *</Label>
+          <div className="grid grid-cols-4 gap-2 mt-2 max-h-40 overflow-y-auto p-2 border border-[#1F1F1F] rounded-lg">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-2">
                 <Checkbox 
@@ -264,7 +264,7 @@ export default function AgentOnboarding() {
                   checked={formData.markets.includes(state)} 
                   onCheckedChange={() => toggleMarket(state)} 
                 />
-                <Label htmlFor={`market-${state}`} className="text-sm font-normal cursor-pointer">{state}</Label>
+                <Label htmlFor={`market-${state}`} className="text-sm font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
               </div>
             ))}
           </div>
@@ -280,16 +280,16 @@ export default function AgentOnboarding() {
       
       <div className="space-y-5">
         <div>
-          <Label htmlFor="bio">Professional Bio</Label>
+          <Label htmlFor="bio" className="text-[#FAFAFA]">Professional Bio</Label>
           <Textarea 
             id="bio" 
             value={formData.bio} 
             onChange={(e) => updateField('bio', e.target.value)} 
             placeholder="Introduce yourself and highlight your experience working with investor clients..." 
             rows={5}
-            className="text-[16px] mt-1" 
+            className="text-[16px] mt-1 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666]" 
           />
-          <p className="text-sm text-[#666666] mt-1">This will appear on your public profile</p>
+          <p className="text-sm text-[#808080] mt-1">This will appear on your public profile</p>
         </div>
 
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
