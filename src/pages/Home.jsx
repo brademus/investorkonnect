@@ -11,7 +11,6 @@ import {
 
 export default function Home() {
   const navigate = useNavigate();
-  const { loading, user, profile } = useCurrentProfile();
 
   const handleLogin = () => {
     // Always go through PostAuth - it handles all routing
