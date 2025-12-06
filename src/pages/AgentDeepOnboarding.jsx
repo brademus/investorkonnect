@@ -263,8 +263,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep1 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Basic Profile</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Let's start with the basics</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Basic Profile</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Let's start with the basics</p>
       
       <div className="space-y-6">
         <div>
@@ -285,8 +285,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">License & Experience</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Your credentials</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Experience</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your credentials</p>
       
       <div className="space-y-6">
         <div>
@@ -317,8 +317,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Markets & Specialties</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Where and what you work on</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Markets & Specialties</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Where and what you work on</p>
       
       <div className="space-y-6">
         <div>
@@ -353,8 +353,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep4 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Investor Experience</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Your experience with investor clients</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Investor Experience</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your experience with investor clients</p>
       
       <div className="space-y-6">
         <div>
@@ -388,8 +388,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep5 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Investment Strategies</h3>
-      <p className="text-[16px] text-[#808080] mb-8">What strategies you support</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Investment Strategies</h3>
+      <p className="text-[18px] text-[#808080] mb-10">What strategies you support</p>
       
       <div className="space-y-6">
         <div>
@@ -429,8 +429,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep6 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Deal Sourcing</h3>
-      <p className="text-[16px] text-[#808080] mb-8">How you find deals</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Deal Sourcing</h3>
+      <p className="text-[18px] text-[#808080] mb-10">How you find deals</p>
       
       <div className="space-y-6">
         <div>
@@ -463,8 +463,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep7 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Professional Network</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Your connections</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Professional Network</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your connections</p>
       
       <div className="space-y-6">
         <div>
@@ -502,8 +502,8 @@ export default function AgentDeepOnboarding() {
 
   const renderStep8 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Communication & Style</h3>
-      <p className="text-[16px] text-[#808080] mb-8">How you work with clients</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Communication & Style</h3>
+      <p className="text-[18px] text-[#808080] mb-10">How you work with clients</p>
       
       <div className="space-y-6">
         <div>
@@ -591,8 +591,8 @@ export default function AgentDeepOnboarding() {
         <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
-      <div className="max-w-[600px] mx-auto px-4 pb-12">
-        <div className="bg-[#0D0D0D] rounded-2xl p-10 border border-[#1F1F1F]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
+      <div className="max-w-[700px] mx-auto px-4 pb-12">
+        <div className="bg-[#0D0D0D] rounded-3xl p-12 border border-[#1F1F1F]" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
           {stepRenderers[step - 1]()}
 
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">

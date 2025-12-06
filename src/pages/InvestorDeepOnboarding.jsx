@@ -259,21 +259,21 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep1 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Basic Profile</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Let's start with the basics</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Basic Profile</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Let's start with the basics</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Full Name *</Label>
-          <Input value={formData.full_name} onChange={(e) => updateField('full_name', e.target.value)} className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Full Name *</Label>
+          <Input value={formData.full_name} onChange={(e) => updateField('full_name', e.target.value)} className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Phone *</Label>
-          <Input type="tel" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Phone *</Label>
+          <Input type="tel" value={formData.phone} onChange={(e) => updateField('phone', e.target.value)} className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Company (optional)</Label>
-          <Input value={formData.company} onChange={(e) => updateField('company', e.target.value)} className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
+          <Input value={formData.company} onChange={(e) => updateField('company', e.target.value)} className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
       </div>
     </div>
@@ -281,34 +281,34 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Experience & Accreditation</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Tell us about your investing background</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Experience & Accreditation</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Tell us about your investing background</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">How would you describe yourself?</Label>
-          <RadioGroup value={formData.investor_description} onValueChange={(v) => updateField('investor_description', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="new" id="new" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="new" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">New investor (0 deals)</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="few_deals" id="few" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="few" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Have done a few deals</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="experienced" id="exp" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="exp" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Experienced (10+ deals)</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="professional" id="pro" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="pro" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Professional/Institutional</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">How would you describe yourself?</Label>
+          <RadioGroup value={formData.investor_description} onValueChange={(v) => updateField('investor_description', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="new" id="new" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="new" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">New investor (0 deals)</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="few_deals" id="few" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="few" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Have done a few deals</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="experienced" id="exp" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="exp" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Experienced (10+ deals)</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="professional" id="pro" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pro" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Professional/Institutional</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Deals closed in last 24 months</Label>
-          <RadioGroup value={formData.deals_closed_24mo} onValueChange={(v) => updateField('deals_closed_24mo', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="0" id="d0" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="d0" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">0</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="1_2" id="d12" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="d12" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">1-2</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="3_5" id="d35" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="d35" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">3-5</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="6_plus" id="d6" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="d6" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">6+</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Deals closed in last 24 months</Label>
+          <RadioGroup value={formData.deals_closed_24mo} onValueChange={(v) => updateField('deals_closed_24mo', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="0" id="d0" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d0" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">0</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="1_2" id="d12" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d12" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">1-2</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="3_5" id="d35" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d35" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">3-5</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="6_plus" id="d6" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d6" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">6+</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Are you an accredited investor?</Label>
-          <RadioGroup value={formData.accredited_investor} onValueChange={(v) => updateField('accredited_investor', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="yes" id="ay" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="ay" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Yes</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="no" id="an" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="an" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">No</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="not_sure" id="ans" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="ans" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Not sure</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Are you an accredited investor?</Label>
+          <RadioGroup value={formData.accredited_investor} onValueChange={(v) => updateField('accredited_investor', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="ay" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ay" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="an" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="an" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="not_sure" id="ans" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ans" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Not sure</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -317,37 +317,37 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Capital & Financing</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Your budget and financing preferences</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Capital & Financing</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your budget and financing preferences</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Capital available in next 12 months</Label>
-          <RadioGroup value={formData.capital_available_12mo} onValueChange={(v) => updateField('capital_available_12mo', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="under_50k" id="c1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="c1" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Under $50K</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="50k_150k" id="c2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="c2" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">$50K - $150K</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="150k_300k" id="c3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="c3" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">$150K - $300K</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="300k_600k" id="c4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="c4" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">$300K - $600K</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="600k_plus" id="c5" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="c5" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">$600K+</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Capital available in next 12 months</Label>
+          <RadioGroup value={formData.capital_available_12mo} onValueChange={(v) => updateField('capital_available_12mo', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="under_50k" id="c1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Under $50K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="50k_150k" id="c2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$50K - $150K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="150k_300k" id="c3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$150K - $300K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="300k_600k" id="c4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$300K - $600K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="600k_plus" id="c5" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c5" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$600K+</Label></div>
           </RadioGroup>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Financing methods you use (select all)</Label>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Financing methods you use (select all)</Label>
+          <div className="grid grid-cols-2 gap-4 mt-4">
             {FINANCING_METHODS.map(m => (
-              <div key={m.value} className="flex items-center gap-3">
-                <Checkbox checked={formData.financing_methods?.includes(m.value)} onCheckedChange={() => toggleArrayField('financing_methods', m.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]" />
-                <Label className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">{m.label}</Label>
+              <div key={m.value} className="flex items-center gap-4">
+                <Checkbox checked={formData.financing_methods?.includes(m.value)} onCheckedChange={() => toggleArrayField('financing_methods', m.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{m.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Do you have financing lined up?</Label>
-          <RadioGroup value={formData.financing_lined_up} onValueChange={(v) => updateField('financing_lined_up', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="yes" id="fl1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="fl1" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Yes</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="in_progress" id="fl2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="fl2" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">In progress</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="no" id="fl3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="fl3" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">No</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Do you have financing lined up?</Label>
+          <RadioGroup value={formData.financing_lined_up} onValueChange={(v) => updateField('financing_lined_up', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="fl1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="in_progress" id="fl2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">In progress</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="fl3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -356,39 +356,39 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep4 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Strategy & Deals</h3>
-      <p className="text-[16px] text-[#808080] mb-8">What kind of deals are you looking for?</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Strategy & Deals</h3>
+      <p className="text-[18px] text-[#808080] mb-10">What kind of deals are you looking for?</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Investment strategies (select all)</Label>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Investment strategies (select all)</Label>
+          <div className="grid grid-cols-2 gap-4 mt-4">
             {INVESTMENT_STRATEGIES.map(s => (
-              <div key={s.value} className="flex items-center gap-3">
-                <Checkbox checked={formData.investment_strategies?.includes(s.value)} onCheckedChange={() => toggleArrayField('investment_strategies', s.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]" />
-                <Label className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">{s.label}</Label>
+              <div key={s.value} className="flex items-center gap-4">
+                <Checkbox checked={formData.investment_strategies?.includes(s.value)} onCheckedChange={() => toggleArrayField('investment_strategies', s.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{s.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Property types (select all)</Label>
-          <div className="grid grid-cols-2 gap-3 mt-3">
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property types (select all)</Label>
+          <div className="grid grid-cols-2 gap-4 mt-4">
             {PROPERTY_TYPES.map(p => (
-              <div key={p.value} className="flex items-center gap-3">
-                <Checkbox checked={formData.property_types?.includes(p.value)} onCheckedChange={() => toggleArrayField('property_types', p.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567]" />
-                <Label className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">{p.label}</Label>
+              <div key={p.value} className="flex items-center gap-4">
+                <Checkbox checked={formData.property_types?.includes(p.value)} onCheckedChange={() => toggleArrayField('property_types', p.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{p.label}</Label>
               </div>
             ))}
           </div>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Property condition preference</Label>
-          <RadioGroup value={formData.property_condition} onValueChange={(v) => updateField('property_condition', v)} className="mt-3 space-y-3">
-            <div className="flex items-center gap-3"><RadioGroupItem value="turnkey" id="pc1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="pc1" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Turnkey</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="light_cosmetic" id="pc2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="pc2" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Light cosmetic</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="heavy_rehab" id="pc3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="pc3" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Heavy rehab</Label></div>
-            <div className="flex items-center gap-3"><RadioGroupItem value="any" id="pc4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black" /><Label htmlFor="pc4" className="font-normal text-[#FAFAFA] text-[16px] cursor-pointer">Any condition</Label></div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property condition preference</Label>
+          <RadioGroup value={formData.property_condition} onValueChange={(v) => updateField('property_condition', v)} className="mt-4 space-y-4">
+            <div className="flex items-center gap-4"><RadioGroupItem value="turnkey" id="pc1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Turnkey</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="light_cosmetic" id="pc2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Light cosmetic</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="heavy_rehab" id="pc3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Heavy rehab</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="any" id="pc4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Any condition</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -397,28 +397,28 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep5 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Target Markets</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Where do you want to invest?</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Target Markets</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Where do you want to invest?</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Primary state *</Label>
-          <select value={formData.primary_state} onChange={(e) => updateField('primary_state', e.target.value)} className="h-14 w-full rounded-lg border border-[#1F1F1F] px-4 mt-2 bg-[#141414] text-[#FAFAFA] text-[18px] focus:border-[#E3C567] focus:ring-[#E3C567]">
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Primary state *</Label>
+          <select value={formData.primary_state} onChange={(e) => updateField('primary_state', e.target.value)} className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 mt-3 bg-[#141414] text-[#FAFAFA] text-[19px] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30">
             <option value="">Select state</option>
             {US_STATES.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Specific cities or counties (optional)</Label>
-          <Input value={formData.specific_cities_counties} onChange={(e) => updateField('specific_cities_counties', e.target.value)} placeholder="e.g., Austin, Dallas County" className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Specific cities or counties (optional)</Label>
+          <Input value={formData.specific_cities_counties} onChange={(e) => updateField('specific_cities_counties', e.target.value)} placeholder="e.g., Austin, Dallas County" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Price range (min)</Label>
-          <Input type="number" value={formData.state_price_min} onChange={(e) => updateField('state_price_min', e.target.value)} placeholder="e.g., 100000" className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Price range (min)</Label>
+          <Input type="number" value={formData.state_price_min} onChange={(e) => updateField('state_price_min', e.target.value)} placeholder="e.g., 100000" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[17px]">Price range (max)</Label>
-          <Input type="number" value={formData.state_price_max} onChange={(e) => updateField('state_price_max', e.target.value)} placeholder="e.g., 500000" className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" />
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Price range (max)</Label>
+          <Input type="number" value={formData.state_price_max} onChange={(e) => updateField('state_price_max', e.target.value)} placeholder="e.g., 500000" className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" />
         </div>
       </div>
     </div>
@@ -426,8 +426,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep6 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Deal Structure</h3>
-      <p className="text-[16px] text-[#808080] mb-8">How you like to structure deals</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Deal Structure</h3>
+      <p className="text-[18px] text-[#808080] mb-10">How you like to structure deals</p>
       
       <div className="space-y-6">
         <div>
@@ -470,8 +470,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep7 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Risk & Speed</h3>
-      <p className="text-[16px] text-[#808080] mb-8">How fast can you move on deals?</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Risk & Speed</h3>
+      <p className="text-[18px] text-[#808080] mb-10">How fast can you move on deals?</p>
       
       <div className="space-y-6">
         <div>
@@ -505,8 +505,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep8 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Working with Agents</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Help us match you with the right agent</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Working with Agents</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Help us match you with the right agent</p>
       
       <div className="space-y-6">
         <div>
@@ -600,8 +600,8 @@ export default function InvestorDeepOnboarding() {
         <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
-      <div className="max-w-[600px] mx-auto px-4 pb-12">
-        <div className="bg-[#0D0D0D] rounded-2xl p-10 border border-[#1F1F1F]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
+      <div className="max-w-[700px] mx-auto px-4 pb-12">
+        <div className="bg-[#0D0D0D] rounded-3xl p-12 border border-[#1F1F1F]" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
           {stepRenderers[step - 1]()}
 
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">

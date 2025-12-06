@@ -136,39 +136,39 @@ export default function InvestorOnboarding() {
 
   const renderStep1 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Let's get started</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Tell us a bit about yourself</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[17px]">Full Name *</Label>
+          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Name *</Label>
           <Input 
             id="full_name" 
             value={formData.full_name} 
             onChange={(e) => updateField('full_name', e.target.value)} 
             placeholder="Your full name" 
-            className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
         <div>
-          <Label htmlFor="phone" className="text-[#FAFAFA] text-[17px]">Phone Number</Label>
+          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number</Label>
           <Input 
             id="phone" 
             type="tel" 
             value={formData.phone} 
             onChange={(e) => updateField('phone', e.target.value)} 
             placeholder="(555) 123-4567" 
-            className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
         <div>
-          <Label htmlFor="company" className="text-[#FAFAFA] text-[17px]">Company (optional)</Label>
+          <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
           <Input 
             id="company" 
             value={formData.company} 
             onChange={(e) => updateField('company', e.target.value)} 
             placeholder="Your company name" 
-            className="h-14 text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
       </div>
@@ -177,29 +177,29 @@ export default function InvestorOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Your investment focus</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Where are you looking to invest?</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Where are you looking to invest?</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label htmlFor="primary_state" className="text-[#FAFAFA] text-[17px]">Primary Market / State *</Label>
+          <Label htmlFor="primary_state" className="text-[#FAFAFA] text-[19px] font-medium">Primary Market / State *</Label>
           <select 
             id="primary_state" 
             value={formData.primary_state} 
             onChange={(e) => updateField('primary_state', e.target.value)} 
-            className="h-14 w-full rounded-lg border border-[#1F1F1F] px-4 text-[18px] mt-2 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-[#E3C567]"
+            className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
           >
             <option value="">Select your target state</option>
             {US_STATES.map(state => <option key={state} value={state}>{state}</option>)}
           </select>
         </div>
         <div>
-          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[17px]">Investment Experience</Label>
+          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">Investment Experience</Label>
           <select 
             id="investment_experience" 
             value={formData.investment_experience} 
             onChange={(e) => updateField('investment_experience', e.target.value)} 
-            className="h-14 w-full rounded-lg border border-[#1F1F1F] px-4 text-[18px] mt-2 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-[#E3C567]"
+            className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
           >
             <option value="">Select your experience level</option>
             <option value="beginner">Beginner (0-2 deals)</option>
@@ -213,19 +213,19 @@ export default function InvestorOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">What are your goals?</h3>
-      <p className="text-[16px] text-[#808080] mb-8">Help us understand what you're looking for</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">What are your goals?</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Help us understand what you're looking for</p>
       
-      <div className="space-y-6">
+      <div className="space-y-7">
         <div>
-          <Label htmlFor="goals" className="text-[#FAFAFA] text-[17px]">Investment Goals</Label>
+          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Investment Goals</Label>
           <Textarea 
             id="goals" 
             value={formData.goals} 
             onChange={(e) => updateField('goals', e.target.value)} 
             placeholder="e.g., Looking for buy-and-hold rentals in growing markets, interested in multifamily properties..." 
-            rows={5}
-            className="text-[18px] mt-2 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-[#E3C567]" 
+            rows={6}
+            className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" 
           />
         </div>
 
@@ -268,8 +268,8 @@ export default function InvestorOnboarding() {
         <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
-      <div className="max-w-[600px] mx-auto px-4 pb-12">
-        <div className="bg-[#0D0D0D] rounded-2xl p-10 border border-[#1F1F1F]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
+      <div className="max-w-[700px] mx-auto px-4 pb-12">
+        <div className="bg-[#0D0D0D] rounded-3xl p-12 border border-[#1F1F1F]" style={{ boxShadow: '0 6px 30px rgba(0,0,0,0.6)' }}>
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
