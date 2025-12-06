@@ -62,6 +62,8 @@ import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
 import AIAssistant from './pages/AIAssistant';
 import InvestorDirectory from './pages/InvestorDirectory';
 import ActiveDeals from './pages/ActiveDeals';
+import PendingDeals from './pages/PendingDeals';
+import ClosedDeals from './pages/ClosedDeals';
 import __Layout from './Layout.jsx';
 
 
@@ -130,6 +132,8 @@ export const PAGES = {
     "AIAssistant": AIAssistant,
     "InvestorDirectory": InvestorDirectory,
     "ActiveDeals": ActiveDeals,
+    "PendingDeals": PendingDeals,
+    "ClosedDeals": ClosedDeals,
 }
 
 export const pagesConfig = {

@@ -223,7 +223,10 @@ function InvestorDashboardContent() {
               <span className="text-xl font-bold text-[#E5C37F]">{dealStats.active}</span>
             </button>
             
-            <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333333]">
+            <button 
+              onClick={() => navigate(createPageUrl("PendingDeals"))}
+              className="w-full flex items-center justify-between p-3 bg-[#262626] rounded-lg hover:bg-[#333333] transition-colors cursor-pointer border border-[#333333] hover:border-[#A6A6A6]"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-[#666666] rounded-lg flex items-center justify-center">
                   <FileText className="w-4 h-4 text-[#FAFAFA]" />
@@ -231,9 +234,12 @@ function InvestorDashboardContent() {
                 <span className="font-medium text-[#FAFAFA]">Pending</span>
               </div>
               <span className="text-xl font-bold text-[#A6A6A6]">{dealStats.pending}</span>
-            </div>
+            </button>
             
-            <div className="flex items-center justify-between p-3 bg-[#34D399]/20 rounded-lg border border-[#34D399]/30">
+            <button 
+              onClick={() => navigate(createPageUrl("ClosedDeals"))}
+              className="w-full flex items-center justify-between p-3 bg-[#34D399]/20 rounded-lg hover:bg-[#34D399]/30 transition-colors cursor-pointer border border-[#34D399]/30"
+            >
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 bg-[#34D399] rounded-lg flex items-center justify-center">
                   <DollarSign className="w-4 h-4 text-[#0F0F0F]" />
@@ -241,7 +247,7 @@ function InvestorDashboardContent() {
                 <span className="font-medium text-[#FAFAFA]">Closed</span>
               </div>
               <span className="text-xl font-bold text-[#34D399]">{dealStats.closed}</span>
-            </div>
+            </button>
           </div>
         </div>
 
