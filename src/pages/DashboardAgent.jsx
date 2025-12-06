@@ -22,7 +22,6 @@ function AgentDashboardContent() {
 
   const loadProfile = async () => {
     try {
-      // First try the /functions/me endpoint
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include',
@@ -36,14 +35,12 @@ function AgentDashboardContent() {
       if (response.ok) {
         const state = await response.json();
         if (state.profile) {
-          console.log('[DashboardAgent] Profile from /functions/me:', state.profile);
           setProfile(state.profile);
           setLoading(false);
           return;
         }
       }
       
-      // Fallback: fetch profile directly from entity
       const { base44 } = await import('@/api/base44Client');
       const user = await base44.auth.me();
       if (user) {
@@ -53,7 +50,6 @@ function AgentDashboardContent() {
           profiles = await base44.entities.Profile.filter({ user_id: user.id });
         }
         if (profiles?.length > 0) {
-          console.log('[DashboardAgent] Profile from direct fetch:', profiles[0]);
           setProfile(profiles[0]);
         }
       }
@@ -68,10 +64,10 @@ function AgentDashboardContent() {
     return (
       <>
         <Header profile={profile} />
-        <div className="min-h-screen bg-[#151311] flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-[#C9A961] animate-spin mx-auto mb-4" />
-            <p className="text-[#9E9E9E] text-sm">Loading your dashboard...</p>
+            <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
+            <p className="text-[#808080] text-sm">Loading your dashboard...</p>
           </div>
         </div>
       </>
@@ -90,127 +86,115 @@ function AgentDashboardContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="min-h-screen bg-[#151311]">
-        <div className="max-w-[1920px] mx-auto px-8 py-12">
-          <div className="space-y-10 lg:space-y-12">
+      <div className="min-h-screen bg-black">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="space-y-8">
             
-            {/* Page Header */}
-            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-              <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-[#C9A961]">
-                  Welcome back, {firstName}!
-                </h1>
-                <p className="mt-2 text-base text-[#9E9E9E]">
-                  Track your profile performance and connect with investors.
-                </p>
-              </div>
+            {/* Header */}
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#E3C567] mb-2">
+                Welcome back, {firstName}!
+              </h1>
+              <p className="text-base text-[#808080]">
+                Track your performance and connect with investors.
+              </p>
             </div>
 
             {/* Setup Checklist */}
             <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
             {/* 4-Box Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               
               {/* Box 1: Find Investors */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-16 h-16 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-8 h-8 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <span className="px-4 py-2 bg-[#34D399]/20 text-[#34D399] text-sm font-medium rounded-full border border-[#34D399]/30">
-                    Primary Action
+                  <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full">
+                    Primary
                   </span>
                 </div>
-                <h3 className="text-2xl font-bold text-[#FAFAFA] mb-4">Find Investors</h3>
-                <p className="text-lg text-[#808080] mb-8 flex-grow">
-                  Browse and connect with verified investors looking for agents in your market.
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Find Investors</h3>
+                <p className="text-sm text-[#808080] mb-6 flex-grow">
+                  Browse verified investors looking for agents in your market.
                 </p>
                 <Button 
                   onClick={() => navigate(createPageUrl("InvestorDirectory"))}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold text-lg py-6"
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Browse Investors
                 </Button>
               </div>
 
               {/* Box 2: Performance Stats */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col">
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-16 h-16 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-8 h-8 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("MyProfile")} className="text-sm text-[#E3C567] hover:underline">
-                    View profile →
+                  <Link to={createPageUrl("MyProfile")} className="text-xs text-[#E3C567] hover:underline">
+                    View →
                   </Link>
                 </div>
-                <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">Your Performance</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Performance</h3>
                 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-[#E3C567]/20 rounded-lg border border-[#E3C567]/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#E3C567] rounded-lg flex items-center justify-center">
-                        <Eye className="w-4 h-4 text-black" />
-                      </div>
-                      <span className="font-medium text-[#FAFAFA]">Profile Views</span>
+                <div className="space-y-2 flex-grow">
+                  <div className="flex items-center justify-between p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                    <div className="flex items-center gap-2">
+                      <Eye className="w-4 h-4 text-[#E3C567]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Profile Views</span>
                     </div>
-                    <span className="text-xl font-bold text-[#E3C567]">{userData.profileViews}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{userData.profileViews}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#666666] rounded-lg flex items-center justify-center">
-                        <Users className="w-4 h-4 text-[#FAFAFA]" />
-                      </div>
-                      <span className="font-medium text-[#FAFAFA]">Active Clients</span>
+                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-[#808080]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Active Clients</span>
                     </div>
-                    <span className="text-xl font-bold text-[#808080]">{userData.activeClients}</span>
+                    <span className="text-lg font-bold text-[#808080]">{userData.activeClients}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-[#34D399]/20 rounded-lg border border-[#34D399]/30">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#34D399] rounded-lg flex items-center justify-center">
-                        <TrendingUp className="w-4 h-4 text-black" />
-                      </div>
-                      <span className="font-medium text-[#FAFAFA]">Profile Strength</span>
+                  <div className="flex items-center justify-between p-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
+                    <div className="flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-[#34D399]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Strength</span>
                     </div>
-                    <span className="text-xl font-bold text-[#34D399]">{profileCompletion}%</span>
+                    <span className="text-lg font-bold text-[#34D399]">{profileCompletion}%</span>
                   </div>
                 </div>
               </div>
 
               {/* Box 3: Messages */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col">
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-16 h-16 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-8 h-8 text-[#DB2777]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-[#DB2777]" />
                   </div>
-                  <Link to={createPageUrl("DealRooms")} className="text-sm text-[#E3C567] hover:underline">
+                  <Link to={createPageUrl("DealRooms")} className="text-xs text-[#E3C567] hover:underline">
                     View all →
                   </Link>
                 </div>
-                <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">Messages & Requests</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
                 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-[#1F1F1F] hover:border-[#DB2777] hover:bg-[#141414] transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#DB2777]/20 rounded-full flex items-center justify-center">
-                        <MessageSquare className="w-4 h-4 text-[#DB2777]" />
-                      </div>
-                      <span className="font-medium text-[#FAFAFA]">Unread Messages</span>
+                <div className="space-y-2 flex-grow">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#DB2777]/10 border border-[#DB2777]/20">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-[#DB2777]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Unread</span>
                     </div>
-                    <span className="text-xl font-bold text-[#DB2777]">{userData.unreadMessages}</span>
+                    <span className="text-lg font-bold text-[#DB2777]">{userData.unreadMessages}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] transition-all">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
-                        <Users className="w-4 h-4 text-[#E3C567]" />
-                      </div>
-                      <span className="font-medium text-[#FAFAFA]">Pending Requests</span>
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#E3C567]/10 border border-[#E3C567]/20">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-[#E3C567]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Pending</span>
                     </div>
-                    <span className="text-xl font-bold text-[#E3C567]">{userData.pendingRequests}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{userData.pendingRequests}</span>
                   </div>
                 </div>
                 
@@ -219,32 +203,32 @@ function AgentDashboardContent() {
                   variant="outline"
                   className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
                 >
-                  Open Deal Rooms
+                  Open Rooms
                 </Button>
               </div>
 
               {/* Box 4: New Leads */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col">
-                <div className="flex items-start justify-between mb-8">
-                  <div className="w-16 h-16 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-8 h-8 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("InvestorDirectory")} className="text-sm text-[#E5C37F] hover:underline">
+                  <Link to={createPageUrl("InvestorDirectory")} className="text-xs text-[#E5C37F] hover:underline">
                     View all →
                   </Link>
                 </div>
-                <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">New Leads</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">New Leads</h3>
                 
-                <div className="text-center py-6">
-                  <Sparkles className="w-10 h-10 text-[#333333] mx-auto mb-2" />
-                  <p className="text-sm text-[#A6A6A6]">No new matches yet</p>
-                  <p className="text-xs text-[#666666]">Check back soon for investor matches</p>
+                <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
+                  <Sparkles className="w-8 h-8 text-[#333333] mb-2" />
+                  <p className="text-sm text-[#808080]">No new matches yet</p>
+                  <p className="text-xs text-[#666666]">Check back soon</p>
                 </div>
                 
                 <Button 
                   onClick={() => navigate(createPageUrl("InvestorDirectory"))}
                   variant="outline"
-                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                  className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
                 >
                   Browse Investors
                 </Button>
@@ -264,12 +248,12 @@ function AgentDashboardContent() {
                   <Link 
                     key={link.href} 
                     to={createPageUrl(link.href)} 
-                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-3 p-4 hover:border-[#E3C567] hover:bg-[#141414] transition-all"
+                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-2 p-3 hover:border-[#E3C567] hover:bg-[#141414] transition-all"
                   >
                     <div className="w-8 h-8 bg-[#E3C567]/20 rounded-lg flex items-center justify-center">
                       <Icon className="w-4 h-4 text-[#E3C567]" />
                     </div>
-                    <span className="font-medium text-[#FAFAFA]">{link.label}</span>
+                    <span className="text-sm font-medium text-[#FAFAFA]">{link.label}</span>
                   </Link>
                 );
               })}
