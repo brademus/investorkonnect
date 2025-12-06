@@ -177,16 +177,16 @@ export default function AgentOnboarding() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
       </div>
     );
   }
 
   const renderStep1 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Let's get started</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Tell us a bit about yourself</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Let's get started</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Tell us a bit about yourself</p>
       
       <div className="space-y-5">
         <div>
@@ -228,8 +228,8 @@ export default function AgentOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">License & Markets</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Your license info and service areas</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">License & Markets</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Your license info and service areas</p>
       
       <div className="space-y-5">
         <div>
@@ -275,8 +275,8 @@ export default function AgentOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Your Bio</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Tell investors about yourself</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Your Bio</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Tell investors about yourself</p>
       
       <div className="space-y-5">
         <div>
@@ -292,9 +292,9 @@ export default function AgentOnboarding() {
           <p className="text-sm text-[#666666] mt-1">This will appear on your public profile</p>
         </div>
 
-        <div className="bg-[#FFFBEB] border border-[#FCD34D] rounded-xl p-5 mt-6">
-          <h4 className="font-semibold text-[#92400E] mb-2">🎉 You're almost done!</h4>
-          <p className="text-sm text-[#92400E]">
+        <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
+          <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
+          <p className="text-sm text-[#E3C567]">
             After completing this, you can add more details from your dashboard to improve your profile and get matched with more investors.
           </p>
         </div>
@@ -303,13 +303,13 @@ export default function AgentOnboarding() {
   );
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
-      <header className="h-20 flex items-center justify-center border-b border-[#E5E5E5]">
+    <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
+      <header className="h-20 flex items-center justify-center border-b border-[#1F1F1F]">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#D4AF37] rounded-xl flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-[#E3C567] rounded-xl flex items-center justify-center">
+            <CheckCircle className="w-6 h-6 text-black" />
           </div>
-          <span className="text-xl font-bold text-black">INVESTOR KONNECT</span>
+          <span className="text-xl font-bold text-[#E3C567]">INVESTOR KONNECT</span>
         </div>
       </header>
 
@@ -320,33 +320,33 @@ export default function AgentOnboarding() {
               key={idx}
               className={`rounded-full transition-all ${
                 idx + 1 === step 
-                  ? 'w-4 h-4 bg-[#D4AF37] animate-pulse' 
+                  ? 'w-4 h-4 bg-[#E3C567] animate-pulse' 
                   : idx + 1 < step 
-                    ? 'w-3 h-3 bg-[#D4AF37]' 
-                    : 'w-3 h-3 border-2 border-[#E5E5E5] bg-transparent'
+                    ? 'w-3 h-3 bg-[#E3C567]' 
+                    : 'w-3 h-3 border-2 border-[#1F1F1F] bg-transparent'
               }`}
             />
           ))}
         </div>
-        <p className="text-[14px] text-[#666666]">Step {step} of {TOTAL_STEPS}</p>
+        <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
       <div className="max-w-[500px] mx-auto px-4 pb-12">
-        <div className="bg-white rounded-2xl p-8 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+        <div className="bg-[#0D0D0D] rounded-2xl p-8 border border-[#1F1F1F]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
 
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E5E5]">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">
             {step > 1 ? (
-              <button onClick={handleBack} disabled={saving} className="text-[#666666] hover:text-black font-medium transition-colors">
+              <button onClick={handleBack} disabled={saving} className="text-[#808080] hover:text-[#E3C567] font-medium transition-colors">
                 ← Back
               </button>
             ) : <div />}
             <button
               onClick={handleNext}
               disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.license_state || formData.markets.length === 0))}
-              className="h-12 px-8 rounded-lg bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold transition-all duration-200 disabled:bg-[#E5E5E5] disabled:text-[#999999]"
+              className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Saving...</>
