@@ -64,6 +64,7 @@ import InvestorDirectory from './pages/InvestorDirectory';
 import ActiveDeals from './pages/ActiveDeals';
 import PendingDeals from './pages/PendingDeals';
 import ClosedDeals from './pages/ClosedDeals';
+import Pipeline from './pages/Pipeline';
 import __Layout from './Layout.jsx';
 
 
@@ -134,6 +135,7 @@ export const PAGES = {
     "ActiveDeals": ActiveDeals,
     "PendingDeals": PendingDeals,
     "ClosedDeals": ClosedDeals,
+    "Pipeline": Pipeline,
 }
 
 export const pagesConfig = {
