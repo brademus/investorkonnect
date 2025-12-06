@@ -108,21 +108,21 @@ export default function RoleSelection() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="max-w-5xl w-full">
         
         {/* Back Button */}
         <div className="mb-8">
           <button
             onClick={() => navigate(createPageUrl("Home"))}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#E5E7EB] bg-white text-sm font-medium hover:border-[#D3A029]"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#1F1F1F] bg-[#0D0D0D] text-sm font-medium text-[#FAFAFA] hover:border-[#E3C567]"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -131,10 +131,10 @@ export default function RoleSelection() {
 
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-[#111827] mb-4">
+          <h1 className="text-4xl font-bold text-[#E3C567] mb-4">
             How will you use Investor Konnect?
           </h1>
-          <p className="text-lg text-[#6B7280]">
+          <p className="text-lg text-[#808080]">
             Choose your role to get started
           </p>
         </div>
@@ -146,34 +146,34 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('investor')}
             disabled={selectedChoice !== null}
-            className={`bg-white border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
-              selectedChoice === 'investor' ? 'border-[#D3A029] border-2 ring-4 ring-[#D3A029]/20' : 'border-[#E5E7EB]'
+            className={`bg-[#0D0D0D] border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
+              selectedChoice === 'investor' ? 'border-[#E3C567] border-2 ring-4 ring-[#E3C567]/20' : 'border-[#1F1F1F]'
             } ${selectedChoice && selectedChoice !== 'investor' ? 'opacity-50' : ''}`}
           >
-            <div className="w-14 h-14 rounded-full bg-[#FEF3C7] flex items-center justify-center mb-6 text-2xl">📈</div>
+            <div className="w-14 h-14 rounded-full bg-[#E3C567]/20 flex items-center justify-center mb-6 text-2xl">📈</div>
             
-            <h2 className="text-2xl font-bold text-[#111827] mb-3">I'm an Investor</h2>
+            <h2 className="text-2xl font-bold text-[#E3C567] mb-3">I'm an Investor</h2>
             
-            <p className="text-[#6B7280] mb-6">
+            <p className="text-[#808080] mb-6">
               Looking to find verified, investor-friendly agents to help me identify and close deals
             </p>
 
             <ul className="space-y-3 mb-8">
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
                 <span>Browse verified agent profiles</span>
               </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
                 <span>Get matched with top agents</span>
               </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#D3A029] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
                 <span>Secure deal rooms with NDA</span>
               </li>
             </ul>
 
-            <div className="flex items-center justify-center gap-2 text-[#D3A029] font-semibold text-lg">
+            <div className="flex items-center justify-center gap-2 text-[#E3C567] font-semibold text-lg">
               {selectedChoice === 'investor' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
@@ -189,34 +189,34 @@ export default function RoleSelection() {
           <button
             onClick={() => handleRoleSelection('agent')}
             disabled={selectedChoice !== null}
-            className={`bg-white border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
-              selectedChoice === 'agent' ? 'border-[#10B981] border-2 ring-4 ring-[#10B981]/20' : 'border-[#E5E7EB]'
+            className={`bg-[#0D0D0D] border rounded-3xl p-8 text-left transition-all hover:shadow-lg ${
+              selectedChoice === 'agent' ? 'border-[#34D399] border-2 ring-4 ring-[#34D399]/20' : 'border-[#1F1F1F]'
             } ${selectedChoice && selectedChoice !== 'agent' ? 'opacity-50' : ''}`}
           >
-            <div className="w-14 h-14 rounded-full bg-[#D1FAE5] flex items-center justify-center mb-6 text-2xl">👥</div>
+            <div className="w-14 h-14 rounded-full bg-[#34D399]/20 flex items-center justify-center mb-6 text-2xl">👥</div>
             
-            <h2 className="text-2xl font-bold text-[#111827] mb-3">I'm an Agent</h2>
+            <h2 className="text-2xl font-bold text-[#34D399] mb-3">I'm an Agent</h2>
             
-            <p className="text-[#6B7280] mb-6">
+            <p className="text-[#808080] mb-6">
               Join a selective network of investor-focused agents and connect with serious buyers
             </p>
 
             <ul className="space-y-3 mb-8">
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
                 <span>Access pre-qualified investors</span>
               </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
                 <span>Build verified reputation</span>
               </li>
-              <li className="flex items-start gap-3 text-[#374151]">
-                <CheckCircle className="w-5 h-5 text-[#10B981] flex-shrink-0 mt-0.5" />
+              <li className="flex items-start gap-3 text-[#FAFAFA]">
+                <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
                 <span>Free membership always</span>
               </li>
             </ul>
 
-            <div className="flex items-center justify-center gap-2 text-[#10B981] font-semibold text-lg">
+            <div className="flex items-center justify-center gap-2 text-[#34D399] font-semibold text-lg">
               {selectedChoice === 'agent' ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />

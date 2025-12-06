@@ -223,8 +223,8 @@ export default function Verify() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#D4AF37] animate-spin" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
       </div>
     );
   }
@@ -232,66 +232,66 @@ export default function Verify() {
   // Verifying state
   if (verifying) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <div className="text-center max-w-md bg-white rounded-2xl border p-10 shadow-lg">
-          <Loader2 className="w-14 h-14 text-[#D4AF37] animate-spin mx-auto mb-5" />
-          <h2 className="text-2xl font-bold mb-2">Processing Verification...</h2>
-          <p className="text-gray-500">Please wait while we confirm your identity</p>
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+        <div className="text-center max-w-md bg-[#0D0D0D] rounded-2xl border border-[#1F1F1F] p-10 shadow-lg">
+          <Loader2 className="w-14 h-14 text-[#E3C567] animate-spin mx-auto mb-5" />
+          <h2 className="text-2xl font-bold mb-2 text-[#FAFAFA]">Processing Verification...</h2>
+          <p className="text-[#808080]">Please wait while we confirm your identity</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <header className="h-16 flex items-center justify-center border-b">
+      <header className="h-16 flex items-center justify-center border-b border-[#1F1F1F]">
         <div className="flex items-center gap-2">
-          <div className="w-9 h-9 bg-[#D4AF37] rounded-lg flex items-center justify-center">
-            <Shield className="w-5 h-5 text-white" />
+          <div className="w-9 h-9 bg-[#E3C567] rounded-lg flex items-center justify-center">
+            <Shield className="w-5 h-5 text-black" />
           </div>
-          <span className="text-lg font-bold">INVESTOR KONNECT</span>
+          <span className="text-lg font-bold text-[#E3C567]">INVESTOR KONNECT</span>
         </div>
       </header>
 
       <div className="max-w-lg mx-auto px-4 py-10">
         {/* Title */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Shield className="w-9 h-9 text-amber-700" />
+          <div className="w-16 h-16 bg-[#E3C567]/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-9 h-9 text-[#E3C567]" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">Verify Your Identity</h1>
-          <p className="text-gray-500">
+          <h1 className="text-3xl font-bold mb-2 text-[#E3C567]">Verify Your Identity</h1>
+          <p className="text-[#808080]">
             Required to access agent profiles and deal rooms
           </p>
         </div>
 
         {/* Info cards */}
         <div className="grid grid-cols-3 gap-3 mb-8">
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <Shield className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
-            <p className="text-sm font-medium">Secure</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <Shield className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
+            <p className="text-sm font-medium text-[#FAFAFA]">Secure</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-            <p className="text-sm font-medium">2-3 min</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#34D399] mx-auto mb-2" />
+            <p className="text-sm font-medium text-[#FAFAFA]">2-3 min</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <CheckCircle className="w-6 h-6 text-[#D4AF37] mx-auto mb-2" />
-            <p className="text-sm font-medium">One-time</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
+            <p className="text-sm font-medium text-[#FAFAFA]">One-time</p>
           </div>
         </div>
 
         {/* Main card */}
-        <div className="bg-white rounded-2xl border shadow-sm p-8">
+        <div className="bg-[#0D0D0D] rounded-2xl border border-[#1F1F1F] shadow-sm p-8">
           {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <div className="bg-[#DC2626]/20 border border-[#DC2626]/30 rounded-lg p-4 mb-6 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-red-800">{error}</p>
+                <p className="text-sm text-[#FAFAFA]">{error}</p>
                 <button
                   onClick={() => window.location.reload()}
-                  className="text-sm text-red-600 underline mt-1"
+                  className="text-sm text-[#DC2626] underline mt-1"
                 >
                   Refresh page
                 </button>
@@ -300,14 +300,14 @@ export default function Verify() {
           )}
 
           <div className="text-center">
-            <p className="text-gray-600 mb-6">
+            <p className="text-[#808080] mb-6">
               You'll need a government-issued ID and camera access.
             </p>
 
             <button
               onClick={startVerification}
               disabled={!personaReady}
-              className="w-full h-14 rounded-xl bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
+              className="w-full h-14 rounded-xl bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transition-colors"
             >
               {!personaReady ? (
                 <>
@@ -324,7 +324,7 @@ export default function Verify() {
           </div>
         </div>
 
-        <p className="text-xs text-gray-400 text-center mt-6">
+        <p className="text-xs text-[#666666] text-center mt-6">
           Powered by Persona • Your data is encrypted and secure
         </p>
       </div>

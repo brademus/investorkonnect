@@ -159,53 +159,53 @@ function NDAContent() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-8">
+    <div className="min-h-screen bg-black py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-[#D3A029] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
-            <Shield className="w-8 h-8 text-white" />
+          <div className="w-14 h-14 bg-[#E3C567] rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Shield className="w-8 h-8 text-black" />
           </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-[#111827] mb-2">Non-Disclosure Agreement</h1>
-          <p className="text-[#6B7280]">
+          <h1 className="text-2xl sm:text-3xl font-bold text-[#E3C567] mb-2">Non-Disclosure Agreement</h1>
+          <p className="text-[#808080]">
             Required to access agent profiles and deal rooms
           </p>
         </div>
 
         <div className="grid grid-cols-3 gap-3 mb-6">
-          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-            <Lock className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
-            <p className="text-xs font-medium text-[#111827]">Deal Protection</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <Lock className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#FAFAFA]">Deal Protection</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-            <FileText className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
-            <p className="text-xs font-medium text-[#111827]">Enforceable</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <FileText className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#FAFAFA]">Enforceable</p>
           </div>
-          <div className="bg-white border border-gray-200 rounded-xl p-4 text-center">
-            <CheckCircle className="w-6 h-6 text-[#D3A029] mx-auto mb-2" />
-            <p className="text-xs font-medium text-[#111827]">One-Time</p>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 text-center">
+            <CheckCircle className="w-6 h-6 text-[#E3C567] mx-auto mb-2" />
+            <p className="text-xs font-medium text-[#FAFAFA]">One-Time</p>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-5 sm:p-6 shadow-sm">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 sm:p-6 shadow-sm">
           
           {/* Error Display */}
           {error && (
-            <div className="bg-[#FEF2F2] border border-[#FECACA] rounded-xl p-4 mb-6">
+            <div className="bg-[#DC2626]/20 border border-[#DC2626]/30 rounded-xl p-4 mb-6">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-[#DC2626] flex-shrink-0 mt-0.5" />
                 <div>
-                  <h4 className="font-semibold text-[#991B1B] mb-1">Error</h4>
-                  <p className="text-sm text-[#B91C1C]">{error}</p>
+                  <h4 className="font-semibold text-[#FAFAFA] mb-1">Error</h4>
+                  <p className="text-sm text-[#FAFAFA]">{error}</p>
                 </div>
               </div>
             </div>
           )}
 
-          <div className="bg-slate-50 rounded-xl p-5 max-h-64 overflow-y-auto border border-slate-200 mb-5">
-            <h3 className="text-base font-bold text-[#111827] mb-3">Investor Konnect Non-Disclosure Agreement v1.0</h3>
+          <div className="bg-[#141414] rounded-xl p-5 max-h-64 overflow-y-auto border border-[#1F1F1F] mb-5">
+            <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Non-Disclosure Agreement v1.0</h3>
             
-            <div className="prose prose-sm text-[#374151] space-y-4">
+            <div className="prose prose-sm text-[#FAFAFA] space-y-4">
               <p>
                 This Non-Disclosure Agreement ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
               </p>
@@ -246,7 +246,7 @@ function NDAContent() {
             </div>
           </div>
 
-          <div className="flex items-start gap-3 mb-5 p-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-xl">
+          <div className="flex items-start gap-3 mb-5 p-3 bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl">
             <Checkbox
               id="nda-agree"
               checked={agreed}
@@ -254,7 +254,7 @@ function NDAContent() {
               className="mt-0.5"
               disabled={accepting}
             />
-            <Label htmlFor="nda-agree" className="text-sm text-[#374151] cursor-pointer leading-relaxed">
+            <Label htmlFor="nda-agree" className="text-sm text-[#FAFAFA] cursor-pointer leading-relaxed">
               I have read and agree to the terms of this Non-Disclosure Agreement. I understand this is a legally binding contract.
             </Label>
           </div>
@@ -262,7 +262,7 @@ function NDAContent() {
           <Button
             onClick={handleAccept}
             disabled={!agreed || accepting}
-            className="w-full h-12 bg-[#D3A029] hover:bg-[#B8902A] text-white font-medium rounded-xl disabled:opacity-50"
+            className="w-full h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-medium rounded-xl disabled:opacity-50"
           >
             {accepting ? (
               <>
@@ -277,8 +277,8 @@ function NDAContent() {
             )}
           </Button>
 
-          <p className="text-center text-xs text-[#6B7280] mt-4">
-            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-[#D3A029] hover:underline">legal@investorkonnect.com</a>
+          <p className="text-center text-xs text-[#808080] mt-4">
+            Questions? Contact <a href="mailto:legal@investorkonnect.com" className="text-[#E3C567] hover:underline">legal@investorkonnect.com</a>
           </p>
         </div>
       </div>
