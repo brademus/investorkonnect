@@ -52,7 +52,7 @@ function LayoutContent({ children }) {
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
             {/* Left: logo + brand */}
             <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/247ab9fb4_IMG_1778.jpg"
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
               alt="Investor Konnect"
               className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => window.location.href = createPageUrl("Dashboard")}
