@@ -57,17 +57,17 @@ function LayoutContent({ children }) {
               className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => window.location.href = createPageUrl("Dashboard")}
             />
-            <span className="text-sm font-semibold tracking-tight text-[#D4AF37]">
+            <span className="text-sm font-semibold tracking-tight text-[#E3C567]">
               Investor Konnect
             </span>
 
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
-              <Link to={createPageUrl("Home")} className="hover:text-[#D4AF37]">Home</Link>
-              <Link to={createPageUrl("HowItWorks")} className="hover:text-[#D4AF37]">How it works</Link>
-              <Link to={createPageUrl("Pricing")} className="hover:text-[#D4AF37]">Pricing</Link>
-              <Link to={createPageUrl("Investors")} className="hover:text-[#D4AF37]">For investors</Link>
-              <Link to={createPageUrl("Agents")} className="hover:text-[#D4AF37]">For agents</Link>
+              <Link to={createPageUrl("Home")} className="hover:text-[#E3C567]">Home</Link>
+              <Link to={createPageUrl("HowItWorks")} className="hover:text-[#E3C567]">How it works</Link>
+              <Link to={createPageUrl("Pricing")} className="hover:text-[#E3C567]">Pricing</Link>
+              <Link to={createPageUrl("Investors")} className="hover:text-[#E3C567]">For investors</Link>
+              <Link to={createPageUrl("Agents")} className="hover:text-[#E3C567]">For agents</Link>
             </nav>
 
             {/* Right: Auth / profile */}
@@ -78,8 +78,8 @@ function LayoutContent({ children }) {
                   to={item.href}
                   className={`ik-chip flex items-center gap-2 h-9 transition-colors ${
                     location.pathname === item.href
-                      ? "bg-[#D4AF37]/20 border-[#D4AF37] text-[#D4AF37]"
-                      : "hover:border-[#D4AF37]/50"
+                      ? "bg-[#E3C567]/20 border-[#E3C567] text-[#E3C567]"
+                      : "hover:border-[#E3C567]/50"
                   }`}
                 >
                   <item.icon className="w-4 h-4" />
@@ -90,16 +90,16 @@ function LayoutContent({ children }) {
               {isAdmin && (
                 <Link
                   to={createPageUrl("Admin")}
-                  className="ik-chip flex items-center gap-2 h-9 border-[#D4AF37]/50 text-[#D4AF37]"
+                  className="ik-chip flex items-center gap-2 h-9 border-[#E3C567]/50 text-[#E3C567]"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm">Admin</span>
                 </Link>
-              )}
+                )}
 
-              <Link to={createPageUrl("AccountProfile")}>
+                <Link to={createPageUrl("AccountProfile")}>
                 <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#0D0D0D] hover:bg-[#1F1F1F]">
-                  <User className="w-4 h-4 text-[#D4AF37]" />
+                  <User className="w-4 h-4 text-[#E3C567]" />
                 </button>
               </Link>
             </div>

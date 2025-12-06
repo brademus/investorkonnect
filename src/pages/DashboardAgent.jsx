@@ -113,10 +113,10 @@ function AgentDashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
               
               {/* Box 1: Find Investors */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(212,175,55,0.2)] hover:border-[#D4AF37] transition-all">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#D4AF37]" />
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-[#E3C567]" />
                   </div>
                   <span className="px-3 py-1 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full border border-[#34D399]/30">
                     Primary Action
@@ -128,7 +128,7 @@ function AgentDashboardContent() {
                 </p>
                 <Button 
                   onClick={() => navigate(createPageUrl("InvestorDirectory"))}
-                  className="w-full bg-[#D4AF37] hover:bg-[#E5C17F] text-black rounded-full font-semibold"
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                 >
                   <Sparkles className="w-4 h-4 mr-2" />
                   Browse Investors
@@ -138,24 +138,24 @@ function AgentDashboardContent() {
               {/* Box 2: Performance Stats */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#D4AF37]/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-[#D4AF37]" />
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("MyProfile")} className="text-sm text-[#D4AF37] hover:underline">
+                  <Link to={createPageUrl("MyProfile")} className="text-sm text-[#E3C567] hover:underline">
                     View profile →
                   </Link>
                 </div>
                 <h3 className="text-lg font-bold text-[#FAFAFA] mb-4">Your Performance</h3>
                 
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between p-3 bg-[#D4AF37]/20 rounded-lg border border-[#D4AF37]/30">
+                  <div className="flex items-center justify-between p-3 bg-[#E3C567]/20 rounded-lg border border-[#E3C567]/30">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#D4AF37] rounded-lg flex items-center justify-center">
+                      <div className="w-8 h-8 bg-[#E3C567] rounded-lg flex items-center justify-center">
                         <Eye className="w-4 h-4 text-black" />
                       </div>
                       <span className="font-medium text-[#FAFAFA]">Profile Views</span>
                     </div>
-                    <span className="text-xl font-bold text-[#D4AF37]">{userData.profileViews}</span>
+                    <span className="text-xl font-bold text-[#E3C567]">{userData.profileViews}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
@@ -186,7 +186,7 @@ function AgentDashboardContent() {
                   <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-[#DB2777]" />
                   </div>
-                  <Link to={createPageUrl("DealRooms")} className="text-sm text-[#D4AF37] hover:underline">
+                  <Link to={createPageUrl("DealRooms")} className="text-sm text-[#E3C567] hover:underline">
                     View all →
                   </Link>
                 </div>
@@ -203,21 +203,21 @@ function AgentDashboardContent() {
                     <span className="text-xl font-bold text-[#DB2777]">{userData.unreadMessages}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-[#1F1F1F] hover:border-[#D4AF37] hover:bg-[#141414] transition-all">
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] transition-all">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                        <Users className="w-4 h-4 text-[#D4AF37]" />
+                      <div className="w-8 h-8 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                        <Users className="w-4 h-4 text-[#E3C567]" />
                       </div>
                       <span className="font-medium text-[#FAFAFA]">Pending Requests</span>
                     </div>
-                    <span className="text-xl font-bold text-[#D4AF37]">{userData.pendingRequests}</span>
+                    <span className="text-xl font-bold text-[#E3C567]">{userData.pendingRequests}</span>
                   </div>
                 </div>
                 
                 <Button 
                   onClick={() => navigate(createPageUrl("DealRooms"))}
                   variant="outline"
-                  className="w-full mt-4 border-[#D4AF37] text-[#D4AF37] hover:bg-[#D4AF37]/10"
+                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
                 >
                   Open Deal Rooms
                 </Button>
@@ -231,7 +231,7 @@ function AgentDashboardContent() {
                       <MapPin className="w-6 h-6 text-[#34D399]" />
                     </div>
                   </div>
-                  <Link to={createPageUrl("AccountProfile")} className="text-sm text-[#D4AF37] hover:underline">
+                  <Link to={createPageUrl("AccountProfile")} className="text-sm text-[#E3C567] hover:underline">
                     Edit →
                   </Link>
                 </div>
@@ -275,10 +275,10 @@ function AgentDashboardContent() {
                   <Link 
                     key={link.href} 
                     to={createPageUrl(link.href)} 
-                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-3 p-4 hover:border-[#D4AF37] hover:bg-[#141414] transition-all"
+                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-3 p-4 hover:border-[#E3C567] hover:bg-[#141414] transition-all"
                   >
-                    <div className="w-8 h-8 bg-[#D4AF37]/20 rounded-lg flex items-center justify-center">
-                      <Icon className="w-4 h-4 text-[#D4AF37]" />
+                    <div className="w-8 h-8 bg-[#E3C567]/20 rounded-lg flex items-center justify-center">
+                      <Icon className="w-4 h-4 text-[#E3C567]" />
                     </div>
                     <span className="font-medium text-[#FAFAFA]">{link.label}</span>
                   </Link>

@@ -80,7 +80,7 @@ html {
     --card-foreground: 0 0% 98%;
 
     /* Primary - Exact Gold from logo */
-    --primary: 43 68% 52%; /* #D4AF37 */
+    --primary: 45 64% 65%; /* #E3C567 */
     --primary-foreground: 0 0% 0%;
 
     /* Secondary */
@@ -92,13 +92,13 @@ html {
     --muted-foreground: 0 0% 50%; /* #808080 */
 
     /* Accent - Exact Gold from logo */
-    --accent: 43 68% 52%; /* #D4AF37 */
+    --accent: 45 64% 65%; /* #E3C567 */
     --accent-foreground: 0 0% 0%;
 
     /* Borders - Subtle dark */
     --border: 0 0% 12%;
     --input: 0 0% 12%;
-    --ring: 43 68% 52%;
+    --ring: 45 64% 65%;
 
     /* Destructive */
     --destructive: 0 84% 60%;
@@ -124,7 +124,7 @@ html {
   h1, h2, h3, h4, h5, h6 {
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     font-weight: 300;
-    color: #D4AF37;
+    color: #E3C567;
     letter-spacing: 0.04em;
     text-rendering: optimizeLegibility;
   }
@@ -156,7 +156,7 @@ html {
       font-size: 1.5rem;
       font-weight: 600;
       letter-spacing: 0.02em;
-      color: #D4AF37;
+      color: #E3C567;
       font-family: 'Cormorant Garamond', serif;
     }
 
@@ -177,7 +177,7 @@ html {
     }
 
     .ik-pill:hover {
-      border-color: #D4AF37;
+      border-color: #E3C567;
       background-color: #141414;
     }
 
@@ -196,8 +196,8 @@ html {
 
   .ik-card-hover:hover {
     transform: translateY(-2px);
-    box-shadow: 0 24px 55px rgba(212, 175, 55, 0.3);
-    border-color: #D4AF37;
+    box-shadow: 0 24px 55px rgba(227, 197, 103, 0.3);
+    border-color: #E3C567;
     background-color: #141414;
   }
 
@@ -223,7 +223,7 @@ html {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: #D4AF37;
+    background: #E3C567;
     color: #000000;
     font-weight: 600;
     border-radius: 9999px;
@@ -235,12 +235,12 @@ html {
   }
 
   .ik-btn-gold:hover {
-    background: #E5C17F;
-    box-shadow: 0 8px 20px rgba(212, 175, 55, 0.4);
+    background: #EDD89F;
+    box-shadow: 0 8px 20px rgba(227, 197, 103, 0.4);
   }
 
   .ik-btn-gold:focus-visible {
-    outline: 2px solid #D4AF37;
+    outline: 2px solid #E3C567;
     outline-offset: 2px;
   }
 
@@ -292,25 +292,25 @@ html {
     justify-content: center;
     gap: 0.4rem;
     border-radius: 9999px;
-    background: #D4AF37;
+    background: #E3C567;
     color: #000000;
     font-weight: 600;
     padding: 0.8rem 1.7rem;
     font-size: 0.95rem;
     font-family: 'Cormorant Garamond', serif;
-    box-shadow: 0 12px 30px rgba(212, 175, 55, 0.4);
+    box-shadow: 0 12px 30px rgba(227, 197, 103, 0.4);
     transition: background 150ms ease, box-shadow 150ms ease, transform 120ms ease;
   }
 
   .ik-btn-primary:hover {
-    background: #E5C17F;
+    background: #EDD89F;
     transform: translateY(-1px);
-    box-shadow: 0 18px 40px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 18px 40px rgba(227, 197, 103, 0.5);
   }
 
   .ik-btn-primary:active {
     transform: translateY(0);
-    box-shadow: 0 10px 24px rgba(212, 175, 55, 0.35);
+    box-shadow: 0 10px 24px rgba(227, 197, 103, 0.35);
   }
 
   .ik-btn-outline {
@@ -331,9 +331,9 @@ html {
 
   .ik-btn-outline:hover {
     background-color: #0D0D0D;
-    border-color: #D4AF37;
+    border-color: #E3C567;
     transform: translateY(-1px);
-    box-shadow: 0 10px 25px rgba(212, 175, 55, 0.2);
+    box-shadow: 0 10px 25px rgba(227, 197, 103, 0.2);
   }
 
   /* Dashboard quick-link tiles */
@@ -354,9 +354,9 @@ html {
   }
 
   .ik-tile:hover {
-    border-color: #D4AF37;
+    border-color: #E3C567;
     background-color: #141414;
-    box-shadow: 0 14px 30px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 14px 30px rgba(227, 197, 103, 0.3);
     transform: translateY(-1px);
   }
 
@@ -368,8 +368,8 @@ html {
     height: 1.85rem;
     width: 1.85rem;
     border-radius: 9999px;
-    background-color: rgba(212, 175, 55, 0.15);
-    color: #D4AF37;
+    background-color: rgba(227, 197, 103, 0.15);
+    color: #E3C567;
     font-size: 0.95rem;
   }
 
@@ -420,9 +420,9 @@ html {
   }
 
   .ik-chip-warning {
-    background-color: rgba(212, 175, 55, 0.15);
-    color: #D4AF37;
-    border-color: rgba(212, 175, 55, 0.3);
+    background-color: rgba(227, 197, 103, 0.15);
+    color: #E3C567;
+    border-color: rgba(227, 197, 103, 0.3);
   }
 
   .ik-chip-muted {

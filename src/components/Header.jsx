@@ -79,7 +79,7 @@ export function Header({ profile }) {
                 <Link 
                   key={link.label}
                   to={link.href} 
-                  className="flex items-center gap-2 px-4 py-2 text-[#808080] hover:text-[#D4AF37] hover:bg-[#0D0D0D] rounded-lg transition-all"
+                  className="flex items-center gap-2 px-4 py-2 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
                 >
                   <Icon className="w-4 h-4" />
                   <span className="font-medium">{link.label}</span>
@@ -98,8 +98,8 @@ export function Header({ profile }) {
                 className="flex items-center gap-2 hover:bg-[#0D0D0D]"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="w-8 h-8 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                  <span className="text-[#D4AF37] font-semibold text-sm">
+                <div className="w-8 h-8 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                  <span className="text-[#E3C567] font-semibold text-sm">
                     {firstName.charAt(0)}
                   </span>
                 </div>
@@ -117,7 +117,7 @@ export function Header({ profile }) {
                     <div className="px-4 py-3 border-b border-[#1F1F1F]">
                       <p className="text-sm font-semibold text-[#FAFAFA]">{profile?.full_name}</p>
                       <p className="text-xs text-[#808080] mt-1">{profile?.email}</p>
-                      <span className="inline-block mt-2 px-2 py-1 bg-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium rounded-full border border-[#D4AF37]/30">
+                      <span className="inline-block mt-2 px-2 py-1 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full border border-[#E3C567]/30">
                         {isInvestor ? 'Investor' : 'Agent'}
                       </span>
                     </div>
@@ -172,14 +172,14 @@ export function Header({ profile }) {
             {/* User Info */}
             <div className="px-3 py-3 mb-3 bg-[#0D0D0D] rounded-lg border border-[#1F1F1F]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#D4AF37]/20 rounded-full flex items-center justify-center">
-                  <span className="text-[#D4AF37] font-semibold">
+                <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                  <span className="text-[#E3C567] font-semibold">
                     {firstName.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#FAFAFA]">{profile?.full_name}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#D4AF37]/20 text-[#D4AF37] text-xs font-medium rounded-full border border-[#D4AF37]/30">
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full border border-[#E3C567]/30">
                     {isInvestor ? 'Investor' : 'Agent'}
                   </span>
                 </div>
@@ -194,7 +194,7 @@ export function Header({ profile }) {
                   <Link 
                     key={link.label}
                     to={link.href} 
-                    className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#D4AF37] hover:bg-[#0D0D0D] rounded-lg transition-all"
+                    className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
                     onClick={() => setMenuOpen(false)}
                   >
                     <Icon className="w-5 h-5" />
@@ -208,7 +208,7 @@ export function Header({ profile }) {
             <div className="border-t border-[#1F1F1F] pt-3 space-y-1">
               <Link 
                 to={createPageUrl("AccountProfile")}
-                className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#D4AF37] hover:bg-[#0D0D0D] rounded-lg transition-all"
+                className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
                 onClick={() => setMenuOpen(false)}
               >
                 <User className="w-5 h-5" />
