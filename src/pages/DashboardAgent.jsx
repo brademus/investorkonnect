@@ -135,8 +135,8 @@ function AgentDashboardContent() {
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("MyProfile")} className="text-xs text-[#E3C567] hover:underline">
-                    View →
+                  <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">
+                    View full pipeline →
                   </Link>
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Performance</h3>
