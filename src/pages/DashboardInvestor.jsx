@@ -128,8 +128,8 @@ function InvestorDashboardContent() {
     <>
       <Header profile={profile} />
       <div className="min-h-screen bg-black">
-        <div className="max-w-[1600px] mx-auto px-6 py-10">
-          <div className="space-y-8 lg:space-y-10">
+        <div className="max-w-[1920px] mx-auto px-8 py-12">
+          <div className="space-y-10 lg:space-y-12">
       
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -147,42 +147,42 @@ function InvestorDashboardContent() {
       <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
       {/* 4-Box Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
         
         {/* Box 1: Start New Deal */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
-          <div className="flex items-start justify-between mb-6">
-            <div className="w-14 h-14 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-              <Plus className="w-7 h-7 text-[#E3C567]" />
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
+          <div className="flex items-start justify-between mb-8">
+            <div className="w-16 h-16 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+              <Plus className="w-8 h-8 text-[#E3C567]" />
             </div>
-            <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full border border-[#34D399]/30">
+            <span className="px-4 py-2 bg-[#34D399]/20 text-[#34D399] text-sm font-medium rounded-full border border-[#34D399]/30">
               Primary Action
             </span>
           </div>
-          <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Start New Deal</h3>
-          <p className="text-base text-[#808080] mb-6">
+          <h3 className="text-2xl font-bold text-[#FAFAFA] mb-4">Start New Deal</h3>
+          <p className="text-lg text-[#808080] mb-8 flex-grow">
             Submit a new deal and get matched with investor-friendly agents in your market.
           </p>
           <Button 
             onClick={() => navigate(createPageUrl("DealWizard"))}
-            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-lg py-6 font-semibold"
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-5 h-5 mr-2" />
             Submit Your First Deal
           </Button>
         </div>
 
         {/* Box 2: Deal Pipeline */}
-        <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="w-14 h-14 bg-[#E5C37F]/20 rounded-xl flex items-center justify-center">
-              <TrendingUp className="w-7 h-7 text-[#E5C37F]" />
+        <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-10 min-h-[400px] flex flex-col">
+          <div className="flex items-start justify-between mb-8">
+            <div className="w-16 h-16 bg-[#E5C37F]/20 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-8 h-8 text-[#E5C37F]" />
             </div>
             <Link to={createPageUrl("DealRooms")} className="text-sm text-[#E5C37F] hover:underline">
               View all →
             </Link>
           </div>
-          <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Deal Pipeline</h3>
+          <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">Deal Pipeline</h3>
           
           <div className="space-y-3">
             <button 
@@ -195,7 +195,7 @@ function InvestorDashboardContent() {
                 </div>
                 <span className="font-medium text-[#FAFAFA]">Active Deals</span>
               </div>
-              <span className="text-xl font-bold text-[#E5C37F]">{dealStats.active}</span>
+              <span className="text-2xl font-bold text-[#E5C37F]">{dealStats.active}</span>
             </button>
             
             <button 
@@ -208,7 +208,7 @@ function InvestorDashboardContent() {
                 </div>
                 <span className="font-medium text-[#FAFAFA]">Pending</span>
               </div>
-              <span className="text-xl font-bold text-[#A6A6A6]">{dealStats.pending}</span>
+              <span className="text-2xl font-bold text-[#A6A6A6]">{dealStats.pending}</span>
             </button>
             
             <button 
@@ -221,22 +221,22 @@ function InvestorDashboardContent() {
                 </div>
                 <span className="font-medium text-[#FAFAFA]">Closed</span>
               </div>
-              <span className="text-xl font-bold text-[#34D399]">{dealStats.closed}</span>
+              <span className="text-2xl font-bold text-[#34D399]">{dealStats.closed}</span>
             </button>
           </div>
         </div>
 
         {/* Box 3: Recent Messages */}
-        <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="w-14 h-14 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
-              <MessageSquare className="w-7 h-7 text-[#DB2777]" />
+        <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-10 min-h-[400px] flex flex-col">
+          <div className="flex items-start justify-between mb-8">
+            <div className="w-16 h-16 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
+              <MessageSquare className="w-8 h-8 text-[#DB2777]" />
             </div>
             <Link to={createPageUrl("DealRooms")} className="text-sm text-[#E5C37F] hover:underline">
               View all →
             </Link>
           </div>
-          <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Recent Messages</h3>
+          <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">Recent Messages</h3>
           
           {recentMessages.length > 0 ? (
             <div className="space-y-3">
@@ -264,16 +264,16 @@ function InvestorDashboardContent() {
         </div>
 
         {/* Box 4: Suggested Agents */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8">
-          <div className="flex items-start justify-between mb-6">
-            <div className="w-14 h-14 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-              <Users className="w-7 h-7 text-[#E3C567]" />
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-10 min-h-[400px] flex flex-col">
+          <div className="flex items-start justify-between mb-8">
+            <div className="w-16 h-16 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+              <Users className="w-8 h-8 text-[#E3C567]" />
             </div>
             <Link to={createPageUrl("AgentDirectory")} className="text-sm text-[#E5C37F] hover:underline">
               Browse all →
             </Link>
           </div>
-          <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Suggested Agents</h3>
+          <h3 className="text-2xl font-bold text-[#FAFAFA] mb-8">Suggested Agents</h3>
           
           <div className="text-center py-6">
             <Users className="w-10 h-10 text-[#333333] mx-auto mb-2" />
