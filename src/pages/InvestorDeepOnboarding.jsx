@@ -251,16 +251,16 @@ export default function InvestorDeepOnboarding() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
       </div>
     );
   }
 
   const renderStep1 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Basic Profile</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Let's start with the basics</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Basic Profile</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Let's start with the basics</p>
       
       <div className="space-y-5">
         <div>
@@ -281,8 +281,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Experience & Accreditation</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Tell us about your investing background</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Experience & Accreditation</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Tell us about your investing background</p>
       
       <div className="space-y-5">
         <div>
@@ -317,8 +317,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Capital & Financing</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Your budget and financing preferences</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Capital & Financing</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Your budget and financing preferences</p>
       
       <div className="space-y-5">
         <div>
@@ -356,8 +356,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep4 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Strategy & Deals</h3>
-      <p className="text-[16px] text-[#666666] mb-8">What kind of deals are you looking for?</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Strategy & Deals</h3>
+      <p className="text-[16px] text-[#808080] mb-8">What kind of deals are you looking for?</p>
       
       <div className="space-y-5">
         <div>
@@ -397,8 +397,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep5 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Target Markets</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Where do you want to invest?</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Target Markets</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Where do you want to invest?</p>
       
       <div className="space-y-5">
         <div>
@@ -426,8 +426,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep6 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Deal Structure</h3>
-      <p className="text-[16px] text-[#666666] mb-8">How you like to structure deals</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Deal Structure</h3>
+      <p className="text-[16px] text-[#808080] mb-8">How you like to structure deals</p>
       
       <div className="space-y-5">
         <div>
@@ -470,8 +470,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep7 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Risk & Speed</h3>
-      <p className="text-[16px] text-[#666666] mb-8">How fast can you move on deals?</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Risk & Speed</h3>
+      <p className="text-[16px] text-[#808080] mb-8">How fast can you move on deals?</p>
       
       <div className="space-y-5">
         <div>
@@ -505,8 +505,8 @@ export default function InvestorDeepOnboarding() {
 
   const renderStep8 = () => (
     <div>
-      <h3 className="text-[28px] font-bold text-black mb-2">Working with Agents</h3>
-      <p className="text-[16px] text-[#666666] mb-8">Help us match you with the right agent</p>
+      <h3 className="text-[28px] font-bold text-[#E3C567] mb-2">Working with Agents</h3>
+      <p className="text-[16px] text-[#808080] mb-8">Help us match you with the right agent</p>
       
       <div className="space-y-5">
         <div>
@@ -554,9 +554,9 @@ export default function InvestorDeepOnboarding() {
           <Textarea value={formData.anything_else_for_agent} onChange={(e) => updateField('anything_else_for_agent', e.target.value)} placeholder="Optional notes..." rows={2} className="mt-1" />
         </div>
 
-        <div className="bg-[#FFFBEB] border border-[#FCD34D] rounded-xl p-5 mt-6">
-          <h4 className="font-semibold text-[#92400E] mb-2">🎉 You're almost done!</h4>
-          <p className="text-sm text-[#92400E]">
+        <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
+          <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
+          <p className="text-sm text-[#E3C567]">
             After completing this, our AI will use your detailed preferences to find better agent matches for you.
           </p>
         </div>
@@ -567,17 +567,17 @@ export default function InvestorDeepOnboarding() {
   const stepRenderers = [renderStep1, renderStep2, renderStep3, renderStep4, renderStep5, renderStep6, renderStep7, renderStep8];
 
   return (
-    <div className="min-h-screen bg-white" style={{ fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif" }}>
-      <header className="h-20 flex items-center justify-between px-6 border-b border-[#E5E5E5]">
-        <button onClick={() => navigate(createPageUrl("Dashboard"))} className="flex items-center gap-2 text-[#666666] hover:text-black">
+    <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
+      <header className="h-20 flex items-center justify-between px-6 border-b border-[#1F1F1F]">
+        <button onClick={() => navigate(createPageUrl("Dashboard"))} className="flex items-center gap-2 text-[#808080] hover:text-[#E3C567]">
           <ArrowLeft className="w-5 h-5" />
           <span>Back to Dashboard</span>
         </button>
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#D4AF37] rounded-xl flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 bg-[#E3C567] rounded-xl flex items-center justify-center">
+            <CheckCircle className="w-6 h-6 text-black" />
           </div>
-          <span className="text-xl font-bold text-black">INVESTOR KONNECT</span>
+          <span className="text-xl font-bold text-[#E3C567]">INVESTOR KONNECT</span>
         </div>
         <div className="w-24" />
       </header>
@@ -589,31 +589,31 @@ export default function InvestorDeepOnboarding() {
               key={idx}
               className={`rounded-full transition-all ${
                 idx + 1 === step 
-                  ? 'w-4 h-4 bg-[#D4AF37] animate-pulse' 
+                  ? 'w-4 h-4 bg-[#E3C567] animate-pulse' 
                   : idx + 1 < step 
-                    ? 'w-3 h-3 bg-[#D4AF37]' 
-                    : 'w-3 h-3 border-2 border-[#E5E5E5] bg-transparent'
+                    ? 'w-3 h-3 bg-[#E3C567]' 
+                    : 'w-3 h-3 border-2 border-[#1F1F1F] bg-transparent'
               }`}
             />
           ))}
         </div>
-        <p className="text-[14px] text-[#666666]">Step {step} of {TOTAL_STEPS}</p>
+        <p className="text-[14px] text-[#808080]">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
       <div className="max-w-[500px] mx-auto px-4 pb-12">
-        <div className="bg-white rounded-2xl p-8 border border-[#E5E5E5]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.08)' }}>
+        <div className="bg-[#0D0D0D] rounded-2xl p-8 border border-[#1F1F1F]" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.5)' }}>
           {stepRenderers[step - 1]()}
 
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#E5E5E5]">
+          <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">
             {step > 1 ? (
-              <button onClick={handleBack} disabled={saving} className="text-[#666666] hover:text-black font-medium transition-colors">
+              <button onClick={handleBack} disabled={saving} className="text-[#808080] hover:text-[#E3C567] font-medium transition-colors">
                 ← Back
               </button>
             ) : <div />}
             <button
               onClick={handleNext}
               disabled={saving || (step === 1 && !formData.full_name) || (step === 5 && !formData.primary_state)}
-              className="h-12 px-8 rounded-lg bg-[#D4AF37] hover:bg-[#C19A2E] text-white font-bold transition-all duration-200 disabled:bg-[#E5E5E5] disabled:text-[#999999]"
+              className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
                 <><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Saving...</>
