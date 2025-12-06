@@ -197,10 +197,10 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#0F0F0F]" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
+    <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
       {/* Subscription Status Banner */}
       {!loading && isPaidSubscriber && (
-        <div className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] py-3">
+        <div className="bg-[#E3C567] text-black py-3">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p className="text-sm font-medium flex items-center justify-center gap-2">
               <Check className="w-4 h-4" />
@@ -228,24 +228,24 @@ export default function Pricing() {
       )}
 
       {/* Hero Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-[#0F0F0F]">
+      <section className="py-16 px-4 sm:px-6 lg:px-8 bg-black">
         <div className="max-w-4xl mx-auto text-center">
-          <h1 className="text-[48px] font-bold text-[#E5C37F] mb-4">Simple, Transparent Pricing</h1>
-          <p className="text-[20px] text-[#A6A6A6] mb-8">
+          <h1 className="text-[48px] font-bold text-[#E3C567] mb-4">Simple, Transparent Pricing</h1>
+          <p className="text-[20px] text-[#808080] mb-8">
             Choose the plan that fits your investment needs. All plans include 14-day free trial.
           </p>
 
           {/* Billing Toggle */}
           <div 
-            className="inline-flex items-center rounded-full p-1 border border-[#333333]"
-            style={{ backgroundColor: '#1A1A1A', width: '280px', height: '48px' }}
+            className="inline-flex items-center rounded-full p-1 border border-[#1F1F1F]"
+            style={{ backgroundColor: '#0D0D0D', width: '280px', height: '48px' }}
           >
             <button
               onClick={() => setBillingCycle("monthly")}
               className={`flex-1 h-full rounded-full text-sm font-medium transition-all duration-300 ${
                 billingCycle === "monthly"
-                  ? "bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] shadow-md"
-                  : "text-[#A6A6A6] hover:text-[#E5C37F]"
+                  ? "bg-[#E3C567] text-black shadow-md"
+                  : "text-[#808080] hover:text-[#E3C567]"
               }`}
             >
               Monthly
@@ -254,12 +254,12 @@ export default function Pricing() {
               onClick={() => setBillingCycle("annual")}
               className={`flex-1 h-full rounded-full text-sm font-medium transition-all duration-300 flex items-center justify-center gap-2 ${
                 billingCycle === "annual"
-                  ? "bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] shadow-md"
-                  : "text-[#A6A6A6] hover:text-[#E5C37F]"
+                  ? "bg-[#E3C567] text-black shadow-md"
+                  : "text-[#808080] hover:text-[#E3C567]"
               }`}
             >
               Annual
-              <span className="text-xs bg-[#E5C37F] text-[#0F0F0F] px-2 py-0.5 rounded-full">Save 20%</span>
+              <span className="text-xs bg-[#E3C567] text-black px-2 py-0.5 rounded-full">Save 20%</span>
             </button>
           </div>
         </div>
@@ -276,19 +276,19 @@ export default function Pricing() {
               return (
                 <div
                   key={tier.name}
-                  className={`bg-[#1A1A1A] rounded-3xl relative transition-all duration-250 ${
+                  className={`bg-[#0D0D0D] rounded-3xl relative transition-all duration-250 ${
                     isPro ? 'scale-105 z-10' : ''
                   }`}
                   style={{
-                    border: isPro ? '2px solid #E5C37F' : '1px solid #333333',
+                    border: isPro ? '2px solid #E3C567' : '1px solid #1F1F1F',
                     padding: '40px 32px',
-                    boxShadow: isPro ? '0 4px 16px rgba(229,195,127,0.3)' : '0 2px 8px rgba(0,0,0,0.3)'
+                    boxShadow: isPro ? '0 4px 16px rgba(227,197,103,0.3)' : '0 2px 8px rgba(0,0,0,0.3)'
                   }}
                 >
                   {/* Most Popular Badge */}
                   {isPro && !isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] text-sm font-medium px-4 py-1 rounded-full">
+                      <span className="bg-[#E3C567] text-black text-sm font-medium px-4 py-1 rounded-full">
                         Most Popular
                       </span>
                     </div>
@@ -297,7 +297,7 @@ export default function Pricing() {
                   {/* Current Plan Badge */}
                   {isCurrentPlan && (
                     <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                      <span className="bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
+                      <span className="bg-[#E3C567] text-black text-sm font-medium px-4 py-1 rounded-full flex items-center gap-2">
                         <Check className="w-4 h-4" />
                         Current Plan
                       </span>
@@ -305,36 +305,36 @@ export default function Pricing() {
                   )}
 
                   {/* Plan Name */}
-                  <p className="text-[16px] uppercase text-[#A6A6A6] tracking-wider mb-4">{tier.name}</p>
+                  <p className="text-[16px] uppercase text-[#808080] tracking-wider mb-4">{tier.name}</p>
                   
                   {/* Price */}
                   <div className="mb-4">
-                    <span className="text-[48px] font-bold text-[#E5C37F]">${tier.price[billingCycle]}</span>
-                    <span className="text-[16px] text-[#A6A6A6]">/month</span>
+                    <span className="text-[48px] font-bold text-[#E3C567]">${tier.price[billingCycle]}</span>
+                    <span className="text-[16px] text-[#808080]">/month</span>
                   </div>
                   
                   {/* Description */}
-                  <p className="text-[14px] text-[#A6A6A6] mb-6">{tier.description}</p>
+                  <p className="text-[14px] text-[#808080] mb-6">{tier.description}</p>
                   
                   {/* Divider */}
-                  <div className="h-px bg-[#333333] my-6"></div>
+                  <div className="h-px bg-[#1F1F1F] my-6"></div>
                   
                   {/* Features */}
                   <ul className="space-y-4 mb-8">
                     {tier.features.map((feature) => (
                       <li key={feature} className="flex items-start gap-3">
-                        <div className="w-5 h-5 rounded-full bg-[#E5C37F] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <Check className="w-3 h-3 text-[#0F0F0F]" />
+                        <div className="w-5 h-5 rounded-full bg-[#E3C567] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <Check className="w-3 h-3 text-black" />
                         </div>
                         <span className="text-[14px] text-[#FAFAFA]">{feature}</span>
                       </li>
                     ))}
                     {tier.notIncluded.map((feature) => (
                       <li key={feature} className="flex items-start gap-3 opacity-40">
-                        <div className="w-5 h-5 rounded-full bg-[#333333] flex items-center justify-center flex-shrink-0 mt-0.5">
-                          <X className="w-3 h-3 text-[#666666]" />
+                        <div className="w-5 h-5 rounded-full bg-[#1F1F1F] flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <X className="w-3 h-3 text-[#808080]" />
                         </div>
-                        <span className="text-[14px] text-[#A6A6A6]">{feature}</span>
+                        <span className="text-[14px] text-[#808080]">{feature}</span>
                       </li>
                     ))}
                   </ul>
@@ -342,7 +342,7 @@ export default function Pricing() {
                   {/* CTA Button */}
                   {isCurrentPlan ? (
                     <button
-                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#333333] text-[#A6A6A6] cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#1F1F1F] text-[#808080] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
                     >
                       <Check className="w-4 h-4" />
@@ -350,7 +350,7 @@ export default function Pricing() {
                     </button>
                   ) : !loading && (role === 'investor' || role === 'agent') && !onboarded && tier.planId !== 'enterprise' ? (
                     <button
-                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#333333] text-[#A6A6A6] cursor-not-allowed flex items-center justify-center gap-2"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#1F1F1F] text-[#808080] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
                     >
                       <Lock className="w-4 h-4" />
@@ -359,8 +359,8 @@ export default function Pricing() {
                   ) : isPro ? (
                     <button
                       onClick={() => handleGetStarted(tier.planId)}
-                      className="w-full h-12 rounded-full font-bold text-[16px] bg-gradient-to-r from-[#E5C37F] to-[#C9A961] text-[#0F0F0F] hover:from-[#F0D699] hover:to-[#D4AF37] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
-                      style={{ boxShadow: '0 4px 12px rgba(229,195,127,0.4)' }}
+                      className="w-full h-12 rounded-full font-bold text-[16px] bg-[#E3C567] text-black hover:bg-[#EDD89F] transition-all duration-200 hover:-translate-y-0.5 flex items-center justify-center gap-2"
+                      style={{ boxShadow: '0 4px 12px rgba(227,197,103,0.4)' }}
                       disabled={loading || checkoutLoading}
                     >
                       {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
@@ -368,7 +368,7 @@ export default function Pricing() {
                   ) : (
                     <button
                       onClick={() => handleGetStarted(tier.planId)}
-                      className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#333333] text-[#FAFAFA] bg-transparent hover:bg-[#1A1A1A] hover:border-[#E5C37F] transition-all duration-200"
+                      className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#1F1F1F] text-[#FAFAFA] bg-transparent hover:bg-[#0D0D0D] hover:border-[#E3C567] transition-all duration-200"
                       disabled={loading || checkoutLoading}
                     >
                       {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}

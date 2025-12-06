@@ -135,10 +135,10 @@ function InvestorDashboardContent() {
     return (
       <>
         <Header profile={profile} />
-        <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-[#E5C37F] animate-spin mx-auto mb-4" />
-            <p className="text-[#A6A6A6] text-sm">Loading your dashboard...</p>
+            <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
+            <p className="text-[#808080] text-sm">Loading your dashboard...</p>
           </div>
         </div>
       </>
@@ -152,17 +152,17 @@ function InvestorDashboardContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="min-h-screen bg-[#0F0F0F]">
+      <div className="min-h-screen bg-black">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="space-y-6 lg:space-y-8">
       
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-[#E5C37F]">
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#E3C567]">
                   Welcome back, {firstName}!
                 </h1>
-                <p className="mt-2 text-base text-[#A6A6A6]">
+                <p className="mt-2 text-base text-[#808080]">
                   Your investment dashboard - track deals, connect with agents, and grow your portfolio.
                 </p>
               </div>
@@ -175,22 +175,22 @@ function InvestorDashboardContent() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         
         {/* Box 1: Start New Deal */}
-        <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(229,195,127,0.2)] hover:border-[#E5C37F] transition-all">
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
           <div className="flex items-start justify-between mb-4">
-            <div className="w-12 h-12 bg-[#E5C37F]/20 rounded-xl flex items-center justify-center">
-              <Plus className="w-6 h-6 text-[#E5C37F]" />
+            <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+              <Plus className="w-6 h-6 text-[#E3C567]" />
             </div>
             <span className="px-3 py-1 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full border border-[#34D399]/30">
               Primary Action
             </span>
           </div>
           <h3 className="text-lg font-bold text-[#FAFAFA] mb-2">Start New Deal</h3>
-          <p className="text-sm text-[#A6A6A6] mb-4">
+          <p className="text-sm text-[#808080] mb-4">
             Submit a new deal and get matched with investor-friendly agents in your market.
           </p>
           <Button 
             onClick={() => navigate(createPageUrl("DealWizard"))}
-            className="w-full bg-gradient-to-r from-[#E5C37F] to-[#C9A961] hover:from-[#F0D699] hover:to-[#D4AF37] text-[#0F0F0F] rounded-full"
+            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Submit Your First Deal
