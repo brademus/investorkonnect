@@ -263,7 +263,7 @@ export default function AgentOnboarding() {
                   id={`market-${state}`} 
                   checked={formData.markets.includes(state)} 
                   onCheckedChange={() => toggleMarket(state)} 
-                  className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
+                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
                 />
                 <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
               </div>

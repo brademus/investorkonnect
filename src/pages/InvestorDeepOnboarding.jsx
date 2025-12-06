@@ -288,27 +288,27 @@ export default function InvestorDeepOnboarding() {
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">How would you describe yourself?</Label>
           <RadioGroup value={formData.investor_description} onValueChange={(v) => updateField('investor_description', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="new" id="new" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="new" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">New investor (0 deals)</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="few_deals" id="few" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="few" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Have done a few deals</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="experienced" id="exp" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="exp" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Experienced (10+ deals)</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="professional" id="pro" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pro" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Professional/Institutional</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="new" id="new" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="new" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">New investor (0 deals)</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="few_deals" id="few" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="few" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Have done a few deals</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="experienced" id="exp" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="exp" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Experienced (10+ deals)</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="professional" id="pro" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pro" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Professional/Institutional</Label></div>
           </RadioGroup>
         </div>
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Deals closed in last 24 months</Label>
           <RadioGroup value={formData.deals_closed_24mo} onValueChange={(v) => updateField('deals_closed_24mo', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="0" id="d0" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d0" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">0</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="1_2" id="d12" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d12" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">1-2</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="3_5" id="d35" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d35" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">3-5</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="6_plus" id="d6" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d6" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">6+</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="0" id="d0" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d0" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">0</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="1_2" id="d12" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d12" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">1-2</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="3_5" id="d35" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d35" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">3-5</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="6_plus" id="d6" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="d6" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">6+</Label></div>
           </RadioGroup>
         </div>
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Are you an accredited investor?</Label>
           <RadioGroup value={formData.accredited_investor} onValueChange={(v) => updateField('accredited_investor', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="ay" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ay" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="an" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="an" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="not_sure" id="ans" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ans" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Not sure</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="ay" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ay" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="an" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="an" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="not_sure" id="ans" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="ans" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Not sure</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -324,11 +324,11 @@ export default function InvestorDeepOnboarding() {
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Capital available in next 12 months</Label>
           <RadioGroup value={formData.capital_available_12mo} onValueChange={(v) => updateField('capital_available_12mo', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="under_50k" id="c1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Under $50K</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="50k_150k" id="c2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$50K - $150K</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="150k_300k" id="c3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$150K - $300K</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="300k_600k" id="c4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$300K - $600K</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="600k_plus" id="c5" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c5" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$600K+</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="under_50k" id="c1" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Under $50K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="50k_150k" id="c2" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$50K - $150K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="150k_300k" id="c3" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$150K - $300K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="300k_600k" id="c4" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$300K - $600K</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="600k_plus" id="c5" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="c5" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">$600K+</Label></div>
           </RadioGroup>
         </div>
         <div>
@@ -336,7 +336,7 @@ export default function InvestorDeepOnboarding() {
           <div className="grid grid-cols-2 gap-4 mt-4">
             {FINANCING_METHODS.map(m => (
               <div key={m.value} className="flex items-center gap-4">
-                <Checkbox checked={formData.financing_methods?.includes(m.value)} onCheckedChange={() => toggleArrayField('financing_methods', m.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Checkbox checked={formData.financing_methods?.includes(m.value)} onCheckedChange={() => toggleArrayField('financing_methods', m.value)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
                 <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{m.label}</Label>
               </div>
             ))}
@@ -345,9 +345,9 @@ export default function InvestorDeepOnboarding() {
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Do you have financing lined up?</Label>
           <RadioGroup value={formData.financing_lined_up} onValueChange={(v) => updateField('financing_lined_up', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="fl1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="in_progress" id="fl2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">In progress</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="fl3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="yes" id="fl1" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Yes</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="in_progress" id="fl2" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">In progress</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="no" id="fl3" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="fl3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">No</Label></div>
           </RadioGroup>
         </div>
       </div>
@@ -365,7 +365,7 @@ export default function InvestorDeepOnboarding() {
           <div className="grid grid-cols-2 gap-4 mt-4">
             {INVESTMENT_STRATEGIES.map(s => (
               <div key={s.value} className="flex items-center gap-4">
-                <Checkbox checked={formData.investment_strategies?.includes(s.value)} onCheckedChange={() => toggleArrayField('investment_strategies', s.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Checkbox checked={formData.investment_strategies?.includes(s.value)} onCheckedChange={() => toggleArrayField('investment_strategies', s.value)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
                 <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{s.label}</Label>
               </div>
             ))}
@@ -376,7 +376,7 @@ export default function InvestorDeepOnboarding() {
           <div className="grid grid-cols-2 gap-4 mt-4">
             {PROPERTY_TYPES.map(p => (
               <div key={p.value} className="flex items-center gap-4">
-                <Checkbox checked={formData.property_types?.includes(p.value)} onCheckedChange={() => toggleArrayField('property_types', p.value)} className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
+                <Checkbox checked={formData.property_types?.includes(p.value)} onCheckedChange={() => toggleArrayField('property_types', p.value)} className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5" />
                 <Label className="font-normal text-[#FAFAFA] text-[17px] cursor-pointer">{p.label}</Label>
               </div>
             ))}
@@ -385,10 +385,10 @@ export default function InvestorDeepOnboarding() {
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Property condition preference</Label>
           <RadioGroup value={formData.property_condition} onValueChange={(v) => updateField('property_condition', v)} className="mt-4 space-y-4">
-            <div className="flex items-center gap-4"><RadioGroupItem value="turnkey" id="pc1" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Turnkey</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="light_cosmetic" id="pc2" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Light cosmetic</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="heavy_rehab" id="pc3" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Heavy rehab</Label></div>
-            <div className="flex items-center gap-4"><RadioGroupItem value="any" id="pc4" className="data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Any condition</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="turnkey" id="pc1" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc1" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Turnkey</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="light_cosmetic" id="pc2" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc2" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Light cosmetic</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="heavy_rehab" id="pc3" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc3" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Heavy rehab</Label></div>
+            <div className="flex items-center gap-4"><RadioGroupItem value="any" id="pc4" className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] data-[state=checked]:text-black w-5 h-5" /><Label htmlFor="pc4" className="font-normal text-[#FAFAFA] text-[18px] cursor-pointer">Any condition</Label></div>
           </RadioGroup>
         </div>
       </div>
