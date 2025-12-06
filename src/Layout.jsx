@@ -57,7 +57,7 @@ function LayoutContent({ children }) {
               className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => window.location.href = createPageUrl("Dashboard")}
             />
-            <span className="text-base font-light tracking-wide text-[#E3C567]" style={{fontFamily: "'Cormorant Garamond', serif"}}>
+            <span className="text-base font-light tracking-wide text-[#E3C567]">
               Investor Konnect
             </span>
 
