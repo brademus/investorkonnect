@@ -90,24 +90,24 @@ export function SetupChecklist({ profile, onRefresh }) {
   // Collapsed state - minimal banner
   if (collapsed) {
     return (
-      <div className="bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-2xl px-4 py-2.5">
+      <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl px-4 py-2.5">
         <button
           onClick={() => setCollapsed(false)}
           className="flex items-center justify-between w-full"
         >
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-[#D3A029] rounded-lg flex items-center justify-center">
-              {allComplete ? <CheckCircle2 className="w-3.5 h-3.5 text-white" /> : <Sparkles className="w-3.5 h-3.5 text-white" />}
+            <div className="w-7 h-7 bg-[#E3C567] rounded-lg flex items-center justify-center">
+              {allComplete ? <CheckCircle2 className="w-3.5 h-3.5 text-black" /> : <Sparkles className="w-3.5 h-3.5 text-black" />}
             </div>
-            <p className="text-sm font-medium text-[#111827]">
+            <p className="text-sm font-medium text-[#FAFAFA]">
               {allComplete ? 'Setup Complete!' : `Setup: ${completedCount}/${totalSteps} done`}
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-16 h-1.5 bg-[#FDE68A] rounded-full overflow-hidden">
-              <div className="h-full bg-[#D3A029] rounded-full" style={{ width: `${progress}%` }} />
+            <div className="w-16 h-1.5 bg-[#1F1F1F] rounded-full overflow-hidden">
+              <div className="h-full bg-[#E3C567] rounded-full" style={{ width: `${progress}%` }} />
             </div>
-            <ChevronDown className="w-4 h-4 text-[#D3A029]" />
+            <ChevronDown className="w-4 h-4 text-[#E3C567]" />
           </div>
         </button>
       </div>
@@ -115,28 +115,28 @@ export function SetupChecklist({ profile, onRefresh }) {
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
+    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl overflow-hidden shadow-sm">
       {/* Compact Header */}
-      <div className="bg-gradient-to-r from-[#D3A029] to-[#E9B949] px-4 py-3 flex items-center justify-between">
+      <div className="bg-[#E3C567] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-white/20 backdrop-blur rounded-lg flex items-center justify-center">
-            {allComplete ? <CheckCircle2 className="w-4 h-4 text-white" /> : <Sparkles className="w-4 h-4 text-white" />}
+          <div className="w-8 h-8 bg-black/20 backdrop-blur rounded-lg flex items-center justify-center">
+            {allComplete ? <CheckCircle2 className="w-4 h-4 text-black" /> : <Sparkles className="w-4 h-4 text-black" />}
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-semibold text-black">
               {allComplete ? 'Setup Complete!' : 'Complete Your Setup'}
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
-              <div className="w-20 h-1.5 bg-white/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }} />
+              <div className="w-20 h-1.5 bg-black/20 rounded-full overflow-hidden">
+                <div className="h-full bg-black rounded-full" style={{ width: `${progress}%` }} />
               </div>
-              <span className="text-xs text-white/80">{completedCount}/{totalSteps}</span>
+              <span className="text-xs text-black/80">{completedCount}/{totalSteps}</span>
             </div>
           </div>
         </div>
         <button
           onClick={() => setCollapsed(true)}
-          className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+          className="text-black/80 hover:text-black p-1.5 hover:bg-black/10 rounded-lg transition-colors"
         >
           <ChevronUp className="w-4 h-4" />
         </button>
@@ -182,21 +182,21 @@ export function SetupChecklist({ profile, onRefresh }) {
                 onClick={handleClick}
                 className={`group flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all duration-200 cursor-pointer ${
                   step.completed
-                    ? 'bg-[#D1FAE5] border border-[#A7F3D0]'
+                    ? 'bg-[#34D399]/20 border border-[#34D399]/30'
                     : isNext
-                    ? 'bg-[#FFFBEB] border border-[#D3A029]'
+                    ? 'bg-[#E3C567]/20 border border-[#E3C567]'
                     : isLocked
-                    ? 'bg-slate-100 border border-transparent opacity-60'
-                    : 'bg-slate-50 border border-transparent hover:border-[#D3A029] hover:bg-[#FFFBEB]'
+                    ? 'bg-[#1F1F1F] border border-transparent opacity-60'
+                    : 'bg-[#141414] border border-transparent hover:border-[#E3C567] hover:bg-[#E3C567]/10'
                 }`}
               >
                 {/* Icon */}
                 <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
                   step.completed
-                    ? 'bg-[#10B981] text-white'
+                    ? 'bg-[#34D399] text-black'
                     : isNext
-                    ? 'bg-[#D3A029] text-white'
-                    : 'bg-slate-200 text-slate-500 group-hover:bg-[#D3A029] group-hover:text-white'
+                    ? 'bg-[#E3C567] text-black'
+                    : 'bg-[#333333] text-[#808080] group-hover:bg-[#E3C567] group-hover:text-black'
                 }`}>
                   {step.completed ? (
                     <CheckCircle2 className="w-4 h-4" />
@@ -208,11 +208,11 @@ export function SetupChecklist({ profile, onRefresh }) {
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <p className={`text-xs font-medium truncate ${
-                    step.completed ? 'text-[#065F46]' : isLocked ? 'text-slate-400' : 'text-[#111827]'
+                    step.completed ? 'text-[#34D399]' : isLocked ? 'text-[#666666]' : 'text-[#FAFAFA]'
                   }`}>
                     {step.title}
                   </p>
-                  <p className="text-[10px] text-[#6B7280] truncate">
+                  <p className="text-[10px] text-[#808080] truncate">
                     {step.completed ? 'Done ✓' : isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'}
                   </p>
                 </div>
