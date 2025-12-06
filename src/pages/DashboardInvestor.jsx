@@ -154,8 +154,8 @@ function InvestorDashboardContent() {
                   <div className="w-12 h-12 bg-[#E5C37F]/20 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-[#E5C37F]" />
                   </div>
-                  <Link to={createPageUrl("DealRooms")} className="text-xs text-[#E5C37F] hover:underline">
-                    View all →
+                  <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E5C37F] hover:underline">
+                    View full pipeline →
                   </Link>
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Deal Pipeline</h3>
