@@ -7,7 +7,7 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
-  MapPin, Loader2, Sparkles, Bot
+  Loader2, Sparkles, Bot
 } from "lucide-react";
 
 function AgentDashboardContent() {
