@@ -546,7 +546,7 @@ export default function AgentDeepOnboarding() {
         </div>
 
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
-          <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
+          <h4 className="font-semibold text-[#E3C567] mb-2">You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
             After completing this, our AI will use your detailed profile to match you with the right investors.
           </p>
