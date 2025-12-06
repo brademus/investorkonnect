@@ -87,8 +87,8 @@ function AgentDashboardContent() {
     <>
       <Header profile={profile} />
       <div className="min-h-screen bg-black">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="space-y-8">
+        <div className="max-w-7xl mx-auto px-6 py-12">
+          <div className="space-y-12">
             
             {/* Header */}
             <div>
@@ -104,10 +104,10 @@ function AgentDashboardContent() {
             <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
             {/* 4-Box Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
               {/* Box 1: Find Investors */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-[#E3C567]" />
@@ -130,7 +130,7 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 2: Performance Stats */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-[#E3C567]" />
@@ -169,7 +169,7 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 3: Messages */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-[#DB2777]" />
@@ -208,7 +208,7 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 4: New Leads */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 flex flex-col">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-[#E3C567]" />
