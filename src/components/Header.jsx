@@ -60,7 +60,7 @@ export function Header({ profile }) {
   ];
 
   return (
-    <header className="bg-[#0F0F0F]/95 backdrop-blur-sm border-b border-[#333333] sticky top-0 z-50">
+    <header className="bg-[#151311]/95 backdrop-blur-sm border-b border-[#38342F] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           
@@ -79,7 +79,7 @@ export function Header({ profile }) {
                 <Link 
                   key={link.label}
                   to={link.href} 
-                  className="flex items-center gap-2 px-4 py-2 text-[#A6A6A6] hover:text-[#E5C37F] hover:bg-[#1A1A1A] rounded-lg transition-all"
+                  className="flex items-center gap-2 px-4 py-2 text-[#9E9E9E] hover:text-[#C9A961] hover:bg-[#1F1C19] rounded-lg transition-all"
                 >
                   <Icon className="w-4 h-4" />
                   <span className="font-medium">{link.label}</span>
@@ -95,16 +95,16 @@ export function Header({ profile }) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="flex items-center gap-2 hover:bg-[#1A1A1A]"
+                className="flex items-center gap-2 hover:bg-[#1F1C19]"
                 onClick={() => setUserMenuOpen(!userMenuOpen)}
               >
-                <div className="w-8 h-8 bg-[#E5C37F]/20 rounded-full flex items-center justify-center">
-                  <span className="text-[#E5C37F] font-semibold text-sm">
+                <div className="w-8 h-8 bg-[#C9A961]/20 rounded-full flex items-center justify-center">
+                  <span className="text-[#C9A961] font-semibold text-sm">
                     {firstName.charAt(0)}
                   </span>
                 </div>
                 <span className="text-[#FAFAFA] font-medium">{firstName}</span>
-                <ChevronDown className="w-4 h-4 text-[#A6A6A6]" />
+                <ChevronDown className="w-4 h-4 text-[#9E9E9E]" />
               </Button>
 
               {userMenuOpen && (
@@ -113,34 +113,34 @@ export function Header({ profile }) {
                     className="fixed inset-0 z-40" 
                     onClick={() => setUserMenuOpen(false)}
                   />
-                  <div className="absolute right-0 mt-2 w-56 bg-[#1A1A1A] rounded-xl shadow-lg border border-[#333333] py-2 z-50">
-                    <div className="px-4 py-3 border-b border-[#333333]">
+                  <div className="absolute right-0 mt-2 w-56 bg-[#1F1C19] rounded-xl shadow-lg border border-[#38342F] py-2 z-50">
+                    <div className="px-4 py-3 border-b border-[#38342F]">
                       <p className="text-sm font-semibold text-[#FAFAFA]">{profile?.full_name}</p>
-                      <p className="text-xs text-[#A6A6A6] mt-1">{profile?.email}</p>
-                      <span className="inline-block mt-2 px-2 py-1 bg-[#E5C37F]/20 text-[#E5C37F] text-xs font-medium rounded-full border border-[#E5C37F]/30">
+                      <p className="text-xs text-[#9E9E9E] mt-1">{profile?.email}</p>
+                      <span className="inline-block mt-2 px-2 py-1 bg-[#C9A961]/20 text-[#C9A961] text-xs font-medium rounded-full border border-[#C9A961]/30">
                         {isInvestor ? 'Investor' : 'Agent'}
                       </span>
                     </div>
                     
                     <Link 
                       to={createPageUrl("AccountProfile")}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#262626] transition-colors"
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#292521] transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <User className="w-4 h-4 text-[#A6A6A6]" />
+                      <User className="w-4 h-4 text-[#9E9E9E]" />
                       <span className="text-sm text-[#FAFAFA]">My Profile</span>
                     </Link>
                     
                     <Link 
                       to={createPageUrl("Pricing")}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#262626] transition-colors"
+                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#292521] transition-colors"
                       onClick={() => setUserMenuOpen(false)}
                     >
-                      <CreditCard className="w-4 h-4 text-[#A6A6A6]" />
+                      <CreditCard className="w-4 h-4 text-[#9E9E9E]" />
                       <span className="text-sm text-[#FAFAFA]">Subscription</span>
                     </Link>
                     
-                    <div className="border-t border-[#333333] mt-2 pt-2">
+                    <div className="border-t border-[#38342F] mt-2 pt-2">
                       <button
                         onClick={handleLogout}
                         className="flex items-center gap-3 px-4 py-2 w-full hover:bg-[#DC2626]/10 transition-colors"
@@ -168,18 +168,18 @@ export function Header({ profile }) {
 
         {/* Mobile Menu */}
         {menuOpen && (
-          <div className="lg:hidden py-4 border-t border-[#333333] animate-in slide-in-from-top">
+          <div className="lg:hidden py-4 border-t border-[#38342F] animate-in slide-in-from-top">
             {/* User Info */}
-            <div className="px-3 py-3 mb-3 bg-[#1A1A1A] rounded-lg border border-[#333333]">
+            <div className="px-3 py-3 mb-3 bg-[#1F1C19] rounded-lg border border-[#38342F]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-[#E5C37F]/20 rounded-full flex items-center justify-center">
-                  <span className="text-[#E5C37F] font-semibold">
+                <div className="w-10 h-10 bg-[#C9A961]/20 rounded-full flex items-center justify-center">
+                  <span className="text-[#C9A961] font-semibold">
                     {firstName.charAt(0)}
                   </span>
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#FAFAFA]">{profile?.full_name}</p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#E5C37F]/20 text-[#E5C37F] text-xs font-medium rounded-full border border-[#E5C37F]/30">
+                  <span className="inline-block mt-1 px-2 py-0.5 bg-[#C9A961]/20 text-[#C9A961] text-xs font-medium rounded-full border border-[#C9A961]/30">
                     {isInvestor ? 'Investor' : 'Agent'}
                   </span>
                 </div>
@@ -194,7 +194,7 @@ export function Header({ profile }) {
                   <Link 
                     key={link.label}
                     to={link.href} 
-                    className="flex items-center gap-3 px-3 py-3 text-[#A6A6A6] hover:text-[#E5C37F] hover:bg-[#1A1A1A] rounded-lg transition-all"
+                    className="flex items-center gap-3 px-3 py-3 text-[#9E9E9E] hover:text-[#C9A961] hover:bg-[#1F1C19] rounded-lg transition-all"
                     onClick={() => setMenuOpen(false)}
                   >
                     <Icon className="w-5 h-5" />
@@ -205,10 +205,10 @@ export function Header({ profile }) {
             </nav>
 
             {/* Profile & Logout */}
-            <div className="border-t border-[#333333] pt-3 space-y-1">
+            <div className="border-t border-[#38342F] pt-3 space-y-1">
               <Link 
                 to={createPageUrl("AccountProfile")}
-                className="flex items-center gap-3 px-3 py-3 text-[#A6A6A6] hover:text-[#E5C37F] hover:bg-[#1A1A1A] rounded-lg transition-all"
+                className="flex items-center gap-3 px-3 py-3 text-[#9E9E9E] hover:text-[#C9A961] hover:bg-[#1F1C19] rounded-lg transition-all"
                 onClick={() => setMenuOpen(false)}
               >
                 <User className="w-5 h-5" />
