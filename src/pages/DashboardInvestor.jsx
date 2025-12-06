@@ -147,7 +147,7 @@ function InvestorDashboardContent() {
       <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
       {/* 4-Box Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
         
         {/* Box 1: Start New Deal */}
         <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
