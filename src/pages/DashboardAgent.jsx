@@ -91,8 +91,8 @@ function AgentDashboardContent() {
     <>
       <Header profile={profile} />
       <div className="min-h-screen bg-[#151311]">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="space-y-6 lg:space-y-8">
+        <div className="max-w-[1600px] mx-auto px-6 py-10">
+          <div className="space-y-8 lg:space-y-10">
             
             {/* Page Header */}
             <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
@@ -110,20 +110,20 @@ function AgentDashboardContent() {
             <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
             {/* 4-Box Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
               
               {/* Box 1: Find Investors */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <Users className="w-7 h-7 text-[#E3C567]" />
                   </div>
-                  <span className="px-3 py-1 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full border border-[#34D399]/30">
+                  <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full border border-[#34D399]/30">
                     Primary Action
                   </span>
                 </div>
-                <h3 className="text-lg font-bold text-[#FAFAFA] mb-2">Find Investors</h3>
-                <p className="text-sm text-[#808080] mb-4">
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Find Investors</h3>
+                <p className="text-base text-[#808080] mb-6">
                   Browse and connect with verified investors looking for agents in your market.
                 </p>
                 <Button 
@@ -136,16 +136,16 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 2: Performance Stats */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <TrendingUp className="w-7 h-7 text-[#E3C567]" />
                   </div>
                   <Link to={createPageUrl("MyProfile")} className="text-sm text-[#E3C567] hover:underline">
                     View profile →
                   </Link>
                 </div>
-                <h3 className="text-lg font-bold text-[#FAFAFA] mb-4">Your Performance</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Your Performance</h3>
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 bg-[#E3C567]/20 rounded-lg border border-[#E3C567]/30">
@@ -181,16 +181,16 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 3: Messages */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-[#DB2777]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-7 h-7 text-[#DB2777]" />
                   </div>
                   <Link to={createPageUrl("DealRooms")} className="text-sm text-[#E3C567] hover:underline">
                     View all →
                   </Link>
                 </div>
-                <h3 className="text-lg font-bold text-[#FAFAFA] mb-4">Messages & Requests</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">Messages & Requests</h3>
                 
                 <div className="space-y-3">
                   <div className="flex items-center justify-between p-3 rounded-lg border border-[#1F1F1F] hover:border-[#DB2777] hover:bg-[#141414] transition-all">
@@ -224,16 +224,16 @@ function AgentDashboardContent() {
               </div>
 
               {/* Box 4: New Leads */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Sparkles className="w-6 h-6 text-[#E3C567]" />
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8">
+                <div className="flex items-start justify-between mb-6">
+                  <div className="w-14 h-14 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-7 h-7 text-[#E3C567]" />
                   </div>
                   <Link to={createPageUrl("InvestorDirectory")} className="text-sm text-[#E5C37F] hover:underline">
                     View all →
                   </Link>
                 </div>
-                <h3 className="text-lg font-bold text-[#FAFAFA] mb-4">New Leads</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-6">New Leads</h3>
                 
                 <div className="text-center py-6">
                   <Sparkles className="w-10 h-10 text-[#333333] mx-auto mb-2" />
