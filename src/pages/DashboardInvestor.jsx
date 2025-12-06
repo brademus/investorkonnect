@@ -146,8 +146,8 @@ function InvestorDashboardContent() {
       {/* Setup Checklist */}
       <SetupChecklist profile={profile} onRefresh={loadProfile} />
 
-      {/* 3-Box Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
+      {/* 4-Box Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
         
         {/* Box 1: Start New Deal */}
         <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all">
@@ -261,6 +261,33 @@ function InvestorDashboardContent() {
               <p className="text-xs text-[#666666]">Start a deal to connect with agents</p>
             </div>
           )}
+        </div>
+
+        {/* Box 4: Suggested Agents */}
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+              <Users className="w-6 h-6 text-[#E3C567]" />
+            </div>
+            <Link to={createPageUrl("AgentDirectory")} className="text-sm text-[#E5C37F] hover:underline">
+              Browse all →
+            </Link>
+          </div>
+          <h3 className="text-lg font-bold text-[#FAFAFA] mb-4">Suggested Agents</h3>
+          
+          <div className="text-center py-6">
+            <Users className="w-10 h-10 text-[#333333] mx-auto mb-2" />
+            <p className="text-sm text-[#A6A6A6]">AI matching in progress</p>
+            <p className="text-xs text-[#666666]">Complete your profile for better matches</p>
+          </div>
+          
+          <Button 
+            onClick={() => navigate(createPageUrl("AgentDirectory"))}
+            variant="outline"
+            className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+          >
+            Browse All Agents
+          </Button>
         </div>
 
       </div>
