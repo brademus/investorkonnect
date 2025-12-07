@@ -4,36 +4,43 @@ import { base44 } from '@/api/base44Client';
 /**
  * Shared hook for loading rooms/deals across all pages
  * Ensures consistency between Pipeline, Room/Messages, and other pages
+ * ALWAYS merges database rooms with sessionStorage rooms
  */
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
       try {
-        // Try to load from database
-        const rooms = await base44.entities.Room.list('-created_date', 100);
-        
-        // If we have rooms in database, use those
-        if (rooms && rooms.length > 0) {
-          return rooms;
+        // Load from both sources
+        let dbRooms = [];
+        try {
+          dbRooms = await base44.entities.Room.list('-created_date', 100) || [];
+        } catch (err) {
+          console.log('[useRooms] Database load failed, will use local only:', err.message);
         }
         
-        // Otherwise check sessionStorage for demo rooms
-        const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-        if (demoRooms.length > 0) {
-          return demoRooms;
-        }
+        // Load from sessionStorage
+        const localRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
         
-        // Return empty array if no data
-        return [];
+        // Merge: prioritize database rooms, then add local rooms that don't exist in DB
+        const dbIds = new Set(dbRooms.map(r => r.id));
+        const uniqueLocalRooms = localRooms.filter(r => !dbIds.has(r.id));
+        
+        const allRooms = [...dbRooms, ...uniqueLocalRooms];
+        
+        console.log(`[useRooms] Loaded ${dbRooms.length} from DB + ${uniqueLocalRooms.length} from local = ${allRooms.length} total`);
+        
+        return allRooms;
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
         
-        // Fallback to sessionStorage on error
+        // Final fallback to sessionStorage only
         const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
         return demoRooms;
       }
     },
     initialData: [],
+    staleTime: 1000, // Consider data fresh for 1 second
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
   });
 }

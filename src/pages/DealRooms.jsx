@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { createDealRoom, listMyRooms, searchCounterparties } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { useRooms } from "@/components/useRooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -163,32 +164,17 @@ function NewRoomModal({ open, onClose, onCreated }) {
 export default function DealRooms() {
   const navigate = useNavigate();
   const { loading: profileLoading, role, onboarded, kycVerified, hasNDA, user, profile } = useCurrentProfile();
-  const [loading, setLoading] = useState(true);
-  const [rooms, setRooms] = useState([]);
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
   const [openNew, setOpenNew] = useState(false);
 
-  useEffect(() => {
-    if (!profileLoading) {
-      setLoading(false);
-      loadRooms();
-    }
-  }, [profileLoading]);
-
-  const loadRooms = async () => {
-    try {
-      const response = await listMyRooms();
-      setRooms(response.data?.items || []);
-    } catch (error) {
-      console.error('Error loading rooms:', error);
-      toast.error("Failed to load deal rooms");
-    }
-  };
+  const loading = profileLoading || roomsLoading;
 
   const handleCreated = (room) => {
+    // Invalidate rooms cache to refresh all pages
     navigate(`${createPageUrl("Room")}?roomId=${room.id}`);
   };
 
-  if (profileLoading || loading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
         <div className="text-center">
