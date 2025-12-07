@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 
 function PipelineContent() {
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deals, setDeals] = useState([]);
@@ -33,6 +34,11 @@ function PipelineContent() {
       console.error('[Pipeline] Error loading profile:', error);
       setLoading(false);
     }
+  };
+
+  const handleDealClick = (deal) => {
+    // Navigate to Room page with the deal's room ID
+    navigate(`${createPageUrl("Room")}?roomId=${deal.id}`);
   };
 
   const loadDeals = async () => {
