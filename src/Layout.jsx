@@ -48,7 +48,7 @@ function LayoutContent({ children }) {
     <div className="ik-shell">
       <style>{`
         body {
-          background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%) !important;
+          background: radial-gradient(circle at 50% 0%, #2a2a2a 0%, #000000 100%) !important;
           background-attachment: fixed !important;
         }
       `}</style>

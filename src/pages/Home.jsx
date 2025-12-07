@@ -25,7 +25,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-transparent">
       {/* Fixed Header */}
-      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-black/95 backdrop-blur-sm">
+      <header className="fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <Logo size="default" showText={true} linkTo="/" />
           <div className="flex items-center gap-3">
