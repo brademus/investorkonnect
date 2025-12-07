@@ -46,14 +46,26 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell">
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
+      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
       <style>{`
+        :root {
+          --font-serif: 'Playfair Display', serif;
+          --font-sans: 'Inter', sans-serif;
+        }
         body {
+          font-family: var(--font-sans);
           background-color: #050505 !important;
           background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/158666991_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png') !important;
           background-size: cover !important;
           background-position: center center !important;
           background-attachment: fixed !important;
           background-repeat: no-repeat !important;
+        }
+        h1, h2, h3, h4, h5, h6, .font-serif {
+          font-family: var(--font-serif) !important;
+          letter-spacing: -0.02em;
         }
       `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
