@@ -55,7 +55,7 @@ export default function Home() {
             Connect with agents who{" "}
             <span className="relative inline-block">
               <span className="relative z-10 text-[#E3C567]">speak your language</span>
-              <span className="absolute inset-x-0 bottom-2 h-4 bg-[#E3C567] opacity-30 -rotate-1"></span>
+
             </span>
           </h1>
 
