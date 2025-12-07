@@ -414,7 +414,10 @@ function PipelineContent() {
                         {stageDeals.length > 0 ? (
                           singleDeal ? (
                             // Single deal - full card view
-                            <div className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4">
+                            <div 
+                              onClick={() => handleDealClick(stageDeals[0])}
+                              className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4"
+                            >
                               <h4 className="text-xl font-bold text-[#FAFAFA] leading-tight">
                                 {stageDeals[0].property_address || stageDeals[0].title || 'Untitled Property'}
                               </h4>
@@ -487,6 +490,7 @@ function PipelineContent() {
                             stageDeals.map((deal) => (
                               <div 
                                 key={deal.id}
+                                onClick={() => handleDealClick(deal)}
                                 className="p-3 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
                               >
                                 <h4 className="text-sm font-bold text-[#FAFAFA] leading-tight">
@@ -560,7 +564,10 @@ function PipelineContent() {
                         {stageDeals.length > 0 ? (
                           singleDeal ? (
                             // Single deal - full card view
-                            <div className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4">
+                            <div 
+                              onClick={() => handleDealClick(stageDeals[0])}
+                              className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4"
+                            >
                               <h4 className="text-xl font-bold text-[#FAFAFA] leading-tight">
                                 {stageDeals[0].property_address || stageDeals[0].title || 'Untitled Property'}
                               </h4>
@@ -633,6 +640,7 @@ function PipelineContent() {
                             stageDeals.map((deal) => (
                               <div 
                                 key={deal.id}
+                                onClick={() => handleDealClick(deal)}
                                 className="p-3 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
                               >
                                 <h4 className="text-sm font-bold text-[#FAFAFA] leading-tight">
