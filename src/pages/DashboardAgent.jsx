@@ -96,7 +96,7 @@ function AgentDashboardContent() {
                 Welcome back, {firstName}!
               </h1>
               <p className="text-base text-[#808080]">
-                Track your performance and connect with investors.
+                Manage your inbound deals and track your pipeline.
               </p>
             </div>
 
@@ -106,31 +106,31 @@ function AgentDashboardContent() {
             {/* 4-Box Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
-              {/* Box 1: Find Investors */}
+              {/* Box 1: My Deals */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#E3C567]" />
+                    <FileText className="w-6 h-6 text-[#E3C567]" />
                   </div>
                   <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full">
-                    Primary
+                    Active
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Find Investors</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">My Deals</h3>
                 <p className="text-sm text-[#808080] mb-6 flex-grow">
-                  Browse verified investors looking for agents in your market.
+                  View and manage deal rooms where investors have sent you contracts.
                 </p>
                 <Button 
-                  onClick={() => navigate(createPageUrl("InvestorDirectory"))}
+                  onClick={() => navigate(createPageUrl("DealRooms"))}
                   className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Browse Investors
+                  <FileText className="w-4 h-4 mr-2" />
+                  View Deal Rooms
                 </Button>
               </div>
 
-              {/* Box 2: Performance Stats */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
+              {/* Box 2: Pipeline */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <TrendingUp className="w-6 h-6 text-[#E3C567]" />
@@ -139,33 +139,36 @@ function AgentDashboardContent() {
                     View full pipeline →
                   </Link>
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Performance</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Pipeline</h3>
+                <p className="text-sm text-[#808080] mb-6">
+                  Track your active deals through every stage of the transaction.
+                </p>
                 
                 <div className="space-y-2 flex-grow">
                   <div className="flex items-center justify-between p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
                     <div className="flex items-center gap-2">
-                      <Eye className="w-4 h-4 text-[#E3C567]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Profile Views</span>
+                      <FileText className="w-4 h-4 text-[#E3C567]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Active Deals</span>
                     </div>
-                    <span className="text-lg font-bold text-[#E3C567]">{userData.profileViews}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{userData.activeDealRooms}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Active Clients</span>
+                      <span className="text-sm font-medium text-[#FAFAFA]">Clients</span>
                     </div>
                     <span className="text-lg font-bold text-[#808080]">{userData.activeClients}</span>
                   </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-4 h-4 text-[#34D399]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Strength</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#34D399]">{profileCompletion}%</span>
-                  </div>
                 </div>
+
+                <Button 
+                  onClick={() => navigate(createPageUrl("Pipeline"))}
+                  variant="outline"
+                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                >
+                  View Pipeline
+                </Button>
               </div>
 
               {/* Box 3: Messages */}
@@ -203,35 +206,44 @@ function AgentDashboardContent() {
                   variant="outline"
                   className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
                 >
-                  Open Rooms
+                  Open Messages
                 </Button>
               </div>
 
-              {/* Box 4: New Leads */}
+              {/* Box 4: How It Works / Status */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <Sparkles className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("InvestorDirectory")} className="text-xs text-[#E5C37F] hover:underline">
-                    View all →
-                  </Link>
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">New Leads</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Incoming Deals</h3>
                 
-                <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                  <Sparkles className="w-8 h-8 text-[#333333] mb-2" />
-                  <p className="text-sm text-[#808080]">No new matches yet</p>
-                  <p className="text-xs text-[#666666]">Check back soon</p>
+                <div className="flex-grow">
+                  <p className="text-sm text-[#808080] mb-4">
+                    Deals are automatically matched to you based on your service area.
+                  </p>
+                  <ul className="text-sm text-[#808080] space-y-3">
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                      <span>Investor uploads contract</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                      <span>AI matches state & county</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                      <span>You receive the deal</span>
+                    </li>
+                  </ul>
                 </div>
                 
-                <Button 
-                  onClick={() => navigate(createPageUrl("InvestorDirectory"))}
-                  variant="outline"
-                  className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
-                >
-                  Browse Investors
-                </Button>
+                <div className="mt-4 p-3 bg-[#262626] rounded-lg">
+                  <p className="text-xs text-[#808080] text-center">
+                    Make sure your <Link to={createPageUrl("AccountProfile")} className="text-[#E3C567] hover:underline">markets</Link> are up to date.
+                  </p>
+                </div>
               </div>
             </div>
 
