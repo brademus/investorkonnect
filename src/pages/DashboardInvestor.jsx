@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { base44 } from "@/api/base44Client";
 import { inboxList } from "@/components/functions";
+import { useRooms } from "@/components/useRooms";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
   Loader2, Sparkles, Home, DollarSign, CreditCard, Bot
@@ -17,12 +18,7 @@ function InvestorDashboardContent() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [recentMessages, setRecentMessages] = useState([]);
-  const [dealStats, setDealStats] = useState({
-    active: 0,
-    pending: 0,
-    closed: 0
-  });
-  const [deals, setDeals] = useState([]);
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
 
   useEffect(() => {
     loadProfile();
@@ -41,7 +37,6 @@ function InvestorDashboardContent() {
       
       setProfile(directProfile);
       loadRecentMessages();
-      loadDeals();
       setLoading(false);
     } catch (error) {
       console.error('[DashboardInvestor] Error loading profile:', error);
@@ -60,33 +55,14 @@ function InvestorDashboardContent() {
     }
   };
 
-  const loadDeals = async () => {
-    try {
-      const apiDeals = await base44.entities.Deal.list('-created_date', 50);
-      const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
-      const apiIds = new Set(apiDeals.map(d => d.id));
-      const uniqueStored = storedDeals.filter(d => !apiIds.has(d.id));
-      const allDeals = [...apiDeals, ...uniqueStored];
-      
-      setDeals(allDeals);
-      
-      const active = allDeals.filter(d => d.status === 'active' || d.status === 'draft').length;
-      const pending = allDeals.filter(d => d.status === 'pending').length;
-      const closed = allDeals.filter(d => d.status === 'closed' || d.status === 'archived').length;
-      
-      setDealStats({ active, pending, closed });
-    } catch (err) {
-      const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
-      setDeals(storedDeals);
-      setDealStats({ 
-        active: storedDeals.filter(d => d.status === 'active').length,
-        pending: 0,
-        closed: 0
-      });
-    }
+  // Calculate deal stats from rooms (same source as Pipeline page)
+  const dealStats = {
+    active: rooms.filter(r => ['new_contract', 'walkthrough_scheduled', 'evaluate_deal', 'marketing'].includes(r.pipeline_stage)).length,
+    pending: 0, // Not used in current pipeline
+    closed: rooms.filter(r => r.pipeline_stage === 'closing').length
   };
 
-  if (loading) {
+  if (loading || roomsLoading) {
     return (
       <>
         <Header profile={profile} />
