@@ -3,79 +3,238 @@ import { base44 } from '@/api/base44Client';
 
 /**
  * Default placeholder deals that appear when no real data exists
+ * These represent matched investors/agents with consistent data across the entire app
  */
 const DEFAULT_PLACEHOLDER_DEALS = [
   {
-    id: 'placeholder-1',
-    title: '123 Main Street',
-    property_address: '123 Main Street',
-    customer_name: 'John Smith',
-    counterparty_name: 'John Smith',
-    counterparty_role: 'investor',
-    counterparty_email: 'john.smith@example.com',
-    counterparty_company: 'Smith Investments',
-    counterparty_phone: '(555) 123-4567',
+    id: 'demo-room-1',
+    // Room identifiers
+    investorId: 'demo-investor-1',
+    agentId: 'demo-agent-1',
+    
+    // Property details (for Pipeline)
+    title: '2847 E Camelback Road',
+    property_address: '2847 E Camelback Road',
     city: 'Phoenix',
-    state: 'AZ',
-    bedrooms: 3,
-    bathrooms: 2,
-    square_feet: 1850,
-    budget: 425000,
-    contract_price: 425000,
-    pipeline_stage: 'new_contract',
-    created_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    contract_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-    open_tasks: 3,
-    completed_tasks: 1
-  },
-  {
-    id: 'placeholder-2',
-    title: '456 Oak Avenue',
-    property_address: '456 Oak Avenue',
-    customer_name: 'Sarah Johnson',
-    counterparty_name: 'Sarah Johnson',
-    counterparty_role: 'agent',
-    counterparty_email: 'sarah.johnson@example.com',
-    counterparty_company: 'Desert Realty Group',
-    counterparty_phone: '(555) 234-5678',
-    city: 'Scottsdale',
     state: 'AZ',
     bedrooms: 4,
     bathrooms: 3,
-    square_feet: 2400,
-    budget: 650000,
-    contract_price: 650000,
-    pipeline_stage: 'walkthrough_scheduled',
-    created_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-    updated_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-    walkthrough_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
-    open_tasks: 2,
-    completed_tasks: 3
+    square_feet: 2850,
+    budget: 895000,
+    contract_price: 895000,
+    
+    // Deal progress (for Pipeline)
+    pipeline_stage: 'new_contract',
+    created_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    contract_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 4,
+    completed_tasks: 2,
+    
+    // Counterparty info (for Messages/Rooms)
+    counterparty_name: 'Michael Chen',
+    counterparty_role: 'agent',
+    counterparty_email: 'michael.chen@phoenixrealty.com',
+    counterparty_company: 'Phoenix Premium Realty',
+    counterparty_phone: '(602) 555-0147',
+    customer_name: 'Michael Chen',
+    
+    // Full profile for detailed views
+    counterparty_profile: {
+      id: 'demo-agent-1',
+      full_name: 'Michael Chen',
+      email: 'michael.chen@phoenixrealty.com',
+      user_role: 'agent',
+      company: 'Phoenix Premium Realty',
+      phone: '(602) 555-0147',
+      markets: ['Phoenix', 'Scottsdale', 'Paradise Valley'],
+      agent: {
+        brokerage: 'Phoenix Premium Realty',
+        license_number: 'AZ-12345678',
+        experience_years: 12,
+        specialties: ['Luxury Residential', 'Investment Properties']
+      }
+    }
   },
   {
-    id: 'placeholder-3',
-    title: '789 Desert Lane',
-    property_address: '789 Desert Lane',
-    customer_name: 'Mike Davis',
-    counterparty_name: 'Mike Davis',
-    counterparty_role: 'investor',
-    counterparty_email: 'mike.davis@example.com',
-    counterparty_company: 'Davis Capital Partners',
-    counterparty_phone: '(555) 345-6789',
-    city: 'Tempe',
+    id: 'demo-room-2',
+    investorId: 'demo-investor-2',
+    agentId: 'demo-agent-2',
+    
+    title: '5621 N Scottsdale Road',
+    property_address: '5621 N Scottsdale Road',
+    city: 'Scottsdale',
     state: 'AZ',
     bedrooms: 5,
-    bathrooms: 4,
-    square_feet: 3200,
-    budget: 825000,
-    contract_price: 825000,
-    pipeline_stage: 'evaluate_deal',
-    created_date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+    bathrooms: 4.5,
+    square_feet: 3600,
+    budget: 1250000,
+    contract_price: 1250000,
+    
+    pipeline_stage: 'walkthrough_scheduled',
+    created_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
     updated_date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    walkthrough_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 3,
+    completed_tasks: 5,
+    
+    counterparty_name: 'Sarah Martinez',
+    counterparty_role: 'agent',
+    counterparty_email: 'sarah.martinez@luxuryaz.com',
+    counterparty_company: 'Luxury Arizona Properties',
+    counterparty_phone: '(480) 555-0289',
+    customer_name: 'Sarah Martinez',
+    
+    counterparty_profile: {
+      id: 'demo-agent-2',
+      full_name: 'Sarah Martinez',
+      email: 'sarah.martinez@luxuryaz.com',
+      user_role: 'agent',
+      company: 'Luxury Arizona Properties',
+      phone: '(480) 555-0289',
+      markets: ['Scottsdale', 'Paradise Valley', 'Fountain Hills'],
+      agent: {
+        brokerage: 'Luxury Arizona Properties',
+        license_number: 'AZ-87654321',
+        experience_years: 8,
+        specialties: ['Luxury Homes', 'Golf Course Properties']
+      }
+    }
+  },
+  {
+    id: 'demo-room-3',
+    investorId: 'demo-investor-3',
+    agentId: 'demo-agent-3',
+    
+    title: '1234 W University Drive',
+    property_address: '1234 W University Drive',
+    city: 'Tempe',
+    state: 'AZ',
+    bedrooms: 3,
+    bathrooms: 2,
+    square_feet: 1650,
+    budget: 485000,
+    contract_price: 485000,
+    
+    pipeline_stage: 'evaluate_deal',
+    created_date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     evaluation_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    open_tasks: 4,
-    completed_tasks: 5
+    open_tasks: 2,
+    completed_tasks: 7,
+    
+    counterparty_name: 'David Thompson',
+    counterparty_role: 'agent',
+    counterparty_email: 'david.thompson@desertinvest.com',
+    counterparty_company: 'Desert Investment Realty',
+    counterparty_phone: '(480) 555-0312',
+    customer_name: 'David Thompson',
+    
+    counterparty_profile: {
+      id: 'demo-agent-3',
+      full_name: 'David Thompson',
+      email: 'david.thompson@desertinvest.com',
+      user_role: 'agent',
+      company: 'Desert Investment Realty',
+      phone: '(480) 555-0312',
+      markets: ['Tempe', 'Mesa', 'Gilbert'],
+      agent: {
+        brokerage: 'Desert Investment Realty',
+        license_number: 'AZ-45678912',
+        experience_years: 15,
+        specialties: ['Investment Properties', 'Multi-Family']
+      }
+    }
+  },
+  {
+    id: 'demo-room-4',
+    investorId: 'demo-investor-4',
+    agentId: 'demo-agent-4',
+    
+    title: '8945 E Shea Boulevard',
+    property_address: '8945 E Shea Boulevard',
+    city: 'Scottsdale',
+    state: 'AZ',
+    bedrooms: 4,
+    bathrooms: 3.5,
+    square_feet: 3100,
+    budget: 975000,
+    contract_price: 975000,
+    
+    pipeline_stage: 'marketing',
+    created_date: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    marketing_start_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 1,
+    completed_tasks: 9,
+    
+    counterparty_name: 'Jennifer Wu',
+    counterparty_role: 'agent',
+    counterparty_email: 'jennifer.wu@eliterealty.com',
+    counterparty_company: 'Elite Realty Partners',
+    counterparty_phone: '(602) 555-0456',
+    customer_name: 'Jennifer Wu',
+    
+    counterparty_profile: {
+      id: 'demo-agent-4',
+      full_name: 'Jennifer Wu',
+      email: 'jennifer.wu@eliterealty.com',
+      user_role: 'agent',
+      company: 'Elite Realty Partners',
+      phone: '(602) 555-0456',
+      markets: ['Scottsdale', 'Phoenix', 'Cave Creek'],
+      agent: {
+        brokerage: 'Elite Realty Partners',
+        license_number: 'AZ-78912345',
+        experience_years: 10,
+        specialties: ['Luxury Estates', 'New Construction']
+      }
+    }
+  },
+  {
+    id: 'demo-room-5',
+    investorId: 'demo-investor-5',
+    agentId: 'demo-agent-5',
+    
+    title: '3456 N Central Avenue',
+    property_address: '3456 N Central Avenue',
+    city: 'Phoenix',
+    state: 'AZ',
+    bedrooms: 6,
+    bathrooms: 5,
+    square_feet: 4200,
+    budget: 1650000,
+    contract_price: 1650000,
+    
+    pipeline_stage: 'closing',
+    created_date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    closing_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 1,
+    completed_tasks: 15,
+    
+    counterparty_name: 'Robert Singh',
+    counterparty_role: 'agent',
+    counterparty_email: 'robert.singh@prestigeproperties.com',
+    counterparty_company: 'Prestige Properties Group',
+    counterparty_phone: '(602) 555-0789',
+    customer_name: 'Robert Singh',
+    
+    counterparty_profile: {
+      id: 'demo-agent-5',
+      full_name: 'Robert Singh',
+      email: 'robert.singh@prestigeproperties.com',
+      user_role: 'agent',
+      company: 'Prestige Properties Group',
+      phone: '(602) 555-0789',
+      markets: ['Phoenix', 'Arcadia', 'Biltmore'],
+      agent: {
+        brokerage: 'Prestige Properties Group',
+        license_number: 'AZ-23456789',
+        experience_years: 18,
+        specialties: ['Luxury Homes', 'Estate Properties', 'Historic Homes']
+      }
+    }
   }
 ];
 
