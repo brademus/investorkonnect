@@ -5,6 +5,7 @@ import { upsertInvestorOnboarding, matchInvestor, findBestAgents } from '@/compo
 import { createPageUrl } from '@/components/utils';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
+import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -41,6 +42,7 @@ const STEPS = [
 
 export default function DealWizard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -301,6 +303,9 @@ export default function DealWizard() {
         // Store in sessionStorage for immediate access
         const existingRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
         sessionStorage.setItem('demo_rooms', JSON.stringify([...existingRooms, ...rooms]));
+        
+        // Invalidate rooms query cache so all pages refresh
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
       } catch (error) {
         console.log('Room creation skipped:', error.message);
       }
