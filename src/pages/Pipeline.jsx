@@ -492,25 +492,7 @@ function PipelineContent() {
               </div>
             </div>
 
-            {/* Empty State */}
-            {deals.length === 0 && (
-              <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-                <div className="text-center py-16 bg-[#0D0D0D] border-2 border-[#1F1F1F] rounded-2xl px-12">
-                  <FileText className="w-20 h-20 text-[#333333] mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold text-[#FAFAFA] mb-3">No deals yet</h3>
-                  <p className="text-[#808080] mb-8 text-base">
-                    Submit your first deal to start tracking your pipeline
-                  </p>
-                  <Button
-                    onClick={() => window.location.href = createPageUrl("DealWizard")}
-                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold px-8 py-6 text-base"
-                  >
-                    <Plus className="w-5 h-5 mr-2" />
-                    Submit Your First Deal
-                  </Button>
-                </div>
-              </div>
-            )}
+
           </div>
         </div>
       </div>
