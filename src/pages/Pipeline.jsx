@@ -162,7 +162,7 @@ function PipelineContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="h-screen bg-black overflow-hidden flex flex-col">
+      <div className="h-screen bg-transparent overflow-hidden flex flex-col">
         <div className="flex-1 overflow-auto">
           <div className="max-w-[1800px] mx-auto px-6 py-6">
             

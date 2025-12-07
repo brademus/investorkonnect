@@ -128,7 +128,7 @@ export default function Room() {
   });
 
   return (
-    <div className="min-h-screen bg-black flex">
+    <div className="min-h-screen bg-transparent flex">
       {/* Left Sidebar - Conversation List */}
       <div 
         className={`fixed inset-y-0 left-0 w-[320px] bg-[#0D0D0D] border-r border-[#1F1F1F] z-40 transform transition-transform shadow-xl ${
