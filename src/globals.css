@@ -114,6 +114,13 @@ html {
 
   body {
     background-color: #000000;
+    background-image: 
+      linear-gradient(to bottom, rgba(0, 0, 0, 0.85), rgba(0, 0, 0, 0.95)),
+      url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/17e4be520_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
     @apply text-foreground;
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
     -webkit-font-smoothing: antialiased;
