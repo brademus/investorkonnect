@@ -12,6 +12,9 @@ const DEFAULT_PLACEHOLDER_DEALS = [
     customer_name: 'John Smith',
     counterparty_name: 'John Smith',
     counterparty_role: 'investor',
+    counterparty_email: 'john.smith@example.com',
+    counterparty_company: 'Smith Investments',
+    counterparty_phone: '(555) 123-4567',
     city: 'Phoenix',
     state: 'AZ',
     bedrooms: 3,
@@ -33,6 +36,9 @@ const DEFAULT_PLACEHOLDER_DEALS = [
     customer_name: 'Sarah Johnson',
     counterparty_name: 'Sarah Johnson',
     counterparty_role: 'agent',
+    counterparty_email: 'sarah.johnson@example.com',
+    counterparty_company: 'Desert Realty Group',
+    counterparty_phone: '(555) 234-5678',
     city: 'Scottsdale',
     state: 'AZ',
     bedrooms: 4,
@@ -54,6 +60,9 @@ const DEFAULT_PLACEHOLDER_DEALS = [
     customer_name: 'Mike Davis',
     counterparty_name: 'Mike Davis',
     counterparty_role: 'investor',
+    counterparty_email: 'mike.davis@example.com',
+    counterparty_company: 'Davis Capital Partners',
+    counterparty_phone: '(555) 345-6789',
     city: 'Tempe',
     state: 'AZ',
     bedrooms: 5,
@@ -69,6 +78,42 @@ const DEFAULT_PLACEHOLDER_DEALS = [
     completed_tasks: 5
   }
 ];
+
+/**
+ * Enrich room with full profile data from matched counterparty
+ */
+async function enrichRoomWithProfile(room) {
+  try {
+    // Determine which profile ID to fetch
+    const counterpartyId = room.agentId || room.investorId;
+    
+    if (!counterpartyId) {
+      return room; // No counterparty, return as-is
+    }
+    
+    // Fetch the counterparty's profile
+    const profiles = await base44.entities.Profile.filter({ id: counterpartyId });
+    const profile = profiles[0];
+    
+    if (!profile) {
+      return room; // Profile not found, return as-is
+    }
+    
+    // Enrich room with profile data
+    return {
+      ...room,
+      counterparty_name: profile.full_name || profile.email || room.counterparty_name,
+      counterparty_email: profile.email,
+      counterparty_role: profile.user_role || profile.role,
+      counterparty_company: profile.company || profile.agent?.brokerage || profile.investor?.company_name,
+      counterparty_phone: profile.phone || profile.agent?.phone,
+      counterparty_profile: profile, // Include full profile for detailed views
+    };
+  } catch (error) {
+    console.error(`[enrichRoomWithProfile] Error enriching room ${room.id}:`, error);
+    return room; // Return original room on error
+  }
+}
 
 /**
  * Normalize room data structure for consistent display across all pages
@@ -92,6 +137,7 @@ function normalizeRoom(room) {
  * Shared hook for loading rooms/deals across all pages
  * Ensures consistency between Pipeline, Room/Messages, and other pages
  * ALWAYS merges database rooms with sessionStorage rooms
+ * Enriches rooms with full profile data from matched agents/investors
  * Shows placeholder deals when no real data exists
  */
 export function useRooms() {
@@ -120,6 +166,9 @@ export function useRooms() {
         if (allRooms.length === 0) {
           allRooms = DEFAULT_PLACEHOLDER_DEALS;
           console.log('[useRooms] No real data, using placeholder deals');
+        } else {
+          // Enrich real rooms with profile data
+          allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
         }
         
         // Normalize all rooms for consistent display
