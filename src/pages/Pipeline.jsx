@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
+import { useRooms } from "@/components/useRooms";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
@@ -15,11 +16,34 @@ function PipelineContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [deals, setDeals] = useState([]);
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
+  
+  // Convert rooms to deals format
+  const deals = rooms.map(room => ({
+    id: room.id,
+    title: room.title || 'Deal Room',
+    property_address: room.property_address,
+    customer_name: room.customer_name,
+    city: room.city,
+    state: room.state,
+    bedrooms: room.bedrooms,
+    bathrooms: room.bathrooms,
+    square_feet: room.square_feet,
+    budget: room.budget || room.contract_price,
+    pipeline_stage: room.pipeline_stage || 'new_contract',
+    created_date: room.created_date,
+    updated_date: room.updated_date,
+    contract_date: room.contract_date,
+    walkthrough_date: room.walkthrough_date,
+    evaluation_date: room.evaluation_date,
+    marketing_start_date: room.marketing_start_date,
+    closing_date: room.closing_date,
+    open_tasks: room.open_tasks || 0,
+    completed_tasks: room.completed_tasks || 0
+  }));
 
   useEffect(() => {
     loadProfile();
-    loadDeals();
   }, []);
 
   const loadProfile = async () => {
@@ -41,219 +65,7 @@ function PipelineContent() {
     navigate(`${createPageUrl("Room")}?roomId=${deal.id}`);
   };
 
-  const loadDeals = async () => {
-    try {
-      // Load actual deal rooms
-      const rooms = await base44.entities.Room.list('-created_date', 100);
-      
-      // Map rooms to deal format
-      const roomDeals = rooms.map(room => ({
-        id: room.id,
-        title: room.title || 'Deal Room',
-        property_address: room.property_address,
-        customer_name: room.customer_name,
-        city: room.city,
-        state: room.state,
-        bedrooms: room.bedrooms,
-        bathrooms: room.bathrooms,
-        square_feet: room.square_feet,
-        budget: room.budget || room.contract_price,
-        pipeline_stage: room.pipeline_stage || 'new_contract',
-        created_date: room.created_date,
-        updated_date: room.updated_date,
-        contract_date: room.contract_date,
-        walkthrough_date: room.walkthrough_date,
-        evaluation_date: room.evaluation_date,
-        marketing_start_date: room.marketing_start_date,
-        closing_date: room.closing_date,
-        open_tasks: room.open_tasks || 0,
-        completed_tasks: room.completed_tasks || 0
-      }));
 
-      // Add placeholder deals if empty
-      let allDeals = roomDeals;
-      if (roomDeals.length === 0) {
-        allDeals = [
-          {
-            id: 'demo-1',
-            property_address: '2847 Oak Street',
-            customer_name: 'Sarah Chen',
-            city: 'Austin',
-            state: 'TX',
-            bedrooms: 3,
-            bathrooms: 2,
-            square_feet: 1450,
-            budget: 425000,
-            pipeline_stage: 'new_contract',
-            created_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            contract_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 3,
-            completed_tasks: 1
-          },
-          {
-            id: 'demo-1b',
-            property_address: '4892 Elm Drive',
-            customer_name: 'Robert Johnson',
-            city: 'Austin',
-            state: 'TX',
-            bedrooms: 4,
-            bathrooms: 3,
-            square_feet: 2100,
-            budget: 520000,
-            pipeline_stage: 'new_contract',
-            created_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-            contract_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 5,
-            completed_tasks: 0
-          },
-          {
-            id: 'demo-1c',
-            property_address: '715 Birch Lane',
-            customer_name: 'Amanda Wilson',
-            city: 'Dallas',
-            state: 'TX',
-            bedrooms: 2,
-            bathrooms: 2,
-            square_feet: 1200,
-            budget: 295000,
-            pipeline_stage: 'new_contract',
-            created_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(),
-            contract_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 4,
-            completed_tasks: 1
-          },
-          {
-            id: 'demo-2',
-            property_address: '156 Maple Avenue',
-            customer_name: 'Michael Rodriguez',
-            city: 'Phoenix',
-            state: 'AZ',
-            bedrooms: 4,
-            bathrooms: 2.5,
-            square_feet: 2100,
-            budget: 385000,
-            pipeline_stage: 'walkthrough_scheduled',
-            created_date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            walkthrough_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 2,
-            completed_tasks: 3
-          },
-          {
-            id: 'demo-3',
-            property_address: '892 Sunset Boulevard',
-            customer_name: 'Jennifer Martinez',
-            city: 'Tampa',
-            state: 'FL',
-            bedrooms: 3,
-            bathrooms: 2,
-            square_feet: 1680,
-            budget: 310000,
-            pipeline_stage: 'evaluate_deal',
-            created_date: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            evaluation_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 1,
-            completed_tasks: 4
-          },
-          {
-            id: 'demo-4',
-            property_address: '4521 Pine Ridge Drive',
-            customer_name: 'David Thompson',
-            city: 'Charlotte',
-            state: 'NC',
-            bedrooms: 5,
-            bathrooms: 3,
-            square_feet: 2850,
-            budget: 475000,
-            pipeline_stage: 'marketing',
-            created_date: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-            marketing_start_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 0,
-            completed_tasks: 5
-          },
-          {
-            id: 'demo-4b',
-            property_address: '891 Harbor View',
-            customer_name: 'Patricia Brown',
-            city: 'Charleston',
-            state: 'SC',
-            bedrooms: 3,
-            bathrooms: 2,
-            square_feet: 1850,
-            budget: 365000,
-            pipeline_stage: 'marketing',
-            created_date: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-            marketing_start_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 1,
-            completed_tasks: 4
-          },
-          {
-            id: 'demo-4c',
-            property_address: '2309 Creek Side',
-            customer_name: 'James Anderson',
-            city: 'Raleigh',
-            state: 'NC',
-            bedrooms: 4,
-            bathrooms: 3,
-            square_feet: 2400,
-            budget: 425000,
-            pipeline_stage: 'marketing',
-            created_date: new Date(Date.now() - 22 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(),
-            marketing_start_date: new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 2,
-            completed_tasks: 3
-          },
-          {
-            id: 'demo-5',
-            property_address: '3107 Lakeview Court',
-            customer_name: 'Emily Davis',
-            city: 'Nashville',
-            state: 'TN',
-            bedrooms: 4,
-            bathrooms: 2.5,
-            square_feet: 2200,
-            budget: 395000,
-            pipeline_stage: 'closing',
-            created_date: new Date(Date.now() - 35 * 24 * 60 * 60 * 1000).toISOString(),
-            updated_date: new Date().toISOString(),
-            closing_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-            open_tasks: 1,
-            completed_tasks: 8
-          }
-        ];
-      }
-      
-      setDeals(allDeals);
-    } catch (err) {
-      console.error('[Pipeline] Error loading deals:', err);
-      // Show placeholder deals on error
-      setDeals([
-        {
-          id: 'demo-1',
-          property_address: '2847 Oak Street',
-          customer_name: 'Sarah Chen',
-          city: 'Austin',
-          state: 'TX',
-          bedrooms: 3,
-          bathrooms: 2,
-          square_feet: 1450,
-          budget: 425000,
-          pipeline_stage: 'new_contract',
-          created_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-          open_tasks: 3,
-          completed_tasks: 1
-        }
-      ]);
-    }
-  };
 
   const pipelineStages = [
     {
@@ -336,7 +148,7 @@ function PipelineContent() {
     return new Date(deal.updated_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  if (loading) {
+  if (loading || roomsLoading) {
     return (
       <>
         <Header profile={profile} />
