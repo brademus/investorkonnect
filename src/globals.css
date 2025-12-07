@@ -159,7 +159,7 @@ html {
 
     .ik-body-shell {
       @apply min-h-screen;
-      background-color: #000000;
+      background-color: transparent;
       color: #FAFAFA;
     }
 
@@ -215,7 +215,7 @@ html {
 
   .ik-shell {
     min-height: 100vh;
-    background-color: #000000;
+    background-color: transparent;
     color: #FAFAFA;
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
