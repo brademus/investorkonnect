@@ -209,20 +209,25 @@ export default function Room() {
                       {new Date(r.created_date || Date.now()).toLocaleDateString()}
                     </span>
                   </div>
-                  <p className="text-sm text-[#808080] truncate">
-                    {r.counterparty_role || "Active room"}
-                  </p>
+                  {r.property_address && (
+                    <p className="text-sm text-[#E3C567] truncate font-medium">
+                      {r.property_address}
+                    </p>
+                  )}
+                  {r.budget && (
+                    <p className="text-sm text-[#34D399] font-semibold mt-0.5">
+                      ${r.budget.toLocaleString()}
+                    </p>
+                  )}
+                  {!r.property_address && !r.budget && (
+                    <p className="text-sm text-[#808080] truncate">
+                      {r.counterparty_role || "Active room"}
+                    </p>
+                  )}
                 </div>
               </button>
             );
           })}
-          
-          <Link 
-            to={createPageUrl("DealRooms")} 
-            className="flex items-center gap-2 px-5 py-4 text-sm font-semibold text-[#E3C567] hover:bg-[#E3C567]/10 transition-colors"
-          >
-            <span className="text-lg">+</span> New Deal Room
-          </Link>
         </div>
       </div>
 
