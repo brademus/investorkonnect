@@ -4,6 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
+import { useRooms } from "@/components/useRooms";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, Plus, Home, DollarSign, MapPin, Calendar,
@@ -13,16 +14,14 @@ import {
 function ActiveDealsContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [deals, setDeals] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rooms, isLoading: roomsLoading } = useRooms();
 
   useEffect(() => {
-    loadData();
+    loadProfile();
   }, []);
 
-  const loadData = async () => {
+  const loadProfile = async () => {
     try {
-      // Load profile
       const response = await fetch('/functions/me', {
         method: 'POST',
         credentials: 'include'
@@ -31,26 +30,8 @@ function ActiveDealsContent() {
         const state = await response.json();
         setProfile(state.profile);
       }
-
-      // Load deals from entity
-      let allDeals = [];
-      try {
-        const apiDeals = await base44.entities.Deal.list('-created_date', 50);
-        allDeals = apiDeals;
-      } catch (err) {
-        console.log('Could not load deals from API');
-      }
-
-      // Also check sessionStorage
-      const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
-      const apiIds = new Set(allDeals.map(d => d.id));
-      const uniqueStored = storedDeals.filter(d => !apiIds.has(d.id));
-      
-      setDeals([...allDeals, ...uniqueStored]);
     } catch (err) {
-      console.error('Error loading deals:', err);
-    } finally {
-      setLoading(false);
+      console.error('Error loading profile:', err);
     }
   };
 
@@ -61,16 +42,7 @@ function ActiveDealsContent() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
   };
 
-  const parseNotes = (notes) => {
-    if (!notes) return {};
-    try {
-      return JSON.parse(notes);
-    } catch {
-      return {};
-    }
-  };
-
-  if (loading) {
+  if (roomsLoading) {
     return (
       <>
         <Header profile={profile} />
@@ -81,7 +53,8 @@ function ActiveDealsContent() {
     );
   }
 
-  const activeDeals = deals.filter(d => d.status === 'active' || d.status === 'draft');
+  // Active = all deals NOT in 'closing' stage
+  const activeDeals = rooms.filter(r => r.pipeline_stage !== 'closing');
 
   return (
     <>
@@ -129,70 +102,63 @@ function ActiveDealsContent() {
             </div>
           ) : (
             <div className="grid gap-4">
-              {activeDeals.map((deal) => {
-                const notes = parseNotes(deal.notes);
-                return (
-                  <div 
-                    key={deal.id}
-                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all"
-                  >
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                          <Home className="w-6 h-6 text-[#E3C567]" />
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-semibold text-[#FAFAFA]">{deal.title}</h3>
-                          <div className="flex items-center gap-2 text-sm text-[#808080]">
-                            <MapPin className="w-4 h-4" />
-                            <span>{notes.city ? `${notes.city}, ` : ''}{notes.state || 'Location not specified'}</span>
-                          </div>
+              {activeDeals.map((deal) => (
+                <div 
+                  key={deal.id}
+                  className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6 hover:shadow-[0_10px_25px_rgba(227,197,103,0.2)] hover:border-[#E3C567] transition-all"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                        <Home className="w-6 h-6 text-[#E3C567]" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-semibold text-[#FAFAFA]">{deal.property_address || deal.title}</h3>
+                        <div className="flex items-center gap-2 text-sm text-[#808080]">
+                          <MapPin className="w-4 h-4" />
+                          <span>{deal.city ? `${deal.city}, ` : ''}{deal.state || 'Location'}</span>
                         </div>
                       </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${
-                        deal.status === 'active' 
-                          ? 'bg-[#34D399]/20 text-[#34D399] border-[#34D399]/30'
-                          : 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30'
-                      }`}>
-                        {deal.status === 'active' ? 'Active' : 'Draft'}
-                      </span>
                     </div>
+                    <span className="px-3 py-1 rounded-full text-xs font-medium border bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30">
+                      Active
+                    </span>
+                  </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
-                      <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
-                        <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Property Type</p>
-                        <p className="font-medium text-[#FAFAFA]">{deal.property_type || notes.propertyType || 'Not specified'}</p>
-                      </div>
-                      <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
-                        <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Budget</p>
-                        <p className="font-medium text-[#FAFAFA]">{formatBudget(deal.budget || notes.totalBudget)}</p>
-                      </div>
-                      <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
-                        <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Strategy</p>
-                        <p className="font-medium text-[#FAFAFA]">{notes.investmentStrategy || 'Not specified'}</p>
-                      </div>
-                      <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
-                        <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Timeline</p>
-                        <p className="font-medium text-[#FAFAFA]">{notes.timeline || 'Not specified'}</p>
-                      </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
+                      <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Bedrooms</p>
+                      <p className="font-medium text-[#FAFAFA]">{deal.bedrooms || 'N/A'}</p>
                     </div>
-
-                    <div className="flex items-center justify-between pt-4 border-t border-[#1F1F1F]">
-                      <div className="flex items-center gap-2 text-sm text-[#808080]">
-                        <Calendar className="w-4 h-4" />
-                        <span>Submitted {new Date(deal.created_date || notes.submitted_at).toLocaleDateString()}</span>
-                      </div>
-                      <Link 
-                        to={createPageUrl("AgentDirectory")}
-                        className="text-sm font-medium text-[#E3C567] hover:underline flex items-center gap-1"
-                      >
-                        <TrendingUp className="w-4 h-4" />
-                        View Matched Agents
-                      </Link>
+                    <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
+                      <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Budget</p>
+                      <p className="font-medium text-[#FAFAFA]">{formatBudget(deal.budget)}</p>
+                    </div>
+                    <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
+                      <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Agent</p>
+                      <p className="font-medium text-[#FAFAFA]">{deal.counterparty_name || 'Matched'}</p>
+                    </div>
+                    <div className="bg-[#141414] rounded-lg p-3 border border-[#1F1F1F]">
+                      <p className="text-xs text-[#808080] uppercase tracking-wide mb-1">Stage</p>
+                      <p className="font-medium text-[#FAFAFA] capitalize">{deal.pipeline_stage?.replace('_', ' ') || 'Active'}</p>
                     </div>
                   </div>
-                );
-              })}
+
+                  <div className="flex items-center justify-between pt-4 border-t border-[#1F1F1F]">
+                    <div className="flex items-center gap-2 text-sm text-[#808080]">
+                      <Calendar className="w-4 h-4" />
+                      <span>Started {new Date(deal.created_date).toLocaleDateString()}</span>
+                    </div>
+                    <Link 
+                      to={`${createPageUrl("Room")}?roomId=${deal.id}`}
+                      className="text-sm font-medium text-[#E3C567] hover:underline flex items-center gap-1"
+                    >
+                      <TrendingUp className="w-4 h-4" />
+                      View Deal Room
+                    </Link>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
