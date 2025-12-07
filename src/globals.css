@@ -113,36 +113,7 @@ html {
   }
 
   body {
-    background: 
-      linear-gradient(135deg, 
-        rgba(10, 10, 12, 1) 0%, 
-        rgba(15, 15, 18, 1) 25%,
-        rgba(8, 8, 10, 1) 50%,
-        rgba(12, 12, 15, 1) 75%,
-        rgba(10, 10, 12, 1) 100%
-      ),
-      repeating-linear-gradient(
-        60deg,
-        transparent 0px,
-        transparent 80px,
-        rgba(255, 255, 255, 0.015) 80px,
-        rgba(255, 255, 255, 0.015) 82px
-      ),
-      repeating-linear-gradient(
-        -60deg,
-        transparent 0px,
-        transparent 80px,
-        rgba(255, 255, 255, 0.012) 80px,
-        rgba(255, 255, 255, 0.012) 82px
-      ),
-      repeating-linear-gradient(
-        30deg,
-        transparent 0px,
-        transparent 120px,
-        rgba(255, 255, 255, 0.008) 120px,
-        rgba(255, 255, 255, 0.008) 122px
-      );
-    background-color: #0a0a0c;
+    background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%);
     background-attachment: fixed;
     @apply text-foreground;
     font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
