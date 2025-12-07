@@ -267,6 +267,54 @@ export default function Room() {
                 <p className="text-sm text-[#808080]">Documents, files, and important information for this deal</p>
               </div>
 
+              {/* Pipeline Progress */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+                <div className="space-y-3">
+                  {[
+                    { id: 'new_contract', label: 'Contract Walkthrough', color: '#E3C567' },
+                    { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
+                    { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
+                    { id: 'marketing', label: 'Marketing', color: '#DB2777' },
+                    { id: 'closing', label: 'Ready to Close', color: '#34D399' }
+                  ].map((stage, idx) => {
+                    const isActive = currentRoom?.pipeline_stage === stage.id;
+                    const isPast = [
+                      'new_contract', 'walkthrough_scheduled', 'evaluate_deal', 'marketing', 'closing'
+                    ].indexOf(currentRoom?.pipeline_stage) > idx;
+                    
+                    return (
+                      <div key={stage.id} className="flex items-center gap-3">
+                        <div 
+                          className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                            isActive 
+                              ? 'ring-2 ring-offset-2 ring-offset-black' 
+                              : isPast 
+                              ? 'bg-[#34D399]' 
+                              : 'bg-[#1F1F1F]'
+                          }`}
+                          style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
+                        >
+                          <span className="text-sm font-bold text-white">
+                            {isPast ? '✓' : idx + 1}
+                          </span>
+                        </div>
+                        <div className="flex-1">
+                          <p className={`text-sm font-medium ${
+                            isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
+                          }`}>
+                            {stage.label}
+                          </p>
+                          {isActive && (
+                            <p className="text-xs text-[#E3C567]">Current Stage</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Escrow Section */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                 <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
