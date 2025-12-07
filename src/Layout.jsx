@@ -48,12 +48,8 @@ function LayoutContent({ children }) {
     <div className="ik-shell">
       <style>{`
         body {
-          background-image: url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/6a5b56aec_IMG_0647.jpg') !important;
-          background-size: cover !important;
-          background-position: center !important;
-          background-repeat: no-repeat !important;
+          background: radial-gradient(circle at 50% 0%, #2a2a2a 0%, #000000 100%) !important;
           background-attachment: fixed !important;
-          background-color: #000000 !important;
         }
       `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
