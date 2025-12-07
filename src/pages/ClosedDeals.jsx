@@ -114,11 +114,6 @@ function ClosedDealsContent() {
     </>
   );
 }
-        </div>
-      </div>
-    </>
-  );
-}
 
 export default function ClosedDeals() {
   return (
