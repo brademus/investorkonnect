@@ -303,144 +303,299 @@ function PipelineContent() {
               </Button>
             </div>
 
-            {/* Pipeline Stages Grid - Optimized for full screen */}
-            <div className="grid grid-cols-5 gap-4">
-              {pipelineStages.map((stage) => {
-                const Icon = stage.icon;
-                const stageDeals = getDealsForStage(stage.id);
-                
-                return (
-                  <div 
-                    key={stage.id}
-                    className={`bg-[#0D0D0D] border-2 ${stage.borderColor} rounded-2xl p-5 flex flex-col transition-all hover:shadow-2xl h-[calc(100vh-180px)]`}
-                  >
-                    {/* Stage Header */}
-                    <div className="mb-4 flex-shrink-0">
-                      <div className={`w-11 h-11 ${stage.bgColor} rounded-xl flex items-center justify-center mb-3`}>
-                        <Icon className="w-6 h-6" style={{ color: stage.color }} />
+            {/* Pipeline Stages Grid - 3 on top, 2 on bottom */}
+            <div className="space-y-4">
+              {/* Top Row - 3 stages */}
+              <div className="grid grid-cols-3 gap-4">
+                {pipelineStages.slice(0, 3).map((stage) => {
+                  const Icon = stage.icon;
+                  const stageDeals = getDealsForStage(stage.id);
+                  const singleDeal = stageDeals.length === 1;
+                  
+                  return (
+                    <div 
+                      key={stage.id}
+                      className={`bg-[#0D0D0D] border-2 ${stage.borderColor} rounded-2xl p-5 flex flex-col transition-all hover:shadow-2xl h-[calc((100vh-220px)/2)]`}
+                    >
+                      {/* Stage Header */}
+                      <div className="mb-4 flex-shrink-0">
+                        <div className={`w-11 h-11 ${stage.bgColor} rounded-xl flex items-center justify-center mb-3`}>
+                          <Icon className="w-6 h-6" style={{ color: stage.color }} />
+                        </div>
+                        <h3 className="text-base font-bold text-[#FAFAFA] mb-1 leading-tight">
+                          {stage.label}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl font-bold" style={{ color: stage.color }}>
+                            {stageDeals.length}
+                          </span>
+                          <span className="text-xs text-[#808080]">
+                            {stageDeals.length === 1 ? 'deal' : 'deals'}
+                          </span>
+                        </div>
                       </div>
-                      <h3 className="text-base font-bold text-[#FAFAFA] mb-1 leading-tight">
-                        {stage.label}
-                      </h3>
-                      <div className="flex items-center gap-2">
-                        <span className="text-3xl font-bold" style={{ color: stage.color }}>
-                          {stageDeals.length}
-                        </span>
-                        <span className="text-xs text-[#808080]">
-                          {stageDeals.length === 1 ? 'deal' : 'deals'}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Scrollable Deals */}
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{scrollbarWidth: 'thin', scrollbarColor: '#E3C567 #0D0D0D'}}>
-                      {stageDeals.length > 0 ? (
-                        stageDeals.map((deal) => {
-                          const keyDate = getKeyDate(deal, stage.id);
-                          const openTasks = deal.open_tasks || 0;
-                          const completedTasks = deal.completed_tasks || 0;
-                          
-                          return (
-                            <div 
-                              key={deal.id}
-                              className="p-4 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2.5"
-                            >
-                              {/* Property Address */}
-                              <h4 className="text-base font-bold text-[#FAFAFA] leading-tight">
-                                {deal.property_address || deal.title || 'Untitled Property'}
+                      {/* Deals */}
+                      <div className={`flex-1 ${singleDeal ? 'flex items-center' : 'overflow-y-auto space-y-3 pr-1'}`} style={{scrollbarWidth: 'thin', scrollbarColor: '#E3C567 #0D0D0D'}}>
+                        {stageDeals.length > 0 ? (
+                          singleDeal ? (
+                            // Single deal - full card view
+                            <div className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4">
+                              <h4 className="text-xl font-bold text-[#FAFAFA] leading-tight">
+                                {stageDeals[0].property_address || stageDeals[0].title || 'Untitled Property'}
                               </h4>
-                              
-                              {/* Customer Name */}
-                              {deal.customer_name && (
-                                <p className="text-sm text-[#E3C567] font-semibold">
-                                  {deal.customer_name}
+                              {stageDeals[0].customer_name && (
+                                <p className="text-lg text-[#E3C567] font-semibold">
+                                  {stageDeals[0].customer_name}
                                 </p>
                               )}
-                              
-                              {/* City, State */}
-                              {(deal.city || deal.state) && (
-                                <p className="text-sm text-[#999999]">
-                                  {deal.city}{deal.city && deal.state ? ', ' : ''}{deal.state}
+                              {(stageDeals[0].city || stageDeals[0].state) && (
+                                <p className="text-base text-[#999999]">
+                                  {stageDeals[0].city}{stageDeals[0].city && stageDeals[0].state ? ', ' : ''}{stageDeals[0].state}
                                 </p>
                               )}
-                              
-                              {/* Beds / Baths / Sqft */}
-                              {(deal.bedrooms || deal.bathrooms || deal.square_feet) && (
-                                <div className="flex items-center gap-3 text-sm text-[#CCCCCC]">
-                                  {deal.bedrooms && (
-                                    <span className="flex items-center gap-1.5">
-                                      <Home className="w-4 h-4" />
-                                      {deal.bedrooms} bd
+                              {(stageDeals[0].bedrooms || stageDeals[0].bathrooms || stageDeals[0].square_feet) && (
+                                <div className="flex items-center gap-4 text-base text-[#CCCCCC]">
+                                  {stageDeals[0].bedrooms && (
+                                    <span className="flex items-center gap-2">
+                                      <Home className="w-5 h-5" />
+                                      {stageDeals[0].bedrooms} bd
                                     </span>
                                   )}
-                                  {deal.bathrooms && (
-                                    <span className="flex items-center gap-1.5">
-                                      <Bath className="w-4 h-4" />
-                                      {deal.bathrooms} ba
+                                  {stageDeals[0].bathrooms && (
+                                    <span className="flex items-center gap-2">
+                                      <Bath className="w-5 h-5" />
+                                      {stageDeals[0].bathrooms} ba
                                     </span>
                                   )}
-                                  {deal.square_feet && (
-                                    <span className="flex items-center gap-1.5">
-                                      <Maximize2 className="w-4 h-4" />
-                                      {deal.square_feet.toLocaleString()} sqft
+                                  {stageDeals[0].square_feet && (
+                                    <span className="flex items-center gap-2">
+                                      <Maximize2 className="w-5 h-5" />
+                                      {stageDeals[0].square_feet.toLocaleString()} sqft
                                     </span>
                                   )}
                                 </div>
                               )}
-                              
-                              {/* Deal Price */}
-                              {deal.budget && (
-                                <div className="flex items-center gap-2 text-sm py-1.5 px-2 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
-                                  <DollarSign className="w-4 h-4 text-[#34D399]" />
+                              {stageDeals[0].budget && (
+                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
+                                  <DollarSign className="w-5 h-5 text-[#34D399]" />
                                   <span className="text-[#34D399] font-bold">
-                                    {formatCurrency(deal.budget)}
+                                    {formatCurrency(stageDeals[0].budget)}
                                   </span>
                                 </div>
                               )}
-                              
-                              {/* Divider */}
-                              <div className="border-t border-[#1F1F1F] pt-2 space-y-2">
-                                {/* Key Date */}
-                                {keyDate && (
-                                  <div className="flex items-center gap-2 text-sm text-[#AAAAAA]">
-                                    <Calendar className="w-4 h-4" />
-                                    <span>{keyDate}</span>
+                              <div className="border-t border-[#1F1F1F] pt-3 space-y-2">
+                                {getKeyDate(stageDeals[0], stage.id) && (
+                                  <div className="flex items-center gap-2 text-base text-[#AAAAAA]">
+                                    <Calendar className="w-5 h-5" />
+                                    <span>{getKeyDate(stageDeals[0], stage.id)}</span>
                                   </div>
                                 )}
-                                
-                                {/* Days in Pipeline */}
-                                <div className="flex items-center gap-2 text-sm text-[#AAAAAA]">
-                                  <Clock className="w-4 h-4" />
-                                  <span>{getDaysInPipeline(deal)}</span>
+                                <div className="flex items-center gap-2 text-base text-[#AAAAAA]">
+                                  <Clock className="w-5 h-5" />
+                                  <span>{getDaysInPipeline(stageDeals[0])}</span>
                                 </div>
-                                
-                                {/* Tasks */}
-                                {(openTasks > 0 || completedTasks > 0) && (
-                                  <div className="flex items-center gap-2 text-sm">
-                                    <CheckSquare className="w-4 h-4 text-[#E3C567]" />
+                                {(stageDeals[0].open_tasks > 0 || stageDeals[0].completed_tasks > 0) && (
+                                  <div className="flex items-center gap-2 text-base">
+                                    <CheckSquare className="w-5 h-5 text-[#E3C567]" />
                                     <span className="text-[#CCCCCC] font-medium">
-                                      {completedTasks}/{completedTasks + openTasks} tasks
+                                      {stageDeals[0].completed_tasks}/{stageDeals[0].completed_tasks + stageDeals[0].open_tasks} tasks
                                     </span>
                                   </div>
                                 )}
-                                
-                                {/* Last Activity */}
-                                <div className="text-xs text-[#777777] pt-1">
-                                  Updated: {getLastActivity(deal)}
+                                <div className="text-sm text-[#777777] pt-1">
+                                  Updated: {getLastActivity(stageDeals[0])}
                                 </div>
                               </div>
                             </div>
-                          );
-                        })
-                      ) : (
-                        <div className="text-center py-12">
-                          <p className="text-sm text-[#666666]">No deals</p>
-                        </div>
-                      )}
+                          ) : (
+                            // Multiple deals - compact view
+                            stageDeals.map((deal) => (
+                              <div 
+                                key={deal.id}
+                                className="p-3 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
+                              >
+                                <h4 className="text-sm font-bold text-[#FAFAFA] leading-tight">
+                                  {deal.property_address || deal.title || 'Untitled Property'}
+                                </h4>
+                                {deal.customer_name && (
+                                  <p className="text-xs text-[#E3C567] font-semibold">
+                                    {deal.customer_name}
+                                  </p>
+                                )}
+                                {deal.budget && (
+                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#34D399]/10 rounded-lg">
+                                    <DollarSign className="w-3 h-3 text-[#34D399]" />
+                                    <span className="text-[#34D399] font-bold">
+                                      {formatCurrency(deal.budget)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-xs text-[#777777] pt-1">
+                                  <span>{getDaysInPipeline(deal)}</span>
+                                  {(deal.open_tasks > 0 || deal.completed_tasks > 0) && (
+                                    <span>{deal.completed_tasks}/{deal.completed_tasks + deal.open_tasks}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )
+                        ) : (
+                          <div className="text-center py-12">
+                            <p className="text-sm text-[#666666]">No deals</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
+
+              {/* Bottom Row - 2 stages */}
+              <div className="grid grid-cols-2 gap-4">
+                {pipelineStages.slice(3, 5).map((stage) => {
+                  const Icon = stage.icon;
+                  const stageDeals = getDealsForStage(stage.id);
+                  const singleDeal = stageDeals.length === 1;
+                  
+                  return (
+                    <div 
+                      key={stage.id}
+                      className={`bg-[#0D0D0D] border-2 ${stage.borderColor} rounded-2xl p-5 flex flex-col transition-all hover:shadow-2xl h-[calc((100vh-220px)/2)]`}
+                    >
+                      {/* Stage Header */}
+                      <div className="mb-4 flex-shrink-0">
+                        <div className={`w-11 h-11 ${stage.bgColor} rounded-xl flex items-center justify-center mb-3`}>
+                          <Icon className="w-6 h-6" style={{ color: stage.color }} />
+                        </div>
+                        <h3 className="text-base font-bold text-[#FAFAFA] mb-1 leading-tight">
+                          {stage.label}
+                        </h3>
+                        <div className="flex items-center gap-2">
+                          <span className="text-3xl font-bold" style={{ color: stage.color }}>
+                            {stageDeals.length}
+                          </span>
+                          <span className="text-xs text-[#808080]">
+                            {stageDeals.length === 1 ? 'deal' : 'deals'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Deals */}
+                      <div className={`flex-1 ${singleDeal ? 'flex items-center' : 'overflow-y-auto space-y-3 pr-1'}`} style={{scrollbarWidth: 'thin', scrollbarColor: '#E3C567 #0D0D0D'}}>
+                        {stageDeals.length > 0 ? (
+                          singleDeal ? (
+                            // Single deal - full card view
+                            <div className="w-full p-6 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-4">
+                              <h4 className="text-xl font-bold text-[#FAFAFA] leading-tight">
+                                {stageDeals[0].property_address || stageDeals[0].title || 'Untitled Property'}
+                              </h4>
+                              {stageDeals[0].customer_name && (
+                                <p className="text-lg text-[#E3C567] font-semibold">
+                                  {stageDeals[0].customer_name}
+                                </p>
+                              )}
+                              {(stageDeals[0].city || stageDeals[0].state) && (
+                                <p className="text-base text-[#999999]">
+                                  {stageDeals[0].city}{stageDeals[0].city && stageDeals[0].state ? ', ' : ''}{stageDeals[0].state}
+                                </p>
+                              )}
+                              {(stageDeals[0].bedrooms || stageDeals[0].bathrooms || stageDeals[0].square_feet) && (
+                                <div className="flex items-center gap-4 text-base text-[#CCCCCC]">
+                                  {stageDeals[0].bedrooms && (
+                                    <span className="flex items-center gap-2">
+                                      <Home className="w-5 h-5" />
+                                      {stageDeals[0].bedrooms} bd
+                                    </span>
+                                  )}
+                                  {stageDeals[0].bathrooms && (
+                                    <span className="flex items-center gap-2">
+                                      <Bath className="w-5 h-5" />
+                                      {stageDeals[0].bathrooms} ba
+                                    </span>
+                                  )}
+                                  {stageDeals[0].square_feet && (
+                                    <span className="flex items-center gap-2">
+                                      <Maximize2 className="w-5 h-5" />
+                                      {stageDeals[0].square_feet.toLocaleString()} sqft
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              {stageDeals[0].budget && (
+                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
+                                  <DollarSign className="w-5 h-5 text-[#34D399]" />
+                                  <span className="text-[#34D399] font-bold">
+                                    {formatCurrency(stageDeals[0].budget)}
+                                  </span>
+                                </div>
+                              )}
+                              <div className="border-t border-[#1F1F1F] pt-3 space-y-2">
+                                {getKeyDate(stageDeals[0], stage.id) && (
+                                  <div className="flex items-center gap-2 text-base text-[#AAAAAA]">
+                                    <Calendar className="w-5 h-5" />
+                                    <span>{getKeyDate(stageDeals[0], stage.id)}</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2 text-base text-[#AAAAAA]">
+                                  <Clock className="w-5 h-5" />
+                                  <span>{getDaysInPipeline(stageDeals[0])}</span>
+                                </div>
+                                {(stageDeals[0].open_tasks > 0 || stageDeals[0].completed_tasks > 0) && (
+                                  <div className="flex items-center gap-2 text-base">
+                                    <CheckSquare className="w-5 h-5 text-[#E3C567]" />
+                                    <span className="text-[#CCCCCC] font-medium">
+                                      {stageDeals[0].completed_tasks}/{stageDeals[0].completed_tasks + stageDeals[0].open_tasks} tasks
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="text-sm text-[#777777] pt-1">
+                                  Updated: {getLastActivity(stageDeals[0])}
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            // Multiple deals - compact view
+                            stageDeals.map((deal) => (
+                              <div 
+                                key={deal.id}
+                                className="p-3 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
+                              >
+                                <h4 className="text-sm font-bold text-[#FAFAFA] leading-tight">
+                                  {deal.property_address || deal.title || 'Untitled Property'}
+                                </h4>
+                                {deal.customer_name && (
+                                  <p className="text-xs text-[#E3C567] font-semibold">
+                                    {deal.customer_name}
+                                  </p>
+                                )}
+                                {deal.budget && (
+                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#34D399]/10 rounded-lg">
+                                    <DollarSign className="w-3 h-3 text-[#34D399]" />
+                                    <span className="text-[#34D399] font-bold">
+                                      {formatCurrency(deal.budget)}
+                                    </span>
+                                  </div>
+                                )}
+                                <div className="flex items-center justify-between text-xs text-[#777777] pt-1">
+                                  <span>{getDaysInPipeline(deal)}</span>
+                                  {(deal.open_tasks > 0 || deal.completed_tasks > 0) && (
+                                    <span>{deal.completed_tasks}/{deal.completed_tasks + deal.open_tasks}</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))
+                          )
+                        ) : (
+                          <div className="text-center py-12">
+                            <p className="text-sm text-[#666666]">No deals</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Empty State */}
