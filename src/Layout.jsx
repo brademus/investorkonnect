@@ -46,6 +46,12 @@ function LayoutContent({ children }) {
 
   return (
     <div className="ik-shell">
+      <style>{`
+        body {
+          background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%) !important;
+          background-attachment: fixed !important;
+        }
+      `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
       {showNav && !isNoNavPage && (
         <header className="fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-black/95 backdrop-blur-sm">
