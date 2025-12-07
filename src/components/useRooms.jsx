@@ -2,10 +2,9 @@ import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
 /**
- * Default placeholder deals that appear when no real data exists
- * These represent matched investors/agents with consistent data across the entire app
+ * Placeholder deals for INVESTORS (showing matched AGENTS as counterparties)
  */
-const DEFAULT_PLACEHOLDER_DEALS = [
+const INVESTOR_PLACEHOLDER_DEALS = [
   {
     id: 'demo-room-1',
     // Room identifiers
@@ -239,6 +238,237 @@ const DEFAULT_PLACEHOLDER_DEALS = [
 ];
 
 /**
+ * Placeholder deals for AGENTS (showing matched INVESTORS as counterparties)
+ */
+const AGENT_PLACEHOLDER_DEALS = [
+  {
+    id: 'demo-room-1',
+    investorId: 'demo-investor-1',
+    agentId: 'demo-agent-1',
+    
+    title: '2847 E Camelback Road',
+    property_address: '2847 E Camelback Road',
+    city: 'Phoenix',
+    state: 'AZ',
+    bedrooms: 4,
+    bathrooms: 3,
+    square_feet: 2850,
+    budget: 895000,
+    contract_price: 895000,
+    
+    pipeline_stage: 'new_contract',
+    created_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    contract_date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 4,
+    completed_tasks: 2,
+    
+    counterparty_name: 'James Mitchell',
+    counterparty_role: 'investor',
+    counterparty_email: 'james.mitchell@capitalgroup.com',
+    counterparty_company: 'Mitchell Capital Group',
+    counterparty_phone: '(602) 555-1001',
+    customer_name: 'James Mitchell',
+    
+    counterparty_profile: {
+      id: 'demo-investor-1',
+      full_name: 'James Mitchell',
+      email: 'james.mitchell@capitalgroup.com',
+      user_role: 'investor',
+      company: 'Mitchell Capital Group',
+      phone: '(602) 555-1001',
+      markets: ['Phoenix', 'Scottsdale', 'Paradise Valley'],
+      investor: {
+        company_name: 'Mitchell Capital Group',
+        investment_focus: 'Luxury Residential',
+        portfolio_size: '15-20 properties',
+        preferred_strategies: ['Buy and Hold', 'Fix and Flip']
+      }
+    }
+  },
+  {
+    id: 'demo-room-2',
+    investorId: 'demo-investor-2',
+    agentId: 'demo-agent-2',
+    
+    title: '5621 N Scottsdale Road',
+    property_address: '5621 N Scottsdale Road',
+    city: 'Scottsdale',
+    state: 'AZ',
+    bedrooms: 5,
+    bathrooms: 4.5,
+    square_feet: 3600,
+    budget: 1250000,
+    contract_price: 1250000,
+    
+    pipeline_stage: 'walkthrough_scheduled',
+    created_date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+    walkthrough_date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 3,
+    completed_tasks: 5,
+    
+    counterparty_name: 'Lisa Zhang',
+    counterparty_role: 'investor',
+    counterparty_email: 'lisa.zhang@zhanginvestments.com',
+    counterparty_company: 'Zhang Investment Partners',
+    counterparty_phone: '(480) 555-2002',
+    customer_name: 'Lisa Zhang',
+    
+    counterparty_profile: {
+      id: 'demo-investor-2',
+      full_name: 'Lisa Zhang',
+      email: 'lisa.zhang@zhanginvestments.com',
+      user_role: 'investor',
+      company: 'Zhang Investment Partners',
+      phone: '(480) 555-2002',
+      markets: ['Scottsdale', 'Paradise Valley', 'Fountain Hills'],
+      investor: {
+        company_name: 'Zhang Investment Partners',
+        investment_focus: 'Multi-Family and Commercial',
+        portfolio_size: '25+ properties',
+        preferred_strategies: ['Value-Add', 'Development']
+      }
+    }
+  },
+  {
+    id: 'demo-room-3',
+    investorId: 'demo-investor-3',
+    agentId: 'demo-agent-3',
+    
+    title: '1234 W University Drive',
+    property_address: '1234 W University Drive',
+    city: 'Tempe',
+    state: 'AZ',
+    bedrooms: 3,
+    bathrooms: 2,
+    square_feet: 1650,
+    budget: 485000,
+    contract_price: 485000,
+    
+    pipeline_stage: 'evaluate_deal',
+    created_date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+    evaluation_date: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 2,
+    completed_tasks: 7,
+    
+    counterparty_name: 'Marcus Johnson',
+    counterparty_role: 'investor',
+    counterparty_email: 'marcus.johnson@johnsonrealty.com',
+    counterparty_company: 'Johnson Realty Investments',
+    counterparty_phone: '(480) 555-3003',
+    customer_name: 'Marcus Johnson',
+    
+    counterparty_profile: {
+      id: 'demo-investor-3',
+      full_name: 'Marcus Johnson',
+      email: 'marcus.johnson@johnsonrealty.com',
+      user_role: 'investor',
+      company: 'Johnson Realty Investments',
+      phone: '(480) 555-3003',
+      markets: ['Tempe', 'Mesa', 'Gilbert'],
+      investor: {
+        company_name: 'Johnson Realty Investments',
+        investment_focus: 'Single Family Rentals',
+        portfolio_size: '30+ properties',
+        preferred_strategies: ['Buy and Hold', 'BRRRR']
+      }
+    }
+  },
+  {
+    id: 'demo-room-4',
+    investorId: 'demo-investor-4',
+    agentId: 'demo-agent-4',
+    
+    title: '8945 E Shea Boulevard',
+    property_address: '8945 E Shea Boulevard',
+    city: 'Scottsdale',
+    state: 'AZ',
+    bedrooms: 4,
+    bathrooms: 3.5,
+    square_feet: 3100,
+    budget: 975000,
+    contract_price: 975000,
+    
+    pipeline_stage: 'marketing',
+    created_date: new Date(Date.now() - 18 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+    marketing_start_date: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 1,
+    completed_tasks: 9,
+    
+    counterparty_name: 'Patricia Rodriguez',
+    counterparty_role: 'investor',
+    counterparty_email: 'patricia.rodriguez@rodriguezholdings.com',
+    counterparty_company: 'Rodriguez Property Holdings',
+    counterparty_phone: '(602) 555-4004',
+    customer_name: 'Patricia Rodriguez',
+    
+    counterparty_profile: {
+      id: 'demo-investor-4',
+      full_name: 'Patricia Rodriguez',
+      email: 'patricia.rodriguez@rodriguezholdings.com',
+      user_role: 'investor',
+      company: 'Rodriguez Property Holdings',
+      phone: '(602) 555-4004',
+      markets: ['Scottsdale', 'Phoenix', 'Cave Creek'],
+      investor: {
+        company_name: 'Rodriguez Property Holdings',
+        investment_focus: 'Luxury Flips and New Construction',
+        portfolio_size: '10-15 properties',
+        preferred_strategies: ['Fix and Flip', 'New Development']
+      }
+    }
+  },
+  {
+    id: 'demo-room-5',
+    investorId: 'demo-investor-5',
+    agentId: 'demo-agent-5',
+    
+    title: '3456 N Central Avenue',
+    property_address: '3456 N Central Avenue',
+    city: 'Phoenix',
+    state: 'AZ',
+    bedrooms: 6,
+    bathrooms: 5,
+    square_feet: 4200,
+    budget: 1650000,
+    contract_price: 1650000,
+    
+    pipeline_stage: 'closing',
+    created_date: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString(),
+    updated_date: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+    closing_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    open_tasks: 1,
+    completed_tasks: 15,
+    
+    counterparty_name: 'Thomas Anderson',
+    counterparty_role: 'investor',
+    counterparty_email: 'thomas.anderson@andersonventures.com',
+    counterparty_company: 'Anderson Ventures LLC',
+    counterparty_phone: '(602) 555-5005',
+    customer_name: 'Thomas Anderson',
+    
+    counterparty_profile: {
+      id: 'demo-investor-5',
+      full_name: 'Thomas Anderson',
+      email: 'thomas.anderson@andersonventures.com',
+      user_role: 'investor',
+      company: 'Anderson Ventures LLC',
+      phone: '(602) 555-5005',
+      markets: ['Phoenix', 'Arcadia', 'Biltmore'],
+      investor: {
+        company_name: 'Anderson Ventures LLC',
+        investment_focus: 'Estate Properties and Historic Homes',
+        portfolio_size: '20+ properties',
+        preferred_strategies: ['Buy and Hold', 'Historic Renovation']
+      }
+    }
+  }
+];
+
+/**
  * Enrich room with full profile data from matched counterparty
  */
 async function enrichRoomWithProfile(room) {
@@ -297,13 +527,27 @@ function normalizeRoom(room) {
  * Ensures consistency between Pipeline, Room/Messages, and other pages
  * ALWAYS merges database rooms with sessionStorage rooms
  * Enriches rooms with full profile data from matched agents/investors
- * Shows placeholder deals when no real data exists
+ * Shows role-appropriate placeholder deals when no real data exists
  */
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
       try {
+        // Determine current user role
+        let userRole = 'investor'; // default
+        try {
+          const user = await base44.auth.me();
+          if (user) {
+            const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            if (profiles[0]) {
+              userRole = profiles[0].user_role || profiles[0].role || 'investor';
+            }
+          }
+        } catch (err) {
+          console.log('[useRooms] Could not determine user role, defaulting to investor');
+        }
+        
         // Load from both sources
         let dbRooms = [];
         try {
@@ -321,10 +565,10 @@ export function useRooms() {
         
         let allRooms = [...dbRooms, ...uniqueLocalRooms];
         
-        // If no rooms exist at all, use placeholder deals
+        // If no rooms exist at all, use role-appropriate placeholder deals
         if (allRooms.length === 0) {
-          allRooms = DEFAULT_PLACEHOLDER_DEALS;
-          console.log('[useRooms] No real data, using placeholder deals');
+          allRooms = userRole === 'agent' ? AGENT_PLACEHOLDER_DEALS : INVESTOR_PLACEHOLDER_DEALS;
+          console.log(`[useRooms] No real data, using ${userRole} placeholder deals`);
         } else {
           // Enrich real rooms with profile data
           allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
@@ -333,15 +577,15 @@ export function useRooms() {
         // Normalize all rooms for consistent display
         const normalizedRooms = allRooms.map(normalizeRoom);
         
-        console.log(`[useRooms] Loaded ${dbRooms.length} from DB + ${uniqueLocalRooms.length} from local + ${allRooms.length === DEFAULT_PLACEHOLDER_DEALS.length ? DEFAULT_PLACEHOLDER_DEALS.length : 0} placeholders = ${normalizedRooms.length} total`);
+        console.log(`[useRooms] Loaded ${dbRooms.length} from DB + ${uniqueLocalRooms.length} from local + ${allRooms === INVESTOR_PLACEHOLDER_DEALS || allRooms === AGENT_PLACEHOLDER_DEALS ? allRooms.length : 0} placeholders = ${normalizedRooms.length} total for ${userRole}`);
         
         return normalizedRooms;
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
         
-        // Final fallback to sessionStorage, or placeholders if empty
+        // Final fallback to sessionStorage, or investor placeholders if empty
         const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-        const fallbackRooms = demoRooms.length > 0 ? demoRooms : DEFAULT_PLACEHOLDER_DEALS;
+        const fallbackRooms = demoRooms.length > 0 ? demoRooms : INVESTOR_PLACEHOLDER_DEALS;
         return fallbackRooms.map(normalizeRoom);
       }
     },
