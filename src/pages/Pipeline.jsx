@@ -276,38 +276,35 @@ function PipelineContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="min-h-screen bg-black">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="space-y-8">
+      <div className="h-screen bg-black overflow-hidden flex flex-col">
+        <div className="flex-1 overflow-auto">
+          <div className="max-w-[1800px] mx-auto px-6 py-6">
             
-            {/* Header */}
-            <div className="flex items-center justify-between">
-              <div>
+            {/* Compact Header */}
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
                 <Link 
                   to={createPageUrl("Dashboard")} 
-                  className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4 transition-colors"
+                  className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4" />
-                  Back to Dashboard
+                  Back
                 </Link>
-                <h1 className="text-3xl sm:text-4xl font-bold text-[#E3C567]">
-                  Deal Pipeline
-                </h1>
-                <p className="mt-2 text-base text-[#808080]">
-                  Track your deals through every stage from contract to close
-                </p>
+                <div>
+                  <h1 className="text-2xl font-bold text-[#E3C567]">Deal Pipeline</h1>
+                </div>
               </div>
               <Button
                 onClick={() => window.location.href = createPageUrl("DealWizard")}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold px-6"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 New Deal
               </Button>
             </div>
 
-            {/* Pipeline Stages Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+            {/* Pipeline Stages Grid - Optimized for full screen */}
+            <div className="grid grid-cols-5 gap-4">
               {pipelineStages.map((stage) => {
                 const Icon = stage.icon;
                 const stageDeals = getDealsForStage(stage.id);
@@ -315,77 +312,76 @@ function PipelineContent() {
                 return (
                   <div 
                     key={stage.id}
-                    className={`bg-[#0D0D0D] border ${stage.borderColor} rounded-2xl p-6 min-h-[300px] flex flex-col transition-all hover:shadow-xl`}
+                    className={`bg-[#0D0D0D] border-2 ${stage.borderColor} rounded-2xl p-5 flex flex-col transition-all hover:shadow-2xl h-[calc(100vh-180px)]`}
                   >
                     {/* Stage Header */}
-                    <div className="mb-6">
-                      <div className={`w-12 h-12 ${stage.bgColor} rounded-xl flex items-center justify-center mb-4`}>
+                    <div className="mb-4 flex-shrink-0">
+                      <div className={`w-11 h-11 ${stage.bgColor} rounded-xl flex items-center justify-center mb-3`}>
                         <Icon className="w-6 h-6" style={{ color: stage.color }} />
                       </div>
-                      <h3 className="text-lg font-bold text-[#FAFAFA] mb-2">
+                      <h3 className="text-base font-bold text-[#FAFAFA] mb-1 leading-tight">
                         {stage.label}
                       </h3>
                       <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold" style={{ color: stage.color }}>
+                        <span className="text-3xl font-bold" style={{ color: stage.color }}>
                           {stageDeals.length}
                         </span>
-                        <span className="text-sm text-[#808080]">
+                        <span className="text-xs text-[#808080]">
                           {stageDeals.length === 1 ? 'deal' : 'deals'}
                         </span>
                       </div>
                     </div>
 
-                    {/* Deals in this stage */}
-                    <div className="space-y-3 flex-grow">
+                    {/* Scrollable Deals */}
+                    <div className="flex-1 overflow-y-auto space-y-3 pr-1" style={{scrollbarWidth: 'thin', scrollbarColor: '#E3C567 #0D0D0D'}}>
                       {stageDeals.length > 0 ? (
-                        stageDeals.slice(0, 3).map((deal) => {
+                        stageDeals.map((deal) => {
                           const keyDate = getKeyDate(deal, stage.id);
-                          const dealMeta = deal.metadata || {};
                           const openTasks = deal.open_tasks || 0;
                           const completedTasks = deal.completed_tasks || 0;
                           
                           return (
                             <div 
                               key={deal.id}
-                              className="p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
+                              className="p-4 bg-[#141414] border-2 border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2.5"
                             >
                               {/* Property Address */}
-                              <h4 className="text-sm font-semibold text-[#FAFAFA] leading-tight">
+                              <h4 className="text-base font-bold text-[#FAFAFA] leading-tight">
                                 {deal.property_address || deal.title || 'Untitled Property'}
                               </h4>
                               
                               {/* Customer Name */}
                               {deal.customer_name && (
-                                <p className="text-xs text-[#E3C567] font-medium">
+                                <p className="text-sm text-[#E3C567] font-semibold">
                                   {deal.customer_name}
                                 </p>
                               )}
                               
                               {/* City, State */}
                               {(deal.city || deal.state) && (
-                                <p className="text-xs text-[#808080]">
+                                <p className="text-sm text-[#999999]">
                                   {deal.city}{deal.city && deal.state ? ', ' : ''}{deal.state}
                                 </p>
                               )}
                               
                               {/* Beds / Baths / Sqft */}
                               {(deal.bedrooms || deal.bathrooms || deal.square_feet) && (
-                                <div className="flex items-center gap-2 text-xs text-[#808080]">
+                                <div className="flex items-center gap-3 text-sm text-[#CCCCCC]">
                                   {deal.bedrooms && (
-                                    <span className="flex items-center gap-1">
-                                      <Home className="w-3 h-3" />
+                                    <span className="flex items-center gap-1.5">
+                                      <Home className="w-4 h-4" />
                                       {deal.bedrooms} bd
                                     </span>
                                   )}
                                   {deal.bathrooms && (
-                                    <span className="flex items-center gap-1">
-                                      <Bath className="w-3 h-3" />
+                                    <span className="flex items-center gap-1.5">
+                                      <Bath className="w-4 h-4" />
                                       {deal.bathrooms} ba
                                     </span>
                                   )}
                                   {deal.square_feet && (
-                                    <span className="flex items-center gap-1">
-                                      <Maximize2 className="w-3 h-3" />
+                                    <span className="flex items-center gap-1.5">
+                                      <Maximize2 className="w-4 h-4" />
                                       {deal.square_feet.toLocaleString()} sqft
                                     </span>
                                   )}
@@ -394,56 +390,52 @@ function PipelineContent() {
                               
                               {/* Deal Price */}
                               {deal.budget && (
-                                <div className="flex items-center gap-1.5 text-xs">
-                                  <DollarSign className="w-3 h-3 text-[#34D399]" />
-                                  <span className="text-[#34D399] font-semibold">
+                                <div className="flex items-center gap-2 text-sm py-1.5 px-2 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
+                                  <DollarSign className="w-4 h-4 text-[#34D399]" />
+                                  <span className="text-[#34D399] font-bold">
                                     {formatCurrency(deal.budget)}
                                   </span>
                                 </div>
                               )}
                               
-                              {/* Key Date & Days in Pipeline */}
-                              <div className="flex items-center justify-between pt-2 border-t border-[#1F1F1F]">
-                                <div className="space-y-1">
-                                  {keyDate && (
-                                    <div className="flex items-center gap-1.5 text-xs text-[#808080]">
-                                      <Calendar className="w-3 h-3" />
-                                      <span>{keyDate}</span>
-                                    </div>
-                                  )}
-                                  <div className="flex items-center gap-1.5 text-xs text-[#808080]">
-                                    <Clock className="w-3 h-3" />
-                                    <span>{getDaysInPipeline(deal)}</span>
+                              {/* Divider */}
+                              <div className="border-t border-[#1F1F1F] pt-2 space-y-2">
+                                {/* Key Date */}
+                                {keyDate && (
+                                  <div className="flex items-center gap-2 text-sm text-[#AAAAAA]">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{keyDate}</span>
                                   </div>
+                                )}
+                                
+                                {/* Days in Pipeline */}
+                                <div className="flex items-center gap-2 text-sm text-[#AAAAAA]">
+                                  <Clock className="w-4 h-4" />
+                                  <span>{getDaysInPipeline(deal)}</span>
                                 </div>
                                 
                                 {/* Tasks */}
                                 {(openTasks > 0 || completedTasks > 0) && (
-                                  <div className="flex items-center gap-1.5 text-xs">
-                                    <CheckSquare className="w-3 h-3 text-[#E3C567]" />
-                                    <span className="text-[#808080]">
-                                      {completedTasks}/{completedTasks + openTasks}
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <CheckSquare className="w-4 h-4 text-[#E3C567]" />
+                                    <span className="text-[#CCCCCC] font-medium">
+                                      {completedTasks}/{completedTasks + openTasks} tasks
                                     </span>
                                   </div>
                                 )}
-                              </div>
-                              
-                              {/* Last Activity */}
-                              <div className="text-xs text-[#666666] pt-1">
-                                Last update: {getLastActivity(deal)}
+                                
+                                {/* Last Activity */}
+                                <div className="text-xs text-[#777777] pt-1">
+                                  Updated: {getLastActivity(deal)}
+                                </div>
                               </div>
                             </div>
                           );
                         })
                       ) : (
-                        <div className="text-center py-8">
-                          <p className="text-sm text-[#666666]">No deals in this stage</p>
+                        <div className="text-center py-12">
+                          <p className="text-sm text-[#666666]">No deals</p>
                         </div>
-                      )}
-                      {stageDeals.length > 3 && (
-                        <p className="text-xs text-center text-[#808080] pt-2">
-                          +{stageDeals.length - 3} more
-                        </p>
                       )}
                     </div>
                   </div>
@@ -453,19 +445,21 @@ function PipelineContent() {
 
             {/* Empty State */}
             {deals.length === 0 && (
-              <div className="text-center py-16 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl">
-                <FileText className="w-16 h-16 text-[#333333] mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">No deals yet</h3>
-                <p className="text-[#808080] mb-6">
-                  Submit your first deal to start tracking your pipeline
-                </p>
-                <Button
-                  onClick={() => window.location.href = createPageUrl("DealWizard")}
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Submit Your First Deal
-                </Button>
+              <div className="absolute inset-0 flex items-center justify-center bg-black/80 backdrop-blur-sm">
+                <div className="text-center py-16 bg-[#0D0D0D] border-2 border-[#1F1F1F] rounded-2xl px-12">
+                  <FileText className="w-20 h-20 text-[#333333] mx-auto mb-6" />
+                  <h3 className="text-2xl font-bold text-[#FAFAFA] mb-3">No deals yet</h3>
+                  <p className="text-[#808080] mb-8 text-base">
+                    Submit your first deal to start tracking your pipeline
+                  </p>
+                  <Button
+                    onClick={() => window.location.href = createPageUrl("DealWizard")}
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold px-8 py-6 text-base"
+                  >
+                    <Plus className="w-5 h-5 mr-2" />
+                    Submit Your First Deal
+                  </Button>
+                </div>
               </div>
             )}
           </div>
