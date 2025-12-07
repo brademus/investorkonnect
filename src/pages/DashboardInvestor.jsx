@@ -55,11 +55,11 @@ function InvestorDashboardContent() {
     }
   };
 
-  // Calculate deal stats from rooms (same source as Pipeline page)
+  // Calculate deal stats from rooms (same logic as detail pages)
   const dealStats = {
-    active: rooms.filter(r => ['new_contract', 'walkthrough_scheduled', 'evaluate_deal', 'marketing'].includes(r.pipeline_stage)).length,
-    pending: 0, // Not used in current pipeline
-    closed: rooms.filter(r => r.pipeline_stage === 'closing').length
+    active: rooms.filter(r => r.pipeline_stage !== 'closing').length,  // All non-closing deals = active
+    pending: 0, // Not used - always 0
+    closed: rooms.filter(r => r.pipeline_stage === 'closing').length  // Only closing stage = closed
   };
 
   if (loading || roomsLoading) {
