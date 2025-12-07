@@ -48,10 +48,10 @@ function LayoutContent({ children }) {
     <div className="ik-shell">
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-      <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;0,900;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
+      <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
       <style>{`
         :root {
-          --font-serif: 'Playfair Display', serif;
+          --font-serif: 'Cinzel', serif;
           --font-sans: 'Inter', sans-serif;
         }
         body {
