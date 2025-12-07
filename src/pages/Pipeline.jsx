@@ -6,7 +6,8 @@ import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
-  Loader2, ArrowLeft, Plus
+  Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
+  Clock, CheckSquare
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -95,6 +96,40 @@ function PipelineContent() {
     return deals.filter(deal => deal.pipeline_stage === stageId);
   };
 
+  const formatCurrency = (value) => {
+    if (!value) return 'N/A';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(value);
+  };
+
+  const getDaysInPipeline = (deal) => {
+    if (!deal.created_date) return 'N/A';
+    const created = new Date(deal.created_date);
+    const now = new Date();
+    const days = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+    return `${days} ${days === 1 ? 'day' : 'days'}`;
+  };
+
+  const getKeyDate = (deal, stageId) => {
+    // Return stage-specific key dates
+    const dates = {
+      new_contract: deal.contract_date || deal.created_date,
+      walkthrough_scheduled: deal.walkthrough_date,
+      evaluate_deal: deal.evaluation_date,
+      marketing: deal.marketing_start_date,
+      closing: deal.closing_date
+    };
+    
+    const date = dates[stageId];
+    if (!date) return null;
+    
+    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  const getLastActivity = (deal) => {
+    if (!deal.updated_date) return 'N/A';
+    return new Date(deal.updated_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
   if (loading) {
     return (
       <>
@@ -169,21 +204,105 @@ function PipelineContent() {
                     </div>
 
                     {/* Deals in this stage */}
-                    <div className="space-y-2 flex-grow">
+                    <div className="space-y-3 flex-grow">
                       {stageDeals.length > 0 ? (
-                        stageDeals.slice(0, 3).map((deal) => (
-                          <div 
-                            key={deal.id}
-                            className="p-3 bg-[#141414] border border-[#1F1F1F] rounded-lg hover:border-[#E3C567] transition-all cursor-pointer"
-                          >
-                            <p className="text-sm font-medium text-[#FAFAFA] truncate">
-                              {deal.title || deal.property_address || 'Untitled Deal'}
-                            </p>
-                            <p className="text-xs text-[#808080] truncate">
-                              {deal.property_type || 'Property'}
-                            </p>
-                          </div>
-                        ))
+                        stageDeals.slice(0, 3).map((deal) => {
+                          const keyDate = getKeyDate(deal, stage.id);
+                          const dealMeta = deal.metadata || {};
+                          const openTasks = deal.open_tasks || 0;
+                          const completedTasks = deal.completed_tasks || 0;
+                          
+                          return (
+                            <div 
+                              key={deal.id}
+                              className="p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all cursor-pointer space-y-2"
+                            >
+                              {/* Property Address */}
+                              <h4 className="text-sm font-semibold text-[#FAFAFA] leading-tight">
+                                {deal.property_address || deal.title || 'Untitled Property'}
+                              </h4>
+                              
+                              {/* Customer Name */}
+                              {deal.customer_name && (
+                                <p className="text-xs text-[#E3C567] font-medium">
+                                  {deal.customer_name}
+                                </p>
+                              )}
+                              
+                              {/* City, State */}
+                              {(deal.city || deal.state) && (
+                                <p className="text-xs text-[#808080]">
+                                  {deal.city}{deal.city && deal.state ? ', ' : ''}{deal.state}
+                                </p>
+                              )}
+                              
+                              {/* Beds / Baths / Sqft */}
+                              {(deal.bedrooms || deal.bathrooms || deal.square_feet) && (
+                                <div className="flex items-center gap-2 text-xs text-[#808080]">
+                                  {deal.bedrooms && (
+                                    <span className="flex items-center gap-1">
+                                      <Home className="w-3 h-3" />
+                                      {deal.bedrooms} bd
+                                    </span>
+                                  )}
+                                  {deal.bathrooms && (
+                                    <span className="flex items-center gap-1">
+                                      <Bath className="w-3 h-3" />
+                                      {deal.bathrooms} ba
+                                    </span>
+                                  )}
+                                  {deal.square_feet && (
+                                    <span className="flex items-center gap-1">
+                                      <Maximize2 className="w-3 h-3" />
+                                      {deal.square_feet.toLocaleString()} sqft
+                                    </span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Deal Price */}
+                              {deal.budget && (
+                                <div className="flex items-center gap-1.5 text-xs">
+                                  <DollarSign className="w-3 h-3 text-[#34D399]" />
+                                  <span className="text-[#34D399] font-semibold">
+                                    {formatCurrency(deal.budget)}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Key Date & Days in Pipeline */}
+                              <div className="flex items-center justify-between pt-2 border-t border-[#1F1F1F]">
+                                <div className="space-y-1">
+                                  {keyDate && (
+                                    <div className="flex items-center gap-1.5 text-xs text-[#808080]">
+                                      <Calendar className="w-3 h-3" />
+                                      <span>{keyDate}</span>
+                                    </div>
+                                  )}
+                                  <div className="flex items-center gap-1.5 text-xs text-[#808080]">
+                                    <Clock className="w-3 h-3" />
+                                    <span>{getDaysInPipeline(deal)}</span>
+                                  </div>
+                                </div>
+                                
+                                {/* Tasks */}
+                                {(openTasks > 0 || completedTasks > 0) && (
+                                  <div className="flex items-center gap-1.5 text-xs">
+                                    <CheckSquare className="w-3 h-3 text-[#E3C567]" />
+                                    <span className="text-[#808080]">
+                                      {completedTasks}/{completedTasks + openTasks}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              
+                              {/* Last Activity */}
+                              <div className="text-xs text-[#666666] pt-1">
+                                Last update: {getLastActivity(deal)}
+                              </div>
+                            </div>
+                          );
+                        })
                       ) : (
                         <div className="text-center py-8">
                           <p className="text-sm text-[#666666]">No deals in this stage</p>
