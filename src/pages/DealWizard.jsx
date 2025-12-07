@@ -250,6 +250,61 @@ export default function DealWizard() {
         }
       }
       
+      // Create Room entries for each matched agent
+      try {
+        const user = await base44.auth.me();
+        const emailLower = user.email.toLowerCase().trim();
+        let profiles = await base44.entities.Profile.filter({ email: emailLower });
+        if (!profiles || profiles.length === 0) {
+          profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        }
+        const investorProfile = profiles[0];
+        
+        // Get matched agents from sessionStorage or create demo ones
+        const matchedAgents = JSON.parse(sessionStorage.getItem('matched_agents') || '[]');
+        const agentsToMatch = matchedAgents.length > 0 ? matchedAgents.slice(0, 5) : [
+          { id: 'agent-1', full_name: 'Sarah Mitchell', agent: { bio: 'Expert in residential investments' } },
+          { id: 'agent-2', full_name: 'John Davis', agent: { bio: 'Commercial real estate specialist' } },
+          { id: 'agent-3', full_name: 'Emily Roberts', agent: { bio: 'Fix & flip expert' } }
+        ];
+        
+        const rooms = [];
+        for (const agent of agentsToMatch) {
+          const room = {
+            id: `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            investorId: investorProfile?.id || 'investor-temp',
+            agentId: agent.id,
+            counterparty_name: agent.full_name || agent.agent?.bio?.split(' ')[0] || 'Agent',
+            counterparty_role: 'Agent',
+            property_address: formData.propertyAddress || `${formData.propertyType} in ${formData.city || formData.state}`,
+            budget: parseFloat(formData.totalBudget?.replace(/[^0-9.]/g, '')) || null,
+            customer_name: investorProfile?.full_name || 'Investor',
+            city: formData.city || '',
+            state: formData.state || '',
+            pipeline_stage: 'new_contract',
+            created_date: new Date().toISOString(),
+            updated_date: new Date().toISOString(),
+            ndaAcceptedInvestor: false,
+            ndaAcceptedAgent: false
+          };
+          
+          rooms.push(room);
+          
+          // Try to create in database
+          try {
+            await base44.entities.Room.create(room);
+          } catch (error) {
+            console.log('Room will be created locally:', error.message);
+          }
+        }
+        
+        // Store in sessionStorage for immediate access
+        const existingRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+        sessionStorage.setItem('demo_rooms', JSON.stringify([...existingRooms, ...rooms]));
+      } catch (error) {
+        console.log('Room creation skipped:', error.message);
+      }
+      
       // Wait for animation then navigate to AgentDirectory to see suggested agents
       setTimeout(() => {
         navigate(createPageUrl("AgentDirectory"), { replace: true });
