@@ -1,5 +1,5 @@
 css
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -109,14 +109,13 @@ html {
 
   * {
     @apply border-border;
-    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
 
   body {
     background: radial-gradient(circle at 50% 0%, #1c1c1c 0%, #050505 100%);
     background-attachment: fixed;
     @apply text-foreground;
-    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-weight: 300;
@@ -124,15 +123,15 @@ html {
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
-    font-weight: 300;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
     color: #E3C567;
-    letter-spacing: 0.04em;
+    letter-spacing: 0.02em;
     text-rendering: optimizeLegibility;
   }
 
   button, input, textarea, select {
-    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
+    font-family: 'Inter', sans-serif;
   }
 }
 
