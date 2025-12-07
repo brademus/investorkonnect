@@ -109,6 +109,7 @@ html {
 
   * {
     @apply border-border;
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
 
   body {
@@ -127,6 +128,10 @@ html {
     color: #E3C567;
     letter-spacing: 0.04em;
     text-rendering: optimizeLegibility;
+  }
+
+  button, input, textarea, select {
+    font-family: 'Cormorant Garamond', 'Playfair Display', Georgia, serif;
   }
 }
 
