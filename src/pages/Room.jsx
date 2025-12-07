@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
 import { 
-  Menu, Send, Loader2, ArrowLeft, DollarSign, FileText, Shield, Search, Info, MoreHorizontal, User
+  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
 
@@ -86,6 +86,7 @@ export default function Room() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showEscrow, setShowEscrow] = useState(false);
   const [searchConversations, setSearchConversations] = useState("");
+  const [showBoard, setShowBoard] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || "Chat";
@@ -240,93 +241,164 @@ export default function Room() {
           
           {/* Action Buttons */}
           {roomId && (
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowEscrow(!showEscrow)}
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all ${
-                  showEscrow 
-                    ? "bg-[#E3C567]/20 text-[#E3C567] shadow-sm" 
-                    : "bg-[#1F1F1F] text-[#808080] hover:bg-[#333333]"
-                }`}
-              >
-                <Shield className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setWizardOpen(true)}
-                className="w-10 h-10 rounded-full bg-[#1F1F1F] text-[#808080] hover:bg-[#333333] flex items-center justify-center transition-all"
-              >
-                <FileText className="w-5 h-5" />
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#1F1F1F] text-[#808080] hover:bg-[#333333] flex items-center justify-center transition-all">
-                <Info className="w-5 h-5" />
-              </button>
-              <button className="w-10 h-10 rounded-full bg-[#1F1F1F] text-[#808080] hover:bg-[#333333] flex items-center justify-center transition-all">
-                <MoreHorizontal className="w-5 h-5" />
-              </button>
-            </div>
+            <Button
+              onClick={() => setShowBoard(!showBoard)}
+              className={`rounded-full font-semibold transition-all ${
+                showBoard 
+                  ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                  : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+              }`}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              Deal Board
+            </Button>
           )}
         </div>
 
-        {/* Escrow Panel */}
-        {showEscrow && currentRoom && (
-          <div className="px-5 py-4 bg-[#0D0D0D] border-b border-[#1F1F1F] shadow-sm">
-            <EscrowPanel 
-              room={currentRoom} 
-              profile={profile}
-              onUpdate={() => window.location.reload()}
-            />
-          </div>
-        )}
 
-        {/* Message Thread */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 space-y-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
-                <p className="text-sm text-[#808080]">Loading messages...</p>
+
+        {/* Message Thread or Deal Board */}
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          {showBoard ? (
+            /* Deal Board View */
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-xl font-bold text-[#E3C567] mb-1">Deal Board</h3>
+                <p className="text-sm text-[#808080]">Documents, files, and important information for this deal</p>
               </div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Send className="w-8 h-8 text-[#E3C567]" />
+
+              {/* Escrow Section */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-[#E3C567]" />
+                  Escrow & Payments
+                </h4>
+                <EscrowPanel 
+                  room={currentRoom} 
+                  profile={profile}
+                  onUpdate={() => window.location.reload()}
+                />
+              </div>
+
+              {/* Contracts Section */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#E3C567]" />
+                    Contracts & Documents
+                  </h4>
+                  <Button
+                    onClick={() => setWizardOpen(true)}
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                    size="sm"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Generate Contract
+                  </Button>
                 </div>
-                <p className="text-[#808080]">No messages yet. Say hello!</p>
+                <p className="text-sm text-[#808080]">
+                  Create and manage contracts for this deal using AI-powered tools.
+                </p>
+              </div>
+
+              {/* Files Section */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-[#E3C567]" />
+                  Uploaded Files
+                </h4>
+                <div className="text-center py-8">
+                  <p className="text-sm text-[#808080]">No files uploaded yet</p>
+                  <p className="text-xs text-[#666666] mt-1">Share files through messages</p>
+                </div>
+              </div>
+
+              {/* Important Information */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                  <Info className="w-5 h-5 text-[#E3C567]" />
+                  Important Information
+                </h4>
+                <div className="space-y-3">
+                  {currentRoom?.property_address && (
+                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                      <span className="text-sm text-[#808080]">Property</span>
+                      <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom.property_address}</span>
+                    </div>
+                  )}
+                  {currentRoom?.budget && (
+                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                      <span className="text-sm text-[#808080]">Budget</span>
+                      <span className="text-sm text-[#34D399] font-semibold">${currentRoom.budget.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {currentRoom?.pipeline_stage && (
+                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                      <span className="text-sm text-[#808080]">Stage</span>
+                      <span className="text-sm text-[#FAFAFA] font-medium capitalize">{currentRoom.pipeline_stage.replace('_', ' ')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between py-2">
+                    <span className="text-sm text-[#808080]">Deal Started</span>
+                    <span className="text-sm text-[#FAFAFA] font-medium">
+                      {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           ) : (
-            <>
-              {messages.map((m) => {
-                const isMe = m.sender_profile_id === profile?.id;
-                return (
-                  <div
-                    key={m.id}
-                    className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                  >
-                    <div className="max-w-[70%]">
-                      <div
-                        className={`px-5 py-3.5 shadow-sm ${
-                          isMe
-                            ? "bg-[#E3C567] text-black rounded-2xl rounded-br-md"
-                            : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
-                        }`}
-                      >
-                        <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
-                      </div>
-                      <p className={`text-xs text-[#808080] mt-1.5 ${isMe ? 'text-right' : 'text-left'}`}>
-                        {new Date(m.created_date).toLocaleTimeString([], { 
-                          hour: '2-digit', 
-                          minute: '2-digit' 
-                        })}
-                      </p>
-                    </div>
+            /* Messages View */
+            <div className="space-y-4">
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
+                    <p className="text-sm text-[#808080]">Loading messages...</p>
                   </div>
-                );
-              })}
-              <div ref={messagesEndRef} />
-            </>
+                </div>
+              ) : messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Send className="w-8 h-8 text-[#E3C567]" />
+                    </div>
+                    <p className="text-[#808080]">No messages yet. Say hello!</p>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  {messages.map((m) => {
+                    const isMe = m.sender_profile_id === profile?.id;
+                    return (
+                      <div
+                        key={m.id}
+                        className={`flex ${isMe ? "justify-end" : "justify-start"}`}
+                      >
+                        <div className="max-w-[70%]">
+                          <div
+                            className={`px-5 py-3.5 shadow-sm ${
+                              isMe
+                                ? "bg-[#E3C567] text-black rounded-2xl rounded-br-md"
+                                : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
+                            }`}
+                          >
+                            <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                          </div>
+                          <p className={`text-xs text-[#808080] mt-1.5 ${isMe ? 'text-right' : 'text-left'}`}>
+                            {new Date(m.created_date).toLocaleTimeString([], { 
+                              hour: '2-digit', 
+                              minute: '2-digit' 
+                            })}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </>
+              )}
+            </div>
           )}
         </div>
 
