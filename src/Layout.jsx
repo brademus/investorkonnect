@@ -49,7 +49,7 @@ function LayoutContent({ children }) {
       <style>{`
         body {
           background-color: #050505 !important;
-          background-image: linear-gradient(to bottom, rgba(5,5,5,0.85), rgba(5,5,5,0.95)), url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/517a93388_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png') !important;
+          background-image: linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/158666991_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png') !important;
           background-size: cover !important;
           background-position: center center !important;
           background-attachment: fixed !important;
