@@ -66,7 +66,7 @@ function InvestorDashboardContent() {
     return (
       <>
         <Header profile={profile} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center">
             <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
             <p className="text-[#808080] text-sm">Loading your dashboard...</p>
@@ -81,7 +81,7 @@ function InvestorDashboardContent() {
   return (
     <>
       <Header profile={profile} />
-      <div className="min-h-screen bg-black">
+      <div className="min-h-screen bg-transparent">
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="space-y-12">
       

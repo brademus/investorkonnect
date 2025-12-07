@@ -141,7 +141,7 @@ export default function AgentDirectory() {
 
   if (profileLoading || loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
           <p className="text-[#6B7280]">Loading agent directory...</p>
@@ -157,7 +157,7 @@ export default function AgentDirectory() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-6 sm:py-8">
+    <div className="min-h-screen bg-transparent py-6 sm:py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <header className="mb-6">

@@ -80,7 +80,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
       </div>
     );
@@ -97,7 +97,7 @@ export default function Dashboard() {
 
   // Fallback
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+    <div className="min-h-screen bg-transparent flex items-center justify-center">
       <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
     </div>
   );
