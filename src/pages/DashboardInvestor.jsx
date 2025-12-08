@@ -289,8 +289,7 @@ function InvestorDashboardContent() {
                 {rooms.length > 0 && (
                   <Button 
                     onClick={() => navigate(createPageUrl(`AgentDirectory${latestDealState ? `?state=${latestDealState}` : ''}`))}
-                    variant="outline"
-                    className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 mt-auto"
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold mt-auto"
                   >
                     Browse All in {latestDealState || 'Market'}
                   </Button>
