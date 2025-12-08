@@ -4,7 +4,6 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
-import { demoAgents, demoRooms } from "@/components/data/demoData";
 import { createDealRoom } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -75,32 +74,6 @@ export default function AgentDirectory() {
   };
 
   const handleOpenRoom = async (agent) => {
-    if (DEMO_MODE) {
-      const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-      const allRooms = [...demoRooms, ...sessionRooms];
-      const existingRoom = allRooms.find(r => r.counterparty_profile_id === agent.id);
-      if (existingRoom) {
-        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
-      } else {
-        const newRoom = {
-          id: 'room-demo-' + Date.now(),
-          investorId: 'investor-demo',
-          agentId: agent.id,
-          counterparty_name: agent.full_name,
-          counterparty_role: 'agent',
-          counterparty_profile_id: agent.id,
-          status: 'active',
-          created_date: new Date().toISOString(),
-          ndaAcceptedInvestor: true,
-          ndaAcceptedAgent: true,
-        };
-        sessionRooms.push(newRoom);
-        sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
-        toast.success(`Deal room created with ${agent.full_name}`);
-        navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
-      }
-      return;
-    }
     try {
       const response = await createDealRoom({ counterparty_profile_id: agent.id });
       if (response.data?.room?.id) {

@@ -548,45 +548,28 @@ export function useRooms() {
           console.log('[useRooms] Could not determine user role, defaulting to investor');
         }
         
-        // Load from both sources
+        // Load from database only
         let dbRooms = [];
         try {
           dbRooms = await base44.entities.Room.list('-created_date', 100) || [];
         } catch (err) {
-          console.log('[useRooms] Database load failed, will use local only:', err.message);
+          console.log('[useRooms] Database load failed:', err.message);
         }
         
-        // Load from sessionStorage
-        const localRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
+        let allRooms = [...dbRooms];
         
-        // Merge: prioritize database rooms, then add local rooms that don't exist in DB
-        const dbIds = new Set(dbRooms.map(r => r.id));
-        const uniqueLocalRooms = localRooms.filter(r => !dbIds.has(r.id));
-        
-        let allRooms = [...dbRooms, ...uniqueLocalRooms];
-        
-        // If no rooms exist at all, use role-appropriate placeholder deals
-        if (allRooms.length === 0) {
-          allRooms = userRole === 'agent' ? AGENT_PLACEHOLDER_DEALS : INVESTOR_PLACEHOLDER_DEALS;
-          console.log(`[useRooms] No real data, using ${userRole} placeholder deals`);
-        } else {
-          // Enrich real rooms with profile data
-          allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
-        }
+        // Enrich real rooms with profile data
+        allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
         
         // Normalize all rooms for consistent display
         const normalizedRooms = allRooms.map(normalizeRoom);
         
-        console.log(`[useRooms] Loaded ${dbRooms.length} from DB + ${uniqueLocalRooms.length} from local + ${allRooms === INVESTOR_PLACEHOLDER_DEALS || allRooms === AGENT_PLACEHOLDER_DEALS ? allRooms.length : 0} placeholders = ${normalizedRooms.length} total for ${userRole}`);
+        console.log(`[useRooms] Loaded ${dbRooms.length} from DB`);
         
         return normalizedRooms;
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
-        
-        // Final fallback to sessionStorage, or investor placeholders if empty
-        const demoRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-        const fallbackRooms = demoRooms.length > 0 ? demoRooms : INVESTOR_PLACEHOLDER_DEALS;
-        return fallbackRooms.map(normalizeRoom);
+        return [];
       }
     },
     initialData: [],
