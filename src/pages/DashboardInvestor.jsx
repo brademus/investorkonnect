@@ -210,25 +210,39 @@ function InvestorDashboardContent() {
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <Users className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("AgentDirectory")} className="text-xs text-[#E5C37F] hover:underline">
-                    Browse →
-                  </Link>
+                  {/* Browse link hidden if no rooms */}
+                  {rooms.length > 0 && (
+                    <Link to={createPageUrl("AgentDirectory")} className="text-xs text-[#E5C37F] hover:underline">
+                      Browse →
+                    </Link>
+                  )}
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Suggested Agents</h3>
           
-                <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                  <Users className="w-8 h-8 text-[#333333] mb-2" />
-                  <p className="text-sm text-[#808080]">AI matching in progress</p>
-                  <p className="text-xs text-[#666666]">Complete profile for matches</p>
-                </div>
-          
-                <Button 
-                  onClick={() => navigate(createPageUrl("AgentDirectory"))}
-                  variant="outline"
-                  className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
-                >
-                  Browse Agents
-                </Button>
+                {rooms.length === 0 ? (
+                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
+                    <Users className="w-8 h-8 text-[#333333] mb-2" />
+                    <p className="text-sm text-[#808080] mb-1">No agents found yet</p>
+                    <p className="text-xs text-[#666666] max-w-[200px]">
+                      Upload a contract to find investor-friendly agents in your market.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
+                      <Users className="w-8 h-8 text-[#333333] mb-2" />
+                      <p className="text-sm text-[#808080]">AI matching in progress</p>
+                      <p className="text-xs text-[#666666]">Agents will appear here</p>
+                    </div>
+                    <Button 
+                      onClick={() => navigate(createPageUrl("AgentDirectory"))}
+                      variant="outline"
+                      className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                    >
+                      Browse Agents
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
 
