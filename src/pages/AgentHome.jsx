@@ -3,60 +3,23 @@ import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
-import { embedProfile, matchInvestorsForAgent } from "@/components/functions";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { Logo } from "@/components/Logo";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
-  Users, Shield, FileText, TrendingUp, CheckCircle,
-  AlertCircle, Building, Award, MapPin, ArrowRight, Star, Loader2, User, DollarSign, X
+  Shield, FileText, CheckCircle,
+  AlertCircle, Building, Award, MapPin, ArrowRight, Loader2, User, X
 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function AgentHome() {
   const navigate = useNavigate();
   const { 
-    profile, loading, onboarded, user, kycVerified, needsKyc, needsOnboarding, hasNDA, targetState
+    profile, loading, onboarded, user, kycVerified, needsKyc, needsOnboarding, hasNDA
   } = useCurrentProfile();
   
   const [dismissedLicenseBanner, setDismissedLicenseBanner] = useState(false);
-  const [suggestedInvestors, setSuggestedInvestors] = useState([]);
-  const [loadingSuggestedInvestors, setLoadingSuggestedInvestors] = useState(true);
 
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
-
-  useEffect(() => {
-    let cancelled = false;
-    const fetchSuggested = async () => {
-      if (!loading && user && profile?.user_role === 'agent' && onboarded && kycVerified) {
-        await loadAIMatches();
-      } else if (!loading && !cancelled) {
-        setLoadingSuggestedInvestors(false);
-      }
-    };
-    fetchSuggested();
-    return () => { cancelled = true; };
-  }, [loading, user, profile, onboarded, kycVerified]);
-
-  const loadAIMatches = async () => {
-    let cancelled = false;
-    try {
-      setLoadingSuggestedInvestors(true);
-      await embedProfile();
-      const matchResponse = await matchInvestorsForAgent({ limit: 6 });
-      if (!cancelled && matchResponse.data?.ok) {
-        setSuggestedInvestors(matchResponse.data.results || []);
-      } else {
-        setSuggestedInvestors([]);
-      }
-    } catch (err) {
-      if (!cancelled) setSuggestedInvestors([]);
-    } finally {
-      if (!cancelled) setLoadingSuggestedInvestors(false);
-    }
-    return () => { cancelled = true; };
-  };
 
   if (loading) {
     return (
@@ -129,7 +92,7 @@ export default function AgentHome() {
             </div>
           </div>
 
-          {/* Onboarding Banner - only show if truly not onboarded */}
+          {/* Onboarding Banner */}
           {needsOnboarding && !onboarded && (
             <section className="rounded-2xl border border-[#FECACA] bg-gradient-to-r from-[#FEF2F2] to-[#FEE2E2] p-6 shadow-md">
               <div className="flex items-start gap-4">
@@ -138,7 +101,7 @@ export default function AgentHome() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-[#991B1B] mb-2">Complete your agent onboarding</h3>
-                  <p className="text-sm text-[#B91C1C] mb-4">Complete the new questions so we can verify your profile and match you with the right investors.</p>
+                  <p className="text-sm text-[#B91C1C] mb-4">Complete your profile so we can verify you and send deals your way.</p>
                   <button onClick={() => navigate(createPageUrl("AgentOnboarding"))} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DC2626] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#B91C1C] transition-all">
                     Continue onboarding <ArrowRight className="w-4 h-4" />
                   </button>
@@ -156,7 +119,7 @@ export default function AgentHome() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-[#92400E] mb-2">Verify Your Identity</h3>
-                  <p className="text-sm text-[#B45309] mb-4">Complete identity verification to access investor profiles and appear in search results.</p>
+                  <p className="text-sm text-[#B45309] mb-4">Complete identity verification to receive inbound deals.</p>
                   <button onClick={handleStartKyc} className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">
                     <Shield className="w-4 h-4" /> Start Identity Verification <ArrowRight className="w-4 h-4" />
                   </button>
@@ -178,31 +141,11 @@ export default function AgentHome() {
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-[#1E40AF] mb-2">Verify your real estate license</h3>
                   <p className="text-sm text-[#1E3A8A] mb-4">
-                    {!agentData.license_number ? "Add your license number and state to unlock full credibility." : "Your license is pending verification."}
+                    {!agentData.license_number ? "Add your license info to be eligible for deal matching." : "Your license is pending verification."}
                   </p>
                   <Link to={createPageUrl("AccountProfile")}>
                     <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#3B82F6] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#2563EB] transition-all">
                       <Shield className="w-4 h-4" /> {!agentData.license_number ? 'Add License' : 'Update License'} <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </Link>
-                </div>
-              </div>
-            </section>
-          )}
-
-          {/* NDA Banner */}
-          {onboarded && kycVerified && !hasNDA && (
-            <section className="rounded-2xl border border-[#FECACA] bg-gradient-to-r from-[#FEF2F2] to-[#FEE2E2] p-6 shadow-md">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[#FCA5A5] flex items-center justify-center flex-shrink-0">
-                  <Shield className="w-6 h-6 text-[#991B1B]" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-[#991B1B] mb-2">NDA Required</h3>
-                  <p className="text-sm text-[#B91C1C] mb-4">Accept our Non-Disclosure Agreement to access investor profiles and deal rooms.</p>
-                  <Link to={createPageUrl("NDA")}>
-                    <button className="inline-flex items-center justify-center gap-2 rounded-full bg-[#DC2626] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[#B91C1C] transition-all">
-                      <Shield className="w-4 h-4" /> Sign NDA <ArrowRight className="w-4 h-4" />
                     </button>
                   </Link>
                 </div>
@@ -240,12 +183,6 @@ export default function AgentHome() {
                     {agentData.license_state && <span className="inline-flex items-center rounded-full bg-[#F3F4F6] px-3 py-1 text-xs font-medium text-[#374151] mt-2">{agentData.license_state}</span>}
                   </div>
                 )}
-                {agentData.experience_years !== undefined && (
-                  <div>
-                    <p className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wide mb-1">Experience</p>
-                    <p className="font-semibold text-[#111827]">{agentData.experience_years} years</p>
-                  </div>
-                )}
                 {agentData.markets?.length > 0 && (
                   <div>
                     <p className="text-xs font-medium text-[#9CA3AF] uppercase tracking-wide mb-2">Markets</p>
@@ -259,78 +196,7 @@ export default function AgentHome() {
                     </div>
                   </div>
                 )}
-                {(!agentData.markets || agentData.markets.length === 0) && (
-                  <div className="text-center py-8">
-                    <Building className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
-                    <p className="text-sm text-[#6B7280] mb-3">Complete your agent profile</p>
-                    <Link to={createPageUrl("AccountProfile")}>
-                      <button className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Edit Profile</button>
-                    </Link>
-                  </div>
-                )}
               </div>
-            </section>
-
-            {/* Suggested Investors */}
-            <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
-              <div className="flex items-center justify-between mb-5">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h3 className="text-lg font-semibold text-[#111827]">Suggested Investors</h3>
-                    <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-3 py-1 text-xs font-medium text-[#92400E]">AI Powered</span>
-                  </div>
-                  <p className="text-sm text-[#6B7280] mt-1">Smart matches based on your markets and expertise</p>
-                </div>
-                <button onClick={() => navigate(createPageUrl("InvestorDirectory"))} className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors">View All →</button>
-              </div>
-
-              {loadingSuggestedInvestors ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-[#D3A029] mb-3" />
-                  <div className="text-sm text-[#6B7280]">AI is analyzing investor demand...</div>
-                </div>
-              ) : needsOnboarding ? (
-                <div className="text-center py-10">
-                  <AlertCircle className="w-12 h-12 mx-auto mb-3 text-[#FCD34D]" />
-                  <p className="text-sm text-[#6B7280] mb-3">Complete onboarding to access investors</p>
-                  <button onClick={() => navigate(createPageUrl("AgentOnboarding"))} className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Complete Onboarding</button>
-                </div>
-              ) : needsKyc ? (
-                <div className="text-center py-10">
-                  <Shield className="w-12 h-12 mx-auto mb-3 text-[#FCD34D]" />
-                  <p className="text-sm text-[#6B7280] mb-3">Verify identity to access investors</p>
-                  <button onClick={handleStartKyc} className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Verify Identity</button>
-                </div>
-              ) : suggestedInvestors.length === 0 ? (
-                <div className="text-center py-10">
-                  <Users className="w-12 h-12 mx-auto mb-3 text-[#E5E7EB]" />
-                  <p className="text-sm text-[#6B7280] mb-3">No AI matches yet. Complete your profile for better matching.</p>
-                  <button onClick={() => navigate(createPageUrl("InvestorDirectory"))} className="inline-flex items-center justify-center rounded-full bg-[#D3A029] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#D3A029]/30 hover:bg-[#B98413] transition-all">Browse all investors</button>
-                </div>
-              ) : (
-                <div className="divide-y divide-[#F3F4F6]">
-                  {suggestedInvestors.map(({ profile: inv, score }) => (
-                    <div key={inv.id} className="flex items-center justify-between py-4 first:pt-0 last:pb-0">
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-10 h-10 rounded-full bg-[#F3F4F6] flex items-center justify-center flex-shrink-0">
-                          <User className="w-5 h-5 text-[#9CA3AF]" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-[#111827] truncate">{inv.full_name || 'Investor'}</span>
-                            {score && score >= 0.8 && <span className="inline-flex items-center rounded-full bg-[#FEF3C7] px-2 py-0.5 text-xs font-medium text-[#92400E]">Top Match</span>}
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-[#6B7280] mt-0.5">
-                            <span>{inv.target_state || inv.markets?.[0] || 'Market not set'}</span>
-                            {score && <span className="text-xs bg-[#F3F4F6] px-2 py-0.5 rounded-full">{(score * 100).toFixed(0)}% match</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <button onClick={() => navigate(`${createPageUrl("InvestorDirectory")}?highlight=${inv.id}`)} className="text-sm font-medium text-[#D3A029] hover:text-[#B98413] transition-colors flex-shrink-0">View →</button>
-                    </div>
-                  ))}
-                </div>
-              )}
             </section>
 
             {/* Documents */}
@@ -360,7 +226,6 @@ export default function AgentHome() {
                       </div>
                     </div>
                   ))}
-                  {docs.length > 3 && <p className="text-sm text-[#6B7280] text-center pt-2">+{docs.length - 3} more documents</p>}
                 </div>
               ) : (
                 <div className="text-center py-10">
@@ -374,12 +239,11 @@ export default function AgentHome() {
             </section>
 
             {/* Quick Links */}
-            <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
+            <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg lg:col-span-2">
               <h2 className="text-lg font-semibold text-[#111827] mb-4">Quick Links</h2>
-              <div className="space-y-2">
+              <div className="grid sm:grid-cols-3 gap-4">
                 {[
                   { label: 'My Profile', icon: '👤', href: 'AccountProfile' },
-                  { label: 'Browse Investors', icon: '👥', href: 'InvestorDirectory' },
                   { label: 'Deal Rooms', icon: '💬', href: 'DealRooms' },
                   { label: 'Documents', icon: '📄', href: 'AgentDocuments' },
                 ].map((link) => (
@@ -394,26 +258,6 @@ export default function AgentHome() {
               </div>
             </section>
           </div>
-
-          {/* Agent Benefits */}
-          <section className="rounded-2xl border border-[#E5E7EB] bg-white p-6 shadow-lg">
-            <h2 className="text-lg font-semibold text-[#111827] mb-6">Why Investor Konnect?</h2>
-            <div className="grid md:grid-cols-3 gap-6">
-              {[
-                { icon: <CheckCircle className="w-6 h-6 text-[#D3A029]" />, title: 'Free Membership', desc: 'No fees to join or use Investor Konnect. Always free for agents.' },
-                { icon: <TrendingUp className="w-6 h-6 text-[#D3A029]" />, title: 'Qualified Investors', desc: 'Connect with serious, pre-vetted investors only.' },
-                { icon: <Star className="w-6 h-6 text-[#D3A029]" />, title: 'Build Reputation', desc: 'Earn verified reviews and grow your business.' },
-              ].map((item, idx) => (
-                <div key={idx} className="text-center sm:text-left">
-                  <div className="w-12 h-12 rounded-xl bg-[#FEF3C7] flex items-center justify-center mb-4 mx-auto sm:mx-0">
-                    {item.icon}
-                  </div>
-                  <h3 className="font-semibold text-[#111827] mb-2">{item.title}</h3>
-                  <p className="text-sm text-[#6B7280]">{item.desc}</p>
-                </div>
-              ))}
-            </div>
-          </section>
         </div>
       </main>
     </div>
