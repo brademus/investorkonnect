@@ -84,6 +84,38 @@ Deno.serve(async (req) => {
       }
     });
 
+    // Find orphan deals (deals created by me but not yet in a room)
+    try {
+      // Get all deals where I am the investor
+      const myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      
+      // Filter out deals that are already in rooms
+      const roomDealIds = new Set(dealIds);
+      const orphanDeals = myDeals.filter(d => !roomDealIds.has(d.id) && d.status !== 'archived');
+      
+      // Convert orphan deals to room-like objects
+      orphanDeals.forEach(deal => {
+        rooms.push({
+          id: `virtual_${deal.id}`, // Virtual ID
+          deal_id: deal.id,
+          title: deal.title,
+          property_address: deal.property_address,
+          city: deal.city,
+          state: deal.state,
+          budget: deal.purchase_price,
+          pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
+          created_date: deal.created_date,
+          updated_date: deal.updated_date || deal.created_date,
+          contract_date: deal.key_dates?.closing_date,
+          counterparty_name: 'No Agent Selected',
+          counterparty_role: 'none',
+          is_orphan: true // Flag for frontend
+        });
+      });
+    } catch (e) {
+      console.log("Error fetching orphan deals:", e.message);
+    }
+
     return Response.json({ items: rooms });
   } catch (error) {
     console.error('[listMyRooms] Error:', error);

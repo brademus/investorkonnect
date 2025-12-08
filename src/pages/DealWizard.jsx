@@ -48,7 +48,55 @@ export default function DealWizard() {
 
   useEffect(() => {
     document.title = "Start New Deal - Investor Konnect";
+    
+    // Check for resume param
+    const params = new URLSearchParams(window.location.search);
+    const resumeDealId = params.get('dealId');
+    
+    if (resumeDealId) {
+      resumeDeal(resumeDealId);
+    }
   }, []);
+
+  const resumeDeal = async (dealId) => {
+    setLoading(true);
+    try {
+      // Fetch deal details
+      const deals = await base44.entities.Deal.filter({ id: dealId });
+      if (deals && deals.length > 0) {
+        const deal = deals[0];
+        setCreatedDealId(deal.id);
+        setDealData(prev => ({
+          ...prev,
+          address: deal.property_address || '',
+          city: deal.city || '',
+          state: deal.state || '',
+          county: deal.county || '',
+          zip: deal.zip || '',
+          purchasePrice: deal.purchase_price || '',
+          contractUrl: deal.contract_url || ''
+        }));
+        
+        // Find matches
+        const matchRes = await base44.functions.invoke('findBestAgents', {
+          state: deal.state,
+          county: deal.county,
+          dealId: deal.id
+        });
+
+        if (matchRes.data?.results) {
+          setMatchedAgents(matchRes.data.results);
+        }
+        
+        setStep(3);
+      }
+    } catch (e) {
+      console.error("Error resuming deal:", e);
+      toast.error("Could not load deal details");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- STEP 1: UPLOAD & EXTRACT ---
   const handleFileUpload = async (e) => {
@@ -114,8 +162,13 @@ export default function DealWizard() {
     setLoading(true);
 
     try {
+      const user = await base44.auth.me();
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const myProfile = profiles[0];
+
       // 1. Save Deal
       const dealPayload = {
+        investor_id: myProfile?.id,
         title: `${dealData.address || 'New Deal'}`,
         property_address: dealData.address,
         city: dealData.city,
@@ -134,21 +187,10 @@ export default function DealWizard() {
         created_date: new Date().toISOString()
       };
 
-      const createdDeal = await base44.entities.Deal.create(dealPayload);
-      setCreatedDealId(createdDeal.id);
-
-      // 2. Find Matches
-      const matchRes = await base44.functions.invoke('findBestAgents', {
-        state: dealData.state,
-        county: dealData.county,
-        dealId: createdDeal.id
-      });
-
-      if (matchRes.data?.results) {
-        setMatchedAgents(matchRes.data.results);
-      }
-
-      setStep(3);
+      await base44.entities.Deal.create(dealPayload);
+      
+      toast.success("Deal created successfully!");
+      navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
       console.error('Error saving deal:', error);

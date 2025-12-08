@@ -21,9 +21,11 @@ function PipelineContent() {
   // Convert rooms to deals format
   const deals = rooms.map(room => ({
     id: room.id,
+    deal_id: room.deal_id, // Preserve deal_id
+    is_orphan: room.is_orphan, // Preserve orphan status
     title: room.title || 'Deal Room',
     property_address: room.property_address,
-    customer_name: room.customer_name,
+    customer_name: room.counterparty_name || room.customer_name,
     city: room.city,
     state: room.state,
     bedrooms: room.bedrooms,
@@ -61,8 +63,13 @@ function PipelineContent() {
   };
 
   const handleDealClick = (deal) => {
-    // Navigate to Room page with the deal's room ID
-    navigate(`${createPageUrl("Room")}?roomId=${deal.id}`);
+    if (deal.is_orphan) {
+      // Resume Deal Wizard for agent selection
+      navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
+    } else {
+      // Navigate to Room page with the deal's room ID
+      navigate(`${createPageUrl("Room")}?roomId=${deal.id}`);
+    }
   };
 
 
