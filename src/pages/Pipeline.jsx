@@ -275,9 +275,9 @@ function PipelineContent() {
                                 </div>
                               )}
                               {stageDeals[0].budget && (
-                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
-                                  <DollarSign className="w-5 h-5 text-[#34D399]" />
-                                  <span className="text-[#34D399] font-bold">
+                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                                  <DollarSign className="w-5 h-5 text-[#E3C567]" />
+                                  <span className="text-[#E3C567] font-bold">
                                     {formatCurrency(stageDeals[0].budget)}
                                   </span>
                                 </div>
@@ -323,9 +323,9 @@ function PipelineContent() {
                                   </p>
                                 )}
                                 {deal.budget && (
-                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#34D399]/10 rounded-lg">
-                                    <DollarSign className="w-3 h-3 text-[#34D399]" />
-                                    <span className="text-[#34D399] font-bold">
+                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                                    <DollarSign className="w-3 h-3 text-[#E3C567]" />
+                                    <span className="text-[#E3C567] font-bold">
                                       {formatCurrency(deal.budget)}
                                     </span>
                                   </div>
@@ -425,9 +425,9 @@ function PipelineContent() {
                                 </div>
                               )}
                               {stageDeals[0].budget && (
-                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#34D399]/10 rounded-lg border border-[#34D399]/20">
-                                  <DollarSign className="w-5 h-5 text-[#34D399]" />
-                                  <span className="text-[#34D399] font-bold">
+                                <div className="flex items-center gap-2 text-lg py-2 px-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                                  <DollarSign className="w-5 h-5 text-[#E3C567]" />
+                                  <span className="text-[#E3C567] font-bold">
                                     {formatCurrency(stageDeals[0].budget)}
                                   </span>
                                 </div>
@@ -473,9 +473,9 @@ function PipelineContent() {
                                   </p>
                                 )}
                                 {deal.budget && (
-                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#34D399]/10 rounded-lg">
-                                    <DollarSign className="w-3 h-3 text-[#34D399]" />
-                                    <span className="text-[#34D399] font-bold">
+                                  <div className="flex items-center gap-1.5 text-xs py-1 px-2 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                                    <DollarSign className="w-3 h-3 text-[#E3C567]" />
+                                    <span className="text-[#E3C567] font-bold">
                                       {formatCurrency(deal.budget)}
                                     </span>
                                   </div>
