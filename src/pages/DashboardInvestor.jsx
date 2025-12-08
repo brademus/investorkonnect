@@ -192,12 +192,12 @@ function InvestorDashboardContent() {
             
                   <button 
                     onClick={() => navigate(createPageUrl("ClosedDeals"))}
-                    className="w-full flex items-center justify-between p-3 bg-[#34D399]/10 rounded-lg hover:bg-[#34D399]/20 transition-colors border border-[#34D399]/20">
+                    className="w-full flex items-center justify-between p-3 bg-[#E3C567]/10 rounded-lg hover:bg-[#E3C567]/20 transition-colors border border-[#E3C567]/20">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#34D399]" />
+                      <DollarSign className="w-4 h-4 text-[#E3C567]" />
                       <span className="text-sm font-medium text-[#FAFAFA]">Closed</span>
                     </div>
-                    <span className="text-lg font-bold text-[#34D399]">{dealStats.closed}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{dealStats.closed}</span>
                   </button>
                 </div>
               </div>
