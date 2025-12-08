@@ -140,7 +140,7 @@ function InvestorDashboardContent() {
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <Plus className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full">
+                  <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full">
                     Primary
                   </span>
                 </div>
