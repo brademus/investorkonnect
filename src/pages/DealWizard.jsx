@@ -129,7 +129,7 @@ export default function DealWizard() {
           earnest_money_due: dealData.earnestMoneyDate
         },
         status: 'active',
-        pipeline_stage: 'new_contract',
+        pipeline_stage: 'new_deal_under_contract',
         created_date: new Date().toISOString()
       };
 
