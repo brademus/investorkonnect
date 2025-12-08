@@ -116,6 +116,13 @@ Deno.serve(async (req) => {
       console.log("Error fetching orphan deals:", e.message);
     }
 
+    // Sort combined list by created_date descending (newest first)
+    rooms.sort((a, b) => {
+      const dateA = new Date(a.created_date || 0);
+      const dateB = new Date(b.created_date || 0);
+      return dateB - dateA;
+    });
+
     return Response.json({ items: rooms });
   } catch (error) {
     console.error('[listMyRooms] Error:', error);

@@ -37,9 +37,10 @@ Deno.serve(async (req) => {
     // Get investor profile for matching context
     const investorProfiles = await base44.entities.Profile.filter({ id: investorProfileId });
     const investorProfile = investorProfiles[0];
-    const investorRegion = investorProfile?.target_state || investorProfile?.markets?.[0] || null;
+    // Prioritize state from request body (deal location), then profile target
+    const investorRegion = body.state || investorProfile?.target_state || investorProfile?.markets?.[0] || null;
     
-    console.log('[matchAgentsForInvestor] Investor region:', investorRegion);
+    console.log('[matchAgentsForInvestor] Match region:', investorRegion, '(Source: ' + (body.state ? 'Deal' : 'Profile') + ')');
     
     // Load investor vector (may not exist for incomplete profiles)
     const invVectors = await base44.entities.ProfileVector.filter({ 
