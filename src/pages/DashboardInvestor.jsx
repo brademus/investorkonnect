@@ -205,8 +205,8 @@ function InvestorDashboardContent() {
               {/* Box 3: Recent Messages */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-[#DB2777]" />
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-[#E3C567]" />
                   </div>
                   {/* View all link removed */}
                 </div>
