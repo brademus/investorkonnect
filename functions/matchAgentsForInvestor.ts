@@ -28,6 +28,25 @@ Deno.serve(async (req) => {
       investorProfileId = profiles[0]?.id;
     }
     
+    // NEW: Check for specific deal context
+    const dealId = body.dealId;
+    let targetState = body.state; // Direct state override
+    let targetCounty = body.county;
+
+    if (dealId && !targetState) {
+      // Fetch deal to get location
+      try {
+        const deals = await base44.entities.Deal.filter({ id: dealId });
+        if (deals.length > 0) {
+          targetState = deals[0].state;
+          targetCounty = deals[0].county;
+          console.log(`[matchAgentsForInvestor] Using Deal ${dealId} location: ${targetState}, ${targetCounty}`);
+        }
+      } catch (e) {
+        console.error('Error fetching deal:', e);
+      }
+    }
+
     if (!investorProfileId) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
@@ -37,9 +56,11 @@ Deno.serve(async (req) => {
     // Get investor profile for matching context
     const investorProfiles = await base44.entities.Profile.filter({ id: investorProfileId });
     const investorProfile = investorProfiles[0];
-    const investorRegion = investorProfile?.target_state || investorProfile?.markets?.[0] || null;
     
-    console.log('[matchAgentsForInvestor] Investor region:', investorRegion);
+    // Use deal state if available, otherwise fallback to profile preferences
+    const investorRegion = targetState || investorProfile?.target_state || investorProfile?.markets?.[0] || null;
+    
+    console.log('[matchAgentsForInvestor] Target region:', investorRegion);
     
     // Load investor vector (may not exist for incomplete profiles)
     const invVectors = await base44.entities.ProfileVector.filter({ 
