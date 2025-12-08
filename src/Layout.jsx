@@ -21,7 +21,8 @@ function LayoutContent({ children }) {
     '/onboarding',
     '/verify',
     '/nda',
-    '/matches'
+    '/matches',
+    '/PostAuth'
   ];
 
   // Full-bleed pages that handle their own layout completely

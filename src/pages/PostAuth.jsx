@@ -16,20 +16,30 @@ import { Loader2 } from "lucide-react";
 export default function PostAuth() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("Signing you in...");
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let mounted = true;
     const route = async () => {
       try {
+        // Timeout safeguard
+        const timeoutId = setTimeout(() => {
+          if (mounted) setError("Taking longer than expected...");
+        }, 8000);
+
         // Step 1: Get user
         const user = await base44.auth.me();
+        clearTimeout(timeoutId);
         
+        if (!mounted) return;
+
         if (!user) {
           navigate(createPageUrl("Home"), { replace: true });
           return;
         }
 
         // Step 2: Get or create profile - USE EMAIL AS PRIMARY KEY
-        setStatus("Loading your profile...");
+        if (mounted) setStatus("Loading your profile...");
         let profile = null;
         try {
           // First try to find by email (canonical lookup)
@@ -88,12 +98,36 @@ export default function PostAuth() {
 
       } catch (error) {
         console.error('[PostAuth] Error:', error);
-        navigate(createPageUrl("Home"), { replace: true });
+        if (mounted) {
+          // If it's a known error or we want to show it
+          navigate(createPageUrl("Home"), { replace: true });
+        }
       }
     };
 
     route();
+    return () => { mounted = false; };
   }, [navigate]);
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-6 h-6 text-red-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-[#111827] mb-2">Something went wrong</h2>
+          <p className="text-[#6B7280] mb-6">{error}</p>
+          <button 
+            onClick={() => window.location.href = createPageUrl("Home")}
+            className="px-6 py-2 bg-[#D3A029] text-white rounded-lg font-medium hover:bg-[#B8902A] transition-colors"
+          >
+            Return Home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
