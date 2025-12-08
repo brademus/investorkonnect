@@ -26,7 +26,7 @@ function LayoutContent({ children }) {
   ];
 
   // Full-bleed pages that handle their own layout completely
-  const fullBleedPages = ['/Room', '/InvestorHome', '/AgentHome', '/Dashboard', '/DealRooms', '/AgentDirectory'];
+  const fullBleedPages = ['/Room', '/InvestorHome', '/AgentHome', '/Dashboard', '/AgentDirectory'];
   const isFullBleedPage = fullBleedPages.some(path => location.pathname.toLowerCase().includes(path.toLowerCase()));
 
   const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
@@ -34,12 +34,10 @@ function LayoutContent({ children }) {
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
 
   const investorNav = [
-    { name: "Deal Rooms", href: createPageUrl("DealRooms"), icon: FileText },
     { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
   ];
 
   const agentNav = [
-    { name: "Deal Rooms", href: createPageUrl("DealRooms"), icon: FileText },
     { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
   ];
 

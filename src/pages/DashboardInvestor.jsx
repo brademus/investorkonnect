@@ -175,9 +175,7 @@ function InvestorDashboardContent() {
                   <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-[#DB2777]" />
                   </div>
-                  <Link to={createPageUrl("DealRooms")} className="text-xs text-[#E5C37F] hover:underline">
-                    View all →
-                  </Link>
+                  {/* View all link removed */}
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
           
@@ -239,7 +237,6 @@ function InvestorDashboardContent() {
               {[
                 { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
                 { label: 'My Profile', icon: Users, href: 'AccountProfile' },
-                { label: 'Deal Rooms', icon: MessageSquare, href: 'DealRooms' },
                 { label: 'Documents', icon: FileText, href: 'InvestorDocuments' },
                 { label: 'AI Assistant', icon: Bot, href: 'AIAssistant' },
               ].map((link) => {

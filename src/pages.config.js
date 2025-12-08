@@ -7,7 +7,6 @@ import Reviews from './pages/Reviews';
 import Security from './pages/Security';
 import Dashboard from './pages/Dashboard';
 import NDA from './pages/NDA';
-import DealRooms from './pages/DealRooms';
 import AdminApprovals from './pages/AdminApprovals';
 import Resources from './pages/Resources';
 import FAQ from './pages/FAQ';
@@ -78,7 +77,6 @@ export const PAGES = {
     "Security": Security,
     "Dashboard": Dashboard,
     "NDA": NDA,
-    "DealRooms": DealRooms,
     "AdminApprovals": AdminApprovals,
     "Resources": Resources,
     "FAQ": FAQ,

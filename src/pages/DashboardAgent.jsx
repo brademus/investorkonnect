@@ -106,28 +106,7 @@ function AgentDashboardContent() {
             {/* 4-Box Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
-              {/* Box 1: My Deals */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-[#E3C567]" />
-                  </div>
-                  <span className="px-3 py-1.5 bg-[#34D399]/20 text-[#34D399] text-xs font-medium rounded-full">
-                    Active
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">My Deals</h3>
-                <p className="text-sm text-[#808080] mb-6 flex-grow">
-                  View and manage deal rooms where investors have sent you contracts.
-                </p>
-                <Button 
-                  onClick={() => navigate(createPageUrl("DealRooms"))}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  View Deal Rooms
-                </Button>
-              </div>
+              {/* Box 1: My Deals - Hidden as DealRooms page is removed */}
 
               {/* Box 2: Pipeline */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
@@ -177,9 +156,7 @@ function AgentDashboardContent() {
                   <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-[#DB2777]" />
                   </div>
-                  <Link to={createPageUrl("DealRooms")} className="text-xs text-[#E3C567] hover:underline">
-                    View all →
-                  </Link>
+                  {/* Deal Rooms link removed */}
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
                 
@@ -201,13 +178,7 @@ function AgentDashboardContent() {
                   </div>
                 </div>
                 
-                <Button 
-                  onClick={() => navigate(createPageUrl("DealRooms"))}
-                  variant="outline"
-                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
-                >
-                  Open Messages
-                </Button>
+                {/* Messages button removed */}
               </div>
 
               {/* Box 4: How It Works / Status */}
@@ -251,7 +222,6 @@ function AgentDashboardContent() {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
                 { label: 'My Profile', icon: Users, href: 'AccountProfile' },
-                { label: 'Deal Rooms', icon: MessageSquare, href: 'DealRooms' },
                 { label: 'Documents', icon: FileText, href: 'AgentDocuments' },
                 { label: 'AI Assistant', icon: Bot, href: 'AIAssistant' },
               ].map((link) => {

@@ -244,7 +244,7 @@ export default function AgentHome() {
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
                   { label: 'My Profile', icon: '👤', href: 'AccountProfile' },
-                  { label: 'Deal Rooms', icon: '💬', href: 'DealRooms' },
+                  /* Deal Rooms link removed */
                   { label: 'Documents', icon: '📄', href: 'AgentDocuments' },
                 ].map((link) => (
                   <Link key={link.href} to={createPageUrl(link.href)} className="flex items-center justify-between w-full p-4 rounded-xl border border-[#F3F4F6] bg-[#F9FAFB] hover:border-[#D3A029] hover:bg-[#FFFBEB] transition-all group">

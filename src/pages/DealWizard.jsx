@@ -185,7 +185,8 @@ export default function DealWizard() {
       await base44.entities.Room.create(roomPayload);
       
       toast.success('Deal Room Created!');
-      navigate(createPageUrl("DealRooms"));
+      // Redirect to the specific room instead of DealRooms listing page
+      navigate(`${createPageUrl("Room")}?roomId=${roomPayload.id}`);
 
     } catch (error) {
       console.error('Error creating room:', error);
