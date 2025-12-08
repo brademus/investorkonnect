@@ -34,30 +34,51 @@ Deno.serve(async (req) => {
       p.agent // Has agent data object
     );
     
-    // Filter agents by location
+    // Normalize state helper
+    const normalizeState = (s) => {
+      if (!s) return null;
+      s = s.toString().toLowerCase().trim();
+      
+      const states = {
+        'alabama': 'AL', 'alaska': 'AK', 'arizona': 'AZ', 'arkansas': 'AR', 'california': 'CA',
+        'colorado': 'CO', 'connecticut': 'CT', 'delaware': 'DE', 'florida': 'FL', 'georgia': 'GA',
+        'hawaii': 'HI', 'idaho': 'ID', 'illinois': 'IL', 'indiana': 'IN', 'iowa': 'IA',
+        'kansas': 'KS', 'kentucky': 'KY', 'louisiana': 'LA', 'maine': 'ME', 'maryland': 'MD',
+        'massachusetts': 'MA', 'michigan': 'MI', 'minnesota': 'MN', 'mississippi': 'MS', 'missouri': 'MO',
+        'montana': 'MT', 'nebraska': 'NE', 'nevada': 'NV', 'new hampshire': 'NH', 'new jersey': 'NJ',
+        'new mexico': 'NM', 'new york': 'NY', 'north carolina': 'NC', 'north dakota': 'ND', 'ohio': 'OH',
+        'oklahoma': 'OK', 'oregon': 'OR', 'pennsylvania': 'PA', 'rhode island': 'RI', 'south carolina': 'SC',
+        'south dakota': 'SD', 'tennessee': 'TN', 'texas': 'TX', 'utah': 'UT', 'vermont': 'VT',
+        'virginia': 'VA', 'washington': 'WA', 'west virginia': 'WV', 'wisconsin': 'WI', 'wyoming': 'WY',
+        'district of columbia': 'DC'
+      };
+      
+      // If it's a full name, return code. If it's code (length 2), return it.
+      return states[s] || (s.length === 2 ? s.toUpperCase() : null);
+    };
+
+    const targetStateCode = normalizeState(state);
+    
+    if (!targetStateCode) {
+      console.log('[findBestAgents] No valid target state provided. Returning empty.');
+      return Response.json({ ok: true, results: [], total: 0 });
+    }
+
+    // Filter agents by location - STRICT STATE MATCH ONLY
     const matchedAgents = agents.filter(agent => {
       const agentMarkets = [
         ...(agent.markets || []),
         ...(agent.agent?.markets || []),
         agent.target_state,
-        agent.agent?.license_state
-      ].map(m => m?.toLowerCase().trim()).filter(Boolean);
+        agent.agent?.license_state,
+        ...(agent.agent?.licensed_states || [])
+      ].map(m => normalizeState(m)).filter(Boolean); // Normalize all agent markets to codes
 
-      const targetState = state?.toLowerCase().trim();
       const targetCounty = county?.toLowerCase().trim();
 
-      // Check for State match
-      const stateMatch = agentMarkets.some(m => m === targetState);
+      // Check for State match (Strict equality on normalized codes)
+      const stateMatch = agentMarkets.includes(targetStateCode);
       
-      // Check for County match (if county is provided)
-      // We check if any of the agent's markets string includes the county name
-      const countyMatch = targetCounty 
-        ? agentMarkets.some(m => m.includes(targetCounty)) 
-        : false;
-
-      // Primary match: State MUST match. 
-      // County match is a bonus that prioritizes, but we'll take state-level agents if needed.
-      // For this "strict" matching request, we'll require at least a state match.
       return stateMatch;
     });
 
