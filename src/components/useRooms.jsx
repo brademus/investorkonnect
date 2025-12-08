@@ -70,37 +70,34 @@ export function useRooms() {
     queryKey: ['rooms'],
     queryFn: async () => {
       try {
-        // Determine current user role
-        let userRole = 'investor'; // default
-        try {
-          const user = await base44.auth.me();
-          if (user) {
-            const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-            if (profiles[0]) {
-              userRole = profiles[0].user_role || profiles[0].role || 'investor';
-            }
-          }
-        } catch (err) {
-          console.log('[useRooms] Could not determine user role, defaulting to investor');
-        }
-        
-        // Load from database only
+        // Load from backend function listMyRooms
+        // This function handles:
+        // 1. Authentication check
+        // 2. Fetching only rooms where user is participant (investor OR agent)
+        // 3. Basic enrichment (counterparty name/role)
         let dbRooms = [];
         try {
-          dbRooms = await base44.entities.Room.list('-created_date', 100) || [];
+          const response = await base44.functions.invoke('listMyRooms');
+          if (response.data && response.data.items) {
+            dbRooms = response.data.items;
+          } else {
+             // Fallback or empty
+             dbRooms = [];
+          }
         } catch (err) {
-          console.log('[useRooms] Database load failed:', err.message);
+          console.log('[useRooms] Backend listMyRooms failed:', err.message);
         }
         
         let allRooms = [...dbRooms];
         
-        // Enrich real rooms with profile data
+        // Enrich real rooms with FULL profile data (frontend needs detailed profile object)
+        // listMyRooms does basic enrichment, but we want the full profile object for details
         allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
         
         // Normalize all rooms for consistent display
         const normalizedRooms = allRooms.map(normalizeRoom);
         
-        console.log(`[useRooms] Loaded ${dbRooms.length} from DB`);
+        console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms`);
         
         return normalizedRooms;
       } catch (error) {
