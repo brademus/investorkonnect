@@ -337,7 +337,7 @@ export default function DealWizard() {
       {matchedAgents.length === 0 ? (
         <div className="text-center py-8 text-[#808080] bg-[#141414] rounded-xl border border-dashed border-[#1F1F1F]">
           No agents found in this exact location. <br/>
-          <Button variant="link" onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-[#E3C567]">Browse Directory</Button>
+          <p className="text-sm mt-2">Try uploading a contract for a supported market.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">

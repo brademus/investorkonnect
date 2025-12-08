@@ -63,29 +63,15 @@ export default function AgentDirectory() {
       return;
     }
 
-    // All checks passed, load agents
-    loadAgents();
+    // Redirect to Dashboard if they try to access AgentDirectory directly
+    // The user requirement is: NO BROWSING. Only access via DealWizard match.
+    toast.info("Please start a deal to find matched agents");
+    navigate(createPageUrl("Dashboard"), { replace: true });
+    return;
   }, [profileLoading, user, profile, role, onboarded]);
 
   const loadAgents = async () => {
-    try {
-      // Always try to load real agents first
-      const allProfiles = await base44.entities.Profile.filter({});
-      const realAgents = allProfiles.filter(p => p.user_role === 'agent' || p.user_type === 'agent');
-      
-      // Merge with demo agents (avoid duplicates by ID)
-      const realIds = new Set(realAgents.map(a => String(a.id)));
-      const demosToShow = demoAgents.filter(a => !realIds.has(String(a.id)));
-      const combined = [...realAgents, ...demosToShow];
-      
-      setAgents(combined);
-      setLoading(false);
-    } catch (error) {
-      console.error("Error loading agents:", error);
-      // Fallback to demo agents only
-      setAgents(demoAgents);
-      setLoading(false);
-    }
+    // Legacy load removed
   };
 
   const handleOpenRoom = async (agent) => {
