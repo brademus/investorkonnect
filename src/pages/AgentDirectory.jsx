@@ -62,8 +62,29 @@ export default function AgentDirectory() {
       return;
     }
 
-    // Redirect to Dashboard if they try to access AgentDirectory directly
-    // The user requirement is: NO BROWSING. Only access via DealWizard match.
+    // Redirect to Dashboard if they try to access AgentDirectory directly WITHOUT context
+    // The user requirement is: NO BROWSING. Only access via DealWizard/Dashboard match context.
+    
+    const params = new URLSearchParams(window.location.search);
+    const stateParam = params.get('state');
+    
+    // Allow access if state param is present
+    if (stateParam) {
+      // Valid access
+      console.log('Accessing directory for state:', stateParam);
+      // Pre-filter by state
+      const stateMap = {
+        'AZ': 'arizona', 'TX': 'texas', 'FL': 'florida', 'CA': 'california'
+      };
+      const normalizedState = stateMap[stateParam] || stateParam.toLowerCase();
+      // Set the filter but don't force it if it's not in the list, just set search context maybe?
+      // Actually, let's try to set the dropdown if it matches
+      if (['arizona', 'texas', 'florida', 'california'].includes(normalizedState)) {
+          setLocationFilter(normalizedState);
+      }
+      return;
+    }
+
     toast.info("Please start a deal to find matched agents");
     navigate(createPageUrl("Dashboard"), { replace: true });
     return;
