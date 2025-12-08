@@ -8,7 +8,7 @@ import { useRooms } from "@/components/useRooms";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
-  Clock, CheckSquare
+  Clock, CheckSquare, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -30,7 +30,7 @@ function PipelineContent() {
     bathrooms: room.bathrooms,
     square_feet: room.square_feet,
     budget: room.budget || room.contract_price,
-    pipeline_stage: room.pipeline_stage || 'new_contract',
+    pipeline_stage: room.pipeline_stage || 'new_deal_under_contract',
     created_date: room.created_date,
     updated_date: room.updated_date,
     contract_date: room.contract_date,
@@ -69,8 +69,8 @@ function PipelineContent() {
 
   const pipelineStages = [
     {
-      id: 'new_contract',
-      label: 'Contract Walkthrough',
+      id: 'new_deal_under_contract',
+      label: 'New Deal (Under Contract)',
       icon: FileText,
       color: '#E3C567',
       bgColor: 'bg-[#E3C567]/10',
@@ -86,23 +86,31 @@ function PipelineContent() {
     },
     {
       id: 'evaluate_deal',
-      label: 'Evaluate Deal',
+      label: 'Evaluate Deal (Keep or Cancel)',
       icon: TrendingUp,
       color: '#F59E0B',
       bgColor: 'bg-[#F59E0B]/10',
       borderColor: 'border-[#F59E0B]/20'
     },
     {
-      id: 'marketing',
-      label: 'Marketing',
+      id: 'active_marketing',
+      label: 'Active Marketing',
       icon: Megaphone,
       color: '#DB2777',
       bgColor: 'bg-[#DB2777]/10',
       borderColor: 'border-[#DB2777]/20'
     },
     {
-      id: 'closing',
-      label: 'Ready to Close',
+      id: 'cancelling_deal',
+      label: 'Cancelling Deal',
+      icon: XCircle,
+      color: '#EF4444',
+      bgColor: 'bg-[#EF4444]/10',
+      borderColor: 'border-[#EF4444]/20'
+    },
+    {
+      id: 'clear_to_close_closed',
+      label: 'Clear to Close / Closed',
       icon: CheckCircle,
       color: '#34D399',
       bgColor: 'bg-[#34D399]/10',
@@ -130,11 +138,12 @@ function PipelineContent() {
   const getKeyDate = (deal, stageId) => {
     // Return stage-specific key dates
     const dates = {
-      new_contract: deal.contract_date || deal.created_date,
+      new_deal_under_contract: deal.contract_date || deal.created_date,
       walkthrough_scheduled: deal.walkthrough_date,
       evaluate_deal: deal.evaluation_date,
-      marketing: deal.marketing_start_date,
-      closing: deal.closing_date
+      active_marketing: deal.marketing_start_date,
+      cancelling_deal: deal.updated_date,
+      clear_to_close_closed: deal.closing_date || deal.updated_date
     };
     
     const date = dates[stageId];
@@ -341,9 +350,9 @@ function PipelineContent() {
                 })}
               </div>
 
-              {/* Bottom Row - 2 stages */}
-              <div className="grid grid-cols-2 gap-4">
-                {pipelineStages.slice(3, 5).map((stage) => {
+              {/* Bottom Row - 3 stages */}
+              <div className="grid grid-cols-3 gap-4">
+                {pipelineStages.slice(3, 6).map((stage) => {
                   const Icon = stage.icon;
                   const stageDeals = getDealsForStage(stage.id);
                   const singleDeal = stageDeals.length === 1;
