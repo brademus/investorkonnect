@@ -28,25 +28,6 @@ Deno.serve(async (req) => {
       investorProfileId = profiles[0]?.id;
     }
     
-    // NEW: Check for specific deal context
-    const dealId = body.dealId;
-    let targetState = body.state; // Direct state override
-    let targetCounty = body.county;
-
-    if (dealId && !targetState) {
-      // Fetch deal to get location
-      try {
-        const deals = await base44.entities.Deal.filter({ id: dealId });
-        if (deals.length > 0) {
-          targetState = deals[0].state;
-          targetCounty = deals[0].county;
-          console.log(`[matchAgentsForInvestor] Using Deal ${dealId} location: ${targetState}, ${targetCounty}`);
-        }
-      } catch (e) {
-        console.error('Error fetching deal:', e);
-      }
-    }
-
     if (!investorProfileId) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
@@ -56,11 +37,9 @@ Deno.serve(async (req) => {
     // Get investor profile for matching context
     const investorProfiles = await base44.entities.Profile.filter({ id: investorProfileId });
     const investorProfile = investorProfiles[0];
+    const investorRegion = investorProfile?.target_state || investorProfile?.markets?.[0] || null;
     
-    // Use deal state if available, otherwise fallback to profile preferences
-    const investorRegion = targetState || investorProfile?.target_state || investorProfile?.markets?.[0] || null;
-    
-    console.log('[matchAgentsForInvestor] Target region:', investorRegion);
+    console.log('[matchAgentsForInvestor] Investor region:', investorRegion);
     
     // Load investor vector (may not exist for incomplete profiles)
     const invVectors = await base44.entities.ProfileVector.filter({ 
@@ -167,16 +146,33 @@ Deno.serve(async (req) => {
         return Response.json({ ok: true, results: [], total: 0 });
       }
       
-      // Prioritize by region if investor has one, but always include all agents
+      // Filter/Prioritize by region if investor has one
       if (investorRegion) {
-        // Score agents by region match
+        // STRICT FILTER: Only return agents matching the region
+        // Normalize helper
+        const normalize = (s) => s ? s.toString().toLowerCase().trim() : '';
+        const target = normalize(investorRegion);
+        
+        // Filter agents
+        matchedAgents = matchedAgents.filter(a => {
+           const markets = [
+             a.target_state,
+             ...(a.markets || []),
+             ...(a.agent?.markets || []),
+             a.agent?.license_state,
+             ...(a.agent?.licensed_states || [])
+           ].map(normalize);
+           
+           // Check for exact match or state code match
+           return markets.some(m => m === target || (target.length === 2 && m.includes(target)));
+        });
+
+        console.log(`[matchAgentsForInvestor] Filtered to ${matchedAgents.length} agents in ${investorRegion}`);
+
+        // Score agents by region match (all are matches now, so just set 1)
         matchedAgents = matchedAgents.map(a => ({
           ...a,
-          _regionMatch: (
-            a.target_state === investorRegion || 
-            a.markets?.includes(investorRegion) ||
-            a.agent?.markets?.includes(investorRegion)
-          ) ? 1 : 0
+          _regionMatch: 1
         }));
         
         // Sort by region match first, then by other criteria
