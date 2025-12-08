@@ -14,7 +14,7 @@ function AgentDashboardContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [profileCompletion] = useState(75);
+  // const [profileCompletion] = useState(75); // Unused
 
   useEffect(() => {
     loadProfile();

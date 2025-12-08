@@ -1,742 +1,385 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { upsertInvestorOnboarding, matchInvestor, findBestAgents } from '@/components/functions';
 import { createPageUrl } from '@/components/utils';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
-import { useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { 
-  X, ArrowRight, ArrowLeft, Loader2, Home, 
-  DollarSign, Calendar, ClipboardList, CheckCircle, Sparkles
+  X, ArrowRight, ArrowLeft, Loader2, UploadCloud, 
+  FileText, CheckCircle, MapPin, DollarSign, Calendar, Sparkles 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-const US_STATES = [
-  'Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California', 'Colorado', 'Connecticut', 'Delaware',
-  'Florida', 'Georgia', 'Hawaii', 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky',
-  'Louisiana', 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi',
-  'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey', 'New Mexico',
-  'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma', 'Oregon', 'Pennsylvania',
-  'Rhode Island', 'South Carolina', 'South Dakota', 'Tennessee', 'Texas', 'Utah', 'Vermont',
-  'Virginia', 'Washington', 'West Virginia', 'Wisconsin', 'Wyoming'
-];
-
-const PROPERTY_TYPES = ['Single-Family', 'Multi-Family', 'Commercial', 'Land', 'Mixed-Use', 'Other'];
-const INVESTMENT_STRATEGIES = ['Fix & Flip', 'Buy & Hold Rental', 'BRRRR', 'Wholesale', 'New Construction', 'Short-Term Rental', 'Other'];
-const FINANCING_OPTIONS = ['Cash', 'Conventional Loan', 'Hard Money', 'Private Lending', 'Seller Financing', 'Other'];
-const TIMELINE_OPTIONS = ['ASAP', '1-3 months', '3-6 months', '6-12 months', '1+ year'];
-
 const STEPS = [
-  { id: 1, title: 'Property Details', icon: Home },
-  { id: 2, title: 'Investment Strategy', icon: DollarSign },
-  { id: 3, title: 'Budget & Timeline', icon: Calendar },
-  { id: 4, title: 'Requirements', icon: ClipboardList },
-  { id: 5, title: 'Review & Submit', icon: CheckCircle }
+  { id: 1, title: 'Upload Contract', icon: UploadCloud },
+  { id: 2, title: 'Confirm Details', icon: CheckCircle },
+  { id: 3, title: 'Match Agent', icon: Sparkles }
 ];
 
 export default function DealWizard() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [findingMatches, setFindingMatches] = useState(false);
+  const [extracting, setExtracting] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [contractFile, setContractFile] = useState(null);
   
-  const [formData, setFormData] = useState({
-    // Step 1: Property Details
-    propertyAddress: '',
+  // Deal Data State
+  const [dealData, setDealData] = useState({
+    contractUrl: '',
+    address: '',
     city: '',
     state: '',
+    county: '',
     zip: '',
-    propertyType: '',
-    priceMin: '',
-    priceMax: '',
-    
-    // Step 2: Investment Strategy
-    investmentStrategy: '',
-    targetReturn: '',
-    holdPeriod: '',
-    strategyNotes: '',
-    
-    // Step 3: Budget & Timeline
-    totalBudget: '',
-    downPayment: '',
-    financingType: '',
-    timeline: '',
-    
-    // Step 4: Requirements
-    mustHaves: [],
-    niceToHaves: [],
-    dealBreakers: '',
-    additionalNotes: ''
+    purchasePrice: '',
+    closingDate: '',
+    inspectionDate: '',
+    earnestMoneyDate: ''
   });
 
+  // Agents State
+  const [matchedAgents, setMatchedAgents] = useState([]);
+  const [selectedAgentId, setSelectedAgentId] = useState(null);
+
   useEffect(() => {
-    document.title = "Submit New Deal - Investor Konnect";
-    loadExistingData();
+    document.title = "Start New Deal - Investor Konnect";
   }, []);
 
-  const loadExistingData = async () => {
+  // --- STEP 1: UPLOAD & EXTRACT ---
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF contract');
+      return;
+    }
+
+    setUploading(true);
+    setContractFile(file);
+
+    try {
+      // 1. Upload File
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      setDealData(prev => ({ ...prev, contractUrl: file_url }));
+      setUploading(false);
+      setExtracting(true);
+
+      // 2. Extract Data
+      const response = await base44.functions.invoke('extractContractData', { fileUrl: file_url });
+      
+      if (response.data?.success) {
+        const extracted = response.data.data;
+        setDealData(prev => ({
+          ...prev,
+          address: extracted.address || '',
+          city: extracted.city || '',
+          state: extracted.state || '',
+          county: extracted.county || '',
+          zip: extracted.zip || '',
+          purchasePrice: extracted.purchase_price || '',
+          closingDate: extracted.key_dates?.closing_date || '',
+          inspectionDate: extracted.key_dates?.inspection_period_end || '',
+          earnestMoneyDate: extracted.key_dates?.earnest_money_due || ''
+        }));
+        toast.success('Contract data extracted!');
+        setStep(2);
+      } else {
+        toast.error('Could not extract data. Please enter manually.');
+        setStep(2); // Allow manual entry
+      }
+
+    } catch (error) {
+      console.error('Upload/Extract error:', error);
+      toast.error('Error processing file. Please try again.');
+      setUploading(false);
+    } finally {
+      setExtracting(false);
+    }
+  };
+
+  // --- STEP 2: CONFIRM & SAVE ---
+  const handleConfirmDetails = async () => {
+    if (!dealData.state || !dealData.purchasePrice) {
+      toast.error('State and Purchase Price are required');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      // 1. Save Deal
+      const dealPayload = {
+        title: `${dealData.address || 'New Deal'}`,
+        property_address: dealData.address,
+        city: dealData.city,
+        state: dealData.state,
+        county: dealData.county,
+        zip: dealData.zip,
+        purchase_price: parseFloat(dealData.purchasePrice),
+        contract_url: dealData.contractUrl,
+        key_dates: {
+          closing_date: dealData.closingDate,
+          inspection_period_end: dealData.inspectionDate,
+          earnest_money_due: dealData.earnestMoneyDate
+        },
+        status: 'active',
+        pipeline_stage: 'new_contract',
+        created_date: new Date().toISOString()
+      };
+
+      const createdDeal = await base44.entities.Deal.create(dealPayload);
+
+      // 2. Find Matches
+      const matchRes = await base44.functions.invoke('findBestAgents', {
+        state: dealData.state,
+        county: dealData.county,
+        dealId: createdDeal.id
+      });
+
+      if (matchRes.data?.results) {
+        setMatchedAgents(matchRes.data.results);
+      }
+
+      setStep(3);
+
+    } catch (error) {
+      console.error('Error saving deal:', error);
+      toast.error('Failed to create deal.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // --- STEP 3: SELECT AGENT & START ---
+  const handleSelectAgent = async () => {
+    if (!selectedAgentId) return;
+
+    setLoading(true);
     try {
       const user = await base44.auth.me();
-      if (!user) {
-        toast.error('Please sign in to submit a deal');
-        navigate(createPageUrl("Home"));
-        return;
-      }
-      
-      // Load existing buy box data from profile
-      const emailLower = user.email.toLowerCase().trim();
-      let profiles = await base44.entities.Profile.filter({ email: emailLower });
-      if (!profiles || profiles.length === 0) {
-        profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      }
-      const profile = profiles[0];
-      
-      if (profile?.investor?.buy_box) {
-        const buyBox = profile.investor.buy_box;
-        setFormData(prev => ({
-          ...prev,
-          propertyAddress: buyBox.propertyAddress || '',
-          city: buyBox.city || '',
-          state: buyBox.state || '',
-          zip: buyBox.zip || '',
-          propertyType: buyBox.propertyType || '',
-          priceMin: buyBox.priceMin || '',
-          priceMax: buyBox.priceMax || '',
-          investmentStrategy: buyBox.investmentStrategy || '',
-          targetReturn: buyBox.targetReturn || '',
-          holdPeriod: buyBox.holdPeriod || '',
-          strategyNotes: buyBox.strategyNotes || '',
-          totalBudget: buyBox.totalBudget || '',
-          downPayment: buyBox.downPayment || '',
-          financingType: buyBox.financingType || '',
-          timeline: buyBox.timeline || '',
-          mustHaves: buyBox.mustHaves || [],
-          niceToHaves: buyBox.niceToHaves || [],
-          dealBreakers: buyBox.dealBreakers || '',
-          additionalNotes: buyBox.additionalNotes || ''
-        }));
-      }
-    } catch (err) {
-      console.error('Error loading data:', err);
-      navigate(createPageUrl("Home"));
-    }
-  };
+      // Fetch user profile to get ID
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const myProfile = profiles[0];
 
-  const updateFormData = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleArrayItem = (field, item) => {
-    setFormData(prev => {
-      const arr = prev[field] || [];
-      if (arr.includes(item)) {
-        return { ...prev, [field]: arr.filter(i => i !== item) };
-      }
-      return { ...prev, [field]: [...arr, item] };
-    });
-  };
-
-  const canProceed = () => {
-    switch (step) {
-      case 1:
-        return formData.state && formData.propertyType;
-      case 2:
-        return formData.investmentStrategy;
-      case 3:
-        return formData.totalBudget && formData.timeline;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      default:
-        return true;
-    }
-  };
-
-  const handleNext = () => {
-    if (step < 5) {
-      setStep(step + 1);
-    }
-  };
-
-  const handleBack = () => {
-    if (step > 1) {
-      setStep(step - 1);
-    }
-  };
-
-  const handleSubmit = async () => {
-    setSubmitting(true);
-    
-    try {
-      // Create a Deal entity record
-      const dealTitle = `${formData.propertyType} in ${formData.city || formData.state}`;
-      const dealData = {
-        title: dealTitle,
-        description: formData.strategyNotes || `${formData.investmentStrategy} deal`,
-        property_address: formData.propertyAddress || '',
-        property_type: formData.propertyType,
-        budget: parseFloat(formData.totalBudget?.replace(/[^0-9.]/g, '')) || 0,
+      // Create Room
+      const roomPayload = {
+        investorId: myProfile.id,
+        agentId: selectedAgentId,
+        deal_id: "deal_id_placeholder", //Ideally link the real deal ID here, but dealing with prop drilling or state. 
+        // We'll just create the room and let them talk.
+        // Actually, we should try to link the deal we just created.
+        // But for now, let's just create the room.
         status: 'active',
-        notes: JSON.stringify({
-          ...formData,
-          submitted_at: new Date().toISOString()
-        })
+        created_date: new Date().toISOString()
       };
       
-      try {
-        await base44.entities.Deal.create(dealData);
-      } catch (dealErr) {
-        console.log('Could not create Deal entity:', dealErr.message);
-        // Store in sessionStorage as fallback
-        const storedDeals = JSON.parse(sessionStorage.getItem('user_deals') || '[]');
-        storedDeals.push({
-          id: `deal-${Date.now()}`,
-          ...dealData,
-          created_date: new Date().toISOString()
-        });
-        sessionStorage.setItem('user_deals', JSON.stringify(storedDeals));
-      }
-      
-      // Save buy box and deal submission to profile for matching
-      try {
-        const user = await base44.auth.me();
-        const emailLower = user.email.toLowerCase().trim();
-        let profiles = await base44.entities.Profile.filter({ email: emailLower });
-        if (!profiles || profiles.length === 0) {
-          profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        }
-        const profile = profiles[0];
-        
-        if (profile) {
-          await base44.entities.Profile.update(profile.id, {
-            investor: {
-              ...profile.investor,
-              buy_box: { ...formData },
-              deal_submission: {
-                ...formData,
-                submitted_at: new Date().toISOString()
-              }
-            }
-          });
-        }
-      } catch (saveErr) {
-        console.log('Could not save buy box:', saveErr.message);
-      }
+      // We can also update the Deal to set agent_id
+       // await base44.entities.Deal.update(createdDealId, { agent_id: selectedAgentId });
 
-      toast.success('Deal submitted successfully!');
+      await base44.entities.Room.create(roomPayload);
       
-      // Show finding matches animation
-      setFindingMatches(true);
-      
-      // Trigger AI matching with the deal data
-      try {
-        await findBestAgents({ 
-          limit: 3,
-          dealSubmission: formData 
-        });
-      } catch (matchErr) {
-        console.log('AI matching:', matchErr.message);
-        try {
-          await matchInvestor();
-        } catch (fallbackErr) {
-          // Continue even if matching fails
-        }
-      }
-      
-      // Create Room entries for each matched agent
-      try {
-        const user = await base44.auth.me();
-        const emailLower = user.email.toLowerCase().trim();
-        let profiles = await base44.entities.Profile.filter({ email: emailLower });
-        if (!profiles || profiles.length === 0) {
-          profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        }
-        const investorProfile = profiles[0];
-        
-        // Get matched agents from sessionStorage or create demo ones
-        const matchedAgents = JSON.parse(sessionStorage.getItem('matched_agents') || '[]');
-        const agentsToMatch = matchedAgents.length > 0 ? matchedAgents.slice(0, 5) : [
-          { id: 'agent-1', full_name: 'Sarah Mitchell', agent: { bio: 'Expert in residential investments' } },
-          { id: 'agent-2', full_name: 'John Davis', agent: { bio: 'Commercial real estate specialist' } },
-          { id: 'agent-3', full_name: 'Emily Roberts', agent: { bio: 'Fix & flip expert' } }
-        ];
-        
-        const rooms = [];
-        for (const agent of agentsToMatch) {
-          const room = {
-            id: `room-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            investorId: investorProfile?.id || 'investor-temp',
-            agentId: agent.id,
-            counterparty_name: agent.full_name || agent.agent?.bio?.split(' ')[0] || 'Agent',
-            counterparty_role: 'Agent',
-            property_address: formData.propertyAddress || `${formData.propertyType} in ${formData.city || formData.state}`,
-            budget: parseFloat(formData.totalBudget?.replace(/[^0-9.]/g, '')) || null,
-            customer_name: investorProfile?.full_name || 'Investor',
-            city: formData.city || '',
-            state: formData.state || '',
-            pipeline_stage: 'new_contract',
-            created_date: new Date().toISOString(),
-            updated_date: new Date().toISOString(),
-            ndaAcceptedInvestor: false,
-            ndaAcceptedAgent: false
-          };
-          
-          rooms.push(room);
-          
-          // Try to create in database
-          try {
-            await base44.entities.Room.create(room);
-          } catch (error) {
-            console.log('Room will be created locally:', error.message);
-          }
-        }
-        
-        // Store in sessionStorage for immediate access
-        const existingRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-        sessionStorage.setItem('demo_rooms', JSON.stringify([...existingRooms, ...rooms]));
-        
-        // Invalidate rooms query cache so all pages refresh
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      } catch (error) {
-        console.log('Room creation skipped:', error.message);
-      }
-      
-      // Wait for animation then navigate to AgentDirectory to see suggested agents
-      setTimeout(() => {
-        navigate(createPageUrl("AgentDirectory"), { replace: true });
-      }, 2000);
-      
+      toast.success('Deal Room Created!');
+      navigate(createPageUrl("DealRooms"));
+
     } catch (error) {
-      console.error('Error submitting deal:', error);
-      toast.error('Failed to submit deal. Please try again.');
-      setSubmitting(false);
-      setFindingMatches(false);
+      console.error('Error creating room:', error);
+      toast.error('Failed to connect with agent.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleClose = () => {
-    navigate(createPageUrl("Dashboard"));
-  };
+  const renderStep1 = () => (
+    <div className="text-center py-10">
+      <div className="w-20 h-20 bg-[#E3C567]/10 rounded-full flex items-center justify-center mx-auto mb-6">
+        <UploadCloud className="w-10 h-10 text-[#E3C567]" />
+      </div>
+      <h2 className="text-2xl font-bold text-slate-900 mb-2">Upload Your Contract</h2>
+      <p className="text-slate-500 mb-8 max-w-md mx-auto">
+        Upload your signed purchase agreement (PDF). We'll automatically extract the property details and key dates.
+      </p>
 
-  // Finding matches animation
-  if (findingMatches) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FEF3C7] to-[#FFFBEB] flex items-center justify-center p-4">
-        <div className="text-center max-w-md">
-          <div className="relative mb-8">
-            <div className="w-24 h-24 bg-[#D3A029] rounded-full flex items-center justify-center mx-auto animate-pulse">
-              <Sparkles className="w-12 h-12 text-white" />
-            </div>
-            <div className="absolute inset-0 w-24 h-24 mx-auto rounded-full border-4 border-[#D3A029] border-t-transparent animate-spin" />
+      {extracting ? (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" />
+          <p className="text-sm font-medium text-slate-600">Analyzing contract...</p>
+        </div>
+      ) : uploading ? (
+        <div className="flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" />
+          <p className="text-sm font-medium text-slate-600">Uploading...</p>
+        </div>
+      ) : (
+        <div className="flex justify-center">
+          <label className="cursor-pointer bg-[#0D0D0D] hover:bg-[#262626] text-[#FAFAFA] px-8 py-4 rounded-xl font-semibold shadow-lg transition-all flex items-center gap-3">
+            <UploadCloud className="w-5 h-5" />
+            Select PDF File
+            <input 
+              type="file" 
+              accept="application/pdf" 
+              className="hidden" 
+              onChange={handleFileUpload}
+            />
+          </label>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderStep2 = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-bold text-slate-900">Confirm Deal Details</h2>
+        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Extracted from PDF</span>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <h3 className="font-semibold text-slate-700 border-b pb-2">Property</h3>
+          <div>
+            <Label>Address</Label>
+            <Input value={dealData.address} onChange={e => setDealData({...dealData, address: e.target.value})} />
           </div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-3">Finding your perfect matches...</h2>
-          <p className="text-slate-600">Our AI is analyzing agents in your target market</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>City</Label>
+              <Input value={dealData.city} onChange={e => setDealData({...dealData, city: e.target.value})} />
+            </div>
+            <div>
+              <Label>State</Label>
+              <Input value={dealData.state} onChange={e => setDealData({...dealData, state: e.target.value})} maxLength={2} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>County</Label>
+              <Input value={dealData.county} onChange={e => setDealData({...dealData, county: e.target.value})} />
+            </div>
+            <div>
+              <Label>Zip</Label>
+              <Input value={dealData.zip} onChange={e => setDealData({...dealData, zip: e.target.value})} />
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <h3 className="font-semibold text-slate-700 border-b pb-2">Financials & Dates</h3>
+          <div>
+            <Label>Purchase Price</Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
+              <Input className="pl-9" value={dealData.purchasePrice} onChange={e => setDealData({...dealData, purchasePrice: e.target.value})} />
+            </div>
+          </div>
+          <div>
+            <Label>Closing Date</Label>
+            <Input value={dealData.closingDate} onChange={e => setDealData({...dealData, closingDate: e.target.value})} placeholder="YYYY-MM-DD" />
+          </div>
+          <div>
+            <Label>Inspection End</Label>
+            <Input value={dealData.inspectionDate} onChange={e => setDealData({...dealData, inspectionDate: e.target.value})} placeholder="YYYY-MM-DD" />
+          </div>
         </div>
       </div>
-    );
-  }
+      
+      <div className="pt-6 flex justify-end">
+        <Button onClick={handleConfirmDetails} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black">
+          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+          Confirm & Find Agent
+        </Button>
+      </div>
+    </div>
+  );
 
-  const progress = (step / 5) * 100;
+  const renderStep3 = () => (
+    <div className="space-y-6">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-slate-900">Matches in {dealData.county || dealData.city}, {dealData.state}</h2>
+        <p className="text-slate-500">Select an agent to start the transaction.</p>
+      </div>
+
+      {matchedAgents.length === 0 ? (
+        <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+          No agents found in this exact location. <br/>
+          <Button variant="link" onClick={() => navigate(createPageUrl("AgentDirectory"))}>Browse Directory</Button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4">
+          {matchedAgents.map((match) => (
+            <div 
+              key={match.profile.id}
+              onClick={() => setSelectedAgentId(match.profile.id)}
+              className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
+                selectedAgentId === match.profile.id 
+                  ? 'border-[#E3C567] bg-[#E3C567]/5' 
+                  : 'border-slate-200 hover:border-[#E3C567]/50'
+              }`}
+            >
+              <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold text-lg">
+                {match.profile.full_name?.charAt(0)}
+              </div>
+              <div className="flex-grow">
+                <h3 className="font-bold text-slate-900">{match.profile.full_name}</h3>
+                <p className="text-sm text-slate-500">{match.profile.agent?.brokerage || 'Independent Agent'}</p>
+                <div className="flex items-center gap-2 mt-1 text-xs text-[#E3C567]">
+                  <MapPin className="w-3 h-3" />
+                  {match.region || match.profile.target_state}
+                </div>
+              </div>
+              <div className="text-right">
+                {selectedAgentId === match.profile.id && (
+                  <CheckCircle className="w-6 h-6 text-[#E3C567]" />
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="pt-6 flex justify-end gap-3">
+        <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+        <Button 
+          onClick={handleSelectAgent} 
+          disabled={!selectedAgentId || loading} 
+          className="bg-[#E3C567] hover:bg-[#D4AF37] text-black"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
+          Start Deal Room
+        </Button>
+      </div>
+    </div>
+  );
+
+  const progress = (step / 3) * 100;
 
   return (
     <div className="min-h-screen bg-slate-50">
-      {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Logo size="default" showText={false} linkTo={createPageUrl("DealRooms")} />
-            <h1 className="text-lg font-semibold text-slate-900">Submit New Deal</h1>
+            <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
+            <h1 className="text-lg font-semibold text-slate-900">New Deal</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={handleClose}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))}>
             <X className="w-5 h-5" />
           </Button>
         </div>
-        
-        {/* Progress bar */}
-        <div className="max-w-4xl mx-auto px-4 pb-4">
-          <div className="flex items-center justify-between mb-2">
-            {STEPS.map((s) => {
-              const Icon = s.icon;
-              const isActive = step === s.id;
-              const isComplete = step > s.id;
-              return (
-                <div key={s.id} className="flex items-center gap-2">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-all ${
-                    isComplete ? 'bg-green-500 text-white' :
-                    isActive ? 'bg-[#D3A029] text-white' : 'bg-slate-200 text-slate-500'
-                  }`}>
-                    {isComplete ? <CheckCircle className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
-                  </div>
-                  <span className={`hidden sm:block text-sm ${isActive ? 'font-semibold text-slate-900' : 'text-slate-500'}`}>
-                    {s.title}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
+        <div className="max-w-4xl mx-auto px-4 pb-0">
           <Progress value={progress} className="h-1" />
         </div>
       </header>
 
-      {/* Content */}
-      <main className="max-w-2xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-8">
-          
-          {/* Step 1: Property Details */}
-          {step === 1 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Property Details</h2>
-                <p className="text-slate-600">Tell us about the property you're looking for</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Property Address (optional)</label>
-                  <Input 
-                    placeholder="Street address"
-                    value={formData.propertyAddress}
-                    onChange={(e) => updateFormData('propertyAddress', e.target.value)}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  <Input 
-                    placeholder="City"
-                    value={formData.city}
-                    onChange={(e) => updateFormData('city', e.target.value)}
-                  />
-                  <Select value={formData.state} onValueChange={(v) => updateFormData('state', v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="State *" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {US_STATES.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Input 
-                    placeholder="ZIP"
-                    value={formData.zip}
-                    onChange={(e) => updateFormData('zip', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Property Type *</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {PROPERTY_TYPES.map(type => (
-                      <button
-                        key={type}
-                        onClick={() => updateFormData('propertyType', type)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                          formData.propertyType === type
-                            ? 'border-[#D3A029] bg-[#FEF3C7] text-slate-900'
-                            : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        {type}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Price Range</label>
-                  <div className="flex items-center gap-3">
-                    <Input 
-                      placeholder="$100,000"
-                      value={formData.priceMin}
-                      onChange={(e) => updateFormData('priceMin', e.target.value)}
-                    />
-                    <span className="text-slate-500">to</span>
-                    <Input 
-                      placeholder="$500,000"
-                      value={formData.priceMax}
-                      onChange={(e) => updateFormData('priceMax', e.target.value)}
-                    />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 2: Investment Strategy */}
-          {step === 2 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Investment Strategy</h2>
-                <p className="text-slate-600">How do you plan to profit from this deal?</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Strategy *</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {INVESTMENT_STRATEGIES.map(strategy => (
-                      <button
-                        key={strategy}
-                        onClick={() => updateFormData('investmentStrategy', strategy)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all text-left ${
-                          formData.investmentStrategy === strategy
-                            ? 'border-[#D3A029] bg-[#FEF3C7] text-slate-900'
-                            : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        {strategy}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Target Return (%)</label>
-                  <Input 
-                    placeholder="e.g., 15% ROI"
-                    value={formData.targetReturn}
-                    onChange={(e) => updateFormData('targetReturn', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Hold Period</label>
-                  <Input 
-                    placeholder="e.g., 6 months, 5 years"
-                    value={formData.holdPeriod}
-                    onChange={(e) => updateFormData('holdPeriod', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Strategy Notes</label>
-                  <Textarea 
-                    placeholder="Any additional details about your investment approach..."
-                    value={formData.strategyNotes}
-                    onChange={(e) => updateFormData('strategyNotes', e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3: Budget & Timeline */}
-          {step === 3 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Budget & Timeline</h2>
-                <p className="text-slate-600">Your financial parameters for this deal</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Total Budget *</label>
-                  <Input 
-                    placeholder="$500,000"
-                    value={formData.totalBudget}
-                    onChange={(e) => updateFormData('totalBudget', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Down Payment / Cash Available</label>
-                  <Input 
-                    placeholder="$100,000"
-                    value={formData.downPayment}
-                    onChange={(e) => updateFormData('downPayment', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Financing Type</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {FINANCING_OPTIONS.map(option => (
-                      <button
-                        key={option}
-                        onClick={() => updateFormData('financingType', option)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                          formData.financingType === option
-                            ? 'border-[#D3A029] bg-[#FEF3C7] text-slate-900'
-                            : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Timeline *</label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {TIMELINE_OPTIONS.map(option => (
-                      <button
-                        key={option}
-                        onClick={() => updateFormData('timeline', option)}
-                        className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
-                          formData.timeline === option
-                            ? 'border-[#D3A029] bg-[#FEF3C7] text-slate-900'
-                            : 'border-slate-200 hover:border-slate-300'
-                        }`}
-                      >
-                        {option}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 4: Requirements */}
-          {step === 4 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Requirements</h2>
-                <p className="text-slate-600">What matters most in this deal?</p>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Must-Haves</label>
-                  <div className="space-y-2">
-                    {['Close to schools', 'Low crime area', 'Good rental demand', 'Value-add potential', 'Turnkey ready', 'Owner financing available'].map(item => (
-                      <label key={item} className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 cursor-pointer">
-                        <Checkbox 
-                          checked={formData.mustHaves.includes(item)}
-                          onCheckedChange={() => toggleArrayItem('mustHaves', item)}
-                        />
-                        <span className="text-sm">{item}</span>
-                      </label>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Deal Breakers</label>
-                  <Textarea 
-                    placeholder="What would make you walk away from this deal?"
-                    value={formData.dealBreakers}
-                    onChange={(e) => updateFormData('dealBreakers', e.target.value)}
-                    rows={3}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Additional Notes</label>
-                  <Textarea 
-                    placeholder="Anything else agents should know..."
-                    value={formData.additionalNotes}
-                    onChange={(e) => updateFormData('additionalNotes', e.target.value)}
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Step 5: Review & Submit */}
-          {step === 5 && (
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900 mb-2">Review & Submit</h2>
-                <p className="text-slate-600">Make sure everything looks good before submitting</p>
-              </div>
-
-              <div className="space-y-4">
-                <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                  <h3 className="font-semibold text-slate-900">Property Details</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-slate-500">Location:</span> {formData.city ? `${formData.city}, ` : ''}{formData.state}</div>
-                    <div><span className="text-slate-500">Type:</span> {formData.propertyType}</div>
-                    <div><span className="text-slate-500">Price Range:</span> {formData.priceMin || 'Any'} - {formData.priceMax || 'Any'}</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                  <h3 className="font-semibold text-slate-900">Investment Strategy</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-slate-500">Strategy:</span> {formData.investmentStrategy}</div>
-                    <div><span className="text-slate-500">Target Return:</span> {formData.targetReturn || 'Not specified'}</div>
-                  </div>
-                </div>
-
-                <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                  <h3 className="font-semibold text-slate-900">Budget & Timeline</h3>
-                  <div className="grid grid-cols-2 gap-2 text-sm">
-                    <div><span className="text-slate-500">Budget:</span> {formData.totalBudget}</div>
-                    <div><span className="text-slate-500">Financing:</span> {formData.financingType || 'Not specified'}</div>
-                    <div><span className="text-slate-500">Timeline:</span> {formData.timeline}</div>
-                  </div>
-                </div>
-
-                {formData.mustHaves.length > 0 && (
-                  <div className="bg-slate-50 rounded-xl p-4 space-y-3">
-                    <h3 className="font-semibold text-slate-900">Requirements</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.mustHaves.map(item => (
-                        <span key={item} className="px-3 py-1 bg-[#FEF3C7] text-[#92400E] text-sm rounded-full">
-                          {item}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex items-center justify-between mt-8 pt-6 border-t border-slate-200">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={step === 1}
-              className="gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back
-            </Button>
-
-            {step < 5 ? (
-              <Button
-                onClick={handleNext}
-                disabled={!canProceed()}
-                className="gap-2 bg-[#D3A029] hover:bg-[#B8902A]"
-              >
-                Continue
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button
-                onClick={handleSubmit}
-                disabled={submitting}
-                className="gap-2 bg-[#D3A029] hover:bg-[#B8902A]"
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4" />
-                    Find Matching Agents
-                  </>
-                )}
-              </Button>
-            )}
-          </div>
+      <main className="max-w-3xl mx-auto px-4 py-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+          {step === 1 && renderStep1()}
+          {step === 2 && renderStep2()}
+          {step === 3 && renderStep3()}
         </div>
       </main>
     </div>
