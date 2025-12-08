@@ -28,6 +28,7 @@ export default function DealWizard() {
   const [contractFile, setContractFile] = useState(null);
   
   // Deal Data State
+  const [createdDealId, setCreatedDealId] = useState(null);
   const [dealData, setDealData] = useState({
     contractUrl: '',
     address: '',
@@ -134,6 +135,7 @@ export default function DealWizard() {
       };
 
       const createdDeal = await base44.entities.Deal.create(dealPayload);
+      setCreatedDealId(createdDeal.id);
 
       // 2. Find Matches
       const matchRes = await base44.functions.invoke('findBestAgents', {
@@ -171,7 +173,7 @@ export default function DealWizard() {
       const roomPayload = {
         investorId: myProfile.id,
         agentId: selectedAgentId,
-        deal_id: "deal_id_placeholder",
+        deal_id: createdDealId,
         status: 'active',
         created_date: new Date().toISOString()
       };

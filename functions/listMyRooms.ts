@@ -51,11 +51,37 @@ Deno.serve(async (req) => {
     const profilesById = new Map();
     otherProfiles.forEach(p => profilesById.set(p.id, p));
 
+    // Enrich with Deal data
+    const dealIds = rooms.map(r => r.deal_id).filter(Boolean);
+    const dealsById = new Map();
+    
+    if (dealIds.length > 0) {
+      try {
+        const deals = await base44.entities.Deal.filter({ id: { $in: dealIds } });
+        deals.forEach(d => dealsById.set(d.id, d));
+      } catch (e) {
+        console.log("Error fetching deals:", e.message);
+      }
+    }
+
     rooms.forEach(r => {
       const otherId = r.investorId === profile.id ? r.agentId : r.investorId;
       const counterparty = profilesById.get(otherId);
       r.counterparty_name = counterparty?.full_name || counterparty?.email || `User ${otherId?.slice(0, 6)}`;
       r.counterparty_role = r.investorId === profile.id ? 'agent' : 'investor';
+      
+      if (r.deal_id) {
+        const deal = dealsById.get(r.deal_id);
+        if (deal) {
+          r.pipeline_stage = deal.pipeline_stage;
+          r.title = deal.title;
+          r.property_address = deal.property_address;
+          r.city = deal.city;
+          r.state = deal.state;
+          r.budget = deal.purchase_price;
+          r.contract_date = deal.key_dates?.closing_date;
+        }
+      }
     });
 
     return Response.json({ items: rooms });
