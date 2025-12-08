@@ -171,17 +171,11 @@ export default function DealWizard() {
       const roomPayload = {
         investorId: myProfile.id,
         agentId: selectedAgentId,
-        deal_id: "deal_id_placeholder", //Ideally link the real deal ID here, but dealing with prop drilling or state. 
-        // We'll just create the room and let them talk.
-        // Actually, we should try to link the deal we just created.
-        // But for now, let's just create the room.
+        deal_id: "deal_id_placeholder",
         status: 'active',
         created_date: new Date().toISOString()
       };
       
-      // We can also update the Deal to set agent_id
-       // await base44.entities.Deal.update(createdDealId, { agent_id: selectedAgentId });
-
       await base44.entities.Room.create(roomPayload);
       
       toast.success('Deal Room Created!');
@@ -201,25 +195,25 @@ export default function DealWizard() {
       <div className="w-20 h-20 bg-[#E3C567]/10 rounded-full flex items-center justify-center mx-auto mb-6">
         <UploadCloud className="w-10 h-10 text-[#E3C567]" />
       </div>
-      <h2 className="text-2xl font-bold text-slate-900 mb-2">Upload Your Contract</h2>
-      <p className="text-slate-500 mb-8 max-w-md mx-auto">
+      <h2 className="text-2xl font-bold text-[#FAFAFA] mb-2 font-serif">Upload Your Contract</h2>
+      <p className="text-[#808080] mb-8 max-w-md mx-auto">
         Upload your signed purchase agreement (PDF). We'll automatically extract the property details and key dates.
       </p>
 
       {extracting ? (
         <div className="flex flex-col items-center justify-center space-y-4">
           <Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" />
-          <p className="text-sm font-medium text-slate-600">Analyzing contract...</p>
+          <p className="text-sm font-medium text-[#808080]">Analyzing contract...</p>
         </div>
       ) : uploading ? (
         <div className="flex flex-col items-center justify-center space-y-4">
           <Loader2 className="w-8 h-8 text-[#E3C567] animate-spin" />
-          <p className="text-sm font-medium text-slate-600">Uploading...</p>
+          <p className="text-sm font-medium text-[#808080]">Uploading...</p>
         </div>
       ) : (
         <div className="flex justify-center">
-          <label className="cursor-pointer bg-[#0D0D0D] hover:bg-[#262626] text-[#FAFAFA] px-8 py-4 rounded-xl font-semibold shadow-lg transition-all flex items-center gap-3">
-            <UploadCloud className="w-5 h-5" />
+          <label className="cursor-pointer bg-[#0D0D0D] border border-[#1F1F1F] hover:border-[#E3C567] text-[#FAFAFA] px-8 py-4 rounded-xl font-semibold shadow-lg transition-all flex items-center gap-3">
+            <UploadCloud className="w-5 h-5 text-[#E3C567]" />
             Select PDF File
             <input 
               type="file" 
@@ -236,61 +230,96 @@ export default function DealWizard() {
   const renderStep2 = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h2 className="text-xl font-bold text-slate-900">Confirm Deal Details</h2>
-        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">Extracted from PDF</span>
+        <h2 className="text-xl font-bold text-[#FAFAFA] font-serif">Confirm Deal Details</h2>
+        <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-1 rounded border border-[#E3C567]/20">Extracted from PDF</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-4">
-          <h3 className="font-semibold text-slate-700 border-b pb-2">Property</h3>
+          <h3 className="font-semibold text-[#808080] border-b border-[#1F1F1F] pb-2 font-serif">Property</h3>
           <div>
-            <Label>Address</Label>
-            <Input value={dealData.address} onChange={e => setDealData({...dealData, address: e.target.value})} />
+            <Label className="text-[#FAFAFA]">Address</Label>
+            <Input 
+              value={dealData.address} 
+              onChange={e => setDealData({...dealData, address: e.target.value})} 
+              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+            />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>City</Label>
-              <Input value={dealData.city} onChange={e => setDealData({...dealData, city: e.target.value})} />
+              <Label className="text-[#FAFAFA]">City</Label>
+              <Input 
+                value={dealData.city} 
+                onChange={e => setDealData({...dealData, city: e.target.value})} 
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
             </div>
             <div>
-              <Label>State</Label>
-              <Input value={dealData.state} onChange={e => setDealData({...dealData, state: e.target.value})} maxLength={2} />
+              <Label className="text-[#FAFAFA]">State</Label>
+              <Input 
+                value={dealData.state} 
+                onChange={e => setDealData({...dealData, state: e.target.value})} 
+                maxLength={2} 
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label>County</Label>
-              <Input value={dealData.county} onChange={e => setDealData({...dealData, county: e.target.value})} />
+              <Label className="text-[#FAFAFA]">County</Label>
+              <Input 
+                value={dealData.county} 
+                onChange={e => setDealData({...dealData, county: e.target.value})} 
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
             </div>
             <div>
-              <Label>Zip</Label>
-              <Input value={dealData.zip} onChange={e => setDealData({...dealData, zip: e.target.value})} />
+              <Label className="text-[#FAFAFA]">Zip</Label>
+              <Input 
+                value={dealData.zip} 
+                onChange={e => setDealData({...dealData, zip: e.target.value})} 
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
             </div>
           </div>
         </div>
 
         <div className="space-y-4">
-          <h3 className="font-semibold text-slate-700 border-b pb-2">Financials & Dates</h3>
+          <h3 className="font-semibold text-[#808080] border-b border-[#1F1F1F] pb-2 font-serif">Financials & Dates</h3>
           <div>
-            <Label>Purchase Price</Label>
+            <Label className="text-[#FAFAFA]">Purchase Price</Label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-slate-400" />
-              <Input className="pl-9" value={dealData.purchasePrice} onChange={e => setDealData({...dealData, purchasePrice: e.target.value})} />
+              <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-[#808080]" />
+              <Input 
+                className="pl-9 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]" 
+                value={dealData.purchasePrice} 
+                onChange={e => setDealData({...dealData, purchasePrice: e.target.value})} 
+              />
             </div>
           </div>
           <div>
-            <Label>Closing Date</Label>
-            <Input value={dealData.closingDate} onChange={e => setDealData({...dealData, closingDate: e.target.value})} placeholder="YYYY-MM-DD" />
+            <Label className="text-[#FAFAFA]">Closing Date</Label>
+            <Input 
+              value={dealData.closingDate} 
+              onChange={e => setDealData({...dealData, closingDate: e.target.value})} 
+              placeholder="YYYY-MM-DD" 
+              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567] placeholder:text-[#808080]"
+            />
           </div>
           <div>
-            <Label>Inspection End</Label>
-            <Input value={dealData.inspectionDate} onChange={e => setDealData({...dealData, inspectionDate: e.target.value})} placeholder="YYYY-MM-DD" />
+            <Label className="text-[#FAFAFA]">Inspection End</Label>
+            <Input 
+              value={dealData.inspectionDate} 
+              onChange={e => setDealData({...dealData, inspectionDate: e.target.value})} 
+              placeholder="YYYY-MM-DD" 
+              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567] placeholder:text-[#808080]"
+            />
           </div>
         </div>
       </div>
       
       <div className="pt-6 flex justify-end">
-        <Button onClick={handleConfirmDetails} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black">
+        <Button onClick={handleConfirmDetails} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold">
           {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
           Confirm & Find Agent
         </Button>
@@ -301,14 +330,14 @@ export default function DealWizard() {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-slate-900">Matches in {dealData.county || dealData.city}, {dealData.state}</h2>
-        <p className="text-slate-500">Select an agent to start the transaction.</p>
+        <h2 className="text-2xl font-bold text-[#FAFAFA] font-serif">Matches in {dealData.county || dealData.city}, {dealData.state}</h2>
+        <p className="text-[#808080]">Select an agent to start the transaction.</p>
       </div>
 
       {matchedAgents.length === 0 ? (
-        <div className="text-center py-8 text-slate-500 bg-slate-50 rounded-xl border border-dashed border-slate-300">
+        <div className="text-center py-8 text-[#808080] bg-[#141414] rounded-xl border border-dashed border-[#1F1F1F]">
           No agents found in this exact location. <br/>
-          <Button variant="link" onClick={() => navigate(createPageUrl("AgentDirectory"))}>Browse Directory</Button>
+          <Button variant="link" onClick={() => navigate(createPageUrl("AgentDirectory"))} className="text-[#E3C567]">Browse Directory</Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
@@ -318,16 +347,16 @@ export default function DealWizard() {
               onClick={() => setSelectedAgentId(match.profile.id)}
               className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
                 selectedAgentId === match.profile.id 
-                  ? 'border-[#E3C567] bg-[#E3C567]/5' 
-                  : 'border-slate-200 hover:border-[#E3C567]/50'
+                  ? 'border-[#E3C567] bg-[#E3C567]/10' 
+                  : 'border-[#1F1F1F] bg-[#141414] hover:border-[#E3C567]/50'
               }`}
             >
-              <div className="w-12 h-12 bg-slate-200 rounded-full flex items-center justify-center text-slate-600 font-bold text-lg">
+              <div className="w-12 h-12 bg-[#1F1F1F] rounded-full flex items-center justify-center text-[#E3C567] font-bold text-lg border border-[#333]">
                 {match.profile.full_name?.charAt(0)}
               </div>
               <div className="flex-grow">
-                <h3 className="font-bold text-slate-900">{match.profile.full_name}</h3>
-                <p className="text-sm text-slate-500">{match.profile.agent?.brokerage || 'Independent Agent'}</p>
+                <h3 className="font-bold text-[#FAFAFA]">{match.profile.full_name}</h3>
+                <p className="text-sm text-[#808080]">{match.profile.agent?.brokerage || 'Independent Agent'}</p>
                 <div className="flex items-center gap-2 mt-1 text-xs text-[#E3C567]">
                   <MapPin className="w-3 h-3" />
                   {match.region || match.profile.target_state}
@@ -344,11 +373,17 @@ export default function DealWizard() {
       )}
 
       <div className="pt-6 flex justify-end gap-3">
-        <Button variant="outline" onClick={() => setStep(2)}>Back</Button>
+        <Button 
+          variant="outline" 
+          onClick={() => setStep(2)}
+          className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] hover:text-white rounded-full font-serif"
+        >
+          Back
+        </Button>
         <Button 
           onClick={handleSelectAgent} 
           disabled={!selectedAgentId || loading} 
-          className="bg-[#E3C567] hover:bg-[#D4AF37] text-black"
+          className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold"
         >
           {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Sparkles className="w-4 h-4 mr-2" />}
           Start Deal Room
@@ -360,24 +395,24 @@ export default function DealWizard() {
   const progress = (step / 3) * 100;
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+    <div className="min-h-screen bg-[#050505]">
+      <header className="bg-[#0D0D0D] border-b border-[#1F1F1F] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
-            <h1 className="text-lg font-semibold text-slate-900">New Deal</h1>
+            <h1 className="text-lg font-semibold text-[#FAFAFA] font-serif">New Deal</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))} className="text-[#808080] hover:text-[#FAFAFA] hover:bg-[#1F1F1F]">
             <X className="w-5 h-5" />
           </Button>
         </div>
         <div className="max-w-4xl mx-auto px-4 pb-0">
-          <Progress value={progress} className="h-1" />
+          <Progress value={progress} className="h-1 bg-[#1F1F1F]" indicatorClassName="bg-[#E3C567]" />
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 sm:p-10">
+        <div className="bg-[#0D0D0D] rounded-2xl shadow-xl border border-[#1F1F1F] p-6 sm:p-10">
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
