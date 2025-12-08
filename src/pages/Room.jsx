@@ -138,7 +138,7 @@ export default function Room() {
         {/* Sidebar Header */}
         <div className="p-5 border-b border-[#1F1F1F]">
           <div className="flex items-center gap-3 mb-5">
-            <Logo size="default" showText={false} linkTo={createPageUrl("DealRooms")} />
+            <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
             <h2 className="text-xl font-bold text-[#E3C567]">Messages</h2>
           </div>
           <div className="relative">
@@ -218,7 +218,7 @@ export default function Room() {
           </button>
           <button
             className="mr-4 w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#808080] hover:bg-[#333333] hover:text-[#FAFAFA] transition-all"
-            onClick={() => navigate(createPageUrl("DealRooms"))}
+            onClick={() => navigate(createPageUrl("Dashboard"))}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
