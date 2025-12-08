@@ -250,7 +250,9 @@ function InvestorDashboardContent() {
                     </Link>
                   )}
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Suggested Agents</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">
+                  {latestDealState ? `Agents in ${latestDealState}` : 'Suggested Agents'}
+                </h3>
           
                 {rooms.length === 0 ? (
                   <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
@@ -260,21 +262,38 @@ function InvestorDashboardContent() {
                       Upload a contract to find investor-friendly agents in your market.
                     </p>
                   </div>
+                ) : suggestedAgents.length > 0 ? (
+                  <div className="space-y-3 flex-grow">
+                     {suggestedAgents.map(agent => (
+                       <div key={agent.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1F1F1F] cursor-pointer transition-colors" onClick={() => navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
+                         <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center font-bold text-[#E3C567]">
+                            {agent.full_name?.charAt(0)}
+                         </div>
+                         <div className="flex-1 min-w-0">
+                           <p className="text-sm font-medium text-[#FAFAFA] truncate">{agent.full_name}</p>
+                           <p className="text-xs text-[#808080] truncate">{agent.agent?.brokerage || 'Independent'}</p>
+                         </div>
+                         <div className="text-xs text-[#E3C567] font-medium">
+                           {(agent.agent?.experience_years || 0) + 'y'}
+                         </div>
+                       </div>
+                     ))}
+                  </div>
                 ) : (
-                  <>
-                    <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                      <Users className="w-8 h-8 text-[#333333] mb-2" />
-                      <p className="text-sm text-[#808080]">AI matching in progress</p>
-                      <p className="text-xs text-[#666666]">Agents will appear here</p>
-                    </div>
-                    <Button 
-                      onClick={() => navigate(createPageUrl("AgentDirectory"))}
-                      variant="outline"
-                      className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
-                    >
-                      Browse Agents
-                    </Button>
-                  </>
+                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin mb-2" />
+                    <p className="text-sm text-[#808080]">Finding best matches...</p>
+                  </div>
+                )}
+                
+                {rooms.length > 0 && (
+                  <Button 
+                    onClick={() => navigate(createPageUrl(`AgentDirectory${latestDealState ? `?state=${latestDealState}` : ''}`))}
+                    variant="outline"
+                    className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 mt-auto"
+                  >
+                    Browse All in {latestDealState || 'Market'}
+                  </Button>
                 )}
               </div>
             </div>
