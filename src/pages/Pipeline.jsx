@@ -80,41 +80,41 @@ function PipelineContent() {
       id: 'walkthrough_scheduled',
       label: 'Walkthrough Scheduled',
       icon: Calendar,
-      color: '#60A5FA',
-      bgColor: 'bg-[#60A5FA]/10',
-      borderColor: 'border-[#60A5FA]/20'
+      color: '#E3C567',
+      bgColor: 'bg-[#E3C567]/10',
+      borderColor: 'border-[#E3C567]/20'
     },
     {
       id: 'evaluate_deal',
       label: 'Evaluate Deal (Keep or Cancel)',
       icon: TrendingUp,
-      color: '#F59E0B',
-      bgColor: 'bg-[#F59E0B]/10',
-      borderColor: 'border-[#F59E0B]/20'
+      color: '#E3C567',
+      bgColor: 'bg-[#E3C567]/10',
+      borderColor: 'border-[#E3C567]/20'
     },
     {
       id: 'active_marketing',
       label: 'Active Marketing',
       icon: Megaphone,
-      color: '#DB2777',
-      bgColor: 'bg-[#DB2777]/10',
-      borderColor: 'border-[#DB2777]/20'
+      color: '#E3C567',
+      bgColor: 'bg-[#E3C567]/10',
+      borderColor: 'border-[#E3C567]/20'
     },
     {
       id: 'cancelling_deal',
       label: 'Cancelling Deal',
       icon: XCircle,
-      color: '#EF4444',
-      bgColor: 'bg-[#EF4444]/10',
-      borderColor: 'border-[#EF4444]/20'
+      color: '#E3C567',
+      bgColor: 'bg-[#E3C567]/10',
+      borderColor: 'border-[#E3C567]/20'
     },
     {
       id: 'clear_to_close_closed',
       label: 'Clear to Close / Closed',
       icon: CheckCircle,
-      color: '#34D399',
-      bgColor: 'bg-[#34D399]/10',
-      borderColor: 'border-[#34D399]/20'
+      color: '#E3C567',
+      bgColor: 'bg-[#E3C567]/10',
+      borderColor: 'border-[#E3C567]/20'
     }
   ];
 
