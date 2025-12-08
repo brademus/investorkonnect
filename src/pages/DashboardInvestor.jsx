@@ -18,11 +18,29 @@ function InvestorDashboardContent() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [recentMessages, setRecentMessages] = useState([]);
+  const [suggestedAgents, setSuggestedAgents] = useState([]);
+  const [latestDealState, setLatestDealState] = useState(null);
+  
   const { data: rooms, isLoading: roomsLoading } = useRooms();
 
   useEffect(() => {
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    // Load suggested agents when rooms are loaded and we have at least one
+    if (rooms && rooms.length > 0) {
+      const latestDeal = rooms[0]; // useRooms sorts by -created_date
+      
+      // Extract state from the deal
+      const state = latestDeal.state || latestDeal.property_address?.split(',').pop().trim().split(' ')[0] || null;
+      
+      if (state && state.length === 2) {
+        setLatestDealState(state);
+        loadSuggestedAgents(state, latestDeal.id);
+      }
+    }
+  }, [rooms]);
 
   const loadProfile = async () => {
     try {
@@ -52,6 +70,21 @@ function InvestorDashboardContent() {
       }
     } catch (err) {
       // Silent fail
+    }
+  };
+
+  const loadSuggestedAgents = async (state, dealId) => {
+    try {
+      const response = await base44.functions.invoke('matchAgentsForInvestor', {
+        state,
+        dealId,
+        limit: 3
+      });
+      if (response.data?.results) {
+        setSuggestedAgents(response.data.results.map(r => r.profile));
+      }
+    } catch (err) {
+      console.error("Failed to load suggested agents", err);
     }
   };
 
