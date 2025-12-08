@@ -87,6 +87,14 @@ export function SetupChecklist({ profile, onRefresh }) {
   const allComplete = completedCount === totalSteps;
   const nextStep = steps.find(s => !s.completed);
 
+  // If all steps are complete, hide the entire checklist
+  if (allComplete) {
+    return null;
+  }
+
+  // Filter out completed steps - only show incomplete ones
+  const visibleSteps = steps.filter(s => !s.completed);
+
   // Collapsed state - minimal banner
   if (collapsed) {
     return (
@@ -97,10 +105,10 @@ export function SetupChecklist({ profile, onRefresh }) {
         >
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 bg-[#E3C567] rounded-lg flex items-center justify-center">
-              {allComplete ? <CheckCircle2 className="w-3.5 h-3.5 text-black" /> : <Sparkles className="w-3.5 h-3.5 text-black" />}
+              <Sparkles className="w-3.5 h-3.5 text-black" />
             </div>
             <p className="text-sm font-medium text-[#FAFAFA]">
-              {allComplete ? 'Setup Complete!' : `Setup: ${completedCount}/${totalSteps} done`}
+              {`Setup: ${completedCount}/${totalSteps} done`}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -120,11 +128,11 @@ export function SetupChecklist({ profile, onRefresh }) {
       <div className="bg-[#E3C567] px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-black/20 backdrop-blur rounded-lg flex items-center justify-center">
-            {allComplete ? <CheckCircle2 className="w-4 h-4 text-black" /> : <Sparkles className="w-4 h-4 text-black" />}
+             <Sparkles className="w-4 h-4 text-black" />
           </div>
           <div>
             <h3 className="text-sm font-semibold text-black">
-              {allComplete ? 'Setup Complete!' : 'Complete Your Setup'}
+              Complete Your Setup
             </h3>
             <div className="flex items-center gap-2 mt-0.5">
               <div className="w-20 h-1.5 bg-black/20 rounded-full overflow-hidden">
@@ -145,33 +153,29 @@ export function SetupChecklist({ profile, onRefresh }) {
       {/* Compact Checklist Items */}
       <div className="p-3">
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          {steps.map((step, idx) => {
+          {visibleSteps.map((step, idx) => {
             const Icon = step.icon;
-            const isNext = nextStep?.id === step.id;
+            // The next incomplete step is always the first one in visibleSteps (since we filtered out completed ones)
+            // But we need to know if it's the *actual* next step in the sequence. 
+            // Since we filter out completed, the first visible one IS the next step.
+            const isNext = visibleSteps[0].id === step.id;
             
-            // Determine if step is locked (previous steps not complete)
-            const prevStepsComplete = steps.slice(0, idx).every(s => s.completed);
-            const isLocked = !step.completed && !prevStepsComplete;
-            
-            // Debug logging
-            console.log(`[SetupChecklist] Step ${step.id}:`, {
-              completed: step.completed,
-              isNext,
-              prevStepsComplete,
-              isLocked
-            });
+            // Is Locked? 
+            // In the filtered list, the first item is the next step.
+            // If we are strictly sequential, then all items after the first visible one are locked?
+            // Original logic: "previous steps complete".
+            // Since we filtered out completed steps, the first item in visibleSteps is the current active one.
+            // Any subsequent item in visibleSteps is locked IF we enforce strict order.
+            // Let's check original logic: `prevStepsComplete = steps.slice(0, idx).every(s => s.completed)`
+            // Here we iterate visibleSteps.
+            // The step is locked if it's NOT the first visible step.
+            const isLocked = idx > 0; 
             
             const handleClick = () => {
-              console.log(`[SetupChecklist] Clicked step: ${step.id}, isLocked: ${isLocked}, link: ${step.link}`);
               if (isLocked) {
-                // Navigate to the first incomplete step
-                const firstIncomplete = steps.find(s => !s.completed);
-                if (firstIncomplete) {
-                  console.log(`[SetupChecklist] Redirecting to first incomplete: ${firstIncomplete.link}`);
-                  navigate(createPageUrl(firstIncomplete.link));
-                }
+                // Navigate to the first incomplete step (which is visibleSteps[0])
+                navigate(createPageUrl(visibleSteps[0].link));
               } else {
-                console.log(`[SetupChecklist] Navigating to: ${step.link}`);
                 navigate(createPageUrl(step.link));
               }
             };
@@ -181,9 +185,7 @@ export function SetupChecklist({ profile, onRefresh }) {
                 key={step.id}
                 onClick={handleClick}
                 className={`group flex items-center gap-2.5 p-2.5 rounded-xl text-left transition-all duration-200 cursor-pointer ${
-                  step.completed
-                    ? 'bg-[#34D399]/20 border border-[#34D399]/30'
-                    : isNext
+                   isNext
                     ? 'bg-[#E3C567]/20 border border-[#E3C567]'
                     : isLocked
                     ? 'bg-[#1F1F1F] border border-transparent opacity-60'
@@ -192,28 +194,22 @@ export function SetupChecklist({ profile, onRefresh }) {
               >
                 {/* Icon */}
                 <div className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
-                  step.completed
-                    ? 'bg-[#34D399] text-black'
-                    : isNext
+                   isNext
                     ? 'bg-[#E3C567] text-black'
                     : 'bg-[#333333] text-[#808080] group-hover:bg-[#E3C567] group-hover:text-black'
                 }`}>
-                  {step.completed ? (
-                    <CheckCircle2 className="w-4 h-4" />
-                  ) : (
                     <Icon className="w-4 h-4" />
-                  )}
                 </div>
                 
                 {/* Content */}
                 <div className="min-w-0 flex-1">
                   <p className={`text-xs font-medium truncate ${
-                    step.completed ? 'text-[#34D399]' : isLocked ? 'text-[#666666]' : 'text-[#FAFAFA]'
+                     isLocked ? 'text-[#666666]' : 'text-[#FAFAFA]'
                   }`}>
                     {step.title}
                   </p>
                   <p className="text-[10px] text-[#808080] truncate">
-                    {step.completed ? 'Done ✓' : isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'}
+                    {isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'}
                   </p>
                 </div>
               </button>
