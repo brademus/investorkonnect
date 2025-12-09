@@ -21,6 +21,7 @@ function InvestorDashboardContent() {
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [latestDealState, setLatestDealState] = useState(null);
   const [orphanDeal, setOrphanDeal] = useState(null);
+  const [agentsLoading, setAgentsLoading] = useState(false);
   
   const { data: rooms, isLoading: roomsLoading } = useRooms();
 
@@ -100,6 +101,7 @@ function InvestorDashboardContent() {
   };
 
   const loadSuggestedAgents = async (state, dealId) => {
+    setAgentsLoading(true);
     try {
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
         state,
@@ -108,9 +110,14 @@ function InvestorDashboardContent() {
       });
       if (response.data?.results) {
         setSuggestedAgents(response.data.results.map(r => r.profile));
+      } else {
+        setSuggestedAgents([]);
       }
     } catch (err) {
       console.error("Failed to load suggested agents", err);
+      setSuggestedAgents([]);
+    } finally {
+      setAgentsLoading(false);
     }
   };
 
@@ -327,6 +334,11 @@ function InvestorDashboardContent() {
                       Upload a contract to find investor-friendly agents in your market.
                     </p>
                   </div>
+                ) : agentsLoading ? (
+                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
+                    <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin mb-2" />
+                    <p className="text-sm text-[#808080]">Finding best matches...</p>
+                  </div>
                 ) : suggestedAgents.length > 0 ? (
                   <div className="space-y-3 flex-grow">
                      {suggestedAgents.map(agent => (
@@ -346,8 +358,9 @@ function InvestorDashboardContent() {
                   </div>
                 ) : (
                   <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                    <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin mb-2" />
-                    <p className="text-sm text-[#808080]">Finding best matches...</p>
+                    <Users className="w-8 h-8 text-[#333333] mb-2" />
+                    <p className="text-sm text-[#808080]">No direct matches found.</p>
+                    <p className="text-xs text-[#666666] mt-1">Try browsing the directory.</p>
                   </div>
                 )}
                 
