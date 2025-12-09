@@ -7,7 +7,7 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { base44 } from "@/api/base44Client";
 import { inboxList } from "@/components/functions";
 import { useRooms } from "@/components/useRooms";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
   Loader2, Sparkles, Home, DollarSign, CreditCard, Bot
@@ -26,9 +26,11 @@ function InvestorDashboardContent() {
   
   const { data: rooms, isLoading: roomsLoading } = useRooms();
   
+  const queryClient = useQueryClient();
+
   // DIRECT DATA FETCHING FOR ROBUSTNESS
   // Fetch active deals for this investor
-  const { data: activeDeals, isLoading: dealsLoading } = useQuery({
+  const { data: activeDeals, isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -38,12 +40,23 @@ function InvestorDashboardContent() {
          10
       );
     },
-    enabled: !!profile?.id
+    enabled: !!profile?.id,
+    refetchOnMount: true,
+    staleTime: 0 
   });
 
   useEffect(() => {
     loadProfile();
   }, []);
+  
+  // Force refetch when returning to dashboard
+  useEffect(() => {
+    if (profile?.id) {
+        queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        refetchDeals();
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (!activeDeals || !rooms) return;

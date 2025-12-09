@@ -163,12 +163,20 @@ export default function DealWizard() {
 
     try {
       const user = await base44.auth.me();
+      if (!user) throw new Error("Not authenticated");
+
+      // Robust profile fetching
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       const myProfile = profiles[0];
+      
+      if (!myProfile) {
+        toast.error("Profile not found. Please complete onboarding.");
+        return;
+      }
 
       // 1. Save Deal
       const dealPayload = {
-        investor_id: myProfile?.id,
+        investor_id: myProfile.id,
         title: `${dealData.address || 'New Deal'}`,
         property_address: dealData.address,
         city: dealData.city,
