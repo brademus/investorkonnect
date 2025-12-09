@@ -187,7 +187,16 @@ export default function DealWizard() {
         created_date: new Date().toISOString()
       };
 
-      const createdDeal = await base44.entities.Deal.create(dealPayload);
+      let createdDeal;
+      if (createdDealId) {
+          // Update existing draft if resuming
+          await base44.entities.Deal.update(createdDealId, dealPayload);
+          createdDeal = { ...dealPayload, id: createdDealId };
+      } else {
+          // Create new
+          createdDeal = await base44.entities.Deal.create(dealPayload);
+          setCreatedDealId(createdDeal.id);
+      }
 
       // 2. Update Profile with deal submission (Persist to Profile as requested)
       if (myProfile) {

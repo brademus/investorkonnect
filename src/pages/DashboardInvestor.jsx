@@ -25,50 +25,65 @@ function InvestorDashboardContent() {
   const [agentsLoading, setAgentsLoading] = useState(false);
   
   const { data: rooms, isLoading: roomsLoading } = useRooms();
+  
+  // DIRECT DATA FETCHING FOR ROBUSTNESS
+  // Fetch active deals for this investor
+  const { data: activeDeals, isLoading: dealsLoading } = useQuery({
+    queryKey: ['investorDeals', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      return await base44.entities.Deal.filter(
+         { investor_id: profile.id, status: 'active' }, 
+         { created_date: -1 }, // Newest first
+         10
+      );
+    },
+    enabled: !!profile?.id
+  });
 
   useEffect(() => {
     loadProfile();
   }, []);
 
   useEffect(() => {
-    // Logic: 
-    // 1. Find the most recent orphan deal (one without an agent).
-    // 2. If found, load agents for that deal's state.
-    // 3. If NO orphan deal exists (all deals have agents), clear suggestions.
+    if (!activeDeals || !rooms) return;
+
+    // Logic: An "orphan" deal is an active deal that is NOT linked to any room yet.
+    // Get all deal IDs currently in rooms
+    const dealIdsInRooms = new Set(rooms.map(r => r.deal_id).filter(Boolean));
     
-    if (rooms) {
-      // Find newest deal that is orphan
-      const orphan = rooms.find(r => r.is_orphan);
-      setOrphanDeal(orphan);
-      
-      if (orphan) {
-        // Extract state - be robust
-        const orphanDeal = orphan; // Alias for readability below
-        let state = orphanDeal.state;
-        if (!state && orphanDeal.property_address) {
-          // Try to extract from address string if state field missing
-          // e.g. "123 Main St, City, CA 90210" -> "CA"
-          const parts = orphanDeal.property_address.split(',');
+    // Find the most recent active deal that is NOT in a room
+    const orphan = activeDeals.find(d => !dealIdsInRooms.has(d.id));
+    
+    setOrphanDeal(orphan || null);
+    
+    if (orphan) {
+        // We found an orphan deal! Let's load suggestions for it.
+        let state = orphan.state;
+        
+        // Fallback extraction from address if state field is missing
+        if (!state && orphan.property_address) {
+          const parts = orphan.property_address.split(',');
           if (parts.length > 1) {
              const stateZip = parts[parts.length - 1].trim();
-             state = stateZip.split(' ')[0];
+             const possibleState = stateZip.split(' ')[0];
+             if (possibleState.length === 2) state = possibleState;
           }
         }
         
-        // Clean state
         state = state ? state.trim().toUpperCase() : null;
         
-        if (state) { // Allow lengths > 2 just in case, matchAgents handles it
-          setLatestDealState(state);
-          loadSuggestedAgents(state, orphanDeal.deal_id); // Use real deal_id
+        if (state) {
+            setLatestDealState(state);
+            loadSuggestedAgents(state, orphan.id);
         }
-      } else {
-        // No orphan deals - user has agents for all deals
+    } else {
+        // No orphan deals found
         setSuggestedAgents([]);
         setLatestDealState(null);
-      }
     }
-  }, [rooms]);
+    
+  }, [activeDeals, rooms]);
 
   const loadProfile = async () => {
     try {
