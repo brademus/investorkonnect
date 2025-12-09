@@ -187,9 +187,27 @@ export default function DealWizard() {
         created_date: new Date().toISOString()
       };
 
-      await base44.entities.Deal.create(dealPayload);
-      
-      toast.success("Deal created successfully!");
+      const createdDeal = await base44.entities.Deal.create(dealPayload);
+
+      // 2. Update Profile with deal submission (Persist to Profile as requested)
+      if (myProfile) {
+        try {
+          await base44.entities.Profile.update(myProfile.id, {
+            investor: {
+              ...(myProfile.investor || {}),
+              deal_submission: {
+                ...dealPayload,
+                deal_id: createdDeal.id
+              }
+            }
+          });
+        } catch (profileErr) {
+          console.error("Failed to update profile with deal submission", profileErr);
+          // Don't block flow if this fails
+        }
+      }
+
+      toast.success("Deal saved to your profile!");
       navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
