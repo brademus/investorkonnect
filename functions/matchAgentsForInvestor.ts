@@ -64,31 +64,60 @@ Deno.serve(async (req) => {
         'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT', 'VERMONT': 'VT',
         'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV', 'WISCONSIN': 'WI', 'WYOMING': 'WY'
       };
+
+      // Create reverse map (Code -> Name)
+      const codeToName = Object.entries(stateMap).reduce((acc, [name, code]) => {
+        acc[code] = name;
+        return acc;
+      }, {});
       
-      const code = stateMap[targetState] || (targetState.length === 2 ? targetState : null);
+      // Determine both Code and Name for the target state
+      let targetCode = null;
+      let targetName = null;
+
+      if (stateMap[targetState]) {
+        // Input is Name (e.g. WISCONSIN)
+        targetName = targetState;
+        targetCode = stateMap[targetState];
+      } else if (codeToName[targetState]) {
+        // Input is Code (e.g. WI)
+        targetCode = targetState;
+        targetName = codeToName[targetState];
+      } else {
+        // Input matches neither exactly, assume Code if len=2, else Name
+        if (targetState.length === 2) targetCode = targetState;
+        else targetName = targetState;
+      }
+
+      console.log(`[matchAgentsForInvestor] Matching against: Code=${targetCode}, Name=${targetName}`);
       
       // Fetch all agents (small dataset ~150)
       const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
       
       const matchedAgents = allAgents.filter(agent => {
-        // Collect all agent location indicators
+        // Collect all agent location indicators (including legacy top-level fields)
         const locations = [
           agent.target_state,
+          agent.license_state, // Legacy top-level
           ...(agent.markets || []),
           agent.agent?.license_state,
           ...(agent.agent?.licensed_states || []),
           ...(agent.agent?.markets || [])
         ].filter(Boolean).map(s => s.trim().toUpperCase());
         
-        // Check for matches against code OR full name
+        // Check for matches
         return locations.some(loc => {
-           // Direct match
-           if (loc === targetState) return true;
-           // Code match
-           if (code && loc === code) return true;
-           // Substring match (e.g. "Phoenix, AZ" contains "AZ")
-           if (code && loc.includes(code)) return true;
-           if (loc.includes(targetState)) return true;
+           // 1. Direct match against Name or Code
+           if (targetCode && loc === targetCode) return true;
+           if (targetName && loc === targetName) return true;
+           
+           // 2. Check if loc *contains* the full name (e.g. "WISCONSIN, USA" matches "WISCONSIN")
+           if (targetName && loc.includes(targetName)) return true;
+
+           // 3. Code logic: Only strict match for codes usually, but "WI" in "WI, USA" is okay
+           // If loc is exactly length 2, it must match code
+           if (targetCode && loc.length === 2 && loc === targetCode) return true;
+           
            return false;
         });
       });
