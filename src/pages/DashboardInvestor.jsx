@@ -61,12 +61,19 @@ function InvestorDashboardContent() {
   useEffect(() => {
     if (!activeDeals || !rooms) return;
 
-    // Logic: An "orphan" deal is an active deal that is NOT linked to any room yet.
-    // Get all deal IDs currently in rooms
-    const dealIdsInRooms = new Set(rooms.map(r => r.deal_id).filter(Boolean));
+    // Logic: An "orphan" deal is an active deal that is NOT linked to any REAL (connected) room yet.
     
-    // Find the most recent active deal that is NOT in a room
-    const orphan = activeDeals.find(d => !dealIdsInRooms.has(d.id));
+    // Get all deal IDs currently in REAL rooms (exclude virtual/orphan rooms that the backend might return)
+    // We only want to exclude deals that have actually been matched with an agent.
+    const dealIdsInRealRooms = new Set(
+      rooms
+        .filter(r => !r.is_orphan && r.counterparty_role !== 'none') 
+        .map(r => r.deal_id)
+        .filter(Boolean)
+    );
+    
+    // Find the most recent active deal that is NOT in a real room
+    const orphan = activeDeals.find(d => !dealIdsInRealRooms.has(d.id));
     
     setOrphanDeal(orphan || null);
     
