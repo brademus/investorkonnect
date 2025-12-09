@@ -108,14 +108,8 @@ function InvestorDashboardContent() {
         dealId,
         limit: 3
       });
-      
-      if (response.data?.results && response.data.results.length > 0) {
+      if (response.data?.results) {
         setSuggestedAgents(response.data.results.map(r => r.profile));
-        
-        // If fallback matches (no agents in that specific state), update UI to reflect that
-        if (response.data.match_type === 'fallback') {
-           setLatestDealState(null); // Will change title to "Suggested Agents"
-        }
       } else {
         setSuggestedAgents([]);
       }

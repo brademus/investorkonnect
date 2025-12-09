@@ -51,23 +51,24 @@ Deno.serve(async (req) => {
       // Normalize target state (handle names like "Arizona" -> "AZ" mapping if needed, but keeping simple for now)
       const targetState = body.state.trim().toUpperCase(); 
       
-      // State Name Map (Basic coverage)
+      // State Name Map (Comprehensive)
       const stateMap = {
-        'ARIZONA': 'AZ', 'CALIFORNIA': 'CA', 'TEXAS': 'TX', 'FLORIDA': 'FL', 'NEW YORK': 'NY',
-        'WASHINGTON': 'WA', 'OREGON': 'OR', 'NEVADA': 'NV', 'COLORADO': 'CO', 'UTAH': 'UT'
+        'ALABAMA': 'AL', 'ALASKA': 'AK', 'ARIZONA': 'AZ', 'ARKANSAS': 'AR', 'CALIFORNIA': 'CA',
+        'COLORADO': 'CO', 'CONNECTICUT': 'CT', 'DELAWARE': 'DE', 'FLORIDA': 'FL', 'GEORGIA': 'GA',
+        'HAWAII': 'HI', 'IDAHO': 'ID', 'ILLINOIS': 'IL', 'INDIANA': 'IN', 'IOWA': 'IA',
+        'KANSAS': 'KS', 'KENTUCKY': 'KY', 'LOUISIANA': 'LA', 'MAINE': 'ME', 'MARYLAND': 'MD',
+        'MASSACHUSETTS': 'MA', 'MICHIGAN': 'MI', 'MINNESOTA': 'MN', 'MISSISSIPPI': 'MS', 'MISSOURI': 'MO',
+        'MONTANA': 'MT', 'NEBRASKA': 'NE', 'NEVADA': 'NV', 'NEW HAMPSHIRE': 'NH', 'NEW JERSEY': 'NJ',
+        'NEW MEXICO': 'NM', 'NEW YORK': 'NY', 'NORTH CAROLINA': 'NC', 'NORTH DAKOTA': 'ND', 'OHIO': 'OH',
+        'OKLAHOMA': 'OK', 'OREGON': 'OR', 'PENNSYLVANIA': 'PA', 'RHODE ISLAND': 'RI', 'SOUTH CAROLINA': 'SC',
+        'SOUTH DAKOTA': 'SD', 'TENNESSEE': 'TN', 'TEXAS': 'TX', 'UTAH': 'UT', 'VERMONT': 'VT',
+        'VIRGINIA': 'VA', 'WASHINGTON': 'WA', 'WEST VIRGINIA': 'WV', 'WISCONSIN': 'WI', 'WYOMING': 'WY'
       };
       
       const code = stateMap[targetState] || (targetState.length === 2 ? targetState : null);
       
-      // Fetch all agents (robust fetch)
-      let allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
-      
-      // Fallback: If no agents found by role, try legacy type or all profiles (data hygiene)
-      if (allAgents.length === 0) {
-        console.log('[matchAgentsForInvestor] No profiles with user_role=agent, trying broader search');
-        const allProfiles = await base44.entities.Profile.filter({});
-        allAgents = allProfiles.filter(p => p.user_role === 'agent' || p.user_type === 'agent' || p.agent);
-      }
+      // Fetch all agents (small dataset ~150)
+      const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
       
       const matchedAgents = allAgents.filter(agent => {
         // Collect all agent location indicators
@@ -94,41 +95,22 @@ Deno.serve(async (req) => {
       
       console.log(`[matchAgentsForInvestor] Found ${matchedAgents.length} agents in ${targetState}`);
       
-      let results;
-      let matchType = 'state_match';
-
-      if (matchedAgents.length > 0) {
-          // Sort: Verified first, then experience
-          matchedAgents.sort((a, b) => {
-            const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
-            const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
-            if (verA !== verB) return verB - verA;
-            return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
-          });
-          
-          results = matchedAgents.slice(0, limit).map(agent => ({
-            profile: agent,
-            score: 1.0,
-            region: targetState
-          }));
-      } else {
-          // FALLBACK: No state matches found. Return top rated/experienced agents overall.
-          console.log('[matchAgentsForInvestor] No state matches, falling back to top agents');
-          matchType = 'fallback';
-          
-          // Sort all agents by experience/rating
-          allAgents.sort((a, b) => {
-             return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
-          });
-          
-          results = allAgents.slice(0, limit).map(agent => ({
-            profile: agent,
-            score: 0.5, // Lower score for fallback
-            region: agent.target_state || 'National'
-          }));
-      }
+      // Sort: Verified first, then experience
+      matchedAgents.sort((a, b) => {
+        const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
+        const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
+        if (verA !== verB) return verB - verA;
+        return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
+      });
       
-      return Response.json({ ok: true, results, total: results.length, match_type: matchType });
+      // Return top N
+      const results = matchedAgents.slice(0, limit).map(agent => ({
+        profile: agent,
+        score: 1.0, // Perfect match by state
+        region: targetState
+      }));
+      
+      return Response.json({ ok: true, results, total: matchedAgents.length });
     }
 
     // --- OLD LOGIC BELOW (Only used if no state provided) ---
