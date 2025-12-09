@@ -28,16 +28,39 @@ function InvestorDashboardContent() {
   }, []);
 
   useEffect(() => {
-    // Load suggested agents when rooms are loaded and we have at least one
-    if (rooms && rooms.length > 0) {
-      const latestDeal = rooms[0]; // useRooms sorts by -created_date
+    // Logic: 
+    // 1. Find the most recent orphan deal (one without an agent).
+    // 2. If found, load agents for that deal's state.
+    // 3. If NO orphan deal exists (all deals have agents), clear suggestions.
+    
+    if (rooms) {
+      // Find newest deal that is orphan
+      const orphanDeal = rooms.find(r => r.is_orphan);
       
-      // Extract state from the deal
-      const state = latestDeal.state || latestDeal.property_address?.split(',').pop().trim().split(' ')[0] || null;
-      
-      if (state && state.length === 2) {
-        setLatestDealState(state);
-        loadSuggestedAgents(state, latestDeal.id);
+      if (orphanDeal) {
+        // Extract state - be robust
+        let state = orphanDeal.state;
+        if (!state && orphanDeal.property_address) {
+          // Try to extract from address string if state field missing
+          // e.g. "123 Main St, City, CA 90210" -> "CA"
+          const parts = orphanDeal.property_address.split(',');
+          if (parts.length > 1) {
+             const stateZip = parts[parts.length - 1].trim();
+             state = stateZip.split(' ')[0];
+          }
+        }
+        
+        // Clean state
+        state = state ? state.trim().toUpperCase() : null;
+        
+        if (state) { // Allow lengths > 2 just in case, matchAgents handles it
+          setLatestDealState(state);
+          loadSuggestedAgents(state, orphanDeal.deal_id); // Use real deal_id
+        }
+      } else {
+        // No orphan deals - user has agents for all deals
+        setSuggestedAgents([]);
+        setLatestDealState(null);
       }
     }
   }, [rooms]);

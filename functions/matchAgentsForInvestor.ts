@@ -42,6 +42,56 @@ Deno.serve(async (req) => {
     
     console.log('[matchAgentsForInvestor] Match region:', investorRegion, '(Source: ' + (body.state ? 'Deal' : 'Profile') + ')');
     
+    // SIMPLIFIED MATCHING LOGIC
+    // If state is provided (from deal context), ONLY match by state.
+    // This overrides complex vector/embedding logic to ensure predictable results.
+    if (body.state) {
+      console.log('[matchAgentsForInvestor] Using strict state matching for:', body.state);
+      
+      const targetState = body.state.trim().toUpperCase(); // e.g. "CA"
+      
+      // Fetch all agents (small dataset ~150)
+      // Note: We can't easily filter array fields in DB, so we fetch all and filter in memory
+      const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+      
+      const matchedAgents = allAgents.filter(agent => {
+        // Collect all agent location indicators
+        const locations = [
+          agent.target_state,
+          ...(agent.markets || []),
+          agent.agent?.license_state,
+          ...(agent.agent?.licensed_states || []),
+          ...(agent.agent?.markets || [])
+        ].filter(Boolean).map(s => s.trim().toUpperCase());
+        
+        // Check for exact match (e.g. "CA") or inclusion (e.g. "California" includes "CA"? No, usually other way around)
+        // Given seed data uses 2-letter codes, strict equality or substring check is best.
+        // We'll check if the agent's location matches the target state code.
+        return locations.some(loc => loc === targetState || loc.includes(targetState) || targetState.includes(loc));
+      });
+      
+      console.log(`[matchAgentsForInvestor] Found ${matchedAgents.length} agents in ${targetState}`);
+      
+      // Sort: Verified first, then experience
+      matchedAgents.sort((a, b) => {
+        const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
+        const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
+        if (verA !== verB) return verB - verA;
+        return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
+      });
+      
+      // Return top N
+      const results = matchedAgents.slice(0, limit).map(agent => ({
+        profile: agent,
+        score: 1.0, // Perfect match by state
+        region: targetState
+      }));
+      
+      return Response.json({ ok: true, results, total: matchedAgents.length });
+    }
+
+    // --- OLD LOGIC BELOW (Only used if no state provided) ---
+
     // Load investor vector (may not exist for incomplete profiles)
     const invVectors = await base44.entities.ProfileVector.filter({ 
       profile_id: investorProfileId 
