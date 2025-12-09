@@ -248,7 +248,13 @@ function InvestorDashboardContent() {
                                        <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.inspection_period_end}</span>
                                    </div>
                                )}
-                           </div>
+                               {orphanDeal.key_dates?.earnest_money_due && (
+                                   <div className="col-span-2 pt-2 border-t border-[#333]/50">
+                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Earnest Money Due</span>
+                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.earnest_money_due}</span>
+                                   </div>
+                               )}
+                               </div>
                          )}
                       </div>
                       <p className="text-xs text-[#808080] text-center mt-2">
