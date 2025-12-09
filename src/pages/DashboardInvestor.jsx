@@ -227,17 +227,33 @@ function InvestorDashboardContent() {
                     </div>
                     <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Find an Agent</h3>
                     <div className="flex-grow space-y-3">
-                      <p className="text-sm text-[#808080]">
-                        Select a matching agent from the suggestions to start your deal room.
-                      </p>
-                      <div className="bg-[#141414] rounded-xl p-3 border border-[#E3C567]/30">
-                         <p className="text-[#FAFAFA] font-medium text-sm truncate">{orphanDeal.property_address || orphanDeal.title}</p>
-                         <div className="flex items-center gap-2 mt-1 text-xs text-[#808080]">
+                      <div className="bg-[#141414] rounded-xl p-4 border border-[#E3C567]/30">
+                         <p className="text-[#FAFAFA] font-medium text-base mb-1 truncate">{orphanDeal.property_address || orphanDeal.title}</p>
+                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#808080] mb-3">
                             <span>{orphanDeal.city}, {orphanDeal.state}</span>
-                            <span>•</span>
-                            <span className="text-[#E3C567]">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
+                            <span className="text-[#E3C567] font-semibold">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
                          </div>
+
+                         {(orphanDeal.key_dates?.closing_date || orphanDeal.key_dates?.inspection_period_end) && (
+                           <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#333]">
+                               {orphanDeal.key_dates?.closing_date && (
+                                   <div>
+                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Closing</span>
+                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.closing_date}</span>
+                                   </div>
+                               )}
+                               {orphanDeal.key_dates?.inspection_period_end && (
+                                   <div>
+                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Inspection</span>
+                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.inspection_period_end}</span>
+                                   </div>
+                               )}
+                           </div>
+                         )}
                       </div>
+                      <p className="text-xs text-[#808080] text-center mt-2">
+                        Select a matching agent from the list →
+                      </p>
                     </div>
                     {/* Button removed as requested - user must select from suggested agents */}
                     <div className="mt-4 p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
