@@ -20,6 +20,7 @@ function InvestorDashboardContent() {
   const [recentMessages, setRecentMessages] = useState([]);
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [latestDealState, setLatestDealState] = useState(null);
+  const [orphanDeal, setOrphanDeal] = useState(null);
   
   const { data: rooms, isLoading: roomsLoading } = useRooms();
 
@@ -35,10 +36,12 @@ function InvestorDashboardContent() {
     
     if (rooms) {
       // Find newest deal that is orphan
-      const orphanDeal = rooms.find(r => r.is_orphan);
+      const orphan = rooms.find(r => r.is_orphan);
+      setOrphanDeal(orphan);
       
-      if (orphanDeal) {
+      if (orphan) {
         // Extract state - be robust
+        const orphanDeal = orphan; // Alias for readability below
         let state = orphanDeal.state;
         if (!state && orphanDeal.property_address) {
           // Try to extract from address string if state field missing
@@ -157,27 +160,66 @@ function InvestorDashboardContent() {
             {/* 4-Box Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
-              {/* Box 1: Start New Deal */}
+              {/* Box 1: Start New Deal (OR Continue Existing) */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-[#E3C567]" />
-                  </div>
-                  <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full">
-                    Primary
-                  </span>
-                </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Start New Deal</h3>
-                <p className="text-sm text-[#808080] mb-6 flex-grow">
-                  Submit a deal and get matched with investor-friendly agents.
-                </p>
-                <Button 
-                  onClick={() => navigate(createPageUrl("DealWizard"))}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                >
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  Submit Deal
-                </Button>
+                {orphanDeal ? (
+                  <>
+                    {/* ORPHAN DEAL STATE */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center animate-pulse">
+                        <FileText className="w-6 h-6 text-[#E3C567]" />
+                      </div>
+                      <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#E3C567] animate-pulse"></span>
+                        Action Required
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Select an Agent</h3>
+                    <div className="flex-grow space-y-3">
+                      <p className="text-sm text-[#808080]">
+                        You have a deal pending agent selection.
+                      </p>
+                      <div className="bg-[#141414] rounded-xl p-3 border border-[#1F1F1F]">
+                         <p className="text-[#FAFAFA] font-medium text-sm truncate">{orphanDeal.property_address || orphanDeal.title}</p>
+                         <div className="flex items-center gap-2 mt-1 text-xs text-[#808080]">
+                            <span>{orphanDeal.city}, {orphanDeal.state}</span>
+                            <span>•</span>
+                            <span className="text-[#E3C567]">${(orphanDeal.budget || 0).toLocaleString()}</span>
+                         </div>
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.deal_id}`)}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold mt-4"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Select Agent
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    {/* DEFAULT STATE */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                        <Plus className="w-6 h-6 text-[#E3C567]" />
+                      </div>
+                      <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full">
+                        Primary
+                      </span>
+                    </div>
+                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Start New Deal</h3>
+                    <p className="text-sm text-[#808080] mb-6 flex-grow">
+                      Submit a deal and get matched with investor-friendly agents.
+                    </p>
+                    <Button 
+                      onClick={() => navigate(createPageUrl("DealWizard"))}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Submit Deal
+                    </Button>
+                  </>
+                )}
               </div>
 
               {/* Box 2: Deal Pipeline */}
