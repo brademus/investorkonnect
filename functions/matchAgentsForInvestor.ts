@@ -48,10 +48,18 @@ Deno.serve(async (req) => {
     if (body.state) {
       console.log('[matchAgentsForInvestor] Using strict state matching for:', body.state);
       
-      const targetState = body.state.trim().toUpperCase(); // e.g. "CA"
+      // Normalize target state (handle names like "Arizona" -> "AZ" mapping if needed, but keeping simple for now)
+      const targetState = body.state.trim().toUpperCase(); 
+      
+      // State Name Map (Basic coverage)
+      const stateMap = {
+        'ARIZONA': 'AZ', 'CALIFORNIA': 'CA', 'TEXAS': 'TX', 'FLORIDA': 'FL', 'NEW YORK': 'NY',
+        'WASHINGTON': 'WA', 'OREGON': 'OR', 'NEVADA': 'NV', 'COLORADO': 'CO', 'UTAH': 'UT'
+      };
+      
+      const code = stateMap[targetState] || (targetState.length === 2 ? targetState : null);
       
       // Fetch all agents (small dataset ~150)
-      // Note: We can't easily filter array fields in DB, so we fetch all and filter in memory
       const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
       
       const matchedAgents = allAgents.filter(agent => {
@@ -64,10 +72,17 @@ Deno.serve(async (req) => {
           ...(agent.agent?.markets || [])
         ].filter(Boolean).map(s => s.trim().toUpperCase());
         
-        // Check for exact match (e.g. "CA") or inclusion (e.g. "California" includes "CA"? No, usually other way around)
-        // Given seed data uses 2-letter codes, strict equality or substring check is best.
-        // We'll check if the agent's location matches the target state code.
-        return locations.some(loc => loc === targetState || loc.includes(targetState) || targetState.includes(loc));
+        // Check for matches against code OR full name
+        return locations.some(loc => {
+           // Direct match
+           if (loc === targetState) return true;
+           // Code match
+           if (code && loc === code) return true;
+           // Substring match (e.g. "Phoenix, AZ" contains "AZ")
+           if (code && loc.includes(code)) return true;
+           if (loc.includes(targetState)) return true;
+           return false;
+        });
       });
       
       console.log(`[matchAgentsForInvestor] Found ${matchedAgents.length} agents in ${targetState}`);

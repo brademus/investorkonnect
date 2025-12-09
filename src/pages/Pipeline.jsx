@@ -18,8 +18,10 @@ function PipelineContent() {
   const [loading, setLoading] = useState(true);
   const { data: rooms, isLoading: roomsLoading } = useRooms();
   
-  // Convert rooms to deals format
-  const deals = rooms.map(room => ({
+  // Convert rooms to deals format (hide orphan deals)
+  const deals = rooms
+    .filter(room => !room.is_orphan)
+    .map(room => ({
     id: room.id,
     deal_id: room.deal_id, // Preserve deal_id
     is_orphan: room.is_orphan, // Preserve orphan status

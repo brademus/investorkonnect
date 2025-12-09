@@ -91,8 +91,36 @@ export default function AgentDirectory() {
   }, [profileLoading, user, profile, role, onboarded]);
 
   const loadAgents = async () => {
-    // Legacy load removed
+    try {
+      setLoading(true);
+      // Fetch all agents
+      const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+      
+      // If we have a location filter (e.g. from URL), apply it locally if needed, 
+      // but filteredAgents logic handles UI filtering.
+      // Just set the state.
+      setAgents(allAgents);
+    } catch (error) {
+      console.error("Failed to load agents:", error);
+      toast.error("Failed to load agents");
+    } finally {
+      setLoading(false);
+    }
   };
+
+  useEffect(() => {
+    if (!profileLoading && user && profile && (role === 'investor' || role === 'admin') && onboarded) {
+       // Check redirect logic first
+       const params = new URLSearchParams(window.location.search);
+       const stateParam = params.get('state');
+       if (stateParam) {
+         loadAgents();
+       } else {
+         // If no state param, we already redirected in the other useEffect. 
+         // But if we didn't redirect (e.g. race condition), ensure we don't load unnecessarily.
+       }
+    }
+  }, [profileLoading, user, profile, role, onboarded]);
 
   const handleOpenRoom = async (agent) => {
     try {
