@@ -88,9 +88,11 @@ Deno.serve(async (req) => {
           r.state = deal.state;
           r.budget = deal.purchase_price;
           r.contract_date = deal.key_dates?.closing_date;
+          
+          // Only add the room if the deal actually exists
+          validRooms.push(r);
         }
       }
-      validRooms.push(r);
     });
 
     // Replace rooms with filtered valid rooms
