@@ -211,30 +211,30 @@ function InvestorDashboardContent() {
                       </div>
                       <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-[#E3C567] animate-pulse"></span>
-                        Action Required
+                        Pending Agent
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Select an Agent</h3>
+                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Find an Agent</h3>
                     <div className="flex-grow space-y-3">
                       <p className="text-sm text-[#808080]">
-                        You have a deal pending agent selection.
+                        Select a matching agent from the suggestions to start your deal room.
                       </p>
-                      <div className="bg-[#141414] rounded-xl p-3 border border-[#1F1F1F]">
+                      <div className="bg-[#141414] rounded-xl p-3 border border-[#E3C567]/30">
                          <p className="text-[#FAFAFA] font-medium text-sm truncate">{orphanDeal.property_address || orphanDeal.title}</p>
                          <div className="flex items-center gap-2 mt-1 text-xs text-[#808080]">
                             <span>{orphanDeal.city}, {orphanDeal.state}</span>
                             <span>•</span>
-                            <span className="text-[#E3C567]">${(orphanDeal.budget || 0).toLocaleString()}</span>
+                            <span className="text-[#E3C567]">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
                          </div>
                       </div>
                     </div>
-                    <Button 
-                      onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.deal_id}`)}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold mt-4"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Select Agent
-                    </Button>
+                    {/* Button removed as requested - user must select from suggested agents */}
+                    <div className="mt-4 p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
+                        <p className="text-xs text-[#E3C567] text-center flex items-center justify-center gap-2">
+                            <Sparkles className="w-3 h-3" />
+                            Use the card below to connect ↘
+                        </p>
+                    </div>
                   </>
                 ) : (
                   <>
