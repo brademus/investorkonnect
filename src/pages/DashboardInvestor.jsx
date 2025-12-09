@@ -161,11 +161,15 @@ function InvestorDashboardContent() {
     }
   };
 
-  // Calculate deal stats from rooms (same logic as detail pages)
+  // Calculate deal stats
+  // We prefer activeDeals for the "Active" count to reflect real-time status including orphans
   const dealStats = {
-    active: rooms.filter(r => r.pipeline_stage !== 'closing').length,  // All non-closing deals = active
-    pending: 0, // Not used - always 0
-    closed: rooms.filter(r => r.pipeline_stage === 'closing').length  // Only closing stage = closed
+    // Active: All active deals (orphans + matched) that aren't closed
+    active: activeDeals ? activeDeals.filter(d => d.pipeline_stage !== 'closing' && d.pipeline_stage !== 'clear_to_close_closed').length : 0,
+    // Pending: Use this for orphan deals (waiting for agent)
+    pending: orphanDeal ? 1 : 0, 
+    // Closed: Use rooms for this as they capture the closing stage best
+    closed: rooms ? rooms.filter(r => r.pipeline_stage === 'closing' || r.pipeline_stage === 'clear_to_close_closed').length : 0
   };
 
   if (loading || roomsLoading) {
@@ -366,7 +370,8 @@ function InvestorDashboardContent() {
                   {latestDealState ? `Agents in ${latestDealState}` : 'Suggested Agents'}
                 </h3>
           
-                {rooms.length === 0 ? (
+                {/* Show empty state ONLY if no rooms AND no orphan deal pending */}
+                {rooms.length === 0 && !orphanDeal ? (
                   <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
                     <Users className="w-8 h-8 text-[#333333] mb-2" />
                     <p className="text-sm text-[#808080] mb-1">No agents found yet</p>
