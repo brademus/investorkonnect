@@ -86,8 +86,12 @@ Deno.serve(async (req) => {
 
     // Find orphan deals (deals created by me but not yet in a room)
     try {
-      // Get all deals where I am the investor
-      const myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      // Get all deals where I am the investor, sorted by newest first, limit 100 to catch recent ones
+      const myDeals = await base44.entities.Deal.filter(
+        { investor_id: profile.id },
+        { created_date: -1 },
+        100
+      );
       
       // Filter out deals that are already in rooms
       const roomDealIds = new Set(dealIds);
