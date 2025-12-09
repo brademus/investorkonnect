@@ -7,6 +7,7 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { base44 } from "@/api/base44Client";
 import { inboxList } from "@/components/functions";
 import { useRooms } from "@/components/useRooms";
+import { useQuery } from "@tanstack/react-query";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
   Loader2, Sparkles, Home, DollarSign, CreditCard, Bot
@@ -103,14 +104,18 @@ function InvestorDashboardContent() {
   const loadSuggestedAgents = async (state, dealId) => {
     setAgentsLoading(true);
     try {
+      console.log("Loading agents for state:", state);
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
         state,
         dealId,
         limit: 3
       });
+      
       if (response.data?.results) {
+        console.log("Agents found:", response.data.results.length);
         setSuggestedAgents(response.data.results.map(r => r.profile));
       } else {
+        console.log("No agents found in response");
         setSuggestedAgents([]);
       }
     } catch (err) {
