@@ -90,16 +90,7 @@ export function useRooms() {
         
         let allRooms = [...dbRooms];
 
-        // Merge with session storage rooms (for demo mode or optimistic updates)
-        try {
-          const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-          // Deduplicate based on ID
-          const dbRoomIds = new Set(dbRooms.map(r => r.id));
-          const uniqueSessionRooms = sessionRooms.filter(r => !dbRoomIds.has(r.id));
-          allRooms = [...allRooms, ...uniqueSessionRooms];
-        } catch (e) {
-          console.warn('[useRooms] Failed to load session rooms:', e);
-        }
+        // Removed session storage merging to ensure only real database data is shown
         
         // Enrich real rooms with FULL profile data (frontend needs detailed profile object)
         // listMyRooms does basic enrichment, but we want the full profile object for details

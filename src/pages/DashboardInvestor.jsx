@@ -49,46 +49,12 @@ function InvestorDashboardContent({ profile: propProfile }) {
     loadProfile();
   }, [profile]);
 
-  // Load Active Deals (Source of Truth)
-  const { data: activeDeals = [], isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
-    queryKey: ['investorDeals', profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      // FIX: Use string sort syntax instead of object, as per instructions
-      const deals = await base44.entities.Deal.filter(
-         { investor_id: profile.id }, 
-         '-created_date',
-         20
-      );
-      // Return active/pipeline deals
-      if (!Array.isArray(deals)) return [];
-      return deals.filter(d => d && (d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract'));
-    },
-    enabled: !!profile?.id,
-    staleTime: 0,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
-  });
-
   // Calculate Orphan Deal (Latest deal not in a connected room)
+  // We use the rooms array which already contains orphan deals from listMyRooms
   const orphanDeal = useMemo(() => {
-    if (!activeDeals.length) return null;
-
-    // Get IDs of deals that are in a REAL room (connected to agent)
-    // We filter out "orphan" virtual rooms that might come from listMyRooms
-    const connectedDealIds = new Set(
-        Array.isArray(rooms)
-            ? rooms
-                .filter(r => r && !r.is_orphan && r.counterparty_role !== 'none' && r.deal_id)
-                .map(r => r.deal_id)
-            : []
-    );
-
-    // Find the newest deal that isn't connected
-    // activeDeals is already sorted by created_date desc
-    if (!Array.isArray(activeDeals)) return null;
-    return activeDeals.find(d => d && d.id && !connectedDealIds.has(d.id));
-  }, [activeDeals, rooms]);
+    if (!Array.isArray(rooms)) return null;
+    return rooms.find(r => r.is_orphan);
+  }, [rooms]);
 
   // Load Suggested Agents when orphan deal changes
   useEffect(() => {
@@ -184,23 +150,21 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Stats
   const dealStats = {
-    active: Array.isArray(activeDeals) 
-      ? activeDeals.filter(d => d && !['closing', 'clear_to_close_closed'].includes(d.pipeline_stage)).length 
+    active: Array.isArray(rooms) 
+      ? rooms.filter(r => r && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length 
       : 0,
-    pending: orphanDeal ? 1 : 0,
+    pending: Array.isArray(rooms) ? rooms.filter(r => r.is_orphan).length : 0,
     closed: Array.isArray(rooms)
-      ? rooms.filter(r => r && ['closing', 'clear_to_close_closed'].includes(r.pipeline_stage)).length
+      ? rooms.filter(r => r && ['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length
       : 0
   };
 
   const handleRefresh = () => {
-    refetchDeals();
     refetchRooms();
-    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
     queryClient.invalidateQueries({ queryKey: ['rooms'] });
   };
 
-  if (!profile || dealsLoading || roomsLoading) {
+  if (!profile || roomsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
