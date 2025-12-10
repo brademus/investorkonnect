@@ -130,6 +130,7 @@ export default function DealWizard() {
         setDealId(currentId);
         setSearchParams({ dealId: currentId });
         await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
       } else {
         await base44.entities.Deal.update(currentId, {
             contract_url: file_url,
