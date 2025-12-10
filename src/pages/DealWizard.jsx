@@ -124,8 +124,9 @@ export default function DealWizard() {
       // 2. Extract Data
       const response = await base44.functions.invoke('extractContractData', { fileUrl: file_url });
       
+      let extracted = {};
       if (response.data?.success) {
-        const extracted = response.data.data;
+        extracted = response.data.data;
         setDealData(prev => ({
           ...prev,
           address: extracted.address || '',
@@ -139,11 +140,40 @@ export default function DealWizard() {
           earnestMoneyDate: extracted.key_dates?.earnest_money_due || ''
         }));
         toast.success('Contract data extracted!');
-        setStep(2);
       } else {
         toast.error('Could not extract data. Please enter manually.');
-        setStep(2); // Allow manual entry
       }
+
+      // 3. IMMEDIATELY CREATE DEAL ENTITY (Draft/Active)
+      try {
+        const user = await base44.auth.me();
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        const myProfile = profiles[0];
+        
+        if (myProfile) {
+            const initialDeal = await base44.entities.Deal.create({
+              investor_id: myProfile.id,
+              title: extracted.address || 'New Deal',
+              property_address: extracted.address || '',
+              city: extracted.city || '',
+              state: extracted.state || '',
+              county: extracted.county || '',
+              zip: extracted.zip || '',
+              purchase_price: extracted.purchase_price ? parseFloat(extracted.purchase_price) : 0,
+              contract_url: file_url,
+              key_dates: extracted.key_dates || {},
+              status: 'active', // Mark active so it shows on dashboard immediately
+              pipeline_stage: 'new_deal_under_contract',
+              created_date: new Date().toISOString()
+            });
+            setCreatedDealId(initialDeal.id);
+            await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+        }
+      } catch (err) {
+        console.error("Failed to create initial deal:", err);
+      }
+      
+      setStep(2);
 
     } catch (error) {
       console.error('Upload/Extract error:', error);
