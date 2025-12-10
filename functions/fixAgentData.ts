@@ -25,7 +25,11 @@ Deno.serve(async (req) => {
     // if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
     // 1. Fetch all agents
-    const allProfiles = await base44.asServiceRole.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 50); // Fetch up to 50 agents to avoid timeouts
+    const allProfiles = await base44.asServiceRole.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 100); 
+    
+    if (allProfiles.length > 0) {
+        console.log('Sample profile agent data keys:', Object.keys(allProfiles[0].agent || {}));
+    }
     
     // Also fetch profiles that might have agent data but incorrect role (just in case)
     // const mixedProfiles = await base44.asServiceRole.entities.Profile.filter({}); 
