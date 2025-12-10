@@ -154,7 +154,35 @@ Deno.serve(async (req) => {
     // Sort by most recent activity/creation
     finalRooms.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
 
-    return Response.json({ items: finalRooms });
+    // Dedup by Counterparty ID (keep most recent)
+    // We allow multiple "Orphans" (No Agent Selected) but only one chat per distinct person
+    const uniqueRooms = [];
+    const seenCounterparties = new Set();
+
+    for (const r of finalRooms) {
+      // If it's an orphan or has no distinct counterparty (unlikely for real rooms), keep it
+      // actually orphans have counterparty_role='none'
+      if (r.is_orphan || !r.counterparty_role || r.counterparty_role === 'none') {
+        uniqueRooms.push(r);
+        continue;
+      }
+
+      // Identify counterparty by ID (we need to find the ID)
+      // We didn't explicitly store counterparty_id in the final object in step 5, let's fix that or use name as fallback (risky)
+      // Let's rely on the logic in step 5 where we found the counterparty.
+      const otherId = r.investorId === profile.id ? r.agentId : r.investorId;
+      
+      if (otherId) {
+        if (seenCounterparties.has(otherId)) {
+          continue; // Skip duplicate (older because we sorted by date desc)
+        }
+        seenCounterparties.add(otherId);
+      }
+      
+      uniqueRooms.push(r);
+    }
+
+    return Response.json({ items: uniqueRooms });
   } catch (error) {
     console.error('[listMyRooms] Critical Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
