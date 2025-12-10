@@ -90,8 +90,9 @@ export function useRooms() {
                     const myDeals = await base44.entities.Deal.filter({ investor_id: myProfileId });
                     
                     // Identify the "Active" deal (latest one) for inference
+                    // Broader status check to catch more deals
                     const activeDeals = myDeals
-                        .filter(d => d.status === 'active' || d.status === 'new_deal_under_contract')
+                        .filter(d => !d.status || ['active', 'new_deal_under_contract', 'under_contract', 'draft'].includes(d.status))
                         .sort((a,b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
                     
                     const latestDeal = activeDeals[0];
@@ -107,9 +108,12 @@ export function useRooms() {
                             dealToUse = myDeals.find(d => d.id === r.deal_id);
                         }
                         
-                        // Case B: Room is "Active" but has no deal -> Infer latest active deal
-                        // Only if I am the investor
-                        if (!dealToUse && !r.deal_id && r.investorId === myProfileId && latestDeal) {
+                        // Case B: Inference (No link OR Broken link)
+                        // If we didn't find the explicit deal (broken link) OR there was no link
+                        // AND I am the investor
+                        // AND we have a latest deal
+                        if (!dealToUse && r.investorId === myProfileId && latestDeal) {
+                            // For rooms with agents, we almost certainly want to show the active deal context
                             dealToUse = latestDeal;
                         }
 
