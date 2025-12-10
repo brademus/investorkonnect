@@ -404,10 +404,14 @@ function InvestorDashboardContent({ profile: propProfile }) {
   );
 }
 
+import ErrorBoundary from "@/components/ErrorBoundary";
+
 export default function DashboardInvestor({ profile }) {
   return (
     <AuthGuard requireAuth={true}>
-      <InvestorDashboardContent profile={profile} />
+      <ErrorBoundary>
+        <InvestorDashboardContent profile={profile} />
+      </ErrorBoundary>
     </AuthGuard>
   );
 }

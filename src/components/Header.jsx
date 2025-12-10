@@ -30,7 +30,7 @@ export function Header({ profile }) {
     {
       label: 'Dashboard',
       icon: Home,
-      href: createPageUrl("Dashboard"),
+      href: createPageUrl(isInvestor ? "DashboardInvestor" : "Dashboard"),
       show: true
     },
     {

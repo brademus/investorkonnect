@@ -90,11 +90,10 @@ export default function Dashboard() {
   // Show role-specific dashboard
   try {
     if (profile?.user_role === 'investor') {
-      return (
-        <ErrorBoundary>
-          <DashboardInvestor profile={profile} />
-        </ErrorBoundary>
-      );
+      // Redirect to the dedicated Investor Dashboard page
+      // preventing "page within a page" issues
+      window.location.href = createPageUrl("DashboardInvestor");
+      return null;
     }
 
     if (profile?.user_role === 'agent') {
