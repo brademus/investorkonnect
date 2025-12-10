@@ -134,6 +134,7 @@ export default function AgentDirectory() {
       
       const response = await createDealRoom(payload);
       if (response.data?.room?.id) {
+        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
         toast.success(`Deal room created with ${agent.full_name}`);
         navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
       } else toast.error("Could not create room");

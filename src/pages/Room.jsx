@@ -262,7 +262,9 @@ export default function Room() {
           <div className="flex items-center gap-3">
             {roomId && 
              (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
-             !currentRoom?.deal_assigned_agent_id && (
+             // Show button if deal is not assigned, OR if assigned to someone else (to allow switching)
+             // Hide if already assigned to THIS agent.
+             currentRoom?.deal_assigned_agent_id !== currentRoom?.agentId && (
               <Button
                 onClick={handleLockIn}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5"
