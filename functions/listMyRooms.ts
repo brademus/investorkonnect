@@ -92,6 +92,9 @@ Deno.serve(async (req) => {
           // Only add the room if the deal actually exists
           validRooms.push(r);
         }
+      } else {
+        // Include general conversation rooms (no specific deal attached)
+        validRooms.push(r);
       }
     });
 
