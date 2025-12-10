@@ -16,99 +16,110 @@ import { Button } from "@/components/ui/button";
 function PipelineContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const { data: rooms, isLoading: roomsLoading } = useRooms();
-
-  // Fetch active deals directly from the Deal entity
-  // This ensures we have the latest "Deal" data (contract info) as requested.
-  const { data: activeDeals, isLoading: dealsLoading } = useQuery({
-    queryKey: ['investorDeals', profile?.id],
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const myDeals = await base44.entities.Deal.filter(
-         { investor_id: profile.id }, 
-         { created_date: -1 }
-      );
-      // Return only active deals or those in pipeline
-      return myDeals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
-    },
-    enabled: !!profile?.id,
-    staleTime: 0
-  });
-
-  // Create a map of deals to their rooms (if any)
-  const dealToRoomMap = new Map();
-  (rooms || []).forEach(room => {
-    if (room.deal_id && !room.is_orphan) {
-      dealToRoomMap.set(room.deal_id, room);
-    }
-  });
-
-  // Map deals to pipeline format, preferring Deal entity data
-  const deals = (activeDeals || []).map(deal => {
-    const connectedRoom = dealToRoomMap.get(deal.id);
-    const hasRoom = !!connectedRoom;
-    
-    return {
-      id: hasRoom ? connectedRoom.id : `orphan_${deal.id}`, // Navigation ID (Room ID or special ID)
-      deal_id: deal.id,
-      is_orphan: !hasRoom,
-      
-      // PREFER DEAL DATA (Contract Info)
-      title: deal.title || 'New Deal',
-      property_address: deal.property_address, // Explicitly use Deal address
-      city: deal.city,
-      state: deal.state,
-      budget: deal.purchase_price, // Explicitly use Deal price
-      
-      // Fallback to room data or placeholders if needed
-      customer_name: hasRoom ? (connectedRoom.counterparty_name || connectedRoom.customer_name) : 'Pending Agent',
-      
-      // Deal Metadata
-      pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
-      created_date: deal.created_date,
-      updated_date: deal.updated_date,
-      
-      // Key Dates from Deal
-      contract_date: deal.key_dates?.closing_date,
-      closing_date: deal.key_dates?.closing_date,
-      
-      // Extra fields (from room if available)
-      bedrooms: hasRoom ? connectedRoom.bedrooms : null,
-      bathrooms: hasRoom ? connectedRoom.bathrooms : null,
-      square_feet: hasRoom ? connectedRoom.square_feet : null,
-      open_tasks: hasRoom ? (connectedRoom.open_tasks || 0) : 0,
-      completed_tasks: hasRoom ? (connectedRoom.completed_tasks || 0) : 0
-    };
-  });
-
+  
+  // 1. Load Profile
   useEffect(() => {
-    loadProfile();
+    const fetchProfile = async () => {
+        try {
+            const user = await base44.auth.me();
+            if (user) {
+                const res = await base44.entities.Profile.filter({ user_id: user.id });
+                setProfile(res[0]);
+            }
+        } catch (e) { console.error(e); }
+    };
+    fetchProfile();
   }, []);
 
-  const loadProfile = async () => {
-    try {
-      const user = await base44.auth.me();
-      if (user) {
-        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        setProfile(profiles[0]);
-      }
-      setLoading(false);
-    } catch (error) {
-      console.error('[Pipeline] Error loading profile:', error);
-      setLoading(false);
-    }
-  };
+  // 2. Load Deals (Primary)
+  const { data: dealsData = [], isLoading: loadingDeals } = useQuery({
+    queryKey: ['pipelineDeals', profile?.id],
+    queryFn: async () => {
+        if (!profile?.id) return [];
+        const res = await base44.entities.Deal.filter({ investor_id: profile.id }, { created_date: -1 });
+        return res.filter(d => d.status !== 'archived');
+    },
+    enabled: !!profile?.id
+  });
+
+  // 3. Load Rooms (For Linking)
+  const { data: rooms = [], isLoading: loadingRooms } = useQuery({
+    queryKey: ['pipelineRooms', profile?.id],
+    queryFn: async () => {
+        if (!profile?.id) return [];
+        const res = await base44.functions.invoke('listMyRooms');
+        return res.data?.items || [];
+    },
+    enabled: !!profile?.id
+  });
+
+  // 4. Merge Data
+  const deals = React.useMemo(() => {
+    // Map DealID -> Room
+    // Filter out virtual orphan rooms from listMyRooms to link only to real rooms
+    const roomMap = new Map();
+    rooms.forEach(r => {
+        if (r.deal_id && !r.is_orphan) {
+            roomMap.set(r.deal_id, r);
+        }
+    });
+
+    return dealsData
+        .filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract')
+        .map(deal => {
+        const room = roomMap.get(deal.id);
+        const hasRoom = !!room;
+
+        return {
+            // Core IDs
+            id: deal.id, // Primary Key is Deal ID now internally, but UI might expect room ID for navigation
+            deal_id: deal.id,
+            room_id: hasRoom ? room.id : null,
+            
+            // Display Data - STRICTLY FROM DEAL ENTITY
+            title: deal.title || 'Untitled Deal',
+            property_address: deal.property_address || 'No Address', // This is what user wants to see
+            city: deal.city,
+            state: deal.state,
+            budget: deal.purchase_price, // Price from contract
+            
+            // Context
+            customer_name: hasRoom ? (room.counterparty_name || 'Agent') : 'Pending Agent',
+            pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
+            
+            // Dates
+            created_date: deal.created_date,
+            updated_date: deal.updated_date,
+            contract_date: deal.key_dates?.closing_date,
+            closing_date: deal.key_dates?.closing_date,
+            marketing_start_date: hasRoom ? room.marketing_start_date : null,
+            walkthrough_date: hasRoom ? room.walkthrough_date : null,
+            evaluation_date: hasRoom ? room.evaluation_date : null,
+            
+            // Stats
+            open_tasks: room?.open_tasks || 0,
+            completed_tasks: room?.completed_tasks || 0,
+            
+            // UI Flags
+            is_orphan: !hasRoom,
+            
+            // Extra fields for UI mapping (from Room if linked)
+            bedrooms: room?.bedrooms,
+            bathrooms: room?.bathrooms,
+            square_feet: room?.square_feet
+        };
+    });
+  }, [dealsData, rooms]);
 
   const handleDealClick = (deal) => {
     if (deal.is_orphan) {
-      // Resume Deal Wizard for agent selection
-      navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
+        navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
     } else {
-      // Navigate to Room page with the deal's room ID
-      navigate(`${createPageUrl("Room")}?roomId=${deal.id}`);
+        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
     }
   };
+
+  const loading = !profile || loadingDeals || loadingRooms;
 
 
 
