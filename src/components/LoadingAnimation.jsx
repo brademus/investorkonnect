@@ -1,11 +1,13 @@
 import React from 'react';
 import Lottie from 'lottie-react';
 import { Loader2 } from 'lucide-react';
-import animationData from './loading-animation.json';
+// import animationData from './loading-animation.json'; 
 
 export default function LoadingAnimation({ className = "w-24 h-24" }) {
+  // Temporary: animationData is null until user provides the JSON
+  const animationData = null;
+
   // Check if animationData is valid (has layers or minimal lottie structure)
-  // Simple check: if it's an empty object (which we created) it's invalid
   const isValid = animationData && Object.keys(animationData).length > 0;
 
   if (!isValid) {
