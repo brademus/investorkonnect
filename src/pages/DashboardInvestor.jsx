@@ -172,7 +172,7 @@ function InvestorDashboardContent() {
     closed: rooms ? rooms.filter(r => r.pipeline_stage === 'closing' || r.pipeline_stage === 'clear_to_close_closed').length : 0
   };
 
-  if (loading || roomsLoading) {
+  if (loading || roomsLoading || dealsLoading) {
     return (
       <>
         <Header profile={profile} />
