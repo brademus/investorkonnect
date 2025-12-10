@@ -36,8 +36,9 @@ function InvestorDocumentsContent() {
             { created_date: -1 }
         );
         
-        // Filter out deals without contracts
-        setDeals(myDeals.filter(d => d.contract_url));
+        // Filter out deals without contracts, but be lenient - maybe some have it but empty string?
+        // Show all active deals or deals with contract_url
+        setDeals(myDeals.filter(d => d.contract_url || d.status === 'active'));
       }
     } catch (error) {
       console.error("Error loading documents:", error);

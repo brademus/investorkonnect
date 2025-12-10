@@ -79,7 +79,9 @@ function InvestorDashboardContent() {
     );
     
     // Find the most recent active deal that is NOT in a real room
-    const orphan = activeDeals.find(d => !dealIdsInRealRooms.has(d.id));
+    // Sort activeDeals by created_date descending just to be safe (though query handles it)
+    const sortedDeals = [...activeDeals].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    const orphan = sortedDeals.find(d => !dealIdsInRealRooms.has(d.id));
     
     setOrphanDeal(orphan || null);
     
