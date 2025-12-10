@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/components/utils';
 import { Logo } from '@/components/Logo';
@@ -21,6 +22,7 @@ const STEPS = [
 
 export default function DealWizard() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [extracting, setExtracting] = useState(false);
@@ -225,6 +227,11 @@ export default function DealWizard() {
       }
 
       toast.success("Deal saved to your profile!");
+      
+      // Force refresh of dashboard data
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      
       navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
