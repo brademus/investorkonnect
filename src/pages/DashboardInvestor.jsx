@@ -34,14 +34,20 @@ function InvestorDashboardContent() {
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      return await base44.entities.Deal.filter(
-         { investor_id: profile.id, status: 'active' }, 
+      console.log('Fetching deals for investor:', profile.id);
+      // Fetch ALL recent deals to debug status issues
+      const deals = await base44.entities.Deal.filter(
+         { investor_id: profile.id }, 
          { created_date: -1 }, // Newest first
-         10
+         20
       );
+      console.log('Fetched deals:', deals);
+      // Filter for active ones
+      return deals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
     },
     enabled: !!profile?.id,
     refetchOnMount: true,
+    refetchOnWindowFocus: true,
     staleTime: 0 
   });
 
