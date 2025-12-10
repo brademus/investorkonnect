@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
 import DashboardInvestor from "./DashboardInvestor";
 import DashboardAgent from "./DashboardAgent";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 /**
  * DASHBOARD - Shows role-specific dashboard
@@ -89,11 +90,19 @@ export default function Dashboard() {
   // Show role-specific dashboard
   try {
     if (profile?.user_role === 'investor') {
-      return <DashboardInvestor profile={profile} />;
+      return (
+        <ErrorBoundary>
+          <DashboardInvestor profile={profile} />
+        </ErrorBoundary>
+      );
     }
 
     if (profile?.user_role === 'agent') {
-      return <DashboardAgent />;
+      return (
+        <ErrorBoundary>
+          <DashboardAgent />
+        </ErrorBoundary>
+      );
     }
   } catch (error) {
     console.error("Dashboard render error:", error);

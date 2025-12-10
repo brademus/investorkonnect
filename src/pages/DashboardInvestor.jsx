@@ -58,6 +58,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
          20
       );
       // Return active/pipeline deals
+      if (!Array.isArray(deals)) return [];
       return deals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
     },
     enabled: !!profile?.id,

@@ -158,7 +158,7 @@ export function SetupChecklist({ profile, onRefresh }) {
             // The next incomplete step is always the first one in visibleSteps (since we filtered out completed ones)
             // But we need to know if it's the *actual* next step in the sequence. 
             // Since we filter out completed, the first visible one IS the next step.
-            const isNext = visibleSteps[0].id === step.id;
+            const isNext = visibleSteps.length > 0 && visibleSteps[0].id === step.id;
             
             // Is Locked? 
             // In the filtered list, the first item is the next step.
