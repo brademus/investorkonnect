@@ -102,8 +102,10 @@ function InvestorDashboardContent({ profile: propProfile }) {
             const parts = orphanDeal.property_address.split(',');
             if (parts.length > 1) {
                 const stateZip = parts[parts.length - 1].trim();
-                const possibleState = stateZip.split(' ')[0];
-                if (possibleState.length === 2) state = possibleState;
+                // Take the first word of the last part (e.g. "TX" from "TX 78701" or "Texas" from "Texas 78701")
+                // We allow full state names now too, backend handles normalization
+                const possibleState = stateZip.split(' ')[0].replace(/[0-9]/g, ''); 
+                if (possibleState.length >= 2) state = possibleState;
             }
         }
     }
@@ -114,38 +116,20 @@ function InvestorDashboardContent({ profile: propProfile }) {
   const loadSuggestedAgents = async (state, dealId) => {
     setAgentsLoading(true);
     try {
-      // 1. Try to get smart matches
+      // 1. Get strict matches based on location
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
         state, dealId, limit: 3
       });
       
-      let agents = response.data?.results?.map(r => r.profile) || [];
+      const agents = response.data?.results?.map(r => r.profile) || [];
       
-      // 2. Fallback: If no matches, just get any verified agents to show SOMETHING
-      if (agents.length === 0) {
-         const fallbackAgents = await base44.entities.Profile.filter({ 
-             user_role: 'agent', 
-             'agent.verification_status': 'verified' 
-         }, '-created_date', 3);
-         
-         // If still nothing, just get any agents
-         if (fallbackAgents.length === 0) {
-             agents = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 3);
-         } else {
-             agents = fallbackAgents;
-         }
-      }
+      // NO GENERIC FALLBACK: User requested to ONLY show agents in the same place.
+      // If 0 agents found in that state, we show 0 agents.
 
       setSuggestedAgents(agents);
     } catch (err) {
       console.error("Agent load error", err);
-      // Final fallback on error
-      try {
-          const fallback = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 3);
-          setSuggestedAgents(fallback);
-      } catch (e) {
-          setSuggestedAgents([]);
-      }
+      setSuggestedAgents([]);
     } finally {
       setAgentsLoading(false);
     }
@@ -386,15 +370,22 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     </div>
                 ) : (
                     <div className="flex-grow flex flex-col items-center justify-center text-center">
-                        <p className="text-sm text-[#666]">
-                           {orphanDeal ? 'No matches found nearby.' : 'Start a deal to see matches.'}
+                        <p className="text-sm text-[#666] mb-2">
+                           {orphanDeal 
+                             ? `No agents found in ${orphanDeal.state || 'this area'} yet.` 
+                             : 'Start a deal to see matches.'}
                         </p>
+                        {orphanDeal && (
+                            <p className="text-xs text-[#444] mb-4 max-w-[200px]">
+                                We only show agents verified in the deal's market.
+                            </p>
+                        )}
                         <Button 
                             variant="link" 
                             className="text-[#E3C567]"
                             onClick={() => navigate(createPageUrl("AgentDirectory"))}
                         >
-                            Browse Directory
+                            Browse All Agents
                         </Button>
                     </div>
                 )}
