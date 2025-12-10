@@ -7,14 +7,32 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
-  Loader2, Sparkles, Bot
+  Loader2, Sparkles, Bot, DollarSign, Clock
 } from "lucide-react";
+import { useRooms } from "@/components/useRooms";
+import { inboxList } from "@/components/functions";
+import { useQuery } from "@tanstack/react-query";
 
 function AgentDashboardContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
-  // const [profileCompletion] = useState(75); // Unused
+  
+  // Real Data Fetching
+  const { data: rooms = [], isLoading: roomsLoading } = useRooms();
+  
+  const { data: inbox = [], isLoading: inboxLoading } = useQuery({
+    queryKey: ['inbox'],
+    queryFn: async () => {
+      try {
+        const res = await inboxList();
+        return res.data || [];
+      } catch (e) {
+        console.error("Inbox load failed:", e);
+        return [];
+      }
+    }
+  });
 
   useEffect(() => {
     loadProfile();
@@ -60,7 +78,7 @@ function AgentDashboardContent() {
     }
   };
 
-  if (loading) {
+  if (loading || roomsLoading || inboxLoading) {
     return (
       <>
         <Header profile={profile} />
@@ -75,12 +93,21 @@ function AgentDashboardContent() {
   }
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Agent';
+
+  // Calculate Real Stats
+  const activeRooms = rooms.filter(r => r && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage));
+  const closedRooms = rooms.filter(r => r && ['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage));
+  const pendingRequests = inbox.filter(i => i.status === 'pending');
+  const uniqueClients = new Set(activeRooms.map(r => r.investorId).filter(Boolean)).size;
+  const unreadCount = inbox.filter(i => !i.read).length; // Approximate unread from inbox
+
   const userData = {
-    activeClients: 5,
-    pendingRequests: 3,
-    unreadMessages: 4,
-    profileViews: 12,
-    activeDealRooms: 2
+    activeClients: uniqueClients,
+    pendingRequests: pendingRequests.length,
+    unreadMessages: unreadCount,
+    profileViews: 0, // Not tracked yet
+    activeDealRooms: activeRooms.length,
+    closedDeals: closedRooms.length
   };
 
   return (
@@ -132,12 +159,20 @@ function AgentDashboardContent() {
                     <span className="text-lg font-bold text-[#E3C567]">{userData.activeDealRooms}</span>
                   </div>
                   
-                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg">
+                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
                     <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Clients</span>
+                      <Clock className="w-4 h-4 text-[#808080]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Pending</span>
                     </div>
-                    <span className="text-lg font-bold text-[#808080]">{userData.activeClients}</span>
+                    <span className="text-lg font-bold text-[#808080]">{userData.pendingRequests}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-4 h-4 text-green-500" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Closed</span>
+                    </div>
+                    <span className="text-lg font-bold text-green-500">{userData.closedDeals}</span>
                   </div>
                 </div>
 
