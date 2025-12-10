@@ -222,23 +222,9 @@ export default function DealWizard() {
         pipeline_stage: 'new_deal_under_contract'
       });
 
-      // Find Agents for Step 3
-      try {
-        const matchRes = await base44.functions.invoke('findBestAgents', {
-            state: dealData.state,
-            county: dealData.county,
-            dealId: dealId
-        });
-        if (matchRes.data?.results) {
-            setMatchedAgents(matchRes.data.results);
-        }
-      } catch (e) {
-        console.error("Matching failed:", e);
-      }
-
       await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
       toast.success("Deal details saved");
-      setStep(3);
+      navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
       console.error("Save failed:", error);
