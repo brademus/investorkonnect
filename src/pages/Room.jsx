@@ -420,7 +420,7 @@ export default function Room() {
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]"></span>
                       <span className="font-semibold text-[#FAFAFA]">
-                        {currentRoom.property_address || currentRoom.title || "New Connection"}
+                        {currentRoom.property_address || currentRoom.title || `Chat with ${counterpartName}`}
                       </span>
                     </div>
                     

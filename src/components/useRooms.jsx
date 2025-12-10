@@ -54,7 +54,7 @@ function normalizeRoom(room) {
     property_address: room.property_address || null,
     customer_name: room.customer_name || room.counterparty_name || null,
     budget: room.budget || room.contract_price || null,
-    pipeline_stage: room.pipeline_stage || 'new_deal_under_contract',
+    pipeline_stage: room.pipeline_stage || (room.deal_id ? 'new_deal_under_contract' : null),
   };
 }
 
