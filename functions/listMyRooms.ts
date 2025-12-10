@@ -54,10 +54,21 @@ Deno.serve(async (req) => {
     // Enrich with Deal data
     const dealIds = rooms.map(r => r.deal_id).filter(Boolean);
     const dealsById = new Map();
+    let myDeals = [];
+
+    // Fetch my deals (for orphans AND inference)
+    try {
+      myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      myDeals.forEach(d => dealsById.set(d.id, d));
+    } catch (e) {
+      console.log("Error fetching my deals:", e.message);
+    }
     
-    if (dealIds.length > 0) {
+    // Fetch other deals linked to rooms
+    const missingDealIds = dealIds.filter(id => !dealsById.has(id));
+    if (missingDealIds.length > 0) {
       try {
-        const deals = await base44.entities.Deal.filter({ id: { $in: dealIds } });
+        const deals = await base44.entities.Deal.filter({ id: { $in: missingDealIds } });
         deals.forEach(d => dealsById.set(d.id, d));
       } catch (e) {
         console.log("Error fetching deals:", e.message);
@@ -78,43 +89,46 @@ Deno.serve(async (req) => {
       r.counterparty_name = counterparty.full_name || counterparty.email || `User ${otherId.slice(0, 6)}`;
       r.counterparty_role = r.investorId === profile.id ? 'agent' : 'investor';
       
+      let deal = null;
       if (r.deal_id) {
-        const deal = dealsById.get(r.deal_id);
-        if (deal) {
-          r.pipeline_stage = deal.pipeline_stage;
-          r.title = deal.title;
-          r.property_address = deal.property_address;
-          r.city = deal.city;
-          r.state = deal.state;
-          r.budget = deal.purchase_price;
-          r.contract_date = deal.key_dates?.closing_date;
-          
-          // Only add the room if the deal actually exists
-          validRooms.push(r);
+        deal = dealsById.get(r.deal_id);
+      } else if (r.investorId === profile.id) {
+        // Infer deal if I'm the investor and have active deals
+        const activeDeals = myDeals.filter(d => d.status !== 'archived' && d.status !== 'closed');
+        if (activeDeals.length > 0) {
+          // Use most recent active deal
+          activeDeals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+          deal = activeDeals[0];
         }
-      } else {
-        // Include general conversation rooms (no specific deal attached)
-        validRooms.push(r);
       }
+
+      if (deal) {
+        r.pipeline_stage = deal.pipeline_stage;
+        r.title = deal.title;
+        r.property_address = deal.property_address;
+        r.city = deal.city;
+        r.state = deal.state;
+        r.budget = deal.purchase_price;
+        r.contract_date = deal.key_dates?.closing_date;
+        
+        // If the room HAD a deal_id but deal not found, validRooms logic below handles it
+      }
+
+      if (r.deal_id && !deal) {
+          // Room points to non-existent deal -> skip or include? 
+          // Original logic: "Only add the room if the deal actually exists"
+          // So we skip.
+          return; 
+      }
+
+      validRooms.push(r);
     });
 
-    // Replace rooms with filtered valid rooms
-    // We modify the array in place or reassign. Since 'rooms' was created from map.values(), we can just use validRooms.
-    // However, we need to be careful about the variable reference used later.
-    // Let's reassign the variable 'rooms' if possible, or update the logic below.
-    // Since 'rooms' is a const (wait, line 37: const rooms = ...), we cannot reassign.
-    // We will use a new variable 'allRooms' and use that.
-    
-    // Actually, to minimize code change, let's clear 'rooms' array and push valid ones back?
-    // Array.from returns a new array.
-    
-    // Let's just use validRooms for the next steps.
     const finalRooms = validRooms;
 
     // Find orphan deals (deals created by me but not yet in a room)
     try {
-      // Get all deals where I am the investor
-      const myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      // myDeals is already fetched above
       
       // Filter out deals that are already in VALID rooms
       // Note: dealIds was calculated from ALL rooms (including invalid ones). 
