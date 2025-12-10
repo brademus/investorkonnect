@@ -9,6 +9,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // 1. Get Profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
     
@@ -16,144 +17,125 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Profile not found" }, { status: 404 });
     }
 
+    // 2. Fetch Rooms (Parallel)
+    const [investorRooms, agentRooms] = await Promise.all([
+      base44.entities.Room.filter({ investorId: profile.id }).catch(e => []),
+      base44.entities.Room.filter({ agentId: profile.id }).catch(e => [])
+    ]);
+
+    // Dedup rooms by ID
     const roomsMap = new Map();
-
-    // Get rooms where user is investor
-    try {
-      const investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
-      investorRooms.forEach(r => roomsMap.set(r.id, r));
-    } catch (e) {
-      console.log("Error fetching investor rooms:", e.message);
-    }
-
-    // Get rooms where user is agent
-    try {
-      const agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      agentRooms.forEach(r => roomsMap.set(r.id, r));
-    } catch (e) {
-      console.log("Error fetching agent rooms:", e.message);
-    }
-
+    [...investorRooms, ...agentRooms].forEach(r => roomsMap.set(r.id, r));
     const rooms = Array.from(roomsMap.values());
 
-    // Enrich with counterparty names
-    const otherIds = [];
+    // 3. Fetch Counterparties (Parallel)
+    const otherIds = new Set();
     rooms.forEach(r => {
       const otherId = r.investorId === profile.id ? r.agentId : r.investorId;
-      if (otherId) otherIds.push(otherId);
+      if (otherId) otherIds.add(otherId);
     });
 
-    const uniqueIds = Array.from(new Set(otherIds));
-    const otherProfiles = await base44.entities.Profile.filter({ 
-      id: { $in: uniqueIds } 
-    });
-
-    const profilesById = new Map();
-    otherProfiles.forEach(p => profilesById.set(p.id, p));
-
-    // Enrich with Deal data
-    const dealIds = rooms.map(r => r.deal_id).filter(Boolean);
-    const dealsById = new Map();
-    let myDeals = [];
-
-    // Fetch my deals (for orphans AND inference)
-    try {
-      myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
-      myDeals.forEach(d => dealsById.set(d.id, d));
-    } catch (e) {
-      console.log("Error fetching my deals:", e.message);
+    const otherProfilesMap = new Map();
+    if (otherIds.size > 0) {
+      const pList = await base44.entities.Profile.filter({ id: { $in: Array.from(otherIds) } });
+      pList.forEach(p => otherProfilesMap.set(p.id, p));
     }
+
+    // 4. Fetch Deals
+    // We need: 
+    // a) Deals referenced by rooms (r.deal_id)
+    // b) Active deals owned by this user (for inference)
     
-    // Fetch other deals linked to rooms
-    const missingDealIds = dealIds.filter(id => !dealsById.has(id));
+    const roomDealIds = new Set(rooms.map(r => r.deal_id).filter(Boolean));
+    const dealsMap = new Map();
+
+    // Fetch user's own deals
+    let myActiveDeals = [];
+    try {
+      // Get all deals for this investor to support inference and orphans
+      const myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      myDeals.forEach(d => {
+        dealsMap.set(d.id, d);
+        // Track active ones for inference
+        if (d.status !== 'archived' && d.status !== 'closed') {
+          myActiveDeals.push(d);
+        }
+      });
+    } catch (e) {
+      console.error("Error fetching my deals:", e);
+    }
+
+    // Sort active deals by date (newest first) for inference priority
+    myActiveDeals.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+
+    // Fetch any missing deals referenced by rooms
+    const missingDealIds = Array.from(roomDealIds).filter(id => !dealsMap.has(id));
     if (missingDealIds.length > 0) {
       try {
-        const deals = await base44.entities.Deal.filter({ id: { $in: missingDealIds } });
-        deals.forEach(d => dealsById.set(d.id, d));
+        const extraDeals = await base44.entities.Deal.filter({ id: { $in: missingDealIds } });
+        extraDeals.forEach(d => dealsMap.set(d.id, d));
       } catch (e) {
-        console.log("Error fetching deals:", e.message);
+        console.error("Error fetching extra deals:", e);
       }
     }
 
-    // Filter out rooms with missing counterparties (broken/test rooms)
-    const validRooms = [];
+    // 5. Construct Final List
+    const finalRooms = [];
+    const usedDealIds = new Set(); // Track which deals are attached to rooms
+
     rooms.forEach(r => {
+      // Determine Counterparty
       const otherId = r.investorId === profile.id ? r.agentId : r.investorId;
-      // If no valid counterparty ID, skip this room (it's broken)
-      if (!otherId) return;
+      if (!otherId) return; // Skip invalid rooms
 
-      const counterparty = profilesById.get(otherId);
-      // If counterparty profile doesn't exist, skip this room
-      if (!counterparty) return;
+      const counterparty = otherProfilesMap.get(otherId);
+      if (!counterparty) return; // Skip if profile missing
 
-      r.counterparty_name = counterparty.full_name || counterparty.email || `User ${otherId.slice(0, 6)}`;
+      // Basic Room Info
+      r.counterparty_name = counterparty.full_name || counterparty.email || "Unknown User";
       r.counterparty_role = r.investorId === profile.id ? 'agent' : 'investor';
-      
+      r.counterparty_image = counterparty.headshotUrl || null; // Add image if available
+
+      // Deal Logic
       let deal = null;
+
       if (r.deal_id) {
-        deal = dealsById.get(r.deal_id);
+        // Explicit link
+        deal = dealsMap.get(r.deal_id);
       } else if (r.investorId === profile.id) {
-        // Infer deal if I'm the investor and have active deals
-        // Only infer if the agent is NOT already locked into another deal? 
-        // No, multiple agents can discuss the same deal.
-        
-        const activeDeals = myDeals.filter(d => d.status !== 'archived' && d.status !== 'closed');
-        if (activeDeals.length > 0) {
-          // Use most recent active deal
-          activeDeals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-          deal = activeDeals[0];
+        // Inference: If I am investor and room has no deal, infer the most recent active deal
+        if (myActiveDeals.length > 0) {
+          deal = myActiveDeals[0];
+          // We don't verify agent match here, assuming open deals can be discussed with anyone
         }
       }
 
       if (deal) {
-        r.pipeline_stage = deal.pipeline_stage;
-        r.title = deal.title;
+        r.deal_title = deal.title; // Explicit field for deal title
+        r.title = deal.title; // Legacy support
         r.property_address = deal.property_address;
         r.city = deal.city;
         r.state = deal.state;
         r.budget = deal.purchase_price;
+        r.pipeline_stage = deal.pipeline_stage;
         r.contract_date = deal.key_dates?.closing_date;
         
-        // Pass the inferred deal ID so frontend can offer to "lock it in"
-        if (!r.deal_id) {
-          r.suggested_deal_id = deal.id;
-        }
-        
-        // Pass the currently assigned agent ID (if any) to control "Lock In" button
+        // Helper flags
+        if (!r.deal_id) r.suggested_deal_id = deal.id;
         r.deal_assigned_agent_id = deal.agent_id;
-      } else {
-        // Deal not found or not inferred.
-        // If the user wants to see deal info, and it's missing, it might be because:
-        // 1. Deal inference failed (no active deals?)
-        // 2. Room has deal_id but deal deleted?
+        
+        usedDealIds.add(deal.id);
       }
 
-      // If r.deal_id exists but deal not found, we still return the room (as a normal chat),
-      // just without the deal info populated above.
-      
-      validRooms.push(r);
+      finalRooms.push(r);
     });
 
-    const finalRooms = validRooms;
-
-    // Find orphan deals (deals created by me but not yet in a room)
-    try {
-      // myDeals is already fetched above
-      
-      // Filter out deals that are already in VALID rooms
-      // Note: dealIds was calculated from ALL rooms (including invalid ones). 
-      // We should recalculate dealIds based on finalRooms to be precise, 
-      // BUT if we exclude broken rooms here, their deals will become orphans. 
-      // If the user wants 0 deals, converting broken rooms to orphans might show them as "Pending".
-      // This is probably better than showing them as "Active".
-      const validDealIds = new Set(finalRooms.map(r => r.deal_id).filter(Boolean));
-      
-      const orphanDeals = myDeals.filter(d => !validDealIds.has(d.id) && d.status !== 'archived');
-      
-      // Convert orphan deals to room-like objects
-      orphanDeals.forEach(deal => {
+    // 6. Add Orphan Deals (Deals I own that aren't linked to a room yet)
+    // Only if they aren't already used in a valid room
+    myActiveDeals.forEach(deal => {
+      if (!usedDealIds.has(deal.id)) {
         finalRooms.push({
-          id: `virtual_${deal.id}`, // Virtual ID
+          id: `virtual_${deal.id}`,
           deal_id: deal.id,
           title: deal.title,
           property_address: deal.property_address,
@@ -162,27 +144,19 @@ Deno.serve(async (req) => {
           budget: deal.purchase_price,
           pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
           created_date: deal.created_date,
-          updated_date: deal.updated_date || deal.created_date,
-          contract_date: deal.key_dates?.closing_date,
           counterparty_name: 'No Agent Selected',
           counterparty_role: 'none',
-          is_orphan: true // Flag for frontend
+          is_orphan: true
         });
-      });
-    } catch (e) {
-      console.log("Error fetching orphan deals:", e.message);
-    }
-
-    // Sort combined list by created_date descending (newest first)
-    finalRooms.sort((a, b) => {
-      const dateA = new Date(a.created_date || 0);
-      const dateB = new Date(b.created_date || 0);
-      return dateB - dateA;
+      }
     });
+
+    // Sort by most recent activity/creation
+    finalRooms.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
 
     return Response.json({ items: finalRooms });
   } catch (error) {
-    console.error('[listMyRooms] Error:', error);
+    console.error('[listMyRooms] Critical Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
