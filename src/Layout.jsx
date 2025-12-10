@@ -26,7 +26,7 @@ function LayoutContent({ children }) {
   ];
 
   // Full-bleed pages that handle their own layout completely
-  const fullBleedPages = ['/Room', '/InvestorHome', '/AgentHome', '/Dashboard', '/AgentDirectory'];
+  const fullBleedPages = ['/Room', '/AgentHome', '/Dashboard', '/AgentDirectory'];
   const isFullBleedPage = fullBleedPages.some(path => location.pathname.toLowerCase().includes(path.toLowerCase()));
 
   const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
