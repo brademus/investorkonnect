@@ -155,13 +155,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Stats
   const dealStats = {
-    active: Array.isArray(rooms) 
-      ? rooms.filter(r => r && !r.is_orphan && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length 
-      : 0,
-    pending: Array.isArray(rooms) ? rooms.filter(r => r.is_orphan).length : 0,
-    closed: Array.isArray(rooms)
-      ? rooms.filter(r => r && ['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length
-      : 0
+    new_deal: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length : 0,
+    walkthrough: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'walkthrough_scheduled').length : 0,
+    evaluate: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'evaluate_deal').length : 0,
+    marketing: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'active_marketing').length : 0,
+    closed: Array.isArray(rooms) ? rooms.filter(r => ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length : 0
   };
 
   const handleRefresh = () => {
@@ -274,30 +272,24 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">View All</Link>
                 </div>
 
-                <div className="space-y-3 flex-grow">
-                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-                        <div className="flex items-center gap-3">
-                            <Home className="w-4 h-4 text-[#E3C567]" />
-                            <span className="text-sm text-[#FAFAFA]">Active Deals</span>
+                <div className="space-y-2 flex-grow overflow-y-auto">
+                    {[
+                        { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#FAFAFA]', icon: Plus, bg: 'bg-[#FAFAFA]/10' },
+                        { label: 'Walkthrough Scheduled', count: dealStats.walkthrough, color: 'text-[#60A5FA]', icon: Home, bg: 'bg-[#60A5FA]/10' },
+                        { label: 'Evaluate Deal', count: dealStats.evaluate, color: 'text-[#F59E0B]', icon: FileText, bg: 'bg-[#F59E0B]/10' },
+                        { label: 'Active Marketing', count: dealStats.marketing, color: 'text-[#DB2777]', icon: Users, bg: 'bg-[#DB2777]/10' },
+                        { label: 'Closed', count: dealStats.closed, color: 'text-[#34D399]', icon: DollarSign, bg: 'bg-[#34D399]/10' }
+                    ].map((stat, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#333] transition-colors">
+                            <div className="flex items-center gap-3">
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg}`}>
+                                    <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                                </div>
+                                <span className="text-sm font-medium text-[#FAFAFA]">{stat.label}</span>
+                            </div>
+                            <span className={`text-base font-bold ${stat.color}`}>{stat.count}</span>
                         </div>
-                        <span className="text-xl font-bold text-[#FAFAFA]">{dealStats.active}</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-                        <div className="flex items-center gap-3">
-                            <FileText className="w-4 h-4 text-[#808080]" />
-                            <span className="text-sm text-[#FAFAFA]">Pending</span>
-                        </div>
-                        <span className="text-xl font-bold text-[#808080]">{dealStats.pending}</span>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
-                        <div className="flex items-center gap-3">
-                            <DollarSign className="w-4 h-4 text-green-500" />
-                            <span className="text-sm text-[#FAFAFA]">Closed</span>
-                        </div>
-                        <span className="text-xl font-bold text-green-500">{dealStats.closed}</span>
-                    </div>
+                    ))}
                 </div>
             </div>
 
