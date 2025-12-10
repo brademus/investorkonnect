@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -10,200 +10,151 @@ import { useRooms } from "@/components/useRooms";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
-  Loader2, Sparkles, Home, DollarSign, CreditCard, Bot
+  Loader2, Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 function InvestorDashboardContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [recentMessages, setRecentMessages] = useState([]);
   const [suggestedAgents, setSuggestedAgents] = useState([]);
-  const [latestDealState, setLatestDealState] = useState(null);
-  const [orphanDeal, setOrphanDeal] = useState(null);
   const [agentsLoading, setAgentsLoading] = useState(false);
   
-  const { data: rooms, isLoading: roomsLoading } = useRooms();
-  
-  const queryClient = useQueryClient();
+  // Load Rooms (Standard Hook)
+  const { data: rooms = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
 
-  // DIRECT DATA FETCHING FOR ROBUSTNESS
-  // Fetch active deals for this investor
-  const { data: activeDeals, isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
+  // Load Profile
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const user = await base44.auth.me();
+        if (!user) return;
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        setProfile(profiles[0]);
+      } catch (error) {
+        console.error("Profile load error", error);
+      }
+    };
+    loadProfile();
+  }, []);
+
+  // Load Active Deals (Source of Truth)
+  const { data: activeDeals = [], isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      console.log('Fetching deals for investor:', profile.id);
-      // Fetch ALL recent deals to debug status issues
       const deals = await base44.entities.Deal.filter(
          { investor_id: profile.id }, 
-         { created_date: -1 }, // Newest first
+         { created_date: -1 },
          20
       );
-      console.log('Fetched deals:', deals);
-      // Filter for active ones
+      // Return active/pipeline deals
       return deals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
     },
     enabled: !!profile?.id,
+    staleTime: 0,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
-    staleTime: 0 
+    refetchOnWindowFocus: true
   });
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-  
-  // Force refetch when returning to dashboard
-  useEffect(() => {
-    if (profile?.id) {
-        queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        refetchDeals();
-    }
-  }, [profile?.id]);
+  // Calculate Orphan Deal (Latest deal not in a connected room)
+  const orphanDeal = useMemo(() => {
+    if (!activeDeals.length) return null;
 
-  useEffect(() => {
-    if (!activeDeals || !rooms) return;
-
-    // Logic: An "orphan" deal is an active deal that is NOT linked to any REAL (connected) room yet.
-    
-    // Get all deal IDs currently in REAL rooms (exclude virtual/orphan rooms that the backend might return)
-    // We only want to exclude deals that have actually been matched with an agent.
-    const dealIdsInRealRooms = new Set(
-      rooms
-        .filter(r => !r.is_orphan && r.counterparty_role !== 'none') 
-        .map(r => r.deal_id)
-        .filter(Boolean)
+    // Get IDs of deals that are in a REAL room (connected to agent)
+    // We filter out "orphan" virtual rooms that might come from listMyRooms
+    const connectedDealIds = new Set(
+        rooms
+            .filter(r => !r.is_orphan && r.counterparty_role !== 'none' && r.deal_id)
+            .map(r => r.deal_id)
     );
-    
-    // Find the most recent active deal that is NOT in a real room
-    // Sort activeDeals by created_date descending just to be safe (though query handles it)
-    const sortedDeals = [...activeDeals].sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    const orphan = sortedDeals.find(d => !dealIdsInRealRooms.has(d.id));
-    
-    setOrphanDeal(orphan || null);
-    
-    if (orphan) {
-        // We found an orphan deal! Let's load suggestions for it.
-        let state = orphan.state;
-        
-        // Fallback extraction from address if state field is missing
-        if (!state && orphan.property_address) {
-          const parts = orphan.property_address.split(',');
-          if (parts.length > 1) {
-             const stateZip = parts[parts.length - 1].trim();
-             const possibleState = stateZip.split(' ')[0];
-             if (possibleState.length === 2) state = possibleState;
-          }
-        }
-        
-        state = state ? state.trim().toUpperCase() : null;
-        
-        if (state) {
-            setLatestDealState(state);
-            loadSuggestedAgents(state, orphan.id);
-        }
-    } else {
-        // No orphan deals found
-        setSuggestedAgents([]);
-        setLatestDealState(null);
-    }
-    
+
+    // Find the newest deal that isn't connected
+    // activeDeals is already sorted by created_date desc
+    return activeDeals.find(d => !connectedDealIds.has(d.id));
   }, [activeDeals, rooms]);
 
-  const loadProfile = async () => {
-    try {
-      const user = await base44.auth.me();
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      const directProfile = profiles[0];
-      
-      setProfile(directProfile);
-      loadRecentMessages();
-      setLoading(false);
-    } catch (error) {
-      console.error('[DashboardInvestor] Error loading profile:', error);
-      setLoading(false);
-    }
-  };
+  // Load Suggested Agents when orphan deal changes
+  useEffect(() => {
+    if (orphanDeal) {
+        let state = orphanDeal.state;
+        // Try extract state from address if missing
+        if (!state && orphanDeal.property_address) {
+            const parts = orphanDeal.property_address.split(',');
+            if (parts.length > 1) {
+                const stateZip = parts[parts.length - 1].trim();
+                const possibleState = stateZip.split(' ')[0];
+                if (possibleState.length === 2) state = possibleState;
+            }
+        }
 
-  const loadRecentMessages = async () => {
-    try {
-      const response = await inboxList();
-      if (response.data) {
-        setRecentMessages(response.data.slice(0, 3));
-      }
-    } catch (err) {
-      // Silent fail
+        if (state) {
+            loadSuggestedAgents(state, orphanDeal.id);
+        } else {
+            // Fallback suggestions or empty
+             setSuggestedAgents([]);
+        }
+    } else {
+        setSuggestedAgents([]);
     }
-  };
+  }, [orphanDeal?.id]);
 
   const loadSuggestedAgents = async (state, dealId) => {
     setAgentsLoading(true);
     try {
-      console.log("Loading agents for state:", state);
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
-        state,
-        dealId,
-        limit: 3
+        state, dealId, limit: 3
       });
-      
-      if (response.data?.results) {
-        console.log("Agents found:", response.data.results.length);
-        setSuggestedAgents(response.data.results.map(r => r.profile));
-      } else {
-        console.log("No agents found in response");
-        setSuggestedAgents([]);
-      }
+      setSuggestedAgents(response.data?.results?.map(r => r.profile) || []);
     } catch (err) {
-      console.error("Failed to load suggested agents", err);
+      console.error(err);
       setSuggestedAgents([]);
     } finally {
       setAgentsLoading(false);
     }
   };
 
-  // Calculate deal stats
-  // We prefer activeDeals for the "Active" count to reflect real-time status including orphans
+  // Messages
+  useEffect(() => {
+    inboxList().then(res => {
+        if (res.data) setRecentMessages(res.data.slice(0, 3));
+    }).catch(() => {});
+  }, []);
+
+  // Stats
   const dealStats = {
-    // Active: All active deals (orphans + matched) that aren't closed
-    active: activeDeals ? activeDeals.filter(d => d.pipeline_stage !== 'closing' && d.pipeline_stage !== 'clear_to_close_closed').length : 0,
-    // Pending: Use this for orphan deals (waiting for agent)
-    pending: orphanDeal ? 1 : 0, 
-    // Closed: Use rooms for this as they capture the closing stage best
-    closed: rooms ? rooms.filter(r => r.pipeline_stage === 'closing' || r.pipeline_stage === 'clear_to_close_closed').length : 0
+    active: activeDeals.filter(d => !['closing', 'clear_to_close_closed'].includes(d.pipeline_stage)).length,
+    pending: orphanDeal ? 1 : 0,
+    closed: rooms.filter(r => ['closing', 'clear_to_close_closed'].includes(r.pipeline_stage)).length
   };
 
-  if (loading || roomsLoading || dealsLoading) {
+  const handleRefresh = () => {
+    refetchDeals();
+    refetchRooms();
+    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+    queryClient.invalidateQueries({ queryKey: ['rooms'] });
+  };
+
+  if (!profile || dealsLoading || roomsLoading) {
     return (
-      <>
-        <Header profile={profile} />
-        <div className="min-h-screen bg-transparent flex items-center justify-center">
-          <div className="text-center">
-            <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
-            <p className="text-[#808080] text-sm">Loading your dashboard...</p>
-          </div>
-        </div>
-      </>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
+      </div>
     );
   }
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
+  const firstName = profile.full_name?.split(' ')[0] || 'Investor';
 
   return (
     <>
       <Header profile={profile} />
       <div className="min-h-screen bg-transparent">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="space-y-12">
-      
-            {/* Header */}
+          
+          {/* Header */}
+          <div className="flex items-end justify-between mb-8">
             <div>
               <h1 className="text-3xl sm:text-4xl font-bold text-[#E3C567] mb-2">
                 Welcome back, {firstName}!
@@ -212,268 +163,210 @@ function InvestorDashboardContent() {
                 Track deals, connect with agents, and grow your portfolio.
               </p>
             </div>
-
-            {/* Setup Checklist */}
-            <SetupChecklist profile={profile} onRefresh={loadProfile} />
-
-            {/* 4-Box Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        
-              {/* Box 1: Start New Deal (OR Continue Existing) */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
-                {orphanDeal ? (
-                  <>
-                    {/* ORPHAN DEAL STATE */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center animate-pulse">
-                        <FileText className="w-6 h-6 text-[#E3C567]" />
-                      </div>
-                      <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#E3C567] animate-pulse"></span>
-                        Pending Agent
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Find an Agent</h3>
-                    <div className="flex-grow space-y-3">
-                      <div className="bg-[#141414] rounded-xl p-4 border border-[#E3C567]/30">
-                         <p className="text-[#FAFAFA] font-medium text-base mb-1 truncate">{orphanDeal.property_address || orphanDeal.title}</p>
-                         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#808080] mb-3">
-                            <span>{orphanDeal.city}, {orphanDeal.state}</span>
-                            <span className="text-[#E3C567] font-semibold">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
-                         </div>
-
-                         {(orphanDeal.key_dates?.closing_date || orphanDeal.key_dates?.inspection_period_end) && (
-                           <div className="grid grid-cols-2 gap-2 pt-3 border-t border-[#333]">
-                               {orphanDeal.key_dates?.closing_date && (
-                                   <div>
-                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Closing</span>
-                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.closing_date}</span>
-                                   </div>
-                               )}
-                               {orphanDeal.key_dates?.inspection_period_end && (
-                                   <div>
-                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Inspection</span>
-                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.inspection_period_end}</span>
-                                   </div>
-                               )}
-                               {orphanDeal.key_dates?.earnest_money_due && (
-                                   <div className="col-span-2 pt-2 border-t border-[#333]/50">
-                                       <span className="text-[#666] block text-[10px] uppercase tracking-wider">Earnest Money Due</span>
-                                       <span className="text-[#DDD] text-xs">{orphanDeal.key_dates.earnest_money_due}</span>
-                                   </div>
-                               )}
-                               </div>
-                         )}
-                      </div>
-                      <p className="text-xs text-[#808080] text-center mt-2">
-                        Select a matching agent from the list →
-                      </p>
-                    </div>
-                    {/* Button removed as requested - user must select from suggested agents */}
-                    <div className="mt-4 p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
-                        <p className="text-xs text-[#E3C567] text-center flex items-center justify-center gap-2">
-                            <Sparkles className="w-3 h-3" />
-                            Use the card below to connect ↘
-                        </p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    {/* DEFAULT STATE */}
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                        <Plus className="w-6 h-6 text-[#E3C567]" />
-                      </div>
-                      <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full">
-                        Primary
-                      </span>
-                    </div>
-                    <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Start New Deal</h3>
-                    <p className="text-sm text-[#808080] mb-6 flex-grow">
-                      Submit a deal and get matched with investor-friendly agents.
-                    </p>
-                    <Button 
-                      onClick={() => navigate(createPageUrl("DealWizard"))}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                    >
-                      <Sparkles className="w-4 h-4 mr-2" />
-                      Submit Deal
-                    </Button>
-                  </>
-                )}
-              </div>
-
-              {/* Box 2: Deal Pipeline */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E5C37F]/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-[#E5C37F]" />
-                  </div>
-                  <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E5C37F] hover:underline">
-                    View full pipeline →
-                  </Link>
-                </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Deal Pipeline</h3>
-          
-                <div className="space-y-2 flex-grow">
-                  <button 
-                    onClick={() => navigate(createPageUrl("ActiveDeals"))}
-                    className="w-full flex items-center justify-between p-3 bg-[#E5C37F]/10 rounded-lg hover:bg-[#E5C37F]/20 transition-colors border border-[#E5C37F]/20">
-                    <div className="flex items-center gap-2">
-                      <Home className="w-4 h-4 text-[#E5C37F]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Active</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#E5C37F]">{dealStats.active}</span>
-                  </button>
-            
-                  <button 
-                    onClick={() => navigate(createPageUrl("PendingDeals"))}
-                    className="w-full flex items-center justify-between p-3 bg-[#262626] rounded-lg hover:bg-[#333333] transition-colors">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Pending</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#808080]">{dealStats.pending}</span>
-                  </button>
-            
-                  <button 
-                    onClick={() => navigate(createPageUrl("ClosedDeals"))}
-                    className="w-full flex items-center justify-between p-3 bg-[#E3C567]/10 rounded-lg hover:bg-[#E3C567]/20 transition-colors border border-[#E3C567]/20">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-[#E3C567]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Closed</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#E3C567]">{dealStats.closed}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* Box 3: Recent Messages */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-[#E3C567]" />
-                  </div>
-                  {/* View all link removed */}
-                </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
-          
-                {recentMessages.length > 0 ? (
-                  <div className="space-y-2 flex-grow">
-                    {recentMessages.map((msg, idx) => (
-                      <div key={idx} className="flex items-center gap-2 p-2 rounded-lg border border-[#1F1F1F] hover:border-[#E5C37F] hover:bg-[#262626] transition-all">
-                        <div className="w-8 h-8 bg-[#E5C37F]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                          <span className="text-xs font-bold text-[#E5C37F]">
-                            {msg.senderName?.charAt(0) || 'A'}
-                          </span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#FAFAFA] truncate">{msg.senderName || 'Agent'}</p>
-                          <p className="text-xs text-[#808080] truncate">{msg.preview || 'New message'}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                    <MessageSquare className="w-8 h-8 text-[#333333] mb-2" />
-                    <p className="text-sm text-[#808080]">No messages yet</p>
-                    <p className="text-xs text-[#666666]">Start a deal to connect</p>
-                  </div>
-                )}
-              </div>
-
-              {/* Box 4: Suggested Agents */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#E3C567]" />
-                  </div>
-                  {/* Browse link hidden if no rooms */}
-                  {rooms.length > 0 && (
-                    <Link to={createPageUrl("AgentDirectory")} className="text-xs text-[#E5C37F] hover:underline">
-                      Browse →
-                    </Link>
-                  )}
-                </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">
-                  {latestDealState ? `Agents in ${latestDealState}` : 'Suggested Agents'}
-                </h3>
-          
-                {/* Show empty state ONLY if no rooms AND no orphan deal pending */}
-                {rooms.length === 0 && !orphanDeal ? (
-                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                    <Users className="w-8 h-8 text-[#333333] mb-2" />
-                    <p className="text-sm text-[#808080] mb-1">No agents found yet</p>
-                    <p className="text-xs text-[#666666] max-w-[200px]">
-                      Upload a contract to find investor-friendly agents in your market.
-                    </p>
-                  </div>
-                ) : agentsLoading ? (
-                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                    <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin mb-2" />
-                    <p className="text-sm text-[#808080]">Finding best matches...</p>
-                  </div>
-                ) : suggestedAgents.length > 0 ? (
-                  <div className="space-y-3 flex-grow">
-                     {suggestedAgents.map(agent => (
-                       <div key={agent.id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-[#1F1F1F] cursor-pointer transition-colors" onClick={() => navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
-                         <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center font-bold text-[#E3C567]">
-                            {agent.full_name?.charAt(0)}
-                         </div>
-                         <div className="flex-1 min-w-0">
-                           <p className="text-sm font-medium text-[#FAFAFA] truncate">{agent.full_name}</p>
-                           <p className="text-xs text-[#808080] truncate">{agent.agent?.brokerage || 'Independent'}</p>
-                         </div>
-                         <div className="text-xs text-[#E3C567] font-medium">
-                           {(agent.agent?.experience_years || 0) + 'y'}
-                         </div>
-                       </div>
-                     ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 flex-grow flex flex-col items-center justify-center">
-                    <Users className="w-8 h-8 text-[#333333] mb-2" />
-                    <p className="text-sm text-[#808080]">No direct matches found.</p>
-                    <p className="text-xs text-[#666666] mt-1">Try browsing the directory.</p>
-                  </div>
-                )}
-                
-                {rooms.length > 0 && (
-                  <Button 
-                    onClick={() => navigate(createPageUrl(`AgentDirectory${latestDealState ? `?state=${latestDealState}` : ''}`))}
-                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold mt-auto"
-                  >
-                    Browse All in {latestDealState || 'Market'}
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Quick Links */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-              {[
-                { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
-                { label: 'My Profile', icon: Users, href: 'AccountProfile' },
-                { label: 'Documents', icon: FileText, href: 'InvestorDocuments' },
-                { label: 'AI Assistant', icon: Bot, href: 'AIAssistant' },
-              ].map((link) => {
-                const Icon = link.icon;
-                return (
-                  <Link 
-                    key={link.href} 
-                    to={createPageUrl(link.href)} 
-                    className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-2 p-3 hover:border-[#E5C37F] hover:bg-[#141414] transition-all"
-                  >
-                    <div className="w-8 h-8 bg-[#E5C37F]/20 rounded-lg flex items-center justify-center">
-                      <Icon className="w-4 h-4 text-[#E5C37F]" />
-                    </div>
-                    <span className="text-sm font-medium text-[#FAFAFA]">{link.label}</span>
-                  </Link>
-                );
-              })}
-            </div>
+            <Button variant="ghost" size="sm" onClick={handleRefresh} className="text-[#808080] hover:text-[#E3C567]">
+                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+            </Button>
           </div>
+
+          <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            
+            {/* BOX 1: ACTION CARD */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:border-[#E3C567]/50 transition-all">
+               {orphanDeal ? (
+                 <>
+                   <div className="flex items-start justify-between mb-4">
+                     <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center animate-pulse">
+                       <FileText className="w-6 h-6 text-[#E3C567]" />
+                     </div>
+                     <span className="px-3 py-1.5 bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium rounded-full flex items-center gap-2">
+                       <span className="w-2 h-2 rounded-full bg-[#E3C567] animate-pulse"></span>
+                       Action Required
+                     </span>
+                   </div>
+                   
+                   <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Select an Agent</h3>
+                   <p className="text-sm text-[#808080] mb-4">
+                     Your deal is ready. Choose an agent below to start the room.
+                   </p>
+
+                   <div className="bg-[#141414] rounded-xl p-4 border border-[#E3C567]/30 mb-4">
+                      <p className="text-[#FAFAFA] font-bold text-lg mb-1">{orphanDeal.property_address || orphanDeal.title}</p>
+                      <div className="flex items-center gap-4 text-xs text-[#808080]">
+                         <span>{orphanDeal.city}, {orphanDeal.state}</span>
+                         <span className="text-[#E3C567]">${(orphanDeal.purchase_price || 0).toLocaleString()}</span>
+                      </div>
+                   </div>
+
+                   <Button 
+                     onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.id}`)}
+                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
+                   >
+                     Match with Agent <Sparkles className="w-4 h-4 ml-2" />
+                   </Button>
+                 </>
+               ) : (
+                 <>
+                   <div className="flex items-start justify-between mb-4">
+                     <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                       <Plus className="w-6 h-6 text-[#E3C567]" />
+                     </div>
+                     <span className="px-3 py-1.5 bg-[#222] text-[#808080] text-xs font-medium rounded-full border border-[#333]">
+                       New Deal
+                     </span>
+                   </div>
+                   <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">Submit New Deal</h3>
+                   <p className="text-sm text-[#808080] mb-8">
+                     Upload a contract to automatically extract details and match with top agents.
+                   </p>
+                   <Button 
+                     onClick={() => navigate(createPageUrl("DealWizard"))}
+                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
+                   >
+                     <Sparkles className="w-4 h-4 mr-2" /> Start Deal Wizard
+                   </Button>
+                 </>
+               )}
+            </div>
+
+            {/* BOX 2: PIPELINE */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
+                            <TrendingUp className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-[#FAFAFA]">Pipeline</h3>
+                    </div>
+                    <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">View All</Link>
+                </div>
+
+                <div className="space-y-3 flex-grow">
+                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                        <div className="flex items-center gap-3">
+                            <Home className="w-4 h-4 text-[#E3C567]" />
+                            <span className="text-sm text-[#FAFAFA]">Active Deals</span>
+                        </div>
+                        <span className="text-xl font-bold text-[#FAFAFA]">{dealStats.active}</span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                        <div className="flex items-center gap-3">
+                            <FileText className="w-4 h-4 text-[#808080]" />
+                            <span className="text-sm text-[#FAFAFA]">Pending</span>
+                        </div>
+                        <span className="text-xl font-bold text-[#808080]">{dealStats.pending}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                        <div className="flex items-center gap-3">
+                            <DollarSign className="w-4 h-4 text-green-500" />
+                            <span className="text-sm text-[#FAFAFA]">Closed</span>
+                        </div>
+                        <span className="text-xl font-bold text-green-500">{dealStats.closed}</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* BOX 3: MESSAGES */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
+                        <MessageSquare className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#FAFAFA]">Messages</h3>
+                </div>
+
+                <div className="flex-grow space-y-3">
+                    {recentMessages.length > 0 ? (
+                        recentMessages.map((msg, i) => (
+                            <div key={i} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold">
+                                    {msg.senderName?.[0]}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-sm font-bold text-[#FAFAFA] truncate">{msg.senderName}</p>
+                                    <p className="text-xs text-[#808080] truncate">{msg.preview}</p>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="h-full flex flex-col items-center justify-center text-center">
+                            <p className="text-sm text-[#666]">No new messages</p>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* BOX 4: AGENTS */}
+            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
+                        <Users className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#FAFAFA]">
+                        {orphanDeal ? 'Recommended Agents' : 'Top Agents'}
+                    </h3>
+                </div>
+
+                {agentsLoading ? (
+                    <div className="flex-grow flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin" />
+                    </div>
+                ) : suggestedAgents.length > 0 ? (
+                    <div className="flex-grow space-y-3">
+                        {suggestedAgents.map(agent => (
+                            <div key={agent.id} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors"
+                                 onClick={() => navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-[#E3C567]/20 text-[#E3C567] flex items-center justify-center font-bold text-xs">
+                                        {agent.full_name?.[0]}
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-[#FAFAFA]">{agent.full_name}</p>
+                                        <p className="text-xs text-[#808080]">{agent.agent?.brokerage}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="flex-grow flex flex-col items-center justify-center text-center">
+                        <p className="text-sm text-[#666]">
+                           {orphanDeal ? 'No matches found nearby.' : 'Start a deal to see matches.'}
+                        </p>
+                        <Button 
+                            variant="link" 
+                            className="text-[#E3C567]"
+                            onClick={() => navigate(createPageUrl("AgentDirectory"))}
+                        >
+                            Browse Directory
+                        </Button>
+                    </div>
+                )}
+            </div>
+
+          </div>
+
+          {/* Quick Links */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-8">
+              {[
+                { label: 'Documents', icon: FileText, href: 'InvestorDocuments' },
+                { label: 'My Profile', icon: Users, href: 'AccountProfile' },
+                { label: 'Subscription', icon: CreditCard, href: 'Pricing' },
+                { label: 'AI Assistant', icon: Bot, href: 'AIAssistant' },
+              ].map(link => {
+                  const Icon = link.icon;
+                  return (
+                    <Link key={link.href} to={createPageUrl(link.href)} className="p-4 bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl flex items-center gap-3 hover:bg-[#141414] transition-colors">
+                        <Icon className="w-5 h-5 text-[#E3C567]" />
+                        <span className="text-sm font-bold text-[#FAFAFA]">{link.label}</span>
+                    </Link>
+                  )
+              })}
+          </div>
+
         </div>
       </div>
     </>
