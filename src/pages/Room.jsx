@@ -126,13 +126,13 @@ export default function Room() {
   const handleLockIn = async () => {
     if (!currentRoom?.suggested_deal_id) return;
     try {
-      await roomUpdate({ 
-        id: roomId, 
-        deal_id: currentRoom.suggested_deal_id,
-        investorId: currentRoom.investorId,
-        agentId: currentRoom.agentId
+      // Call the specialized lock-in function that handles cleanup of other rooms
+      await base44.functions.invoke('lockInDealAgent', { 
+        room_id: roomId, 
+        deal_id: currentRoom.suggested_deal_id
       });
-      // Refresh logic would go here, or optimistic update
+      
+      // Force reload to refresh room list and UI state
       window.location.reload();
     } catch (error) {
       console.error("Failed to lock in agent:", error);
