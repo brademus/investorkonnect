@@ -229,7 +229,7 @@ export default function AgentProfile() {
           (!dealId || r.deal_id === dealId)
       );
       if (existingRoom) {
-        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
+        navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`, { state: { initialCounterpartyName: profile.full_name } });
         setConnecting(false);
         return;
       }
@@ -249,7 +249,7 @@ export default function AgentProfile() {
       sessionRooms.push(newRoom);
       sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
       toast.success(`Deal room created with ${profile.full_name}`);
-      navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`, { state: { initialCounterpartyName: profile.full_name } });
       setConnecting(false);
       return;
     }
@@ -268,7 +268,7 @@ export default function AgentProfile() {
         await queryClient.invalidateQueries({ queryKey: ['rooms'] });
         toast.success(`Deal room created with ${profile.full_name}`);
         console.log("Navigating to room:", response.data.room.id);
-        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
+        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`, { state: { initialCounterpartyName: profile.full_name } });
       } else {
         console.error("Room creation failed, no room ID in response:", response.data);
         if (response.data?.error) {
