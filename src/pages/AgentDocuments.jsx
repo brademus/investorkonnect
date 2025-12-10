@@ -9,7 +9,7 @@ function AgentDocumentsContent() {
   return (
     <div className="min-h-screen bg-slate-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <Link to={createPageUrl("AgentHome")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+        <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
           <ArrowLeft className="w-4 h-4" />
           Back to Dashboard
         </Link>
