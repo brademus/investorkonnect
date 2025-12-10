@@ -8,44 +8,48 @@ import { base44 } from "@/api/base44Client";
 import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 function InvestorDocumentsContent() {
-  const [loading, setLoading] = useState(true);
-  const [profile, setProfile] = useState(null);
-  const [deals, setDeals] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  // 1. Fetch User & Profile
+  const { data: profile, isLoading: profileLoading } = useQuery({
+    queryKey: ['myProfile'],
+    queryFn: async () => {
+        const user = await base44.auth.me();
+        if (!user) return null;
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        return profiles[0];
+    }
+  });
 
-  const loadData = async () => {
-    try {
-      const user = await base44.auth.me();
-      if (!user) return;
-
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      const myProfile = profiles[0];
-      setProfile(myProfile);
-
-      if (myProfile) {
-        // Fetch deals for this investor that have a contract URL
-        // Privacy enforcement: Filtering by investor_id ensures users only see their own deals
+  // 2. Fetch Deals (Dependent on Profile)
+  const { data: deals = [], isLoading: dealsLoading, refetch } = useQuery({
+    queryKey: ['investorDeals', profile?.id],
+    queryFn: async () => {
+        if (!profile?.id) return [];
+        console.log("Fetching documents for investor:", profile.id);
         const myDeals = await base44.entities.Deal.filter(
-            { investor_id: myProfile.id }, 
+            { investor_id: profile.id }, 
             { created_date: -1 }
         );
-        
-        // Filter out deals without contracts, but be lenient - maybe some have it but empty string?
         // Show all active deals or deals with contract_url
-        setDeals(myDeals.filter(d => d.contract_url || d.status === 'active'));
-      }
-    } catch (error) {
-      console.error("Error loading documents:", error);
-    } finally {
-      setLoading(false);
+        return myDeals.filter(d => d.contract_url || d.status === 'active');
+    },
+    enabled: !!profile?.id,
+    staleTime: 0 // Always fetch fresh
+  });
+
+  // Force refresh when component mounts
+  useEffect(() => {
+    if (profile?.id) {
+        refetch();
     }
-  };
+  }, [profile?.id, refetch]);
+
+  const loading = profileLoading || dealsLoading;
 
   const filteredDeals = deals.filter(deal => 
     deal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
