@@ -257,10 +257,10 @@ export default function InvestorProfile() {
                   </div>
                 </div>
                 <button 
-                  className="ik-btn-primary"
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105"
                   onClick={handleConnect}
                 >
-                  <MessageCircle className="w-4 h-4 mr-2" />
+                  <MessageCircle className="w-5 h-5 mr-2" />
                   Connect
                 </button>
               </div>
@@ -397,10 +397,10 @@ export default function InvestorProfile() {
               Start a secure deal room to discuss opportunities and share documents.
             </p>
             <button 
-              className="ik-btn-primary"
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center mx-auto transition-all hover:scale-105"
               onClick={handleConnect}
             >
-              <MessageCircle className="w-4 h-4 mr-2" />
+              <MessageCircle className="w-6 h-6 mr-3" />
               Start Conversation
             </button>
           </div>
