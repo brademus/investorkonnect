@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useRooms } from "@/components/useRooms";
+import { useQuery } from "@tanstack/react-query";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
@@ -17,34 +18,83 @@ function PipelineContent() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const { data: rooms, isLoading: roomsLoading } = useRooms();
+
+  // Fetch active deals to catch orphans (deals without rooms yet)
+  const { data: activeDeals, isLoading: dealsLoading } = useQuery({
+    queryKey: ['investorDeals', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      // Fetch deals for this investor
+      const myDeals = await base44.entities.Deal.filter(
+         { investor_id: profile.id }, 
+         { created_date: -1 }
+      );
+      // Return active deals
+      return myDeals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
+    },
+    enabled: !!profile?.id,
+    staleTime: 0
+  });
   
-  // Convert rooms to deals format (hide orphan deals)
-  const deals = rooms
-    .filter(room => !room.is_orphan)
+  // MERGE LOGIC: Combine Rooms + Orphan Deals
+  const roomDeals = (rooms || [])
+    .filter(room => !room.is_orphan) // Still filter virtual orphan rooms if any
     .map(room => ({
-    id: room.id,
-    deal_id: room.deal_id, // Preserve deal_id
-    is_orphan: room.is_orphan, // Preserve orphan status
-    title: room.title || 'Deal Room',
-    property_address: room.property_address,
-    customer_name: room.counterparty_name || room.customer_name,
-    city: room.city,
-    state: room.state,
-    bedrooms: room.bedrooms,
-    bathrooms: room.bathrooms,
-    square_feet: room.square_feet,
-    budget: room.budget || room.contract_price,
-    pipeline_stage: room.pipeline_stage || 'new_deal_under_contract',
-    created_date: room.created_date,
-    updated_date: room.updated_date,
-    contract_date: room.contract_date,
-    walkthrough_date: room.walkthrough_date,
-    evaluation_date: room.evaluation_date,
-    marketing_start_date: room.marketing_start_date,
-    closing_date: room.closing_date,
-    open_tasks: room.open_tasks || 0,
-    completed_tasks: room.completed_tasks || 0
-  }));
+      id: room.id,
+      deal_id: room.deal_id,
+      is_orphan: false,
+      title: room.title || 'Deal Room',
+      property_address: room.property_address,
+      customer_name: room.counterparty_name || room.customer_name,
+      city: room.city,
+      state: room.state,
+      bedrooms: room.bedrooms,
+      bathrooms: room.bathrooms,
+      square_feet: room.square_feet,
+      budget: room.budget || room.contract_price,
+      pipeline_stage: room.pipeline_stage || 'new_deal_under_contract',
+      created_date: room.created_date,
+      updated_date: room.updated_date,
+      contract_date: room.contract_date,
+      walkthrough_date: room.walkthrough_date,
+      evaluation_date: room.evaluation_date,
+      marketing_start_date: room.marketing_start_date,
+      closing_date: room.closing_date,
+      open_tasks: room.open_tasks || 0,
+      completed_tasks: room.completed_tasks || 0
+    }));
+
+  // Identify real orphan deals (Active Deal Entity but NO Room Entity)
+  const dealIdsInRooms = new Set((rooms || []).map(r => r.deal_id).filter(Boolean));
+  
+  const orphanDeals = (activeDeals || [])
+    .filter(deal => !dealIdsInRooms.has(deal.id))
+    .map(deal => ({
+      id: deal.id, // Use deal ID for navigation key
+      deal_id: deal.id,
+      is_orphan: true,
+      title: deal.title || 'New Deal',
+      property_address: deal.property_address,
+      customer_name: 'Pending Agent', // Placeholder for orphans
+      city: deal.city,
+      state: deal.state,
+      bedrooms: null,
+      bathrooms: null,
+      square_feet: null,
+      budget: deal.purchase_price,
+      pipeline_stage: 'new_deal_under_contract', // Always start here
+      created_date: deal.created_date,
+      updated_date: deal.updated_date,
+      contract_date: deal.key_dates?.closing_date,
+      walkthrough_date: null,
+      evaluation_date: null,
+      marketing_start_date: null,
+      closing_date: deal.key_dates?.closing_date,
+      open_tasks: 0,
+      completed_tasks: 0
+    }));
+
+  const deals = [...orphanDeals, ...roomDeals];
 
   useEffect(() => {
     loadProfile();

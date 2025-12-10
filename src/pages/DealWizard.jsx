@@ -309,11 +309,16 @@ export default function DealWizard() {
         created_date: new Date().toISOString()
       };
       
-      await base44.entities.Room.create(roomPayload);
+      const newRoom = await base44.entities.Room.create(roomPayload);
       
       toast.success('Deal Room Created!');
+
+      // Invalidate queries to ensure dashboard and pipeline update immediately
+      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      
       // Redirect to the specific room instead of DealRooms listing page
-      navigate(`${createPageUrl("Room")}?roomId=${roomPayload.id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
 
     } catch (error) {
       console.error('Error creating room:', error);
