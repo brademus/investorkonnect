@@ -135,27 +135,27 @@ function AccountProfileContent() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4">
+          <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4">
             <ArrowLeft className="w-4 h-4" />
             Dashboard
           </Link>
           <div className="flex items-center gap-3 mb-2">
-            <User className="w-8 h-8 text-[#D3A029]" />
-            <h1 className="text-3xl font-bold text-slate-900">Edit Profile</h1>
+            <User className="w-8 h-8 text-[#E3C567]" />
+            <h1 className="text-3xl font-bold text-[#FAFAFA]">Edit Profile</h1>
           </div>
-          <p className="text-slate-600">Update your account information</p>
+          <p className="text-[#808080]">Update your account information</p>
         </div>
 
         {/* Profile Form */}
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+        <div className="ik-card p-8 bg-[#0D0D0D] border border-[#1F1F1F]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name */}
             <div>
-              <Label htmlFor="full_name">Full Name *</Label>
+              <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
               <Input
                 id="full_name"
                 value={formData.full_name}
@@ -163,24 +163,25 @@ function AccountProfileContent() {
                 placeholder="John Doe"
                 required
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
 
             {/* Email (read-only) */}
             <div>
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-[#FAFAFA]">Email</Label>
               <Input
                 id="email"
                 value={user.email}
                 disabled
-                className="bg-slate-50 text-slate-500"
+                className="bg-[#141414] text-[#808080] border-[#333] opacity-50"
               />
-              <p className="text-xs text-slate-500 mt-1">Email cannot be changed</p>
+              <p className="text-xs text-[#808080] mt-1">Email cannot be changed</p>
             </div>
 
             {/* User Type */}
             <div>
-              <Label className="mb-3 block">Account Type *</Label>
+              <Label className="mb-3 block text-[#FAFAFA]">Account Type *</Label>
               <RadioGroup
                 value={formData.role}
                 onValueChange={(value) => setFormData({...formData, role: value})}
@@ -189,24 +190,24 @@ function AccountProfileContent() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                     formData.role === "investor" 
-                      ? "border-[#D3A029] bg-[#FEF3C7]" 
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#E3C567] bg-[#E3C567]/10" 
+                      : "border-[#333] hover:border-[#555] bg-[#141414]"
                   } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <RadioGroupItem value="investor" id="investor" />
-                      <Label htmlFor="investor" className="cursor-pointer font-semibold">
+                      <RadioGroupItem value="investor" id="investor" className="border-[#FAFAFA] text-[#E3C567]" />
+                      <Label htmlFor="investor" className="cursor-pointer font-semibold text-[#FAFAFA]">
                         Investor
                       </Label>
                     </div>
                   </div>
                   <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
                     formData.role === "agent" 
-                      ? "border-emerald-600 bg-emerald-50" 
-                      : "border-slate-200 hover:border-slate-300"
+                      ? "border-[#10B981] bg-[#10B981]/10" 
+                      : "border-[#333] hover:border-[#555] bg-[#141414]"
                   } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
                     <div className="flex items-center gap-3">
-                      <RadioGroupItem value="agent" id="agent" />
-                      <Label htmlFor="agent" className="cursor-pointer font-semibold">
+                      <RadioGroupItem value="agent" id="agent" className="border-[#FAFAFA] text-[#10B981]" />
+                      <Label htmlFor="agent" className="cursor-pointer font-semibold text-[#FAFAFA]">
                         Agent
                       </Label>
                     </div>
@@ -217,32 +218,34 @@ function AccountProfileContent() {
 
             {/* Company */}
             <div>
-              <Label htmlFor="company">Company</Label>
+              <Label htmlFor="company" className="text-[#FAFAFA]">Company</Label>
               <Input
                 id="company"
                 value={formData.company}
                 onChange={(e) => setFormData({...formData, company: e.target.value})}
                 placeholder="Your Company"
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
 
             {/* Markets */}
             <div>
-              <Label htmlFor="markets">Target Markets</Label>
+              <Label htmlFor="markets" className="text-[#FAFAFA]">Target Markets</Label>
               <Input
                 id="markets"
                 value={formData.markets}
                 onChange={(e) => setFormData({...formData, markets: e.target.value})}
                 placeholder="Miami, Phoenix, Dallas"
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
-              <p className="text-xs text-slate-500 mt-1">Cities or metro areas (comma-separated)</p>
+              <p className="text-xs text-[#808080] mt-1">Cities or metro areas (comma-separated)</p>
             </div>
 
             {/* Phone */}
             <div>
-              <Label htmlFor="phone">Phone Number</Label>
+              <Label htmlFor="phone" className="text-[#FAFAFA]">Phone Number</Label>
               <Input
                 id="phone"
                 type="tel"
@@ -250,24 +253,26 @@ function AccountProfileContent() {
                 onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 placeholder="(555) 123-4567"
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
 
             {/* Accreditation */}
             <div>
-              <Label htmlFor="accreditation">Accreditation</Label>
+              <Label htmlFor="accreditation" className="text-[#FAFAFA]">Accreditation</Label>
               <Input
                 id="accreditation"
                 value={formData.accreditation}
                 onChange={(e) => setFormData({...formData, accreditation: e.target.value})}
                 placeholder="e.g., Accredited Investor, Licensed Agent"
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
 
             {/* Goals */}
             <div>
-              <Label htmlFor="goals">Goals</Label>
+              <Label htmlFor="goals" className="text-[#FAFAFA]">Goals</Label>
               <Textarea
                 id="goals"
                 value={formData.goals}
@@ -275,6 +280,7 @@ function AccountProfileContent() {
                 placeholder="What are you looking to accomplish on Investor Konnect?"
                 rows={4}
                 disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
 
@@ -283,7 +289,7 @@ function AccountProfileContent() {
               <Button
                 type="submit"
                 disabled={saving}
-                className="flex-1 bg-[#D3A029] hover:bg-[#B98413]"
+                className="flex-1 bg-[#E3C567] text-black hover:bg-[#EDD89F]"
               >
                 {saving ? (
                   <>
@@ -302,6 +308,7 @@ function AccountProfileContent() {
                   type="button"
                   variant="outline"
                   disabled={saving}
+                  className="border-[#333] text-[#FAFAFA] hover:bg-[#141414] hover:text-[#FAFAFA]"
                 >
                   Cancel
                 </Button>

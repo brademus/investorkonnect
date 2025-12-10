@@ -302,12 +302,12 @@ export default function AgentProfile() {
   const isDemo = String(profile.id).startsWith('demo-');
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-8">
+    <div className="min-h-screen bg-transparent py-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Back Button */}
         <button 
           onClick={() => navigate(-1)}
-          className="ik-btn-outline mb-6"
+          className="ik-btn-outline mb-6 text-[#808080] hover:text-[#E3C567] border-[#333] hover:bg-[#141414]"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Directory
@@ -318,7 +318,7 @@ export default function AgentProfile() {
           <div className="flex flex-col md:flex-row gap-8">
             {/* Avatar */}
             <div className="flex-shrink-0">
-              <div className="w-32 h-32 bg-gradient-to-br from-[#FEF3C7] to-[#FDE68A] rounded-2xl flex items-center justify-center text-[#D3A029] text-4xl font-bold shadow-lg">
+              <div className="w-32 h-32 bg-[#141414] border border-[#E3C567] rounded-2xl flex items-center justify-center text-[#E3C567] text-4xl font-bold shadow-lg">
                 {profile.full_name?.charAt(0) || profile.email?.charAt(0).toUpperCase()}
               </div>
             </div>
@@ -328,17 +328,17 @@ export default function AgentProfile() {
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <div className="flex items-center gap-3 mb-2">
-                    <h1 className="text-3xl font-bold text-slate-900">
+                    <h1 className="text-3xl font-bold text-[#FAFAFA]">
                       {profile.full_name || "Agent"}
                     </h1>
                     {isDemo && (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-500">
+                      <span className="inline-flex items-center rounded-full bg-[#1F1F1F] px-2.5 py-1 text-xs font-medium text-[#808080]">
                         Demo Profile
                       </span>
                     )}
                   </div>
                   {(profile.vetted || profile.verified) && (
-                    <span className="ik-chip ik-chip-success">
+                    <span className="ik-chip bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20">
                       <Shield className="w-3 h-3 mr-1" />
                       Verified Agent
                     </span>
@@ -355,41 +355,41 @@ export default function AgentProfile() {
 
               {/* Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
+                <div className="bg-[#141414] rounded-xl p-4 border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
-                    <Star className="w-4 h-4 text-[#D3A029] fill-[#D3A029]" />
-                    <span className="text-2xl font-bold text-gray-900">
+                    <Star className="w-4 h-4 text-[#E3C567] fill-[#E3C567]" />
+                    <span className="text-2xl font-bold text-[#FAFAFA]">
                       {agentData.rating || avgRating || "4.9"}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">{reviews.length || agentData.investor_clients_count || 0} Reviews</p>
+                  <p className="text-xs text-[#808080]">{reviews.length || agentData.investor_clients_count || 0} Reviews</p>
                 </div>
-                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
+                <div className="bg-[#141414] rounded-xl p-4 border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
-                    <Award className="w-4 h-4 text-[#D3A029]" />
-                    <span className="text-2xl font-bold text-gray-900">
+                    <Award className="w-4 h-4 text-[#E3C567]" />
+                    <span className="text-2xl font-bold text-[#FAFAFA]">
                       {agentData.deals_closed || agentData.investment_deals_last_12m || 0}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Deals Closed</p>
+                  <p className="text-xs text-[#808080]">Deals Closed</p>
                 </div>
-                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
+                <div className="bg-[#141414] rounded-xl p-4 border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
                     <CheckCircle className="w-4 h-4 text-[#10B981]" />
-                    <span className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-[#FAFAFA]">
                       {agentData.experience_years || 5}+
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Years Experience</p>
+                  <p className="text-xs text-[#808080]">Years Experience</p>
                 </div>
-                <div className="bg-[#FFFBEB] rounded-xl p-4 border border-[#FDE68A]">
+                <div className="bg-[#141414] rounded-xl p-4 border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-colors">
                   <div className="flex items-center gap-2 mb-1">
-                    <Briefcase className="w-4 h-4 text-[#D3A029]" />
-                    <span className="text-2xl font-bold text-gray-900">
+                    <Briefcase className="w-4 h-4 text-[#E3C567]" />
+                    <span className="text-2xl font-bold text-[#FAFAFA]">
                       {agentData.investor_clients_count || 0}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">Investor Clients</p>
+                  <p className="text-xs text-[#808080]">Investor Clients</p>
                 </div>
               </div>
 
@@ -397,40 +397,40 @@ export default function AgentProfile() {
               <div className="space-y-3">
                 {(profile.markets?.length > 0 || agentData.markets?.length > 0) && (
                   <div className="flex items-start gap-3">
-                    <MapPin className="w-5 h-5 text-[#D3A029] mt-0.5" />
+                    <MapPin className="w-5 h-5 text-[#E3C567] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Markets</p>
-                      <p className="text-gray-600">{(profile.markets || agentData.markets || []).join(", ")}</p>
+                      <p className="text-sm font-medium text-[#FAFAFA]">Markets</p>
+                      <p className="text-[#808080]">{(profile.markets || agentData.markets || []).join(", ")}</p>
                     </div>
                   </div>
                 )}
                 {(profile.broker || agentData.brokerage) && (
                   <div className="flex items-start gap-3">
-                    <Briefcase className="w-5 h-5 text-[#D3A029] mt-0.5" />
+                    <Briefcase className="w-5 h-5 text-[#E3C567] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Brokerage</p>
-                      <p className="text-gray-600">{profile.broker || agentData.brokerage}</p>
+                      <p className="text-sm font-medium text-[#FAFAFA]">Brokerage</p>
+                      <p className="text-[#808080]">{profile.broker || agentData.brokerage}</p>
                     </div>
                   </div>
                 )}
                 {(agentData.license_number || profile.licenseNumber) && (
                   <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-[#D3A029] mt-0.5" />
+                    <Shield className="w-5 h-5 text-[#E3C567] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">License</p>
-                      <p className="text-gray-600">
+                      <p className="text-sm font-medium text-[#FAFAFA]">License</p>
+                      <p className="text-[#808080]">
                         {agentData.license_number || profile.licenseNumber} ({agentData.license_state || profile.licenseState})
-                        {agentData.license_type && <span className="text-gray-400"> • {agentData.license_type}</span>}
+                        {agentData.license_type && <span className="text-[#666]"> • {agentData.license_type}</span>}
                       </p>
                     </div>
                   </div>
                 )}
                 {agentData.typical_deal_price_range && (
                   <div className="flex items-start gap-3">
-                    <Award className="w-5 h-5 text-[#D3A029] mt-0.5" />
+                    <Award className="w-5 h-5 text-[#E3C567] mt-0.5" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">Typical Deal Size</p>
-                      <p className="text-gray-600">{agentData.typical_deal_price_range}</p>
+                      <p className="text-sm font-medium text-[#FAFAFA]">Typical Deal Size</p>
+                      <p className="text-[#808080]">{agentData.typical_deal_price_range}</p>
                     </div>
                   </div>
                 )}
@@ -440,11 +440,11 @@ export default function AgentProfile() {
 
           {/* Specialties */}
           {agentData.specialties?.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Specialties</h3>
+            <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">Specialties</h3>
               <div className="flex flex-wrap gap-2">
                 {agentData.specialties.map((specialty, idx) => (
-                  <span key={idx} className="ik-chip">{specialty}</span>
+                  <span key={idx} className="ik-chip bg-[#141414] border-[#333] text-[#A0A0A0]">{specialty}</span>
                 ))}
               </div>
             </div>
@@ -452,11 +452,11 @@ export default function AgentProfile() {
 
           {/* Investment Strategies */}
           {agentData.investment_strategies?.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Investment Strategies</h3>
+            <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">Investment Strategies</h3>
               <div className="flex flex-wrap gap-2">
                 {agentData.investment_strategies.map((strategy, idx) => (
-                  <span key={idx} className="px-3 py-1.5 bg-[#D1FAE5] text-[#065F46] rounded-full text-sm font-medium">{strategy}</span>
+                  <span key={idx} className="px-3 py-1.5 bg-[#E3C567]/10 text-[#E3C567] border border-[#E3C567]/20 rounded-full text-sm font-medium">{strategy}</span>
                 ))}
               </div>
             </div>
@@ -464,56 +464,56 @@ export default function AgentProfile() {
 
           {/* Bio */}
           {(profile.bio || agentData.bio) && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">About</h3>
-              <p className="text-gray-700 leading-relaxed">{profile.bio || agentData.bio}</p>
+            <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">About</h3>
+              <p className="text-[#A0A0A0] leading-relaxed">{profile.bio || agentData.bio}</p>
             </div>
           )}
 
           {/* What Sets Them Apart */}
           {agentData.what_sets_you_apart && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">What Sets Them Apart</h3>
-              <p className="text-gray-700 leading-relaxed">{agentData.what_sets_you_apart}</p>
+            <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">What Sets Them Apart</h3>
+              <p className="text-[#A0A0A0] leading-relaxed">{agentData.what_sets_you_apart}</p>
             </div>
           )}
         </div>
 
         {/* Experience & Expertise */}
         <div className="ik-card p-8 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Experience & Expertise</h2>
+          <h2 className="text-xl font-semibold text-[#FAFAFA] mb-6">Experience & Expertise</h2>
           
           <div className="grid md:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-4">
               {agentData.investor_experience_years && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-1">Investor Experience</p>
-                  <p className="font-semibold text-gray-900">{agentData.investor_experience_years}+ years working with investors</p>
+                <div className="p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                  <p className="text-sm text-[#808080] mb-1">Investor Experience</p>
+                  <p className="font-semibold text-[#FAFAFA]">{agentData.investor_experience_years}+ years working with investors</p>
                 </div>
               )}
               {agentData.investment_deals_last_12m && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-1">Recent Activity</p>
-                  <p className="font-semibold text-gray-900">{agentData.investment_deals_last_12m} investment deals in last 12 months</p>
+                <div className="p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                  <p className="text-sm text-[#808080] mb-1">Recent Activity</p>
+                  <p className="font-semibold text-[#FAFAFA]">{agentData.investment_deals_last_12m} investment deals in last 12 months</p>
                 </div>
               )}
               {agentData.investor_types_served?.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-2">Investor Types Served</p>
+                <div className="p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                  <p className="text-sm text-[#808080] mb-2">Investor Types Served</p>
                   <div className="flex flex-wrap gap-1.5">
                     {agentData.investor_types_served.map((type, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-white border border-gray-200 rounded-md text-xs text-gray-700">{type}</span>
+                      <span key={idx} className="px-2 py-1 bg-[#0D0D0D] border border-[#333] rounded-md text-xs text-[#A0A0A0]">{type}</span>
                     ))}
                   </div>
                 </div>
               )}
               {agentData.metrics_used?.length > 0 && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-2">Investment Metrics Used</p>
+                <div className="p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                  <p className="text-sm text-[#808080] mb-2">Investment Metrics Used</p>
                   <div className="flex flex-wrap gap-1.5">
                     {agentData.metrics_used.map((metric, idx) => (
-                      <span key={idx} className="px-2 py-1 bg-[#FEF3C7] border border-[#FDE68A] rounded-md text-xs text-[#92400E]">{metric}</span>
+                      <span key={idx} className="px-2 py-1 bg-[#E3C567]/10 border border-[#E3C567]/20 rounded-md text-xs text-[#E3C567]">{metric}</span>
                     ))}
                   </div>
                 </div>
@@ -523,31 +523,31 @@ export default function AgentProfile() {
             {/* Right Column */}
             <div className="space-y-4">
               {agentData.personally_invests && (
-                <div className="p-4 bg-[#D1FAE5] border border-[#A7F3D0] rounded-xl">
+                <div className="p-4 bg-[#10B981]/10 border border-[#10B981]/20 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle className="w-4 h-4 text-[#065F46]" />
-                    <p className="font-semibold text-[#065F46]">Active Investor</p>
+                    <CheckCircle className="w-4 h-4 text-[#10B981]" />
+                    <p className="font-semibold text-[#10B981]">Active Investor</p>
                   </div>
                   {agentData.personal_investing_notes && (
-                    <p className="text-sm text-[#047857] mt-2">{agentData.personal_investing_notes}</p>
+                    <p className="text-sm text-[#10B981]/80 mt-2">{agentData.personal_investing_notes}</p>
                   )}
                 </div>
               )}
               {agentData.sources_off_market && (
-                <div className="p-4 bg-[#FEF3C7] border border-[#FDE68A] rounded-xl">
+                <div className="p-4 bg-[#E3C567]/10 border border-[#E3C567]/20 rounded-xl">
                   <div className="flex items-center gap-2 mb-1">
-                    <CheckCircle className="w-4 h-4 text-[#92400E]" />
-                    <p className="font-semibold text-[#92400E]">Sources Off-Market Deals</p>
+                    <CheckCircle className="w-4 h-4 text-[#E3C567]" />
+                    <p className="font-semibold text-[#E3C567]">Sources Off-Market Deals</p>
                   </div>
                   {agentData.off_market_methods_notes && (
-                    <p className="text-sm text-[#B45309] mt-2">{agentData.off_market_methods_notes}</p>
+                    <p className="text-sm text-[#E3C567]/80 mt-2">{agentData.off_market_methods_notes}</p>
                   )}
                 </div>
               )}
               {agentData.primary_neighborhoods_notes && (
-                <div className="p-4 bg-gray-50 rounded-xl">
-                  <p className="text-sm text-gray-500 mb-1">Areas of Expertise</p>
-                  <p className="text-gray-700">{agentData.primary_neighborhoods_notes}</p>
+                <div className="p-4 bg-[#141414] rounded-xl border border-[#1F1F1F]">
+                  <p className="text-sm text-[#808080] mb-1">Areas of Expertise</p>
+                  <p className="text-[#FAFAFA]">{agentData.primary_neighborhoods_notes}</p>
                 </div>
               )}
             </div>
@@ -555,47 +555,47 @@ export default function AgentProfile() {
 
           {/* Case Study */}
           {agentData.case_study_best_deal && (
-            <div className="mt-6 p-5 bg-gradient-to-r from-[#FFFBEB] to-white border border-[#FDE68A] rounded-xl">
-              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <Award className="w-5 h-5 text-[#D3A029]" />
+            <div className="mt-6 p-5 bg-[#141414] border border-[#E3C567]/30 rounded-xl">
+              <h4 className="font-semibold text-[#FAFAFA] mb-2 flex items-center gap-2">
+                <Award className="w-5 h-5 text-[#E3C567]" />
                 Success Story
               </h4>
-              <p className="text-gray-700">{agentData.case_study_best_deal}</p>
+              <p className="text-[#A0A0A0]">{agentData.case_study_best_deal}</p>
             </div>
           )}
         </div>
 
         {/* Working Style & Communication */}
         <div className="ik-card p-8 mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">Working Style</h2>
+          <h2 className="text-xl font-semibold text-[#FAFAFA] mb-6">Working Style</h2>
           
           <div className="grid md:grid-cols-3 gap-4">
             {agentData.typical_response_time && (
-              <div className="p-4 bg-gray-50 rounded-xl text-center">
-                <p className="text-sm text-gray-500 mb-1">Response Time</p>
-                <p className="font-semibold text-gray-900">{agentData.typical_response_time}</p>
+              <div className="p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl text-center">
+                <p className="text-sm text-[#808080] mb-1">Response Time</p>
+                <p className="font-semibold text-[#FAFAFA]">{agentData.typical_response_time}</p>
               </div>
             )}
             {agentData.update_frequency && (
-              <div className="p-4 bg-gray-50 rounded-xl text-center">
-                <p className="text-sm text-gray-500 mb-1">Update Frequency</p>
-                <p className="font-semibold text-gray-900">{agentData.update_frequency}</p>
+              <div className="p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl text-center">
+                <p className="text-sm text-[#808080] mb-1">Update Frequency</p>
+                <p className="font-semibold text-[#FAFAFA]">{agentData.update_frequency}</p>
               </div>
             )}
             {agentData.preferred_communication_channels?.length > 0 && (
-              <div className="p-4 bg-gray-50 rounded-xl text-center">
-                <p className="text-sm text-gray-500 mb-1">Preferred Contact</p>
-                <p className="font-semibold text-gray-900">{agentData.preferred_communication_channels.join(', ')}</p>
+              <div className="p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl text-center">
+                <p className="text-sm text-[#808080] mb-1">Preferred Contact</p>
+                <p className="font-semibold text-[#FAFAFA]">{agentData.preferred_communication_channels.join(', ')}</p>
               </div>
             )}
           </div>
 
           {agentData.languages_spoken?.length > 0 && (
-            <div className="mt-4 p-4 bg-gray-50 rounded-xl">
-              <p className="text-sm text-gray-500 mb-2">Languages</p>
+            <div className="mt-4 p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl">
+              <p className="text-sm text-[#808080] mb-2">Languages</p>
               <div className="flex flex-wrap gap-2">
                 {agentData.languages_spoken.map((lang, idx) => (
-                  <span key={idx} className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-gray-700">{lang}</span>
+                  <span key={idx} className="px-3 py-1 bg-[#0D0D0D] border border-[#333] rounded-full text-sm text-[#A0A0A0]">{lang}</span>
                 ))}
               </div>
             </div>
@@ -603,16 +603,16 @@ export default function AgentProfile() {
 
           {/* Professional Network */}
           {agentData.pro_network_types?.length > 0 && (
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Professional Network</h3>
-              <p className="text-sm text-gray-500 mb-3">Can connect you with trusted:</p>
+            <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">Professional Network</h3>
+              <p className="text-sm text-[#808080] mb-3">Can connect you with trusted:</p>
               <div className="flex flex-wrap gap-2">
                 {agentData.pro_network_types.map((type, idx) => (
-                  <span key={idx} className="px-3 py-1.5 bg-[#E0E7FF] text-[#3730A3] rounded-full text-sm font-medium">{type}</span>
+                  <span key={idx} className="px-3 py-1.5 bg-[#E0E7FF]/10 text-[#818CF8] border border-[#818CF8]/20 rounded-full text-sm font-medium">{type}</span>
                 ))}
               </div>
               {agentData.refer_professionals_notes && (
-                <p className="text-sm text-gray-600 mt-3">{agentData.refer_professionals_notes}</p>
+                <p className="text-sm text-[#A0A0A0] mt-3">{agentData.refer_professionals_notes}</p>
               )}
             </div>
           )}
@@ -620,46 +620,46 @@ export default function AgentProfile() {
 
         {/* Reviews Section */}
         <div className="ik-card p-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-6">
+          <h2 className="text-xl font-semibold text-[#FAFAFA] mb-6">
             Verified Reviews ({reviews.length})
           </h2>
 
           {reviews.length === 0 ? (
             <div className="text-center py-12">
-              <Star className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-              <p className="text-gray-600">No reviews yet</p>
+              <Star className="w-12 h-12 text-[#333] mx-auto mb-4" />
+              <p className="text-[#808080]">No reviews yet</p>
             </div>
           ) : (
             <div className="space-y-6">
               {reviews.map((review) => (
                 <div 
                   key={review.id} 
-                  className="border-b border-gray-100 last:border-0 pb-6 last:pb-0"
+                  className="border-b border-[#1F1F1F] last:border-0 pb-6 last:pb-0"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div>
                       <div className="flex items-center gap-2 mb-2">
                         <div className="flex">{renderStars(review.rating)}</div>
-                        <span className="text-sm font-semibold text-gray-900">
+                        <span className="text-sm font-semibold text-[#FAFAFA]">
                           {review.rating}.0
                         </span>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-[#FAFAFA]">
                         {review.reviewer_name}
                       </p>
                     </div>
-                    <span className="ik-chip ik-chip-success text-xs">
+                    <span className="ik-chip bg-[#10B981]/10 text-[#10B981] border-[#10B981]/20 text-xs">
                       <Shield className="w-3 h-3 mr-1" />
                       Verified
                     </span>
                   </div>
-                  <p className="text-gray-700 leading-relaxed mb-2">{review.body}</p>
+                  <p className="text-[#A0A0A0] leading-relaxed mb-2">{review.body}</p>
                   {review.market && (
-                    <span className="ik-chip text-xs">
+                    <span className="ik-chip text-xs bg-[#141414] border-[#333] text-[#808080]">
                       {review.market}
                     </span>
                   )}
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-[#666] mt-2">
                     {new Date(review.created_date).toLocaleDateString()}
                   </p>
                 </div>

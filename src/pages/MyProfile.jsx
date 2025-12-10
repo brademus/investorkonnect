@@ -57,77 +57,77 @@ export default function MyProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-transparent">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-8">
           <button
             onClick={() => navigate(createPageUrl("Dashboard"))}
-            className="inline-flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 mb-4"
+            className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
           </button>
-          <h1 className="text-3xl font-bold text-slate-900 mb-2">My Profile</h1>
-          <p className="text-slate-600">
+          <h1 className="text-3xl font-bold text-[#FAFAFA] mb-2">My Profile</h1>
+          <p className="text-[#808080]">
             Edit your basics or open the full onboarding to adjust matching inputs
           </p>
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6">
+        <div className="ik-card bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-8 space-y-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center">
-              <User className="w-6 h-6 text-[#D3A029]" />
+            <div className="w-12 h-12 bg-[#141414] border border-[#E3C567] rounded-xl flex items-center justify-center">
+              <User className="w-6 h-6 text-[#E3C567]" />
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-slate-900">
+              <h2 className="text-xl font-semibold text-[#FAFAFA]">
                 {profile?.full_name || user?.full_name || 'Your Profile'}
               </h2>
-              <p className="text-sm text-slate-600 capitalize">
+              <p className="text-sm text-[#808080] capitalize">
                 {role || 'Member'}
               </p>
             </div>
           </div>
 
-          <div className="border-t border-slate-200 pt-6">
-            <h3 className="font-semibold text-slate-900 mb-4">What would you like to do?</h3>
+          <div className="border-t border-[#1F1F1F] pt-6">
+            <h3 className="font-semibold text-[#FAFAFA] mb-4">What would you like to do?</h3>
             
             <div className="grid sm:grid-cols-2 gap-4">
               <Button 
                 onClick={toAccountEdit}
                 variant="outline"
-                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-[#D3A029] hover:bg-[#FEF3C7] transition-all"
+                className="h-auto py-6 flex-col items-start gap-2 border-2 border-[#333] bg-[#141414] hover:border-[#E3C567] hover:bg-[#E3C567]/10 transition-all text-[#FAFAFA]"
               >
-                <Edit className="w-5 h-5 text-[#D3A029]" />
+                <Edit className="w-5 h-5 text-[#E3C567]" />
                 <div className="text-left">
-                  <div className="font-semibold text-slate-900">Edit Basic Profile</div>
-                  <div className="text-xs text-slate-600">Name, email, contact info</div>
+                  <div className="font-semibold text-[#FAFAFA]">Edit Basic Profile</div>
+                  <div className="text-xs text-[#808080]">Name, email, contact info</div>
                 </div>
               </Button>
 
               <Button 
                 onClick={toFullOnboarding}
                 variant="outline"
-                className="h-auto py-6 flex-col items-start gap-2 border-2 hover:border-[#D3A029] hover:bg-[#FEF3C7] transition-all"
+                className="h-auto py-6 flex-col items-start gap-2 border-2 border-[#333] bg-[#141414] hover:border-[#E3C567] hover:bg-[#E3C567]/10 transition-all text-[#FAFAFA]"
               >
-                <Layers className="w-5 h-5 text-[#D3A029]" />
+                <Layers className="w-5 h-5 text-[#E3C567]" />
                 <div className="text-left">
-                  <div className="font-semibold text-slate-900">Open Full Onboarding</div>
-                  <div className="text-xs text-slate-600">Update all matching criteria</div>
+                  <div className="font-semibold text-[#FAFAFA]">Open Full Onboarding</div>
+                  <div className="text-xs text-[#808080]">Update all matching criteria</div>
                 </div>
               </Button>
             </div>
           </div>
 
-          <div className="border-t border-slate-200 pt-6">
-            <h3 className="font-semibold text-slate-900 mb-3">AI Matching</h3>
-            <p className="text-sm text-slate-600 mb-4">
+          <div className="border-t border-[#1F1F1F] pt-6">
+            <h3 className="font-semibold text-[#FAFAFA] mb-3">AI Matching</h3>
+            <p className="text-sm text-[#808080] mb-4">
               Refresh your profile embedding to update AI-powered match suggestions
             </p>
             <Button 
               onClick={refreshEmbedding}
               disabled={refreshing}
               variant="ghost"
-              className="gap-2"
+              className="gap-2 text-[#E3C567] hover:bg-[#E3C567]/10 hover:text-[#E3C567]"
             >
               {refreshing ? (
                 <>
