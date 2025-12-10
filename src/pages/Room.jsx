@@ -124,6 +124,9 @@ export default function Room() {
   };
 
   const filteredRooms = rooms.filter(r => {
+    // Only show active conversations (exclude orphan deals/potential matches)
+    if (r.is_orphan) return false;
+    
     if (!searchConversations) return true;
     return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
   });
