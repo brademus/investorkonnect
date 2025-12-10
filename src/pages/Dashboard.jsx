@@ -89,7 +89,7 @@ export default function Dashboard() {
   // Show role-specific dashboard
   try {
     if (profile?.user_role === 'investor') {
-      return <DashboardInvestor />;
+      return <DashboardInvestor profile={profile} />;
     }
 
     if (profile?.user_role === 'agent') {

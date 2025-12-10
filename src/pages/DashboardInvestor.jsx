@@ -14,19 +14,25 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-function InvestorDashboardContent() {
+function InvestorDashboardContent({ profile: propProfile }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState(propProfile);
   const [recentMessages, setRecentMessages] = useState([]);
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   
+  // Sync profile if prop changes
+  useEffect(() => {
+    if (propProfile) setProfile(propProfile);
+  }, [propProfile]);
+  
   // Load Rooms (Standard Hook)
   const { data: rooms = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
 
-  // Load Profile
+  // Load Profile (Fallback if not provided by prop)
   useEffect(() => {
+    if (profile) return; // Skip if already have profile
     const loadProfile = async () => {
       try {
         const user = await base44.auth.me();
@@ -38,16 +44,17 @@ function InvestorDashboardContent() {
       }
     };
     loadProfile();
-  }, []);
+  }, [profile]);
 
   // Load Active Deals (Source of Truth)
   const { data: activeDeals = [], isLoading: dealsLoading, refetch: refetchDeals } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
+      // FIX: Use string sort syntax instead of object, as per instructions
       const deals = await base44.entities.Deal.filter(
          { investor_id: profile.id }, 
-         { created_date: -1 },
+         '-created_date',
          20
       );
       // Return active/pipeline deals
@@ -376,10 +383,10 @@ function InvestorDashboardContent() {
   );
 }
 
-export default function DashboardInvestor() {
+export default function DashboardInvestor({ profile }) {
   return (
     <AuthGuard requireAuth={true}>
-      <InvestorDashboardContent />
+      <InvestorDashboardContent profile={profile} />
     </AuthGuard>
   );
 }
