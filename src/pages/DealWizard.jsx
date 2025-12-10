@@ -197,6 +197,7 @@ export default function DealWizard() {
       setUploading(false);
     } finally {
       setExtracting(false);
+      setUploading(false);
     }
   };
 
