@@ -322,7 +322,7 @@ Deno.serve(async (req) => {
     return Response.json({ 
       ok: true, 
       results,
-      total: scored.length
+      total: results.length
     });
     
   } catch (error) {
