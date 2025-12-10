@@ -412,19 +412,19 @@ export default function Room() {
             </div>
           ) : (
             /* Messages View */
-            <div className="space-y-4">
+            <div className="flex flex-col min-h-full space-y-4">
               {/* Floating Deal Info */}
-              {!loading && (currentRoom?.property_address || currentRoom?.budget || currentRoom?.deal_id) && (
+              {!loading && currentRoom && (
                 <div className="sticky top-0 z-20 flex justify-center pb-4 -mt-2 pointer-events-none">
                   <div className="bg-[#0D0D0D]/80 backdrop-blur-md border border-[#1F1F1F] pl-4 pr-4 py-1.5 rounded-full shadow-lg flex items-center gap-3 text-xs pointer-events-auto transition-all hover:border-[#E3C567]/50">
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]"></span>
                       <span className="font-semibold text-[#FAFAFA]">
-                        {currentRoom.property_address || currentRoom.title || "New Deal"}
+                        {currentRoom.property_address || currentRoom.title || "New Connection"}
                       </span>
                     </div>
                     
-                    {currentRoom.budget && (
+                    {currentRoom.budget > 0 && (
                       <>
                         <div className="w-px h-3 bg-[#333]"></div>
                         <span className="text-[#34D399] font-medium font-mono">
@@ -433,11 +433,11 @@ export default function Room() {
                       </>
                     )}
 
-                    {currentRoom.pipeline_stage && (
+                    {(currentRoom.pipeline_stage || !currentRoom.deal_id) && (
                       <>
                         <div className="w-px h-3 bg-[#333]"></div>
                         <span className="text-[#808080] capitalize">
-                          {currentRoom.pipeline_stage.replace(/_/g, ' ')}
+                          {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'General Discussion'}
                         </span>
                       </>
                     )}
@@ -453,7 +453,7 @@ export default function Room() {
                   </div>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex-1 flex items-center justify-center">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Send className="w-8 h-8 text-[#E3C567]" />
