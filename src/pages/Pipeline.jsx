@@ -65,10 +65,17 @@ function PipelineContent() {
     }));
 
   // Identify real orphan deals (Active Deal Entity but NO Room Entity)
-  const dealIdsInRooms = new Set((rooms || []).map(r => r.deal_id).filter(Boolean));
+  // CRITICAL FIX: Only consider REAL rooms (connected to agents) when checking exclusions.
+  // listMyRooms returns virtual orphan rooms (is_orphan=true), so we must ignore those 
+  // when building the set of "already handled" deals.
+  const dealIdsInRealRooms = new Set((rooms || [])
+    .filter(r => !r.is_orphan)
+    .map(r => r.deal_id)
+    .filter(Boolean)
+  );
   
   const orphanDeals = (activeDeals || [])
-    .filter(deal => !dealIdsInRooms.has(deal.id))
+    .filter(deal => !dealIdsInRealRooms.has(deal.id))
     .map(deal => ({
       id: deal.id, // Use deal ID for navigation key
       deal_id: deal.id,
