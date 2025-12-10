@@ -153,8 +153,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
     fetchMessages();
   }, []);
 
-  // Stats - only count active/locked-in deals (must have deal_id)
-  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id) : [];
+  // Stats - only count active/locked-in deals (must have deal_id AND not be an orphan/unassigned deal)
+  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan) : [];
 
   const dealStats = {
     new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,

@@ -1,11 +1,12 @@
 import React from 'react';
 import Lottie from 'lottie-react';
 import { Loader2 } from 'lucide-react';
-// import animationData from './loading-animation.json'; 
 
 export default function LoadingAnimation({ className = "w-24 h-24" }) {
-  // If you have the URL, paste it here:
-  const animationUrl = "https://lottie.host/embed/ed6558a3-55e6-44f7-b219-839e2f1f9716/Lottie.json"; // Placeholder, waiting for user input
+  // To enable Lottie:
+  // 1. Get the "Asset Link" (JSON URL) from LottieFiles
+  // 2. Paste it below as the value for animationUrl
+  const animationUrl = null; 
   
   const [animationData, setAnimationData] = React.useState(null);
 
