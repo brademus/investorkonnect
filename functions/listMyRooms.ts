@@ -115,15 +115,14 @@ Deno.serve(async (req) => {
         if (!r.deal_id) {
           r.suggested_deal_id = deal.id;
         }
+        
+        // Pass the currently assigned agent ID (if any) to control "Lock In" button
+        r.deal_assigned_agent_id = deal.agent_id;
       }
 
-      if (r.deal_id && !deal) {
-          // Room points to non-existent deal -> skip or include? 
-          // Original logic: "Only add the room if the deal actually exists"
-          // So we skip.
-          return; 
-      }
-
+      // If r.deal_id exists but deal not found, we still return the room (as a normal chat),
+      // just without the deal info populated above.
+      
       validRooms.push(r);
     });
 

@@ -260,7 +260,9 @@ export default function Room() {
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {roomId && !currentRoom?.deal_id && currentRoom?.suggested_deal_id && (
+            {roomId && 
+             (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
+             !currentRoom?.deal_assigned_agent_id && (
               <Button
                 onClick={handleLockIn}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5"

@@ -29,9 +29,11 @@ Deno.serve(async (req) => {
         }
 
         // 2. Update the Deal: assign agent and set status
+        // We only update pipeline_stage if it's currently null/undefined or generic
+        // But to be safe and respect existing progress, we might want to keep it. 
+        // Let's just set agent_id.
         await base44.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
-            pipeline_stage: 'new_deal_under_contract', // Set to initial stage if needed, or keep existing
             status: 'active'
         });
 
