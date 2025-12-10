@@ -324,7 +324,8 @@ export default function Room() {
                 </div>
               </div>
 
-              {/* Escrow Section */}
+              {/* Escrow Section - Hidden */}
+              {/* 
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                 <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                   <Shield className="w-5 h-5 text-[#E3C567]" />
@@ -335,7 +336,8 @@ export default function Room() {
                   profile={profile}
                   onUpdate={() => window.location.reload()}
                 />
-              </div>
+              </div> 
+              */}
 
               {/* Contracts Section */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
