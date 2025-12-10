@@ -224,10 +224,7 @@ export default function DealWizard() {
 
       await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
       toast.success("Deal details saved");
-      
-      // Proceed to matching instead of exiting
-      await fetchMatches();
-      setStep(3);
+      navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
       console.error("Save failed:", error);
