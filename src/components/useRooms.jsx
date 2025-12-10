@@ -1,9 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
-// Placeholder deals removed as requested.
-// The system now relies on real database deals via listMyRooms.
-
 /**
  * Enrich room with full profile data from matched counterparty
  */
@@ -50,7 +47,7 @@ function normalizeRoom(room) {
     counterparty_name: room.counterparty_name || room.customer_name || room.title || 'Deal Room',
     counterparty_role: room.counterparty_role || (room.agentId ? 'agent' : room.investorId ? 'investor' : 'partner'),
     // Ensure pipeline fields exist
-    title: room.title || room.deal_title || null, // Only use real deal titles, don't fallback to names
+    title: room.title || room.deal_title || null,
     property_address: room.property_address || null,
     customer_name: room.customer_name || room.counterparty_name || null,
     budget: room.budget || room.contract_price || null,
@@ -62,42 +59,88 @@ function normalizeRoom(room) {
 /**
  * Shared hook for loading rooms/deals across all pages
  * Ensures consistency between Pipeline, Room/Messages, and other pages
- * ALWAYS merges database rooms with sessionStorage rooms
- * Enriches rooms with full profile data from matched agents/investors
- * Shows role-appropriate placeholder deals when no real data exists
+ * Merges database rooms with client-side fetched deals for robustness
  */
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
       try {
-        // Load from backend function listMyRooms
-        // This function handles:
-        // 1. Authentication check
-        // 2. Fetching only rooms where user is participant (investor OR agent)
-        // 3. Basic enrichment (counterparty name/role)
+        // 1. Load from backend function listMyRooms
         let dbRooms = [];
         try {
           const response = await base44.functions.invoke('listMyRooms');
           if (response.data && response.data.items) {
             dbRooms = response.data.items;
-          } else {
-             // Fallback or empty
-             dbRooms = [];
           }
         } catch (err) {
           console.log('[useRooms] Backend listMyRooms failed:', err.message);
         }
         
-        let allRooms = [...dbRooms];
+        // 2. Client-Side Deal Enrichment (Backup for Backend)
+        // This ensures that even if backend inference fails, we patch it here
+        try {
+            const user = await base44.auth.me();
+            if (user) {
+                const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+                if (profiles.length > 0) {
+                    const myProfileId = profiles[0].id;
+                    
+                    // Fetch all deals for this user
+                    const myDeals = await base44.entities.Deal.filter({ investor_id: myProfileId });
+                    
+                    // Identify the "Active" deal (latest one) for inference
+                    const activeDeals = myDeals
+                        .filter(d => d.status === 'active' || d.status === 'new_deal_under_contract')
+                        .sort((a,b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+                    
+                    const latestDeal = activeDeals[0];
 
-        // Removed session storage merging to ensure only real database data is shown
-        
-        // Enrich real rooms with FULL profile data (frontend needs detailed profile object)
-        // listMyRooms does basic enrichment, but we want the full profile object for details
+                    dbRooms = dbRooms.map(r => {
+                        // Logic: If room already has robust data, keep it.
+                        // Otherwise, try to fill holes.
+                        
+                        let dealToUse = null;
+
+                        // Case A: Room has explicit deal_id -> Find it in myDeals
+                        if (r.deal_id) {
+                            dealToUse = myDeals.find(d => d.id === r.deal_id);
+                        }
+                        
+                        // Case B: Room is "Active" but has no deal -> Infer latest active deal
+                        // Only if I am the investor
+                        if (!dealToUse && !r.deal_id && r.investorId === myProfileId && latestDeal) {
+                            dealToUse = latestDeal;
+                        }
+
+                        if (dealToUse) {
+                            return {
+                                ...r,
+                                deal_title: dealToUse.title, // Title usually contains name or address
+                                property_address: dealToUse.property_address,
+                                budget: dealToUse.purchase_price,
+                                pipeline_stage: dealToUse.pipeline_stage,
+                                suggested_deal_id: dealToUse.id, // Ensure lock-in button works
+                                deal_assigned_agent_id: dealToUse.agent_id,
+                                contract_date: dealToUse.key_dates?.closing_date,
+                                city: dealToUse.city,
+                                state: dealToUse.state
+                            };
+                        }
+                        
+                        return r;
+                    });
+                }
+            }
+        } catch (e) {
+            console.error("[useRooms] Client-side enrichment failed:", e);
+        }
+
+        // 3. Enrich with Counterparty Profiles
+        let allRooms = [...dbRooms];
         allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
         
-        // Normalize all rooms for consistent display
+        // 4. Normalize
         const normalizedRooms = allRooms.map(normalizeRoom);
         
         console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms`);
@@ -110,7 +153,7 @@ export function useRooms() {
     },
     initialData: [],
     staleTime: 0, // Always refetch to ensure fresh data
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Ensure we check for updates on mount
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 }
