@@ -61,7 +61,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
       );
       // Return active/pipeline deals
       if (!Array.isArray(deals)) return [];
-      return deals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
+      return deals.filter(d => d && (d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract'));
     },
     enabled: !!profile?.id,
     staleTime: 0,
@@ -85,7 +85,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
     // Find the newest deal that isn't connected
     // activeDeals is already sorted by created_date desc
-    return activeDeals.find(d => !connectedDealIds.has(d.id));
+    if (!Array.isArray(activeDeals)) return null;
+    return activeDeals.find(d => d && d.id && !connectedDealIds.has(d.id));
   }, [activeDeals, rooms]);
 
   // Load Suggested Agents when orphan deal changes
@@ -130,9 +131,20 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Messages
   useEffect(() => {
-    inboxList().then(res => {
-        if (res.data) setRecentMessages(res.data.slice(0, 3));
-    }).catch(() => {});
+    // Safety wrapper for inboxList
+    const fetchMessages = async () => {
+      try {
+        if (typeof inboxList === 'function') {
+           const res = await inboxList();
+           if (res && Array.isArray(res.data)) {
+             setRecentMessages(res.data.slice(0, 3));
+           }
+        }
+      } catch (err) {
+        console.warn("Failed to load messages", err);
+      }
+    };
+    fetchMessages();
   }, []);
 
   // Stats
