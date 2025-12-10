@@ -91,8 +91,12 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Load Suggested Agents when orphan deal changes
   useEffect(() => {
+    let state = null;
+    let dealId = null;
+
     if (orphanDeal) {
-        let state = orphanDeal.state;
+        dealId = orphanDeal.id;
+        state = orphanDeal.state;
         // Try extract state from address if missing
         if (!state && orphanDeal.property_address) {
             const parts = orphanDeal.property_address.split(',');
@@ -102,28 +106,46 @@ function InvestorDashboardContent({ profile: propProfile }) {
                 if (possibleState.length === 2) state = possibleState;
             }
         }
-
-        if (state) {
-            loadSuggestedAgents(state, orphanDeal.id);
-        } else {
-            // Fallback suggestions or empty
-             setSuggestedAgents([]);
-        }
-    } else {
-        setSuggestedAgents([]);
     }
+
+    loadSuggestedAgents(state, dealId);
   }, [orphanDeal?.id]);
 
   const loadSuggestedAgents = async (state, dealId) => {
     setAgentsLoading(true);
     try {
+      // 1. Try to get smart matches
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
         state, dealId, limit: 3
       });
-      setSuggestedAgents(response.data?.results?.map(r => r.profile) || []);
+      
+      let agents = response.data?.results?.map(r => r.profile) || [];
+      
+      // 2. Fallback: If no matches, just get any verified agents to show SOMETHING
+      if (agents.length === 0) {
+         const fallbackAgents = await base44.entities.Profile.filter({ 
+             user_role: 'agent', 
+             'agent.verification_status': 'verified' 
+         }, '-created_date', 3);
+         
+         // If still nothing, just get any agents
+         if (fallbackAgents.length === 0) {
+             agents = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 3);
+         } else {
+             agents = fallbackAgents;
+         }
+      }
+
+      setSuggestedAgents(agents);
     } catch (err) {
-      console.error(err);
-      setSuggestedAgents([]);
+      console.error("Agent load error", err);
+      // Final fallback on error
+      try {
+          const fallback = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 3);
+          setSuggestedAgents(fallback);
+      } catch (e) {
+          setSuggestedAgents([]);
+      }
     } finally {
       setAgentsLoading(false);
     }
