@@ -413,6 +413,38 @@ export default function Room() {
           ) : (
             /* Messages View */
             <div className="space-y-4">
+              {/* Floating Deal Info */}
+              {!loading && (currentRoom?.property_address || currentRoom?.budget || currentRoom?.deal_id) && (
+                <div className="sticky top-0 z-20 flex justify-center pb-4 -mt-2 pointer-events-none">
+                  <div className="bg-[#0D0D0D]/80 backdrop-blur-md border border-[#1F1F1F] pl-4 pr-4 py-1.5 rounded-full shadow-lg flex items-center gap-3 text-xs pointer-events-auto transition-all hover:border-[#E3C567]/50">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]"></span>
+                      <span className="font-semibold text-[#FAFAFA]">
+                        {currentRoom.property_address || currentRoom.title || "New Deal"}
+                      </span>
+                    </div>
+                    
+                    {currentRoom.budget && (
+                      <>
+                        <div className="w-px h-3 bg-[#333]"></div>
+                        <span className="text-[#34D399] font-medium font-mono">
+                          ${currentRoom.budget.toLocaleString()}
+                        </span>
+                      </>
+                    )}
+
+                    {currentRoom.pipeline_stage && (
+                      <>
+                        <div className="w-px h-3 bg-[#333]"></div>
+                        <span className="text-[#808080] capitalize">
+                          {currentRoom.pipeline_stage.replace(/_/g, ' ')}
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
