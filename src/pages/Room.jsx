@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMessages, listMyRooms, sendMessage } from "@/components/functions";
+import { listMessages, listMyRooms, sendMessage, roomUpdate } from "@/components/functions";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
@@ -121,6 +121,22 @@ export default function Room() {
       // Keep the message in UI and sessionStorage even if API fails
       console.log('Message saved locally:', error.message);
     } finally { setSending(false); }
+  };
+
+  const handleLockIn = async () => {
+    if (!currentRoom?.suggested_deal_id) return;
+    try {
+      await roomUpdate({ 
+        id: roomId, 
+        deal_id: currentRoom.suggested_deal_id,
+        investorId: currentRoom.investorId,
+        agentId: currentRoom.agentId
+      });
+      // Refresh logic would go here, or optimistic update
+      window.location.reload();
+    } catch (error) {
+      console.error("Failed to lock in agent:", error);
+    }
   };
 
   const filteredRooms = rooms.filter(r => {
@@ -244,8 +260,9 @@ export default function Room() {
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {roomId && (
+            {roomId && !currentRoom?.deal_id && currentRoom?.suggested_deal_id && (
               <Button
+                onClick={handleLockIn}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5"
               >
                 Lock in this agent
@@ -286,7 +303,8 @@ export default function Room() {
             {/* Row 2: Address & Price */}
             <div className="flex items-center gap-3 text-xs opacity-90">
                <div className="flex items-center gap-1.5 text-[#CCC]">
-                 <span>{currentRoom.property_address || "No Property Address"}</span>
+                 {/* Fallback to title if address is missing, as title often contains the address in this app */}
+                 <span>{currentRoom.property_address || currentRoom.title || "No Property Address"}</span>
                </div>
                
                {currentRoom.budget > 0 && (

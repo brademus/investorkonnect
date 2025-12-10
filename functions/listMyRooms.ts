@@ -111,7 +111,10 @@ Deno.serve(async (req) => {
         r.budget = deal.purchase_price;
         r.contract_date = deal.key_dates?.closing_date;
         
-        // If the room HAD a deal_id but deal not found, validRooms logic below handles it
+        // Pass the inferred deal ID so frontend can offer to "lock it in"
+        if (!r.deal_id) {
+          r.suggested_deal_id = deal.id;
+        }
       }
 
       if (r.deal_id && !deal) {
