@@ -19,32 +19,68 @@ function PipelineContent() {
   const [loading, setLoading] = useState(true);
   const { data: rooms, isLoading: roomsLoading } = useRooms();
 
-  // DIRECT MAPPING: Use rooms from useRooms hook (which includes virtual orphan rooms from listMyRooms)
-  // We do NOT filter out is_orphan deals anymore, as they should appear in the pipeline.
-  const deals = (rooms || []).map(room => ({
-    id: room.id,
-    deal_id: room.deal_id,
-    is_orphan: !!room.is_orphan,
-    title: room.title || 'Deal Room',
-    property_address: room.property_address,
-    customer_name: room.counterparty_name || room.customer_name,
-    city: room.city,
-    state: room.state,
-    bedrooms: room.bedrooms,
-    bathrooms: room.bathrooms,
-    square_feet: room.square_feet,
-    budget: room.budget || room.contract_price,
-    pipeline_stage: room.pipeline_stage || 'new_deal_under_contract',
-    created_date: room.created_date,
-    updated_date: room.updated_date,
-    contract_date: room.contract_date,
-    walkthrough_date: room.walkthrough_date,
-    evaluation_date: room.evaluation_date,
-    marketing_start_date: room.marketing_start_date,
-    closing_date: room.closing_date,
-    open_tasks: room.open_tasks || 0,
-    completed_tasks: room.completed_tasks || 0
-  }));
+  // Fetch active deals directly from the Deal entity
+  // This ensures we have the latest "Deal" data (contract info) as requested.
+  const { data: activeDeals, isLoading: dealsLoading } = useQuery({
+    queryKey: ['investorDeals', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const myDeals = await base44.entities.Deal.filter(
+         { investor_id: profile.id }, 
+         { created_date: -1 }
+      );
+      // Return only active deals or those in pipeline
+      return myDeals.filter(d => d.status === 'active' || d.pipeline_stage === 'new_deal_under_contract');
+    },
+    enabled: !!profile?.id,
+    staleTime: 0
+  });
+
+  // Create a map of deals to their rooms (if any)
+  const dealToRoomMap = new Map();
+  (rooms || []).forEach(room => {
+    if (room.deal_id && !room.is_orphan) {
+      dealToRoomMap.set(room.deal_id, room);
+    }
+  });
+
+  // Map deals to pipeline format, preferring Deal entity data
+  const deals = (activeDeals || []).map(deal => {
+    const connectedRoom = dealToRoomMap.get(deal.id);
+    const hasRoom = !!connectedRoom;
+    
+    return {
+      id: hasRoom ? connectedRoom.id : `orphan_${deal.id}`, // Navigation ID (Room ID or special ID)
+      deal_id: deal.id,
+      is_orphan: !hasRoom,
+      
+      // PREFER DEAL DATA (Contract Info)
+      title: deal.title || 'New Deal',
+      property_address: deal.property_address, // Explicitly use Deal address
+      city: deal.city,
+      state: deal.state,
+      budget: deal.purchase_price, // Explicitly use Deal price
+      
+      // Fallback to room data or placeholders if needed
+      customer_name: hasRoom ? (connectedRoom.counterparty_name || connectedRoom.customer_name) : 'Pending Agent',
+      
+      // Deal Metadata
+      pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
+      created_date: deal.created_date,
+      updated_date: deal.updated_date,
+      
+      // Key Dates from Deal
+      contract_date: deal.key_dates?.closing_date,
+      closing_date: deal.key_dates?.closing_date,
+      
+      // Extra fields (from room if available)
+      bedrooms: hasRoom ? connectedRoom.bedrooms : null,
+      bathrooms: hasRoom ? connectedRoom.bathrooms : null,
+      square_feet: hasRoom ? connectedRoom.square_feet : null,
+      open_tasks: hasRoom ? (connectedRoom.open_tasks || 0) : 0,
+      completed_tasks: hasRoom ? (connectedRoom.completed_tasks || 0) : 0
+    };
+  });
 
   useEffect(() => {
     loadProfile();
