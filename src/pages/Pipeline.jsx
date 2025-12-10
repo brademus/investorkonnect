@@ -202,7 +202,7 @@ function PipelineContent() {
     return new Date(deal.updated_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  if (loading || roomsLoading) {
+  if (loading || roomsLoading || dealsLoading) {
     return (
       <>
         <Header profile={profile} />
