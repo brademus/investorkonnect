@@ -36,11 +36,13 @@ Deno.serve(async (req) => {
 
     for (const profile of allProfiles) {
       // Check if this profile needs backfilling
-      // We'll assume if it's missing 'investment_strategies' it needs an update
-      if (profile.agent && (!profile.agent.investment_strategies || profile.agent.investment_strategies.length === 0)) {
+      // If agent object is missing OR investment_strategies is missing
+      const agentData = profile.agent || {};
+      
+      if (!agentData.investment_strategies || agentData.investment_strategies.length === 0) {
         
         const agentUpdate = {
-          ...profile.agent,
+          ...agentData,
           
           // Basic Stats
           personally_invests: Math.random() > 0.3,
