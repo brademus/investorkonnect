@@ -91,11 +91,43 @@ Deno.serve(async (req) => {
 
       console.log(`[matchAgentsForInvestor] Matching against: Code=${targetCode}, Name=${targetName}`);
       
-      // Fetch all agents (broader search to catch any profile with agent data)
-      // We filter in memory to ensure we catch 'agent' role OR profiles with 'agent' data object
-      const allProfiles = await base44.entities.Profile.filter({});
-      const allAgents = allProfiles.filter(p => p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0));
+      // TARGETED SEARCH STRATEGY
+      // Instead of fetching all profiles (which hits limits), we query specifically for this state
+      // We run multiple queries to cover different fields where the state might be stored
       
+      const queries = [];
+      const limits = 20;
+
+      // 1. Direct match on target_state
+      if (targetCode) queries.push(base44.entities.Profile.filter({ target_state: targetCode }, '-created_date', limits));
+      if (targetName) queries.push(base44.entities.Profile.filter({ target_state: targetName }, '-created_date', limits));
+
+      // 2. Direct match on agent.license_state
+      if (targetCode) queries.push(base44.entities.Profile.filter({ 'agent.license_state': targetCode }, '-created_date', limits));
+      
+      // 3. Match on user_role='agent' (broad, but recent) - catch-all for array fields like 'markets' 
+      // since we can't always reliably query inside arrays depending on the backend
+      queries.push(base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 100));
+
+      // Execute all queries in parallel
+      const queryResults = await Promise.all(queries);
+      
+      // Combine and Dedup
+      const allFound = queryResults.flat();
+      const seenIds = new Set();
+      const allAgents = [];
+      
+      for (const p of allFound) {
+          if (!p || seenIds.has(p.id)) continue;
+          // Must have some indication of being an agent
+          if (p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0)) {
+              seenIds.add(p.id);
+              allAgents.push(p);
+          }
+      }
+
+      console.log(`[matchAgentsForInvestor] Aggregated ${allAgents.length} potential agents for matching`);
+
       const matchedAgents = allAgents.filter(agent => {
         // Collect all agent location indicators (including legacy top-level fields)
         const locations = [
