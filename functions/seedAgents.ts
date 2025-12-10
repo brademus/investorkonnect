@@ -85,7 +85,37 @@ Deno.serve(async (req) => {
             marketing_methods: ["MLS", "Off-market", "Networking"],
             deal_sourcing_methods: ["Direct to seller", "Wholesalers"],
             commission_structure: "Standard 3%",
-            bio: `I help investors build wealth through real estate in ${state}.`
+            bio: `I help investors build wealth through real estate in ${state}.`,
+
+            // Deep Profile Data
+            personally_invests: Math.random() > 0.3,
+            personal_investing_notes: "I own a portfolio of 3 rental properties and have completed 2 flips in the last 5 years.",
+            investment_strategies: ["Buy & Hold", "Fix & Flip"],
+            typical_deal_price_range: getRandom(["$200k - $400k", "$300k - $600k", "$150k - $350k"]),
+            investor_types_served: ["First-time Investors", "Experienced Pros"],
+            metrics_used: ["Cash on Cash Return", "Cap Rate", "IRR"],
+            what_sets_you_apart: "I analyze every deal as if I were buying it myself. My background in construction helps me estimate rehab costs accurately.",
+            primary_neighborhoods_notes: `Deep expertise in ${state} emerging neighborhoods with high appreciation potential.`,
+            investment_philosophy_notes: "Cash flow is king, but I never ignore the fundamentals of location and appreciation potential.",
+            why_good_fit_notes: "I am responsive, data-driven, and understand the speed required to secure the best deals.",
+            strengths_and_challenges_notes: "Strength: Detailed analysis. Challenge: I'm picky about recommendations.",
+            sources_off_market: Math.random() > 0.4,
+            off_market_methods_notes: "I have a dedicated team for cold calling and direct mail campaigns.",
+            pro_network_types: ["Contractors", "Lenders", "Property Managers"],
+            can_refer_professionals: true,
+            refer_professionals_notes: "I have a vetted list of contractors and a reliable property management company.",
+            can_provide_investor_references: true,
+            case_study_best_deal: "Helped a client acquire a duplex for $280k, put $40k into renovations, appraised for $410k. Cash flows $600/month.",
+            update_frequency: getRandom(["Weekly", "As needed"]),
+            typical_response_time: "Within 4 hours",
+            works_in_team: Math.random() > 0.5,
+            team_role_notes: "I lead a small team handling strategy and negotiations.",
+            preferred_communication_channels: ["Text", "Email"],
+            languages_spoken: ["English"],
+            investor_certifications: Math.random() > 0.7 ? "Certified Investor Agent Specialist (CIAS)" : "",
+            keeps_up_with_trends_notes: "I subscribe to multiple market data services and attend REIA meetings.",
+            has_discipline_history: false,
+            risk_approach_score: Math.floor(Math.random() * 2) + 3
           }
         };
 
