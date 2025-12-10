@@ -128,8 +128,37 @@ function InvestorDashboardContent({ profile: propProfile }) {
       const agents = response.data?.results?.map(r => r.profile) || [];
       setSuggestedAgents(agents);
     } catch (err) {
-      console.error("Agent load error", err);
-      setSuggestedAgents([]);
+      console.warn("Agent matching function failed, falling back to direct query", err);
+      
+      try {
+          // Fallback: Direct frontend query for agents in this state
+          if (state) {
+              // 1. Search by target_state
+              const byTargetState = await base44.entities.Profile.filter({ target_state: state }, '-created_date', 10);
+              
+              // 2. Search by license_state (if backend supports nested query, otherwise this might fail gracefully or return empty)
+              let byLicense = [];
+              try {
+                  byLicense = await base44.entities.Profile.filter({ 'agent.license_state': state }, '-created_date', 10);
+              } catch (e) { console.log('Nested filter not supported'); }
+
+              // Combine unique agents
+              const combined = [...byTargetState, ...byLicense];
+              const uniqueAgents = Array.from(new Map(combined.map(item => [item.id, item])).values());
+              
+              // Filter to ensure they are actually agents
+              const validAgents = uniqueAgents.filter(p => 
+                  p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0)
+              );
+
+              setSuggestedAgents(validAgents);
+          } else {
+              setSuggestedAgents([]);
+          }
+      } catch (fallbackErr) {
+          console.error("Fallback query failed", fallbackErr);
+          setSuggestedAgents([]);
+      }
     } finally {
       setAgentsLoading(false);
     }
