@@ -46,10 +46,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Counterparty not found" }, { status: 404 });
     }
 
-    const myRole = myProfile.user_role || myProfile.role;
+    let myRole = myProfile.user_role || myProfile.role;
     const cpRole = cp.user_role || cp.role;
 
-    // Roles must be opposite
+    // Handle Admin/Member acting as opposite of counterparty
+    if (myRole === 'admin' || myRole === 'member') {
+      myRole = cpRole === 'agent' ? 'investor' : 'agent';
+    }
+
+    // Roles must be opposite (or compatible)
     if (myRole === cpRole) {
       return Response.json({ error: "Room requires opposite roles (investor↔agent)" }, { status: 400 });
     }

@@ -158,16 +158,26 @@ export default function InvestorProfile() {
     }
     
     try {
+      console.log("Starting createDealRoom for profile:", profile.id);
       const response = await createDealRoom({ counterparty_profile_id: profile.id });
+      console.log("createDealRoom response:", response);
+
       if (response.data?.room?.id) {
         toast.success(`Deal room created with ${profile.full_name}`);
+        console.log("Navigating to room:", response.data.room.id);
         navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
       } else {
-        toast.error("Could not create room");
+        console.error("Room creation failed, no room ID in response:", response.data);
+        if (response.data?.error) {
+            toast.error(`Error: ${response.data.error}`);
+        } else {
+            toast.error("Could not create room - unknown error");
+        }
       }
     } catch (error) {
       console.error('Connect error:', error);
-      toast.error("Failed to create deal room");
+      const errorMessage = error.response?.data?.error || error.message || "Unknown error";
+      toast.error(`Failed to create deal room: ${errorMessage}`);
     }
   };
 
