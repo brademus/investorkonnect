@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const { counterparty_profile_id } = body || {};
+    const { counterparty_profile_id, deal_id } = body || {};
     
     if (!counterparty_profile_id) {
       return Response.json({ error: "counterparty_profile_id required" }, { status: 400 });
@@ -79,11 +79,14 @@ Deno.serve(async (req) => {
     const agentId = myRole === "agent" ? myProfile.id : cp.id;
 
     // Check if room already exists
-    const existingRooms = await base44.entities.Room.filter({
-      investorId: investorId,
-      agentId: agentId
-    });
+    // If deal_id is provided, look for that specific room
+    // Otherwise look for any room between these two (legacy behavior)
+    let query = { investorId, agentId };
+    if (deal_id) {
+      query.deal_id = deal_id;
+    }
 
+    const existingRooms = await base44.entities.Room.filter(query);
     let room = existingRooms[0];
 
     if (!room) {
@@ -94,6 +97,7 @@ Deno.serve(async (req) => {
       room = await base44.entities.Room.create({
         investorId: investorId,
         agentId: agentId,
+        deal_id: deal_id || undefined,
         ndaAcceptedInvestor: false,
         ndaAcceptedAgent: false
       });

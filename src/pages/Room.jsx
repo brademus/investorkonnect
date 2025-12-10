@@ -231,28 +231,37 @@ export default function Room() {
           {/* Name and Status */}
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">{counterpartName}</h2>
-            {currentRoom && (
-              <p className="text-sm text-[#34D399] flex items-center gap-1.5">
-                <span className="w-2 h-2 bg-[#34D399] rounded-full animate-pulse"></span>
-                Active now
-              </p>
-            )}
+            <div className="flex items-center gap-3">
+              <span className="bg-[#1F1F1F] text-[#808080] border border-[#333] px-2 py-0.5 rounded text-xs">
+                Choosing agent
+              </span>
+            </div>
           </div>
           
           {/* Action Buttons */}
-          {roomId && (
-            <Button
-              onClick={() => setShowBoard(!showBoard)}
-              className={`rounded-full font-semibold transition-all ${
-                showBoard 
-                  ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                  : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-              }`}
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Deal Board
-            </Button>
-          )}
+          <div className="flex items-center gap-3">
+            {roomId && (
+              <Button
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5"
+              >
+                Lock in this agent
+              </Button>
+            )}
+            
+            {roomId && (
+              <Button
+                onClick={() => setShowBoard(!showBoard)}
+                className={`rounded-full font-semibold transition-all ${
+                  showBoard 
+                    ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                    : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                }`}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Deal Board
+              </Button>
+            )}
+          </div>
         </div>
 
 

@@ -214,10 +214,18 @@ export default function AgentProfile() {
     setConnecting(true);
     const isDemo = String(profile.id).startsWith('demo-');
     
+    // Get dealId from URL if present
+    const urlParams = new URLSearchParams(window.location.search);
+    const dealId = urlParams.get("dealId");
+
     if (DEMO_MODE || isDemo) {
       // Demo mode - create a demo room
       const sessionRooms = JSON.parse(sessionStorage.getItem('demo_rooms') || '[]');
-      const existingRoom = sessionRooms.find(r => r.counterparty_profile_id === profile.id);
+      // Check for existing room with this agent AND deal (if dealId present)
+      const existingRoom = sessionRooms.find(r => 
+          r.counterparty_profile_id === profile.id && 
+          (!dealId || r.deal_id === dealId)
+      );
       if (existingRoom) {
         navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
         setConnecting(false);
@@ -230,6 +238,7 @@ export default function AgentProfile() {
         counterparty_name: profile.full_name,
         counterparty_role: 'agent',
         counterparty_profile_id: profile.id,
+        deal_id: dealId || null,
         status: 'active',
         created_date: new Date().toISOString(),
         ndaAcceptedInvestor: true,
@@ -244,9 +253,12 @@ export default function AgentProfile() {
     }
     
     try {
-      console.log("Starting createDealRoom for profile:", profile.id);
+      console.log("Starting createDealRoom for profile:", profile.id, "dealId:", dealId);
       // Direct invoke to ensure correct calling convention
-      const response = await base44.functions.invoke('createDealRoom', { counterparty_profile_id: profile.id });
+      const response = await base44.functions.invoke('createDealRoom', { 
+          counterparty_profile_id: profile.id,
+          deal_id: dealId 
+      });
       console.log("createDealRoom response:", response);
       
       if (response.data?.room?.id) {

@@ -347,7 +347,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
                             if (!agent) return null;
                             return (
                                 <div key={agent.id || Math.random()} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors"
-                                     onClick={() => agent.id && navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
+                                     onClick={() => {
+                                         if (agent.id) {
+                                             let url = `AgentProfile?id=${agent.id}`;
+                                             if (orphanDeal?.id) {
+                                                 url += `&dealId=${orphanDeal.id}`;
+                                             }
+                                             navigate(createPageUrl(url));
+                                         }
+                                     }}>
                                     <div className="flex items-center gap-3">
                                         <div className="w-8 h-8 rounded-full bg-[#E3C567]/20 text-[#E3C567] flex items-center justify-center font-bold text-xs">
                                             {agent.full_name ? agent.full_name[0] : 'A'}
