@@ -156,7 +156,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   // Stats
   const dealStats = {
     active: Array.isArray(rooms) 
-      ? rooms.filter(r => r && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length 
+      ? rooms.filter(r => r && !r.is_orphan && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length 
       : 0,
     pending: Array.isArray(rooms) ? rooms.filter(r => r.is_orphan).length : 0,
     closed: Array.isArray(rooms)
