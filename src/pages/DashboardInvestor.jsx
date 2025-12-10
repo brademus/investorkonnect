@@ -153,13 +153,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
     fetchMessages();
   }, []);
 
-  // Stats
+  // Stats - only count active/locked-in deals (must have deal_id)
+  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id) : [];
+
   const dealStats = {
-    new_deal: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length : 0,
-    walkthrough: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'walkthrough_scheduled').length : 0,
-    evaluate: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'evaluate_deal').length : 0,
-    marketing: Array.isArray(rooms) ? rooms.filter(r => r.pipeline_stage === 'active_marketing').length : 0,
-    closed: Array.isArray(rooms) ? rooms.filter(r => ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length : 0
+    new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,
+    walkthrough: activeDealRooms.filter(r => r.pipeline_stage === 'walkthrough_scheduled').length,
+    evaluate: activeDealRooms.filter(r => r.pipeline_stage === 'evaluate_deal').length,
+    marketing: activeDealRooms.filter(r => r.pipeline_stage === 'active_marketing').length,
+    closed: activeDealRooms.filter(r => ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length
   };
 
   const handleRefresh = () => {
