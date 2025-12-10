@@ -416,30 +416,36 @@ export default function Room() {
               {/* Floating Deal Info */}
               {!loading && currentRoom && (
                 <div className="sticky top-0 z-20 flex justify-center pb-4 -mt-2 pointer-events-none">
-                  <div className="bg-[#0D0D0D]/80 backdrop-blur-md border border-[#1F1F1F] pl-4 pr-4 py-1.5 rounded-full shadow-lg flex items-center gap-3 text-xs pointer-events-auto transition-all hover:border-[#E3C567]/50">
+                  <div className="bg-[#111111]/95 backdrop-blur-md border border-[#333] px-6 py-2 rounded-xl shadow-xl flex flex-col items-center gap-0.5 text-xs pointer-events-auto transition-all hover:border-[#E3C567]/50">
+                    {/* Top Row: Name & Status */}
                     <div className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]"></span>
                       <span className="font-semibold text-[#FAFAFA]">
-                        {currentRoom.property_address || currentRoom.title || `Chat with ${counterpartName}`}
+                        {currentRoom.title || `Chat with ${counterpartName}`}
+                      </span>
+                      <span className="text-[#555]">•</span>
+                      <span className="text-[#808080] capitalize">
+                        {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'General Discussion'}
                       </span>
                     </div>
                     
-                    {currentRoom.budget > 0 && (
-                      <>
-                        <div className="w-px h-3 bg-[#333]"></div>
-                        <span className="text-[#34D399] font-medium font-mono">
-                          ${currentRoom.budget.toLocaleString()}
-                        </span>
-                      </>
-                    )}
+                    {/* Bottom Row: Address & Price */}
+                    {(currentRoom.property_address || currentRoom.budget > 0) && (
+                      <div className="flex items-center gap-2 text-[11px] opacity-90">
+                        {currentRoom.property_address && (
+                          <span className="text-[#CCC]">{currentRoom.property_address}</span>
+                        )}
+                        
+                        {currentRoom.property_address && currentRoom.budget > 0 && (
+                          <span className="text-[#555]">•</span>
+                        )}
 
-                    {(currentRoom.pipeline_stage || !currentRoom.deal_id) && (
-                      <>
-                        <div className="w-px h-3 bg-[#333]"></div>
-                        <span className="text-[#808080] capitalize">
-                          {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'General Discussion'}
-                        </span>
-                      </>
+                        {currentRoom.budget > 0 && (
+                          <span className="text-[#34D399] font-medium font-mono">
+                            ${currentRoom.budget.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
