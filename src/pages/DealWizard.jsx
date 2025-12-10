@@ -224,11 +224,43 @@ export default function DealWizard() {
 
       await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
       toast.success("Deal details saved");
-      navigate(createPageUrl("Dashboard"));
+      
+      // Proceed to matching instead of exiting
+      await fetchMatches();
+      setStep(3);
 
     } catch (error) {
       console.error("Save failed:", error);
       toast.error("Failed to save deal details");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMatches = async () => {
+    // Determine state to search
+    // If we have extracted data, use it. Otherwise rely on matching logic.
+    const searchState = dealData.state || dealData.city; 
+    
+    if (!searchState) {
+       console.log("No state/location to match against");
+       return;
+    }
+
+    setLoading(true);
+    try {
+      const { data } = await base44.functions.invoke('matchAgentsForInvestor', {
+        state: dealData.state,
+        city: dealData.city,
+        limit: 20
+      });
+      
+      if (data && data.results) {
+        setMatchedAgents(data.results);
+      }
+    } catch (error) {
+      console.error("Failed to fetch matches:", error);
+      toast.error("Could not load agent matches");
     } finally {
       setLoading(false);
     }
