@@ -224,6 +224,7 @@ export default function DealWizard() {
       });
 
       await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
       toast.success("Deal details saved");
       navigate(createPageUrl("Dashboard"));
 
