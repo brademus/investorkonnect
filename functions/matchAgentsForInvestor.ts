@@ -91,8 +91,10 @@ Deno.serve(async (req) => {
 
       console.log(`[matchAgentsForInvestor] Matching against: Code=${targetCode}, Name=${targetName}`);
       
-      // Fetch all agents (small dataset ~150)
-      const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+      // Fetch all agents (broader search to catch any profile with agent data)
+      // We filter in memory to ensure we catch 'agent' role OR profiles with 'agent' data object
+      const allProfiles = await base44.entities.Profile.filter({});
+      const allAgents = allProfiles.filter(p => p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0));
       
       const matchedAgents = allAgents.filter(agent => {
         // Collect all agent location indicators (including legacy top-level fields)

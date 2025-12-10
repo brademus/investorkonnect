@@ -21,6 +21,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   const [recentMessages, setRecentMessages] = useState([]);
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
+  const [showAllAgents, setShowAllAgents] = useState(false);
   
   // Sync profile if prop changes
   useEffect(() => {
@@ -102,30 +103,29 @@ function InvestorDashboardContent({ profile: propProfile }) {
             const parts = orphanDeal.property_address.split(',');
             if (parts.length > 1) {
                 const stateZip = parts[parts.length - 1].trim();
-                // Take the first word of the last part (e.g. "TX" from "TX 78701" or "Texas" from "Texas 78701")
-                // We allow full state names now too, backend handles normalization
                 const possibleState = stateZip.split(' ')[0].replace(/[0-9]/g, ''); 
                 if (possibleState.length >= 2) state = possibleState;
             }
         }
     }
 
-    loadSuggestedAgents(state, dealId);
-  }, [orphanDeal?.id]);
+    // If "Show All" is enabled, ignore state
+    if (showAllAgents) {
+        loadSuggestedAgents(null, dealId);
+    } else {
+        loadSuggestedAgents(state, dealId);
+    }
+  }, [orphanDeal?.id, showAllAgents]);
 
   const loadSuggestedAgents = async (state, dealId) => {
     setAgentsLoading(true);
     try {
-      // 1. Get strict matches based on location
+      // 1. Get matches (strict if state provided, broad if null)
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
         state, dealId, limit: 3
       });
       
       const agents = response.data?.results?.map(r => r.profile) || [];
-      
-      // NO GENERIC FALLBACK: User requested to ONLY show agents in the same place.
-      // If 0 agents found in that state, we show 0 agents.
-
       setSuggestedAgents(agents);
     } catch (err) {
       console.error("Agent load error", err);
@@ -376,16 +376,25 @@ function InvestorDashboardContent({ profile: propProfile }) {
                              : 'Start a deal to see matches.'}
                         </p>
                         {orphanDeal && (
-                            <p className="text-xs text-[#444] mb-4 max-w-[200px]">
-                                We only show agents verified in the deal's market.
-                            </p>
+                            <>
+                                <p className="text-xs text-[#444] mb-4 max-w-[200px]">
+                                    We only show agents verified in the deal's market.
+                                </p>
+                                <Button 
+                                    variant="outline" 
+                                    className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567] hover:text-black rounded-full text-xs h-8 mb-2"
+                                    onClick={() => setShowAllAgents(true)}
+                                >
+                                    Show Agents from Other Areas
+                                </Button>
+                            </>
                         )}
                         <Button 
                             variant="link" 
-                            className="text-[#E3C567]"
+                            className="text-[#808080] text-xs"
                             onClick={() => navigate(createPageUrl("AgentDirectory"))}
                         >
-                            Browse All Agents
+                            Browse Directory
                         </Button>
                     </div>
                 )}
