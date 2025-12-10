@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
     
-    console.log('[matchAgentsForInvestor] Finding matches for investor:', investorProfileId, 'Version: 1.2');
+    console.log('[matchAgentsForInvestor] Finding matches for investor:', investorProfileId, 'Version: 1.3');
     
     // Get investor profile for matching context
     const investorProfiles = await base44.entities.Profile.filter({ id: investorProfileId });
@@ -91,22 +91,25 @@ Deno.serve(async (req) => {
 
       console.log(`[matchAgentsForInvestor] Matching against: Code=${targetCode}, Name=${targetName}`);
       
-      // TARGETED SEARCH STRATEGY
+      // TARGETED SEARCH STRATEGY (v1.3)
       // Instead of fetching all profiles (which hits limits), we query specifically for this state
-      // We run multiple queries to cover different fields where the state might be stored
       
       const queries = [];
-      const limits = 20;
+      const limits = 50;
 
       // 1. Direct match on target_state
       if (targetCode) queries.push(base44.entities.Profile.filter({ target_state: targetCode }, '-created_date', limits));
       if (targetName) queries.push(base44.entities.Profile.filter({ target_state: targetName }, '-created_date', limits));
 
       // 2. Direct match on agent.license_state
-      if (targetCode) queries.push(base44.entities.Profile.filter({ 'agent.license_state': targetCode }, '-created_date', limits));
+      if (targetCode) {
+         try {
+             // Attempt to filter by nested field if supported
+             queries.push(base44.entities.Profile.filter({ 'agent.license_state': targetCode }, '-created_date', limits));
+         } catch(e) { console.log('Nested filter failed, skipping'); }
+      }
       
-      // 3. Match on user_role='agent' (broad, but recent) - catch-all for array fields like 'markets' 
-      // since we can't always reliably query inside arrays depending on the backend
+      // 3. Match on user_role='agent' (catch-all for recent agents)
       queries.push(base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 100));
 
       // Execute all queries in parallel
@@ -119,7 +122,6 @@ Deno.serve(async (req) => {
       
       for (const p of allFound) {
           if (!p || seenIds.has(p.id)) continue;
-          // Must have some indication of being an agent
           if (p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0)) {
               seenIds.add(p.id);
               allAgents.push(p);
@@ -127,7 +129,7 @@ Deno.serve(async (req) => {
       }
 
       console.log(`[matchAgentsForInvestor] Aggregated ${allAgents.length} potential agents for matching`);
-
+      
       const matchedAgents = allAgents.filter(agent => {
         // Collect all agent location indicators (including legacy top-level fields)
         const locations = [
