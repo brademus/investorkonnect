@@ -24,26 +24,21 @@ Deno.serve(async (req) => {
     // Safety check - maybe ensure admin or explicitly allowed
     // if (!user) return Response.json({ error: "Unauthorized" }, { status: 401 });
 
-    // 1. Fetch all agents
-    const allProfiles = await base44.asServiceRole.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 100); 
+    // 1. Fetch 'WI' agents primarily, as those are the "placeholders we do have"
+    const allProfiles = await base44.asServiceRole.entities.Profile.filter({ user_role: 'agent', target_state: 'WI' }, '-created_date', 50); 
     
     if (allProfiles.length > 0) {
-        console.log('Sample profile agent data keys:', Object.keys(allProfiles[0].agent || {}));
+        console.log('Sample WI profile agent data keys:', Object.keys(allProfiles[0].agent || {}));
     }
-    
-    // Also fetch profiles that might have agent data but incorrect role (just in case)
-    // const mixedProfiles = await base44.asServiceRole.entities.Profile.filter({}); 
-    // const potentialAgents = mixedProfiles.filter(p => p.agent && Object.keys(p.agent).length > 0);
-    // Combine and deduplicate if needed, but filtering by user_role='agent' is primary.
 
     let updatedCount = 0;
 
     for (const profile of allProfiles) {
-      // Check if this profile needs backfilling
-      // If agent object is missing OR investment_strategies is missing
+      // FORCE BACKFILL on all WI agents to ensure they are complete
       const agentData = profile.agent || {};
       
-      if (!agentData.investment_strategies || agentData.investment_strategies.length === 0) {
+      // Update even if fields exist, to ensure they are rich
+      if (true) {
         
         const agentUpdate = {
           ...agentData,
