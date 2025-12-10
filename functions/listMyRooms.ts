@@ -94,6 +94,9 @@ Deno.serve(async (req) => {
         deal = dealsById.get(r.deal_id);
       } else if (r.investorId === profile.id) {
         // Infer deal if I'm the investor and have active deals
+        // Only infer if the agent is NOT already locked into another deal? 
+        // No, multiple agents can discuss the same deal.
+        
         const activeDeals = myDeals.filter(d => d.status !== 'archived' && d.status !== 'closed');
         if (activeDeals.length > 0) {
           // Use most recent active deal
@@ -118,6 +121,11 @@ Deno.serve(async (req) => {
         
         // Pass the currently assigned agent ID (if any) to control "Lock In" button
         r.deal_assigned_agent_id = deal.agent_id;
+      } else {
+        // Deal not found or not inferred.
+        // If the user wants to see deal info, and it's missing, it might be because:
+        // 1. Deal inference failed (no active deals?)
+        // 2. Room has deal_id but deal deleted?
       }
 
       // If r.deal_id exists but deal not found, we still return the room (as a normal chat),

@@ -143,6 +143,17 @@ export default function Room() {
     // Only show active conversations (exclude orphan deals/potential matches)
     if (r.is_orphan) return false;
     
+    // Check if we are viewing a specific deal (via URL dealId or context)
+    // If so, user might expect to see ONLY rooms for that deal? 
+    // The user requirement says "only ones that show up ... are ones that you've selected".
+    // This implies removing unrelated chats if they are confusing.
+    // However, hiding other chats might be jarring.
+    // Let's at least filter out empty chats that are NOT linked to the current deal logic.
+    // But since "selected" means "created via Connect button", they should have room entries.
+    // If "unselected" agents appear, they must have room entries too.
+    // The only way to hide them is if they are truly empty/zombie rooms.
+    // We can't easily detect "empty" here without message counts.
+    
     if (!searchConversations) return true;
     return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
   });
