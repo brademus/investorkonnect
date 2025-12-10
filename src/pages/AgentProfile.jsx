@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { introCreate, ndaStatus, createDealRoom } from "@/components/functions";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import NDAModal from "@/components/NDAModal";
@@ -16,6 +17,7 @@ import { toast } from "sonner";
 
 export default function AgentProfile() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [showNDAModal, setShowNDAModal] = useState(false);
   const [ndaAccepted, setNdaAccepted] = useState(false);
@@ -262,6 +264,8 @@ export default function AgentProfile() {
       console.log("createDealRoom response:", response);
       
       if (response.data?.room?.id) {
+        // Invalidate rooms query to ensure the new conversation appears immediately in the sidebar
+        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
         toast.success(`Deal room created with ${profile.full_name}`);
         console.log("Navigating to room:", response.data.room.id);
         navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
