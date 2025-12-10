@@ -124,12 +124,21 @@ export default function AgentDirectory() {
 
   const handleOpenRoom = async (agent) => {
     try {
-      const response = await createDealRoom({ counterparty_profile_id: agent.id });
+      const params = new URLSearchParams(window.location.search);
+      const dealId = params.get('dealId');
+      
+      const payload = { counterparty_profile_id: agent.id };
+      if (dealId) {
+        payload.deal_id = dealId;
+      }
+      
+      const response = await createDealRoom(payload);
       if (response.data?.room?.id) {
         toast.success(`Deal room created with ${agent.full_name}`);
         navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
       } else toast.error("Could not create room");
     } catch (error) {
+      console.error("Failed to create room:", error);
       toast.error("Failed to create room");
     }
   };

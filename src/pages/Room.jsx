@@ -204,9 +204,9 @@ export default function Room() {
                       {new Date(r.created_date || Date.now()).toLocaleDateString()}
                     </span>
                   </div>
-                  {r.property_address && (
+                  {(r.property_address || r.title) && (
                     <p className="text-sm text-[#E3C567] truncate font-medium">
-                      {r.property_address}
+                      {r.property_address || r.title}
                     </p>
                   )}
                   {r.budget && (
@@ -214,7 +214,7 @@ export default function Room() {
                       ${r.budget.toLocaleString()}
                     </p>
                   )}
-                  {!r.property_address && !r.budget && (
+                  {!r.property_address && !r.title && !r.budget && (
                     <p className="text-sm text-[#808080] truncate">
                       {r.counterparty_role || "Active room"}
                     </p>
