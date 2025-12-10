@@ -28,7 +28,9 @@ function InvestorDashboardContent({ profile: propProfile }) {
   }, [propProfile]);
   
   // Load Rooms (Standard Hook)
-  const { data: rooms = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
+  const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
+  // Ensure rooms is always an array
+  const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
   // Load Profile (Fallback if not provided by prop)
   useEffect(() => {
@@ -74,9 +76,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
     // Get IDs of deals that are in a REAL room (connected to agent)
     // We filter out "orphan" virtual rooms that might come from listMyRooms
     const connectedDealIds = new Set(
-        rooms
-            .filter(r => !r.is_orphan && r.counterparty_role !== 'none' && r.deal_id)
-            .map(r => r.deal_id)
+        Array.isArray(rooms)
+            ? rooms
+                .filter(r => r && !r.is_orphan && r.counterparty_role !== 'none' && r.deal_id)
+                .map(r => r.deal_id)
+            : []
     );
 
     // Find the newest deal that isn't connected
@@ -133,9 +137,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Stats
   const dealStats = {
-    active: activeDeals.filter(d => !['closing', 'clear_to_close_closed'].includes(d.pipeline_stage)).length,
+    active: Array.isArray(activeDeals) 
+      ? activeDeals.filter(d => d && !['closing', 'clear_to_close_closed'].includes(d.pipeline_stage)).length 
+      : 0,
     pending: orphanDeal ? 1 : 0,
-    closed: rooms.filter(r => ['closing', 'clear_to_close_closed'].includes(r.pipeline_stage)).length
+    closed: Array.isArray(rooms)
+      ? rooms.filter(r => r && ['closing', 'clear_to_close_closed'].includes(r.pipeline_stage)).length
+      : 0
   };
 
   const handleRefresh = () => {
