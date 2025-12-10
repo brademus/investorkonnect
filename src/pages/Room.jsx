@@ -268,7 +268,38 @@ export default function Room() {
           </div>
         </div>
 
-
+        {/* Persistent Deal Header */}
+        {!showBoard && !loading && currentRoom && (
+          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md z-10">
+            {/* Row 1: Status & Title */}
+            <div className="flex items-center gap-2 mb-1">
+              <span className="w-2 h-2 rounded-full bg-[#E3C567]"></span>
+              <span className="font-bold text-[#FAFAFA] text-sm">
+                {currentRoom.title || `Chat with ${counterpartName}`}
+              </span>
+              <span className="text-[#555] text-xs">•</span>
+              <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
+                {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'}
+              </span>
+            </div>
+            
+            {/* Row 2: Address & Price */}
+            <div className="flex items-center gap-3 text-xs opacity-90">
+               <div className="flex items-center gap-1.5 text-[#CCC]">
+                 <span>{currentRoom.property_address || "No Property Address"}</span>
+               </div>
+               
+               {currentRoom.budget > 0 && (
+                 <>
+                   <span className="text-[#333]">|</span>
+                   <span className="text-[#34D399] font-mono font-medium">
+                     ${currentRoom.budget.toLocaleString()}
+                   </span>
+                 </>
+               )}
+            </div>
+          </div>
+        )}
 
         {/* Message Thread or Deal Board */}
         <div className="flex-1 overflow-y-auto px-6 py-6">
@@ -413,44 +444,6 @@ export default function Room() {
           ) : (
             /* Messages View */
             <div className="flex flex-col min-h-full space-y-4">
-              {/* Floating Deal Info */}
-              {!loading && currentRoom && (
-                <div className="sticky top-0 z-20 flex justify-center pb-4 -mt-2 pointer-events-none">
-                  <div className="bg-[#111111]/95 backdrop-blur-md border border-[#333] px-6 py-2 rounded-xl shadow-xl flex flex-col items-center gap-0.5 text-xs pointer-events-auto transition-all hover:border-[#E3C567]/50">
-                    {/* Top Row: Name & Status */}
-                    <div className="flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#E3C567]"></span>
-                      <span className="font-semibold text-[#FAFAFA]">
-                        {currentRoom.title || `Chat with ${counterpartName}`}
-                      </span>
-                      <span className="text-[#555]">•</span>
-                      <span className="text-[#808080] capitalize">
-                        {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'General Discussion'}
-                      </span>
-                    </div>
-                    
-                    {/* Bottom Row: Address & Price */}
-                    {(currentRoom.property_address || currentRoom.budget > 0) && (
-                      <div className="flex items-center gap-2 text-[11px] opacity-90">
-                        {currentRoom.property_address && (
-                          <span className="text-[#CCC]">{currentRoom.property_address}</span>
-                        )}
-                        
-                        {currentRoom.property_address && currentRoom.budget > 0 && (
-                          <span className="text-[#555]">•</span>
-                        )}
-
-                        {currentRoom.budget > 0 && (
-                          <span className="text-[#34D399] font-medium font-mono">
-                            ${currentRoom.budget.toLocaleString()}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
