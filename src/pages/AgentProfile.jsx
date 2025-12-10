@@ -477,6 +477,20 @@ export default function AgentProfile() {
               <p className="text-[#A0A0A0] leading-relaxed">{agentData.what_sets_you_apart}</p>
             </div>
           )}
+          
+          {/* Bottom Connect Button - Moved inside the card for better flow or keep it separate? User asked to fix the button visibility. */}
+          {/* Actually the button is in the top header section. I will add a large CTA at the bottom of the main profile card too, or just rely on the sticky header if there was one, but there isn't. */}
+          
+          <div className="mt-8 pt-6 border-t border-[#1F1F1F] flex justify-center">
+            <button 
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105"
+              onClick={handleConnect}
+            >
+              <MessageCircle className="w-6 h-6 mr-3" />
+              Start Conversation
+            </button>
+          </div>
+
         </div>
 
         {/* Experience & Expertise */}
