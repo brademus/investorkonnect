@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { listMessages, listMyRooms, sendMessage } from "@/components/functions";
 import { createPageUrl } from "@/components/utils";
@@ -75,6 +75,7 @@ function useMessages(roomId) {
 
 export default function Room() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
   const { profile } = useCurrentProfile();
@@ -89,7 +90,7 @@ export default function Room() {
   const [showBoard, setShowBoard] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
-  const counterpartName = currentRoom?.counterparty_name || "Chat";
+  const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
 
   const send = async () => {
     const t = text.trim();
