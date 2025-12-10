@@ -316,20 +316,23 @@ function InvestorDashboardContent() {
                     </div>
                 ) : suggestedAgents.length > 0 ? (
                     <div className="flex-grow space-y-3">
-                        {suggestedAgents.map(agent => (
-                            <div key={agent.id} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors"
-                                 onClick={() => navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-[#E3C567]/20 text-[#E3C567] flex items-center justify-center font-bold text-xs">
-                                        {agent.full_name?.[0]}
-                                    </div>
-                                    <div>
-                                        <p className="text-sm font-bold text-[#FAFAFA]">{agent.full_name}</p>
-                                        <p className="text-xs text-[#808080]">{agent.agent?.brokerage}</p>
+                        {suggestedAgents.map(agent => {
+                            if (!agent) return null;
+                            return (
+                                <div key={agent.id || Math.random()} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors"
+                                     onClick={() => agent.id && navigate(createPageUrl(`AgentProfile?id=${agent.id}`))}>
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-8 h-8 rounded-full bg-[#E3C567]/20 text-[#E3C567] flex items-center justify-center font-bold text-xs">
+                                            {agent.full_name ? agent.full_name[0] : 'A'}
+                                        </div>
+                                        <div>
+                                            <p className="text-sm font-bold text-[#FAFAFA]">{agent.full_name || 'Unknown Agent'}</p>
+                                            <p className="text-xs text-[#808080]">{agent.agent?.brokerage || 'Independent'}</p>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 ) : (
                     <div className="flex-grow flex flex-col items-center justify-center text-center">

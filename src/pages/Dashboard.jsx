@@ -87,12 +87,21 @@ export default function Dashboard() {
   }
 
   // Show role-specific dashboard
-  if (profile?.user_role === 'investor') {
-    return <DashboardInvestor />;
-  }
+  try {
+    if (profile?.user_role === 'investor') {
+      return <DashboardInvestor />;
+    }
 
-  if (profile?.user_role === 'agent') {
-    return <DashboardAgent />;
+    if (profile?.user_role === 'agent') {
+      return <DashboardAgent />;
+    }
+  } catch (error) {
+    console.error("Dashboard render error:", error);
+    return (
+       <div className="min-h-screen flex items-center justify-center text-white">
+          <p>Something went wrong loading the dashboard. Please refresh.</p>
+       </div>
+    );
   }
 
   // Fallback
