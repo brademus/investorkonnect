@@ -102,14 +102,14 @@ Deno.serve(async (req) => {
     let tier = 'starter';
     
     // LIVE price IDs
+    if (price === 'price_1SP8AB1Nw95Lp8qMSu9CdqJk') tier = 'pro';
+    if (price === 'price_1SP8B01Nw95Lp8qMsNzWobkZ') tier = 'enterprise';
+    if (price === 'price_1SP89V1Nw95Lp8qMNv6ZlA6q') tier = 'starter';
+    
+    // Legacy/Fallback IDs
     if (price === 'price_1SOpHB0nQRABXxQy0EOkgWYP') tier = 'pro';
     if (price === 'price_1SOpGm0nQRABXxQy3uESqqPJ') tier = 'enterprise';
     if (price === 'price_1SOpHa0nQRABXxQyK1W6nUoq') tier = 'starter';
-    
-    // TEST price IDs
-    if (price === 'price_1SP74d0nQRABXxQy19OnQqPv') tier = 'pro';
-    if (price === 'price_1SP75b0nQRABXxQyz40CXB32') tier = 'enterprise';
-    if (price === 'price_1SP73D0nQRABXxQyM9cMQTER') tier = 'starter';
 
     console.log('Detected tier:', tier, 'for price:', price);
 
@@ -117,8 +117,9 @@ Deno.serve(async (req) => {
     const sessionParams = new URLSearchParams();
     sessionParams.append('mode', 'subscription');
     sessionParams.append('customer', customerId);
-    sessionParams.append('success_url', success_url || 'https://agent-vault-da3d088b.base44.app/account/billing?sub=active');
-    sessionParams.append('cancel_url', cancel_url || 'https://agent-vault-da3d088b.base44.app/pricing');
+    const baseUrl = String(Deno.env.get('PUBLIC_APP_URL') || 'https://agent-vault-da3d088b.base44.app').replace(/\/+$/, '');
+    sessionParams.append('success_url', success_url || `${baseUrl}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`);
+    sessionParams.append('cancel_url', cancel_url || `${baseUrl}/pricing`);
     sessionParams.append('line_items[0][price]', price);
     sessionParams.append('line_items[0][quantity]', '1');
     sessionParams.append('metadata[user_id]', profiles[0]?.id || user.id);
