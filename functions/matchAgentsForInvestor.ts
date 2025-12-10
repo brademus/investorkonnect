@@ -32,7 +32,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
     
-    console.log('[matchAgentsForInvestor] Finding matches for investor:', investorProfileId);
+    console.log('[matchAgentsForInvestor] Finding matches for investor:', investorProfileId, 'Version: 1.1');
     
     // Get investor profile for matching context
     const investorProfiles = await base44.entities.Profile.filter({ id: investorProfileId });
