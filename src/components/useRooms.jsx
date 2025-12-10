@@ -50,11 +50,12 @@ function normalizeRoom(room) {
     counterparty_name: room.counterparty_name || room.customer_name || room.title || 'Deal Room',
     counterparty_role: room.counterparty_role || (room.agentId ? 'agent' : room.investorId ? 'investor' : 'partner'),
     // Ensure pipeline fields exist
-    title: room.title || room.counterparty_name || room.customer_name || 'Deal Room',
+    title: room.title || room.deal_title || null, // Only use real deal titles, don't fallback to names
     property_address: room.property_address || null,
     customer_name: room.customer_name || room.counterparty_name || null,
     budget: room.budget || room.contract_price || null,
     pipeline_stage: room.pipeline_stage || (room.deal_id ? 'new_deal_under_contract' : null),
+    deal_title: room.deal_title || room.title || null,
   };
 }
 

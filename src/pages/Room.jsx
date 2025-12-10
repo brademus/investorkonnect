@@ -215,17 +215,22 @@ export default function Room() {
                       {new Date(r.created_date || Date.now()).toLocaleDateString()}
                     </span>
                   </div>
-                  {(r.property_address || r.title) && (
+                  {/* Deal Address or Title */}
+                  {(r.property_address || r.deal_title || r.title) && (
                     <p className="text-sm text-[#E3C567] truncate font-medium">
-                      {r.property_address || r.title}
+                      {r.property_address || r.deal_title || r.title}
                     </p>
                   )}
-                  {r.budget && (
+                  
+                  {/* Deal Budget */}
+                  {(r.budget > 0) && (
                     <p className="text-sm text-[#34D399] font-semibold mt-0.5">
                       ${r.budget.toLocaleString()}
                     </p>
                   )}
-                  {!r.property_address && !r.title && !r.budget && (
+
+                  {/* Fallback state */}
+                  {!r.property_address && !r.deal_title && !r.title && !r.budget && (
                     <p className="text-sm text-[#808080] truncate">
                       {r.counterparty_role || "Active room"}
                     </p>
@@ -318,8 +323,10 @@ export default function Room() {
             {/* Row 2: Address & Price */}
             <div className="flex items-center gap-3 text-xs opacity-90">
                <div className="flex items-center gap-1.5 text-[#CCC]">
-                 {/* Fallback to title if address is missing, as title often contains the address in this app */}
-                 <span>{currentRoom.property_address || currentRoom.title || "No Property Address"}</span>
+                 {/* Show Address if available, otherwise Deal Title, otherwise fallback */}
+                 <span>
+                   {currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected"}
+                 </span>
                </div>
                
                {currentRoom.budget > 0 && (
