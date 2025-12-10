@@ -9,6 +9,7 @@ import { useRooms } from "@/components/useRooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus
 } from "lucide-react";
@@ -487,7 +488,7 @@ export default function Room() {
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
-                    <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
+                    <LoadingAnimation className="w-20 h-20 mx-auto mb-3" />
                     <p className="text-sm text-[#808080]">Loading messages...</p>
                   </div>
                 </div>

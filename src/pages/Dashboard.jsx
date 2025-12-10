@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Loader2 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import DashboardInvestor from "./DashboardInvestor";
 import DashboardAgent from "./DashboardAgent";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -82,7 +83,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+        <LoadingAnimation className="w-32 h-32" />
       </div>
     );
   }
@@ -115,7 +116,7 @@ export default function Dashboard() {
   // Fallback
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
-      <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin" />
+      <LoadingAnimation className="w-32 h-32" />
     </div>
   );
 }

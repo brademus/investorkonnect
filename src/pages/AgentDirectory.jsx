@@ -14,6 +14,7 @@ import {
   Users, Shield, MapPin, TrendingUp, Star,
   Loader2, Search, Filter, CheckCircle, MessageCircle, Home as HomeIcon, User, ArrowRight
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 
 export default function AgentDirectory() {
@@ -163,7 +164,7 @@ export default function AgentDirectory() {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <LoadingAnimation className="w-32 h-32 mx-auto mb-4" />
           <p className="text-[#A3A3A3]">Loading agent directory...</p>
         </div>
       </div>
