@@ -32,10 +32,25 @@ Deno.serve(async (req) => {
 
     // Get current user profile
     const myProfiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const myProfile = myProfiles[0];
+    let myProfile = myProfiles[0];
     
     if (!myProfile) {
-      return Response.json({ error: "Profile not found" }, { status: 404 });
+      // Auto-create profile if missing (e.g. admin or new user)
+      try {
+        console.log("Auto-creating profile for user:", user.id);
+        myProfile = await base44.entities.Profile.create({
+          user_id: user.id,
+          email: user.email,
+          full_name: user.full_name || user.email.split('@')[0],
+          role: user.role || 'member',
+          user_role: user.role === 'admin' ? 'admin' : 'investor', // Default to investor if unknown
+          onboarding_step: 'auto_created',
+          created_date: new Date().toISOString()
+        });
+      } catch (e) {
+        console.error("Failed to auto-create profile:", e);
+        return Response.json({ error: "Profile not found and could not be created" }, { status: 404 });
+      }
     }
 
     // Get counterparty profile

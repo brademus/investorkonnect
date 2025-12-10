@@ -22,6 +22,7 @@ export default function AgentProfile() {
   const [profile, setProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [agentId, setAgentId] = useState(null);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     // Parse URL params on mount
@@ -210,6 +211,7 @@ export default function AgentProfile() {
   };
 
   const handleConnect = async () => {
+    setConnecting(true);
     const isDemo = String(profile.id).startsWith('demo-');
     
     if (DEMO_MODE || isDemo) {
@@ -218,6 +220,7 @@ export default function AgentProfile() {
       const existingRoom = sessionRooms.find(r => r.counterparty_profile_id === profile.id);
       if (existingRoom) {
         navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`);
+        setConnecting(false);
         return;
       }
       const newRoom = {
@@ -236,6 +239,7 @@ export default function AgentProfile() {
       sessionStorage.setItem('demo_rooms', JSON.stringify(sessionRooms));
       toast.success(`Deal room created with ${profile.full_name}`);
       navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
+      setConnecting(false);
       return;
     }
     
@@ -260,6 +264,8 @@ export default function AgentProfile() {
       console.error('Connect error:', error);
       const errorMessage = error.response?.data?.error || error.message || "Unknown error";
       toast.error(`Failed to create deal room: ${errorMessage}`);
+    } finally {
+      setConnecting(false);
     }
   };
 
@@ -355,11 +361,12 @@ export default function AgentProfile() {
                   )}
                 </div>
                 <button 
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105"
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
                   onClick={handleConnect}
+                  disabled={connecting}
                 >
-                  <MessageCircle className="w-5 h-5 mr-2" />
-                  Connect
+                  {connecting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <MessageCircle className="w-5 h-5 mr-2" />}
+                  {connecting ? "Connecting..." : "Connect"}
                 </button>
               </div>
 
@@ -493,11 +500,12 @@ export default function AgentProfile() {
           
           <div className="mt-8 pt-6 border-t border-[#1F1F1F] flex justify-center">
             <button 
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105"
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
               onClick={handleConnect}
+              disabled={connecting}
             >
-              <MessageCircle className="w-6 h-6 mr-3" />
-              Start Conversation
+              {connecting ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <MessageCircle className="w-6 h-6 mr-3" />}
+              {connecting ? "Starting..." : "Start Conversation"}
             </button>
           </div>
 
