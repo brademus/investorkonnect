@@ -33,6 +33,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
   // Ensure rooms is always an array
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
+  // Force refetch on mount to ensure we see new deals immediately
+  useEffect(() => {
+    refetchRooms();
+  }, [refetchRooms]);
+
   // Load Profile (Fallback if not provided by prop)
   useEffect(() => {
     if (profile) return; // Skip if already have profile

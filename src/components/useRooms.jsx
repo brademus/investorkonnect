@@ -108,7 +108,8 @@ export function useRooms() {
       }
     },
     initialData: [],
-    staleTime: 1000, // Consider data fresh for 1 second
+    staleTime: 0, // Always refetch to ensure fresh data
     refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Ensure we check for updates on mount
   });
 }
