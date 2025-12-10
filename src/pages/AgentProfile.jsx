@@ -245,7 +245,8 @@ export default function AgentProfile() {
     
     try {
       console.log("Starting createDealRoom for profile:", profile.id);
-      const response = await createDealRoom({ counterparty_profile_id: profile.id });
+      // Direct invoke to ensure correct calling convention
+      const response = await base44.functions.invoke('createDealRoom', { counterparty_profile_id: profile.id });
       console.log("createDealRoom response:", response);
       
       if (response.data?.room?.id) {
