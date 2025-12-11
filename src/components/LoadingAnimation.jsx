@@ -10,13 +10,42 @@ export default function LoadingAnimation({ className = "" }) {
   const [animationData, setAnimationData] = useState(cachedAnimationData);
 
   useEffect(() => {
-    if (cachedAnimationData) return;
+    if (cachedAnimationData) {
+      setAnimationData(cachedAnimationData);
+      return;
+    }
 
     if (!fetchPromise) {
       fetchPromise = base44.functions.invoke('getLoadingAnimation')
         .then(res => {
-          cachedAnimationData = res.data;
-          return res.data;
+          // Process data to remove background
+          const data = res.data;
+          if (data) {
+             // Remove solid color background property if exists
+             if (data.sc) delete data.sc; 
+             
+             // Try to find and remove background layers
+             // In Lottie, layers are ordered top-to-bottom. Background is usually at the bottom (last index) or explicit.
+             if (Array.isArray(data.layers)) {
+                data.layers = data.layers.filter(layer => {
+                   const name = (layer.nm || '').toLowerCase();
+                   // Common names for backgrounds in After Effects
+                   const isBackgroundName = name.includes('bg') || name.includes('background') || name.includes('solid') || name.includes('color');
+                   // Type 1 is Solid
+                   const isSolid = layer.ty === 1; 
+                   
+                   // If it's a solid layer, it's likely a background, especially if named so
+                   if (isSolid) return false;
+                   
+                   // If explicit background name
+                   if (isBackgroundName && isSolid) return false;
+                   
+                   return true;
+                });
+             }
+          }
+          cachedAnimationData = data;
+          return data;
         })
         .catch(err => {
           console.error("Failed to load animation", err);
@@ -33,8 +62,8 @@ export default function LoadingAnimation({ className = "" }) {
   const sizeClass = className && (className.includes('w-') || className.includes('h-')) ? '' : 'w-64 h-64';
   
   if (!animationData) {
-    // Fallback pulse while loading
-    return <div className={`animate-pulse bg-[#E3C567]/20 rounded-full ${sizeClass} ${className}`} />;
+    // Fallback pulse while loading - minimal/transparent
+    return <div className={`animate-pulse opacity-0 ${sizeClass} ${className}`} />;
   }
   
   return (
