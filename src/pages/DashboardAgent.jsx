@@ -83,7 +83,7 @@ function AgentDashboardContent() {
     return (
       <>
         <Header profile={profile} />
-        <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <div className="min-h-screen bg-black flex items-center justify-center">
           <div className="text-center">
             <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
             <p className="text-[#808080] text-sm">Loading your dashboard...</p>

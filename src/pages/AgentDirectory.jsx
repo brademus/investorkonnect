@@ -162,7 +162,7 @@ export default function AgentDirectory() {
 
   if (profileLoading || loading) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
           <p className="text-[#A3A3A3]">Loading agent directory...</p>
