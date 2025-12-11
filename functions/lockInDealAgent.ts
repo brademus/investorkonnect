@@ -28,13 +28,11 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Only the investor can lock in an agent' }, { status: 403 });
         }
 
-        // 2. Update the Deal: assign agent and set status
-        // We only update pipeline_stage if it's currently null/undefined or generic
-        // But to be safe and respect existing progress, we might want to keep it. 
-        // Let's just set agent_id.
+        // 2. Update the Deal: assign agent, set status, and move to pipeline
         await base44.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
-            status: 'active'
+            status: 'active',
+            pipeline_stage: 'new_deal_under_contract'
         });
 
         // 3. Update the Target Room: link to deal

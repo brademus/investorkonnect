@@ -25,13 +25,18 @@ export default function AgentProfile() {
   const [profile, setProfile] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [agentId, setAgentId] = useState(null);
+  const [dealId, setDealId] = useState(null);
+  const [roomId, setRoomId] = useState(null);
   const [connecting, setConnecting] = useState(false);
+  const [lockingIn, setLockingIn] = useState(false);
 
   useEffect(() => {
     // Parse URL params on mount
     const urlParams = new URLSearchParams(window.location.search);
     const id = urlParams.get("id");
-    console.log("AgentProfile: URL params id =", id);
+    const deal = urlParams.get("dealId");
+    const room = urlParams.get("roomId");
+    console.log("AgentProfile: URL params id =", id, "dealId =", deal, "roomId =", room);
     
     if (!id) {
       toast.error("No agent ID provided");
@@ -39,6 +44,8 @@ export default function AgentProfile() {
       return;
     }
     setAgentId(id);
+    if (deal) setDealId(deal);
+    if (room) setRoomId(room);
   }, []);
 
   useEffect(() => {
@@ -213,13 +220,38 @@ export default function AgentProfile() {
     loadProfile();
   };
 
+  const handleLockIn = async () => {
+    if (!roomId || !dealId) {
+      toast.error("Missing room or deal information");
+      return;
+    }
+    
+    setLockingIn(true);
+    try {
+      const response = await base44.functions.invoke('lockInDealAgent', {
+        room_id: roomId,
+        deal_id: dealId
+      });
+      
+      if (response.data?.success) {
+        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+        toast.success(`${profile.full_name} is now your exclusive agent for this deal!`);
+        navigate(createPageUrl("Dashboard"));
+      } else {
+        toast.error("Failed to lock in agent");
+      }
+    } catch (error) {
+      console.error("Lock in error:", error);
+      toast.error(error.response?.data?.error || "Failed to lock in agent");
+    } finally {
+      setLockingIn(false);
+    }
+  };
+
   const handleConnect = async () => {
     setConnecting(true);
     const isDemo = String(profile.id).startsWith('demo-');
-    
-    // Get dealId from URL if present
-    const urlParams = new URLSearchParams(window.location.search);
-    const dealId = urlParams.get("dealId");
 
     if (DEMO_MODE || isDemo) {
       // Demo mode - create a demo room
@@ -267,6 +299,7 @@ export default function AgentProfile() {
       if (response.data?.room?.id) {
         // Invalidate rooms query to ensure the new conversation appears immediately in the sidebar
         await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        setRoomId(response.data.room.id);
         toast.success(`Deal room created with ${profile.full_name}`);
         console.log("Navigating to room:", response.data.room.id);
         navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`, { state: { initialCounterpartyName: profile.full_name } });
@@ -378,14 +411,38 @@ export default function AgentProfile() {
                     </span>
                   )}
                 </div>
-                <button 
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                  onClick={handleConnect}
-                  disabled={connecting}
-                >
-                  {connecting ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <MessageCircle className="w-5 h-5 mr-2" />}
-                  {connecting ? "Connecting..." : "Connect"}
-                </button>
+                <div className="flex gap-3">
+                  {dealId && !roomId && (
+                    <button 
+                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={handleConnect}
+                      disabled={connecting}
+                    >
+                      {connecting ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <MessageCircle className="w-5 h-5 mr-2" />}
+                      {connecting ? "Connecting..." : "Connect"}
+                    </button>
+                  )}
+                  {dealId && roomId && (
+                    <button 
+                      className="bg-[#10B981] hover:bg-[#059669] text-white text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={handleLockIn}
+                      disabled={lockingIn}
+                    >
+                      {lockingIn ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <CheckCircle className="w-5 h-5 mr-2" />}
+                      {lockingIn ? "Locking In..." : "Lock in this Agent"}
+                    </button>
+                  )}
+                  {!dealId && (
+                    <button 
+                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                      onClick={handleConnect}
+                      disabled={connecting}
+                    >
+                      {connecting ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <MessageCircle className="w-5 h-5 mr-2" />}
+                      {connecting ? "Connecting..." : "Connect"}
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* Stats */}
@@ -517,14 +574,25 @@ export default function AgentProfile() {
           {/* Actually the button is in the top header section. I will add a large CTA at the bottom of the main profile card too, or just rely on the sticky header if there was one, but there isn't. */}
           
           <div className="mt-8 pt-6 border-t border-[#1F1F1F] flex justify-center">
-            <button 
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-              onClick={handleConnect}
-              disabled={connecting}
-            >
-              {connecting ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <MessageCircle className="w-6 h-6 mr-3" />}
-              {connecting ? "Starting..." : "Start Conversation"}
-            </button>
+            {dealId && roomId ? (
+              <button 
+                className="bg-[#10B981] hover:bg-[#059669] text-white text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                onClick={handleLockIn}
+                disabled={lockingIn}
+              >
+                {lockingIn ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <CheckCircle className="w-6 h-6 mr-3" />}
+                {lockingIn ? "Locking In..." : "Lock in this Agent"}
+              </button>
+            ) : (
+              <button 
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+                onClick={handleConnect}
+                disabled={connecting}
+              >
+                {connecting ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <MessageCircle className="w-6 h-6 mr-3" />}
+                {connecting ? "Starting..." : "Start Conversation"}
+              </button>
+            )}
           </div>
 
         </div>
