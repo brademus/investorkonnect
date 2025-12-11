@@ -344,7 +344,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
                 {agentsLoading ? (
                     <div className="flex-grow flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 text-[#E3C567] animate-spin" />
+                        <LoadingAnimation className="w-6 h-6" />
                     </div>
                 ) : suggestedAgents.length > 0 ? (
                     <div className="flex-grow space-y-3">
