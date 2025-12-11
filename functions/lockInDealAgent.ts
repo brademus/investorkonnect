@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Profile not found' }, { status: 404 });
         }
         
-        // Verify user is the investor in this room (since they are locking in an agent)
+        // Verify user is the investor in this room
         if (room.investorId !== myProfile.id) {
              return Response.json({ error: 'Only the investor can lock in an agent' }, { status: 403 });
         }
@@ -40,7 +40,32 @@ Deno.serve(async (req) => {
         const agentProfiles = await base44.entities.Profile.filter({ id: room.agentId });
         const agentProfile = agentProfiles[0];
 
-        // 2. Update the Deal: assign agent, set status, and move to pipeline
+        // 2. FIRST - Delete ALL exploration rooms for this deal (before updating)
+        // Get ALL rooms for this investor
+        const allUserRooms = await base44.entities.Room.filter({ investorId: myProfile.id });
+        
+        // Find all rooms related to this deal (except the one we're locking in)
+        const roomsToDelete = allUserRooms.filter(r => 
+            r.id !== room_id && (
+              r.deal_id === deal_id || 
+              r.suggested_deal_id === deal_id
+            )
+        );
+
+        // Delete all exploration rooms and their messages
+        const deletePromises = roomsToDelete.map(async (r) => {
+            try {
+                const msgs = await base44.entities.Message.filter({ room_id: r.id });
+                await Promise.all(msgs.map(m => base44.entities.Message.delete(m.id)));
+            } catch (e) {
+                console.error("Error deleting messages for room " + r.id, e);
+            }
+            return base44.entities.Room.delete(r.id);
+        });
+
+        await Promise.all(deletePromises);
+
+        // 3. Update the Deal: assign agent, set status, and move to pipeline
         await base44.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
             agent_name: agentProfile?.full_name || 'Agent',
@@ -49,46 +74,18 @@ Deno.serve(async (req) => {
             pipeline_stage: 'new_deal_under_contract'
         });
 
-        // 3. Update the Target Room: link to deal and ensure proper fields
+        // 4. Update the Target Room: convert from exploration to locked-in
         await base44.entities.Room.update(room_id, {
             deal_id: deal_id,
+            suggested_deal_id: null, // Clear the suggested flag
             investorId: myProfile.id,
             agentId: room.agentId
         });
 
-        // 4. Cleanup: Delete ALL OTHER rooms related to this deal (including suggested_deal_id)
-        // This removes all agent conversations that were related to this deal
-        
-        const allUserRooms = await base44.entities.Room.filter({ investorId: myProfile.id });
-        
-        const roomsToDelete = allUserRooms.filter(r => 
-            r.id !== room_id && (
-              r.deal_id === deal_id || 
-              r.suggested_deal_id === deal_id
-            )
-        );
-
-        const deletePromises = roomsToDelete.map(async (r) => {
-            // Delete messages for this room first (optional but good for cleanup)
-            // Note: Entity SDK might not support bulk delete by query for some entities yet, so we iterate or let it be.
-            // Assuming we just delete the room for now, or fetch messages and delete.
-            // Let's try to delete messages if possible to keep DB clean.
-            try {
-                const msgs = await base44.entities.Message.filter({ room_id: r.id });
-                await Promise.all(msgs.map(m => base44.entities.Message.delete(m.id)));
-            } catch (e) {
-                console.error("Error deleting messages for room " + r.id, e);
-            }
-            
-            // Delete the room
-            return base44.entities.Room.delete(r.id);
-        });
-
-        await Promise.all(deletePromises);
-
         return Response.json({ 
             success: true, 
-            deleted_count: roomsToDelete.length 
+            deleted_count: roomsToDelete.length,
+            agent_name: agentProfile?.full_name || 'Agent'
         });
 
     } catch (error) {

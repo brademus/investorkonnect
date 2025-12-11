@@ -126,20 +126,24 @@ export default function Room() {
 
   const handleLockIn = async () => {
     const dealId = currentRoom?.deal_id || currentRoom?.suggested_deal_id;
-    if (!dealId) return;
+    if (!dealId || !roomId) return;
     
     try {
       // Call the specialized lock-in function that handles cleanup of other rooms
-      await base44.functions.invoke('lockInDealAgent', { 
+      const response = await base44.functions.invoke('lockInDealAgent', { 
         room_id: roomId, 
         deal_id: dealId
       });
       
-      // Clear all cached data and force full refresh
-      sessionStorage.clear();
-      window.location.href = createPageUrl("Dashboard");
+      if (response.data?.success) {
+        // Clear all cached data and force full refresh
+        sessionStorage.clear();
+        queryClient.clear();
+        window.location.href = createPageUrl("Dashboard");
+      }
     } catch (error) {
       console.error("Failed to lock in agent:", error);
+      alert("Failed to lock in agent. Please try again.");
     }
   };
 
