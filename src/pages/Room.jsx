@@ -135,8 +135,8 @@ export default function Room() {
         deal_id: dealId
       });
       
-      // Force reload to refresh room list and UI state
-      window.location.reload();
+      // Navigate to dashboard instead of reload to show fresh state
+      navigate(createPageUrl("Dashboard"));
     } catch (error) {
       console.error("Failed to lock in agent:", error);
     }

@@ -80,23 +80,27 @@ function InvestorDashboardContent({ profile: propProfile }) {
     return unassigned;
   }, [rooms]);
 
-  // Load Suggested Agents when orphan deal changes
+  // Load Suggested Agents ONLY when there's an orphan deal
   useEffect(() => {
+    // If no orphan deal, clear agents and don't load
+    if (!orphanDeal) {
+      setSuggestedAgents([]);
+      return;
+    }
+
     let state = null;
     let dealId = null;
 
-    if (orphanDeal) {
-        // IMPORTANT: Use the actual deal_id, not the room id (which might be virtual_xxx)
-        dealId = orphanDeal.deal_id || orphanDeal.id;
-        state = orphanDeal.state;
-        // Try extract state from address if missing
-        if (!state && orphanDeal.property_address) {
-            const parts = orphanDeal.property_address.split(',');
-            if (parts.length > 1) {
-                const stateZip = parts[parts.length - 1].trim();
-                const possibleState = stateZip.split(' ')[0].replace(/[0-9]/g, ''); 
-                if (possibleState.length >= 2) state = possibleState;
-            }
+    // IMPORTANT: Use the actual deal_id, not the room id (which might be virtual_xxx)
+    dealId = orphanDeal.deal_id || orphanDeal.id;
+    state = orphanDeal.state;
+    // Try extract state from address if missing
+    if (!state && orphanDeal.property_address) {
+        const parts = orphanDeal.property_address.split(',');
+        if (parts.length > 1) {
+            const stateZip = parts[parts.length - 1].trim();
+            const possibleState = stateZip.split(' ')[0].replace(/[0-9]/g, ''); 
+            if (possibleState.length >= 2) state = possibleState;
         }
     }
 
@@ -409,9 +413,9 @@ function InvestorDashboardContent({ profile: propProfile }) {
                         <p className="text-sm text-[#666] mb-2">
                            {orphanDeal 
                              ? `No agents found in ${orphanDeal.state || 'this area'} yet.` 
-                             : 'Start a deal to see matches.'}
+                             : 'No recommended agents right now.'}
                         </p>
-                        {orphanDeal && (
+                        {orphanDeal ? (
                             <>
                                 <p className="text-xs text-[#444] mb-4 max-w-[200px]">
                                     We only show agents verified in the deal's market.
@@ -424,6 +428,10 @@ function InvestorDashboardContent({ profile: propProfile }) {
                                     Show Agents from Other Areas
                                 </Button>
                             </>
+                        ) : (
+                            <p className="text-xs text-[#444] mb-4 max-w-[220px]">
+                                Upload a new contract to get matched with agents for your next deal.
+                            </p>
                         )}
                         <Button 
                             variant="link" 
