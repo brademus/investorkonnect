@@ -57,12 +57,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
   }, [profile]);
 
   // Calculate Orphan Deal (Latest deal not in a connected room OR deal not locked in)
+  // An orphan deal is a deal that needs an agent selection:
+  // - is_orphan flag is true (virtual deal room), OR
+  // - has a deal_id but NO locked-in agent (deal_assigned_agent_id is null/undefined)
   const orphanDeal = useMemo(() => {
     if (!Array.isArray(rooms)) return null;
     // 1. Explicit orphan (virtual room)
     const virtual = rooms.find(r => r.is_orphan);
     if (virtual) return virtual;
-    // 2. Real room but deal not locked in (we prioritize virtual ones usually, but if none, pick unassigned active deal)
+    // 2. Real room but deal not locked in
     const unassigned = rooms.find(r => r.deal_id && !r.deal_assigned_agent_id);
     return unassigned;
   }, [rooms]);
@@ -160,16 +163,31 @@ function InvestorDashboardContent({ profile: propProfile }) {
     fetchMessages();
   }, []);
 
-  // Stats - only count active/locked-in deals (must have deal_id, not orphan, AND locked to this agent)
-  // We strictly check that deal_assigned_agent_id exists and matches the room's agentId
-  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan && r.deal_assigned_agent_id && r.deal_assigned_agent_id === r.agentId) : [];
+  // Stats - only count active/locked-in deals
+  // Active = has deal_id, not orphan, AND has locked-in agent (deal_assigned_agent_id exists)
+  // Pipeline stages: new_deal_under_contract, walkthrough_scheduled, evaluate_deal, active_marketing
+  // Closed stages: clear_to_close_closed, closed, cancelling_deal
+  const activeDealRooms = Array.isArray(rooms) 
+    ? rooms.filter(r => 
+        r.deal_id && 
+        !r.is_orphan && 
+        r.deal_assigned_agent_id && 
+        !['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(r.pipeline_stage)
+      ) 
+    : [];
 
   const dealStats = {
     new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,
     walkthrough: activeDealRooms.filter(r => r.pipeline_stage === 'walkthrough_scheduled').length,
     evaluate: activeDealRooms.filter(r => r.pipeline_stage === 'evaluate_deal').length,
     marketing: activeDealRooms.filter(r => r.pipeline_stage === 'active_marketing').length,
-    closed: activeDealRooms.filter(r => ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)).length
+    closed: Array.isArray(rooms) 
+      ? rooms.filter(r => 
+          r.deal_id && 
+          r.deal_assigned_agent_id && 
+          ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)
+        ).length 
+      : 0
   };
 
   const handleRefresh = () => {

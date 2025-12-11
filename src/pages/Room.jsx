@@ -269,9 +269,18 @@ export default function Room() {
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">{counterpartName}</h2>
             <div className="flex items-center gap-3">
-              <span className="bg-[#1F1F1F] text-[#808080] border border-[#333] px-2 py-0.5 rounded text-xs">
-                Choosing agent
-              </span>
+              {currentRoom?.deal_assigned_agent_id === currentRoom?.agentId ? (
+                <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
+                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Agent Locked In
+                </span>
+              ) : (
+                <span className="bg-[#1F1F1F] text-[#808080] border border-[#333] px-2 py-0.5 rounded text-xs">
+                  Choosing agent
+                </span>
+              )}
             </div>
           </div>
           
@@ -279,8 +288,6 @@ export default function Room() {
           <div className="flex items-center gap-3">
             {roomId && 
              (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
-             // Show button if deal is not assigned, OR if assigned to someone else (to allow switching)
-             // Hide if already assigned to THIS agent.
              currentRoom?.deal_assigned_agent_id !== currentRoom?.agentId && (
               <Button
                 onClick={handleLockIn}
@@ -311,13 +318,17 @@ export default function Room() {
           <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md z-10">
             {/* Row 1: Status & Title */}
             <div className="flex items-center gap-2 mb-1">
-              <span className="w-2 h-2 rounded-full bg-[#E3C567]"></span>
+              <span className={`w-2 h-2 rounded-full ${currentRoom?.deal_assigned_agent_id === currentRoom?.agentId ? 'bg-[#10B981]' : 'bg-[#E3C567]'}`}></span>
               <span className="font-bold text-[#FAFAFA] text-sm">
                 {currentRoom.title || `Chat with ${counterpartName}`}
               </span>
               <span className="text-[#555] text-xs">•</span>
               <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
-                {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'}
+                {currentRoom?.deal_assigned_agent_id === currentRoom?.agentId ? (
+                  <span className="text-[#10B981]">Active – Working with this agent</span>
+                ) : (
+                  currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'
+                )}
               </span>
             </div>
             
