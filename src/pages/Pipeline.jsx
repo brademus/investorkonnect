@@ -97,14 +97,19 @@ function PipelineContent() {
     
     const processedDeals = dealsData.map(deal => {
       const room = roomMap.get(deal.id);
-      const hasRoom = !!room;
       const hasAgentLocked = !!deal.agent_id;
+
+      // Get agent name from Deal or Room
+      let agentName = 'No Agent Selected';
+      if (hasAgentLocked) {
+        agentName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
+      }
 
       return {
         // IDs
         id: deal.id,
         deal_id: deal.id,
-        room_id: hasRoom ? room.id : null,
+        room_id: room?.id || null,
         
         // Content - Prefer Deal Entity (User Uploaded Data)
         title: deal.title || 'Untitled Deal',
@@ -115,7 +120,7 @@ function PipelineContent() {
         
         // Status & Agent
         pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
-        customer_name: hasAgentLocked && hasRoom ? (room.counterparty_name || 'Agent Connected') : 'No Agent Selected',
+        customer_name: agentName,
         agent_id: deal.agent_id,
         
         // Dates

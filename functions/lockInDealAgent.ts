@@ -36,9 +36,14 @@ Deno.serve(async (req) => {
              return Response.json({ error: 'Only the investor can lock in an agent' }, { status: 403 });
         }
 
+        // Fetch agent profile to get their name
+        const agentProfiles = await base44.entities.Profile.filter({ id: room.agentId });
+        const agentProfile = agentProfiles[0];
+
         // 2. Update the Deal: assign agent, set status, and move to pipeline
         await base44.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
+            agent_name: agentProfile?.full_name || 'Agent',
             investor_id: myProfile.id,
             status: 'active',
             pipeline_stage: 'new_deal_under_contract'
@@ -51,18 +56,16 @@ Deno.serve(async (req) => {
             agentId: room.agentId
         });
 
-        // 4. Cleanup: Delete OTHER rooms for THIS DEAL that are not the selected one
-        // We look for rooms where:
-        // - They have the same deal_id as this room
-        // - id is NOT the current room_id
-        // This ensures we remove duplicate agent conversations for the same deal
+        // 4. Cleanup: Delete ALL OTHER rooms related to this deal (including suggested_deal_id)
+        // This removes all agent conversations that were related to this deal
         
         const allUserRooms = await base44.entities.Room.filter({ investorId: myProfile.id });
         
         const roomsToDelete = allUserRooms.filter(r => 
-            r.id !== room_id && 
-            r.deal_id === deal_id &&
-            r.agentId
+            r.id !== room_id && (
+              r.deal_id === deal_id || 
+              r.suggested_deal_id === deal_id
+            )
         );
 
         const deletePromises = roomsToDelete.map(async (r) => {
