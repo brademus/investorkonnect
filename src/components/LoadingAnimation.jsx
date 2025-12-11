@@ -20,32 +20,9 @@ export default function LoadingAnimation({ className = "" }) {
         .then(res => {
           const data = res.data;
           if (data) {
-             // Remove global background color
-             delete data.sc; 
-             data.bg = undefined;
-             
-             // Remove ONLY solid layers (type 1) which are typically backgrounds
-             const removeSolids = (layers) => {
-                 if (!Array.isArray(layers)) return layers;
-                 return layers.filter(layer => {
-                     // Keep everything except solid layers (ty: 1)
-                     return layer.ty !== 1;
-                 });
-             };
-
-             // Process root layers
-             if (data.layers) {
-                 data.layers = removeSolids(data.layers);
-             }
-
-             // Process all precomps/assets
-             if (Array.isArray(data.assets)) {
-                 data.assets.forEach(asset => {
-                     if (asset.layers) {
-                         asset.layers = removeSolids(asset.layers);
-                     }
-                 });
-             }
+             // Simply remove background color properties
+             if (data.bg) delete data.bg;
+             if (data.sc) delete data.sc;
           }
           cachedAnimationData = data;
           return data;
@@ -64,21 +41,18 @@ export default function LoadingAnimation({ className = "" }) {
   const sizeClass = className && (className.includes('w-') || className.includes('h-')) ? '' : 'w-64 h-64';
   
   if (!animationData) {
-    return <div className={`animate-pulse opacity-0 ${sizeClass} ${className}`} />;
+    return <div className={`animate-pulse bg-transparent ${sizeClass} ${className}`} />;
   }
   
   return (
-    <div className={`flex items-center justify-center ${sizeClass} ${className}`} style={{ background: 'transparent' }}>
+    <div className={`flex items-center justify-center ${sizeClass} ${className}`}>
       <Lottie 
         animationData={animationData} 
         loop={true} 
         className="w-full h-full"
-        style={{ background: 'transparent' }}
         rendererSettings={{ 
           preserveAspectRatio: 'xMidYMid meet',
-          clearCanvas: true,
-          progressiveLoad: false,
-          hideOnTransparent: true
+          clearCanvas: true
         }}
       />
     </div>
