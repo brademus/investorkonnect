@@ -13,20 +13,73 @@ Deno.serve(async (req) => {
         
         const data = await response.json();
         
-        // Remove only the black background - keep all animation layers intact
         // Remove background color properties
         delete data.bg;
+        delete data.sc;
         
-        // Filter out ONLY solid color layers (type 1) which are backgrounds
-        if (data.layers && Array.isArray(data.layers)) {
-            data.layers = data.layers.filter(layer => layer.ty !== 1);
+        // Helper to check if color is black/dark
+        const isBlack = (colorArray) => {
+            if (!Array.isArray(colorArray) || colorArray.length < 3) return false;
+            // Check if all RGB values are very low (black/dark)
+            return colorArray[0] <= 0.15 && colorArray[1] <= 0.15 && colorArray[2] <= 0.15;
+        };
+        
+        // Recursively process shapes to remove black fills/strokes
+        const processShapes = (shapes) => {
+            if (!Array.isArray(shapes)) return shapes;
+            
+            return shapes.filter(shape => {
+                // Remove fills with black color
+                if (shape.ty === 'fl' && shape.c && shape.c.k && isBlack(shape.c.k)) {
+                    return false;
+                }
+                // Remove strokes with black color
+                if (shape.ty === 'st' && shape.c && shape.c.k && isBlack(shape.c.k)) {
+                    return false;
+                }
+                // Process nested groups recursively
+                if (shape.ty === 'gr' && shape.it) {
+                    shape.it = processShapes(shape.it);
+                }
+                return true;
+            });
+        };
+        
+        // Process layers recursively
+        const processLayers = (layers) => {
+            if (!Array.isArray(layers)) return layers;
+            
+            return layers.filter(layer => {
+                // Remove solid layers (backgrounds)
+                if (layer.ty === 1) return false;
+                
+                // Remove layers with black solid colors
+                if (layer.sc && isBlack(layer.sc)) return false;
+                
+                // Process shape layers
+                if (layer.ty === 4 && layer.shapes) {
+                    layer.shapes = processShapes(layer.shapes);
+                }
+                
+                // Process nested layers in precomps
+                if (layer.layers) {
+                    layer.layers = processLayers(layer.layers);
+                }
+                
+                return true;
+            });
+        };
+        
+        // Clean root layers
+        if (data.layers) {
+            data.layers = processLayers(data.layers);
         }
         
-        // Do the same for precomp assets
+        // Clean all precomp assets
         if (Array.isArray(data.assets)) {
             data.assets.forEach(asset => {
-                if (asset.layers && Array.isArray(asset.layers)) {
-                    asset.layers = asset.layers.filter(layer => layer.ty !== 1);
+                if (asset.layers) {
+                    asset.layers = processLayers(asset.layers);
                 }
             });
         }
