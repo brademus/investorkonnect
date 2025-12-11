@@ -130,7 +130,7 @@ export default function InvestorOnboarding() {
   if (checking) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <LoadingAnimation className="w-12 h-12" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }

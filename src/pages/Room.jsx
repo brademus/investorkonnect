@@ -488,7 +488,7 @@ export default function Room() {
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
-                    <LoadingAnimation className="w-20 h-20 mx-auto mb-3" />
+                    <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
                     <p className="text-sm text-[#808080]">Loading messages...</p>
                   </div>
                 </div>
