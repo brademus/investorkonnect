@@ -162,23 +162,60 @@ function InvestorDashboardContent({ profile: propProfile }) {
     }
   };
 
-  // Messages
+  // Messages - Load from active rooms
   useEffect(() => {
-    // Safety wrapper for inboxList
     const fetchMessages = async () => {
       try {
-        if (typeof inboxList === 'function') {
-           const res = await inboxList();
-           if (res && Array.isArray(res.data)) {
-             setRecentMessages(res.data.slice(0, 3));
-           }
+        // Get active rooms (only locked-in deals with agents)
+        const activeRooms = rooms.filter(r => 
+          r.deal_id && 
+          !r.is_orphan && 
+          r.deal_assigned_agent_id &&
+          r.counterparty_name &&
+          r.counterparty_name !== 'Unknown'
+        );
+        
+        if (activeRooms.length === 0) {
+          setRecentMessages([]);
+          return;
         }
+
+        // Fetch latest messages for each active room
+        const messagePromises = activeRooms.slice(0, 3).map(async (room) => {
+          try {
+            const messages = await base44.entities.Message.filter(
+              { room_id: room.id },
+              '-created_date',
+              1
+            );
+            
+            if (messages.length > 0) {
+              return {
+                roomId: room.id,
+                senderName: room.counterparty_name,
+                preview: messages[0].body?.substring(0, 50) || 'New message',
+                timestamp: messages[0].created_date
+              };
+            }
+            return null;
+          } catch (err) {
+            console.warn(`Failed to load messages for room ${room.id}`, err);
+            return null;
+          }
+        });
+
+        const results = await Promise.all(messagePromises);
+        const validMessages = results.filter(m => m !== null);
+        setRecentMessages(validMessages);
       } catch (err) {
         console.warn("Failed to load messages", err);
       }
     };
-    fetchMessages();
-  }, []);
+    
+    if (rooms.length > 0) {
+      fetchMessages();
+    }
+  }, [rooms]);
 
   // Stats - only count active/locked-in deals
   // Active = has deal_id, not orphan, AND has locked-in agent (deal_assigned_agent_id exists)
@@ -356,11 +393,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
                 <div className="flex-grow space-y-3">
                     {recentMessages.length > 0 ? (
                         recentMessages.map((msg, i) => (
-                            <div key={i} className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] flex items-center gap-3">
-                                <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold">
+                            <div 
+                                key={i} 
+                                onClick={() => navigate(`${createPageUrl("Room")}?roomId=${msg.roomId}`)}
+                                className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors flex items-center gap-3"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold text-[#E3C567]">
                                     {msg.senderName?.[0]}
                                 </div>
-                                <div className="min-w-0">
+                                <div className="min-w-0 flex-1">
                                     <p className="text-sm font-bold text-[#FAFAFA] truncate">{msg.senderName}</p>
                                     <p className="text-xs text-[#808080] truncate">{msg.preview}</p>
                                 </div>
@@ -368,7 +409,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
                         ))
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-center">
-                            <p className="text-sm text-[#666]">No new messages</p>
+                            <p className="text-sm text-[#666]">No messages yet</p>
+                            <p className="text-xs text-[#444] mt-1">Messages will appear once you connect with an agent</p>
                         </div>
                     )}
                 </div>
