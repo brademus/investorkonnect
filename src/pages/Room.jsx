@@ -561,7 +561,7 @@ export default function Room() {
               className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] disabled:bg-[#1F1F1F] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#E3C567]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
             >
               {sending ? (
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
+                <LoadingAnimation className="w-5 h-5 text-white" />
               ) : (
                 <Send className="w-5 h-5 text-white" />
               )}
