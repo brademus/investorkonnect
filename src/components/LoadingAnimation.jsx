@@ -20,9 +20,40 @@ export default function LoadingAnimation({ className = "" }) {
         .then(res => {
           const data = res.data;
           if (data) {
-             // Simply remove background color properties
+             // Remove background color properties
              if (data.bg) delete data.bg;
              if (data.sc) delete data.sc;
+             
+             // Recursively remove solid layers and black backgrounds
+             const cleanLayers = (layers) => {
+                 if (!Array.isArray(layers)) return layers;
+                 return layers.filter(layer => {
+                     // Remove solid layers (type 1)
+                     if (layer.ty === 1) return false;
+                     
+                     // Remove shape layers with black fills
+                     if (layer.ty === 4 && layer.shapes) {
+                         const hasBlackFill = JSON.stringify(layer.shapes).includes('"c":{"a":0,"k":[0,0,0,1]}');
+                         if (hasBlackFill) return false;
+                     }
+                     
+                     return true;
+                 });
+             };
+
+             // Clean root layers
+             if (data.layers) {
+                 data.layers = cleanLayers(data.layers);
+             }
+
+             // Clean precomp layers
+             if (Array.isArray(data.assets)) {
+                 data.assets.forEach(asset => {
+                     if (asset.layers) {
+                         asset.layers = cleanLayers(asset.layers);
+                     }
+                 });
+             }
           }
           cachedAnimationData = data;
           return data;
