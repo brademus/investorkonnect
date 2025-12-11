@@ -480,7 +480,7 @@ export default function DealWizard() {
           disabled={!selectedAgentId && matchedAgents.length > 0} 
           className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold"
         >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : (selectedAgentId ? 'Start Deal Room' : 'Skip & Save Deal')}
+          {loading ? <LoadingAnimation className="w-4 h-4 text-black" /> : (selectedAgentId ? 'Start Deal Room' : 'Skip & Save Deal')}
         </Button>
       </div>
     </div>
