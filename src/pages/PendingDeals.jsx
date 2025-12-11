@@ -5,7 +5,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useRooms } from "@/components/useRooms";
-import { FileText, ArrowLeft, Clock, MapPin, Home, DollarSign, Loader2 } from "lucide-react";
+import { FileText, ArrowLeft, Clock, MapPin, Home, DollarSign } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 
 function PendingDealsContent() {
@@ -20,7 +21,7 @@ function PendingDealsContent() {
       <>
         <Header profile={profile} />
         <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
-          <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
+          <LoadingAnimation className="w-64 h-64" />
         </div>
       </>
     );

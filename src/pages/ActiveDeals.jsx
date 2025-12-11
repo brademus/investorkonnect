@@ -8,8 +8,9 @@ import { useRooms } from "@/components/useRooms";
 import { Button } from "@/components/ui/button";
 import { 
   ArrowLeft, Plus, Home, DollarSign, MapPin, Calendar,
-  Loader2, FileText, TrendingUp
+  FileText, TrendingUp
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 function ActiveDealsContent() {
   const navigate = useNavigate();
@@ -47,7 +48,7 @@ function ActiveDealsContent() {
       <>
         <Header profile={profile} />
         <div className="min-h-screen bg-black flex items-center justify-center">
-          <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
+          <LoadingAnimation className="w-64 h-64" />
         </div>
       </>
     );

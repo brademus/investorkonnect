@@ -7,9 +7,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Users, Loader2, CheckCircle, X, 
+  Users, CheckCircle, X, 
   MessageCircle, Shield, Home as HomeIcon, ArrowLeft
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 
 export default function Inbox() {
@@ -90,7 +91,7 @@ export default function Inbox() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-amber-500 border-t-transparent rounded-full animate-spin"></div>
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
