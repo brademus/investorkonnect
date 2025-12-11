@@ -24,26 +24,25 @@ export default function LoadingAnimation({ className = "" }) {
              delete data.sc; 
              data.bg = undefined;
              
-             // ULTRA AGGRESSIVE: Only keep layers with "hand" in the name
-             const keepOnlyHands = (layers) => {
-                 if (!Array.isArray(layers)) return [];
+             // Remove ONLY solid layers (type 1) which are typically backgrounds
+             const removeSolids = (layers) => {
+                 if (!Array.isArray(layers)) return layers;
                  return layers.filter(layer => {
-                     const name = (layer.nm || '').toLowerCase();
-                     // Only keep if name contains "hand" or "shake"
-                     return name.includes('hand') || name.includes('shake');
+                     // Keep everything except solid layers (ty: 1)
+                     return layer.ty !== 1;
                  });
              };
 
              // Process root layers
              if (data.layers) {
-                 data.layers = keepOnlyHands(data.layers);
+                 data.layers = removeSolids(data.layers);
              }
 
              // Process all precomps/assets
              if (Array.isArray(data.assets)) {
                  data.assets.forEach(asset => {
                      if (asset.layers) {
-                         asset.layers = keepOnlyHands(asset.layers);
+                         asset.layers = removeSolids(asset.layers);
                      }
                  });
              }
