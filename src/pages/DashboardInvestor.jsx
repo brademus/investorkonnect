@@ -158,7 +158,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
   }, []);
 
   // Stats - only count active/locked-in deals (must have deal_id, not orphan, AND locked to this agent)
-  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan && r.deal_assigned_agent_id === r.agentId) : [];
+  // We strictly check that deal_assigned_agent_id exists and matches the room's agentId
+  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan && r.deal_assigned_agent_id && r.deal_assigned_agent_id === r.agentId) : [];
 
   const dealStats = {
     new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,
