@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { Loader2, Shield, CheckCircle, AlertCircle } from "lucide-react";
+import { Shield, CheckCircle, AlertCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 
 /**
@@ -224,7 +225,7 @@ export default function Verify() {
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -234,7 +235,7 @@ export default function Verify() {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center max-w-md bg-[#0D0D0D] rounded-2xl border border-[#1F1F1F] p-10 shadow-lg">
-          <Loader2 className="w-14 h-14 text-[#E3C567] animate-spin mx-auto mb-5" />
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-5" />
           <h2 className="text-2xl font-bold mb-2 text-[#FAFAFA]">Processing Verification...</h2>
           <p className="text-[#808080]">Please wait while we confirm your identity</p>
         </div>
@@ -311,7 +312,7 @@ export default function Verify() {
             >
               {!personaReady ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingAnimation className="w-5 h-5" />
                   Loading...
                 </>
               ) : (

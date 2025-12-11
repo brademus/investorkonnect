@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, CheckCircle } from "lucide-react";
+import { ArrowLeft, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 /**
  * ROLE SELECTION - User picks investor or agent
@@ -109,7 +110,7 @@ export default function RoleSelection() {
   if (checking) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -176,7 +177,7 @@ export default function RoleSelection() {
             <div className="flex items-center justify-center gap-2 text-[#E3C567] font-semibold text-lg">
               {selectedChoice === 'investor' ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingAnimation className="w-5 h-5" />
                   Setting up...
                 </>
               ) : (
@@ -219,7 +220,7 @@ export default function RoleSelection() {
             <div className="flex items-center justify-center gap-2 text-[#34D399] font-semibold text-lg">
               {selectedChoice === 'agent' ? (
                 <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <LoadingAnimation className="w-5 h-5" />
                   Setting up...
                 </>
               ) : (
