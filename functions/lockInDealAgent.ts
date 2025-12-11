@@ -40,33 +40,33 @@ Deno.serve(async (req) => {
         const agentProfiles = await base44.entities.Profile.filter({ id: room.agentId });
         const agentProfile = agentProfiles[0];
 
-        // 2. FIRST - Delete ALL exploration rooms for this deal (before updating)
-        // Get ALL rooms for this investor
-        const allUserRooms = await base44.entities.Room.filter({ investorId: myProfile.id });
+        // 2. AGGRESSIVE CLEANUP - Delete ALL other rooms for this investor except the locked-in one
+        // This ensures no old conversations remain visible
+        const allUserRooms = await base44.asServiceRole.entities.Room.filter({ investorId: myProfile.id });
         
-        // Find all rooms related to this deal (except the one we're locking in)
-        const roomsToDelete = allUserRooms.filter(r => 
-            r.id !== room_id && (
-              r.deal_id === deal_id || 
-              r.suggested_deal_id === deal_id
-            )
-        );
+        console.log(`[lockInDealAgent] Found ${allUserRooms.length} total rooms for investor`);
+        
+        // Delete ALL rooms except the one we're locking in
+        const roomsToDelete = allUserRooms.filter(r => r.id !== room_id);
+        
+        console.log(`[lockInDealAgent] Will delete ${roomsToDelete.length} rooms`);
 
-        // Delete all exploration rooms and their messages
-        const deletePromises = roomsToDelete.map(async (r) => {
+        // Delete rooms and their messages using service role for permissions
+        for (const r of roomsToDelete) {
             try {
-                const msgs = await base44.entities.Message.filter({ room_id: r.id });
-                await Promise.all(msgs.map(m => base44.entities.Message.delete(m.id)));
+                const msgs = await base44.asServiceRole.entities.Message.filter({ room_id: r.id });
+                for (const m of msgs) {
+                    await base44.asServiceRole.entities.Message.delete(m.id);
+                }
+                await base44.asServiceRole.entities.Room.delete(r.id);
+                console.log(`[lockInDealAgent] Deleted room ${r.id}`);
             } catch (e) {
-                console.error("Error deleting messages for room " + r.id, e);
+                console.error(`[lockInDealAgent] Error deleting room ${r.id}:`, e);
             }
-            return base44.entities.Room.delete(r.id);
-        });
-
-        await Promise.all(deletePromises);
+        }
 
         // 3. Update the Deal: assign agent, set status, and move to pipeline
-        await base44.entities.Deal.update(deal_id, {
+        await base44.asServiceRole.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
             agent_name: agentProfile?.full_name || 'Agent',
             investor_id: myProfile.id,
@@ -75,7 +75,7 @@ Deno.serve(async (req) => {
         });
 
         // 4. Update the Target Room: convert from exploration to locked-in
-        await base44.entities.Room.update(room_id, {
+        await base44.asServiceRole.entities.Room.update(room_id, {
             deal_id: deal_id,
             suggested_deal_id: null, // Clear the suggested flag
             investorId: myProfile.id,
