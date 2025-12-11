@@ -118,15 +118,33 @@ export default function DealWizard() {
 
       let currentId = dealId;
       if (!currentId) {
-        const newDeal = await base44.entities.Deal.create({
+        // Check for existing deals by this investor to prevent duplicates
+        const existingDeals = await base44.entities.Deal.filter({ 
           investor_id: profiles[0].id,
-          title: file.name,
-          contract_url: file_url,
-          status: 'active',
-          pipeline_stage: 'new_deal_under_contract',
-          created_date: new Date().toISOString()
+          status: 'active'
         });
-        currentId = newDeal.id;
+        
+        // If there's already an active deal without an agent, use that instead of creating new
+        const orphanDeal = existingDeals.find(d => !d.agent_id);
+        
+        if (orphanDeal) {
+          currentId = orphanDeal.id;
+          await base44.entities.Deal.update(currentId, {
+            contract_url: file_url,
+            title: file.name
+          });
+        } else {
+          const newDeal = await base44.entities.Deal.create({
+            investor_id: profiles[0].id,
+            title: file.name,
+            contract_url: file_url,
+            status: 'active',
+            pipeline_stage: 'new_deal_under_contract',
+            created_date: new Date().toISOString()
+          });
+          currentId = newDeal.id;
+        }
+        
         setDealId(currentId);
         setSearchParams({ dealId: currentId });
         await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
@@ -159,7 +177,20 @@ export default function DealWizard() {
           
           setDealData(prev => ({ ...prev, ...updates }));
           
-          // Save extracted data to DB immediately
+          // Check if another deal already exists with same address
+          const existingByAddress = await base44.entities.Deal.filter({
+            property_address: updates.address,
+            investor_id: profiles[0].id
+          });
+          
+          // If duplicate address found and it's not the current deal, use the existing one
+          if (existingByAddress.length > 0 && existingByAddress[0].id !== currentId) {
+            currentId = existingByAddress[0].id;
+            setDealId(currentId);
+            setSearchParams({ dealId: currentId });
+          }
+          
+          // Save extracted data to DB
           await base44.entities.Deal.update(currentId, {
              property_address: updates.address,
              city: updates.city,
