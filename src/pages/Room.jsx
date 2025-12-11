@@ -125,12 +125,14 @@ export default function Room() {
   };
 
   const handleLockIn = async () => {
-    if (!currentRoom?.suggested_deal_id) return;
+    const dealId = currentRoom?.deal_id || currentRoom?.suggested_deal_id;
+    if (!dealId) return;
+    
     try {
       // Call the specialized lock-in function that handles cleanup of other rooms
       await base44.functions.invoke('lockInDealAgent', { 
         room_id: roomId, 
-        deal_id: currentRoom.suggested_deal_id
+        deal_id: dealId
       });
       
       // Force reload to refresh room list and UI state
