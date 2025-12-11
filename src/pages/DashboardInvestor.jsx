@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function InvestorDashboardContent({ profile: propProfile }) {
   const navigate = useNavigate();
@@ -357,7 +358,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                                          if (agent.id) {
                                              let url = `AgentProfile?id=${agent.id}`;
                                              if (orphanDeal?.id) {
-                                                 url += `&dealId=${orphanDeal.id}`;
+                                                 url += `&dealId=${orphanDeal.deal_id || orphanDeal.id}`;
                                              }
                                              navigate(createPageUrl(url));
                                          }
@@ -432,8 +433,6 @@ function InvestorDashboardContent({ profile: propProfile }) {
     </>
   );
 }
-
-import ErrorBoundary from "@/components/ErrorBoundary";
 
 export default function DashboardInvestor({ profile }) {
   return (
