@@ -178,7 +178,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   if (!profile || roomsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
+        <LoadingAnimation className="w-10 h-10" />
       </div>
     );
   }
