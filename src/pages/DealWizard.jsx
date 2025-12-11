@@ -424,7 +424,7 @@ export default function DealWizard() {
       
       <div className="pt-6 flex justify-end">
         <Button onClick={handleConfirm} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold">
-          {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+          {loading ? <LoadingAnimation className="w-4 h-4 mr-2 text-black" /> : <CheckCircle className="w-4 h-4 mr-2" />}
           Confirm & Save
         </Button>
       </div>
