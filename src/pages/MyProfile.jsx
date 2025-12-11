@@ -5,7 +5,8 @@ import { createPageUrl } from "@/components/utils";
 import { embedProfile } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { User, Edit, Layers, Loader2, RefreshCw, ArrowLeft } from "lucide-react";
+import { User, Edit, Layers, RefreshCw, ArrowLeft } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 
 /**
@@ -51,7 +52,7 @@ export default function MyProfile() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 text-[#D3A029] animate-spin" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -131,7 +132,7 @@ export default function MyProfile() {
             >
               {refreshing ? (
                 <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <LoadingAnimation className="w-4 h-4" />
                   Refreshing...
                 </>
               ) : (

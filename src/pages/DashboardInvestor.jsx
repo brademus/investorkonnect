@@ -178,7 +178,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   if (!profile || roomsLoading) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <LoadingAnimation className="w-10 h-10" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -344,7 +344,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
                 {agentsLoading ? (
                     <div className="flex-grow flex items-center justify-center">
-                        <LoadingAnimation className="w-6 h-6" />
+                        <LoadingAnimation className="w-64 h-64" />
                     </div>
                 ) : suggestedAgents.length > 0 ? (
                     <div className="flex-grow space-y-3">

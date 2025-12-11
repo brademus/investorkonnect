@@ -8,8 +8,9 @@ import { demoInvestors } from "@/components/data/demoData";
 import { DEMO_MODE } from "@/components/config/demo";
 import { 
   Shield, MapPin, Briefcase, TrendingUp, DollarSign,
-  CheckCircle, Loader2, ArrowLeft, MessageCircle, Target
+  CheckCircle, ArrowLeft, MessageCircle, Target
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 
 export default function InvestorProfile() {
@@ -192,7 +193,7 @@ export default function InvestorProfile() {
     return (
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
           <p className="text-gray-600">Loading investor profile...</p>
         </div>
       </div>
@@ -278,7 +279,7 @@ export default function InvestorProfile() {
                   onClick={handleConnect}
                   disabled={connecting}
                 >
-                  {connecting ? <Loader2 className="w-5 h-5 mr-2 animate-spin" /> : <MessageCircle className="w-5 h-5 mr-2" />}
+                  {connecting ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <MessageCircle className="w-5 h-5 mr-2" />}
                   {connecting ? "Connecting..." : "Connect"}
                 </button>
               </div>
@@ -419,7 +420,7 @@ export default function InvestorProfile() {
               onClick={handleConnect}
               disabled={connecting}
             >
-              {connecting ? <Loader2 className="w-6 h-6 mr-3 animate-spin" /> : <MessageCircle className="w-6 h-6 mr-3" />}
+              {connecting ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <MessageCircle className="w-6 h-6 mr-3" />}
               {connecting ? "Starting..." : "Start Conversation"}
             </button>
           </div>
