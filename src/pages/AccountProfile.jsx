@@ -63,18 +63,11 @@ function AccountProfileContent() {
       return;
     }
 
-    if (!formData.role) {
-      toast.error("Please select your account type");
-      return;
-    }
-
     setSaving(true);
 
     try {
       const updateData = {
         full_name: formData.full_name.trim(),
-        user_role: formData.role,
-        user_type: formData.role,
         company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
@@ -84,35 +77,16 @@ function AccountProfileContent() {
 
       console.log('[AccountProfile] 📤 Updating profile:', updateData);
 
-      // Directly update the Profile entity
+      // Directly update the Profile entity (role cannot change)
       await base44.entities.Profile.update(profile.id, updateData);
 
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // Check if role changed - if so, redirect to appropriate onboarding
-      const originalRole = profile?.user_role || profile?.user_type;
-      const newRole = formData.role;
-      
-      if (originalRole !== newRole) {
-        // Role changed - redirect to onboarding for new role
-        console.log('[AccountProfile] Role changed from', originalRole, 'to', newRole, '- redirecting to onboarding');
-        toast.info(`Switching to ${newRole} account - please complete onboarding`);
-        setTimeout(() => {
-          if (newRole === 'investor') {
-            navigate(createPageUrl("InvestorOnboarding"));
-          } else if (newRole === 'agent') {
-            navigate(createPageUrl("AgentOnboarding"));
-          } else {
-            navigate(createPageUrl("MyProfile"));
-          }
-        }, 500);
-      } else {
-        // No role change - go back to Dashboard
-        setTimeout(() => {
-          navigate(createPageUrl("Dashboard"));
-        }, 500);
-      }
+      // Go back to Dashboard
+      setTimeout(() => {
+        navigate(createPageUrl("Dashboard"));
+      }, 500)
 
     } catch (error) {
       console.error("[AccountProfile] ❌ Save error:", error);
@@ -180,41 +154,16 @@ function AccountProfileContent() {
               <p className="text-xs text-[#808080] mt-1">Email cannot be changed</p>
             </div>
 
-            {/* User Type */}
+            {/* Account Type (read-only) */}
             <div>
-              <Label className="mb-3 block text-[#FAFAFA]">Account Type *</Label>
-              <RadioGroup
-                value={formData.role}
-                onValueChange={(value) => setFormData({...formData, role: value})}
-                disabled={saving}
-              >
-                <div className="grid grid-cols-2 gap-4">
-                  <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    formData.role === "investor" 
-                      ? "border-[#E3C567] bg-[#E3C567]/10" 
-                      : "border-[#333] hover:border-[#555] bg-[#141414]"
-                  } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-center gap-3">
-                      <RadioGroupItem value="investor" id="investor" className="border-[#FAFAFA] text-[#E3C567]" />
-                      <Label htmlFor="investor" className="cursor-pointer font-semibold text-[#FAFAFA]">
-                        Investor
-                      </Label>
-                    </div>
-                  </div>
-                  <div className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                    formData.role === "agent" 
-                      ? "border-[#10B981] bg-[#10B981]/10" 
-                      : "border-[#333] hover:border-[#555] bg-[#141414]"
-                  } ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                    <div className="flex items-center gap-3">
-                      <RadioGroupItem value="agent" id="agent" className="border-[#FAFAFA] text-[#10B981]" />
-                      <Label htmlFor="agent" className="cursor-pointer font-semibold text-[#FAFAFA]">
-                        Agent
-                      </Label>
-                    </div>
-                  </div>
-                </div>
-              </RadioGroup>
+              <Label htmlFor="account_type" className="text-[#FAFAFA]">Account Type</Label>
+              <Input
+                id="account_type"
+                value={formData.role === 'investor' ? 'Investor' : formData.role === 'agent' ? 'Agent' : 'Member'}
+                disabled
+                className="bg-[#141414] text-[#808080] border-[#333] opacity-50"
+              />
+              <p className="text-xs text-[#808080] mt-1">Account type cannot be changed</p>
             </div>
 
             {/* Company */}
