@@ -1,90 +1,87 @@
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useEffect, useState } from 'react';
+import Lottie from 'lottie-react';
+import { base44 } from '@/api/base44Client';
+
+// Global cache to avoid re-fetching
+let cachedAnimationData = null;
+let fetchPromise = null;
 
 export default function LoadingAnimation({ className = "" }) {
-  // Default size if not provided
+  const [animationData, setAnimationData] = useState(cachedAnimationData);
+
+  useEffect(() => {
+    if (cachedAnimationData) {
+      setAnimationData(cachedAnimationData);
+      return;
+    }
+
+    if (!fetchPromise) {
+      fetchPromise = base44.functions.invoke('getLoadingAnimation')
+        .then(res => {
+          const data = res.data;
+          if (data) {
+             // Remove global background color
+             delete data.sc; 
+             data.bg = undefined;
+             
+             // ULTRA AGGRESSIVE: Only keep layers with "hand" in the name
+             const keepOnlyHands = (layers) => {
+                 if (!Array.isArray(layers)) return [];
+                 return layers.filter(layer => {
+                     const name = (layer.nm || '').toLowerCase();
+                     // Only keep if name contains "hand" or "shake"
+                     return name.includes('hand') || name.includes('shake');
+                 });
+             };
+
+             // Process root layers
+             if (data.layers) {
+                 data.layers = keepOnlyHands(data.layers);
+             }
+
+             // Process all precomps/assets
+             if (Array.isArray(data.assets)) {
+                 data.assets.forEach(asset => {
+                     if (asset.layers) {
+                         asset.layers = keepOnlyHands(asset.layers);
+                     }
+                 });
+             }
+          }
+          cachedAnimationData = data;
+          return data;
+        })
+        .catch(err => {
+          console.error("Failed to load animation", err);
+          return null;
+        });
+    }
+
+    fetchPromise.then(data => {
+      if (data) setAnimationData(data);
+    });
+  }, []);
+
   const sizeClass = className && (className.includes('w-') || className.includes('h-')) ? '' : 'w-64 h-64';
   
+  if (!animationData) {
+    return <div className={`animate-pulse opacity-0 ${sizeClass} ${className}`} />;
+  }
+  
   return (
-    <div className={`flex items-center justify-center ${sizeClass} ${className}`}>
-      <motion.div
-        className="relative"
-        style={{ width: '100%', height: '100%' }}
-        animate={{
-          scale: [1, 1.1, 1],
+    <div className={`flex items-center justify-center ${sizeClass} ${className}`} style={{ background: 'transparent' }}>
+      <Lottie 
+        animationData={animationData} 
+        loop={true} 
+        className="w-full h-full"
+        style={{ background: 'transparent' }}
+        rendererSettings={{ 
+          preserveAspectRatio: 'xMidYMid meet',
+          clearCanvas: true,
+          progressiveLoad: false,
+          hideOnTransparent: true
         }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      >
-        {/* Simple handshake icon in yellow */}
-        <svg
-          viewBox="0 0 100 100"
-          className="w-full h-full"
-          style={{ filter: 'drop-shadow(0 4px 8px rgba(227, 197, 103, 0.3))' }}
-        >
-          {/* Left hand/arm */}
-          <motion.path
-            d="M20,50 L35,50 L40,45 L40,55 L35,50"
-            fill="#E3C567"
-            stroke="#D3A029"
-            strokeWidth="2"
-            animate={{
-              d: [
-                "M20,50 L35,50 L40,45 L40,55 L35,50",
-                "M20,50 L35,48 L40,43 L40,53 L35,48",
-                "M20,50 L35,50 L40,45 L40,55 L35,50"
-              ]
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          
-          {/* Right hand/arm */}
-          <motion.path
-            d="M80,50 L65,50 L60,45 L60,55 L65,50"
-            fill="#E3C567"
-            stroke="#D3A029"
-            strokeWidth="2"
-            animate={{
-              d: [
-                "M80,50 L65,50 L60,45 L60,55 L65,50",
-                "M80,50 L65,48 L60,43 L60,53 L65,48",
-                "M80,50 L65,50 L60,45 L60,55 L65,50"
-              ]
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-          
-          {/*握手的手指部分 */}
-          <motion.circle
-            cx="50"
-            cy="50"
-            r="8"
-            fill="#E3C567"
-            stroke="#D3A029"
-            strokeWidth="2"
-            animate={{
-              scale: [1, 1.15, 1],
-              opacity: [0.9, 1, 0.9]
-            }}
-            transition={{
-              duration: 1.5,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-        </svg>
-      </motion.div>
+      />
     </div>
   );
 }
