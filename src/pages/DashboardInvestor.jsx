@@ -37,8 +37,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
 
   // Force refetch on mount to ensure we see new deals immediately
   useEffect(() => {
+    // Aggressive refetch to ensure fresh data after lock-in
+    queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
     refetchRooms();
-  }, [refetchRooms]);
+  }, [refetchRooms, queryClient]);
 
   // Load Profile (Fallback if not provided by prop)
   useEffect(() => {

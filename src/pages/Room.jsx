@@ -135,8 +135,9 @@ export default function Room() {
         deal_id: dealId
       });
       
-      // Navigate to dashboard instead of reload to show fresh state
-      navigate(createPageUrl("Dashboard"));
+      // Clear all cached data and force full refresh
+      sessionStorage.clear();
+      window.location.href = createPageUrl("Dashboard");
     } catch (error) {
       console.error("Failed to lock in agent:", error);
     }

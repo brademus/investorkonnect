@@ -39,13 +39,16 @@ Deno.serve(async (req) => {
         // 2. Update the Deal: assign agent, set status, and move to pipeline
         await base44.entities.Deal.update(deal_id, {
             agent_id: room.agentId,
+            investor_id: myProfile.id,
             status: 'active',
             pipeline_stage: 'new_deal_under_contract'
         });
 
-        // 3. Update the Target Room: link to deal
+        // 3. Update the Target Room: link to deal and ensure proper fields
         await base44.entities.Room.update(room_id, {
-            deal_id: deal_id
+            deal_id: deal_id,
+            investorId: myProfile.id,
+            agentId: room.agentId
         });
 
         // 4. Cleanup: Delete OTHER rooms for THIS DEAL that are not the selected one

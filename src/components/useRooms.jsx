@@ -97,7 +97,7 @@ export function useRooms() {
                     
                     const latestDeal = activeDeals[0];
 
-                    // 1. Enrich existing rooms
+                    // 1. Enrich existing rooms with deal data
                     dbRooms = dbRooms.map(r => {
                         let dealToUse = null;
 
@@ -106,14 +106,15 @@ export function useRooms() {
                             dealToUse = myDeals.find(d => d.id === r.deal_id);
                         }
                         
-                        // Case B: Inference (No link OR Broken link)
-                        if (!dealToUse && r.investorId === myProfileId && latestDeal) {
+                        // Case B: Inference only if no explicit deal_id (No link OR Broken link)
+                        if (!r.deal_id && !dealToUse && r.investorId === myProfileId && latestDeal) {
                             dealToUse = latestDeal;
                         }
 
                         if (dealToUse) {
                             return {
                                 ...r,
+                                deal_id: dealToUse.id, // Ensure deal_id is set
                                 deal_title: dealToUse.title,
                                 property_address: dealToUse.property_address,
                                 budget: dealToUse.purchase_price,
@@ -122,7 +123,8 @@ export function useRooms() {
                                 deal_assigned_agent_id: dealToUse.agent_id,
                                 contract_date: dealToUse.key_dates?.closing_date,
                                 city: dealToUse.city,
-                                state: dealToUse.state
+                                state: dealToUse.state,
+                                status: dealToUse.status
                             };
                         }
                         return r;
