@@ -8,46 +8,39 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import LoadingAnimation from '@/components/LoadingAnimation';
 import { 
-  X, ArrowRight, ArrowLeft, Loader2, UploadCloud, 
-  FileText, CheckCircle, MapPin, DollarSign, Calendar, Sparkles 
+  X, ArrowLeft, Loader2, UploadCloud, 
+  CheckCircle, DollarSign 
 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const STEPS = [
   { id: 1, title: 'Upload Contract', icon: UploadCloud },
-  { id: 2, title: 'Confirm Details', icon: CheckCircle },
-  { id: 3, title: 'Match Agent', icon: Sparkles }
+  { id: 2, title: 'Confirm Details', icon: CheckCircle }
 ];
 
 export default function DealWizard() {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [processing, setProcessing] = useState(false); // For upload/extract
+  const [processing, setProcessing] = useState(false);
   
-  // Data State
   const [dealId, setDealId] = useState(searchParams.get('dealId') || null);
   const [dealData, setDealData] = useState({
-    contractUrl: '',
     address: '',
     city: '',
     state: '',
     county: '',
     zip: '',
     purchasePrice: '',
-    closingDate: '',
-    inspectionDate: '',
-    earnestMoneyDate: ''
+    closingDate: ''
   });
 
-  const [matchedAgents, setMatchedAgents] = useState([]);
-  const [selectedAgentId, setSelectedAgentId] = useState(null);
-
-  // Initial Load / Resume
+  // Load existing deal if resuming
   useEffect(() => {
     document.title = "Start New Deal - Investor Konnect";
     if (dealId) {
@@ -61,22 +54,17 @@ export default function DealWizard() {
       const deals = await base44.entities.Deal.filter({ id });
       if (deals && deals.length > 0) {
         const deal = deals[0];
-        setDealData(prev => ({
-          ...prev,
-          contractUrl: deal.contract_url || prev.contractUrl,
-          address: deal.property_address || prev.address,
-          city: deal.city || prev.city,
-          state: deal.state || prev.state,
-          county: deal.county || prev.county,
-          zip: deal.zip || prev.zip,
-          purchasePrice: deal.purchase_price ? deal.purchase_price.toString() : prev.purchasePrice,
-          closingDate: deal.key_dates?.closing_date || prev.closingDate,
-          inspectionDate: deal.key_dates?.inspection_period_end || prev.inspectionDate,
-          earnestMoneyDate: deal.key_dates?.earnest_money_due || prev.earnestMoneyDate
-        }));
+        setDealData({
+          address: deal.property_address || '',
+          city: deal.city || '',
+          state: deal.state || '',
+          county: deal.county || '',
+          zip: deal.zip || '',
+          purchasePrice: deal.purchase_price ? deal.purchase_price.toString() : '',
+          closingDate: deal.key_dates?.closing_date || ''
+        });
         
-        // If we have an ID but still on step 1, move to step 2 automatically if data exists
-        if (step === 1 && deal.property_address) {
+        if (deal.property_address) {
           setStep(2);
         }
       }
@@ -87,130 +75,113 @@ export default function DealWizard() {
     }
   };
 
-  // Helper to safely parse price
   const parsePrice = (priceStr) => {
     if (!priceStr) return 0;
-    // Remove '$', ',', and whitespace
     const cleanStr = priceStr.toString().replace(/[$,\s]/g, '');
     const num = parseFloat(cleanStr);
     return isNaN(num) ? 0 : num;
   };
 
-  // --- STEP 1: UPLOAD ---
+  // STEP 1: Upload & Extract
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-
-    if (file.type !== 'application/pdf') {
+    if (!file || file.type !== 'application/pdf') {
       toast.error('Please upload a PDF contract');
       return;
     }
 
     setProcessing(true);
     try {
-      // 1. Upload
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      
-      // 2. Create Deal Record Immediately
       const user = await base44.auth.me();
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      if (!profiles[0]) throw new Error("No profile found");
+      const investorId = profiles[0].id;
 
-      let currentId = dealId;
-      if (!currentId) {
-        // Check for existing deals by this investor to prevent duplicates
-        const existingDeals = await base44.entities.Deal.filter({ 
-          investor_id: profiles[0].id,
-          status: 'active'
-        });
-        
-        // If there's already an active deal without an agent, use that instead of creating new
-        const orphanDeal = existingDeals.find(d => !d.agent_id);
-        
-        if (orphanDeal) {
-          currentId = orphanDeal.id;
-          await base44.entities.Deal.update(currentId, {
-            contract_url: file_url,
-            title: file.name
-          });
-        } else {
-          const newDeal = await base44.entities.Deal.create({
-            investor_id: profiles[0].id,
-            title: file.name,
-            contract_url: file_url,
-            status: 'active',
-            pipeline_stage: 'new_deal_under_contract',
-            created_date: new Date().toISOString()
-          });
-          currentId = newDeal.id;
-        }
-        
-        setDealId(currentId);
-        setSearchParams({ dealId: currentId });
-        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      } else {
-        await base44.entities.Deal.update(currentId, {
-            contract_url: file_url,
-            title: file.name
-        });
+      // 1. Upload file
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      // 2. Extract data from contract
+      const extractRes = await base44.functions.invoke('extractContractData', {
+        file_url,
+        deal_id: null
+      });
+
+      let extractedData = {
+        address: '',
+        city: '',
+        state: '',
+        county: '',
+        zip: '',
+        purchasePrice: '',
+        closingDate: ''
+      };
+
+      if (extractRes.data?.status === 'success' && extractRes.data.output) {
+        const extracted = extractRes.data.output;
+        extractedData = {
+          address: extracted.property_address || extracted.address || '',
+          city: extracted.city || '',
+          state: extracted.state || '',
+          county: extracted.county || '',
+          zip: extracted.zip || extracted.zipCode || '',
+          purchasePrice: extracted.purchase_price || extracted.purchasePrice || '',
+          closingDate: extracted.closing_date || extracted.closingDate || ''
+        };
+        setDealData(extractedData);
       }
 
-      setDealData(prev => ({ ...prev, contractUrl: file_url }));
-
-      // 3. Extract Data
-      try {
-        const res = await base44.functions.invoke('extractContractData', { fileUrl: file_url });
-        if (res.data?.success) {
-          const extracted = res.data.data;
-          const updates = {
-            address: extracted.address || '',
-            city: extracted.city || '',
-            state: extracted.state || '',
-            county: extracted.county || '',
-            zip: extracted.zip || '',
-            purchasePrice: extracted.purchase_price ? extracted.purchase_price.toString() : '',
-            closingDate: extracted.key_dates?.closing_date || '',
-            inspectionDate: extracted.key_dates?.inspection_period_end || '',
-            earnestMoneyDate: extracted.key_dates?.earnest_money_due || ''
-          };
-          
-          setDealData(prev => ({ ...prev, ...updates }));
-          
-          // Check if another deal already exists with same address
-          const existingByAddress = await base44.entities.Deal.filter({
-            property_address: updates.address,
-            investor_id: profiles[0].id
+      // 3. Check for existing deal with same address
+      let currentDeal = null;
+      
+      if (extractedData.address) {
+        const existingDeals = await base44.entities.Deal.filter({
+          investor_id: investorId,
+          property_address: extractedData.address
+        });
+        
+        if (existingDeals.length > 0) {
+          // Found existing deal with same address - update it
+          currentDeal = existingDeals[0];
+          await base44.entities.Deal.update(currentDeal.id, {
+            contract_url: file_url,
+            title: extractedData.address,
+            city: extractedData.city,
+            state: extractedData.state,
+            county: extractedData.county,
+            zip: extractedData.zip,
+            purchase_price: parsePrice(extractedData.purchasePrice),
+            key_dates: {
+              closing_date: extractedData.closingDate
+            }
           });
-          
-          // If duplicate address found and it's not the current deal, use the existing one
-          if (existingByAddress.length > 0 && existingByAddress[0].id !== currentId) {
-            currentId = existingByAddress[0].id;
-            setDealId(currentId);
-            setSearchParams({ dealId: currentId });
-          }
-          
-          // Save extracted data to DB
-          await base44.entities.Deal.update(currentId, {
-             property_address: updates.address,
-             city: updates.city,
-             state: updates.state,
-             county: updates.county,
-             zip: updates.zip,
-             purchase_price: parsePrice(updates.purchasePrice),
-             key_dates: {
-                closing_date: updates.closingDate,
-                inspection_period_end: updates.inspectionDate,
-                earnest_money_due: updates.earnestMoneyDate
-             }
-          });
-          
-          toast.success("Contract analyzed successfully");
+          toast.success("Deal updated with new contract");
         }
-      } catch (extractError) {
-        console.error("Extraction failed:", extractError);
-        toast.warning("Could not auto-extract data. Please enter manually.");
       }
+      
+      // 4. If no existing deal, create new one
+      if (!currentDeal) {
+        currentDeal = await base44.entities.Deal.create({
+          investor_id: investorId,
+          title: extractedData.address || file.name,
+          contract_url: file_url,
+          property_address: extractedData.address,
+          city: extractedData.city,
+          state: extractedData.state,
+          county: extractedData.county,
+          zip: extractedData.zip,
+          purchase_price: parsePrice(extractedData.purchasePrice),
+          key_dates: {
+            closing_date: extractedData.closingDate
+          },
+          status: 'active',
+          pipeline_stage: 'new_deal_under_contract'
+        });
+        toast.success("Contract analyzed successfully");
+      }
+
+      setDealId(currentDeal.id);
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
       setStep(2);
 
@@ -222,7 +193,7 @@ export default function DealWizard() {
     }
   };
 
-  // --- STEP 2: CONFIRM ---
+  // STEP 2: Confirm and Navigate to Dashboard
   const handleConfirm = async () => {
     if (!dealData.address || !dealData.purchasePrice) {
       toast.error("Address and Purchase Price are required");
@@ -233,30 +204,29 @@ export default function DealWizard() {
     try {
       if (!dealId) throw new Error("No deal ID found");
 
-      // Robust Save
-      const price = parsePrice(dealData.purchasePrice);
-      
       await base44.entities.Deal.update(dealId, {
-        title: dealData.address, // Use address as title for better visibility
+        title: dealData.address,
         property_address: dealData.address,
         city: dealData.city,
         state: dealData.state,
         county: dealData.county,
         zip: dealData.zip,
-        purchase_price: price,
+        purchase_price: parsePrice(dealData.purchasePrice),
         key_dates: {
-          closing_date: dealData.closingDate,
-          inspection_period_end: dealData.inspectionDate,
-          earnest_money_due: dealData.earnestMoneyDate
+          closing_date: dealData.closingDate
         },
-        // Ensure status is active
         status: 'active',
         pipeline_stage: 'new_deal_under_contract'
       });
 
       await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      toast.success("Deal details saved");
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+      
+      toast.success("Deal saved successfully");
+      
+      // Clear cache and navigate to dashboard
+      sessionStorage.clear();
       navigate(createPageUrl("Dashboard"));
 
     } catch (error) {
@@ -267,66 +237,6 @@ export default function DealWizard() {
     }
   };
 
-  const fetchMatches = async () => {
-    // Determine state to search
-    // If we have extracted data, use it. Otherwise rely on matching logic.
-    const searchState = dealData.state || dealData.city; 
-    
-    if (!searchState) {
-       console.log("No state/location to match against");
-       return;
-    }
-
-    setLoading(true);
-    try {
-      const { data } = await base44.functions.invoke('matchAgentsForInvestor', {
-        state: dealData.state,
-        city: dealData.city,
-        limit: 20
-      });
-      
-      if (data && data.results) {
-        setMatchedAgents(data.results);
-      }
-    } catch (error) {
-      console.error("Failed to fetch matches:", error);
-      toast.error("Could not load agent matches");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // --- STEP 3: MATCH ---
-  const handleMatch = async () => {
-    if (!selectedAgentId) return;
-    setLoading(true);
-    try {
-      const user = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      
-      const newRoom = await base44.entities.Room.create({
-        investorId: profiles[0].id,
-        agentId: selectedAgentId,
-        deal_id: dealId,
-        status: 'active',
-        created_date: new Date().toISOString()
-      });
-
-      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      
-      navigate(`${createPageUrl("Room")}?roomId=${newRoom.id}`);
-      toast.success("Deal Room created!");
-
-    } catch (error) {
-      console.error("Room creation failed:", error);
-      toast.error("Failed to create room");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Renders...
   const renderStep1 = () => (
     <div className="text-center py-10">
       <div className="w-20 h-20 bg-[#E3C567]/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -334,7 +244,7 @@ export default function DealWizard() {
       </div>
       <h2 className="text-2xl font-bold text-[#FAFAFA] mb-2 font-serif">Upload Purchase Agreement</h2>
       <p className="text-[#808080] mb-8 max-w-md mx-auto">
-        Upload your PDF contract. We'll automatically create the deal and extract key details.
+        Upload your PDF contract. We'll automatically extract details and check for duplicates.
       </p>
 
       {processing ? (
@@ -367,7 +277,6 @@ export default function DealWizard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Property Info */}
         <div className="space-y-4">
           <h3 className="font-semibold text-[#808080] border-b border-[#1F1F1F] pb-2 font-serif">Property</h3>
           <div>
@@ -417,7 +326,6 @@ export default function DealWizard() {
           </div>
         </div>
 
-        {/* Financials */}
         <div className="space-y-4">
           <h3 className="font-semibold text-[#808080] border-b border-[#1F1F1F] pb-2 font-serif">Financials & Dates</h3>
           <div>
@@ -441,77 +349,16 @@ export default function DealWizard() {
               className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
             />
           </div>
-          <div>
-            <Label className="text-[#FAFAFA]">Inspection End</Label>
-            <Input 
-              value={dealData.inspectionDate} 
-              onChange={e => setDealData({...dealData, inspectionDate: e.target.value})} 
-              placeholder="YYYY-MM-DD" 
-              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
-            />
-          </div>
         </div>
       </div>
       
-      <div className="pt-6 flex justify-end">
-        <Button onClick={handleConfirm} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold">
-          {loading ? <LoadingAnimation className="w-4 h-4 mr-2 text-black" /> : <CheckCircle className="w-4 h-4 mr-2" />}
-          Confirm & Save
-        </Button>
-      </div>
-    </div>
-  );
-
-  const renderStep3 = () => (
-    <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-[#FAFAFA] font-serif">Agent Matches</h2>
-        <p className="text-[#808080]">Found {matchedAgents.length} agents near {dealData.city}</p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 max-h-[400px] overflow-y-auto">
-        {matchedAgents.length === 0 ? (
-           <div className="p-8 text-center border border-dashed border-[#1F1F1F] rounded-xl">
-             <p className="text-[#808080]">No exact matches found. You can proceed and invite an agent later.</p>
-           </div>
-        ) : (
-          matchedAgents.map((match) => (
-            <div 
-              key={match.profile.id}
-              onClick={() => setSelectedAgentId(match.profile.id)}
-              className={`cursor-pointer p-4 rounded-xl border-2 transition-all flex items-center gap-4 ${
-                selectedAgentId === match.profile.id 
-                  ? 'border-[#E3C567] bg-[#E3C567]/10' 
-                  : 'border-[#1F1F1F] bg-[#141414] hover:border-[#E3C567]/50'
-              }`}
-            >
-              <div className="w-10 h-10 bg-[#1F1F1F] rounded-full flex items-center justify-center text-[#E3C567] font-bold border border-[#333]">
-                {match.profile.full_name?.charAt(0)}
-              </div>
-              <div className="flex-grow">
-                <h3 className="font-bold text-[#FAFAFA]">{match.profile.full_name}</h3>
-                <p className="text-xs text-[#808080]">{match.profile.agent?.brokerage}</p>
-              </div>
-              {selectedAgentId === match.profile.id && <CheckCircle className="w-5 h-5 text-[#E3C567]" />}
-            </div>
-          ))
-        )}
-      </div>
-
       <div className="pt-6 flex justify-end gap-3">
-        <Button 
-          variant="outline" 
-          onClick={() => setStep(2)}
-          className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] rounded-full"
-        >
-          Back
+        <Button onClick={() => setStep(1)} variant="outline" className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] rounded-full">
+          <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
-        <Button 
-          onClick={handleMatch} 
-          disabled={!selectedAgentId && matchedAgents.length > 0} 
-          className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold"
-        >
-          {loading ? <LoadingAnimation className="w-4 h-4 text-black" /> : (selectedAgentId ? 'Start Deal Room' : 'Skip & Save Deal')}
+        <Button onClick={handleConfirm} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold">
+          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+          Save & Continue
         </Button>
       </div>
     </div>
@@ -530,7 +377,7 @@ export default function DealWizard() {
           </Button>
         </div>
         <div className="max-w-4xl mx-auto px-4 pb-0">
-          <Progress value={(step/3)*100} className="h-1 bg-[#1F1F1F]" indicatorClassName="bg-[#E3C567]" />
+          <Progress value={(step/2)*100} className="h-1 bg-[#1F1F1F]" indicatorClassName="bg-[#E3C567]" />
         </div>
       </header>
 
@@ -538,7 +385,6 @@ export default function DealWizard() {
         <div className="bg-[#0D0D0D] rounded-2xl shadow-xl border border-[#1F1F1F] p-6 sm:p-10">
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
         </div>
       </main>
     </div>
