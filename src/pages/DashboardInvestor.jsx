@@ -267,18 +267,24 @@ function InvestorDashboardContent({ profile: propProfile }) {
                    </p>
 
                    <div className="bg-[#141414] rounded-xl p-4 border border-[#E3C567]/30 mb-4">
-                      <p className="text-[#FAFAFA] font-bold text-lg mb-1">{orphanDeal.property_address || orphanDeal.title}</p>
+                      <p className="text-[#FAFAFA] font-bold text-lg mb-1">{orphanDeal.property_address || orphanDeal.title || 'New Deal'}</p>
                       <div className="flex items-center gap-4 text-xs text-[#808080]">
-                         <span>{orphanDeal.city}, {orphanDeal.state}</span>
-                         <span className="text-[#E3C567]">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
+                         {orphanDeal.city && orphanDeal.state && (
+                           <span>{orphanDeal.city}, {orphanDeal.state}</span>
+                         )}
+                         {orphanDeal.purchase_price > 0 && (
+                           <span className="text-[#E3C567]">${orphanDeal.purchase_price.toLocaleString()}</span>
+                         )}
                       </div>
                    </div>
 
                    <Button 
-                     onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.deal_id || orphanDeal.id}`)}
+                     onClick={() => navigate(createPageUrl("AgentDirectory"), { 
+                       state: { dealId: orphanDeal.id } 
+                     })}
                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
                    >
-                     Match with Agent <Sparkles className="w-4 h-4 ml-2" />
+                     Choose Agent <Sparkles className="w-4 h-4 ml-2" />
                    </Button>
                  </>
                ) : (
