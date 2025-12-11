@@ -15,8 +15,9 @@ import { Button } from "@/components/ui/button";
 function PipelineContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
+  const [deduplicating, setDeduplicating] = useState(false);
 
-  // 1. Load Profile
+  // 1. Load Profile and deduplicate on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -24,6 +25,15 @@ function PipelineContent() {
         if (user) {
           const res = await base44.entities.Profile.filter({ user_id: user.id });
           setProfile(res[0]);
+          
+          // Auto-deduplicate deals on load
+          setDeduplicating(true);
+          try {
+            await base44.functions.invoke('deduplicateDeals');
+          } catch (e) {
+            console.error("Deduplication error", e);
+          }
+          setDeduplicating(false);
         }
       } catch (e) {
         console.error("Profile load error", e);
@@ -72,7 +82,7 @@ function PipelineContent() {
     }
   }, [profile?.id]);
 
-  // 4. Merge Data
+  // 4. Merge Data and deduplicate by property_address
   const deals = useMemo(() => {
     // Index rooms by deal_id
     const roomMap = new Map();
@@ -82,7 +92,10 @@ function PipelineContent() {
       }
     });
 
-    return dealsData.map(deal => {
+    // Create a map to track unique addresses
+    const addressMap = new Map();
+    
+    const processedDeals = dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const hasRoom = !!room;
       const hasAgentLocked = !!deal.agent_id;
@@ -117,6 +130,27 @@ function PipelineContent() {
         is_orphan: !hasAgentLocked // Orphan if no agent assigned, regardless of room
       };
     });
+    
+    // Deduplicate by property_address - keep only the best deal per address
+    processedDeals.forEach(deal => {
+      const key = deal.property_address || deal.id;
+      const existing = addressMap.get(key);
+      
+      if (!existing) {
+        addressMap.set(key, deal);
+      } else {
+        // Keep the one with agent, or the newer one
+        if (deal.agent_id && !existing.agent_id) {
+          addressMap.set(key, deal);
+        } else if (!deal.agent_id && existing.agent_id) {
+          // Keep existing
+        } else if (new Date(deal.created_date) > new Date(existing.created_date)) {
+          addressMap.set(key, deal);
+        }
+      }
+    });
+    
+    return Array.from(addressMap.values());
   }, [dealsData, rooms]);
 
   const handleDealClick = (deal) => {
@@ -153,10 +187,13 @@ function PipelineContent() {
     { id: 'clear_to_close_closed', label: 'Closed', icon: CheckCircle }
   ];
 
-  if (!profile || loadingDeals || loadingRooms) {
+  if (!profile || loadingDeals || loadingRooms || deduplicating) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
+        <div className="text-center">
+          <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
+          {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
+        </div>
       </div>
     );
   }
