@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useWizard } from "@/components/WizardContext";
 import { Loader2, CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
