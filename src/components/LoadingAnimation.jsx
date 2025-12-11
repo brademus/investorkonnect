@@ -30,7 +30,7 @@ export default function LoadingAnimation({ className = "" }) {
   }, []);
 
   // Default size if not provided
-  const sizeClass = className && (className.includes('w-') || className.includes('h-')) ? '' : 'w-24 h-24';
+  const sizeClass = className && (className.includes('w-') || className.includes('h-')) ? '' : 'w-64 h-64';
   
   if (!animationData) {
     // Fallback pulse while loading
