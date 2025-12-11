@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
-import { User, Loader2, CheckCircle, ArrowLeft } from "lucide-react";
+import { User, CheckCircle, ArrowLeft } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { AuthGuard } from "@/components/AuthGuard";
 
@@ -125,7 +126,7 @@ function AccountProfileContent() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
           <p className="text-slate-600">Loading your profile...</p>
         </div>
       </div>
@@ -293,7 +294,7 @@ function AccountProfileContent() {
               >
                 {saving ? (
                   <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    <LoadingAnimation className="w-4 h-4 mr-2" />
                     Saving...
                   </>
                 ) : (

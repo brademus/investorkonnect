@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { Loader2 } from "lucide-react";
+import { AlertCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 /**
  * POST-AUTH - Central routing hub after login
@@ -114,7 +115,7 @@ export default function PostAuth() {
       <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Loader2 className="w-6 h-6 text-red-600" />
+            <AlertCircle className="w-6 h-6 text-red-600" />
           </div>
           <h2 className="text-xl font-semibold text-[#111827] mb-2">Something went wrong</h2>
           <p className="text-[#6B7280] mb-6">{error}</p>
@@ -132,7 +133,7 @@ export default function PostAuth() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 text-[#D3A029] animate-spin mx-auto mb-4" />
+        <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-[#111827] mb-2">{status}</h2>
         <p className="text-[#6B7280]">Please wait a moment</p>
       </div>
