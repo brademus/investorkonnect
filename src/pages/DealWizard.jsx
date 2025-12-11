@@ -308,7 +308,7 @@ export default function DealWizard() {
 
       {processing ? (
         <div className="flex flex-col items-center justify-center space-y-4">
-          <LoadingAnimation className="w-8 h-8" />
+          <LoadingAnimation className="w-48 h-48" />
           <p className="text-sm font-medium text-[#808080]">Processing contract...</p>
         </div>
       ) : (

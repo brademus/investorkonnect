@@ -7,8 +7,9 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
-  Loader2, Sparkles, Bot, DollarSign, Clock
+  Sparkles, Bot, DollarSign, Clock
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { useRooms } from "@/components/useRooms";
 import { inboxList } from "@/components/functions";
 import { useQuery } from "@tanstack/react-query";
@@ -84,7 +85,7 @@ function AgentDashboardContent() {
         <Header profile={profile} />
         <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
+            <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
             <p className="text-[#808080] text-sm">Loading your dashboard...</p>
           </div>
         </div>

@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, FileText, AlertCircle, Sparkles, Shield, AlertTriangle, CheckCircle, Scale } from "lucide-react";
+import { FileText, AlertCircle, Sparkles, Shield, AlertTriangle, CheckCircle, Scale } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 const CONTRACT_TEMPLATES = [
   { id: "buyer_rep_v1", name: "Buyer Representation Agreement" },
@@ -343,7 +344,7 @@ Date: _______________
               >
                 {loading ? (
                   <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                    <LoadingAnimation className="w-5 h-5 mr-2" />
                     {mode === "ai" ? "Generating Contract & Analyzing..." : "Analyzing Chat..."}
                   </>
                 ) : mode === "ai" ? (
@@ -530,7 +531,7 @@ Date: _______________
                 >
                   {saving ? (
                     <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <LoadingAnimation className="w-4 h-4 mr-2" />
                       Generating...
                     </>
                   ) : (

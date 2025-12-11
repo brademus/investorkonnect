@@ -164,7 +164,7 @@ export default function AgentDirectory() {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <LoadingAnimation className="w-32 h-32 mx-auto mb-4" />
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
           <p className="text-[#A3A3A3]">Loading agent directory...</p>
         </div>
       </div>

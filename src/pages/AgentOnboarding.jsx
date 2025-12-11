@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { Loader2, CheckCircle } from "lucide-react";
+import { CheckCircle } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -178,7 +179,7 @@ export default function AgentOnboarding() {
   if (checking) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
-        <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -350,7 +351,7 @@ export default function AgentOnboarding() {
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Saving...</>
+                <><LoadingAnimation className="w-4 h-4 mr-2 inline" />Saving...</>
               ) : step === TOTAL_STEPS ? (
                 'Complete Setup →'
               ) : (

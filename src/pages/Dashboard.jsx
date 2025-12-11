@@ -83,7 +83,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <LoadingAnimation className="w-32 h-32" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
@@ -116,7 +116,7 @@ export default function Dashboard() {
   // Fallback
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
-      <LoadingAnimation className="w-32 h-32" />
+      <LoadingAnimation className="w-64 h-64" />
     </div>
   );
 }
