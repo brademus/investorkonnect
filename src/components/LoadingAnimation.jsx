@@ -1,65 +1,24 @@
-import React, { useEffect, useState } from 'react';
-import Lottie from 'lottie-react';
-import { Loader2 } from 'lucide-react';
-import { base44 } from '@/api/base44Client';
-
-// Cache in memory to avoid repeated fetches during session
-let cachedAnimationData = null;
+import React from 'react';
 
 export default function LoadingAnimation({ className = "w-24 h-24" }) {
-  const [animationData, setAnimationData] = useState(cachedAnimationData);
-  const [error, setError] = useState(false);
-
-  useEffect(() => {
-    if (cachedAnimationData) {
-      setAnimationData(cachedAnimationData);
-      return;
-    }
-
-    const fetchAnimation = async () => {
-      try {
-        // Try to get from sessionStorage first
-        const stored = sessionStorage.getItem('loading_animation_data');
-        if (stored) {
-          const parsed = JSON.parse(stored);
-          cachedAnimationData = parsed;
-          setAnimationData(parsed);
-          return;
-        }
-
-        const response = await base44.functions.invoke('getLoadingAnimation');
-        if (response.data && !response.data.error) {
-          cachedAnimationData = response.data;
-          setAnimationData(response.data);
-          try {
-            sessionStorage.setItem('loading_animation_data', JSON.stringify(response.data));
-          } catch (e) {
-            // Ignore quota errors
-          }
-        } else {
-          setError(true);
-        }
-      } catch (err) {
-        console.error("Failed to load animation:", err);
-        setError(true);
-      }
-    };
-
-    fetchAnimation();
-  }, []);
-
-  if (!animationData || error) {
-    return (
-      <div className={`flex flex-col items-center justify-center ${className}`}>
-        <Loader2 className="w-full h-full text-[#D3A029] animate-spin" />
-        <p className="text-xs text-[#808080] mt-2 text-center sr-only">Loading...</p>
-      </div>
-    );
-  }
-
   return (
-    <div className={className}>
-      <Lottie animationData={animationData} loop={true} />
+    <div className={`${className} flex items-center justify-center bg-transparent`}>
+      <svg 
+        viewBox="0 0 24 24" 
+        fill="none" 
+        xmlns="http://www.w3.org/2000/svg"
+        className="w-full h-full animate-spin"
+      >
+        <path 
+          d="M12 2.25C6.61522 2.25 2.25 6.61522 2.25 12C2.25 17.3848 6.61522 21.75 12 21.75C17.3848 21.75 21.75 17.3848 21.75 12C21.75 6.61522 17.3848 2.25 12 2.25ZM12 4.75C16.0041 4.75 19.25 7.99594 19.25 12C19.25 16.0041 16.0041 19.25 12 19.25C7.99594 19.25 4.75 16.0041 4.75 12C4.75 7.99594 7.99594 4.75 12 4.75Z" 
+          fillOpacity="0.15" 
+          fill="#E3C567"
+        />
+        <path 
+          d="M12 2.25C6.61522 2.25 2.25 6.61522 2.25 12C2.25 12.4142 2.58579 12.75 3 12.75C3.41421 12.75 3.75 12.4142 3.75 12C3.75 7.44365 7.44365 3.75 12 3.75C16.5563 3.75 20.25 7.44365 20.25 12C20.25 12.4142 20.5858 12.75 21 12.75C21.4142 12.75 21.75 12.4142 21.75 12C21.75 6.61522 17.3848 2.25 12 2.25Z" 
+          fill="#E3C567"
+        />
+      </svg>
     </div>
   );
 }
