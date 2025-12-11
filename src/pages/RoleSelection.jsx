@@ -109,7 +109,7 @@ export default function RoleSelection() {
 
   if (checking) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <LoadingAnimation className="w-64 h-64" />
       </div>
     );

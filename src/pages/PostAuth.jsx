@@ -112,7 +112,7 @@ export default function PostAuth() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center p-4">
+      <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
         <div className="text-center max-w-md">
           <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6 text-red-500" />
@@ -131,7 +131,7 @@ export default function PostAuth() {
   }
 
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center p-4">
+    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
       <div className="text-center">
         <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
         <h2 className="text-xl font-bold text-[#E3C567] mb-2">{status}</h2>
