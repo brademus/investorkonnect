@@ -22,23 +22,21 @@ export default function LoadingAnimation({ className = "" }) {
           const data = res.data;
           if (data) {
              // Remove solid color background property if exists
-             if (data.sc) delete data.sc; 
+             delete data.sc; 
              
-             // Try to find and remove background layers
-             // In Lottie, layers are ordered top-to-bottom. Background is usually at the bottom (last index) or explicit.
+             // Aggressively remove background layers
              if (Array.isArray(data.layers)) {
                 data.layers = data.layers.filter(layer => {
                    const name = (layer.nm || '').toLowerCase();
-                   // Common names for backgrounds in After Effects
-                   const isBackgroundName = name.includes('bg') || name.includes('background') || name.includes('solid') || name.includes('color');
-                   // Type 1 is Solid
-                   const isSolid = layer.ty === 1; 
+                   const isSolid = layer.ty === 1; // Type 1 is Solid
                    
-                   // If it's a solid layer, it's likely a background, especially if named so
+                   // Remove ALL solid layers (usually backgrounds)
                    if (isSolid) return false;
                    
-                   // If explicit background name
-                   if (isBackgroundName && isSolid) return false;
+                   // Remove layers explicitly named background/bg/solid/dark/black
+                   if (name.includes('background') || name.includes('bg') || name.includes('solid') || name.includes('black') || name.includes('dark')) {
+                       return false;
+                   }
                    
                    return true;
                 });
@@ -72,6 +70,8 @@ export default function LoadingAnimation({ className = "" }) {
         animationData={animationData} 
         loop={true} 
         className="w-full h-full"
+        style={{ background: 'transparent' }}
+        rendererSettings={{ preserveAspectRatio: 'xMidYMid slice', clearCanvas: true }}
       />
     </div>
   );
