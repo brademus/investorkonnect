@@ -191,7 +191,7 @@ export default function InvestorProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
           <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
           <p className="text-[#808080]">Loading investor profile...</p>
@@ -206,7 +206,7 @@ export default function InvestorProfile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="ik-card p-8 text-center max-w-md border border-[#1F1F1F] bg-[#0D0D0D]">
           <h2 className="text-xl font-bold text-[#FAFAFA] mb-4">Profile Not Found</h2>
           <p className="text-[#808080] mb-6">The investor profile you're looking for doesn't exist or has been removed.</p>
