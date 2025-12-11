@@ -130,7 +130,19 @@ export function useRooms() {
                         return r;
                     });
 
-                    // 2. Inject Orphan Deal if missing
+                    // 2. Clean up exploration rooms for deals with locked-in agents
+                    // Remove rooms where deal has agent_id but room has suggested_deal_id
+                    dbRooms = dbRooms.filter(r => {
+                        // If room has suggested_deal_id (exploration room)
+                        if (r.suggested_deal_id && !r.deal_id) {
+                            const deal = myDeals.find(d => d.id === r.suggested_deal_id);
+                            // Keep only if deal doesn't have locked-in agent
+                            return deal && !deal.agent_id;
+                        }
+                        return true;
+                    });
+
+                    // 3. Inject Orphan Deal if missing
                     // Check if we have an active deal without an agent that isn't represented in the rooms list
                     if (latestDeal && !latestDeal.agent_id) {
                         const isRepresented = dbRooms.some(r => 
