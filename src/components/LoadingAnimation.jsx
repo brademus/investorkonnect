@@ -24,61 +24,60 @@ export default function LoadingAnimation({ className = "" }) {
              // 1. Remove global background color
              delete data.sc; 
              
-             // Helper to clean layers
-             const cleanLayers = (layers) => {
+             // Recursive function to clean a composition (root or precomp)
+             const processComposition = (layers) => {
                  if (!Array.isArray(layers)) return [];
-                 return layers.filter(layer => {
+
+                 // 1. Filter out known background types/names
+                 let cleaned = layers.filter(layer => {
                      const name = (layer.nm || '').toLowerCase();
-                     const isSolid = layer.ty === 1; // Type 1 is Solid
-                     const isShape = layer.ty === 4; // Type 4 is Shape
+                     const isSolid = layer.ty === 1; // Solid
                      
-                     // Remove ALL solid layers (usually backgrounds)
+                     // Remove Solids
                      if (isSolid) return false;
                      
-                     // Remove layers with suspicious names
+                     // Remove Suspicious Names
                      if (name.includes('background') || name.includes('bg') || name.includes('solid') || name.includes('black') || name.includes('dark')) {
                          return false;
                      }
-
-                     // If it's a shape layer (Type 4) and it's the LAST layer in the list (which is the background in AE)
-                     // AND it's not named something obvious like "hand" or "icon"
-                     // We can try to be aggressive here if requested.
-                     // Since layers are processed in filter, we can't easily check index vs length during iteration cleanly without context.
-                     // But we can check if it looks like a "Square" or "Rect" shape group inside? Too deep.
-                     
-                     // Alternative: Remove all Shape Layers that are NOT "Yellow" (color check hard in json)
-                     // Or remove the very last layer of the ROOT composition if it is a Shape Layer.
-                     // We will do that outside this helper for the root specifically.
-                     
-                     // Specialized check: sometimes background is a full-screen shape layer
-                     // If it's the very last layer (bottom-most) and looks like a rect, we might want to kill it,
-                     // but that's risky. Relying on solids/names first.
-                     
                      return true;
                  });
+
+                 // 2. Aggressively remove the bottom-most layer if it looks like a background
+                 // (Shape layer or Image layer at the bottom, unless named 'hand' or 'logo')
+                 if (cleaned.length > 0) {
+                     const lastLayer = cleaned[cleaned.length - 1];
+                     const name = (lastLayer.nm || '').toLowerCase();
+                     const isShape = lastLayer.ty === 4;
+                     const isImage = lastLayer.ty === 2;
+
+                     // Safety check: Don't delete if it seems to be a main element
+                     const isSafe = name.includes('hand') || name.includes('logo') || name.includes('icon') || name.includes('main');
+
+                     if (!isSafe && (isShape || isImage)) {
+                         // Double check: if it's the ONLY layer, maybe keep it? 
+                         // But if it's a black box, we want it gone. 
+                         // Assuming the hands are multiple layers or a precomp.
+                         // Only pop if we have > 1 layer, OR if the layer is explicitly weird?
+                         // Let's just pop it if it's shape/image and not safe.
+                         console.log("Removing aggressive background layer:", name);
+                         cleaned.pop();
+                     }
+                 }
+                 
+                 return cleaned;
              };
 
              // 2. Clean root layers
              if (data.layers) {
-                 data.layers = cleanLayers(data.layers);
-                 
-                 // AGGRESSIVE: Remove the bottom-most layer if it's a Shape Layer (Type 4)
-                 // In Lottie/AE, layers are top-to-bottom. Last element is the background.
-                 if (data.layers.length > 0) {
-                     const lastLayer = data.layers[data.layers.length - 1];
-                     // If it's a shape layer (4) and not explicitly named "hand" (just in case)
-                     if (lastLayer.ty === 4 && !(lastLayer.nm || '').toLowerCase().includes('hand')) {
-                         console.log("Removing potential background shape layer:", lastLayer.nm);
-                         data.layers.pop();
-                     }
-                 }
+                 data.layers = processComposition(data.layers);
              }
 
              // 3. Recursively clean precomps (assets)
              if (Array.isArray(data.assets)) {
                  data.assets.forEach(asset => {
                      if (asset.layers) {
-                         asset.layers = cleanLayers(asset.layers);
+                         asset.layers = processComposition(asset.layers);
                      }
                  });
              }
