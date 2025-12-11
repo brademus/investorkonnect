@@ -21,25 +21,45 @@ export default function LoadingAnimation({ className = "" }) {
           // Process data to remove background
           const data = res.data;
           if (data) {
-             // Remove solid color background property if exists
+             // 1. Remove global background color
              delete data.sc; 
              
-             // Aggressively remove background layers
-             if (Array.isArray(data.layers)) {
-                data.layers = data.layers.filter(layer => {
-                   const name = (layer.nm || '').toLowerCase();
-                   const isSolid = layer.ty === 1; // Type 1 is Solid
-                   
-                   // Remove ALL solid layers (usually backgrounds)
-                   if (isSolid) return false;
-                   
-                   // Remove layers explicitly named background/bg/solid/dark/black
-                   if (name.includes('background') || name.includes('bg') || name.includes('solid') || name.includes('black') || name.includes('dark')) {
-                       return false;
-                   }
-                   
-                   return true;
-                });
+             // Helper to clean layers
+             const cleanLayers = (layers) => {
+                 if (!Array.isArray(layers)) return [];
+                 return layers.filter(layer => {
+                     const name = (layer.nm || '').toLowerCase();
+                     const isSolid = layer.ty === 1; // Type 1 is Solid
+                     const isShape = layer.ty === 4; // Type 4 is Shape
+                     
+                     // Remove ALL solid layers (usually backgrounds)
+                     if (isSolid) return false;
+                     
+                     // Remove layers with suspicious names
+                     if (name.includes('background') || name.includes('bg') || name.includes('solid') || name.includes('black') || name.includes('dark')) {
+                         return false;
+                     }
+                     
+                     // Specialized check: sometimes background is a full-screen shape layer
+                     // If it's the very last layer (bottom-most) and looks like a rect, we might want to kill it,
+                     // but that's risky. Relying on solids/names first.
+                     
+                     return true;
+                 });
+             };
+
+             // 2. Clean root layers
+             if (data.layers) {
+                 data.layers = cleanLayers(data.layers);
+             }
+
+             // 3. Recursively clean precomps (assets)
+             if (Array.isArray(data.assets)) {
+                 data.assets.forEach(asset => {
+                     if (asset.layers) {
+                         asset.layers = cleanLayers(asset.layers);
+                     }
+                 });
              }
           }
           cachedAnimationData = data;
