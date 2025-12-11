@@ -287,7 +287,7 @@ export default function InvestorOnboarding() {
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin inline" />Saving...</>
+                <><LoadingAnimation className="w-4 h-4 mr-2 inline text-black" />Saving...</>
               ) : step === TOTAL_STEPS ? (
                 'Complete Setup →'
               ) : (
