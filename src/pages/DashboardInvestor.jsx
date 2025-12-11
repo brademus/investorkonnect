@@ -162,7 +162,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
     }
   };
 
-  // Messages - Load from active rooms
+  // Messages - Show all active conversations (locked-in deals)
   useEffect(() => {
     const fetchMessages = async () => {
       try {
@@ -180,7 +180,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
           return;
         }
 
-        // Fetch latest messages for each active room
+        // Show all active rooms with latest message preview
         const messagePromises = activeRooms.slice(0, 3).map(async (room) => {
           try {
             const messages = await base44.entities.Message.filter(
@@ -189,24 +189,32 @@ function InvestorDashboardContent({ profile: propProfile }) {
               1
             );
             
-            if (messages.length > 0) {
-              return {
-                roomId: room.id,
-                senderName: room.counterparty_name,
-                preview: messages[0].body?.substring(0, 50) || 'New message',
-                timestamp: messages[0].created_date
-              };
-            }
-            return null;
+            return {
+              roomId: room.id,
+              senderName: room.counterparty_name,
+              dealTitle: room.property_address || room.title || room.deal_title,
+              preview: messages.length > 0 
+                ? messages[0].body?.substring(0, 50) || 'New message'
+                : 'Start conversation',
+              hasMessages: messages.length > 0,
+              timestamp: messages[0]?.created_date || room.created_date
+            };
           } catch (err) {
             console.warn(`Failed to load messages for room ${room.id}`, err);
-            return null;
+            // Still return the room even if messages fail to load
+            return {
+              roomId: room.id,
+              senderName: room.counterparty_name,
+              dealTitle: room.property_address || room.title || room.deal_title,
+              preview: 'Open chat',
+              hasMessages: false,
+              timestamp: room.created_date
+            };
           }
         });
 
         const results = await Promise.all(messagePromises);
-        const validMessages = results.filter(m => m !== null);
-        setRecentMessages(validMessages);
+        setRecentMessages(results);
       } catch (err) {
         console.warn("Failed to load messages", err);
       }
@@ -394,23 +402,31 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     {recentMessages.length > 0 ? (
                         recentMessages.map((msg, i) => (
                             <div 
-                                key={i} 
+                                key={msg.roomId || i} 
                                 onClick={() => navigate(`${createPageUrl("Room")}?roomId=${msg.roomId}`)}
-                                className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-colors flex items-center gap-3"
+                                className="p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#E3C567] cursor-pointer transition-all group"
                             >
-                                <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-xs font-bold text-[#E3C567]">
-                                    {msg.senderName?.[0]}
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                    <p className="text-sm font-bold text-[#FAFAFA] truncate">{msg.senderName}</p>
-                                    <p className="text-xs text-[#808080] truncate">{msg.preview}</p>
+                                <div className="flex items-start gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-[#E3C567]/20 flex items-center justify-center text-sm font-bold text-[#E3C567] flex-shrink-0">
+                                        {msg.senderName?.[0] || 'A'}
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                        <div className="flex items-center justify-between mb-1">
+                                            <p className="text-sm font-bold text-[#FAFAFA] truncate">{msg.senderName}</p>
+                                            {msg.hasMessages && (
+                                                <span className="w-2 h-2 rounded-full bg-[#E3C567] flex-shrink-0"></span>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-[#666] truncate mb-1">{msg.dealTitle}</p>
+                                        <p className="text-xs text-[#808080] truncate italic">{msg.preview}</p>
+                                    </div>
                                 </div>
                             </div>
                         ))
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-center">
-                            <p className="text-sm text-[#666]">No messages yet</p>
-                            <p className="text-xs text-[#444] mt-1">Messages will appear once you connect with an agent</p>
+                            <p className="text-sm text-[#666]">No active conversations</p>
+                            <p className="text-xs text-[#444] mt-1">Lock in an agent to start chatting</p>
                         </div>
                     )}
                 </div>
