@@ -72,7 +72,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
     let dealId = null;
 
     if (orphanDeal) {
-        dealId = orphanDeal.id;
+        // IMPORTANT: Use the actual deal_id, not the room id (which might be virtual_xxx)
+        dealId = orphanDeal.deal_id || orphanDeal.id;
         state = orphanDeal.state;
         // Try extract state from address if missing
         if (!state && orphanDeal.property_address) {
@@ -238,7 +239,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                    </div>
 
                    <Button 
-                     onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.id}`)}
+                     onClick={() => navigate(`${createPageUrl("DealWizard")}?dealId=${orphanDeal.deal_id || orphanDeal.id}`)}
                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
                    >
                      Match with Agent <Sparkles className="w-4 h-4 ml-2" />

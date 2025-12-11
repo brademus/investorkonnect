@@ -97,10 +97,8 @@ export function useRooms() {
                     
                     const latestDeal = activeDeals[0];
 
+                    // 1. Enrich existing rooms
                     dbRooms = dbRooms.map(r => {
-                        // Logic: If room already has robust data, keep it.
-                        // Otherwise, try to fill holes.
-                        
                         let dealToUse = null;
 
                         // Case A: Room has explicit deal_id -> Find it in myDeals
@@ -109,31 +107,58 @@ export function useRooms() {
                         }
                         
                         // Case B: Inference (No link OR Broken link)
-                        // If we didn't find the explicit deal (broken link) OR there was no link
-                        // AND I am the investor
-                        // AND we have a latest deal
                         if (!dealToUse && r.investorId === myProfileId && latestDeal) {
-                            // For rooms with agents, we almost certainly want to show the active deal context
                             dealToUse = latestDeal;
                         }
 
                         if (dealToUse) {
                             return {
                                 ...r,
-                                deal_title: dealToUse.title, // Title usually contains name or address
+                                deal_title: dealToUse.title,
                                 property_address: dealToUse.property_address,
                                 budget: dealToUse.purchase_price,
                                 pipeline_stage: dealToUse.pipeline_stage,
-                                suggested_deal_id: dealToUse.id, // Ensure lock-in button works
+                                suggested_deal_id: dealToUse.id,
                                 deal_assigned_agent_id: dealToUse.agent_id,
                                 contract_date: dealToUse.key_dates?.closing_date,
                                 city: dealToUse.city,
                                 state: dealToUse.state
                             };
                         }
-                        
                         return r;
                     });
+
+                    // 2. Inject Orphan Deal if missing
+                    // Check if we have an active deal that isn't represented in the rooms list
+                    // (either as a virtual orphan or a real connection)
+                    if (latestDeal) {
+                        const isRepresented = dbRooms.some(r => 
+                            r.deal_id === latestDeal.id || 
+                            r.suggested_deal_id === latestDeal.id ||
+                            (r.is_orphan && r.id === `virtual_${latestDeal.id}`)
+                        );
+
+                        if (!isRepresented) {
+                            console.log("[useRooms] Injecting client-side orphan deal:", latestDeal.id);
+                            dbRooms.push({
+                                id: `virtual_${latestDeal.id}`,
+                                deal_id: latestDeal.id,
+                                title: latestDeal.title,
+                                property_address: latestDeal.property_address,
+                                city: latestDeal.city,
+                                state: latestDeal.state,
+                                budget: latestDeal.purchase_price,
+                                pipeline_stage: latestDeal.pipeline_stage || 'new_deal_under_contract',
+                                created_date: latestDeal.created_date,
+                                counterparty_name: 'No Agent Selected',
+                                counterparty_role: 'none',
+                                is_orphan: true
+                            });
+                            
+                            // Sort again to ensure it appears at top if new
+                            dbRooms.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
+                        }
+                    }
                 }
             }
         } catch (e) {
