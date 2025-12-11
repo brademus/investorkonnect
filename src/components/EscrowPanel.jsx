@@ -207,7 +207,7 @@ export default function EscrowPanel({ room, profile, onUpdate }) {
                     className="w-full bg-blue-600 hover:bg-blue-700"
                   >
                     {loading ? (
-                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                      <><LoadingAnimation className="w-4 h-4 mr-2" /> Creating...</>
                     ) : (
                       <><Lock className="w-4 h-4 mr-2" /> Create Escrow</>
                     )}
@@ -246,7 +246,7 @@ export default function EscrowPanel({ room, profile, onUpdate }) {
                 className="w-full bg-emerald-600 hover:bg-emerald-700"
               >
                 {loading ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Loading...</>
+                  <><LoadingAnimation className="w-4 h-4 mr-2" /> Loading...</>
                 ) : (
                   <><DollarSign className="w-4 h-4 mr-2" /> Fund Escrow</>
                 )}
@@ -290,7 +290,7 @@ export default function EscrowPanel({ room, profile, onUpdate }) {
                   className="flex-1 bg-emerald-600 hover:bg-emerald-700"
                 >
                   {loading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <LoadingAnimation className="w-4 h-4" />
                   ) : (
                     <><Unlock className="w-4 h-4 mr-2" /> Release Funds</>
                   )}
@@ -358,7 +358,7 @@ export default function EscrowPanel({ room, profile, onUpdate }) {
               disabled={refreshing}
             >
               {refreshing ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <LoadingAnimation className="w-4 h-4" />
               ) : (
                 "Refresh"
               )}

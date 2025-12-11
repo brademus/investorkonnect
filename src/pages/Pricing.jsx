@@ -364,7 +364,7 @@ export default function Pricing() {
                       style={{ boxShadow: '0 4px 12px rgba(227,197,103,0.4)' }}
                       disabled={loading || checkoutLoading}
                     >
-                      {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
+                      {(loading || checkoutLoading) ? <LoadingAnimation className="w-4 h-4" /> : tier.cta}
                     </button>
                   ) : (
                     <button
@@ -372,7 +372,7 @@ export default function Pricing() {
                       className="w-full h-12 rounded-xl font-bold text-[16px] border-2 border-[#1F1F1F] text-[#FAFAFA] bg-transparent hover:bg-[#0D0D0D] hover:border-[#E3C567] transition-all duration-200"
                       disabled={loading || checkoutLoading}
                     >
-                      {(loading || checkoutLoading) ? <Loader2 className="w-4 h-4 animate-spin" /> : tier.cta}
+                      {(loading || checkoutLoading) ? <LoadingAnimation className="w-4 h-4" /> : tier.cta}
                     </button>
                   )}
                 </div>
