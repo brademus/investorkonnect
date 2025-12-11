@@ -90,7 +90,7 @@ export default function Inbox() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <LoadingAnimation className="w-64 h-64" />
       </div>
     );

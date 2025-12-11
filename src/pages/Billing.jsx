@@ -46,13 +46,13 @@ export default function Billing() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="text-center">
         <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-slate-900 mb-2">
+        <h2 className="text-xl font-bold text-[#E3C567] mb-2">
           Opening Stripe Billing Portal...
         </h2>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-[#808080]">
           You'll be redirected to manage your subscription
         </p>
       </div>

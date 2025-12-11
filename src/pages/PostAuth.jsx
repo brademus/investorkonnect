@@ -112,13 +112,13 @@ export default function PostAuth() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+      <div className="min-h-screen bg-black flex items-center justify-center p-4">
         <div className="text-center max-w-md">
-          <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+          <div className="w-12 h-12 bg-red-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6 text-red-500" />
           </div>
-          <h2 className="text-xl font-semibold text-[#111827] mb-2">Something went wrong</h2>
-          <p className="text-[#6B7280] mb-6">{error}</p>
+          <h2 className="text-xl font-bold text-[#FAFAFA] mb-2">Something went wrong</h2>
+          <p className="text-[#808080] mb-6">{error}</p>
           <button 
             onClick={() => window.location.href = createPageUrl("Home")}
             className="px-6 py-2 bg-[#D3A029] text-white rounded-lg font-medium hover:bg-[#B8902A] transition-colors"
@@ -131,11 +131,11 @@ export default function PostAuth() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-4">
+    <div className="min-h-screen bg-black flex items-center justify-center p-4">
       <div className="text-center">
         <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
-        <h2 className="text-xl font-semibold text-[#111827] mb-2">{status}</h2>
-        <p className="text-[#6B7280]">Please wait a moment</p>
+        <h2 className="text-xl font-bold text-[#E3C567] mb-2">{status}</h2>
+        <p className="text-[#808080]">Please wait a moment</p>
       </div>
     </div>
   );

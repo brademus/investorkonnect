@@ -304,10 +304,10 @@ export default function AgentProfile() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
+      <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
-          <p className="text-gray-600">Loading agent profile...</p>
+          <p className="text-[#808080]">Loading agent profile...</p>
         </div>
       </div>
     );
@@ -319,10 +319,10 @@ export default function AgentProfile() {
 
   if (!profile) {
     return (
-      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center">
-        <div className="ik-card p-8 text-center max-w-md">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profile Not Found</h2>
-          <p className="text-gray-600 mb-6">The agent profile you're looking for doesn't exist or has been removed.</p>
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="ik-card p-8 text-center max-w-md border border-[#1F1F1F] bg-[#0D0D0D]">
+          <h2 className="text-xl font-bold text-[#FAFAFA] mb-4">Profile Not Found</h2>
+          <p className="text-[#808080] mb-6">The agent profile you're looking for doesn't exist or has been removed.</p>
           <Link to={createPageUrl("AgentDirectory")} className="ik-btn-primary">
             Back to Agent Directory
           </Link>
