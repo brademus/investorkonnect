@@ -35,13 +35,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   // Ensure rooms is always an array
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
-  // Force refetch on mount to ensure we see new deals immediately
-  useEffect(() => {
-    // Aggressive refetch to ensure fresh data after lock-in
-    queryClient.invalidateQueries({ queryKey: ['rooms'] });
-    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-    refetchRooms();
-  }, [refetchRooms, queryClient]);
+  // Removed aggressive refetch - useRooms now handles caching properly
 
   // Load Profile (Fallback if not provided by prop)
   useEffect(() => {
@@ -71,8 +65,10 @@ function InvestorDashboardContent({ profile: propProfile }) {
       return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    refetchOnMount: true,
-    refetchOnWindowFocus: true
+    staleTime: 30000,
+    cacheTime: 300000,
+    refetchOnMount: false,
+    refetchOnWindowFocus: false
   });
 
   // Orphan deal = deal without agent_id (source of truth from Deal entity)
