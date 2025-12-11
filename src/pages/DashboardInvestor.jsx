@@ -54,11 +54,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
     loadProfile();
   }, [profile]);
 
-  // Calculate Orphan Deal (Latest deal not in a connected room)
-  // We use the rooms array which already contains orphan deals from listMyRooms
+  // Calculate Orphan Deal (Latest deal not in a connected room OR deal not locked in)
   const orphanDeal = useMemo(() => {
     if (!Array.isArray(rooms)) return null;
-    return rooms.find(r => r.is_orphan);
+    // 1. Explicit orphan (virtual room)
+    const virtual = rooms.find(r => r.is_orphan);
+    if (virtual) return virtual;
+    // 2. Real room but deal not locked in (we prioritize virtual ones usually, but if none, pick unassigned active deal)
+    const unassigned = rooms.find(r => r.deal_id && !r.deal_assigned_agent_id);
+    return unassigned;
   }, [rooms]);
 
   // Load Suggested Agents when orphan deal changes
@@ -153,8 +157,8 @@ function InvestorDashboardContent({ profile: propProfile }) {
     fetchMessages();
   }, []);
 
-  // Stats - only count active/locked-in deals (must have deal_id AND not be an orphan/unassigned deal)
-  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan) : [];
+  // Stats - only count active/locked-in deals (must have deal_id, not orphan, AND locked to this agent)
+  const activeDealRooms = Array.isArray(rooms) ? rooms.filter(r => r.deal_id && !r.is_orphan && r.deal_assigned_agent_id === r.agentId) : [];
 
   const dealStats = {
     new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,
@@ -227,7 +231,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                       <p className="text-[#FAFAFA] font-bold text-lg mb-1">{orphanDeal.property_address || orphanDeal.title}</p>
                       <div className="flex items-center gap-4 text-xs text-[#808080]">
                          <span>{orphanDeal.city}, {orphanDeal.state}</span>
-                         <span className="text-[#E3C567]">${(orphanDeal.purchase_price || 0).toLocaleString()}</span>
+                         <span className="text-[#E3C567]">${(orphanDeal.budget || orphanDeal.purchase_price || 0).toLocaleString()}</span>
                       </div>
                    </div>
 
