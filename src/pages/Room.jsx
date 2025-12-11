@@ -141,19 +141,9 @@ export default function Room() {
   };
 
   const filteredRooms = rooms.filter(r => {
-    // Only show active conversations (exclude orphan deals/potential matches)
+    // Only show real conversations with valid counterparty
     if (r.is_orphan) return false;
-    
-    // Check if we are viewing a specific deal (via URL dealId or context)
-    // If so, user might expect to see ONLY rooms for that deal? 
-    // The user requirement says "only ones that show up ... are ones that you've selected".
-    // This implies removing unrelated chats if they are confusing.
-    // However, hiding other chats might be jarring.
-    // Let's at least filter out empty chats that are NOT linked to the current deal logic.
-    // But since "selected" means "created via Connect button", they should have room entries.
-    // If "unselected" agents appear, they must have room entries too.
-    // The only way to hide them is if they are truly empty/zombie rooms.
-    // We can't easily detect "empty" here without message counts.
+    if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
     
     if (!searchConversations) return true;
     return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
@@ -495,7 +485,49 @@ export default function Room() {
             </div>
           ) : (
             /* Messages View */
-            <div className="flex flex-col min-h-full space-y-4">
+            <div className="flex flex-col min-h-full">
+              {/* Floating Deal Summary Box */}
+              {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
+                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-[#E3C567] mb-1">
+                        {currentRoom.property_address || currentRoom.deal_title || 'Deal Summary'}
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {currentRoom.counterparty_name && (
+                          <p className="text-[#FAFAFA]">
+                            {currentRoom.counterparty_role === 'agent' ? 'Agent' : 'Investor'}: {currentRoom.counterparty_name}
+                          </p>
+                        )}
+                        {(currentRoom.city || currentRoom.state) && (
+                          <p className="text-[#808080]">
+                            {[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}
+                          </p>
+                        )}
+                        {currentRoom.budget > 0 && (
+                          <p className="text-[#34D399] font-semibold">
+                            ${currentRoom.budget.toLocaleString()}
+                          </p>
+                        )}
+                        {currentRoom.closing_date && (
+                          <p className="text-[#808080]">
+                            Closing: {new Date(currentRoom.closing_date).toLocaleDateString()}
+                          </p>
+                        )}
+                        {!currentRoom.closing_date && currentRoom.created_date && (
+                          <p className="text-[#666]">
+                            Started: {new Date(currentRoom.created_date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Messages Container */}
+              <div className="flex flex-col space-y-4">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -544,6 +576,7 @@ export default function Room() {
                   <div ref={messagesEndRef} />
                 </>
               )}
+              </div>
             </div>
           )}
         </div>
