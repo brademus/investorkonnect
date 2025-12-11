@@ -62,11 +62,21 @@ function InvestorDashboardContent({ profile: propProfile }) {
   // - has a deal_id but NO locked-in agent (deal_assigned_agent_id is null/undefined)
   const orphanDeal = useMemo(() => {
     if (!Array.isArray(rooms)) return null;
-    // 1. Explicit orphan (virtual room)
+    
+    // Find deals that need agent selection:
+    // 1. Explicit orphan (virtual room with is_orphan flag)
     const virtual = rooms.find(r => r.is_orphan);
     if (virtual) return virtual;
-    // 2. Real room but deal not locked in
-    const unassigned = rooms.find(r => r.deal_id && !r.deal_assigned_agent_id);
+    
+    // 2. Real deal/room but no agent locked in yet
+    // This happens when deal exists but deal_assigned_agent_id is not set
+    const unassigned = rooms.find(r => 
+      r.deal_id && 
+      !r.deal_assigned_agent_id &&
+      r.pipeline_stage !== 'cancelled' &&
+      r.pipeline_stage !== 'closed'
+    );
+    
     return unassigned;
   }, [rooms]);
 

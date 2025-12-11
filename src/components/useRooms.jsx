@@ -129,9 +129,8 @@ export function useRooms() {
                     });
 
                     // 2. Inject Orphan Deal if missing
-                    // Check if we have an active deal that isn't represented in the rooms list
-                    // (either as a virtual orphan or a real connection)
-                    if (latestDeal) {
+                    // Check if we have an active deal without an agent that isn't represented in the rooms list
+                    if (latestDeal && !latestDeal.agent_id) {
                         const isRepresented = dbRooms.some(r => 
                             r.deal_id === latestDeal.id || 
                             r.suggested_deal_id === latestDeal.id ||

@@ -299,6 +299,7 @@ export default function AgentProfile() {
       if (response.data?.room?.id) {
         // Invalidate rooms query to ensure the new conversation appears immediately in the sidebar
         await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
         setRoomId(response.data.room.id);
         toast.success(`Deal room created with ${profile.full_name}`);
         console.log("Navigating to room:", response.data.room.id);

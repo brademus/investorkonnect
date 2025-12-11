@@ -23,8 +23,16 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Room not found' }, { status: 404 });
         }
 
+        // Get user's profile to verify they're the investor
+        const myProfiles = await base44.entities.Profile.filter({ user_id: user.id });
+        const myProfile = myProfiles[0];
+        
+        if (!myProfile) {
+            return Response.json({ error: 'Profile not found' }, { status: 404 });
+        }
+        
         // Verify user is the investor in this room (since they are locking in an agent)
-        if (room.investorId !== user.id) {
+        if (room.investorId !== myProfile.id) {
              return Response.json({ error: 'Only the investor can lock in an agent' }, { status: 403 });
         }
 
@@ -40,19 +48,18 @@ Deno.serve(async (req) => {
             deal_id: deal_id
         });
 
-        // 4. Cleanup: Delete OTHER rooms for this investor that are unassigned (potential auditions)
+        // 4. Cleanup: Delete OTHER rooms for THIS DEAL that are not the selected one
         // We look for rooms where:
-        // - investorId is current user
+        // - They have the same deal_id as this room
         // - id is NOT the current room_id
-        // - deal_id is NULL/undefined (not linked to another valid deal)
-        // - agentId exists (it's an agent chat, not internal/support)
+        // This ensures we remove duplicate agent conversations for the same deal
         
-        const allUserRooms = await base44.entities.Room.filter({ investorId: user.id });
+        const allUserRooms = await base44.entities.Room.filter({ investorId: myProfile.id });
         
         const roomsToDelete = allUserRooms.filter(r => 
             r.id !== room_id && 
-            r.agentId && 
-            !r.deal_id
+            r.deal_id === deal_id &&
+            r.agentId
         );
 
         const deletePromises = roomsToDelete.map(async (r) => {
