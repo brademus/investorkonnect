@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { billingPortal } from "@/components/functions";
-import { Loader2 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 /**
  * BILLING PAGE - Redirects to Stripe Billing Portal
@@ -48,7 +48,7 @@ export default function Billing() {
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
       <div className="text-center">
-        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
+        <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
         <h2 className="text-xl font-semibold text-slate-900 mb-2">
           Opening Stripe Billing Portal...
         </h2>

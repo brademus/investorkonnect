@@ -11,11 +11,11 @@ import {
   Clock, 
   AlertCircle, 
   ExternalLink,
-  Loader2,
   ArrowRight,
   Lock,
   Unlock
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
 import { 
   initiateEscrowTransaction, 
