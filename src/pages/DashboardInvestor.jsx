@@ -12,6 +12,7 @@ import {
   FileText, TrendingUp, Plus, MessageSquare, Users,
   Loader2, Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw
 } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 
 function InvestorDashboardContent({ profile: propProfile }) {
