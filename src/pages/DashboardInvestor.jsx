@@ -59,29 +59,29 @@ function InvestorDashboardContent({ profile: propProfile }) {
     loadProfile();
   }, [profile]);
 
-  // Calculate Orphan Deal (Latest deal not in a connected room OR deal not locked in)
-  // An orphan deal is a deal that needs an agent selection:
-  // - is_orphan flag is true (virtual deal room), OR
-  // - has a deal_id but NO locked-in agent (deal_assigned_agent_id is null/undefined)
+  // Load investor deals directly to determine orphan status
+  const { data: investorDeals = [] } = useQuery({
+    queryKey: ['investorDeals', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const deals = await base44.entities.Deal.filter({ 
+        investor_id: profile.id,
+        status: 'active'
+      });
+      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    },
+    enabled: !!profile?.id,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
+  });
+
+  // Orphan deal = deal without agent_id (source of truth from Deal entity)
   const orphanDeal = useMemo(() => {
-    if (!Array.isArray(rooms)) return null;
+    if (!investorDeals || investorDeals.length === 0) return null;
     
-    // Find deals that need agent selection:
-    // 1. Explicit orphan (virtual room with is_orphan flag)
-    const virtual = rooms.find(r => r.is_orphan);
-    if (virtual) return virtual;
-    
-    // 2. Real deal/room but no agent locked in yet
-    // This happens when deal exists but deal_assigned_agent_id is not set
-    const unassigned = rooms.find(r => 
-      r.deal_id && 
-      !r.deal_assigned_agent_id &&
-      r.pipeline_stage !== 'cancelled' &&
-      r.pipeline_stage !== 'closed'
-    );
-    
-    return unassigned;
-  }, [rooms]);
+    // Find first deal without an agent
+    return investorDeals.find(d => !d.agent_id) || null;
+  }, [investorDeals]);
 
   // Load Suggested Agents ONLY when there's an orphan deal
   useEffect(() => {
