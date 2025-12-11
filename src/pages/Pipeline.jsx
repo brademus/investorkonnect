@@ -33,24 +33,26 @@ function PipelineContent() {
   }, []);
 
   // 2. Load Active Deals (Source of Truth)
-  const { data: dealsData = [], isLoading: loadingDeals } = useQuery({
+  const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       // Fetch deals where I am the investor
       const res = await base44.entities.Deal.filter(
-        { investor_id: profile.id }, 
-        { created_date: -1 }
+        { investor_id: profile.id }
       );
-      // Filter out archived
-      return res.filter(d => d.status !== 'archived');
+      // Filter out archived and sort by created_date
+      return res
+        .filter(d => d.status !== 'archived')
+        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
 
   // 3. Load Rooms (to link agents/status)
-  const { data: rooms = [], isLoading: loadingRooms } = useQuery({
+  const { data: rooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['pipelineRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -58,8 +60,17 @@ function PipelineContent() {
       return res.data?.items || [];
     },
     enabled: !!profile?.id,
-    refetchOnWindowFocus: true
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
   });
+
+  // Force refresh on mount
+  useEffect(() => {
+    if (profile?.id) {
+      refetchDeals();
+      refetchRooms();
+    }
+  }, [profile?.id]);
 
   // 4. Merge Data
   const deals = useMemo(() => {
@@ -74,6 +85,7 @@ function PipelineContent() {
     return dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const hasRoom = !!room;
+      const hasAgentLocked = !!deal.agent_id;
 
       return {
         // IDs
@@ -90,7 +102,8 @@ function PipelineContent() {
         
         // Status & Agent
         pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
-        customer_name: hasRoom ? (room.counterparty_name || 'Agent Connected') : 'No Agent Selected',
+        customer_name: hasAgentLocked && hasRoom ? (room.counterparty_name || 'Agent Connected') : 'No Agent Selected',
+        agent_id: deal.agent_id,
         
         // Dates
         created_date: deal.created_date,
@@ -101,7 +114,7 @@ function PipelineContent() {
         open_tasks: room?.open_tasks || 0,
         completed_tasks: room?.completed_tasks || 0,
         
-        is_orphan: !hasRoom
+        is_orphan: !hasAgentLocked // Orphan if no agent assigned, regardless of room
       };
     });
   }, [dealsData, rooms]);
@@ -195,40 +208,48 @@ function PipelineContent() {
                       ) : (
                         stageDeals.map(deal => (
                           <div 
-                            key={deal.id}
-                            onClick={() => handleDealClick(deal)}
-                            className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] cursor-pointer group transition-all"
+                           key={deal.id}
+                           onClick={() => handleDealClick(deal)}
+                           className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] cursor-pointer group transition-all"
                           >
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                                {deal.property_address}
-                              </h4>
-                              <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
-                                {getDaysInPipeline(deal.created_date)}
-                              </span>
-                            </div>
-                            
-                            <div className="flex items-center gap-2 mb-3">
-                              <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
-                                {formatCurrency(deal.budget)}
-                              </span>
-                              {deal.is_orphan && (
-                                <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
-                              )}
-                            </div>
+                           <div className="flex justify-between items-start mb-2">
+                             <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
+                               {deal.property_address}
+                             </h4>
+                             <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
+                               {getDaysInPipeline(deal.created_date)}
+                             </span>
+                           </div>
 
-                            <div className="flex items-center justify-between text-xs text-[#666]">
-                              <div className="flex items-center gap-1">
-                                <Home className="w-3 h-3" />
-                                <span>{deal.city}, {deal.state}</span>
-                              </div>
-                              {deal.open_tasks > 0 && (
-                                <div className="flex items-center gap-1 text-[#E3C567]">
-                                  <CheckSquare className="w-3 h-3" />
-                                  <span>{deal.open_tasks}</span>
-                                </div>
-                              )}
-                            </div>
+                           <div className="flex items-center gap-2 mb-3">
+                             <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
+                               {formatCurrency(deal.budget)}
+                             </span>
+                             {deal.is_orphan && (
+                               <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
+                             )}
+                           </div>
+
+                           <div className="flex flex-col gap-2">
+                             <div className="flex items-center gap-1 text-xs text-[#666]">
+                               <Home className="w-3 h-3" />
+                               <span>{deal.city}, {deal.state}</span>
+                             </div>
+
+                             {!deal.is_orphan && deal.customer_name && (
+                               <div className="text-xs text-[#10B981] flex items-center gap-1">
+                                 <CheckCircle className="w-3 h-3" />
+                                 <span>{deal.customer_name}</span>
+                               </div>
+                             )}
+
+                             {deal.open_tasks > 0 && (
+                               <div className="flex items-center gap-1 text-[#E3C567] text-xs">
+                                 <CheckSquare className="w-3 h-3" />
+                                 <span>{deal.open_tasks} tasks</span>
+                               </div>
+                             )}
+                           </div>
                           </div>
                         ))
                       )}
