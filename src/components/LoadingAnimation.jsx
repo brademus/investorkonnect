@@ -39,6 +39,16 @@ export default function LoadingAnimation({ className = "" }) {
                      if (name.includes('background') || name.includes('bg') || name.includes('solid') || name.includes('black') || name.includes('dark')) {
                          return false;
                      }
+
+                     // If it's a shape layer (Type 4) and it's the LAST layer in the list (which is the background in AE)
+                     // AND it's not named something obvious like "hand" or "icon"
+                     // We can try to be aggressive here if requested.
+                     // Since layers are processed in filter, we can't easily check index vs length during iteration cleanly without context.
+                     // But we can check if it looks like a "Square" or "Rect" shape group inside? Too deep.
+                     
+                     // Alternative: Remove all Shape Layers that are NOT "Yellow" (color check hard in json)
+                     // Or remove the very last layer of the ROOT composition if it is a Shape Layer.
+                     // We will do that outside this helper for the root specifically.
                      
                      // Specialized check: sometimes background is a full-screen shape layer
                      // If it's the very last layer (bottom-most) and looks like a rect, we might want to kill it,
@@ -51,6 +61,17 @@ export default function LoadingAnimation({ className = "" }) {
              // 2. Clean root layers
              if (data.layers) {
                  data.layers = cleanLayers(data.layers);
+                 
+                 // AGGRESSIVE: Remove the bottom-most layer if it's a Shape Layer (Type 4)
+                 // In Lottie/AE, layers are top-to-bottom. Last element is the background.
+                 if (data.layers.length > 0) {
+                     const lastLayer = data.layers[data.layers.length - 1];
+                     // If it's a shape layer (4) and not explicitly named "hand" (just in case)
+                     if (lastLayer.ty === 4 && !(lastLayer.nm || '').toLowerCase().includes('hand')) {
+                         console.log("Removing potential background shape layer:", lastLayer.nm);
+                         data.layers.pop();
+                     }
+                 }
              }
 
              // 3. Recursively clean precomps (assets)
