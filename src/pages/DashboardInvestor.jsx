@@ -34,20 +34,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
   const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
-  // Load Profile (Fallback if not provided by prop)
+  // Load Profile in background - don't block UI
   useEffect(() => {
     if (profile) return;
-    const loadProfile = async () => {
-      try {
-        const user = await base44.auth.me();
-        if (!user) return;
-        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        setProfile(profiles[0]);
-      } catch (error) {
-        console.error("Profile load error", error);
-      }
-    };
-    loadProfile();
+    base44.auth.me()
+      .then(user => user && base44.entities.Profile.filter({ user_id: user.id }))
+      .then(profiles => profiles?.[0] && setProfile(profiles[0]))
+      .catch(err => console.error("Profile load error", err));
   }, [profile]);
 
   // Load investor deals - INSTANT with aggressive caching
@@ -245,22 +238,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
   };
 
   const handleRefresh = () => {
-    refetchRooms();
     queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+    refetchRooms();
   };
 
-  // Show UI immediately with loading states instead of blocking
-  const showLoading = !profile && roomsLoading;
-
   const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
-
-  if (showLoading) {
-    return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <LoadingAnimation className="w-64 h-64" />
-      </div>
-    );
-  }
+  const isLoading = roomsLoading && rooms.length === 0;
 
   return (
     <>
@@ -278,18 +262,36 @@ function InvestorDashboardContent({ profile: propProfile }) {
                 Track deals, connect with agents, and grow your portfolio.
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleRefresh} className="text-[#808080] hover:text-[#E3C567]">
-                <RefreshCw className="w-4 h-4 mr-2" /> Refresh
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleRefresh} 
+              disabled={isLoading}
+              className="text-[#808080] hover:text-[#E3C567] disabled:opacity-50"
+            >
+                <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} /> 
+                Refresh
             </Button>
           </div>
 
-          <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />
+          {profile && <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
             {/* BOX 1: ACTION CARD */}
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:border-[#E3C567]/50 transition-all">
-               {orphanDeal ? (
+               {isLoading ? (
+                 <>
+                   <div className="flex items-start justify-between mb-4">
+                     <div className="w-12 h-12 bg-[#1F1F1F] rounded-xl animate-pulse"></div>
+                     <div className="h-6 w-24 bg-[#1F1F1F] rounded-full animate-pulse"></div>
+                   </div>
+                   <div className="h-6 w-3/4 bg-[#1F1F1F] rounded animate-pulse mb-2"></div>
+                   <div className="h-4 w-full bg-[#1F1F1F] rounded animate-pulse mb-4"></div>
+                   <div className="h-20 bg-[#141414] rounded-xl animate-pulse mb-4"></div>
+                   <div className="h-12 bg-[#1F1F1F] rounded-full animate-pulse mt-auto"></div>
+                 </>
+               ) : orphanDeal ? (
                  <>
                    <div className="flex items-start justify-between mb-4">
                      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center animate-pulse">
@@ -363,6 +365,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">View All</Link>
                 </div>
 
+                {isLoading ? (
+                  <div className="space-y-2 flex-grow">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="h-14 bg-[#141414] rounded-xl animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : (
                 <div className="space-y-2 flex-grow overflow-y-auto">
                     {[
                         { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#FAFAFA]', icon: Plus, bg: 'bg-[#FAFAFA]/10' },
@@ -382,6 +391,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                         </div>
                     ))}
                 </div>
+                )}
             </div>
 
             {/* BOX 3: MESSAGES */}
@@ -393,6 +403,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     <h3 className="text-xl font-bold text-[#FAFAFA]">Messages</h3>
                 </div>
 
+                {isLoading ? (
+                  <div className="flex-grow space-y-3">
+                    {[1,2,3].map(i => (
+                      <div key={i} className="h-20 bg-[#141414] rounded-xl animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : (
                 <div className="flex-grow space-y-3">
                     {recentMessages.length > 0 ? (
                         recentMessages.map((msg, i) => (
@@ -425,6 +442,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                         </div>
                     )}
                 </div>
+                )}
             </div>
 
             {/* BOX 4: AGENTS */}
@@ -438,9 +456,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     </h3>
                 </div>
 
-                {agentsLoading ? (
-                    <div className="flex-grow flex items-center justify-center">
-                        <LoadingAnimation className="w-64 h-64" />
+                {isLoading || agentsLoading ? (
+                    <div className="flex-grow space-y-3">
+                      {[1,2,3].map(i => (
+                        <div key={i} className="h-16 bg-[#141414] rounded-xl animate-pulse"></div>
+                      ))}
                     </div>
                 ) : suggestedAgents.length > 0 ? (
                     <div className="flex-grow space-y-3">
