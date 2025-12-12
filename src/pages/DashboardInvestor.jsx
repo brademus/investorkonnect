@@ -516,8 +516,7 @@ function InvestorDashboardContent() {
                                       : 'Add county in Deal Wizard for better matches.'}
                                 </p>
                                 <Button 
-                                    variant="outline" 
-                                    className="border-[#1F1F1F] text-[#808080] hover:bg-[#1F1F1F] hover:text-[#E3C567] hover:border-[#E3C567] rounded-full text-xs h-8 mb-2"
+                                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs h-8 mb-2 font-bold"
                                     onClick={() => setShowAllAgents(true)}
                                 >
                                     Show Agents from Other Areas
