@@ -5,7 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
-import { createDealRoom } from "@/components/functions";
+import { getOrCreateDealRoom } from "@/utils/dealRooms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -178,36 +178,35 @@ export default function AgentDirectory() {
       const params = new URLSearchParams(window.location.search);
       const dealId = params.get('dealId');
       
-      const payload = { counterparty_profile_id: agent.id };
-      if (dealId) {
-        payload.deal_id = dealId;
+      if (!dealId) {
+        toast.error("No deal specified");
+        return;
       }
       
-      const response = await createDealRoom(payload);
-      if (response.data?.room?.id) {
-        const roomId = response.data.room.id;
-        
-        // Immediately lock in the agent to this deal
-        if (dealId) {
-          const lockResponse = await base44.functions.invoke('lockInDealAgent', {
-            room_id: roomId,
-            deal_id: dealId
-          });
+      // Get or create room for this deal + agent
+      const roomId = await getOrCreateDealRoom({
+        dealId: dealId,
+        agentProfileId: agent.id
+      });
+      
+      // Lock in the agent to this deal
+      const lockResponse = await base44.functions.invoke('lockInDealAgent', {
+        room_id: roomId,
+        deal_id: dealId
+      });
 
-          if (!lockResponse.data?.success) {
-            toast.error("Failed to lock in agent. Please try again.");
-            return;
-          }
-        }
+      if (!lockResponse.data?.success) {
+        toast.error("Failed to lock in agent. Please try again.");
+        return;
+      }
 
-        // Invalidate queries to refresh dashboard/pipeline
-        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-        await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+      // Invalidate queries to refresh dashboard/pipeline
+      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
-        toast.success(`${agent.full_name} is now your agent for this deal!`);
-        navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
-      } else toast.error("Could not create room");
+      toast.success(`${agent.full_name} is now your agent for this deal!`);
+      navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
     } catch (error) {
       console.error("Failed to create room:", error);
       toast.error("Failed to create room");
