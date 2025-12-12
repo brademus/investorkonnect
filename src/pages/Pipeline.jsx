@@ -39,14 +39,14 @@ function PipelineContent() {
     try {
       const response = await base44.functions.invoke('deduplicateDeals');
       if (response.data?.deletedCount > 0) {
-        alert(`Removed ${response.data.deletedCount} duplicate deals`);
+        toast.success(`Removed ${response.data.deletedCount} duplicate deals`);
         refetchDeals();
       } else {
-        alert('No duplicates found');
+        toast.success('No duplicates found');
       }
     } catch (e) {
       console.error("Deduplication error", e);
-      alert('Failed to check for duplicates');
+      toast.error('Failed to check for duplicates');
     }
     setDeduplicating(false);
   };
@@ -183,7 +183,7 @@ function PipelineContent() {
       refetchDeals();
     } catch (error) {
       console.error('Failed to update stage:', error);
-      alert('Failed to update stage');
+      toast.error('Failed to update stage');
     }
   };
 
