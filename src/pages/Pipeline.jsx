@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
@@ -16,24 +17,16 @@ import { toast } from "sonner";
 
 function PipelineContent() {
   const navigate = useNavigate();
-  const [profile, setProfile] = useState(null);
+  const { profile, loading } = useCurrentProfile();
   const [deduplicating, setDeduplicating] = useState(false);
 
-  // 1. Load Profile (removed auto-dedup)
+  // Redirect if profile not found after loading
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const user = await base44.auth.me();
-        if (user) {
-          const res = await base44.entities.Profile.filter({ user_id: user.id });
-          setProfile(res[0]);
-        }
-      } catch (e) {
-        console.error("Profile load error", e);
-      }
-    };
-    fetchProfile();
-  }, []);
+    if (!loading && !profile) {
+      toast.error("Profile not found. Please complete setup.");
+      navigate(createPageUrl("PostAuth"), { replace: true });
+    }
+  }, [loading, profile, navigate]);
 
   // Manual dedup handler
   const handleDedup = async () => {
@@ -212,12 +205,13 @@ function PipelineContent() {
     { id: 'clear_to_close_closed', label: 'Closed', icon: CheckCircle }
   ];
 
-  if (!profile || loadingDeals || loadingRooms || deduplicating) {
+  if (loading || !profile || loadingDeals || loadingRooms || deduplicating) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
           {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
+          {loading && <p className="text-sm text-[#808080]">Loading profile...</p>}
         </div>
       </div>
     );
