@@ -1,12 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { Button } from "@/components/ui/button";
-import MapUSA from "@/components/MapUSA";
-import LocationPopup from "@/components/LocationPopup";
 import { 
   Shield, Star, Lock, FileText, Users, 
-  TrendingUp, CheckCircle, ArrowRight, Zap, MapPin
+  TrendingUp, CheckCircle, ArrowRight, Zap
 } from "lucide-react";
 
 /**
