@@ -159,11 +159,20 @@ export function useCurrentProfile() {
         // - onboarding_completed_at timestamp
         // - onboarding_step = 'basic_complete' or 'deep_complete'
         // - onboarding_version exists
+        // - LEGACY: Has all key profile fields filled (backward compatibility)
+        const hasLegacyProfile = !!(
+          profile?.full_name && 
+          profile?.phone && 
+          (profile?.company || profile?.investor?.company_name) &&
+          (profile?.target_state || profile?.location || (profile?.markets && profile?.markets.length > 0))
+        );
+
         let onboarded = !!(
           profile?.onboarding_completed_at || 
           profile?.onboarding_step === 'basic_complete' || 
           profile?.onboarding_step === 'deep_complete' ||
-          profile?.onboarding_version
+          profile?.onboarding_version ||
+          hasLegacyProfile  // Recognize legacy accounts as onboarded
         );
 
         // needsOnboarding = user has a role but hasn't completed onboarding (EXCEPT admins)
