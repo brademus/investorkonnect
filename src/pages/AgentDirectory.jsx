@@ -88,6 +88,33 @@ export default function AgentDirectory() {
         }
         
         const dealData = deals[0];
+        
+        // Check if deal already has an agent assigned
+        if (dealData.agent_id) {
+          toast.error("This deal is already assigned to an agent");
+          
+          // Try to find the existing room
+          try {
+            const roomsResponse = await base44.functions.invoke('listMyRooms');
+            const rooms = roomsResponse.data?.items || [];
+            
+            const existingRoom = rooms.find(room => 
+              room.deal_id === dealData.id && 
+              (room.agentId === dealData.agent_id || room.counterparty_profile?.id === dealData.agent_id)
+            );
+            
+            if (existingRoom) {
+              navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`, { replace: true });
+            } else {
+              navigate(createPageUrl("Dashboard"), { replace: true });
+            }
+          } catch (roomError) {
+            console.error("Failed to find room:", roomError);
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          }
+          return;
+        }
+        
         setDeal(dealData);
         
         // Set location filter based on deal state
