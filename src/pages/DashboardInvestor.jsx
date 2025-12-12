@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { SetupChecklist } from "@/components/SetupChecklist";
@@ -16,32 +17,18 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
-function InvestorDashboardContent({ profile: propProfile }) {
+function InvestorDashboardContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [profile, setProfile] = useState(propProfile);
+  const { profile, loading: profileLoading } = useCurrentProfile();
   const [recentMessages, setRecentMessages] = useState([]);
   const [suggestedAgents, setSuggestedAgents] = useState([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   const [showAllAgents, setShowAllAgents] = useState(false);
   
-  // Sync profile if prop changes
-  useEffect(() => {
-    if (propProfile) setProfile(propProfile);
-  }, [propProfile]);
-  
   // Load Rooms (Standard Hook) - Show cached data immediately
   const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
-
-  // Load Profile in background - don't block UI
-  useEffect(() => {
-    if (profile) return;
-    base44.auth.me()
-      .then(user => user && base44.entities.Profile.filter({ user_id: user.id }))
-      .then(profiles => profiles?.[0] && setProfile(profiles[0]))
-      .catch(err => console.error("Profile load error", err));
-  }, [profile]);
 
   // Load investor deals - INSTANT with aggressive caching
   const { data: investorDeals = [], isLoading: dealsLoading } = useQuery({
@@ -246,7 +233,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   };
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
-  const isLoading = (roomsLoading || dealsLoading) && rooms.length === 0;
+  const isLoading = (profileLoading || roomsLoading || dealsLoading) && rooms.length === 0;
 
   return (
     <>
@@ -559,11 +546,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
   );
 }
 
-export default function DashboardInvestor({ profile }) {
+export default function DashboardInvestor() {
   return (
     <AuthGuard requireAuth={true}>
       <ErrorBoundary>
-        <InvestorDashboardContent profile={profile} />
+        <InvestorDashboardContent />
       </ErrorBoundary>
     </AuthGuard>
   );
