@@ -272,7 +272,12 @@ Deno.serve(async (req) => {
         region: targetState
       }));
       
-      return Response.json({ ok: true, results, total: matchedAgents.length });
+      return Response.json({ 
+        ok: true, 
+        results, 
+        total: matchedAgents.length,
+        countySpecific: county ? results.filter(r => r.score >= 1.0).length : 0
+      });
     }
 
     // --- OLD LOGIC BELOW (Only used if no state provided) ---
