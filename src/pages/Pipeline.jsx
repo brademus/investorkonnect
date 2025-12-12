@@ -177,8 +177,7 @@ function PipelineContent() {
     }
   };
 
-  const handleStageChange = async (dealId, newStage, e) => {
-    e.stopPropagation();
+  const handleStageChange = async (dealId, newStage) => {
     try {
       await base44.entities.Deal.update(dealId, {
         pipeline_stage: newStage
