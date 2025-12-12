@@ -20,6 +20,7 @@ Deno.serve(async (req) => {
     // Parse request body
     const body = await req.json().catch(() => ({}));
     const limit = Math.max(1, Math.min(Number(body.limit || 10), 50));
+    const county = body.county || null;
     
     // Get investor profile ID
     let investorProfileId = body.investorProfileId;
@@ -130,33 +131,48 @@ Deno.serve(async (req) => {
 
       console.log(`[matchAgentsForInvestor] Aggregated ${allAgents.length} potential agents for matching`);
       
-      const matchedAgents = allAgents.filter(agent => {
-        // Collect all agent location indicators (including legacy top-level fields)
+      // First, filter by state
+      let matchedAgents = allAgents.filter(agent => {
         const locations = [
           agent.target_state,
-          agent.license_state, // Legacy top-level
+          agent.license_state,
           ...(agent.markets || []),
           agent.agent?.license_state,
           ...(agent.agent?.licensed_states || []),
           ...(agent.agent?.markets || [])
         ].filter(Boolean).map(s => s.trim().toUpperCase());
         
-        // Check for matches
         return locations.some(loc => {
-           // 1. Direct match against Name or Code
            if (targetCode && loc === targetCode) return true;
            if (targetName && loc === targetName) return true;
-           
-           // 2. Check if loc *contains* the full name (e.g. "WISCONSIN, USA" matches "WISCONSIN")
            if (targetName && loc.includes(targetName)) return true;
-
-           // 3. Code logic: Only strict match for codes usually, but "WI" in "WI, USA" is okay
-           // If loc is exactly length 2, it must match code
            if (targetCode && loc.length === 2 && loc === targetCode) return true;
-           
            return false;
         });
       });
+      
+      console.log(`[matchAgentsForInvestor] State match: ${matchedAgents.length} agents`);
+      
+      // If county provided, try to filter further
+      if (county && matchedAgents.length > 0) {
+        const countyUpper = county.trim().toUpperCase();
+        const countyMatches = matchedAgents.filter(agent => {
+          const counties = [
+            ...(agent.agent?.counties || []),
+            ...(agent.agent?.service_counties || [])
+          ].filter(Boolean).map(c => c.trim().toUpperCase());
+          
+          return counties.some(c => c.includes(countyUpper) || countyUpper.includes(c));
+        });
+        
+        // If we found county matches, use them; otherwise keep state matches
+        if (countyMatches.length > 0) {
+          console.log(`[matchAgentsForInvestor] County match: ${countyMatches.length} agents in ${county}`);
+          matchedAgents = countyMatches;
+        } else {
+          console.log(`[matchAgentsForInvestor] No county matches, using state-only results`);
+        }
+      }
       
       console.log(`[matchAgentsForInvestor] Found ${matchedAgents.length} agents in ${targetState}`);
       
