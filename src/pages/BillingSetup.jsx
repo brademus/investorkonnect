@@ -41,7 +41,16 @@ export default function BillingSetup() {
   const loadProfile = async () => {
     try {
       const user = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ created_by: user.email });
+      
+      // Canonical profile lookup: try email first, fallback to user_id
+      let profiles = await base44.entities.Profile.filter({ 
+        email: user.email.toLowerCase().trim()
+      });
+      
+      if (profiles.length === 0) {
+        profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      }
+      
       if (profiles.length > 0 && profiles[0].role === "admin") {
         setProfile(profiles[0]);
       } else {
