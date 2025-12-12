@@ -4,7 +4,10 @@ Deno.serve(async (req) => {
     try {
         const base44 = createClientFromRequest(req);
         const body = await req.json();
-        const { deal_id, agent_id } = body;
+        const { deal_id, agent_id, counterparty_profile_id } = body;
+        
+        // Accept both agent_id and counterparty_profile_id for backward compatibility
+        const agentProfileId = agent_id || counterparty_profile_id;
 
         const user = await base44.auth.me();
         if (!user) {
@@ -28,30 +31,36 @@ Deno.serve(async (req) => {
             return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
         }
 
+        if (!agentProfileId) {
+            return Response.json({ error: 'Agent ID required' }, { status: 400 });
+        }
+
         // Check if room already exists for this deal + agent
         const existingRooms = await base44.entities.Room.filter({
             deal_id: deal_id,
             investorId: investorProfile.id,
-            agentId: agent_id
+            agentId: agentProfileId
         });
 
-        let roomId;
+        let room;
         if (existingRooms.length > 0) {
-            roomId = existingRooms[0].id;
+            room = existingRooms[0];
         } else {
-            const newRoom = await base44.entities.Room.create({
+            room = await base44.entities.Room.create({
                 investorId: investorProfile.id,
-                agentId: agent_id,
+                agentId: agentProfileId,
                 deal_id: deal_id,
                 ndaAcceptedInvestor: false,
                 ndaAcceptedAgent: false
             });
-            roomId = newRoom.id;
         }
 
         return Response.json({ 
             ok: true, 
-            room_id: roomId 
+            room: {
+                id: room.id,
+                ...room
+            }
         });
 
     } catch (error) {
