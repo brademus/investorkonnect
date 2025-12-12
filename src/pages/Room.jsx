@@ -7,7 +7,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
 import { useRooms } from "@/components/useRooms";
 import { useQueryClient } from "@tanstack/react-query";
-import { getOrCreateDealRoom } from "@/utils/dealRooms";
+import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
