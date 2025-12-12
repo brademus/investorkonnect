@@ -216,7 +216,5 @@ export function useRooms() {
       }
     },
     initialData: [],
-    refetchOnWindowFocus: false,
-    refetchOnMount: 'always',
   });
 }
