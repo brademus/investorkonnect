@@ -114,14 +114,20 @@ export default function Room() {
         const deal = deals[0];
         if (!deal.agent_id) return; // No agent assigned yet, allow access
         
+        // Compute robust room agent ID from multiple sources
+        const roomAgentProfileId = 
+          currentRoom.agentId ||
+          (currentRoom.counterparty_role === 'agent' ? currentRoom.counterparty_profile?.id : null) ||
+          null;
+        
         // Check if current room's agent matches the deal's assigned agent
-        if (currentRoom.agentId && currentRoom.agentId !== deal.agent_id) {
+        if (roomAgentProfileId && roomAgentProfileId !== deal.agent_id) {
           toast.error("This deal is locked to a different agent");
           
           // Find the correct room for this deal + assigned agent
           const correctRoom = rooms.find(r => 
             (r.deal_id === dealId || r.suggested_deal_id === dealId) && 
-            r.agentId === deal.agent_id
+            (r.agentId === deal.agent_id || r.counterparty_profile?.id === deal.agent_id)
           );
           
           if (correctRoom) {
