@@ -6,6 +6,7 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
 import { useRooms } from "@/components/useRooms";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
@@ -14,6 +15,7 @@ import {
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
+import { toast } from "sonner";
 
 // Use shared rooms hook for consistency across pages
 function useMyRooms() {
@@ -82,6 +84,7 @@ export default function Room() {
   const { profile } = useCurrentProfile();
   const { rooms } = useMyRooms();
   const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
+  const queryClient = useQueryClient();
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -89,6 +92,7 @@ export default function Room() {
   const [showEscrow, setShowEscrow] = useState(false);
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
+  const [lockingIn, setLockingIn] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
@@ -126,24 +130,36 @@ export default function Room() {
 
   const handleLockIn = async () => {
     const dealId = currentRoom?.deal_id || currentRoom?.suggested_deal_id;
-    if (!dealId || !roomId) return;
+    if (!dealId || !roomId || lockingIn) return;
     
+    setLockingIn(true);
     try {
-      // Call the specialized lock-in function that handles cleanup of other rooms
       const response = await base44.functions.invoke('lockInDealAgent', { 
         room_id: roomId, 
         deal_id: dealId
       });
       
       if (response.data?.success) {
-        // Clear all cached data and force full refresh
+        toast.success(`Agent locked in! ${response.data.agentName || 'Agent'} is now your dedicated agent.`);
+        
+        // Clear cached data
         sessionStorage.clear();
-        queryClient.clear();
-        window.location.href = createPageUrl("Dashboard");
+        
+        // Invalidate relevant queries
+        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+        await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+        
+        // Navigate to dashboard
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      } else {
+        toast.error("Failed to lock in agent. Please try again.");
       }
     } catch (error) {
       console.error("Failed to lock in agent:", error);
-      alert("Failed to lock in agent. Please try again.");
+      toast.error("Failed to lock in agent. Please try again.");
+    } finally {
+      setLockingIn(false);
     }
   };
 
@@ -288,9 +304,17 @@ export default function Room() {
              currentRoom?.deal_assigned_agent_id !== currentRoom?.agentId && (
               <Button
                 onClick={handleLockIn}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5"
+                disabled={lockingIn}
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Lock in this agent
+                {lockingIn ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Locking in...
+                  </>
+                ) : (
+                  'Lock in this agent'
+                )}
               </Button>
             )}
             
