@@ -64,8 +64,11 @@ function normalizeRoom(room) {
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
-    staleTime: 30000, // Cache for 30 seconds - show cached data immediately
-    cacheTime: 300000, // Keep in cache for 5 minutes
+    staleTime: Infinity, // Never auto-refetch - show cached data instantly
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
     queryFn: async () => {
       try {
         // 1. Load from backend function listMyRooms

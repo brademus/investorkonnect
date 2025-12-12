@@ -30,16 +30,13 @@ function InvestorDashboardContent({ profile: propProfile }) {
     if (propProfile) setProfile(propProfile);
   }, [propProfile]);
   
-  // Load Rooms (Standard Hook)
+  // Load Rooms (Standard Hook) - Show cached data immediately
   const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
-  // Ensure rooms is always an array
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
-
-  // Removed aggressive refetch - useRooms now handles caching properly
 
   // Load Profile (Fallback if not provided by prop)
   useEffect(() => {
-    if (profile) return; // Skip if already have profile
+    if (profile) return;
     const loadProfile = async () => {
       try {
         const user = await base44.auth.me();
@@ -53,22 +50,23 @@ function InvestorDashboardContent({ profile: propProfile }) {
     loadProfile();
   }, [profile]);
 
-  // Load investor deals directly to determine orphan status
-  const { data: investorDeals = [] } = useQuery({
+  // Load investor deals - INSTANT with aggressive caching
+  const { data: investorDeals = [], isLoading: dealsLoading } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const deals = await base44.entities.Deal.filter({ 
-        investor_id: profile.id,
-        status: 'active'
+        investor_id: profile.id
       });
       return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    staleTime: 30000,
-    cacheTime: 300000,
+    staleTime: Infinity, // Never consider stale - show cached data instantly
+    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
     refetchOnMount: false,
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    initialData: [] // Show empty state immediately
   });
 
   // Orphan deal = deal without agent_id (source of truth from Deal entity)
@@ -158,67 +156,65 @@ function InvestorDashboardContent({ profile: propProfile }) {
     }
   };
 
-  // Messages - Show all active conversations (locked-in deals)
+  // Messages - Show rooms immediately, load message previews async
   useEffect(() => {
-    const fetchMessages = async () => {
-      try {
-        // Get active rooms (only locked-in deals with agents)
-        const activeRooms = rooms.filter(r => 
-          r.deal_id && 
-          !r.is_orphan && 
-          r.deal_assigned_agent_id &&
-          r.counterparty_name &&
-          r.counterparty_name !== 'Unknown'
-        );
-        
-        if (activeRooms.length === 0) {
-          setRecentMessages([]);
-          return;
-        }
-
-        // Show all active rooms with latest message preview
-        const messagePromises = activeRooms.slice(0, 3).map(async (room) => {
-          try {
-            const messages = await base44.entities.Message.filter(
-              { room_id: room.id },
-              '-created_date',
-              1
-            );
-            
-            return {
-              roomId: room.id,
-              senderName: room.counterparty_name,
-              dealTitle: room.property_address || room.title || room.deal_title,
-              preview: messages.length > 0 
-                ? messages[0].body?.substring(0, 50) || 'New message'
-                : 'Start conversation',
-              hasMessages: messages.length > 0,
-              timestamp: messages[0]?.created_date || room.created_date
-            };
-          } catch (err) {
-            console.warn(`Failed to load messages for room ${room.id}`, err);
-            // Still return the room even if messages fail to load
-            return {
-              roomId: room.id,
-              senderName: room.counterparty_name,
-              dealTitle: room.property_address || room.title || room.deal_title,
-              preview: 'Open chat',
-              hasMessages: false,
-              timestamp: room.created_date
-            };
-          }
-        });
-
-        const results = await Promise.all(messagePromises);
-        setRecentMessages(results);
-      } catch (err) {
-        console.warn("Failed to load messages", err);
-      }
-    };
+    const activeRooms = rooms.filter(r => 
+      r.deal_id && 
+      !r.is_orphan && 
+      r.deal_assigned_agent_id &&
+      r.counterparty_name &&
+      r.counterparty_name !== 'Unknown'
+    );
     
-    if (rooms.length > 0) {
-      fetchMessages();
+    if (activeRooms.length === 0) {
+      setRecentMessages([]);
+      return;
     }
+
+    // Show rooms IMMEDIATELY with placeholder previews
+    const immediateMessages = activeRooms.slice(0, 3).map(room => ({
+      roomId: room.id,
+      senderName: room.counterparty_name,
+      dealTitle: room.property_address || room.title || room.deal_title,
+      preview: 'Loading...',
+      hasMessages: false,
+      timestamp: room.created_date
+    }));
+    
+    setRecentMessages(immediateMessages);
+
+    // Load message previews in background
+    Promise.all(
+      activeRooms.slice(0, 3).map(async (room) => {
+        try {
+          const messages = await base44.entities.Message.filter(
+            { room_id: room.id },
+            '-created_date',
+            1
+          );
+          
+          return {
+            roomId: room.id,
+            senderName: room.counterparty_name,
+            dealTitle: room.property_address || room.title || room.deal_title,
+            preview: messages.length > 0 
+              ? messages[0].body?.substring(0, 50) || 'New message'
+              : 'Start conversation',
+            hasMessages: messages.length > 0,
+            timestamp: messages[0]?.created_date || room.created_date
+          };
+        } catch {
+          return {
+            roomId: room.id,
+            senderName: room.counterparty_name,
+            dealTitle: room.property_address || room.title || room.deal_title,
+            preview: 'Open chat',
+            hasMessages: false,
+            timestamp: room.created_date
+          };
+        }
+      })
+    ).then(results => setRecentMessages(results));
   }, [rooms]);
 
   // Stats - only count active/locked-in deals
@@ -253,15 +249,18 @@ function InvestorDashboardContent({ profile: propProfile }) {
     queryClient.invalidateQueries({ queryKey: ['rooms'] });
   };
 
-  if (!profile || roomsLoading) {
+  // Show UI immediately with loading states instead of blocking
+  const showLoading = !profile && roomsLoading;
+
+  const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
+
+  if (showLoading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
-
-  const firstName = profile.full_name?.split(' ')[0] || 'Investor';
 
   return (
     <>
