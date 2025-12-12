@@ -93,6 +93,7 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [lockingIn, setLockingIn] = useState(false);
+  const [showDealDetails, setShowDealDetails] = useState(false);
 
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
@@ -359,17 +360,30 @@ export default function Room() {
             )}
             
             {roomId && (
-              <Button
-                onClick={() => setShowBoard(!showBoard)}
-                className={`rounded-full font-semibold transition-all ${
-                  showBoard 
-                    ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                    : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                }`}
-              >
-                <FileText className="w-4 h-4 mr-2" />
-                Deal Board
-              </Button>
+              <>
+                <Button
+                  onClick={() => setShowDealDetails(!showDealDetails)}
+                  className={`rounded-full font-semibold transition-all ${
+                    showDealDetails 
+                      ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                      : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                  }`}
+                >
+                  <Info className="w-4 h-4 mr-2" />
+                  Details
+                </Button>
+                <Button
+                  onClick={() => setShowBoard(!showBoard)}
+                  className={`rounded-full font-semibold transition-all ${
+                    showBoard 
+                      ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                      : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                  }`}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Deal Board
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -415,7 +429,68 @@ export default function Room() {
         )}
 
         {/* Message Thread or Deal Board */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4">
+          {/* Deal Details Sidebar */}
+          {showDealDetails && currentRoom && (
+            <div className="w-80 flex-shrink-0 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 h-fit sticky top-6">
+              <h3 className="text-lg font-bold text-[#E3C567] mb-4 flex items-center gap-2">
+                <Info className="w-5 h-5" />
+                Deal Details
+              </h3>
+
+              <div className="space-y-3 text-sm">
+                <div>
+                  <label className="text-[#808080] text-xs uppercase tracking-wider">Property Address</label>
+                  <p className="text-[#FAFAFA] mt-1">{currentRoom.property_address || '—'}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[#808080] text-xs uppercase tracking-wider">City</label>
+                    <p className="text-[#FAFAFA] mt-1">{currentRoom.city || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-[#808080] text-xs uppercase tracking-wider">State</label>
+                    <p className="text-[#FAFAFA] mt-1">{currentRoom.state || '—'}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[#808080] text-xs uppercase tracking-wider">County</label>
+                    <p className="text-[#FAFAFA] mt-1">{currentRoom.county || '—'}</p>
+                  </div>
+                  <div>
+                    <label className="text-[#808080] text-xs uppercase tracking-wider">Zip Code</label>
+                    <p className="text-[#FAFAFA] mt-1">{currentRoom.zip || '—'}</p>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-[#808080] text-xs uppercase tracking-wider">Purchase Price</label>
+                  <p className="text-[#34D399] font-semibold mt-1">
+                    {currentRoom.budget ? `$${currentRoom.budget.toLocaleString()}` : '—'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[#808080] text-xs uppercase tracking-wider">Closing Date</label>
+                  <p className="text-[#FAFAFA] mt-1">
+                    {currentRoom.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : '—'}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="text-[#808080] text-xs uppercase tracking-wider">Pipeline Stage</label>
+                  <p className="text-[#FAFAFA] mt-1 capitalize">
+                    {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : '—'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className="flex-1 min-w-0">
           {showBoard ? (
             /* Deal Board View */
             <div className="space-y-6">
@@ -648,9 +723,10 @@ export default function Room() {
                 </>
               )}
               </div>
-            </div>
-          )}
-        </div>
+              </div>
+              )}
+              </div>
+              </div>
 
         {/* Message Input Area */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
