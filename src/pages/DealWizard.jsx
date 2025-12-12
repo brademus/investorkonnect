@@ -195,9 +195,15 @@ export default function DealWizard() {
 
   // STEP 2: Confirm and Navigate to Dashboard
   const handleConfirm = async () => {
-    if (!dealData.address || !dealData.purchasePrice) {
-      toast.error("Address and Purchase Price are required");
+    // State is required
+    if (!dealData.state) {
+      toast.error("State is required to continue");
       return;
+    }
+
+    // County missing: warning but allow save
+    if (!dealData.county) {
+      toast.warning("County is missing - this may limit agent matching accuracy");
     }
 
     setLoading(true);
