@@ -31,6 +31,7 @@ export default function AgentDirectory() {
   
   const [agents, setAgents] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deal, setDeal] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [locationFilter, setLocationFilter] = useState("all");
   const [specialtyFilter, setSpecialtyFilter] = useState("all");
@@ -65,32 +66,47 @@ export default function AgentDirectory() {
       return;
     }
 
-    // Redirect to Dashboard if they try to access AgentDirectory directly WITHOUT context
-    // The user requirement is: NO BROWSING. Only access via DealWizard/Dashboard match context.
-    
+    // REQUIRE dealId - no free browsing
     const params = new URLSearchParams(window.location.search);
-    const stateParam = params.get('state');
+    const dealId = params.get('dealId');
     
-    // Allow access if state param is present
-    if (stateParam) {
-      // Valid access
-      console.log('Accessing directory for state:', stateParam);
-      // Pre-filter by state
-      const stateMap = {
-        'AZ': 'arizona', 'TX': 'texas', 'FL': 'florida', 'CA': 'california'
-      };
-      const normalizedState = stateMap[stateParam] || stateParam.toLowerCase();
-      // Set the filter but don't force it if it's not in the list, just set search context maybe?
-      // Actually, let's try to set the dropdown if it matches
-      if (['arizona', 'texas', 'florida', 'california'].includes(normalizedState)) {
-          setLocationFilter(normalizedState);
-      }
+    if (!dealId) {
+      toast.info("Please start a deal to find matched agents");
+      navigate(createPageUrl("Dashboard"), { replace: true });
       return;
     }
 
-    toast.info("Please start a deal to find matched agents");
-    navigate(createPageUrl("Dashboard"), { replace: true });
-    return;
+    // Load deal data
+    const loadDeal = async () => {
+      try {
+        const deals = await base44.entities.Deal.filter({ id: dealId });
+        if (deals.length === 0) {
+          toast.error("Deal not found");
+          navigate(createPageUrl("Dashboard"), { replace: true });
+          return;
+        }
+        
+        const dealData = deals[0];
+        setDeal(dealData);
+        
+        // Set location filter based on deal state
+        if (dealData.state) {
+          const stateMap = {
+            'AZ': 'arizona', 'TX': 'texas', 'FL': 'florida', 'CA': 'california'
+          };
+          const normalizedState = stateMap[dealData.state] || dealData.state.toLowerCase();
+          if (['arizona', 'texas', 'florida', 'california'].includes(normalizedState)) {
+            setLocationFilter(normalizedState);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load deal:", error);
+        toast.error("Failed to load deal");
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
+    };
+
+    loadDeal();
   }, [profileLoading, user, profile, role, onboarded]);
 
   const loadAgents = async () => {
@@ -112,18 +128,10 @@ export default function AgentDirectory() {
   };
 
   useEffect(() => {
-    if (!profileLoading && user && profile && (role === 'investor' || role === 'admin') && onboarded) {
-       // Check redirect logic first
-       const params = new URLSearchParams(window.location.search);
-       const stateParam = params.get('state');
-       if (stateParam) {
-         loadAgents();
-       } else {
-         // If no state param, we already redirected in the other useEffect. 
-         // But if we didn't redirect (e.g. race condition), ensure we don't load unnecessarily.
-       }
+    if (!profileLoading && user && profile && (role === 'investor' || role === 'admin') && onboarded && deal) {
+      loadAgents();
     }
-  }, [profileLoading, user, profile, role, onboarded]);
+  }, [profileLoading, user, profile, role, onboarded, deal]);
 
   const handleOpenRoom = async (agent) => {
     try {
@@ -182,9 +190,13 @@ export default function AgentDirectory() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
         <header className="mb-6">
-          <h1 className="text-2xl font-bold text-[#FAFAFA]">Agent Directory</h1>
+          <h1 className="text-2xl font-bold text-[#FAFAFA]">
+            {deal ? `Find Agent for ${deal.property_address || 'Your Deal'}` : 'Agent Directory'}
+          </h1>
           <p className="mt-1 text-sm text-[#A3A3A3]">
-            Browse verified, investor-friendly agents in your target markets
+            {deal && deal.city && deal.state 
+              ? `Showing verified agents in ${deal.county || deal.city}, ${deal.state}`
+              : 'Browse verified, investor-friendly agents'}
           </p>
         </header>
 
@@ -350,8 +362,9 @@ export default function AgentDirectory() {
                     <div className="flex gap-2 pt-3 border-t border-gray-100">
                       <button
                         onClick={() => {
-                          console.log("Navigating to agent:", agent.id);
-                          navigate(`/AgentProfile?id=${agent.id}`);
+                          const params = new URLSearchParams(window.location.search);
+                          const dealId = params.get('dealId');
+                          navigate(`/AgentProfile?id=${agent.id}${dealId ? `&dealId=${dealId}` : ''}`);
                         }}
                         className="flex-1 h-9 text-sm font-medium border border-[#1F1F1F] rounded-lg flex items-center justify-center gap-1.5 hover:bg-[#1A1A1A] transition-colors"
                       >

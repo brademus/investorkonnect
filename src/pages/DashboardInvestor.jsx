@@ -321,9 +321,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
                    </div>
 
                    <Button 
-                     onClick={() => navigate(createPageUrl("AgentDirectory"), { 
-                       state: { dealId: orphanDeal.id } 
-                     })}
+                     onClick={() => navigate(`${createPageUrl("AgentDirectory")}?dealId=${orphanDeal.id}`)}
                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
                    >
                      Choose Agent <Sparkles className="w-4 h-4 ml-2" />
