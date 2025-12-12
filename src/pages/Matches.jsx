@@ -24,7 +24,7 @@ function MatchesContent() {
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
-      <LoadingAnimation className="w-64 h-64" />
+      <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
     </div>
   );
 }
