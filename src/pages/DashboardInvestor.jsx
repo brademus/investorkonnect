@@ -16,6 +16,8 @@ import {
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import { requireInvestorSetup } from "@/components/requireInvestorSetup";
+import { toast } from "sonner";
 
 function InvestorDashboardContent() {
   const navigate = useNavigate();
@@ -336,7 +338,15 @@ function InvestorDashboardContent() {
                      Upload a contract to automatically extract details and match with top agents.
                    </p>
                    <Button 
-                     onClick={() => navigate(createPageUrl("DealWizard"))}
+                     onClick={async () => {
+                       const check = await requireInvestorSetup({ profile });
+                       if (!check.ok) {
+                         toast.error(check.message);
+                         navigate(createPageUrl(check.redirectTo));
+                         return;
+                       }
+                       navigate(createPageUrl("DealWizard"));
+                     }}
                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold mt-auto"
                    >
                      <Sparkles className="w-4 h-4 mr-2" /> Start Deal Wizard

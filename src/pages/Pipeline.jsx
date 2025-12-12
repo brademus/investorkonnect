@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
+import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -239,7 +240,15 @@ function PipelineContent() {
                   {deduplicating ? 'Checking...' : 'Fix Duplicates'}
                 </Button>
                 <Button 
-                  onClick={() => navigate(createPageUrl("DealWizard"))}
+                  onClick={async () => {
+                    const check = await requireInvestorSetup({ profile });
+                    if (!check.ok) {
+                      toast.error(check.message);
+                      navigate(createPageUrl(check.redirectTo));
+                      return;
+                    }
+                    navigate(createPageUrl("DealWizard"));
+                  }}
                   className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
                 >
                   <Plus className="w-4 h-4 mr-2" /> New Deal

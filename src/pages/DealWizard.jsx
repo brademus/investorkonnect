@@ -15,6 +15,7 @@ import {
   CheckCircle, DollarSign 
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { requireInvestorSetup } from '@/components/requireInvestorSetup';
 
 const STEPS = [
   { id: 1, title: 'Upload Contract', icon: UploadCloud },
@@ -49,6 +50,20 @@ export default function DealWizard() {
       loadExistingDeal(dealId);
     }
   }, [dealId]);
+
+  // Check setup requirements on mount (prevents deep-link bypass)
+  useEffect(() => {
+    const checkSetup = async () => {
+      if (!profileLoading && profile) {
+        const check = await requireInvestorSetup({ profile });
+        if (!check.ok) {
+          toast.error(check.message);
+          navigate(createPageUrl(check.redirectTo), { replace: true });
+        }
+      }
+    };
+    checkSetup();
+  }, [profileLoading, profile, navigate]);
 
   const loadExistingDeal = async (id) => {
     try {
