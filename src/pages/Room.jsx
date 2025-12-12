@@ -514,11 +514,12 @@ export default function Room() {
                     { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
                     { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
                     { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
+                    { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
                     { id: 'clear_to_close_closed', label: 'Clear to Close', color: '#34D399' }
                   ].map((stage, idx) => {
                     const isActive = currentRoom?.pipeline_stage === stage.id;
                     const isPast = [
-                      'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'clear_to_close_closed'
+                      'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
                     ].indexOf(currentRoom?.pipeline_stage) > idx;
                     
                     return (
