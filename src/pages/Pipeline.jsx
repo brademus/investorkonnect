@@ -11,13 +11,14 @@ import {
   Clock, CheckSquare, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 function PipelineContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [deduplicating, setDeduplicating] = useState(false);
 
-  // 1. Load Profile and deduplicate on mount
+  // 1. Load Profile (removed auto-dedup)
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -25,15 +26,6 @@ function PipelineContent() {
         if (user) {
           const res = await base44.entities.Profile.filter({ user_id: user.id });
           setProfile(res[0]);
-          
-          // Auto-deduplicate deals on load
-          setDeduplicating(true);
-          try {
-            await base44.functions.invoke('deduplicateDeals');
-          } catch (e) {
-            console.error("Deduplication error", e);
-          }
-          setDeduplicating(false);
         }
       } catch (e) {
         console.error("Profile load error", e);
@@ -41,6 +33,25 @@ function PipelineContent() {
     };
     fetchProfile();
   }, []);
+
+  // Manual dedup handler
+  const handleDedup = async () => {
+    if (!profile?.id) return;
+    setDeduplicating(true);
+    try {
+      const response = await base44.functions.invoke('deduplicateDeals');
+      if (response.data?.deletedCount > 0) {
+        alert(`Removed ${response.data.deletedCount} duplicate deals`);
+        refetchDeals();
+      } else {
+        alert('No duplicates found');
+      }
+    } catch (e) {
+      console.error("Deduplication error", e);
+      alert('Failed to check for duplicates');
+    }
+    setDeduplicating(false);
+  };
 
   // 2. Load Active Deals (Source of Truth)
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
@@ -160,11 +171,22 @@ function PipelineContent() {
 
   const handleDealClick = (deal) => {
     if (deal.is_orphan) {
-      // Go back to wizard to finish setup/matching
       navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
     } else {
-      // Go to deal room
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+    }
+  };
+
+  const handleStageChange = async (dealId, newStage, e) => {
+    e.stopPropagation();
+    try {
+      await base44.entities.Deal.update(dealId, {
+        pipeline_stage: newStage
+      });
+      refetchDeals();
+    } catch (error) {
+      console.error('Failed to update stage:', error);
+      alert('Failed to update stage');
     }
   };
 
@@ -218,12 +240,23 @@ function PipelineContent() {
                 </Link>
                 <h1 className="text-3xl font-bold text-[#E3C567]">Deal Pipeline</h1>
               </div>
-              <Button 
-                onClick={() => navigate(createPageUrl("DealWizard"))}
-                className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
-              >
-                <Plus className="w-4 h-4 mr-2" /> New Deal
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button 
+                  onClick={handleDedup}
+                  variant="outline"
+                  size="sm"
+                  disabled={deduplicating}
+                  className="text-xs"
+                >
+                  {deduplicating ? 'Checking...' : 'Fix Duplicates'}
+                </Button>
+                <Button 
+                  onClick={() => navigate(createPageUrl("DealWizard"))}
+                  className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
+                >
+                  <Plus className="w-4 h-4 mr-2" /> New Deal
+                </Button>
+              </div>
             </div>
 
             {/* Kanban Grid */}
@@ -251,47 +284,72 @@ function PipelineContent() {
                         stageDeals.map(deal => (
                           <div 
                            key={deal.id}
-                           onClick={() => handleDealClick(deal)}
-                           className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] cursor-pointer group transition-all"
+                           className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transition-all"
                           >
-                           <div className="flex justify-between items-start mb-2">
-                             <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                               {deal.property_address}
-                             </h4>
-                             <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
-                               {getDaysInPipeline(deal.created_date)}
-                             </span>
-                           </div>
-
-                           <div className="flex items-center gap-2 mb-3">
-                             <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
-                               {formatCurrency(deal.budget)}
-                             </span>
-                             {deal.is_orphan && (
-                               <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
-                             )}
-                           </div>
-
-                           <div className="flex flex-col gap-2">
-                             <div className="flex items-center gap-1 text-xs text-[#666]">
-                               <Home className="w-3 h-3" />
-                               <span>{deal.city}, {deal.state}</span>
+                           <div 
+                             onClick={() => handleDealClick(deal)}
+                             className="cursor-pointer"
+                           >
+                             <div className="flex justify-between items-start mb-2">
+                               <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
+                                 {deal.property_address}
+                               </h4>
+                               <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
+                                 {getDaysInPipeline(deal.created_date)}
+                               </span>
                              </div>
 
-                             {!deal.is_orphan && deal.customer_name && (
-                               <div className="text-xs text-[#10B981] flex items-center gap-1">
-                                 <CheckCircle className="w-3 h-3" />
-                                 <span>{deal.customer_name}</span>
-                               </div>
-                             )}
+                             <div className="flex items-center gap-2 mb-3">
+                               <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
+                                 {formatCurrency(deal.budget)}
+                               </span>
+                               {deal.is_orphan && (
+                                 <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
+                               )}
+                             </div>
 
-                             {deal.open_tasks > 0 && (
-                               <div className="flex items-center gap-1 text-[#E3C567] text-xs">
-                                 <CheckSquare className="w-3 h-3" />
-                                 <span>{deal.open_tasks} tasks</span>
+                             <div className="flex flex-col gap-2 mb-3">
+                               <div className="flex items-center gap-1 text-xs text-[#666]">
+                                 <Home className="w-3 h-3" />
+                                 <span>{deal.city}, {deal.state}</span>
                                </div>
-                             )}
+
+                               {!deal.is_orphan && deal.customer_name && (
+                                 <div className="text-xs text-[#10B981] flex items-center gap-1">
+                                   <CheckCircle className="w-3 h-3" />
+                                   <span>{deal.customer_name}</span>
+                                 </div>
+                               )}
+
+                               {deal.open_tasks > 0 && (
+                                 <div className="flex items-center gap-1 text-[#E3C567] text-xs">
+                                   <CheckSquare className="w-3 h-3" />
+                                   <span>{deal.open_tasks} tasks</span>
+                                 </div>
+                               )}
+                             </div>
                            </div>
+
+                           {/* Stage selector */}
+                           <Select
+                             value={deal.pipeline_stage}
+                             onValueChange={(newStage) => handleStageChange(deal.id, newStage, { stopPropagation: () => {} })}
+                           >
+                             <SelectTrigger 
+                               className="h-7 text-xs bg-[#1A1A1A] border-[#1F1F1F]"
+                               onClick={(e) => e.stopPropagation()}
+                             >
+                               <SelectValue />
+                             </SelectTrigger>
+                             <SelectContent>
+                               <SelectItem value="new_deal_under_contract">New Deal</SelectItem>
+                               <SelectItem value="walkthrough_scheduled">Walkthrough</SelectItem>
+                               <SelectItem value="evaluate_deal">Evaluate</SelectItem>
+                               <SelectItem value="active_marketing">Marketing</SelectItem>
+                               <SelectItem value="cancelling_deal">Cancelling</SelectItem>
+                               <SelectItem value="clear_to_close_closed">Closed</SelectItem>
+                             </SelectContent>
+                           </Select>
                           </div>
                         ))
                       )}
