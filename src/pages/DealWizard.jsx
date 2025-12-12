@@ -122,8 +122,7 @@ export default function DealWizard() {
       
       // 2. Extract data from contract
       const extractRes = await base44.functions.invoke('extractContractData', {
-        file_url,
-        deal_id: null
+        fileUrl: file_url
       });
 
       let extractedData = {
@@ -136,16 +135,16 @@ export default function DealWizard() {
         closingDate: ''
       };
 
-      if (extractRes.data?.status === 'success' && extractRes.data.output) {
-        const extracted = extractRes.data.output;
+      if (extractRes.data?.success && extractRes.data.data) {
+        const extracted = extractRes.data.data;
         extractedData = {
-          address: extracted.property_address || extracted.address || '',
+          address: extracted.address || '',
           city: extracted.city || '',
           state: extracted.state || '',
           county: extracted.county || '',
-          zip: extracted.zip || extracted.zipCode || '',
-          purchasePrice: extracted.purchase_price || extracted.purchasePrice || '',
-          closingDate: extracted.closing_date || extracted.closingDate || ''
+          zip: extracted.zip || '',
+          purchasePrice: extracted.purchase_price || '',
+          closingDate: extracted.key_dates?.closing_date || ''
         };
         setDealData(extractedData);
       }
@@ -208,7 +207,8 @@ export default function DealWizard() {
 
     } catch (error) {
       console.error("Upload failed:", error);
-      toast.error("Upload failed. Please try again.");
+      const errorMsg = error?.response?.data?.error || error?.message || "Upload failed";
+      toast.error(`Upload failed: ${errorMsg}`);
     } finally {
       setProcessing(false);
     }
