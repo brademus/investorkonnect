@@ -32,7 +32,7 @@ function InvestorDashboardContent() {
   const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
-  // Load investor deals - INSTANT with aggressive caching
+  // Load investor deals - with smart caching and refresh capability
   const { data: investorDeals = [], isLoading: dealsLoading } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
@@ -43,12 +43,12 @@ function InvestorDashboardContent() {
       return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    staleTime: Infinity, // Never consider stale - show cached data instantly
+    staleTime: 60000, // 1 minute - allow refresh but show cached data
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
-    refetchOnMount: false,
+    refetchOnMount: true, // Refetch on mount to get latest data
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    initialData: [] // Show empty state immediately
+    placeholderData: [] // Show empty state immediately while loading
   });
 
   // Orphan deal = deal without agent_id (source of truth from Deal entity)
@@ -228,6 +228,7 @@ function InvestorDashboardContent() {
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['rooms'] });
     queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+    queryClient.refetchQueries({ queryKey: ['investorDeals', profile?.id] });
     refetchRooms();
   };
 
