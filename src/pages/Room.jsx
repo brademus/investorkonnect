@@ -195,8 +195,8 @@ export default function Room() {
         
         // Invalidate relevant queries
         await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-        await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+        await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+        await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
         
         // Navigate to dashboard
         navigate(createPageUrl("Dashboard"), { replace: true });

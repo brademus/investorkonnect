@@ -176,6 +176,7 @@ function PipelineContent() {
       
       // Invalidate Dashboard caches to update counts immediately
       queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       
       // Refetch local data

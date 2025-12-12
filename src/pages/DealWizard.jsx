@@ -200,9 +200,9 @@ export default function DealWizard() {
       }
 
       setDealId(currentDeal.id);
-      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
       setStep(2);
 
@@ -246,9 +246,9 @@ export default function DealWizard() {
         pipeline_stage: 'new_deal_under_contract'
       });
 
-      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
       
       toast.success("Deal saved successfully");
       
