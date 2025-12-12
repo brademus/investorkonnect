@@ -227,8 +227,8 @@ function InvestorDashboardContent() {
 
   const handleRefresh = () => {
     queryClient.invalidateQueries({ queryKey: ['rooms'] });
-    queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-    queryClient.refetchQueries({ queryKey: ['investorDeals', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['investorDeals', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id] });
     refetchRooms();
   };
 
