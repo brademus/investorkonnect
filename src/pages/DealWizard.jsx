@@ -76,10 +76,10 @@ export default function DealWizard() {
   };
 
   const parsePrice = (priceStr) => {
-    if (!priceStr) return 0;
+    if (!priceStr || priceStr.toString().trim() === '') return null;
     const cleanStr = priceStr.toString().replace(/[$,\s]/g, '');
     const num = parseFloat(cleanStr);
-    return isNaN(num) ? 0 : num;
+    return isNaN(num) ? null : num;
   };
 
   // STEP 1: Upload & Extract
