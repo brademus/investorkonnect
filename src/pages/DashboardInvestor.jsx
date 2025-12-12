@@ -102,8 +102,11 @@ function InvestorDashboardContent() {
       console.warn("Agent matching function failed, falling back to agent profiles", err);
       
       try {
-          // Fetch recent agent profiles
-          const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 50);
+          // Fetch all verified agent profiles
+          const allAgents = await base44.entities.Profile.filter({ 
+            user_role: 'agent',
+            kyc_status: 'approved'
+          }, '-created_date', 100);
           
           let filteredAgents = allAgents;
           
@@ -112,7 +115,9 @@ function InvestorDashboardContent() {
               const stateUpper = state.trim().toUpperCase();
               filteredAgents = allAgents.filter(agent => {
                   const markets = agent.agent?.markets || [];
-                  return markets.some(m => m.toUpperCase().includes(stateUpper));
+                  const targetState = agent.target_state || '';
+                  return markets.some(m => m.toUpperCase().includes(stateUpper)) || 
+                         targetState.toUpperCase() === stateUpper;
               });
           }
           
@@ -129,8 +134,14 @@ function InvestorDashboardContent() {
               }
           }
           
-          // Take top 3
-          setSuggestedAgents(filteredAgents.slice(0, 3));
+          // If still no matches, show top verified agents
+          if (filteredAgents.length === 0) {
+              filteredAgents = allAgents.slice(0, 3);
+          } else {
+              filteredAgents = filteredAgents.slice(0, 3);
+          }
+          
+          setSuggestedAgents(filteredAgents);
       } catch (fallbackErr) {
           console.error("Fallback query failed", fallbackErr);
           setSuggestedAgents([]);
