@@ -42,7 +42,16 @@ export async function requireInvestorSetup({ profile }) {
     missingFields.push('Target Market/State');
   }
 
-  // 4. NDA acceptance
+  // 4. KYC verification
+  if (profile.kyc_status !== 'approved') {
+    return {
+      ok: false,
+      redirectTo: 'Verify',
+      message: 'Complete identity verification before uploading a deal.'
+    };
+  }
+
+  // 5. NDA acceptance
   if (!profile.nda_accepted) {
     return {
       ok: false,
@@ -51,7 +60,7 @@ export async function requireInvestorSetup({ profile }) {
     };
   }
 
-  // 5. Onboarding completion
+  // 6. Onboarding completion
   const isOnboarded = !!(
     profile.onboarding_completed_at || 
     profile.onboarding_step === 'basic_complete' || 
