@@ -145,11 +145,33 @@ function PipelineContent() {
     });
   }, [dealsData, rooms]);
 
-  const handleDealClick = (deal) => {
+  const handleDealClick = async (deal) => {
     if (deal.is_orphan) {
       navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
-    } else {
+      return;
+    }
+    
+    // If room_id exists, navigate to it
+    if (deal.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+      return;
+    }
+    
+    // Otherwise, find or create the room for this deal + agent
+    try {
+      const response = await base44.functions.invoke('createDealRoom', {
+        counterparty_profile_id: deal.agent_id,
+        deal_id: deal.deal_id
+      });
+      
+      if (response.data?.room?.id) {
+        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
+      } else {
+        toast.error("Failed to open conversation");
+      }
+    } catch (error) {
+      console.error("Failed to create/find room:", error);
+      toast.error("Failed to open conversation");
     }
   };
 
