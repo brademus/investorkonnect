@@ -127,35 +127,61 @@ export default function Investors() {
         </div>
       </section>
 
-      {/* Interactive Map Section */}
+      {/* How It Works Section */}
       <section className="py-20 bg-[#0F0F0F] border-t border-[#333333]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <div className="inline-flex items-center gap-2 bg-[#E5C37F]/20 border border-[#E5C37F]/30 rounded-full px-4 py-2 mb-4">
-              <MapPin className="w-4 h-4 text-[#E5C37F]" />
-              <span className="text-sm font-semibold text-[#E5C37F]">Get Started</span>
-            </div>
             <h2 className="text-3xl md:text-4xl font-bold text-[#E5C37F] mb-4">
-              Select Your Investment Market
+              Get Started in 3 Simple Steps
             </h2>
             <p className="text-xl text-[#A6A6A6] max-w-2xl mx-auto">
-              Click on a state to begin your journey with verified agents in your target market
+              Connect with verified agents and close deals faster
             </p>
           </div>
 
-          <MapUSA onStateClick={handleStateClick} />
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="rounded-3xl border border-[#333333] bg-[#1A1A1A] p-8 text-center">
+              <div className="w-16 h-16 bg-[#E5C37F]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-[#E5C37F]">1</span>
+              </div>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Create Account</h3>
+              <p className="text-[#A6A6A6]">
+                Sign up and complete your investor profile to get matched with the right agents
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-[#333333] bg-[#1A1A1A] p-8 text-center">
+              <div className="w-16 h-16 bg-[#E5C37F]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-[#E5C37F]">2</span>
+              </div>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Browse Verified Agents</h3>
+              <p className="text-[#A6A6A6]">
+                View profiles, reviews, and track records of pre-vetted agents in your target markets
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-[#333333] bg-[#1A1A1A] p-8 text-center">
+              <div className="w-16 h-16 bg-[#E5C37F]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-[#E5C37F]">3</span>
+              </div>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Start Collaborating</h3>
+              <p className="text-[#A6A6A6]">
+                Connect securely with agents and manage deals in protected rooms with full audit trails
+              </p>
+            </div>
+          </div>
+
+          <div className="text-center mt-12">
+            <button 
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#E5C37F] to-[#C9A961] px-8 py-4 text-base font-semibold text-[#0F0F0F] shadow-lg shadow-[#E5C37F]/30 transition-all hover:from-[#F0D699] hover:to-[#D4AF37] hover:shadow-xl hover:-translate-y-0.5"
+              onClick={() => navigate(createPageUrl("Pricing"))}
+            >
+              Get Started Now
+              <ArrowRight className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </section>
-
-      {/* Location Popup */}
-      {popup && (
-        <LocationPopup
-          stateCode={popup.stateCode}
-          stateName={popup.stateName}
-          onClose={() => setPopup(null)}
-          onContinue={handleLocationContinue}
-        />
-      )}
 
       {/* Benefits */}
       <section className="py-20 bg-[#0F0F0F]">
