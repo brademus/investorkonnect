@@ -385,11 +385,11 @@ function InvestorDashboardContent() {
                 ) : (
                 <div className="space-y-2 flex-grow overflow-y-auto">
                     {[
-                        { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#FAFAFA]', icon: Plus, bg: 'bg-[#FAFAFA]/10' },
-                        { label: 'Walkthrough Scheduled', count: dealStats.walkthrough, color: 'text-[#60A5FA]', icon: Home, bg: 'bg-[#60A5FA]/10' },
-                        { label: 'Evaluate Deal', count: dealStats.evaluate, color: 'text-[#F59E0B]', icon: FileText, bg: 'bg-[#F59E0B]/10' },
-                        { label: 'Active Marketing', count: dealStats.marketing, color: 'text-[#DB2777]', icon: Users, bg: 'bg-[#DB2777]/10' },
-                        { label: 'Closed', count: dealStats.closed, color: 'text-[#34D399]', icon: DollarSign, bg: 'bg-[#34D399]/10' }
+                        { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#E3C567]', icon: Plus, bg: 'bg-[#E3C567]/10' },
+                        { label: 'Walkthrough Scheduled', count: dealStats.walkthrough, color: 'text-[#E3C567]', icon: Home, bg: 'bg-[#E3C567]/10' },
+                        { label: 'Evaluate Deal', count: dealStats.evaluate, color: 'text-[#E3C567]', icon: FileText, bg: 'bg-[#E3C567]/10' },
+                        { label: 'Active Marketing', count: dealStats.marketing, color: 'text-[#E3C567]', icon: Users, bg: 'bg-[#E3C567]/10' },
+                        { label: 'Closed', count: dealStats.closed, color: 'text-[#808080]', icon: DollarSign, bg: 'bg-[#808080]/10' }
                     ].map((stat, i) => (
                         <div key={i} className="flex items-center justify-between p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#333] transition-colors">
                             <div className="flex items-center gap-3">
@@ -517,7 +517,7 @@ function InvestorDashboardContent() {
                                 </p>
                                 <Button 
                                     variant="outline" 
-                                    className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567] hover:text-black rounded-full text-xs h-8 mb-2"
+                                    className="border-[#1F1F1F] text-[#808080] hover:bg-[#1F1F1F] hover:text-[#E3C567] hover:border-[#E3C567] rounded-full text-xs h-8 mb-2"
                                     onClick={() => setShowAllAgents(true)}
                                 >
                                     Show Agents from Other Areas
