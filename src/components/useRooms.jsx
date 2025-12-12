@@ -94,7 +94,15 @@ export function useRooms() {
         try {
             const user = await base44.auth.me();
             if (user) {
-                const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+                // Email-first profile lookup (matches useCurrentProfile pattern)
+                const emailLower = user.email.toLowerCase().trim();
+                let profiles = await base44.entities.Profile.filter({ email: emailLower });
+                
+                // Fallback to user_id if not found by email
+                if (!profiles || profiles.length === 0) {
+                  profiles = await base44.entities.Profile.filter({ user_id: user.id });
+                }
+                
                 if (profiles.length > 0) {
                     const myProfileId = profiles[0].id;
                     
@@ -197,7 +205,15 @@ export function useRooms() {
         const user = await base44.auth.me();
         let myProfileId = null;
         if (user) {
-          const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          // Email-first profile lookup (matches useCurrentProfile pattern)
+          const emailLower = user.email.toLowerCase().trim();
+          let profiles = await base44.entities.Profile.filter({ email: emailLower });
+          
+          // Fallback to user_id if not found by email
+          if (!profiles || profiles.length === 0) {
+            profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          }
+          
           if (profiles.length > 0) {
             myProfileId = profiles[0].id;
           }
