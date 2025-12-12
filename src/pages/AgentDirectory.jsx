@@ -323,7 +323,9 @@ export default function AgentDirectory() {
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredAgents.map((agent) => {
+              {filteredAgents.map((item) => {
+                const agent = item.profile || item; // Support both formats
+                const reason = item.reason; // Match reason from backend
                 const agentData = agent.agent || {};
                 const isVerified = agent.kyc_status === 'approved' || agent.verified || agent.vetted;
                 const isDemo = String(agent.id).startsWith('demo-');
@@ -358,6 +360,11 @@ export default function AgentDirectory() {
                             <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded">Demo</span>
                           )}
                         </div>
+                        {reason && (
+                          <p className="text-xs text-[#D3A029] mt-0.5 line-clamp-1">
+                            {reason}
+                          </p>
+                        )}
                         <p className="text-xs text-[#A3A3A3] flex items-center gap-1 mt-0.5">
                           <MapPin className="w-3 h-3" />
                           {agent.markets?.[0] || agentData.markets?.[0] || agent.target_state || 'Location TBD'}
