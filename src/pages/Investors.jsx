@@ -15,22 +15,6 @@ import {
  */
 export default function Investors() {
   const navigate = useNavigate();
-  const [popup, setPopup] = useState(null);
-
-  const handleStateClick = (stateCode, stateName) => {
-    setPopup({ stateCode, stateName });
-  };
-
-  const handleLocationContinue = ({ state, stateName, county, city }) => {
-    const params = new URLSearchParams();
-    params.set('state', state);
-    params.set('stateName', stateName);
-    if (county) params.set('county', county);
-    if (city) params.set('city', city);
-
-    // Redirect to role selection with location context
-    navigate(`${createPageUrl("RoleSelection")}?${params.toString()}`);
-  };
 
   const benefits = [
     {
