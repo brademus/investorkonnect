@@ -135,10 +135,7 @@ export default function Room() {
           } else {
             navigate(createPageUrl("Dashboard"), { replace: true });
           }
-          }
-          } catch (error) {
-          console.error("Failed to check deal lock-in:", error);
-          }
+        }
       } catch (error) {
         console.error("Failed to check deal lock-in:", error);
       }
