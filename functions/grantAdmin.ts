@@ -9,13 +9,22 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Find user's profile
-    const profiles = await base44.asServiceRole.entities.Profile.filter({ 
+    // Find user's profile by email OR user_id
+    let profiles = await base44.asServiceRole.entities.Profile.filter({ 
       email: user.email.toLowerCase().trim() 
     });
     
     if (!profiles || profiles.length === 0) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
+      profiles = await base44.asServiceRole.entities.Profile.filter({ 
+        user_id: user.id 
+      });
+    }
+    
+    if (!profiles || profiles.length === 0) {
+      return Response.json({ 
+        error: 'Profile not found',
+        debug: { email: user.email, user_id: user.id }
+      }, { status: 404 });
     }
 
     const profile = profiles[0];
