@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -10,13 +10,23 @@ import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin, Lo
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 function InvestorDocumentsContent() {
   const [searchTerm, setSearchTerm] = useState("");
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { profile, loading: profileLoading } = useCurrentProfile();
 
-  // 2. Fetch Deals (Dependent on Profile)
+  // Redirect if profile not found after loading
+  useEffect(() => {
+    if (!profileLoading && !profile) {
+      toast.error("Profile not found. Please complete setup.");
+      navigate(createPageUrl("PostAuth"), { replace: true });
+    }
+  }, [profileLoading, profile, navigate]);
+
+  // Fetch Deals (Dependent on Profile)
   const { data: deals = [], isLoading: dealsLoading, refetch } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
