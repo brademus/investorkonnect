@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
+import { Toaster } from "@/components/ui/sonner";
 
 import { Shield, FileText, User, Settings, ShieldCheck } from "lucide-react";
 
@@ -134,10 +135,12 @@ function LayoutContent({ children }) {
         {children}
       </main>
 
+      {/* Sonner toast notifications */}
+      <Toaster />
 
-    </div>
-  );
-}
+      </div>
+      );
+      }
 
 export default function Layout({ children, currentPageName }) {
   return (
