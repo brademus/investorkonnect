@@ -28,11 +28,20 @@ export async function requireInvestorSetup({ profile }) {
   // This ensures the user completes major steps before being asked for minor profile details
 
   // 1. Onboarding completion (HIGHEST PRIORITY)
+  // Legacy account detection: if they have key profile fields filled, consider them onboarded
+  const hasLegacyProfile = !!(
+    profile.full_name && 
+    profile.phone && 
+    (profile.company || profile.investor?.company_name) &&
+    (profile.target_state || profile.location || (profile.markets && profile.markets.length > 0))
+  );
+
   const isOnboarded = !!(
     profile.onboarding_completed_at || 
     profile.onboarding_step === 'basic_complete' || 
     profile.onboarding_step === 'deep_complete' ||
-    profile.onboarding_version
+    profile.onboarding_version ||
+    hasLegacyProfile  // Consider legacy accounts with complete profiles as onboarded
   );
 
   if (!isOnboarded) {
