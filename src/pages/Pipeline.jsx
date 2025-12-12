@@ -332,7 +332,7 @@ function PipelineContent() {
                            {/* Stage selector */}
                            <Select
                              value={deal.pipeline_stage}
-                             onValueChange={(newStage) => handleStageChange(deal.id, newStage, { stopPropagation: () => {} })}
+                             onValueChange={(newStage) => handleStageChange(deal.id, newStage)}
                            >
                              <SelectTrigger 
                                className="h-7 text-xs bg-[#1A1A1A] border-[#1F1F1F]"
