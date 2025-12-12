@@ -112,13 +112,23 @@ export default function AgentDirectory() {
   const loadAgents = async () => {
     try {
       setLoading(true);
-      // Fetch all agents
-      const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
       
-      // If we have a location filter (e.g. from URL), apply it locally if needed, 
-      // but filteredAgents logic handles UI filtering.
-      // Just set the state.
-      setAgents(allAgents);
+      // If we have a deal, use matching to get recommended agents
+      if (deal) {
+        const response = await base44.functions.invoke('matchAgentsForInvestor', {
+          state: deal.state,
+          county: deal.county,
+          dealId: deal.id,
+          limit: 20
+        });
+        
+        const matchedAgents = response.data?.results?.map(r => r.profile) || [];
+        setAgents(matchedAgents);
+      } else {
+        // Fallback: Fetch all agents
+        const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+        setAgents(allAgents);
+      }
     } catch (error) {
       console.error("Failed to load agents:", error);
       toast.error("Failed to load agents");

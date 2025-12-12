@@ -78,12 +78,10 @@ function InvestorDashboardContent({ profile: propProfile }) {
       return;
     }
 
-    let state = null;
-    let dealId = null;
+    let state = orphanDeal.state;
+    let county = orphanDeal.county;
+    const dealId = orphanDeal.deal_id || orphanDeal.id;
 
-    // IMPORTANT: Use the actual deal_id, not the room id (which might be virtual_xxx)
-    dealId = orphanDeal.deal_id || orphanDeal.id;
-    state = orphanDeal.state;
     // Try extract state from address if missing
     if (!state && orphanDeal.property_address) {
         const parts = orphanDeal.property_address.split(',');
@@ -94,20 +92,19 @@ function InvestorDashboardContent({ profile: propProfile }) {
         }
     }
 
-    // If "Show All" is enabled, ignore state
+    // If "Show All" is enabled, ignore territory
     if (showAllAgents) {
-        loadSuggestedAgents(null, dealId);
+        loadSuggestedAgents(null, null, dealId);
     } else {
-        loadSuggestedAgents(state, dealId);
+        loadSuggestedAgents(state, county, dealId);
     }
   }, [orphanDeal?.id, showAllAgents]);
 
-  const loadSuggestedAgents = async (state, dealId) => {
+  const loadSuggestedAgents = async (state, county, dealId) => {
     setAgentsLoading(true);
     try {
-      // 1. Get matches (strict if state provided, broad if null)
       const response = await base44.functions.invoke('matchAgentsForInvestor', {
-        state, dealId, limit: 3
+        state, county, dealId, limit: 3
       });
       
       const agents = response.data?.results?.map(r => r.profile) || [];
@@ -116,26 +113,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
       console.warn("Agent matching function failed, falling back to direct query", err);
       
       try {
-          // Fallback: Direct frontend query for agents in this state
           if (state) {
-              // 1. Search by target_state
               const byTargetState = await base44.entities.Profile.filter({ target_state: state }, '-created_date', 10);
-              
-              // 2. Search by license_state (if backend supports nested query, otherwise this might fail gracefully or return empty)
-              let byLicense = [];
-              try {
-                  byLicense = await base44.entities.Profile.filter({ 'agent.license_state': state }, '-created_date', 10);
-              } catch (e) { console.log('Nested filter not supported'); }
-
-              // Combine unique agents
-              const combined = [...byTargetState, ...byLicense];
-              const uniqueAgents = Array.from(new Map(combined.map(item => [item.id, item])).values());
-              
-              // Filter to ensure they are actually agents
-              const validAgents = uniqueAgents.filter(p => 
+              const validAgents = byTargetState.filter(p => 
                   p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0)
               );
-
               setSuggestedAgents(validAgents);
           } else {
               setSuggestedAgents([]);
@@ -318,6 +300,11 @@ function InvestorDashboardContent({ profile: propProfile }) {
                            <span className="text-[#E3C567]">${orphanDeal.purchase_price.toLocaleString()}</span>
                          )}
                       </div>
+                      {!orphanDeal.county && (
+                        <p className="text-xs text-[#F59E0B] mt-2 flex items-center gap-1">
+                          ⚠️ County missing — open Deal Wizard to confirm details
+                        </p>
+                      )}
                    </div>
 
                    <Button 
@@ -492,13 +479,15 @@ function InvestorDashboardContent({ profile: propProfile }) {
                     <div className="flex-grow flex flex-col items-center justify-center text-center">
                         <p className="text-sm text-[#666] mb-2">
                            {orphanDeal 
-                             ? `No agents found in ${orphanDeal.state || 'this area'} yet.` 
+                             ? `No agents found in ${orphanDeal.county ? `${orphanDeal.county}, ${orphanDeal.state}` : orphanDeal.state || 'this area'} yet.` 
                              : 'No recommended agents right now.'}
                         </p>
                         {orphanDeal ? (
                             <>
                                 <p className="text-xs text-[#444] mb-4 max-w-[200px]">
-                                    We only show agents verified in the deal's market.
+                                    {orphanDeal.county 
+                                      ? 'We only show agents verified in your deal territory.'
+                                      : 'Add county in Deal Wizard for better matches.'}
                                 </p>
                                 <Button 
                                     variant="outline" 
