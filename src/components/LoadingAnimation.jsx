@@ -1,6 +1,6 @@
 import React from 'react';
 import Lottie from 'lottie-react';
-import animationData from './loading-animation-data.json';
+import animationData from './loading-animation-data.js';
 
 export default function LoadingAnimation({ className = "" }) {
 
