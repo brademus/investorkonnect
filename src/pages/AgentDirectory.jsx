@@ -99,7 +99,7 @@ export default function AgentDirectory() {
             const rooms = roomsResponse.data?.items || [];
             
             const existingRoom = rooms.find(room => 
-              room.deal_id === dealData.id && 
+              (room.deal_id === dealData.id || room.suggested_deal_id === dealData.id) && 
               (room.agentId === dealData.agent_id || room.counterparty_profile?.id === dealData.agent_id)
             );
             
