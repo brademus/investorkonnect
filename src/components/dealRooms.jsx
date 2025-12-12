@@ -1,5 +1,6 @@
 import { base44 } from "@/api/base44Client";
 import { listMyRooms, createDealRoom } from "@/components/functions";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 
 /**
  * Get or create a deal room for a specific deal + agent combination.
@@ -17,7 +18,7 @@ export async function getOrCreateDealRoom({ dealId, agentProfileId }) {
 
   // Check for existing room
   const roomsResponse = await listMyRooms();
-  const rooms = roomsResponse.data?.items || [];
+  const rooms = getRoomsFromListMyRoomsResponse(roomsResponse);
   
   const existingRoom = rooms.find(room => 
     (room.deal_id === dealId || room.suggested_deal_id === dealId) && 

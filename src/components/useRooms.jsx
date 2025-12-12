@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
+import { getRoomsFromListMyRoomsResponse } from '@/components/utils/getRoomsFromListMyRooms';
 
 /**
  * Enrich room with full profile data from matched counterparty
@@ -82,9 +83,7 @@ export function useRooms() {
         let dbRooms = [];
         try {
           const response = await base44.functions.invoke('listMyRooms');
-          if (response.data && response.data.items) {
-            dbRooms = response.data.items;
-          }
+          dbRooms = getRoomsFromListMyRoomsResponse(response);
         } catch (err) {
           console.log('[useRooms] Backend listMyRooms failed:', err.message);
         }

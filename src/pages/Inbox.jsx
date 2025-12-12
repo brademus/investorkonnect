@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { inboxList, introRespond, listMyRooms } from "@/components/functions";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -32,7 +33,7 @@ export default function Inbox() {
       
       // Load active rooms for both investors and agents
       const roomsRes = await listMyRooms({});
-      setRooms(roomsRes.data?.rooms || []);
+      setRooms(getRoomsFromListMyRoomsResponse(roomsRes));
       
       setLoading(false);
     } catch (error) {

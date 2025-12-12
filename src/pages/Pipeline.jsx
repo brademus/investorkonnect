@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { requireInvestorSetup } from "@/components/requireInvestorSetup";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -75,7 +76,7 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
-      return res.data?.items || [];
+      return getRoomsFromListMyRoomsResponse(res);
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: true,
