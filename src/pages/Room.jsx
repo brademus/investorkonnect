@@ -97,6 +97,46 @@ export default function Room() {
   const currentRoom = rooms.find(r => r.id === roomId) || null;
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
 
+  // Enforce agent lock-in: investor can't access other agent rooms once deal is assigned
+  useEffect(() => {
+    if (!currentRoom || !profile) return;
+    
+    const dealId = currentRoom.deal_id || currentRoom.suggested_deal_id;
+    if (!dealId || profile.user_role !== 'investor') return;
+    
+    // Load deal to check assigned agent
+    const checkLockIn = async () => {
+      try {
+        const deals = await base44.entities.Deal.filter({ id: dealId });
+        if (deals.length === 0) return;
+        
+        const deal = deals[0];
+        if (!deal.agent_id) return; // No agent assigned yet, allow access
+        
+        // Check if current room's agent matches the deal's assigned agent
+        if (currentRoom.agentId && currentRoom.agentId !== deal.agent_id) {
+          toast.error("This deal is locked to a different agent");
+          
+          // Find the correct room for this deal + assigned agent
+          const correctRoom = rooms.find(r => 
+            (r.deal_id === dealId || r.suggested_deal_id === dealId) && 
+            r.agentId === deal.agent_id
+          );
+          
+          if (correctRoom) {
+            navigate(`${createPageUrl("Room")}?roomId=${correctRoom.id}`, { replace: true });
+          } else {
+            navigate(createPageUrl("Dashboard"), { replace: true });
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check deal lock-in:", error);
+      }
+    };
+    
+    checkLockIn();
+  }, [currentRoom, profile, rooms, navigate]);
+
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
