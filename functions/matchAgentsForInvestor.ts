@@ -153,7 +153,7 @@ Deno.serve(async (req) => {
       
       console.log(`[matchAgentsForInvestor] State match: ${matchedAgents.length} agents`);
       
-      // County-aware ranking
+      // County-first ranking with detailed reasons
       let countyMatches = [];
       let stateOnlyMatches = [];
       
@@ -176,20 +176,39 @@ Deno.serve(async (req) => {
             c.split(' ').some(word => word === countyUpper)
           );
           
+          // Build reason string
+          let reason = '';
           if (isCountyMatch) {
-            countyMatches.push({ ...agent, _countyScore: 1.0 });
+            reason = `Serves ${county} County`;
+            if (agent.agent?.investor_experience_years > 0) {
+              reason += `, ${agent.agent.investor_experience_years}+ years with investors`;
+            }
           } else {
-            stateOnlyMatches.push({ ...agent, _countyScore: 0.7 });
+            reason = `Licensed in ${targetState}`;
+            if (agent.agent?.markets?.length > 0) {
+              reason += `, covers ${agent.agent.markets.slice(0, 2).join(', ')}`;
+            }
+          }
+          
+          if (isCountyMatch) {
+            countyMatches.push({ ...agent, _countyScore: 1.0, _reason: reason });
+          } else {
+            stateOnlyMatches.push({ ...agent, _countyScore: 0.7, _reason: reason });
           }
         });
         
         console.log(`[matchAgentsForInvestor] County-aware split: ${countyMatches.length} county matches, ${stateOnlyMatches.length} state-only`);
         
-        // Sort county matches first (verified + experience)
+        // Sort county matches: verified first, then by investor experience
         countyMatches.sort((a, b) => {
           const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
           const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
           if (verA !== verB) return verB - verA;
+          
+          const invExpA = a.agent?.investor_experience_years || 0;
+          const invExpB = b.agent?.investor_experience_years || 0;
+          if (invExpA !== invExpB) return invExpB - invExpA;
+          
           return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
         });
         
@@ -198,34 +217,58 @@ Deno.serve(async (req) => {
           const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
           const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
           if (verA !== verB) return verB - verA;
+          
+          const invExpA = a.agent?.investor_experience_years || 0;
+          const invExpB = b.agent?.investor_experience_years || 0;
+          if (invExpA !== invExpB) return invExpB - invExpA;
+          
           return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
         });
         
-        // Combine: county first, then fill remaining slots with state-only
-        const neededFromState = Math.max(0, limit - countyMatches.length);
-        matchedAgents = [...countyMatches, ...stateOnlyMatches.slice(0, neededFromState)];
-        
-        console.log(`[matchAgentsForInvestor] Final mix: ${countyMatches.length} county + ${Math.min(neededFromState, stateOnlyMatches.length)} state-only`);
+        // County-first strategy: prioritize county matches, fill remaining with state-only
+        if (countyMatches.length >= limit) {
+          // We have enough county matches
+          matchedAgents = countyMatches.slice(0, limit);
+          console.log(`[matchAgentsForInvestor] Using ${matchedAgents.length} county-specific agents`);
+        } else {
+          // Not enough county matches, fill with state-only
+          const neededFromState = limit - countyMatches.length;
+          matchedAgents = [...countyMatches, ...stateOnlyMatches.slice(0, neededFromState)];
+          console.log(`[matchAgentsForInvestor] Mixed: ${countyMatches.length} county + ${Math.min(neededFromState, stateOnlyMatches.length)} state-only`);
+        }
       } else {
-        // No county provided, sort by verification + experience only
+        // No county provided, sort by verification + investor experience + total experience
         matchedAgents.sort((a, b) => {
           const verA = a.agent?.verification_status === 'verified' ? 1 : 0;
           const verB = b.agent?.verification_status === 'verified' ? 1 : 0;
           if (verA !== verB) return verB - verA;
+          
+          const invExpA = a.agent?.investor_experience_years || 0;
+          const invExpB = b.agent?.investor_experience_years || 0;
+          if (invExpA !== invExpB) return invExpB - invExpA;
+          
           return (b.agent?.experience_years || 0) - (a.agent?.experience_years || 0);
         });
-        matchedAgents = matchedAgents.map(a => ({ ...a, _countyScore: 0.8 }));
+        
+        // Add reasons for state-only matches
+        matchedAgents = matchedAgents.map(a => {
+          let reason = `Licensed in ${targetState}`;
+          if (a.agent?.investor_experience_years > 0) {
+            reason += `, ${a.agent.investor_experience_years}+ years with investors`;
+          } else if (a.agent?.experience_years > 0) {
+            reason += `, ${a.agent.experience_years}+ years experience`;
+          }
+          return { ...a, _countyScore: 0.8, _reason: reason };
+        });
       }
       
-      console.log(`[matchAgentsForInvestor] Found ${matchedAgents.length} agents in ${targetState}${county ? ` (${county} county-aware)` : ''}`);
+      console.log(`[matchAgentsForInvestor] Final results: ${matchedAgents.length} agents in ${targetState}${county ? ` (${county} county-first)` : ''}`);
       
-      // Return top N with scores
+      // Return top N with scores and reasons
       const results = matchedAgents.slice(0, limit).map(agent => ({
         profile: agent,
         score: agent._countyScore || 0.8,
-        reason: agent._countyScore === 1.0 
-          ? `Serves ${county} County, ${targetState}` 
-          : `Licensed in ${targetState}`,
+        reason: agent._reason || `Licensed in ${targetState}`,
         region: targetState
       }));
       
