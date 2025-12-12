@@ -211,8 +211,8 @@ export default function AgentDirectory() {
 
       // Invalidate queries to refresh dashboard/pipeline
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      await queryClient.invalidateQueries({ queryKey: ['investorDeals'] });
-      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
 
       toast.success(`${agent.full_name} is now your agent for this deal!`);
       navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
