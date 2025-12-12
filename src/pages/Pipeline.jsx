@@ -5,7 +5,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
@@ -19,6 +19,7 @@ import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 
 function PipelineContent() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { profile, loading } = useCurrentProfile();
   const [deduplicating, setDeduplicating] = useState(false);
 
@@ -171,6 +172,12 @@ function PipelineContent() {
       await base44.entities.Deal.update(dealId, {
         pipeline_stage: newStage
       });
+      
+      // Invalidate Dashboard caches to update counts immediately
+      queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      
+      // Refetch local data
       refetchDeals();
     } catch (error) {
       console.error('Failed to update stage:', error);
