@@ -48,7 +48,8 @@ export default function AgentDirectory() {
     // After loading complete, check if user and profile exist
     if (!user || !profile) {
       toast.info("Please sign in to browse agents");
-      base44.auth.redirectToLogin(createPageUrl("AgentDirectory"));
+      const returnUrl = window.location.pathname + window.location.search;
+      base44.auth.redirectToLogin(returnUrl);
       return;
     }
 
