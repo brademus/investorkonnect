@@ -18,49 +18,16 @@ export async function requireInvestorSetup({ profile }) {
     };
   }
 
-  // Check required fields for investor setup
-  const missingFields = [];
-
-  // 1. Basic profile info
-  if (!profile.full_name || profile.full_name.trim() === '') {
-    missingFields.push('Full Name');
+  // ADMIN BYPASS: Admins can access everything
+  const isAdmin = profile.role === 'admin';
+  if (isAdmin) {
+    return { ok: true };
   }
 
-  if (!profile.phone || profile.phone.trim() === '') {
-    missingFields.push('Phone Number');
-  }
+  // Priority order: Onboarding → KYC → NDA → Profile Fields
+  // This ensures the user completes major steps before being asked for minor profile details
 
-  // 2. Company/Entity info
-  const hasCompany = profile.company || profile.investor?.company_name;
-  if (!hasCompany) {
-    missingFields.push('Company/Entity Name');
-  }
-
-  // 3. Target market/state
-  const hasMarket = profile.target_state || profile.location || (profile.markets && profile.markets.length > 0);
-  if (!hasMarket) {
-    missingFields.push('Target Market/State');
-  }
-
-  // 4. KYC verification
-  if (profile.kyc_status !== 'approved') {
-    return {
-      ok: false,
-      redirectTo: 'Verify',
-      message: 'Complete identity verification before uploading a deal.'
-    };
-  }
-
-  // 5. NDA acceptance
-  if (!profile.nda_accepted) {
-    return {
-      ok: false,
-      redirectTo: 'NDA',
-      message: 'Please accept the NDA to continue.'
-    };
-  }
-
-  // 6. Onboarding completion
+  // 1. Onboarding completion (HIGHEST PRIORITY)
   const isOnboarded = !!(
     profile.onboarding_completed_at || 
     profile.onboarding_step === 'basic_complete' || 
@@ -76,7 +43,45 @@ export async function requireInvestorSetup({ profile }) {
     };
   }
 
-  // If any basic fields are missing, redirect to profile setup
+  // 2. KYC verification (SECOND PRIORITY)
+  if (profile.kyc_status !== 'approved') {
+    return {
+      ok: false,
+      redirectTo: 'Verify',
+      message: 'Complete identity verification before uploading a deal.'
+    };
+  }
+
+  // 3. NDA acceptance (THIRD PRIORITY)
+  if (!profile.nda_accepted) {
+    return {
+      ok: false,
+      redirectTo: 'NDA',
+      message: 'Please accept the NDA to continue.'
+    };
+  }
+
+  // 4. Basic profile fields (LOWEST PRIORITY - only checked after major gates)
+  const missingFields = [];
+
+  if (!profile.full_name || profile.full_name.trim() === '') {
+    missingFields.push('Full Name');
+  }
+
+  if (!profile.phone || profile.phone.trim() === '') {
+    missingFields.push('Phone Number');
+  }
+
+  const hasCompany = profile.company || profile.investor?.company_name;
+  if (!hasCompany) {
+    missingFields.push('Company/Entity Name');
+  }
+
+  const hasMarket = profile.target_state || profile.location || (profile.markets && profile.markets.length > 0);
+  if (!hasMarket) {
+    missingFields.push('Target Market/State');
+  }
+
   if (missingFields.length > 0) {
     return {
       ok: false,
