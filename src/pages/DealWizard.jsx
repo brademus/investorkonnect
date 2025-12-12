@@ -93,7 +93,8 @@ export default function DealWizard() {
     }
 
     if (!profile?.id) {
-      toast.error('Profile not loaded. Please try again.');
+      toast.error('Profile not found — please finish setup');
+      navigate(createPageUrl("RoleSelection"));
       return;
     }
 
