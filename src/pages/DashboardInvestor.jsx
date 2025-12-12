@@ -92,60 +92,58 @@ function InvestorDashboardContent() {
   const loadSuggestedAgents = async (state, county, dealId) => {
     setAgentsLoading(true);
     try {
-      const response = await base44.functions.invoke('matchAgentsForInvestor', {
-        state, county, dealId, limit: 3
-      });
+      // Fetch all verified agent profiles directly
+      const allAgents = await base44.entities.Profile.filter({ 
+        user_role: 'agent',
+        kyc_status: 'approved',
+        nda_accepted: true
+      }, '-created_date', 150);
       
-      const agents = response.data?.results?.map(r => r.profile) || [];
-      setSuggestedAgents(agents);
-    } catch (err) {
-      console.warn("Agent matching function failed, falling back to agent profiles", err);
+      console.log('[Dashboard] Found agents:', allAgents.length, 'state:', state, 'county:', county);
       
-      try {
-          // Fetch all verified agent profiles
-          const allAgents = await base44.entities.Profile.filter({ 
-            user_role: 'agent',
-            kyc_status: 'approved'
-          }, '-created_date', 100);
+      let filteredAgents = allAgents;
+      
+      // Filter by state if available
+      if (state) {
+          const stateUpper = state.trim().toUpperCase();
+          const stateMatches = allAgents.filter(agent => {
+              const markets = agent.agent?.markets || [];
+              const targetState = agent.target_state || '';
+              const matchesMarket = markets.some(m => m.toUpperCase().includes(stateUpper));
+              const matchesTarget = targetState.toUpperCase() === stateUpper;
+              return matchesMarket || matchesTarget;
+          });
           
-          let filteredAgents = allAgents;
-          
-          // Filter by state if available
-          if (state) {
-              const stateUpper = state.trim().toUpperCase();
-              filteredAgents = allAgents.filter(agent => {
-                  const markets = agent.agent?.markets || [];
-                  const targetState = agent.target_state || '';
-                  return markets.some(m => m.toUpperCase().includes(stateUpper)) || 
-                         targetState.toUpperCase() === stateUpper;
-              });
+          if (stateMatches.length > 0) {
+              filteredAgents = stateMatches;
+              console.log('[Dashboard] State matches:', stateMatches.length);
           }
-          
-          // Prioritize county matches if county exists
-          if (county && filteredAgents.length > 0) {
-              const countyUpper = county.trim().toUpperCase();
-              const countyMatches = filteredAgents.filter(agent => {
-                  const markets = agent.agent?.markets || [];
-                  return markets.some(m => m.toUpperCase().includes(countyUpper));
-              });
-              
-              if (countyMatches.length > 0) {
-                  filteredAgents = countyMatches;
-              }
-          }
-          
-          // If still no matches, show top verified agents
-          if (filteredAgents.length === 0) {
-              filteredAgents = allAgents.slice(0, 3);
-          } else {
-              filteredAgents = filteredAgents.slice(0, 3);
-          }
-          
-          setSuggestedAgents(filteredAgents);
-      } catch (fallbackErr) {
-          console.error("Fallback query failed", fallbackErr);
-          setSuggestedAgents([]);
       }
+      
+      // Prioritize county matches if county exists
+      if (county && filteredAgents.length > 0) {
+          const countyUpper = county.trim().toUpperCase();
+          const countyMatches = filteredAgents.filter(agent => {
+              const markets = agent.agent?.markets || [];
+              return markets.some(m => m.toUpperCase().includes(countyUpper));
+          });
+          
+          if (countyMatches.length > 0) {
+              filteredAgents = countyMatches;
+              console.log('[Dashboard] County matches:', countyMatches.length);
+          }
+      }
+      
+      // Always show top 3, even if no location match
+      const finalAgents = filteredAgents.length > 0 
+        ? filteredAgents.slice(0, 3) 
+        : allAgents.slice(0, 3);
+      
+      console.log('[Dashboard] Showing agents:', finalAgents.length);
+      setSuggestedAgents(finalAgents);
+    } catch (err) {
+      console.error("Failed to load agents", err);
+      setSuggestedAgents([]);
     } finally {
       setAgentsLoading(false);
     }
