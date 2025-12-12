@@ -123,12 +123,14 @@ export default function AgentDirectory() {
           limit: 20
         });
         
-        const matchedAgents = response.data?.results?.map(r => r.profile) || [];
+        // Keep full match results (profile, reason, score)
+        const matchedAgents = response.data?.results || [];
         setAgents(matchedAgents);
       } else {
-        // Fallback: Fetch all agents
+        // Fallback: Fetch all agents (wrap in match result format)
         const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
-        setAgents(allAgents);
+        const wrapped = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
+        setAgents(wrapped);
       }
     } catch (error) {
       console.error("Failed to load agents:", error);
