@@ -187,7 +187,8 @@ export default function AgentDirectory() {
     }
   };
 
-  const filteredAgents = agents.filter(agent => {
+  const filteredAgents = agents.filter(item => {
+    const agent = item.profile || item; // Support both formats
     if (!searchTerm && locationFilter === "all" && specialtyFilter === "all") return true;
     const search = searchTerm.toLowerCase();
     const name = agent.full_name?.toLowerCase() || '';
