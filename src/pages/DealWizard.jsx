@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/components/utils';
+import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { Logo } from '@/components/Logo';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +25,7 @@ export default function DealWizard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const { profile, loading: profileLoading } = useCurrentProfile();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -90,11 +92,14 @@ export default function DealWizard() {
       return;
     }
 
+    if (!profile?.id) {
+      toast.error('Profile not loaded. Please try again.');
+      return;
+    }
+
     setProcessing(true);
     try {
-      const user = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      const investorId = profiles[0].id;
+      const investorId = profile.id;
 
       // 1. Upload file
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
@@ -253,7 +258,7 @@ export default function DealWizard() {
         Upload your PDF contract. We'll automatically extract details and check for duplicates.
       </p>
 
-      {processing ? (
+      {profileLoading || processing ? (
         <div className="flex flex-col items-center justify-center space-y-4">
           <LoadingAnimation className="w-64 h-64" />
           <p className="text-sm font-medium text-[#808080]">Processing contract...</p>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -13,17 +14,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 function InvestorDocumentsContent() {
   const [searchTerm, setSearchTerm] = useState("");
   const queryClient = useQueryClient();
-
-  // 1. Fetch User & Profile
-  const { data: profile, isLoading: profileLoading } = useQuery({
-    queryKey: ['myProfile'],
-    queryFn: async () => {
-        const user = await base44.auth.me();
-        if (!user) return null;
-        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-        return profiles[0];
-    }
-  });
+  const { profile, loading: profileLoading } = useCurrentProfile();
 
   // 2. Fetch Deals (Dependent on Profile)
   const { data: deals = [], isLoading: dealsLoading, refetch } = useQuery({
