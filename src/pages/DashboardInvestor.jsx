@@ -110,18 +110,38 @@ function InvestorDashboardContent({ profile: propProfile }) {
       const agents = response.data?.results?.map(r => r.profile) || [];
       setSuggestedAgents(agents);
     } catch (err) {
-      console.warn("Agent matching function failed, falling back to direct query", err);
+      console.warn("Agent matching function failed, falling back to agent profiles", err);
       
       try {
+          // Fetch recent agent profiles
+          const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' }, '-created_date', 50);
+          
+          let filteredAgents = allAgents;
+          
+          // Filter by state if available
           if (state) {
-              const byTargetState = await base44.entities.Profile.filter({ target_state: state }, '-created_date', 10);
-              const validAgents = byTargetState.filter(p => 
-                  p.user_role === 'agent' || (p.agent && Object.keys(p.agent).length > 0)
-              );
-              setSuggestedAgents(validAgents);
-          } else {
-              setSuggestedAgents([]);
+              const stateUpper = state.trim().toUpperCase();
+              filteredAgents = allAgents.filter(agent => {
+                  const markets = agent.agent?.markets || [];
+                  return markets.some(m => m.toUpperCase().includes(stateUpper));
+              });
           }
+          
+          // Prioritize county matches if county exists
+          if (county && filteredAgents.length > 0) {
+              const countyUpper = county.trim().toUpperCase();
+              const countyMatches = filteredAgents.filter(agent => {
+                  const markets = agent.agent?.markets || [];
+                  return markets.some(m => m.toUpperCase().includes(countyUpper));
+              });
+              
+              if (countyMatches.length > 0) {
+                  filteredAgents = countyMatches;
+              }
+          }
+          
+          // Take top 3
+          setSuggestedAgents(filteredAgents.slice(0, 3));
       } catch (fallbackErr) {
           console.error("Fallback query failed", fallbackErr);
           setSuggestedAgents([]);
