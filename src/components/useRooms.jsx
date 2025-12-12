@@ -4,10 +4,17 @@ import { base44 } from '@/api/base44Client';
 /**
  * Enrich room with full profile data from matched counterparty
  */
-async function enrichRoomWithProfile(room) {
+async function enrichRoomWithProfile(room, myProfileId) {
   try {
-    // Determine which profile ID to fetch
-    const counterpartyId = room.agentId || room.investorId;
+    // Determine which profile ID to fetch - exclude current user
+    let counterpartyId;
+    if (room.agentId === myProfileId) {
+      counterpartyId = room.investorId;
+    } else if (room.investorId === myProfileId) {
+      counterpartyId = room.agentId;
+    } else {
+      counterpartyId = room.agentId || room.investorId;
+    }
     
     if (!counterpartyId) {
       return room; // No counterparty, return as-is
@@ -187,7 +194,15 @@ export function useRooms() {
 
         // 3. Enrich with Counterparty Profiles
         let allRooms = [...dbRooms];
-        allRooms = await Promise.all(allRooms.map(enrichRoomWithProfile));
+        const user = await base44.auth.me();
+        let myProfileId = null;
+        if (user) {
+          const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          if (profiles.length > 0) {
+            myProfileId = profiles[0].id;
+          }
+        }
+        allRooms = await Promise.all(allRooms.map(room => enrichRoomWithProfile(room, myProfileId)));
         
         // 4. Normalize
         const normalizedRooms = allRooms.map(normalizeRoom);
