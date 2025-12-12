@@ -126,9 +126,11 @@ export function useRooms() {
                                 pipeline_stage: dealToUse.pipeline_stage,
                                 suggested_deal_id: dealToUse.id,
                                 deal_assigned_agent_id: dealToUse.agent_id,
-                                contract_date: dealToUse.key_dates?.closing_date,
+                                closing_date: dealToUse.key_dates?.closing_date,
                                 city: dealToUse.city,
                                 state: dealToUse.state,
+                                county: dealToUse.county,
+                                zip: dealToUse.zip,
                                 status: dealToUse.status
                             };
                         }
