@@ -201,29 +201,26 @@ function InvestorDashboardContent() {
     ).then(results => setRecentMessages(results));
   }, [rooms]);
 
-  // Stats - only count active/locked-in deals
-  // Active = has deal_id, not orphan, AND has locked-in agent (deal_assigned_agent_id exists)
+  // Stats - compute from Deal entities (source of truth) instead of rooms
+  // Only count deals with agent_id assigned
   // Pipeline stages: new_deal_under_contract, walkthrough_scheduled, evaluate_deal, active_marketing
-  // Closed stages: clear_to_close_closed, closed, cancelling_deal
-  const activeDealRooms = Array.isArray(rooms) 
-    ? rooms.filter(r => 
-        r.deal_id && 
-        !r.is_orphan && 
-        r.deal_assigned_agent_id && 
-        !['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(r.pipeline_stage)
+  // Closed stages: clear_to_close_closed, cancelling_deal, closed
+  const activeDeals = Array.isArray(investorDeals) 
+    ? investorDeals.filter(d => 
+        d.agent_id && 
+        !['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)
       ) 
     : [];
 
   const dealStats = {
-    new_deal: activeDealRooms.filter(r => r.pipeline_stage === 'new_deal_under_contract').length,
-    walkthrough: activeDealRooms.filter(r => r.pipeline_stage === 'walkthrough_scheduled').length,
-    evaluate: activeDealRooms.filter(r => r.pipeline_stage === 'evaluate_deal').length,
-    marketing: activeDealRooms.filter(r => r.pipeline_stage === 'active_marketing').length,
-    closed: Array.isArray(rooms) 
-      ? rooms.filter(r => 
-          r.deal_id && 
-          r.deal_assigned_agent_id && 
-          ['clear_to_close_closed', 'closed'].includes(r.pipeline_stage)
+    new_deal: activeDeals.filter(d => d.pipeline_stage === 'new_deal_under_contract').length,
+    walkthrough: activeDeals.filter(d => d.pipeline_stage === 'walkthrough_scheduled').length,
+    evaluate: activeDeals.filter(d => d.pipeline_stage === 'evaluate_deal').length,
+    marketing: activeDeals.filter(d => d.pipeline_stage === 'active_marketing').length,
+    closed: Array.isArray(investorDeals) 
+      ? investorDeals.filter(d => 
+          d.agent_id && 
+          ['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)
         ).length 
       : 0
   };
