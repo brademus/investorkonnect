@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList, introRespond } from "@/components/functions";
+import { inboxList, introRespond, listMyRooms } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,25 +30,9 @@ export default function Inbox() {
       const requestsRes = await inboxList();
       setRequests(requestsRes.data.requests || []);
       
-      const user = await base44.auth.me();
-      
-      // Canonical profile lookup: try email first, fallback to user_id
-      let userProfiles = await base44.entities.Profile.filter({ 
-        email: user.email.toLowerCase().trim()
-      });
-      
-      if (userProfiles.length === 0) {
-        userProfiles = await base44.entities.Profile.filter({ 
-          user_id: user.id
-        });
-      }
-      
-      if (userProfiles.length > 0) {
-        const myRooms = await base44.entities.Room.filter({ 
-          agentId: userProfiles[0].id 
-        }, '-created_date');
-        setRooms(myRooms);
-      }
+      // Load active rooms for both investors and agents
+      const roomsRes = await listMyRooms({});
+      setRooms(roomsRes.data?.rooms || []);
       
       setLoading(false);
     } catch (error) {
