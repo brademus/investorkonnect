@@ -79,12 +79,12 @@ Keep answers short (2-3 sentences) and actionable. If you don't know something s
   return (
     <>
       <Header profile={profile} />
-      <div className="min-h-screen bg-[#FAF7F2]">
+      <div className="min-h-screen bg-transparent">
         <div className="max-w-4xl mx-auto px-4 py-8">
           {/* Back Button */}
           <Link 
             to={createPageUrl("Dashboard")} 
-            className="inline-flex items-center gap-2 text-[#6B7280] hover:text-[#111827] mb-6"
+            className="inline-flex items-center gap-2 text-[#808080] hover:text-[#E3C567] mb-6"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -92,34 +92,34 @@ Keep answers short (2-3 sentences) and actionable. If you don't know something s
 
           {/* Header */}
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-14 h-14 bg-gradient-to-br from-[#D3A029] to-[#B8902A] rounded-2xl flex items-center justify-center">
-              <Bot className="w-7 h-7 text-white" />
+            <div className="w-14 h-14 bg-[#E3C567]/20 rounded-2xl flex items-center justify-center border border-[#E3C567]/30">
+              <Bot className="w-7 h-7 text-[#E3C567]" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-[#111827]">AI Assistant</h1>
-              <p className="text-[#6B7280]">Get instant help with platform questions</p>
+              <h1 className="text-2xl font-bold text-[#E3C567]">AI Assistant</h1>
+              <p className="text-[#808080]">Get instant help with platform questions</p>
             </div>
           </div>
 
           {/* Chat Container */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+          <div className="bg-[#0D0D0D] rounded-2xl border border-[#1F1F1F] shadow-[0_18px_45px_rgba(0,0,0,0.5)] overflow-hidden">
             {/* Messages */}
-            <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-slate-50">
+            <div className="h-[500px] overflow-y-auto p-6 space-y-4 bg-[#0D0D0D]">
               {messages.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
                   {msg.role === 'assistant' && (
-                    <div className="w-8 h-8 bg-[#FEF3C7] rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                      <Sparkles className="w-4 h-4 text-[#D3A029]" />
+                    <div className="w-8 h-8 bg-[#E3C567]/20 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                      <Sparkles className="w-4 h-4 text-[#E3C567]" />
                     </div>
                   )}
                   <div
                     className={`max-w-[70%] rounded-2xl px-4 py-3 ${
                       msg.role === 'user'
-                        ? 'bg-[#D3A029] text-white'
-                        : 'bg-white border border-slate-200 text-slate-900'
+                        ? 'bg-[#E3C567] text-black'
+                        : 'bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA]'
                     }`}
                   >
                     <p className="text-sm whitespace-pre-wrap leading-relaxed">{msg.content}</p>
@@ -128,11 +128,11 @@ Keep answers short (2-3 sentences) and actionable. If you don't know something s
               ))}
               {loading && (
                 <div className="flex justify-start">
-                  <div className="w-8 h-8 bg-[#FEF3C7] rounded-full flex items-center justify-center mr-3 flex-shrink-0">
-                    <Sparkles className="w-4 h-4 text-[#D3A029]" />
+                  <div className="w-8 h-8 bg-[#E3C567]/20 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
+                    <Sparkles className="w-4 h-4 text-[#E3C567]" />
                   </div>
-                  <div className="bg-white border border-slate-200 rounded-2xl px-4 py-3">
-                    <Loader2 className="w-4 h-4 text-[#D3A029] animate-spin" />
+                  <div className="bg-[#141414] border border-[#1F1F1F] rounded-2xl px-4 py-3">
+                    <Loader2 className="w-4 h-4 text-[#E3C567] animate-spin" />
                   </div>
                 </div>
               )}
@@ -140,7 +140,7 @@ Keep answers short (2-3 sentences) and actionable. If you don't know something s
             </div>
 
             {/* Input */}
-            <div className="p-4 border-t bg-white">
+            <div className="p-4 border-t border-[#1F1F1F] bg-[#0D0D0D]">
               <div className="flex gap-3">
                 <Input
                   value={input}
@@ -148,17 +148,17 @@ Keep answers short (2-3 sentences) and actionable. If you don't know something s
                   onKeyPress={handleKeyPress}
                   placeholder="Ask me anything about the platform..."
                   disabled={loading}
-                  className="flex-1 h-12"
+                  className="flex-1 h-12 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080]"
                 />
                 <Button
                   onClick={sendMessage}
                   disabled={loading || !input.trim()}
-                  className="h-12 px-6 bg-[#D3A029] hover:bg-[#B8902A]"
+                  className="h-12 px-6 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold"
                 >
                   <Send className="w-4 h-4" />
                 </Button>
               </div>
-              <p className="text-xs text-slate-500 mt-3 text-center">
+              <p className="text-xs text-[#666] mt-3 text-center">
                 Powered by AI • Responses may not be 100% accurate
               </p>
             </div>
