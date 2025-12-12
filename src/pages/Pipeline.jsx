@@ -93,7 +93,7 @@ function PipelineContent() {
     }
   }, [profile?.id]);
 
-  // 4. Merge Data and deduplicate by property_address
+  // 4. Merge Data (no automatic dedup - user clicks button if needed)
   const deals = useMemo(() => {
     // Index rooms by deal_id
     const roomMap = new Map();
@@ -103,10 +103,7 @@ function PipelineContent() {
       }
     });
 
-    // Create a map to track unique addresses
-    const addressMap = new Map();
-    
-    const processedDeals = dealsData.map(deal => {
+    return dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const hasAgentLocked = !!deal.agent_id;
 
@@ -121,52 +118,31 @@ function PipelineContent() {
         id: deal.id,
         deal_id: deal.id,
         room_id: room?.id || null,
-        
+
         // Content - Prefer Deal Entity (User Uploaded Data)
         title: deal.title || 'Untitled Deal',
         property_address: deal.property_address || 'Address Pending',
         city: deal.city,
         state: deal.state,
         budget: deal.purchase_price, // The number saved in Deal entity
-        
+
         // Status & Agent
         pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
         customer_name: agentName,
         agent_id: deal.agent_id,
-        
+
         // Dates
         created_date: deal.created_date,
         updated_date: deal.updated_date,
         contract_date: deal.key_dates?.closing_date,
-        
+
         // Room extras
         open_tasks: room?.open_tasks || 0,
         completed_tasks: room?.completed_tasks || 0,
-        
+
         is_orphan: !hasAgentLocked // Orphan if no agent assigned, regardless of room
       };
     });
-    
-    // Deduplicate by property_address - keep only the best deal per address
-    processedDeals.forEach(deal => {
-      const key = deal.property_address || deal.id;
-      const existing = addressMap.get(key);
-      
-      if (!existing) {
-        addressMap.set(key, deal);
-      } else {
-        // Keep the one with agent, or the newer one
-        if (deal.agent_id && !existing.agent_id) {
-          addressMap.set(key, deal);
-        } else if (!deal.agent_id && existing.agent_id) {
-          // Keep existing
-        } else if (new Date(deal.created_date) > new Date(existing.created_date)) {
-          addressMap.set(key, deal);
-        }
-      }
-    });
-    
-    return Array.from(addressMap.values());
   }, [dealsData, rooms]);
 
   const handleDealClick = (deal) => {
