@@ -30,9 +30,18 @@ export default function Inbox() {
       const requestsRes = await inboxList();
       setRequests(requestsRes.data.requests || []);
       
-      const userProfiles = await base44.entities.Profile.filter({ 
-        created_by: (await base44.auth.me()).email 
+      const user = await base44.auth.me();
+      
+      // Canonical profile lookup: try email first, fallback to user_id
+      let userProfiles = await base44.entities.Profile.filter({ 
+        email: user.email.toLowerCase().trim()
       });
+      
+      if (userProfiles.length === 0) {
+        userProfiles = await base44.entities.Profile.filter({ 
+          user_id: user.id
+        });
+      }
       
       if (userProfiles.length > 0) {
         const myRooms = await base44.entities.Room.filter({ 
