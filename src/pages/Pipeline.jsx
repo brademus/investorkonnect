@@ -135,7 +135,7 @@ function PipelineContent() {
         // Dates
         created_date: deal.created_date,
         updated_date: deal.updated_date,
-        contract_date: deal.key_dates?.closing_date,
+        closing_date: deal.key_dates?.closing_date,
 
         // Room extras
         open_tasks: room?.open_tasks || 0,
