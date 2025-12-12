@@ -4,8 +4,19 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Shield, FileText, User, Settings, ShieldCheck } from "lucide-react";
+
+// Create a QueryClient for the entire app
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 /**
  * LAYOUT - Airbnb-style shell with conditional navigation
@@ -144,8 +155,10 @@ function LayoutContent({ children }) {
 
 export default function Layout({ children, currentPageName }) {
   return (
-    <WizardProvider>
-      <LayoutContent>{children}</LayoutContent>
-    </WizardProvider>
+    <QueryClientProvider client={queryClient}>
+      <WizardProvider>
+        <LayoutContent>{children}</LayoutContent>
+      </WizardProvider>
+    </QueryClientProvider>
   );
 }
