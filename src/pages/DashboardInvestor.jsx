@@ -226,7 +226,7 @@ function InvestorDashboardContent({ profile: propProfile }) {
   };
 
   const firstName = profile?.full_name?.split(' ')[0] || 'Investor';
-  const isLoading = roomsLoading && rooms.length === 0;
+  const isLoading = (roomsLoading || dealsLoading) && rooms.length === 0;
 
   return (
     <>
