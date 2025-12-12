@@ -515,7 +515,7 @@ export default function Room() {
                     { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
                     { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
                     { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
-                    { id: 'clear_to_close_closed', label: 'Clear to Close', color: '#34D399' }
+                    { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
                   ].map((stage, idx) => {
                     const isActive = currentRoom?.pipeline_stage === stage.id;
                     const isPast = [
