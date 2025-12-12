@@ -1,15 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
-import { base44 } from "@/api/base44Client";
-import { inboxList, introCreate, matchList, getInvestorMatches, findBestAgents } from "@/components/functions";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { Header } from "@/components/Header";
-import { Button } from "@/components/ui/button";
-import { 
-  Loader2, MapPin, Star, TrendingUp, Users, 
-  ArrowRight, CheckCircle, Shield, Lock, MessageSquare, User
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 /**
