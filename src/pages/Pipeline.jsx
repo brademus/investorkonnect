@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { getOrCreateDealRoom } from "@/components/dealRooms";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -151,18 +152,13 @@ function PipelineContent() {
       return;
     }
     
-    // Otherwise, find or create the room for this deal + agent
+    // Otherwise, get or create the room for this deal + agent
     try {
-      const response = await base44.functions.invoke('createDealRoom', {
-        counterparty_profile_id: deal.agent_id,
-        deal_id: deal.deal_id
+      const roomId = await getOrCreateDealRoom({
+        dealId: deal.deal_id,
+        agentProfileId: deal.agent_id
       });
-      
-      if (response.data?.room?.id) {
-        navigate(`${createPageUrl("Room")}?roomId=${response.data.room.id}`);
-      } else {
-        toast.error("Failed to open conversation");
-      }
+      navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
     } catch (error) {
       console.error("Failed to create/find room:", error);
       toast.error("Failed to open conversation");
