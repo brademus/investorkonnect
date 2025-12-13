@@ -597,10 +597,10 @@ export default function Room() {
                   <FileText className="w-5 h-5 text-[#E3C567]" />
                   Deal Documents
                 </h4>
-                {currentRoom?.contract_url ? (
+                {currentRoom?.contract_url || currentRoom?.contract_document ? (
                   <div className="space-y-3">
                     <a 
-                      href={currentRoom.contract_url}
+                      href={currentRoom.contract_url || currentRoom.contract_document?.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
@@ -610,12 +610,19 @@ export default function Room() {
                           <FileText className="w-5 h-5 text-[#E3C567]" />
                         </div>
                         <div>
-                          <p className="text-sm font-semibold text-[#FAFAFA]">Purchase Agreement</p>
-                          <p className="text-xs text-[#808080]">Contract PDF</p>
+                          <p className="text-sm font-semibold text-[#FAFAFA]">
+                            {currentRoom.contract_document?.name || 'Purchase Agreement'}
+                          </p>
+                          <p className="text-xs text-[#808080]">
+                            {currentRoom.contract_document?.uploaded_at 
+                              ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
+                              : 'Contract PDF'
+                            }
+                          </p>
                         </div>
                       </div>
                       <Button variant="ghost" size="sm" className="text-[#E3C567]">
-                        View
+                        View PDF
                       </Button>
                     </a>
                   </div>
