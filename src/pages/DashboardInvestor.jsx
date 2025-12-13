@@ -11,7 +11,8 @@ import { useRooms } from "@/components/useRooms";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
-  Loader2, Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw
+  Loader2, Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw,
+  AlertCircle, Trash2
 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
@@ -32,36 +33,66 @@ function InvestorDashboardContent() {
   const { data: roomsQuery = [], isLoading: roomsLoading, refetch: refetchRooms } = useRooms();
   const rooms = Array.isArray(roomsQuery) ? roomsQuery : [];
 
-  // Load investor deals - with smart caching and refresh capability
-  const { data: investorDeals = [], isLoading: dealsLoading } = useQuery({
+  // Load investor deals - separate valid and invalid
+  const { data: allDeals = [], isLoading: dealsLoading } = useQuery({
     queryKey: ['investorDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const deals = await base44.entities.Deal.filter({ 
         investor_id: profile.id
       });
-      // Filter out deals without city and state (handle null, undefined, empty strings, "null" strings)
-      const validDeals = deals.filter(deal => {
-        const hasValidCity = deal.city && 
-          deal.city.trim() !== '' && 
-          deal.city.toLowerCase() !== 'null' &&
-          deal.city.toLowerCase() !== 'undefined';
-        const hasValidState = deal.state && 
-          deal.state.trim() !== '' && 
-          deal.state.toLowerCase() !== 'null' &&
-          deal.state.toLowerCase() !== 'undefined';
-        return hasValidCity && hasValidState;
-      });
-      return validDeals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    staleTime: 60000, // 1 minute - allow refresh but show cached data
-    gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
-    refetchOnMount: true, // Refetch on mount to get latest data
+    staleTime: 60000,
+    gcTime: 1000 * 60 * 30,
+    refetchOnMount: true,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    placeholderData: [] // Show empty state immediately while loading
+    placeholderData: []
   });
+
+  // Separate valid and invalid deals
+  const { investorDeals, invalidDeals } = useMemo(() => {
+    const valid = [];
+    const invalid = [];
+    
+    allDeals.forEach(deal => {
+      const hasValidCity = deal.city && 
+        deal.city.trim() !== '' && 
+        deal.city.toLowerCase() !== 'null' &&
+        deal.city.toLowerCase() !== 'undefined';
+      const hasValidState = deal.state && 
+        deal.state.trim() !== '' && 
+        deal.state.toLowerCase() !== 'null' &&
+        deal.state.toLowerCase() !== 'undefined';
+      
+      if (hasValidCity && hasValidState) {
+        valid.push(deal);
+      } else {
+        invalid.push(deal);
+      }
+    });
+    
+    return { investorDeals: valid, invalidDeals: invalid };
+  }, [allDeals]);
+
+  const [deletingInvalid, setDeletingInvalid] = useState(false);
+
+  const handleDeleteInvalidDeals = async () => {
+    setDeletingInvalid(true);
+    try {
+      await Promise.all(invalidDeals.map(deal => base44.entities.Deal.delete(deal.id)));
+      await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
+      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
+      toast.success(`Deleted ${invalidDeals.length} incomplete deal${invalidDeals.length > 1 ? 's' : ''}`);
+    } catch (error) {
+      console.error('Failed to delete invalid deals:', error);
+      toast.error('Failed to delete incomplete deals');
+    } finally {
+      setDeletingInvalid(false);
+    }
+  };
 
   // Orphan deal = deal without agent_id (source of truth from Deal entity)
   const orphanDeal = useMemo(() => {
@@ -285,6 +316,64 @@ function InvestorDashboardContent() {
           </div>
 
           {profile && <SetupChecklist profile={profile} onRefresh={() => window.location.reload()} />}
+
+          {/* Invalid Deals Warning */}
+          {invalidDeals.length > 0 && (
+            <div className="bg-[#EF4444]/10 border border-[#EF4444]/30 rounded-2xl p-6 mb-6">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-[#EF4444] mb-2 flex items-center gap-2">
+                    <AlertCircle className="w-5 h-5" />
+                    Incomplete Deals Found
+                  </h3>
+                  <p className="text-[#FAFAFA] text-sm mb-4">
+                    You have {invalidDeals.length} deal{invalidDeals.length > 1 ? 's' : ''} with missing or invalid address information. 
+                    These deals cannot be shown to agents and must be re-uploaded with valid addresses.
+                  </p>
+                  <div className="space-y-2 mb-4">
+                    {invalidDeals.map(deal => (
+                      <div key={deal.id} className="flex items-center justify-between bg-[#0D0D0D]/50 border border-[#1F1F1F] rounded-lg px-4 py-3">
+                        <div>
+                          <p className="text-[#FAFAFA] font-medium">{deal.title || 'Untitled Deal'}</p>
+                          <p className="text-xs text-[#808080]">
+                            Missing: {!deal.city || deal.city.toLowerCase() === 'null' ? 'City' : ''} 
+                            {(!deal.city || deal.city.toLowerCase() === 'null') && (!deal.state || deal.state.toLowerCase() === 'null') ? ' and ' : ''}
+                            {!deal.state || deal.state.toLowerCase() === 'null' ? 'State' : ''}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-3">
+                    <Link to={createPageUrl("DealWizard")}>
+                      <Button className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold">
+                        <Plus className="w-4 h-4 mr-2" />
+                        Upload New Deal
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={handleDeleteInvalidDeals}
+                      disabled={deletingInvalid}
+                      variant="outline"
+                      className="border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444]/10 rounded-full"
+                    >
+                      {deletingInvalid ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Deleting...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Delete All Invalid
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
