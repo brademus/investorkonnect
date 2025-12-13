@@ -60,13 +60,19 @@ function PipelineContent() {
       const res = await base44.entities.Deal.filter(
         { investor_id: profile.id }
       );
-      // Filter out archived, deals without city and state (handle null, undefined, empty strings), then sort by created_date
+      // Filter out archived, deals without city and state (handle null, undefined, empty strings, "null" strings), then sort by created_date
       return res
-        .filter(d => 
-          d.status !== 'archived' && 
-          d.city && d.city.trim() !== '' && 
-          d.state && d.state.trim() !== ''
-        )
+        .filter(d => {
+          const hasValidCity = d.city && 
+            d.city.trim() !== '' && 
+            d.city.toLowerCase() !== 'null' &&
+            d.city.toLowerCase() !== 'undefined';
+          const hasValidState = d.state && 
+            d.state.trim() !== '' && 
+            d.state.toLowerCase() !== 'null' &&
+            d.state.toLowerCase() !== 'undefined';
+          return d.status !== 'archived' && hasValidCity && hasValidState;
+        })
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,

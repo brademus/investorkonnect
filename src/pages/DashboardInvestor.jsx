@@ -40,11 +40,18 @@ function InvestorDashboardContent() {
       const deals = await base44.entities.Deal.filter({ 
         investor_id: profile.id
       });
-      // Filter out deals without city and state (handle null, undefined, empty strings)
-      const validDeals = deals.filter(deal => 
-        deal.city && deal.city.trim() !== '' && 
-        deal.state && deal.state.trim() !== ''
-      );
+      // Filter out deals without city and state (handle null, undefined, empty strings, "null" strings)
+      const validDeals = deals.filter(deal => {
+        const hasValidCity = deal.city && 
+          deal.city.trim() !== '' && 
+          deal.city.toLowerCase() !== 'null' &&
+          deal.city.toLowerCase() !== 'undefined';
+        const hasValidState = deal.state && 
+          deal.state.trim() !== '' && 
+          deal.state.toLowerCase() !== 'null' &&
+          deal.state.toLowerCase() !== 'undefined';
+        return hasValidCity && hasValidState;
+      });
       return validDeals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
