@@ -33,11 +33,13 @@ function InvestorDocumentsContent() {
         if (!profile?.id) return [];
         console.log("Fetching documents for investor:", profile.id);
         const myDeals = await base44.entities.Deal.filter(
-            { investor_id: profile.id }, 
-            { created_date: -1 }
+            { investor_id: profile.id }
         );
-        // Show all active deals or deals with contract
-        return myDeals.filter(d => d.contract_url || d.contract_document?.url || d.status === 'active');
+        console.log("All deals fetched:", myDeals.length, myDeals);
+        // Show only deals with contracts
+        const withContracts = myDeals.filter(d => d.contract_url || d.contract_document?.url);
+        console.log("Deals with contracts:", withContracts.length, withContracts);
+        return withContracts;
     },
     enabled: !!profile?.id,
     staleTime: 0 // Always fetch fresh
