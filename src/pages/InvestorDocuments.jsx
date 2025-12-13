@@ -132,7 +132,7 @@ function InvestorDocumentsContent() {
                             </div>
                             
                             <h3 className="font-bold text-[#FAFAFA] truncate mb-1" title={deal.property_address}>
-                                {deal.property_address || deal.title}
+                                {deal.contract_document?.name || deal.property_address || deal.title}
                             </h3>
                             <div className="text-xs text-[#808080] flex items-center gap-1 mb-4">
                                 <MapPin className="w-3 h-3" />
@@ -146,12 +146,19 @@ function InvestorDocumentsContent() {
                                 </div>
                                 <div className="flex justify-between text-sm">
                                     <span className="text-[#666]">Uploaded</span>
-                                    <span className="text-[#FAFAFA]">{deal.created_date ? format(new Date(deal.created_date), 'MMM d, yyyy') : '-'}</span>
+                                    <span className="text-[#FAFAFA]">
+                                      {deal.contract_document?.uploaded_at 
+                                        ? format(new Date(deal.contract_document.uploaded_at), 'MMM d, yyyy')
+                                        : deal.created_date 
+                                        ? format(new Date(deal.created_date), 'MMM d, yyyy') 
+                                        : '-'
+                                      }
+                                    </span>
                                 </div>
                             </div>
                             
                             <a 
-                                href={deal.contract_url} 
+                                href={deal.contract_url || deal.contract_document?.url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
                                 className="block w-full"
