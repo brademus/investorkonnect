@@ -40,7 +40,9 @@ function InvestorDashboardContent() {
       const deals = await base44.entities.Deal.filter({ 
         investor_id: profile.id
       });
-      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      // Filter out deals without city and state
+      const validDeals = deals.filter(deal => deal.city && deal.state);
+      return validDeals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
     staleTime: 60000, // 1 minute - allow refresh but show cached data
