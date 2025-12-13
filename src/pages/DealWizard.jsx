@@ -216,8 +216,13 @@ export default function DealWizard() {
 
   // STEP 2: Confirm and Navigate to Dashboard
   const handleConfirm = async () => {
-    // State is required
-    if (!dealData.state) {
+    // City and State are REQUIRED
+    if (!dealData.city || !dealData.city.trim()) {
+      toast.error("City is required to continue");
+      return;
+    }
+    
+    if (!dealData.state || !dealData.state.trim()) {
       toast.error("State is required to continue");
       return;
     }
@@ -316,20 +321,22 @@ export default function DealWizard() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <Label className="text-[#FAFAFA]">City</Label>
+              <Label className="text-[#FAFAFA]">City <span className="text-red-400">*</span></Label>
               <Input 
                 value={dealData.city} 
                 onChange={e => setDealData({...dealData, city: e.target.value})} 
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+                required
               />
             </div>
             <div>
-              <Label className="text-[#FAFAFA]">State</Label>
+              <Label className="text-[#FAFAFA]">State <span className="text-red-400">*</span></Label>
               <Input 
                 value={dealData.state} 
                 onChange={e => setDealData({...dealData, state: e.target.value})} 
                 maxLength={2} 
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+                required
               />
             </div>
           </div>
