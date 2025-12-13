@@ -595,12 +595,36 @@ export default function Room() {
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                 <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 text-[#E3C567]" />
-                  Uploaded Files
+                  Deal Documents
                 </h4>
-                <div className="text-center py-8">
-                  <p className="text-sm text-[#808080]">No files uploaded yet</p>
-                  <p className="text-xs text-[#666666] mt-1">Share files through messages</p>
-                </div>
+                {currentRoom?.contract_url ? (
+                  <div className="space-y-3">
+                    <a 
+                      href={currentRoom.contract_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
+                          <FileText className="w-5 h-5 text-[#E3C567]" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-semibold text-[#FAFAFA]">Purchase Agreement</p>
+                          <p className="text-xs text-[#808080]">Contract PDF</p>
+                        </div>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-[#E3C567]">
+                        View
+                      </Button>
+                    </a>
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-sm text-[#808080]">No contract uploaded yet</p>
+                    <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
+                  </div>
+                )}
               </div>
 
               {/* Important Information */}
