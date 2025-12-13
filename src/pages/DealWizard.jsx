@@ -146,6 +146,34 @@ export default function DealWizard() {
           purchasePrice: extracted.purchase_price || '',
           closingDate: extracted.key_dates?.closing_date || ''
         };
+        
+        // Verify address is real
+        if (extractedData.address && extractedData.city && extractedData.state) {
+          try {
+            const fullAddress = `${extractedData.address}, ${extractedData.city}, ${extractedData.state} ${extractedData.zip}`.trim();
+            const verifyRes = await base44.integrations.Core.InvokeLLM({
+              prompt: `Verify if this is a valid, real US property address that exists: "${fullAddress}". Return only a JSON object with: {"valid": true/false, "reason": "brief explanation"}`,
+              add_context_from_internet: true,
+              response_json_schema: {
+                type: 'object',
+                properties: {
+                  valid: { type: 'boolean' },
+                  reason: { type: 'string' }
+                }
+              }
+            });
+            
+            if (!verifyRes.valid) {
+              toast.error(`Invalid address: ${verifyRes.reason || 'Address could not be verified'}`);
+              setProcessing(false);
+              return;
+            }
+          } catch (verifyError) {
+            console.error('Address verification failed:', verifyError);
+            toast.warning('Could not verify address - proceeding anyway');
+          }
+        }
+        
         setDealData(extractedData);
       }
 
