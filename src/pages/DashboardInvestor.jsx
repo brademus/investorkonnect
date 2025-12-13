@@ -52,6 +52,26 @@ function InvestorDashboardContent() {
     placeholderData: []
   });
 
+  // Valid US states and territories
+  const validUSStates = new Set([
+    'AL', 'AK', 'AZ', 'AR', 'CA', 'CO', 'CT', 'DE', 'FL', 'GA',
+    'HI', 'ID', 'IL', 'IN', 'IA', 'KS', 'KY', 'LA', 'ME', 'MD',
+    'MA', 'MI', 'MN', 'MS', 'MO', 'MT', 'NE', 'NV', 'NH', 'NJ',
+    'NM', 'NY', 'NC', 'ND', 'OH', 'OK', 'OR', 'PA', 'RI', 'SC',
+    'SD', 'TN', 'TX', 'UT', 'VT', 'VA', 'WA', 'WV', 'WI', 'WY',
+    'DC', 'PR', 'VI', 'GU', 'AS', 'MP',
+    'ALABAMA', 'ALASKA', 'ARIZONA', 'ARKANSAS', 'CALIFORNIA', 'COLORADO',
+    'CONNECTICUT', 'DELAWARE', 'FLORIDA', 'GEORGIA', 'HAWAII', 'IDAHO',
+    'ILLINOIS', 'INDIANA', 'IOWA', 'KANSAS', 'KENTUCKY', 'LOUISIANA',
+    'MAINE', 'MARYLAND', 'MASSACHUSETTS', 'MICHIGAN', 'MINNESOTA',
+    'MISSISSIPPI', 'MISSOURI', 'MONTANA', 'NEBRASKA', 'NEVADA',
+    'NEW HAMPSHIRE', 'NEW JERSEY', 'NEW MEXICO', 'NEW YORK',
+    'NORTH CAROLINA', 'NORTH DAKOTA', 'OHIO', 'OKLAHOMA', 'OREGON',
+    'PENNSYLVANIA', 'RHODE ISLAND', 'SOUTH CAROLINA', 'SOUTH DAKOTA',
+    'TENNESSEE', 'TEXAS', 'UTAH', 'VERMONT', 'VIRGINIA', 'WASHINGTON',
+    'WEST VIRGINIA', 'WISCONSIN', 'WYOMING'
+  ]);
+
   // Separate valid and invalid deals with strict validation
   const { investorDeals, invalidDeals } = useMemo(() => {
     const valid = [];
@@ -60,7 +80,7 @@ function InvestorDashboardContent() {
     allDeals.forEach(deal => {
       // Strict validation - must have real city and state
       const cityStr = String(deal.city || '').trim().toLowerCase();
-      const stateStr = String(deal.state || '').trim().toLowerCase();
+      const stateStr = String(deal.state || '').trim().toUpperCase();
       
       const hasValidCity = 
         deal.city && 
@@ -72,11 +92,8 @@ function InvestorDashboardContent() {
         
       const hasValidState = 
         deal.state && 
-        stateStr.length >= 2 && // State must be at least 2 chars
-        stateStr !== 'null' &&
-        stateStr !== 'undefined' &&
-        stateStr !== 'none' &&
-        stateStr !== 'n/a';
+        stateStr.length >= 2 && 
+        validUSStates.has(stateStr);
       
       if (hasValidCity && hasValidState) {
         valid.push(deal);
