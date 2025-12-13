@@ -42,7 +42,9 @@ function InvestorDocumentsContent() {
         return withContracts;
     },
     enabled: !!profile?.id,
-    staleTime: 0 // Always fetch fresh
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   // Force refresh when component mounts

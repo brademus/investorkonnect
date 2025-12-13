@@ -44,12 +44,9 @@ function InvestorDashboardContent() {
       return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    staleTime: 60000,
-    gcTime: 1000 * 60 * 30,
-    refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    placeholderData: []
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   // Valid US states and territories
