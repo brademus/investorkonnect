@@ -167,7 +167,7 @@ function InvestorDocumentsContent() {
                                 rel="noopener noreferrer"
                                 className="block w-full"
                             >
-                                <Button variant="outline" className="w-full border-[#333] hover:bg-[#1F1F1F] text-[#E3C567] hover:text-[#E3C567] hover:border-[#E3C567]">
+                                <Button className="w-full bg-[#0D0D0D] border border-[#1F1F1F] text-[#E3C567] hover:bg-[#141414] hover:border-[#E3C567]">
                                     <Download className="w-4 h-4 mr-2" />
                                     Download PDF
                                 </Button>
