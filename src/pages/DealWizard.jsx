@@ -117,8 +117,15 @@ export default function DealWizard() {
     try {
       const investorId = profile.id;
 
-      // 1. Upload file
+      // 1. Upload file with metadata
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      const contractDocument = {
+        url: file_url,
+        name: file.name,
+        type: 'contract',
+        uploaded_at: new Date().toISOString()
+      };
       
       // 2. Extract data from contract
       const extractRes = await base44.functions.invoke('extractContractData', {
@@ -191,6 +198,7 @@ export default function DealWizard() {
           currentDeal = existingDeals[0];
           await base44.entities.Deal.update(currentDeal.id, {
             contract_url: file_url,
+            contract_document: contractDocument,
             title: extractedData.address,
             city: extractedData.city,
             state: extractedData.state,
@@ -211,6 +219,7 @@ export default function DealWizard() {
           investor_id: investorId,
           title: extractedData.address || file.name,
           contract_url: file_url,
+          contract_document: contractDocument,
           property_address: extractedData.address,
           city: extractedData.city,
           state: extractedData.state,
