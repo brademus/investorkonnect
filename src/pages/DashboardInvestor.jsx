@@ -52,20 +52,31 @@ function InvestorDashboardContent() {
     placeholderData: []
   });
 
-  // Separate valid and invalid deals
+  // Separate valid and invalid deals with strict validation
   const { investorDeals, invalidDeals } = useMemo(() => {
     const valid = [];
     const invalid = [];
     
     allDeals.forEach(deal => {
-      const hasValidCity = deal.city && 
-        deal.city.trim() !== '' && 
-        deal.city.toLowerCase() !== 'null' &&
-        deal.city.toLowerCase() !== 'undefined';
-      const hasValidState = deal.state && 
-        deal.state.trim() !== '' && 
-        deal.state.toLowerCase() !== 'null' &&
-        deal.state.toLowerCase() !== 'undefined';
+      // Strict validation - must have real city and state
+      const cityStr = String(deal.city || '').trim().toLowerCase();
+      const stateStr = String(deal.state || '').trim().toLowerCase();
+      
+      const hasValidCity = 
+        deal.city && 
+        cityStr.length > 0 && 
+        cityStr !== 'null' &&
+        cityStr !== 'undefined' &&
+        cityStr !== 'none' &&
+        cityStr !== 'n/a';
+        
+      const hasValidState = 
+        deal.state && 
+        stateStr.length >= 2 && // State must be at least 2 chars
+        stateStr !== 'null' &&
+        stateStr !== 'undefined' &&
+        stateStr !== 'none' &&
+        stateStr !== 'n/a';
       
       if (hasValidCity && hasValidState) {
         valid.push(deal);
