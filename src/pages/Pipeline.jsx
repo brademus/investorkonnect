@@ -60,18 +60,32 @@ function PipelineContent() {
       const res = await base44.entities.Deal.filter(
         { investor_id: profile.id }
       );
-      // Filter out archived, deals without city and state (handle null, undefined, empty strings, "null" strings), then sort by created_date
+      // Filter out archived and deals with invalid addresses
       return res
         .filter(d => {
-          const hasValidCity = d.city && 
-            d.city.trim() !== '' && 
-            d.city.toLowerCase() !== 'null' &&
-            d.city.toLowerCase() !== 'undefined';
-          const hasValidState = d.state && 
-            d.state.trim() !== '' && 
-            d.state.toLowerCase() !== 'null' &&
-            d.state.toLowerCase() !== 'undefined';
-          return d.status !== 'archived' && hasValidCity && hasValidState;
+          if (d.status === 'archived') return false;
+          
+          // Strict validation - must have real city and state
+          const cityStr = String(d.city || '').trim().toLowerCase();
+          const stateStr = String(d.state || '').trim().toLowerCase();
+          
+          const hasValidCity = 
+            d.city && 
+            cityStr.length > 0 && 
+            cityStr !== 'null' &&
+            cityStr !== 'undefined' &&
+            cityStr !== 'none' &&
+            cityStr !== 'n/a';
+            
+          const hasValidState = 
+            d.state && 
+            stateStr.length >= 2 && 
+            stateStr !== 'null' &&
+            stateStr !== 'undefined' &&
+            stateStr !== 'none' &&
+            stateStr !== 'n/a';
+          
+          return hasValidCity && hasValidState;
         })
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
