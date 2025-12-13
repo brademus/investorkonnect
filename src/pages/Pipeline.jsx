@@ -60,9 +60,9 @@ function PipelineContent() {
       const res = await base44.entities.Deal.filter(
         { investor_id: profile.id }
       );
-      // Filter out archived and sort by created_date
+      // Filter out archived, deals without city and state, then sort by created_date
       return res
-        .filter(d => d.status !== 'archived')
+        .filter(d => d.status !== 'archived' && d.city && d.state)
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
