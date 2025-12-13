@@ -36,8 +36,8 @@ function InvestorDocumentsContent() {
             { investor_id: profile.id }, 
             { created_date: -1 }
         );
-        // Show all active deals or deals with contract_url
-        return myDeals.filter(d => d.contract_url || d.status === 'active');
+        // Show all active deals or deals with contract
+        return myDeals.filter(d => d.contract_url || d.contract_document?.url || d.status === 'active');
     },
     enabled: !!profile?.id,
     staleTime: 0 // Always fetch fresh
