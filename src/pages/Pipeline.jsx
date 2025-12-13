@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
+import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -227,6 +228,17 @@ function PipelineContent() {
     }
   };
 
+  const handleDragEnd = async (result) => {
+    if (!result.destination) return;
+    
+    const { draggableId, destination } = result;
+    const dealId = draggableId;
+    const newStage = destination.droppableId;
+    
+    // Update the deal's pipeline stage
+    await handleStageChange(dealId, newStage);
+  };
+
   const formatCurrency = (val) => {
     if (!val) return 'N/A';
     return new Intl.NumberFormat('en-US', {
@@ -305,105 +317,128 @@ function PipelineContent() {
               </div>
             </div>
 
-            {/* Kanban Grid */}
-            <div className="grid grid-cols-3 gap-6 mb-8">
-              {pipelineStages.map(stage => {
-                const stageDeals = deals.filter(d => d.pipeline_stage === stage.id);
-                const Icon = stage.icon;
+            {/* Kanban Grid with Drag & Drop */}
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <div className="grid grid-cols-3 gap-6 mb-8">
+                {pipelineStages.map(stage => {
+                  const stageDeals = deals.filter(d => d.pipeline_stage === stage.id);
+                  const Icon = stage.icon;
 
-                return (
-                  <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col h-[400px]">
-                    <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
-                      <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
-                        <Icon className="w-4 h-4" />
+                  return (
+                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col h-[400px]">
+                      <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
+                        <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h3 className="text-[#FAFAFA] font-bold text-sm">{stage.label}</h3>
+                          <p className="text-xs text-[#808080]">{stageDeals.length} deals</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="text-[#FAFAFA] font-bold text-sm">{stage.label}</h3>
-                        <p className="text-xs text-[#808080]">{stageDeals.length} deals</p>
-                      </div>
-                    </div>
 
-                    <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
-                      {stageDeals.length === 0 ? (
-                        <div className="h-full flex items-center justify-center text-[#333] text-sm">No deals</div>
-                      ) : (
-                        stageDeals.map(deal => (
-                          <div 
-                           key={deal.id}
-                           className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transition-all"
+                      <Droppable droppableId={stage.id}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.droppableProps}
+                            className={`flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar ${
+                              snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''
+                            }`}
                           >
-                           <div 
-                             onClick={() => handleDealClick(deal)}
-                             className="cursor-pointer"
-                           >
-                             <div className="flex justify-between items-start mb-2">
-                               <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                                 {deal.property_address}
-                               </h4>
-                               <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
-                                 {getDaysInPipeline(deal.created_date)}
-                               </span>
-                             </div>
+                            {stageDeals.length === 0 ? (
+                              <div className="h-full flex items-center justify-center text-[#333] text-sm">
+                                {snapshot.isDraggingOver ? 'Drop here' : 'No deals'}
+                              </div>
+                            ) : (
+                              stageDeals.map((deal, index) => (
+                                <Draggable key={deal.id} draggableId={deal.id} index={index}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      {...provided.dragHandleProps}
+                                      className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transition-all ${
+                                        snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567] opacity-90' : ''
+                                      }`}
+                                    >
+                                      <div 
+                                        onClick={() => handleDealClick(deal)}
+                                        className="cursor-pointer"
+                                      >
+                                        <div className="flex justify-between items-start mb-2">
+                                          <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
+                                            {deal.property_address}
+                                          </h4>
+                                          <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
+                                            {getDaysInPipeline(deal.created_date)}
+                                          </span>
+                                        </div>
 
-                             <div className="flex items-center gap-2 mb-3">
-                               <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
-                                 {formatCurrency(deal.budget)}
-                               </span>
-                               {deal.is_orphan && (
-                                 <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
-                               )}
-                             </div>
+                                        <div className="flex items-center gap-2 mb-3">
+                                          <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
+                                            {formatCurrency(deal.budget)}
+                                          </span>
+                                          {deal.is_orphan && (
+                                            <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
+                                          )}
+                                        </div>
 
-                             <div className="flex flex-col gap-2 mb-3">
-                               <div className="flex items-center gap-1 text-xs text-[#666]">
-                                 <Home className="w-3 h-3" />
-                                 <span>{deal.city}, {deal.state}</span>
-                               </div>
+                                        <div className="flex flex-col gap-2 mb-3">
+                                          <div className="flex items-center gap-1 text-xs text-[#666]">
+                                            <Home className="w-3 h-3" />
+                                            <span>{deal.city}, {deal.state}</span>
+                                          </div>
 
-                               {!deal.is_orphan && deal.customer_name && (
-                                 <div className="text-xs text-[#10B981] flex items-center gap-1">
-                                   <CheckCircle className="w-3 h-3" />
-                                   <span>{deal.customer_name}</span>
-                                 </div>
-                               )}
+                                          {!deal.is_orphan && deal.customer_name && (
+                                            <div className="text-xs text-[#10B981] flex items-center gap-1">
+                                              <CheckCircle className="w-3 h-3" />
+                                              <span>{deal.customer_name}</span>
+                                            </div>
+                                          )}
 
-                               {deal.open_tasks > 0 && (
-                                 <div className="flex items-center gap-1 text-[#E3C567] text-xs">
-                                   <CheckSquare className="w-3 h-3" />
-                                   <span>{deal.open_tasks} tasks</span>
-                                 </div>
-                               )}
-                             </div>
-                           </div>
+                                          {deal.open_tasks > 0 && (
+                                            <div className="flex items-center gap-1 text-[#E3C567] text-xs">
+                                              <CheckSquare className="w-3 h-3" />
+                                              <span>{deal.open_tasks} tasks</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
 
-                           {/* Stage selector */}
-                           <Select
-                             value={deal.pipeline_stage}
-                             onValueChange={(newStage) => handleStageChange(deal.id, newStage)}
-                           >
-                             <SelectTrigger 
-                               className="h-7 text-xs bg-[#1A1A1A] border-[#1F1F1F]"
-                               onClick={(e) => e.stopPropagation()}
-                             >
-                               <SelectValue />
-                             </SelectTrigger>
-                             <SelectContent>
-                               <SelectItem value="new_deal_under_contract">New Deal</SelectItem>
-                               <SelectItem value="walkthrough_scheduled">Walkthrough</SelectItem>
-                               <SelectItem value="evaluate_deal">Evaluate</SelectItem>
-                               <SelectItem value="active_marketing">Marketing</SelectItem>
-                               <SelectItem value="cancelling_deal">Cancelling</SelectItem>
-                               <SelectItem value="clear_to_close_closed">Closed</SelectItem>
-                             </SelectContent>
-                           </Select>
+                                      {/* Stage selector */}
+                                      <Select
+                                        value={deal.pipeline_stage}
+                                        onValueChange={(newStage) => handleStageChange(deal.id, newStage)}
+                                      >
+                                        <SelectTrigger 
+                                          className="h-7 text-xs bg-[#1A1A1A] border-[#1F1F1F]"
+                                          onClick={(e) => e.stopPropagation()}
+                                        >
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          <SelectItem value="new_deal_under_contract">New Deal</SelectItem>
+                                          <SelectItem value="walkthrough_scheduled">Walkthrough</SelectItem>
+                                          <SelectItem value="evaluate_deal">Evaluate</SelectItem>
+                                          <SelectItem value="active_marketing">Marketing</SelectItem>
+                                          <SelectItem value="cancelling_deal">Cancelling</SelectItem>
+                                          <SelectItem value="clear_to_close_closed">Closed</SelectItem>
+                                        </SelectContent>
+                                      </Select>
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))
+                            )}
+                            {provided.placeholder}
                           </div>
-                        ))
-                      )}
+                        )}
+                      </Droppable>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            </DragDropContext>
 
           </div>
         </div>
