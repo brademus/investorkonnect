@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import { 
-  X, ArrowLeft, Loader2, UploadCloud, 
+  X, ArrowLeft, UploadCloud, 
   CheckCircle, DollarSign 
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -428,7 +428,13 @@ export default function DealWizard() {
           <ArrowLeft className="w-4 h-4 mr-2" /> Back
         </Button>
         <Button onClick={handleConfirm} disabled={loading} className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-serif font-semibold">
-          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CheckCircle className="w-4 h-4 mr-2" />}
+          {loading ? (
+            <div className="w-4 h-4 mr-2">
+              <LoadingAnimation className="w-4 h-4" />
+            </div>
+          ) : (
+            <CheckCircle className="w-4 h-4 mr-2" />
+          )}
           Save & Continue
         </Button>
       </div>
