@@ -146,47 +146,38 @@ export default function AgentDirectory() {
         nda_accepted: true
       });
       
-      // If we have a deal with location, prioritize agents in that area
-      let sortedAgents = allAgents;
+      // Filter to only agents in the deal's state
+      let filteredAgents = allAgents;
       if (deal?.state) {
         const stateUpper = deal.state.trim().toUpperCase();
         const countyUpper = deal.county?.trim().toUpperCase();
         
-        // Separate into matches and non-matches
-        const matches = [];
-        const others = [];
-        
-        allAgents.forEach(agent => {
-          const markets = agent.agent?.markets || [];
-          const targetState = agent.target_state || '';
-          
-          // Check state match
-          const stateMatch = markets.some(m => m.toUpperCase().includes(stateUpper)) || 
-                            targetState.toUpperCase() === stateUpper;
-          
-          // Check county match if county exists
-          const countyMatch = countyUpper ? 
-            markets.some(m => m.toUpperCase().includes(countyUpper)) : false;
-          
-          if (countyMatch || stateMatch) {
-            matches.push({ 
-              profile: agent, 
+        filteredAgents = allAgents
+          .filter(agent => {
+            const markets = agent.agent?.markets || [];
+            const targetState = agent.target_state || '';
+            
+            // Agent must serve this state
+            return markets.some(m => m.toUpperCase().includes(stateUpper)) || 
+                   targetState.toUpperCase() === stateUpper;
+          })
+          .map(agent => {
+            const markets = agent.agent?.markets || [];
+            const countyMatch = countyUpper && markets.some(m => m.toUpperCase().includes(countyUpper));
+            
+            return {
+              profile: agent,
               reason: countyMatch ? `Serves ${deal.county}, ${deal.state}` : `Serves ${deal.state}`,
               score: countyMatch ? 2 : 1
-            });
-          } else {
-            others.push({ profile: agent, reason: undefined, score: 0 });
-          }
-        });
-        
-        // Sort by score (county matches first, then state matches, then others)
-        sortedAgents = [...matches.sort((a, b) => b.score - a.score), ...others];
+            };
+          })
+          .sort((a, b) => b.score - a.score);
       } else {
-        // No deal location - show all agents without priority
-        sortedAgents = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
+        // No deal location - show all agents
+        filteredAgents = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
       }
       
-      setAgents(sortedAgents);
+      setAgents(filteredAgents);
     } catch (error) {
       console.error("Failed to load agents:", error);
       toast.error("Failed to load agents");
