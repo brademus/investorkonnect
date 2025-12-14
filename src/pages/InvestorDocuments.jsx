@@ -6,7 +6,8 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin, Loader2 } from "lucide-react";
+import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin } from "lucide-react";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -67,7 +68,7 @@ function InvestorDocumentsContent() {
         <Header profile={profile} />
         <div className="min-h-screen bg-transparent flex items-center justify-center">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin mx-auto mb-4" />
+            <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
             <p className="text-[#808080] text-sm">Loading documents...</p>
           </div>
         </div>
