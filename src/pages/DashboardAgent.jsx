@@ -7,7 +7,7 @@ import { SetupChecklist } from "@/components/SetupChecklist";
 import { Button } from "@/components/ui/button";
 import { 
   MessageSquare, Users, FileText, TrendingUp, Eye,
-  Sparkles, Bot, DollarSign, Clock
+  Sparkles, Bot, DollarSign, Clock, Plus, Home
 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { useRooms } from "@/components/useRooms";
