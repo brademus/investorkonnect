@@ -11,7 +11,7 @@ import { useRooms } from "@/components/useRooms";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { 
   FileText, TrendingUp, Plus, MessageSquare, Users,
-  Loader2, Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw,
+  Sparkles, Home, DollarSign, CreditCard, Bot, RefreshCw,
   AlertCircle, Trash2
 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
@@ -384,7 +384,7 @@ function InvestorDashboardContent() {
                     >
                       {deletingInvalid ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                           Deleting...
                         </>
                       ) : (
