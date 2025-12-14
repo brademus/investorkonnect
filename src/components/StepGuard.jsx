@@ -4,7 +4,7 @@ import { createPageUrl } from '@/components/utils';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from './useCurrentProfile';
 import { useWizard } from './WizardContext';
-import { Loader2 } from 'lucide-react';
+import LoadingAnimation from '@/components/LoadingAnimation';
 
 /**
  * STEP GUARD
@@ -79,10 +79,10 @@ export function StepGuard({ children, requiredStep }) {
   // Show loading while checking
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600">Loading...</p>
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
+          <p className="text-[#808080]">Loading...</p>
         </div>
       </div>
     );
