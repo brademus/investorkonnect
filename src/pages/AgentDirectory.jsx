@@ -139,24 +139,54 @@ export default function AgentDirectory() {
     try {
       setLoading(true);
       
-      // If we have a deal, use matching to get recommended agents
-      if (deal) {
-        const response = await base44.functions.invoke('matchAgentsForInvestor', {
-          state: deal.state,
-          county: deal.county,
-          dealId: deal.id,
-          limit: 20
+      // Fetch all verified agents directly
+      const allAgents = await base44.entities.Profile.filter({ 
+        user_role: 'agent',
+        kyc_status: 'approved',
+        nda_accepted: true
+      });
+      
+      // If we have a deal with location, prioritize agents in that area
+      let sortedAgents = allAgents;
+      if (deal?.state) {
+        const stateUpper = deal.state.trim().toUpperCase();
+        const countyUpper = deal.county?.trim().toUpperCase();
+        
+        // Separate into matches and non-matches
+        const matches = [];
+        const others = [];
+        
+        allAgents.forEach(agent => {
+          const markets = agent.agent?.markets || [];
+          const targetState = agent.target_state || '';
+          
+          // Check state match
+          const stateMatch = markets.some(m => m.toUpperCase().includes(stateUpper)) || 
+                            targetState.toUpperCase() === stateUpper;
+          
+          // Check county match if county exists
+          const countyMatch = countyUpper ? 
+            markets.some(m => m.toUpperCase().includes(countyUpper)) : false;
+          
+          if (countyMatch || stateMatch) {
+            matches.push({ 
+              profile: agent, 
+              reason: countyMatch ? `Serves ${deal.county}, ${deal.state}` : `Serves ${deal.state}`,
+              score: countyMatch ? 2 : 1
+            });
+          } else {
+            others.push({ profile: agent, reason: undefined, score: 0 });
+          }
         });
         
-        // Keep full match results (profile, reason, score)
-        const matchedAgents = response.data?.results || [];
-        setAgents(matchedAgents);
+        // Sort by score (county matches first, then state matches, then others)
+        sortedAgents = [...matches.sort((a, b) => b.score - a.score), ...others];
       } else {
-        // Fallback: Fetch all agents (wrap in match result format)
-        const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
-        const wrapped = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
-        setAgents(wrapped);
+        // No deal location - show all agents without priority
+        sortedAgents = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
       }
+      
+      setAgents(sortedAgents);
     } catch (error) {
       console.error("Failed to load agents:", error);
       toast.error("Failed to load agents");
