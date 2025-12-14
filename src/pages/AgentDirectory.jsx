@@ -125,17 +125,6 @@ export default function AgentDirectory() {
         }
         
         setDeal(dealData);
-        
-        // Set location filter based on deal state
-        if (dealData.state) {
-          const stateMap = {
-            'AZ': 'arizona', 'TX': 'texas', 'FL': 'florida', 'CA': 'california'
-          };
-          const normalizedState = stateMap[dealData.state] || dealData.state.toLowerCase();
-          if (['arizona', 'texas', 'florida', 'california'].includes(normalizedState)) {
-            setLocationFilter(normalizedState);
-          }
-        }
       } catch (error) {
         console.error("Failed to load deal:", error);
         toast.error("Failed to load deal");
