@@ -28,6 +28,7 @@ export default function AgentOnboarding() {
     phone: '',
     license_number: '',
     license_state: '',
+    main_county: '',
     markets: [],
     experience_years: '',
     bio: ''
@@ -69,6 +70,7 @@ export default function AgentOnboarding() {
         phone: profile.phone || '',
         license_number: agent.license_number || profile.license_number || '',
         license_state: agent.license_state || profile.license_state || '',
+        main_county: agent.main_county || '',
         markets: agent.markets || profile.markets || [],
         experience_years: agent.experience_years || '',
         bio: agent.bio || ''
@@ -141,7 +143,7 @@ export default function AgentOnboarding() {
         user_type: 'agent',
         license_number: formData.license_number,
         license_state: formData.license_state,
-        markets: formData.markets,
+        markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
         target_state: formData.license_state || formData.markets[0] || '',
         onboarding_step: 'basic_complete',
         onboarding_completed_at: new Date().toISOString(),
@@ -150,7 +152,8 @@ export default function AgentOnboarding() {
           ...(profileToUpdate.agent || {}),
           license_number: formData.license_number,
           license_state: formData.license_state,
-          markets: formData.markets,
+          main_county: formData.main_county,
+          markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
           experience_years: parseInt(formData.experience_years) || 0,
           bio: formData.bio,
           investor_friendly: true,
@@ -229,8 +232,8 @@ export default function AgentOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Markets</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Your license info and service areas</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your license info and main service area</p>
       
       <div className="space-y-7">
         <div>
@@ -244,7 +247,7 @@ export default function AgentOnboarding() {
           />
         </div>
         <div>
-          <Label htmlFor="license_state" className="text-[#FAFAFA] text-[19px] font-medium">License State *</Label>
+          <Label htmlFor="license_state" className="text-[#FAFAFA] text-[19px] font-medium">Licensed State *</Label>
           <select 
             id="license_state" 
             value={formData.license_state} 
@@ -256,8 +259,29 @@ export default function AgentOnboarding() {
           </select>
         </div>
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Markets You Serve *</Label>
-          <div className="grid grid-cols-3 gap-3 mt-3 max-h-60 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
+          <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Main County *</Label>
+          <Input 
+            id="main_county" 
+            value={formData.main_county} 
+            onChange={(e) => updateField('main_county', e.target.value)} 
+            placeholder="e.g., Maricopa County" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+          />
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep3 = () => (
+    <div>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Markets & Bio</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Service areas and professional background</p>
+      
+      <div className="space-y-7">
+        <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Additional Markets You Serve</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you're licensed or serve clients</p>
+          <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-3">
                 <Checkbox 
@@ -271,16 +295,7 @@ export default function AgentOnboarding() {
             ))}
           </div>
         </div>
-      </div>
-    </div>
-  );
 
-  const renderStep3 = () => (
-    <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell investors about yourself</p>
-      
-      <div className="space-y-7">
         <div>
           <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
           <Textarea 
@@ -288,13 +303,13 @@ export default function AgentOnboarding() {
             value={formData.bio} 
             onChange={(e) => updateField('bio', e.target.value)} 
             placeholder="Introduce yourself and highlight your experience working with investor clients..." 
-            rows={7}
+            rows={5}
             className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" 
           />
           <p className="text-[16px] text-[#808080] mt-2">This will appear on your public profile</p>
         </div>
 
-        <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
+        <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
             After completing this, you can add more details from your dashboard to improve your profile and get matched with more investors.
@@ -347,7 +362,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.license_state || formData.markets.length === 0))}
+              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.license_state || !formData.main_county))}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
