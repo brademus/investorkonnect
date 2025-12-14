@@ -91,21 +91,23 @@ export default function Inbox() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-transparent">
       {/* Navigation Bar */}
-      <nav className="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm px-6 md:px-20 py-4">
+      <nav className="bg-[#0D0D0D] border-b border-[#1F1F1F] sticky top-0 z-50 px-6 md:px-20 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <Link to={createPageUrl("Home")} className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-amber-500 rounded-xl flex items-center justify-center">
-              <HomeIcon className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold text-gray-700">INVESTOR KONNECT</span>
+            <img 
+              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+              alt="Investor Konnect"
+              className="h-10 w-10 object-contain"
+            />
+            <span className="text-xl font-bold text-[#E3C567]">INVESTOR KONNECT</span>
           </Link>
           
           <Button
             variant="ghost"
             onClick={() => navigate(-1)}
-            className="rounded-full font-medium gap-2"
+            className="rounded-full font-medium gap-2 text-[#808080] hover:text-[#E3C567]"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Dashboard
@@ -117,21 +119,21 @@ export default function Inbox() {
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-3">
-            <div className="w-14 h-14 bg-blue-100 rounded-2xl flex items-center justify-center">
-              <MessageCircle className="w-7 h-7 text-blue-600" />
+            <div className="w-14 h-14 bg-[#E3C567]/20 rounded-2xl flex items-center justify-center">
+              <MessageCircle className="w-7 h-7 text-[#E3C567]" />
             </div>
-            <h1 className="text-4xl font-bold text-gray-800">Messages</h1>
+            <h1 className="text-4xl font-bold text-[#E3C567]">Messages</h1>
           </div>
-          <p className="text-lg text-gray-600">
+          <p className="text-lg text-[#808080]">
             Connection requests and active conversations
           </p>
         </div>
 
         <Tabs defaultValue="requests" className="space-y-8">
-          <TabsList className="bg-white rounded-full p-1 border border-gray-200 shadow-sm">
+          <TabsList className="bg-[#0D0D0D] rounded-full p-1 border border-[#1F1F1F]">
             <TabsTrigger 
               value="requests" 
-              className="rounded-full px-6 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+              className="rounded-full px-6 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black"
             >
               <Users className="w-4 h-4 mr-2" />
               Requests
@@ -141,57 +143,57 @@ export default function Inbox() {
             </TabsTrigger>
             <TabsTrigger 
               value="active" 
-              className="rounded-full px-6 data-[state=active]:bg-amber-500 data-[state=active]:text-white"
+              className="rounded-full px-6 data-[state=active]:bg-[#E3C567] data-[state=active]:text-black"
             >
               <MessageCircle className="w-4 h-4 mr-2" />
               Active Rooms
               {rooms.length > 0 && (
-                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">{rooms.length}</span>
+                <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#E3C567]/20 text-[#E3C567]">{rooms.length}</span>
               )}
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="requests">
-            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-[#0D0D0D] rounded-3xl border border-[#1F1F1F] overflow-hidden">
               {requests.length === 0 ? (
                 <div className="p-16 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6">
-                    <Users className="w-10 h-10 text-gray-400" />
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-[#141414] rounded-2xl mb-6">
+                    <Users className="w-10 h-10 text-[#808080]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">No pending requests</h3>
-                  <p className="text-gray-600 text-lg">New connection requests will appear here</p>
+                  <h3 className="text-2xl font-bold text-[#FAFAFA] mb-3">No pending requests</h3>
+                  <p className="text-[#808080] text-lg">New connection requests will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-[#1F1F1F]">
                   {requests.map((request) => (
-                    <div key={request.requestId} className="p-8 hover:bg-gray-50 transition-colors">
+                    <div key={request.requestId} className="p-8 hover:bg-[#141414] transition-colors">
                       <div className="flex items-start justify-between mb-6">
                         <div className="flex-1">
                           <div className="flex items-center gap-3 mb-2">
-                            <h3 className="text-xl font-bold text-gray-800">
+                            <h3 className="text-xl font-bold text-[#FAFAFA]">
                               {request.investor.name || 'Investor'}
                             </h3>
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">New</span>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#E3C567]/20 text-[#E3C567]">New</span>
                           </div>
                           {request.investor.company && (
-                            <p className="text-sm text-gray-600 mb-2">{request.investor.company}</p>
+                            <p className="text-sm text-[#808080] mb-2">{request.investor.company}</p>
                           )}
                           <div className="flex flex-wrap gap-1">
                             {request.investor.markets?.map(market => (
-                              <Badge key={market} variant="secondary" className="text-xs rounded-full">
+                              <Badge key={market} variant="secondary" className="text-xs rounded-full bg-[#1F1F1F] text-[#FAFAFA] border-[#333]">
                                 {market}
                               </Badge>
                             ))}
                           </div>
                         </div>
-                        <Badge variant="outline" className="rounded-full">
+                        <Badge variant="outline" className="rounded-full border-[#1F1F1F] text-[#808080]">
                           {new Date(request.createdAt).toLocaleDateString()}
                         </Badge>
                       </div>
 
                       {request.message && (
-                        <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-                          <p className="text-sm text-gray-700">{request.message}</p>
+                        <div className="bg-[#141414] rounded-2xl p-4 mb-6 border border-[#1F1F1F]">
+                          <p className="text-sm text-[#FAFAFA]">{request.message}</p>
                         </div>
                       )}
 
@@ -206,7 +208,7 @@ export default function Inbox() {
                         <Button
                           onClick={() => handleDecline(request.requestId)}
                           variant="outline"
-                          className="border-gray-300 text-gray-700 hover:bg-gray-50 rounded-xl px-6 font-semibold"
+                          className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] rounded-xl px-6 font-semibold"
                         >
                           <X className="w-4 h-4 mr-2" />
                           Decline
@@ -220,43 +222,45 @@ export default function Inbox() {
           </TabsContent>
 
           <TabsContent value="active">
-            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="bg-[#0D0D0D] rounded-3xl border border-[#1F1F1F] overflow-hidden">
               {rooms.length === 0 ? (
                 <div className="p-16 text-center">
-                  <div className="inline-flex items-center justify-center w-20 h-20 bg-gray-100 rounded-2xl mb-6">
-                    <MessageCircle className="w-10 h-10 text-gray-400" />
+                  <div className="inline-flex items-center justify-center w-20 h-20 bg-[#141414] rounded-2xl mb-6">
+                    <MessageCircle className="w-10 h-10 text-[#808080]" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800 mb-3">No active rooms</h3>
-                  <p className="text-gray-600 text-lg">Accepted connections will appear here</p>
+                  <h3 className="text-2xl font-bold text-[#FAFAFA] mb-3">No active rooms</h3>
+                  <p className="text-[#808080] text-lg">Accepted connections will appear here</p>
                 </div>
               ) : (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-[#1F1F1F]">
                   {rooms.map((room) => (
                     <div 
                       key={room.id} 
-                      className="p-6 hover:bg-gray-50 cursor-pointer transition-colors"
+                      className="p-6 hover:bg-[#141414] cursor-pointer transition-colors"
                       onClick={() => goToRoom(room.id)}
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 rounded-2xl bg-blue-100 flex items-center justify-center">
-                            <Users className="w-6 h-6 text-blue-600" />
+                          <div className="w-12 h-12 rounded-2xl bg-[#E3C567]/20 flex items-center justify-center">
+                            <Users className="w-6 h-6 text-[#E3C567]" />
                           </div>
                           <div>
-                            <h3 className="font-semibold text-gray-800">Intro Room</h3>
-                            <p className="text-sm text-gray-500">
+                            <h3 className="font-semibold text-[#FAFAFA]">
+                              {room.counterparty_name || room.deal_title || 'Deal Room'}
+                            </h3>
+                            <p className="text-sm text-[#808080]">
                               Created {new Date(room.created_date).toLocaleDateString()}
                             </p>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           {room.ndaAcceptedInvestor && room.ndaAcceptedAgent && (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#E3C567]/20 text-[#E3C567]">
                               <Shield className="w-3 h-3 mr-1" />
                               NDA Signed
                             </span>
                           )}
-                          <Button variant="ghost" size="sm" className="rounded-full">
+                          <Button variant="ghost" size="sm" className="rounded-full text-[#E3C567] hover:bg-[#E3C567]/10">
                             View
                           </Button>
                         </div>
