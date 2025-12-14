@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { Loader2 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import DashboardInvestor from "./DashboardInvestor";
 import DashboardAgent from "./DashboardAgent";

@@ -6,9 +6,10 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import LoadingAnimation from "@/components/LoadingAnimation";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
-  Loader2, ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
+  ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
   Clock, CheckSquare, XCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -265,9 +266,9 @@ function PipelineContent() {
 
   if (loading || !profile || loadingDeals || loadingRooms || deduplicating) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin mx-auto mb-3" />
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
           {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
           {loading && <p className="text-sm text-[#808080]">Loading profile...</p>}
         </div>
