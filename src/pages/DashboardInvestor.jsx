@@ -596,13 +596,8 @@ function InvestorDashboardContent() {
                             variant="ghost"
                             size="sm"
                             onClick={() => {
-                                let url = createPageUrl("AgentDirectory");
-                                if (orphanDeal.county && orphanDeal.state) {
-                                    url += `?county=${encodeURIComponent(orphanDeal.county)}&state=${encodeURIComponent(orphanDeal.state)}`;
-                                } else if (orphanDeal.state) {
-                                    url += `?state=${encodeURIComponent(orphanDeal.state)}`;
-                                }
-                                navigate(url);
+                                const dealId = orphanDeal.deal_id || orphanDeal.id;
+                                navigate(`${createPageUrl("AgentDirectory")}?dealId=${dealId}`);
                             }}
                             className="text-xs text-[#E3C567] hover:text-[#EDD89F]"
                         >
