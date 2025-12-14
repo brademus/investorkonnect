@@ -244,9 +244,11 @@ export default function InvestorOnboarding() {
     <div className="min-h-screen bg-black" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', Georgia, serif" }}>
       <header className="h-20 flex items-center justify-center border-b border-[#1F1F1F]">
         <div className="flex items-center gap-2">
-          <div className="w-10 h-10 bg-[#E3C567] rounded-xl flex items-center justify-center">
-            <CheckCircle className="w-6 h-6 text-black" />
-          </div>
+          <img 
+            src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+            alt="Investor Konnect"
+            className="h-10 w-10 object-contain"
+          />
           <span className="text-xl font-bold text-[#E3C567]">INVESTOR KONNECT</span>
         </div>
       </header>
