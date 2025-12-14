@@ -256,9 +256,8 @@ function AccountProfileContent() {
               <Link to={createPageUrl("Dashboard")}>
                 <Button
                   type="button"
-                  variant="outline"
                   disabled={saving}
-                  className="border-[#333] text-[#FAFAFA] hover:bg-[#141414] hover:text-[#FAFAFA]"
+                  className="bg-[#0D0D0D] border border-[#1F1F1F] text-[#808080] hover:bg-[#141414] hover:border-[#333] hover:text-[#E3C567]"
                 >
                   Cancel
                 </Button>
