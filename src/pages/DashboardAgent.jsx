@@ -19,6 +19,22 @@ function AgentDashboardContent() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Load agent deals
+  const { data: agentDeals = [], isLoading: dealsLoading } = useQuery({
+    queryKey: ['agentDeals', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      const deals = await base44.entities.Deal.filter({ 
+        agent_id: profile.id 
+      });
+      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+    },
+    enabled: !!profile?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
+  });
+
   // Real Data Fetching
   const { data: rooms = [], isLoading: roomsLoading } = useRooms();
   
@@ -79,7 +95,10 @@ function AgentDashboardContent() {
     }
   };
 
-  if (loading || roomsLoading || inboxLoading) {
+  const firstName = profile?.full_name?.split(' ')[0] || 'Agent';
+  const isLoading = (loading || roomsLoading || inboxLoading || dealsLoading) && rooms.length === 0;
+
+  if (isLoading) {
     return (
       <>
         <Header profile={profile} />
@@ -93,22 +112,32 @@ function AgentDashboardContent() {
     );
   }
 
-  const firstName = profile?.full_name?.split(' ')[0] || 'Agent';
+  // Calculate Real Stats from deals
+  const activeDeals = Array.isArray(agentDeals) 
+    ? agentDeals.filter(d => !['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)) 
+    : [];
 
-  // Calculate Real Stats
-  const activeRooms = rooms.filter(r => r && !['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage));
-  const closedRooms = rooms.filter(r => r && ['closing', 'clear_to_close_closed', 'closed'].includes(r.pipeline_stage));
+  const dealStats = {
+    new_deal: activeDeals.filter(d => d.pipeline_stage === 'new_deal_under_contract').length,
+    walkthrough: activeDeals.filter(d => d.pipeline_stage === 'walkthrough_scheduled').length,
+    evaluate: activeDeals.filter(d => d.pipeline_stage === 'evaluate_deal').length,
+    marketing: activeDeals.filter(d => d.pipeline_stage === 'active_marketing').length,
+    closed: Array.isArray(agentDeals) 
+      ? agentDeals.filter(d => ['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)).length 
+      : 0
+  };
+
   const pendingRequests = inbox.filter(i => i.status === 'pending');
-  const uniqueClients = new Set(activeRooms.map(r => r.investorId).filter(Boolean)).size;
-  const unreadCount = inbox.filter(i => !i.read).length; // Approximate unread from inbox
+  const uniqueClients = new Set(activeDeals.map(d => d.investor_id).filter(Boolean)).size;
+  const unreadCount = inbox.filter(i => !i.read).length;
 
   const userData = {
     activeClients: uniqueClients,
     pendingRequests: pendingRequests.length,
     unreadMessages: unreadCount,
-    profileViews: 0, // Not tracked yet
-    activeDealRooms: activeRooms.length,
-    closedDeals: closedRooms.length
+    profileViews: 0,
+    activeDealRooms: activeDeals.length,
+    closedDeals: dealStats.closed
   };
 
   return (
@@ -134,21 +163,57 @@ function AgentDashboardContent() {
             {/* 4-Box Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               
-              {/* Box 1: My Deals - Hidden as DealRooms page is removed */}
+              {/* Box 1: Pipeline Overview */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
+                      <TrendingUp className="w-5 h-5" />
+                    </div>
+                    <h3 className="text-xl font-bold text-[#FAFAFA]">Pipeline</h3>
+                  </div>
+                  <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">View All</Link>
+                </div>
 
-              {/* Box 2: Pipeline */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col hover:shadow-xl hover:border-[#E3C567] transition-all">
+                {isLoading ? (
+                  <div className="space-y-2 flex-grow">
+                    {[1,2,3,4,5].map(i => (
+                      <div key={i} className="h-14 bg-[#141414] rounded-xl animate-pulse"></div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="space-y-2 flex-grow overflow-y-auto">
+                    {[
+                      { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#E3C567]', icon: Plus, bg: 'bg-[#E3C567]/10' },
+                      { label: 'Walkthrough Scheduled', count: dealStats.walkthrough, color: 'text-[#E3C567]', icon: Home, bg: 'bg-[#E3C567]/10' },
+                      { label: 'Evaluate Deal', count: dealStats.evaluate, color: 'text-[#E3C567]', icon: FileText, bg: 'bg-[#E3C567]/10' },
+                      { label: 'Active Marketing', count: dealStats.marketing, color: 'text-[#E3C567]', icon: Users, bg: 'bg-[#E3C567]/10' },
+                      { label: 'Closed', count: dealStats.closed, color: 'text-[#808080]', icon: DollarSign, bg: 'bg-[#808080]/10' }
+                    ].map((stat, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#333] transition-colors">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${stat.bg}`}>
+                            <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                          </div>
+                          <span className="text-sm font-medium text-[#FAFAFA]">{stat.label}</span>
+                        </div>
+                        <span className={`text-base font-bold ${stat.color}`}>{stat.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Box 2: Quick Stats */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <TrendingUp className="w-6 h-6 text-[#E3C567]" />
+                    <Users className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">
-                    View full pipeline →
-                  </Link>
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Pipeline</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Activity</h3>
                 <p className="text-sm text-[#808080] mb-6">
-                  Track your active deals through every stage of the transaction.
+                  Your current deals and connections at a glance.
                 </p>
                 
                 <div className="space-y-2 flex-grow">
@@ -162,8 +227,16 @@ function AgentDashboardContent() {
                   
                   <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
                     <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-[#808080]" />
+                      <span className="text-sm font-medium text-[#FAFAFA]">Active Clients</span>
+                    </div>
+                    <span className="text-lg font-bold text-[#808080]">{userData.activeClients}</span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
+                    <div className="flex items-center gap-2">
                       <Clock className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Pending</span>
+                      <span className="text-sm font-medium text-[#FAFAFA]">Pending Requests</span>
                     </div>
                     <span className="text-lg font-bold text-[#808080]">{userData.pendingRequests}</span>
                   </div>
@@ -171,7 +244,7 @@ function AgentDashboardContent() {
                   <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
                     <div className="flex items-center gap-2">
                       <DollarSign className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Closed</span>
+                      <span className="text-sm font-medium text-[#FAFAFA]">Closed Deals</span>
                     </div>
                     <span className="text-lg font-bold text-green-500">{userData.closedDeals}</span>
                   </div>
