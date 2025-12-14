@@ -262,20 +262,20 @@ function AgentDashboardContent() {
               {/* Box 3: Messages */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
-                  <div className="w-12 h-12 bg-[#DB2777]/20 rounded-xl flex items-center justify-center">
-                    <MessageSquare className="w-6 h-6 text-[#DB2777]" />
+                  <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
+                    <MessageSquare className="w-6 h-6 text-[#E3C567]" />
                   </div>
                   {/* Deal Rooms link removed */}
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
                 
                 <div className="space-y-2 flex-grow">
-                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#DB2777]/10 border border-[#DB2777]/20">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-[#E3C567]/10 border border-[#E3C567]/20">
                     <div className="flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-[#DB2777]" />
+                      <MessageSquare className="w-4 h-4 text-[#E3C567]" />
                       <span className="text-sm font-medium text-[#FAFAFA]">Unread</span>
                     </div>
-                    <span className="text-lg font-bold text-[#DB2777]">{userData.unreadMessages}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{userData.unreadMessages}</span>
                   </div>
                   
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#E3C567]/10 border border-[#E3C567]/20">
