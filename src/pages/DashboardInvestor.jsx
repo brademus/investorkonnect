@@ -582,13 +582,33 @@ function InvestorDashboardContent() {
 
             {/* BOX 4: AGENTS */}
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
-                <div className="flex items-center gap-3 mb-6">
-                    <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
-                        <Users className="w-5 h-5" />
+                <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center text-[#E3C567]">
+                            <Users className="w-5 h-5" />
+                        </div>
+                        <h3 className="text-xl font-bold text-[#FAFAFA]">
+                            {orphanDeal ? 'Recommended Agents' : 'Top Agents'}
+                        </h3>
                     </div>
-                    <h3 className="text-xl font-bold text-[#FAFAFA]">
-                        {orphanDeal ? 'Recommended Agents' : 'Top Agents'}
-                    </h3>
+                    {orphanDeal && (
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                                let url = createPageUrl("AgentDirectory");
+                                if (orphanDeal.county && orphanDeal.state) {
+                                    url += `?county=${encodeURIComponent(orphanDeal.county)}&state=${encodeURIComponent(orphanDeal.state)}`;
+                                } else if (orphanDeal.state) {
+                                    url += `?state=${encodeURIComponent(orphanDeal.state)}`;
+                                }
+                                navigate(url);
+                            }}
+                            className="text-xs text-[#E3C567] hover:text-[#EDD89F]"
+                        >
+                            View All
+                        </Button>
+                    )}
                 </div>
 
                 {isLoading || agentsLoading ? (
