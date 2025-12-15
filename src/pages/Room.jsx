@@ -947,7 +947,7 @@ ${dealContext}`;
                                       <FileText className="w-5 h-5 text-[#E3C567]" />
                                       Deal Documents
                                     </h4>
-                                    {currentRoom?.contract_url || currentRoom?.contract_document ? (
+                                    {(currentRoom?.contract_url || currentRoom?.contract_document?.url) ? (
                                       <div className="space-y-3">
                                         <a 
                                           href={currentRoom.contract_url || currentRoom.contract_document?.url}
@@ -1238,7 +1238,7 @@ ${dealContext}`;
                                       <FileText className="w-5 h-5 text-[#E3C567]" />
                                       Deal Documents
                                     </h4>
-                                    {currentRoom?.contract_url || currentRoom?.contract_document ? (
+                                    {(currentRoom?.contract_url || currentRoom?.contract_document?.url) ? (
                                       <div className="space-y-3">
                                         <a 
                                           href={currentRoom.contract_url || currentRoom.contract_document?.url}
