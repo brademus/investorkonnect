@@ -48,25 +48,7 @@ async function enrichRoomWithProfile(room, myProfileId) {
 /**
  * Normalize room data structure for consistent display across all pages
  */
-async function normalizeRoom(room) {
-  // Fetch last message for this room if not already present
-  let lastMessage = room.last_message;
-  
-  if (!lastMessage && room.id && !room.is_orphan) {
-    try {
-      const messages = await base44.entities.Message.filter(
-        { room_id: room.id },
-        '-created_date',
-        1
-      );
-      if (messages && messages.length > 0) {
-        lastMessage = messages[0];
-      }
-    } catch (err) {
-      console.log(`[normalizeRoom] Could not fetch last message for room ${room.id}`);
-    }
-  }
-  
+function normalizeRoom(room) {
   return {
     ...room,
     // Ensure messages sidebar fields exist
@@ -79,9 +61,9 @@ async function normalizeRoom(room) {
     budget: room.budget || room.contract_price || null,
     pipeline_stage: room.pipeline_stage || (room.deal_id ? 'new_deal_under_contract' : null),
     deal_title: room.deal_title || room.title || null,
-    // Include last message data
-    last_message: lastMessage,
-    last_message_text: lastMessage?.body,
+    // Last message already fetched by backend
+    last_message: room.last_message,
+    last_message_text: room.last_message_text,
   };
 }
 
@@ -242,8 +224,8 @@ export function useRooms() {
         }
         allRooms = await Promise.all(allRooms.map(room => enrichRoomWithProfile(room, myProfileId)));
         
-        // 4. Normalize (now async to fetch last message)
-        const normalizedRooms = await Promise.all(allRooms.map(normalizeRoom));
+        // 4. Normalize (sync - backend already has messages)
+        const normalizedRooms = allRooms.map(normalizeRoom);
         
         console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms`);
         

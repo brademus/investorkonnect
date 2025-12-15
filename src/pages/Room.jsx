@@ -38,16 +38,16 @@ function useMessages(roomId) {
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
-    let lastFetch = null;
 
     const fetchMessages = async () => {
       try {
-        const params = { room_id: roomId };
-        const response = await listMessages(params);
-        const apiMessages = response.data?.items || [];
+        const messages = await base44.entities.Message.filter(
+          { room_id: roomId },
+          '-created_date'
+        );
 
         if (!cancelled) {
-          setItems(apiMessages);
+          setItems(messages || []);
         }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
@@ -56,7 +56,7 @@ function useMessages(roomId) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 500); // Poll every 500ms for real-time feel
+    const interval = setInterval(fetchMessages, 1000); // Poll every second
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 

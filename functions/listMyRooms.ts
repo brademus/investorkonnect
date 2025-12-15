@@ -79,22 +79,26 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Fetch Last Messages for all rooms
+    // 5. Fetch Last Messages for all rooms (PARALLEL)
     const lastMessagesMap = new Map();
     if (rooms.length > 0) {
       try {
         const roomIds = rooms.map(r => r.id);
-        // Get last message for each room
-        for (const roomId of roomIds) {
-          const msgs = await base44.entities.Message.filter(
+        // Fetch all last messages in parallel
+        const messagePromises = roomIds.map(roomId => 
+          base44.entities.Message.filter(
             { room_id: roomId },
             '-created_date',
             1
-          );
-          if (msgs && msgs.length > 0) {
-            lastMessagesMap.set(roomId, msgs[0]);
+          ).catch(e => [])
+        );
+        const allMessages = await Promise.all(messagePromises);
+        
+        roomIds.forEach((roomId, idx) => {
+          if (allMessages[idx] && allMessages[idx].length > 0) {
+            lastMessagesMap.set(roomId, allMessages[idx][0]);
           }
-        }
+        });
       } catch (e) {
         console.error("Error fetching last messages:", e);
       }
