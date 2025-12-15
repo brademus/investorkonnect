@@ -221,7 +221,7 @@ export default function Room() {
   });
 
   return (
-    <div className="h-screen bg-transparent flex overflow-hidden">
+    <div className="fixed inset-0 bg-transparent flex overflow-hidden">
       {/* Left Sidebar - Conversation List */}
       <div 
         className={`fixed inset-y-0 left-0 w-[320px] bg-[#0D0D0D] border-r border-[#1F1F1F] z-40 transform transition-transform shadow-xl ${
@@ -305,7 +305,7 @@ export default function Room() {
       </div>
 
       {/* Right Main Area - Active Conversation */}
-      <div className="flex-1 md:ml-[320px] flex flex-col bg-black h-screen overflow-hidden">
+      <div className="flex-1 md:ml-[320px] flex flex-col bg-black overflow-hidden">
         {/* Conversation Header */}
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0 z-10">
           <button 
