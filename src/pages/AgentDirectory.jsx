@@ -194,24 +194,21 @@ export default function AgentDirectory() {
 
   const handleOpenRoom = async (agent) => {
     try {
-      const params = new URLSearchParams(window.location.search);
-      const dealId = params.get('dealId');
-      
-      if (!dealId) {
-        toast.error("No deal specified");
+      if (!deal?.id) {
+        toast.error("No deal found. Please try again.");
         return;
       }
       
       // Get or create room for this deal + agent
       const roomId = await getOrCreateDealRoom({
-        dealId: dealId,
+        dealId: deal.id,
         agentProfileId: agent.id
       });
       
       // Lock in the agent to this deal
       const lockResponse = await base44.functions.invoke('lockInDealAgent', {
         room_id: roomId,
-        deal_id: dealId
+        deal_id: deal.id
       });
 
       if (!lockResponse.data?.success) {
@@ -228,7 +225,7 @@ export default function AgentDirectory() {
       navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
     } catch (error) {
       console.error("Failed to create room:", error);
-      toast.error("Failed to create room");
+      toast.error(error.message || "Failed to create room");
     }
   };
 
