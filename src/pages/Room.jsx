@@ -305,7 +305,7 @@ export default function Room() {
       </div>
 
       {/* Right Main Area - Active Conversation */}
-      <div className="flex-1 md:ml-[320px] flex flex-col bg-black h-screen">
+      <div className="md:ml-[320px] flex flex-col bg-black h-screen">
         {/* Conversation Header */}
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0">
           <button 
@@ -436,7 +436,7 @@ export default function Room() {
         )}
 
         {/* Message Thread or Deal Board - SCROLLABLE MIDDLE */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4 min-h-0">
           {/* Deal Details Sidebar */}
           {showDealDetails && currentRoom && (
             <div className="w-80 flex-shrink-0 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 h-fit sticky top-6">
