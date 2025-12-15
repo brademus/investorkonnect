@@ -212,58 +212,59 @@ function AgentDashboardContent() {
                 )}
               </div>
 
-              {/* Box 2: Quick Stats */}
+              {/* Box 2: Things to Do Today */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-[#E3C567]" />
+                    <Clock className="w-6 h-6 text-[#E3C567]" />
                   </div>
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Activity</h3>
-                <p className="text-sm text-[#808080] mb-6">
-                  Your current deals and connections at a glance.
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Things to Do Today</h3>
+                <p className="text-sm text-[#808080] mb-4">
+                  Your action items across all active deals
                 </p>
                 
-                <div className="space-y-2 flex-grow">
-                  <div className="flex items-center justify-between p-3 bg-[#E3C567]/10 rounded-lg border border-[#E3C567]/20">
-                    <div className="flex items-center gap-2">
-                      <FileText className="w-4 h-4 text-[#E3C567]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Active Deals</span>
+                <div className="space-y-2 flex-grow overflow-y-auto">
+                  {activeDeals.length > 0 ? (
+                    activeDeals.slice(0, 5).map((deal) => {
+                      const dealRoom = rooms.find(r => r.deal_id === deal.id);
+                      return (
+                        <button
+                          key={deal.id}
+                          onClick={() => {
+                            if (dealRoom) {
+                              navigate(`${createPageUrl("Room")}?roomId=${dealRoom.id}`);
+                            }
+                          }}
+                          className="w-full text-left p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567] transition-all group"
+                        >
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 rounded border border-[#1F1F1F] bg-[#0D0D0D] mt-0.5 flex-shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#FAFAFA] truncate">
+                                Follow up: {deal.property_address || deal.title}
+                              </p>
+                              <p className="text-xs text-[#808080] mt-0.5">
+                                Investor: {dealRoom?.counterparty_name || 'N/A'} • Stage: {deal.pipeline_stage?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                              </p>
+                            </div>
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-sm text-[#808080]">No active deals today</p>
+                      <p className="text-xs text-[#666666] mt-1">Tasks will appear here as deals come in</p>
                     </div>
-                    <span className="text-lg font-bold text-[#E3C567]">{userData.activeDealRooms}</span>
-                  </div>
-                  
-                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Active Clients</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#808080]">{userData.activeClients}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
-                    <div className="flex items-center gap-2">
-                      <Clock className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Pending Requests</span>
-                    </div>
-                    <span className="text-lg font-bold text-[#808080]">{userData.pendingRequests}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between p-3 bg-[#262626] rounded-lg border border-[#333]">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-green-500" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Closed Deals</span>
-                    </div>
-                    <span className="text-lg font-bold text-green-500">{userData.closedDeals}</span>
-                  </div>
+                  )}
                 </div>
 
-                <Button 
-                  onClick={() => navigate(createPageUrl("Pipeline"))}
-                  className="w-full mt-4 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                >
-                  View Pipeline
-                </Button>
+                {activeDeals.length > 5 && (
+                  <p className="text-xs text-[#808080] mt-3 text-center">
+                    +{activeDeals.length - 5} more tasks in pipeline
+                  </p>
+                )}
               </div>
 
               {/* Box 3: Messages */}
