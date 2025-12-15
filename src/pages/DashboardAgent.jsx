@@ -183,7 +183,7 @@ function AgentDashboardContent() {
                   <Link to={createPageUrl("Pipeline")} className="text-xs text-[#E3C567] hover:underline">View All</Link>
                 </div>
 
-                {isLoading ? (
+                {dealsLoading ? (
                   <div className="space-y-2 flex-grow">
                     {[1,2,3,4,5].map(i => (
                       <div key={i} className="h-14 bg-[#141414] rounded-xl animate-pulse"></div>
