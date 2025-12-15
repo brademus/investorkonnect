@@ -670,7 +670,7 @@ export default function Room() {
             </div>
           ) : (
             /* Messages View */
-            <div className="flex flex-col h-full">
+            <>
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
@@ -712,7 +712,7 @@ export default function Room() {
               )}
 
               {/* Messages Container */}
-              <div className="flex-1 overflow-y-auto flex flex-col space-y-4 min-h-0">
+              <div className="flex-1 overflow-y-auto space-y-4">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -721,7 +721,7 @@ export default function Room() {
                   </div>
                 </div>
               ) : messages.length === 0 ? (
-                <div className="flex-1 flex items-center justify-center">
+                <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                       <Send className="w-8 h-8 text-[#E3C567]" />
@@ -762,7 +762,7 @@ export default function Room() {
                 </>
               )}
               </div>
-              </div>
+              </>
               )}
               </div>
               </div>
