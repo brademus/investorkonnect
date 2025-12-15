@@ -93,11 +93,12 @@ async function normalizeRoom(room) {
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
-    staleTime: 60000, // 1 minute - allow refresh but show cached data
+    staleTime: 2000, // 2 seconds - near real-time updates
     gcTime: 1000 * 60 * 30, // Keep in cache for 30 minutes
     refetchOnMount: true,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    refetchInterval: 2000, // Poll every 2 seconds for new messages
     placeholderData: [],
     queryFn: async () => {
       try {

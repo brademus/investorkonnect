@@ -42,35 +42,21 @@ function useMessages(roomId) {
 
     const fetchMessages = async () => {
       try {
-        // Load from sessionStorage first
-        const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
-        
         const params = { room_id: roomId };
-        if (lastFetch) params.after = lastFetch;
         const response = await listMessages(params);
         const apiMessages = response.data?.items || [];
-        
-        // Merge API messages with stored messages (avoid duplicates)
-        const apiIds = new Set(apiMessages.map(m => m.id));
-        const uniqueStored = storedMessages.filter(m => !apiIds.has(m.id));
-        const allMessages = [...apiMessages, ...uniqueStored].sort((a, b) => 
-          new Date(a.created_date) - new Date(b.created_date)
-        );
-        
+
         if (!cancelled) {
-          setItems(allMessages);
-          if (allMessages.length > 0) lastFetch = allMessages[allMessages.length - 1].created_date;
+          setItems(apiMessages);
         }
       } catch (error) {
-        // Fallback to sessionStorage only
-        const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
-        if (!cancelled) setItems(storedMessages);
+        console.error('Failed to fetch messages:', error);
       }
       finally { if (!cancelled) setLoading(false); }
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 1000);
+    const interval = setInterval(fetchMessages, 500); // Poll every 500ms for real-time feel
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -171,44 +157,16 @@ export default function Room() {
     if (!t || !roomId || sending) return;
     setText("");
     setSending(true);
-    const optimistic = {
-      id: `msg-${Date.now()}`,
-      room_id: roomId,
-      body: t,
-      sender_profile_id: profile?.id || "me",
-      created_date: new Date().toISOString()
-    };
-    setItems(prev => [...prev, optimistic]);
-
-    // Save to sessionStorage for persistence
-    const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
-    storedMessages.push(optimistic);
-    sessionStorage.setItem(`room_messages_${roomId}`, JSON.stringify(storedMessages));
-
+    
     try {
       await sendMessage({ room_id: roomId, body: t });
+      // Invalidate queries to force refresh everywhere
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast.error('Failed to send message. It will retry automatically.');
+      toast.error('Failed to send message');
     } finally { 
       setSending(false);
-      // Force immediate refresh after sending
-      setTimeout(() => {
-        const fetchMessages = async () => {
-          try {
-            const response = await listMessages({ room_id: roomId });
-            const apiMessages = response.data?.items || [];
-            const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
-            const apiIds = new Set(apiMessages.map(m => m.id));
-            const uniqueStored = storedMessages.filter(m => !apiIds.has(m.id));
-            const allMessages = [...apiMessages, ...uniqueStored].sort((a, b) => 
-              new Date(a.created_date) - new Date(b.created_date)
-            );
-            setItems(allMessages);
-          } catch (e) {}
-        };
-        fetchMessages();
-      }, 500);
     }
   };
 
