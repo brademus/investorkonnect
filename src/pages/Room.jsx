@@ -108,8 +108,63 @@ export default function Room() {
   const [showBoard, setShowBoard] = useState(false);
   const [lockingIn, setLockingIn] = useState(false);
   const [showDealDetails, setShowDealDetails] = useState(false);
+  const [currentRoom, setCurrentRoom] = useState(null);
+  const [roomLoading, setRoomLoading] = useState(true);
 
-  const currentRoom = rooms.find(r => r.id === roomId) || null;
+  // Fetch current room directly for instant loading
+  useEffect(() => {
+    if (!roomId) return;
+    
+    const fetchCurrentRoom = async () => {
+      try {
+        // First check cache
+        const cachedRoom = rooms.find(r => r.id === roomId);
+        if (cachedRoom) {
+          setCurrentRoom(cachedRoom);
+          setRoomLoading(false);
+          return;
+        }
+        
+        // Fetch directly from database
+        const roomData = await base44.entities.Room.filter({ id: roomId });
+        if (roomData && roomData.length > 0) {
+          const room = roomData[0];
+          
+          // Fetch deal data if present
+          if (room.deal_id) {
+            const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
+            if (dealData && dealData.length > 0) {
+              const deal = dealData[0];
+              setCurrentRoom({
+                ...room,
+                title: deal.title,
+                property_address: deal.property_address,
+                city: deal.city,
+                state: deal.state,
+                county: deal.county,
+                zip: deal.zip,
+                budget: deal.purchase_price,
+                pipeline_stage: deal.pipeline_stage,
+                closing_date: deal.key_dates?.closing_date,
+                deal_assigned_agent_id: deal.agent_id
+              });
+            } else {
+              setCurrentRoom(room);
+            }
+          } else {
+            setCurrentRoom(room);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch room:', error);
+      } finally {
+        setRoomLoading(false);
+      }
+    };
+    
+    fetchCurrentRoom();
+  }, [roomId, rooms]);
+
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
   
   // Robust agent profile ID - check multiple sources
@@ -402,42 +457,52 @@ export default function Room() {
         </div>
 
         {/* Persistent Deal Header */}
-        {!showBoard && !loading && currentRoom && (
+        {!showBoard && (
           <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md flex-shrink-0 z-10">
-            {/* Row 1: Status & Title */}
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-2 h-2 rounded-full ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'bg-[#10B981]' : 'bg-[#E3C567]'}`}></span>
-              <span className="font-bold text-[#FAFAFA] text-sm">
-                {currentRoom.title || `Chat with ${counterpartName}`}
-              </span>
-              <span className="text-[#555] text-xs">•</span>
-              <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
-                {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
-                  <span className="text-[#10B981]">Active – Working with this agent</span>
-                ) : (
-                  currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'
-                )}
-              </span>
-            </div>
-            
-            {/* Row 2: Address & Price */}
-            <div className="flex items-center gap-3 text-xs opacity-90">
-               <div className="flex items-center gap-1.5 text-[#CCC]">
-                 {/* Show Address if available, otherwise Deal Title, otherwise fallback */}
-                 <span>
-                   {currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected"}
-                 </span>
-               </div>
-               
-               {currentRoom.budget > 0 && (
-                 <>
-                   <span className="text-[#333]">|</span>
-                   <span className="text-[#34D399] font-mono font-medium">
-                     ${currentRoom.budget.toLocaleString()}
-                   </span>
-                 </>
-               )}
-            </div>
+            {roomLoading ? (
+              <div className="animate-pulse flex items-center gap-2">
+                <div className="h-3 w-3 bg-[#333] rounded-full"></div>
+                <div className="h-4 w-48 bg-[#333] rounded"></div>
+              </div>
+            ) : currentRoom ? (
+              <>
+                {/* Row 1: Status & Title */}
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`w-2 h-2 rounded-full ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'bg-[#10B981]' : 'bg-[#E3C567]'}`}></span>
+                  <span className="font-bold text-[#FAFAFA] text-sm">
+                    {currentRoom.title || `Chat with ${counterpartName}`}
+                  </span>
+                  <span className="text-[#555] text-xs">•</span>
+                  <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
+                    {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                      <span className="text-[#10B981]">Active – Working with this agent</span>
+                    ) : (
+                      currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'
+                    )}
+                  </span>
+                </div>
+
+                {/* Row 2: Address & Price */}
+                <div className="flex items-center gap-3 text-xs opacity-90">
+                   <div className="flex items-center gap-1.5 text-[#CCC]">
+                     <span>
+                       {currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected"}
+                     </span>
+                   </div>
+
+                   {currentRoom.budget > 0 && (
+                     <>
+                       <span className="text-[#333]">|</span>
+                       <span className="text-[#34D399] font-mono font-medium">
+                         ${currentRoom.budget.toLocaleString()}
+                       </span>
+                     </>
+                   )}
+                </div>
+              </>
+            ) : (
+              <span className="text-[#808080] text-sm">Loading deal information...</span>
+            )}
           </div>
         )}
 
