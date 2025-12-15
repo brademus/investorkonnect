@@ -75,13 +75,13 @@ function normalizeRoom(room) {
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
-    staleTime: 3000,
+    staleTime: 4000,
     gcTime: 1000 * 60 * 30,
     refetchOnMount: true,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnReconnect: true,
-    refetchInterval: 5000, // Poll every 5 seconds (less aggressive)
-    placeholderData: [],
+    refetchInterval: 8000, // Poll every 8 seconds (smooth updates)
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       try {
         // 1. Load from backend function listMyRooms

@@ -108,6 +108,67 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
   );
 });
 
+// Memoized conversation item to prevent flickering
+const ConversationItem = React.memo(({ room, isActive, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full text-left px-5 py-4 transition-all duration-200 flex items-center gap-4 border-b border-[#1F1F1F] ${
+        isActive 
+          ? "bg-[#E3C567]/20 border-l-4 border-l-[#E3C567]" 
+          : "hover:bg-[#141414] border-l-4 border-l-transparent"
+      }`}
+    >
+      {/* Avatar */}
+      <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
+        <User className="w-6 h-6 text-[#E3C567]" />
+      </div>
+      
+      {/* Content */}
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
+            {room.counterparty_name || `Room ${room.id.slice(0, 6)}`}
+          </p>
+          <span className="text-xs text-[#808080] flex-shrink-0 ml-2">
+            {new Date(room.created_date || Date.now()).toLocaleDateString()}
+          </span>
+        </div>
+        {/* Deal Address or Title */}
+        {(room.property_address || room.deal_title || room.title) && (
+          <p className="text-sm text-[#E3C567] truncate font-medium">
+            {room.property_address || room.deal_title || room.title}
+          </p>
+        )}
+        
+        {/* Deal Budget */}
+        {(room.budget > 0) && (
+          <p className="text-sm text-[#34D399] font-semibold mt-0.5">
+            ${room.budget.toLocaleString()}
+          </p>
+        )}
+
+        {/* Fallback state */}
+        {!room.property_address && !room.deal_title && !room.title && !room.budget && (
+          <p className="text-sm text-[#808080] truncate">
+            {room.counterparty_role || "Active room"}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison to prevent unnecessary re-renders
+  return (
+    prevProps.room.id === nextProps.room.id &&
+    prevProps.isActive === nextProps.isActive &&
+    prevProps.room.counterparty_name === nextProps.room.counterparty_name &&
+    prevProps.room.property_address === nextProps.room.property_address &&
+    prevProps.room.budget === nextProps.room.budget &&
+    prevProps.room.created_date === nextProps.room.created_date
+  );
+});
+
 export default function Room() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -331,60 +392,17 @@ export default function Room() {
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredRooms.map(r => {
-            const isActive = r.id === roomId;
-            return (
-              <button
-                key={r.id}
-                onClick={() => {
-                  navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
-                  setDrawer(false);
-                }}
-                className={`w-full text-left px-5 py-4 transition-all duration-200 flex items-center gap-4 border-b border-[#1F1F1F] ${
-                  isActive 
-                    ? "bg-[#E3C567]/20 border-l-4 border-l-[#E3C567]" 
-                    : "hover:bg-[#141414] border-l-4 border-l-transparent"
-                }`}
-              >
-                {/* Avatar */}
-                <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0 shadow-sm">
-                  <User className="w-6 h-6 text-[#E3C567]" />
-                </div>
-                
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
-                      {r.counterparty_name || `Room ${r.id.slice(0, 6)}`}
-                    </p>
-                    <span className="text-xs text-[#808080] flex-shrink-0 ml-2">
-                      {new Date(r.created_date || Date.now()).toLocaleDateString()}
-                    </span>
-                  </div>
-                  {/* Deal Address or Title */}
-                  {(r.property_address || r.deal_title || r.title) && (
-                    <p className="text-sm text-[#E3C567] truncate font-medium">
-                      {r.property_address || r.deal_title || r.title}
-                    </p>
-                  )}
-                  
-                  {/* Deal Budget */}
-                  {(r.budget > 0) && (
-                    <p className="text-sm text-[#34D399] font-semibold mt-0.5">
-                      ${r.budget.toLocaleString()}
-                    </p>
-                  )}
-
-                  {/* Fallback state */}
-                  {!r.property_address && !r.deal_title && !r.title && !r.budget && (
-                    <p className="text-sm text-[#808080] truncate">
-                      {r.counterparty_role || "Active room"}
-                    </p>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+          {filteredRooms.map(r => (
+            <ConversationItem
+              key={r.id}
+              room={r}
+              isActive={r.id === roomId}
+              onClick={() => {
+                navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+                setDrawer(false);
+              }}
+            />
+          ))}
         </div>
       </div>
 
