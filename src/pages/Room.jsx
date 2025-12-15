@@ -18,10 +18,13 @@ import {
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
 
-// Use shared rooms hook for consistency across pages
+// Use shared rooms hook with aggressive caching
 function useMyRooms() {
   const { data: rooms, isLoading: loading } = useRooms();
-  return { rooms: rooms || [], loading };
+  return { 
+    rooms: rooms || [], 
+    loading: loading && (!rooms || rooms.length === 0) // Only show loading if no cached data
+  };
 }
 
 function useMessages(roomId) {
@@ -80,7 +83,7 @@ function useMessages(roomId) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 1500); // Poll every 1.5 seconds
+    const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -194,22 +197,22 @@ export default function Room() {
   useEffect(() => {
     if (!roomId) return;
     
+    // Immediately use cached room if available
+    const cachedRoom = rooms.find(r => r.id === roomId);
+    if (cachedRoom) {
+      setCurrentRoom(cachedRoom);
+      setRoomLoading(false);
+      return;
+    }
+    
+    // Only fetch if not in cache
+    setRoomLoading(true);
     const fetchCurrentRoom = async () => {
       try {
-        // First check cache
-        const cachedRoom = rooms.find(r => r.id === roomId);
-        if (cachedRoom) {
-          setCurrentRoom(cachedRoom);
-          setRoomLoading(false);
-          return;
-        }
-        
-        // Fetch directly from database
         const roomData = await base44.entities.Room.filter({ id: roomId });
         if (roomData && roomData.length > 0) {
           const room = roomData[0];
           
-          // Fetch deal data if present
           if (room.deal_id) {
             const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
             if (dealData && dealData.length > 0) {
@@ -498,14 +501,14 @@ export default function Room() {
         </div>
 
         {/* Persistent Deal Header */}
-        {!showBoard && (
+        {!showBoard && currentRoom && (
           <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md flex-shrink-0 z-10">
             {roomLoading ? (
               <div className="animate-pulse flex items-center gap-2">
                 <div className="h-3 w-3 bg-[#333] rounded-full"></div>
                 <div className="h-4 w-48 bg-[#333] rounded"></div>
               </div>
-            ) : currentRoom ? (
+            ) : (
               <>
                 {/* Row 1: Status & Title */}
                 <div className="flex items-center gap-2 mb-1">
@@ -539,11 +542,9 @@ export default function Room() {
                        </span>
                      </>
                    )}
-                </div>
-              </>
-            ) : (
-              <span className="text-[#808080] text-sm">Loading deal information...</span>
-            )}
+                   </div>
+                   </>
+                   )}
           </div>
         )}
 
