@@ -646,17 +646,31 @@ export default function Room() {
                                         <div className="text-3xl font-bold text-[#34D399] mb-4">
                                           ${(currentRoom?.budget || 0).toLocaleString()}
                                         </div>
-                                        <div className="flex items-center gap-3">
-                                          <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
-                                            <User className="w-5 h-5 text-[#E3C567]" />
+                                        {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                                              <User className="w-5 h-5 text-[#E3C567]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
+                                              <p className="text-sm font-semibold text-[#FAFAFA]">
+                                                {currentRoom?.counterparty_name || 'Agent Name'}
+                                              </p>
+                                            </div>
                                           </div>
-                                          <div>
-                                            <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
-                                            <p className="text-sm font-semibold text-[#FAFAFA]">
-                                              {currentRoom?.counterparty_name || 'Agent Name'}
-                                            </p>
+                                        ) : (
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#808080]/20 rounded-full flex items-center justify-center">
+                                              <User className="w-5 h-5 text-[#808080]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
+                                              <p className="text-sm font-semibold text-[#808080]">
+                                                No agent selected
+                                              </p>
+                                            </div>
                                           </div>
-                                        </div>
+                                        )}
                                       </div>
                                       <div className="flex-shrink-0">
                                         <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
@@ -720,9 +734,17 @@ export default function Room() {
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Summary</h4>
                                     <p className="text-sm text-[#FAFAFA] leading-relaxed">
                                       This is a single-family residential property located in {currentRoom?.city || 'your target market'}. 
-                                      Your agent {currentRoom?.counterparty_name || 'has been assigned'} and is currently working on the initial walkthrough and evaluation. 
+                                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                                        <>Your agent {currentRoom?.counterparty_name} is currently working on the initial walkthrough and evaluation. </>
+                                      ) : (
+                                        <>You are currently exploring this deal and selecting an agent. </>
+                                      )}
                                       The property is under contract at ${(currentRoom?.budget || 0).toLocaleString()} with an estimated closing date of {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : 'TBD'}. 
-                                      Next steps include completing the property inspection and finalizing financing details.
+                                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                                        <>Next steps include completing the property inspection and finalizing financing details.</>
+                                      ) : (
+                                        <>Review the deal details and lock in an agent to proceed with the transaction.</>
+                                      )}
                                     </p>
                                   </div>
 
