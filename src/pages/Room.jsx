@@ -70,7 +70,7 @@ function useMessages(roomId) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 5000);
+    const interval = setInterval(fetchMessages, 1000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -158,22 +158,37 @@ export default function Room() {
       created_date: new Date().toISOString()
     };
     setItems(prev => [...prev, optimistic]);
-    
+
     // Save to sessionStorage for persistence
     const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
     storedMessages.push(optimistic);
     sessionStorage.setItem(`room_messages_${roomId}`, JSON.stringify(storedMessages));
-    
+
     try {
-      const response = await sendMessage({ room_id: roomId, body: t });
-      if (!response.data?.ok) {
-        // API failed but we keep local message - it's already in sessionStorage
-        console.log('Message saved locally, API sync pending');
-      }
+      await sendMessage({ room_id: roomId, body: t });
     } catch (error) {
-      // Keep the message in UI and sessionStorage even if API fails
-      console.log('Message saved locally:', error.message);
-    } finally { setSending(false); }
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message. It will retry automatically.');
+    } finally { 
+      setSending(false);
+      // Force immediate refresh after sending
+      setTimeout(() => {
+        const fetchMessages = async () => {
+          try {
+            const response = await listMessages({ room_id: roomId });
+            const apiMessages = response.data?.items || [];
+            const storedMessages = JSON.parse(sessionStorage.getItem(`room_messages_${roomId}`) || '[]');
+            const apiIds = new Set(apiMessages.map(m => m.id));
+            const uniqueStored = storedMessages.filter(m => !apiIds.has(m.id));
+            const allMessages = [...apiMessages, ...uniqueStored].sort((a, b) => 
+              new Date(a.created_date) - new Date(b.created_date)
+            );
+            setItems(allMessages);
+          } catch (e) {}
+        };
+        fetchMessages();
+      }, 500);
+    }
   };
 
   const handleLockIn = async () => {
