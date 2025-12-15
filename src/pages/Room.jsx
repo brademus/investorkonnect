@@ -51,27 +51,32 @@ function useMessages(roomId) {
 
         if (!cancelled) {
           setItems(prev => {
-            // Create a map of existing message IDs
-            const existingIds = new Set(prev.map(m => m.id));
-            
-            // Keep optimistic messages
+            // Keep optimistic messages temporarily
             const optimisticMessages = prev.filter(m => m._isOptimistic);
-            
-            // Add only new real messages
-            const newMessages = messages.filter(m => !existingIds.has(m.id));
-            
+
             // Remove optimistic messages that match new real messages
             const activeOptimistic = optimisticMessages.filter(opt => {
-              return !newMessages.some(real => 
+              return !messages.some(real => 
                 real.body === opt.body && 
                 real.sender_profile_id === opt.sender_profile_id &&
-                Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 3000
+                Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 5000
               );
             });
-            
-            // Combine: all previous non-optimistic + new messages + remaining optimistic
-            const nonOptimisticPrev = prev.filter(m => !m._isOptimistic);
-            return [...nonOptimisticPrev, ...newMessages, ...activeOptimistic].sort(
+
+            // Create a map of all real message IDs for deduplication
+            const realMessageIds = new Set(messages.map(m => m.id));
+
+            // Combine real messages + active optimistic, remove duplicates by ID
+            const combined = [...messages, ...activeOptimistic];
+            const seen = new Set();
+            const deduplicated = combined.filter(m => {
+              if (seen.has(m.id)) return false;
+              seen.add(m.id);
+              return true;
+            });
+
+            // Sort by created_date
+            return deduplicated.sort(
               (a, b) => new Date(a.created_date) - new Date(b.created_date)
             );
           });
