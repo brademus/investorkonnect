@@ -73,14 +73,20 @@ function PipelineContent() {
     'WEST VIRGINIA', 'WISCONSIN', 'WYOMING'
   ]);
 
+  // Detect user role
+  const isAgent = profile?.user_role === 'agent';
+  const isInvestor = profile?.user_role === 'investor';
+
   // 2. Load Active Deals (Source of Truth)
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
-    queryKey: ['pipelineDeals', profile?.id],
+    queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const res = await base44.entities.Deal.filter(
-        { investor_id: profile.id }
-      );
+      
+      // Filter by role - agents see their assigned deals, investors see their created deals
+      const filterKey = isAgent ? { agent_id: profile.id } : { investor_id: profile.id };
+      const res = await base44.entities.Deal.filter(filterKey);
+      
       // Filter out archived and deals with invalid addresses
       return res
         .filter(d => {
@@ -153,6 +159,14 @@ function PipelineContent() {
         agentName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
       }
 
+      // For agents: show investor name. For investors: show agent name
+      let counterpartyName = 'Not Assigned';
+      if (isAgent) {
+        counterpartyName = room?.counterparty_name || 'Investor';
+      } else {
+        counterpartyName = agentName;
+      }
+
       return {
         // IDs
         id: deal.id,
@@ -168,7 +182,7 @@ function PipelineContent() {
 
         // Status & Agent
         pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
-        customer_name: agentName,
+        customer_name: counterpartyName,
         agent_id: deal.agent_id,
 
         // Dates
@@ -301,20 +315,22 @@ function PipelineContent() {
                 >
                   {deduplicating ? 'Checking...' : 'Fix Duplicates'}
                 </Button>
-                <Button 
-                  onClick={async () => {
-                    const check = await requireInvestorSetup({ profile });
-                    if (!check.ok) {
-                      toast.error(check.message);
-                      navigate(createPageUrl(check.redirectTo));
-                      return;
-                    }
-                    navigate(createPageUrl("DealWizard"));
-                  }}
-                  className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
-                >
-                  <Plus className="w-4 h-4 mr-2" /> New Deal
-                </Button>
+                {isInvestor && (
+                  <Button 
+                    onClick={async () => {
+                      const check = await requireInvestorSetup({ profile });
+                      if (!check.ok) {
+                        toast.error(check.message);
+                        navigate(createPageUrl(check.redirectTo));
+                        return;
+                      }
+                      navigate(createPageUrl("DealWizard"));
+                    }}
+                    className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" /> New Deal
+                  </Button>
+                )}
               </div>
             </div>
 
