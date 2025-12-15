@@ -50,8 +50,15 @@ function useMessages(roomId) {
           // Merge with optimistic messages, avoid duplicates
           setItems(prev => {
             const tempMessages = prev.filter(m => m.id.toString().startsWith('temp-'));
-            const realMessageIds = new Set(messages.map(m => m.id));
-            const uniqueTemp = tempMessages.filter(m => !realMessageIds.has(m.id));
+            
+            // Remove temp messages that match real messages by content and time
+            const uniqueTemp = tempMessages.filter(temp => {
+              return !messages.some(real => 
+                real.body === temp.body && 
+                Math.abs(new Date(real.created_date) - new Date(temp.created_date)) < 5000
+              );
+            });
+            
             return [...messages, ...uniqueTemp];
           });
         }
