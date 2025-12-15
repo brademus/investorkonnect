@@ -163,8 +163,6 @@ function LayoutContent({ children }) {
       );
       }
 
-import { MessageSquare } from "lucide-react";
-
 export default function Layout({ children, currentPageName }) {
   return (
     <QueryClientProvider client={queryClient}>
