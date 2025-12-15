@@ -1,5 +1,4 @@
 import { base44 } from "@/api/base44Client";
-import { listMyRooms, createDealRoom } from "@/components/functions";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 
 /**
@@ -17,7 +16,7 @@ export async function getOrCreateDealRoom({ dealId, agentProfileId }) {
   }
 
   // Check for existing room
-  const roomsResponse = await listMyRooms();
+  const roomsResponse = await base44.functions.invoke('listMyRooms');
   const rooms = getRoomsFromListMyRoomsResponse(roomsResponse);
   
   const existingRoom = rooms.find(room => 
@@ -35,7 +34,7 @@ export async function getOrCreateDealRoom({ dealId, agentProfileId }) {
   }
   
   // Create new room
-  const response = await createDealRoom({ 
+  const response = await base44.functions.invoke('createDealRoom', { 
     deal_id: dealId,
     counterparty_profile_id: agentProfileId 
   });
