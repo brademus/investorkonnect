@@ -305,9 +305,9 @@ export default function Room() {
       </div>
 
       {/* Right Main Area - Active Conversation */}
-      <div className="flex-1 md:ml-[320px] flex flex-col bg-black">
+      <div className="flex-1 md:ml-[320px] flex flex-col bg-black h-screen">
         {/* Conversation Header */}
-        <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm">
+        <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0">
           <button 
             className="mr-4 md:hidden text-[#6B7280] hover:text-[#111827] transition-colors"
             onClick={() => setDrawer(s => !s)}
@@ -397,7 +397,7 @@ export default function Room() {
 
         {/* Persistent Deal Header */}
         {!showBoard && !loading && currentRoom && (
-          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md z-10">
+          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md z-10 flex-shrink-0">
             {/* Row 1: Status & Title */}
             <div className="flex items-center gap-2 mb-1">
               <span className={`w-2 h-2 rounded-full ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'bg-[#10B981]' : 'bg-[#E3C567]'}`}></span>
@@ -436,7 +436,7 @@ export default function Room() {
         )}
 
         {/* Message Thread or Deal Board */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4">
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4 min-h-0">
           {/* Deal Details Sidebar */}
           {showDealDetails && currentRoom && (
             <div className="w-80 flex-shrink-0 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 h-fit sticky top-6">
@@ -670,10 +670,10 @@ export default function Room() {
             </div>
           ) : (
             /* Messages View */
-            <div className="flex flex-col min-h-full">
+            <div className="flex flex-col h-full">
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
-                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg">
+                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
@@ -712,7 +712,7 @@ export default function Room() {
               )}
 
               {/* Messages Container */}
-              <div className="flex flex-col space-y-4">
+              <div className="flex-1 overflow-y-auto flex flex-col space-y-4 min-h-0">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -768,7 +768,7 @@ export default function Room() {
               </div>
 
         {/* Message Input Area */}
-        <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+        <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="flex-1 relative">
               <Input
