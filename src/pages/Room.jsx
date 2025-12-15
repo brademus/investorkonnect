@@ -21,7 +21,7 @@ import { toast } from "sonner";
 // Use shared rooms hook for consistency across pages
 function useMyRooms() {
   const { data: rooms, isLoading: loading } = useRooms();
-  return { rooms, loading };
+  return { rooms: rooms || [], loading };
 }
 
 function useMessages(roomId) {
@@ -283,7 +283,7 @@ export default function Room() {
     }
   };
 
-  const filteredRooms = rooms.filter(r => {
+  const filteredRooms = (rooms || []).filter(r => {
     // Only show real conversations with valid counterparty
     if (r.is_orphan) return false;
     if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
