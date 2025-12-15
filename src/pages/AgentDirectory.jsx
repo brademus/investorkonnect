@@ -204,24 +204,8 @@ export default function AgentDirectory() {
         dealId: deal.id,
         agentProfileId: agent.id
       });
-      
-      // Lock in the agent to this deal
-      const lockResponse = await base44.functions.invoke('lockInDealAgent', {
-        room_id: roomId,
-        deal_id: deal.id
-      });
 
-      if (!lockResponse.data?.success) {
-        toast.error("Failed to lock in agent. Please try again.");
-        return;
-      }
-
-      // Invalidate queries to refresh dashboard/pipeline
-      await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
-      await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
-
-      toast.success(`${agent.full_name} is now your agent for this deal!`);
+      toast.success(`Opening conversation with ${agent.full_name}`);
       navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
     } catch (error) {
       console.error("Failed to create room:", error);
