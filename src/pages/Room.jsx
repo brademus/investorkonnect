@@ -854,16 +854,48 @@ export default function Room() {
                                   </div>
                                 </>
                               ) : (
-                                /* AGENT DEAL BOARD (unchanged) */
+                                /* AGENT DEAL BOARD */
                                 <>
-                                  <div>
-                                    <h3 className="text-xl font-bold text-[#E3C567] mb-1">Deal Board</h3>
-                                    <p className="text-sm text-[#808080]">Documents, files, and important information for this deal</p>
+                                  {/* 1. Deal Header (agent version) */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <div className="flex-1">
+                                        <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
+                                          {currentRoom?.property_address || 'Property Address'}
+                                        </h3>
+                                        <p className="text-sm text-[#808080] mb-3">
+                                          {[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location'}
+                                        </p>
+                                        <div className="text-3xl font-bold text-[#34D399] mb-4">
+                                          ${(currentRoom?.budget || 0).toLocaleString()}
+                                        </div>
+                                        <div className="flex items-center gap-3 mb-2">
+                                          <div className="w-10 h-10 bg-[#60A5FA]/20 rounded-full flex items-center justify-center">
+                                            <User className="w-5 h-5 text-[#60A5FA]" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-[#808080] uppercase tracking-wider">Investor</p>
+                                            <p className="text-sm font-semibold text-[#FAFAFA]">
+                                              {currentRoom?.counterparty_name || 'Investor Name'}
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <p className="text-xs text-[#808080]">
+                                          Days in stage: {Math.floor((Date.now() - new Date(currentRoom?.created_date || Date.now())) / (1000 * 60 * 60 * 24))}
+                                        </p>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                                          {currentRoom?.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
+                                        </span>
+                                      </div>
+                                    </div>
                                   </div>
 
-                                  {/* Pipeline Progress */}
+                                  {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
+                                    <p className="text-xs text-[#808080] mb-4">Click to change stage</p>
                                     <div className="space-y-3">
                                       {[
                                         { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
@@ -879,7 +911,24 @@ export default function Room() {
                                         ].indexOf(currentRoom?.pipeline_stage) > idx;
 
                                         return (
-                                          <div key={stage.id} className="flex items-center gap-3">
+                                          <button
+                                            key={stage.id}
+                                            onClick={async () => {
+                                              if (currentRoom?.deal_id) {
+                                                try {
+                                                  await base44.entities.Deal.update(currentRoom.deal_id, {
+                                                    pipeline_stage: stage.id
+                                                  });
+                                                  setCurrentRoom({ ...currentRoom, pipeline_stage: stage.id });
+                                                  toast.success(`Deal moved to ${stage.label}`);
+                                                  queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                                } catch (error) {
+                                                  toast.error('Failed to update stage');
+                                                }
+                                              }
+                                            }}
+                                            className="flex items-center gap-3 w-full text-left hover:bg-[#141414] p-2 rounded-lg transition-colors"
+                                          >
                                             <div 
                                               className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
                                                 isActive 
@@ -904,13 +953,127 @@ export default function Room() {
                                                 <p className="text-xs text-[#E3C567]">Current Stage</p>
                                               )}
                                             </div>
-                                          </div>
+                                          </button>
                                         );
                                       })}
                                     </div>
                                   </div>
 
-                                  {/* Contracts Section */}
+                                  {/* 3. Today for This Deal */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Today for This Deal</h4>
+                                      <Button
+                                        size="sm"
+                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs"
+                                        onClick={() => toast.info('Add task feature coming soon')}
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Add Task
+                                      </Button>
+                                    </div>
+                                    <div className="space-y-2">
+                                      {[
+                                        { label: 'Confirm walkthrough time with seller', due: 'Due today' },
+                                        { label: 'Upload photos for investor', due: 'Due tomorrow' },
+                                        { label: 'Send marketing update', due: 'Due in 3 days' }
+                                      ].map((task, idx) => (
+                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                          <input 
+                                            type="checkbox"
+                                            className="mt-0.5 w-4 h-4 rounded border-[#1F1F1F] bg-[#0D0D0D] text-[#E3C567] focus:ring-[#E3C567] focus:ring-offset-0"
+                                          />
+                                          <div className="flex-1">
+                                            <p className="text-sm text-[#FAFAFA]">{task.label}</p>
+                                            <p className="text-xs text-[#808080] mt-0.5">{task.due}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* 4. Appointments & Walkthroughs */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Appointments & Walkthroughs</h4>
+                                      <Button
+                                        size="sm"
+                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs"
+                                        onClick={() => toast.info('Add appointment feature coming soon')}
+                                      >
+                                        <Plus className="w-3 h-3 mr-1" />
+                                        Add
+                                      </Button>
+                                    </div>
+                                    <div className="space-y-3">
+                                      {[
+                                        { date: 'Jan 18, 2025', time: '10:00 AM', type: 'Walkthrough', note: 'Initial property tour with investor' },
+                                        { date: 'Jan 22, 2025', time: '2:00 PM', type: 'Inspection', note: 'Home inspection scheduled' }
+                                      ].map((appt, idx) => (
+                                        <div key={idx} className="p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                          <div className="flex items-start justify-between mb-2">
+                                            <div>
+                                              <p className="text-sm font-semibold text-[#FAFAFA]">{appt.type}</p>
+                                              <p className="text-xs text-[#808080]">{appt.date} at {appt.time}</p>
+                                            </div>
+                                            <span className="text-xs bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded border border-[#E3C567]/30">
+                                              Upcoming
+                                            </span>
+                                          </div>
+                                          <p className="text-xs text-[#FAFAFA]">{appt.note}</p>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+
+                                  {/* 5. Investor Snapshot */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Investor Snapshot</h4>
+                                    <div className="space-y-3 text-sm">
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-[#808080] min-w-[100px]">Name:</span>
+                                        <span className="text-[#FAFAFA] font-medium">{currentRoom?.counterparty_name || 'N/A'}</span>
+                                      </div>
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-[#808080] min-w-[100px]">Prefers:</span>
+                                        <span className="text-[#FAFAFA]">Email & Text</span>
+                                      </div>
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-[#808080] min-w-[100px]">Goal:</span>
+                                        <span className="text-[#FAFAFA]">Flip in 60 days, target profit $50K</span>
+                                      </div>
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-[#808080] min-w-[100px]">Strategy:</span>
+                                        <span className="text-[#FAFAFA]">BRRRR, Buy & Hold</span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 6. Agent Notes (Private) */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-3">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                                        Agent Notes
+                                        <span className="text-xs bg-[#EF4444]/20 text-[#EF4444] px-2 py-0.5 rounded border border-[#EF4444]/30">
+                                          PRIVATE
+                                        </span>
+                                      </h4>
+                                    </div>
+                                    <textarea
+                                      placeholder="Add private notes about this deal (only visible to you)..."
+                                      className="w-full h-32 p-3 bg-[#141414] border border-[#1F1F1F] rounded-lg text-[#FAFAFA] text-sm focus:border-[#E3C567] focus:ring-1 focus:ring-[#E3C567] resize-none"
+                                      defaultValue=""
+                                    />
+                                    <Button
+                                      size="sm"
+                                      className="mt-3 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                                      onClick={() => toast.success('Notes saved (demo)')}
+                                    >
+                                      Save Notes
+                                    </Button>
+                                  </div>
+
+                                  {/* 7. Contracts & Documents */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-center justify-between mb-4">
                                       <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
@@ -931,7 +1094,7 @@ export default function Room() {
                                     </p>
                                   </div>
 
-                                  {/* Files Section */}
+                                  {/* Deal Documents */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                                       <FileText className="w-5 h-5 text-[#E3C567]" />
@@ -969,43 +1132,9 @@ export default function Room() {
                                     ) : (
                                       <div className="text-center py-8">
                                         <p className="text-sm text-[#808080]">No contract uploaded yet</p>
-                                        <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
+                                        <p className="text-xs text-[#666666] mt-1">Waiting for investor to upload</p>
                                       </div>
                                     )}
-                                  </div>
-
-                                  {/* Important Information */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                      <Info className="w-5 h-5 text-[#E3C567]" />
-                                      Important Information
-                                    </h4>
-                                    <div className="space-y-3">
-                                      {currentRoom?.property_address && (
-                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                          <span className="text-sm text-[#808080]">Property</span>
-                                          <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom.property_address}</span>
-                                        </div>
-                                      )}
-                                      {currentRoom?.budget && (
-                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                          <span className="text-sm text-[#808080]">Budget</span>
-                                          <span className="text-sm text-[#34D399] font-semibold">${currentRoom.budget.toLocaleString()}</span>
-                                        </div>
-                                      )}
-                                      {currentRoom?.pipeline_stage && (
-                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                          <span className="text-sm text-[#808080]">Stage</span>
-                                          <span className="text-sm text-[#FAFAFA] font-medium capitalize">{currentRoom.pipeline_stage.replace('_', ' ')}</span>
-                                        </div>
-                                      )}
-                                      <div className="flex justify-between py-2">
-                                        <span className="text-sm text-[#808080]">Deal Started</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">
-                                          {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                    </div>
                                   </div>
                                 </>
                               )}
