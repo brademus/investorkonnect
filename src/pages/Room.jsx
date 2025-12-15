@@ -205,22 +205,14 @@ export default function Room() {
   useEffect(() => {
     if (!roomId) return;
     
-    // Immediately use cached room if available
-    const cachedRoom = rooms.find(r => r.id === roomId);
-    if (cachedRoom) {
-      setCurrentRoom(cachedRoom);
-      setRoomLoading(false);
-      return;
-    }
-    
-    // Only fetch if not in cache
-    setRoomLoading(true);
     const fetchCurrentRoom = async () => {
+      setRoomLoading(true);
       try {
         const roomData = await base44.entities.Room.filter({ id: roomId });
         if (roomData && roomData.length > 0) {
           const room = roomData[0];
           
+          // Always fetch deal data if deal_id exists to get contract info
           if (room.deal_id) {
             const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
             if (dealData && dealData.length > 0) {
@@ -237,9 +229,9 @@ export default function Room() {
                 pipeline_stage: deal.pipeline_stage,
                 closing_date: deal.key_dates?.closing_date,
                 deal_assigned_agent_id: deal.agent_id,
-                // Preserve room's contract fields (takes precedence over deal)
-                contract_url: room.contract_url || deal.contract_url,
-                contract_document: room.contract_document || deal.contract_document
+                // Merge contract fields from both room and deal
+                contract_url: room.contract_url || deal.contract_url || null,
+                contract_document: room.contract_document || deal.contract_document || null
               });
             } else {
               setCurrentRoom(room);
@@ -256,7 +248,7 @@ export default function Room() {
     };
     
     fetchCurrentRoom();
-  }, [roomId, rooms]);
+  }, [roomId]);
 
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
   
