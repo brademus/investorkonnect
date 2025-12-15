@@ -1140,8 +1140,8 @@ ${dealContext}`;
                                     </div>
                                     <div className="space-y-3">
                                       {[
-                                        { date: 'Jan 18, 2025', time: '10:00 AM', type: 'Walkthrough', note: 'Initial property tour with investor' },
-                                        { date: 'Jan 22, 2025', time: '2:00 PM', type: 'Inspection', note: 'Home inspection scheduled' }
+                                        { date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), time: '10:00 AM', type: 'Walkthrough', note: 'Initial property tour with investor' },
+                                        { date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), time: '2:00 PM', type: 'Inspection', note: 'Home inspection scheduled' }
                                       ].map((appt, idx) => (
                                         <div key={idx} className="p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
                                           <div className="flex items-start justify-between mb-2">
