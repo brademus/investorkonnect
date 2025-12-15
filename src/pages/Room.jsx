@@ -233,7 +233,10 @@ export default function Room() {
                 budget: deal.purchase_price,
                 pipeline_stage: deal.pipeline_stage,
                 closing_date: deal.key_dates?.closing_date,
-                deal_assigned_agent_id: deal.agent_id
+                deal_assigned_agent_id: deal.agent_id,
+                // Preserve room's contract fields (takes precedence over deal)
+                contract_url: room.contract_url || deal.contract_url,
+                contract_document: room.contract_document || deal.contract_document
               });
             } else {
               setCurrentRoom(room);
