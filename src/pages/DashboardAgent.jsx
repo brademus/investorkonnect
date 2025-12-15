@@ -295,20 +295,34 @@ function AgentDashboardContent() {
 
                   {/* Show recent messages */}
                   <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
-                    {rooms.slice(0, 3).map(room => (
-                      <button
-                        key={room.id}
-                        onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
-                        className="w-full text-left p-2 bg-[#141414] rounded-lg hover:bg-[#1F1F1F] transition-colors border border-[#1F1F1F] hover:border-[#E3C567]"
-                      >
-                        <p className="text-xs font-semibold text-[#FAFAFA] truncate">
-                          {room.counterparty_name || 'New Message'}
-                        </p>
-                        <p className="text-xs text-[#808080] truncate">
-                          {room.property_address || room.deal_title || 'Click to view'}
-                        </p>
-                      </button>
-                    ))}
+                    {rooms.slice(0, 3).map(room => {
+                      const lastMsg = room.last_message?.body || room.last_message_text;
+                      const hasUnread = room.last_message && room.last_message.sender_profile_id !== profile?.id;
+                      
+                      return (
+                        <button
+                          key={room.id}
+                          onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
+                          className={`w-full text-left p-2 rounded-lg hover:bg-[#1F1F1F] transition-colors border ${
+                            hasUnread 
+                              ? 'bg-[#E3C567]/10 border-[#E3C567]/30' 
+                              : 'bg-[#141414] border-[#1F1F1F] hover:border-[#E3C567]'
+                          }`}
+                        >
+                          <div className="flex items-start justify-between mb-1">
+                            <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                              {room.counterparty_name || 'New Message'}
+                            </p>
+                            {hasUnread && (
+                              <div className="w-2 h-2 bg-[#E3C567] rounded-full flex-shrink-0 mt-1" />
+                            )}
+                          </div>
+                          <p className="text-xs text-[#808080] truncate">
+                            {lastMsg || room.property_address || room.deal_title || 'No messages yet'}
+                          </p>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 
