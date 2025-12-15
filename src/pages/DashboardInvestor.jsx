@@ -220,9 +220,7 @@ function InvestorDashboardContent() {
   // Messages - Show rooms immediately, load message previews async
   useEffect(() => {
     const activeRooms = rooms.filter(r => 
-      r.deal_id && 
       !r.is_orphan && 
-      r.deal_assigned_agent_id &&
       r.counterparty_name &&
       r.counterparty_name !== 'Unknown'
     );
