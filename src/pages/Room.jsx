@@ -556,6 +556,16 @@ ${dealContext}`;
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
+            {profile?.user_role === 'investor' && roomAgentProfileId && (
+              <Button
+                onClick={() => navigate(`${createPageUrl("AgentProfile")}?id=${roomAgentProfileId}${currentRoom?.deal_id ? `&dealId=${currentRoom.deal_id}` : ''}${roomId ? `&roomId=${roomId}` : ''}`)}
+                className="bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA] rounded-full font-semibold border border-[#333] hover:border-[#E3C567]"
+              >
+                <User className="w-4 h-4 mr-2" />
+                Agent Profile
+              </Button>
+            )}
+            
             {roomId && 
              profile?.user_role === 'investor' &&
              (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
