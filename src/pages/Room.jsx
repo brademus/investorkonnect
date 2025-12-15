@@ -162,13 +162,18 @@ const ConversationItem = React.memo(({ room, isActive, onClick }) => {
   );
 }, (prevProps, nextProps) => {
   // Custom comparison to prevent unnecessary re-renders
+  // Normalize values to handle undefined/null/0 consistently
+  const normalize = (val) => val || '';
+  
   return (
     prevProps.room.id === nextProps.room.id &&
     prevProps.isActive === nextProps.isActive &&
-    prevProps.room.counterparty_name === nextProps.room.counterparty_name &&
-    prevProps.room.property_address === nextProps.room.property_address &&
-    prevProps.room.budget === nextProps.room.budget &&
-    prevProps.room.created_date === nextProps.room.created_date
+    normalize(prevProps.room.counterparty_name) === normalize(nextProps.room.counterparty_name) &&
+    normalize(prevProps.room.property_address) === normalize(nextProps.room.property_address) &&
+    normalize(prevProps.room.deal_title) === normalize(nextProps.room.deal_title) &&
+    normalize(prevProps.room.title) === normalize(nextProps.room.title) &&
+    (prevProps.room.budget || 0) === (nextProps.room.budget || 0) &&
+    normalize(prevProps.room.created_date) === normalize(nextProps.room.created_date)
   );
 });
 
@@ -370,14 +375,17 @@ export default function Room() {
     }
   };
 
-  const filteredRooms = (rooms || []).filter(r => {
-    // Only show real conversations with valid counterparty
-    if (r.is_orphan) return false;
-    if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
-    
-    if (!searchConversations) return true;
-    return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
-  });
+  // Memoize filtered rooms to prevent unnecessary recalculations
+  const filteredRooms = useMemo(() => {
+    return (rooms || []).filter(r => {
+      // Only show real conversations with valid counterparty
+      if (r.is_orphan) return false;
+      if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
+      
+      if (!searchConversations) return true;
+      return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
+    });
+  }, [rooms, searchConversations]);
 
   return (
     <div className="fixed inset-0 bg-transparent flex overflow-hidden">
@@ -395,17 +403,21 @@ export default function Room() {
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredRooms.map(r => (
-            <ConversationItem
-              key={r.id}
-              room={r}
-              isActive={r.id === roomId}
-              onClick={() => {
-                navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
-                setDrawer(false);
-              }}
-            />
-          ))}
+          {filteredRooms.map(r => {
+            const handleClick = () => {
+              navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+              setDrawer(false);
+            };
+            
+            return (
+              <ConversationItem
+                key={r.id}
+                room={r}
+                isActive={r.id === roomId}
+                onClick={handleClick}
+              />
+            );
+          })}
         </div>
       </div>
 
