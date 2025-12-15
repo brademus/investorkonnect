@@ -236,6 +236,18 @@ export default function DealWizard() {
       }
 
       setDealId(currentDeal.id);
+      
+      // Update any associated rooms with contract document
+      const rooms = await base44.entities.Room.filter({ deal_id: currentDeal.id });
+      if (rooms && rooms.length > 0) {
+        for (const room of rooms) {
+          await base44.entities.Room.update(room.id, {
+            contract_url: file_url,
+            contract_document: contractDocument
+          });
+        }
+      }
+      
       await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -287,6 +299,23 @@ export default function DealWizard() {
         status: 'active',
         pipeline_stage: 'new_deal_under_contract'
       });
+      
+      // Sync deal details to associated rooms
+      const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+      if (rooms && rooms.length > 0) {
+        for (const room of rooms) {
+          await base44.entities.Room.update(room.id, {
+            title: dealData.address,
+            property_address: dealData.address,
+            city: dealData.city,
+            state: dealData.state,
+            county: dealData.county,
+            zip: dealData.zip,
+            budget: parsePrice(dealData.purchasePrice),
+            closing_date: dealData.closingDate
+          });
+        }
+      }
 
       await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
