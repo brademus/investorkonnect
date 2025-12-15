@@ -381,6 +381,92 @@ export default function Room() {
     }
   };
 
+  const generateTasks = async () => {
+    if (!roomId || generatingTasks) return;
+    
+    setGeneratingTasks(true);
+    try {
+      // Get recent chat messages for context
+      const recentMessages = messages.slice(-20).map(m => 
+        `${m.sender_profile_id === profile?.id ? 'You' : 'Other'}: ${m.body}`
+      ).join('\n');
+      
+      const dealContext = `
+Property: ${currentRoom?.property_address || 'N/A'}
+Price: $${(currentRoom?.budget || 0).toLocaleString()}
+Stage: ${currentRoom?.pipeline_stage || 'new_deal_under_contract'}
+Closing Date: ${currentRoom?.closing_date || 'TBD'}
+Agent Locked: ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'Yes' : 'No'}
+
+Recent conversation:
+${recentMessages || 'No messages yet'}
+`;
+
+      const investorPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable next steps for the INVESTOR. Be specific and realistic. Return as JSON array of objects with "label" and "due" fields.
+
+${dealContext}`;
+
+      const agentPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable tasks for the AGENT working this deal today. Be specific and realistic. Return as JSON array of objects with "label" and "due" fields.
+
+${dealContext}`;
+
+      const [investorResponse, agentResponse] = await Promise.all([
+        base44.integrations.Core.InvokeLLM({
+          prompt: investorPrompt,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              tasks: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    label: { type: "string" },
+                    due: { type: "string" }
+                  }
+                }
+              }
+            }
+          }
+        }),
+        base44.integrations.Core.InvokeLLM({
+          prompt: agentPrompt,
+          response_json_schema: {
+            type: "object",
+            properties: {
+              tasks: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    label: { type: "string" },
+                    due: { type: "string" }
+                  }
+                }
+              }
+            }
+          }
+        })
+      ]);
+
+      setInvestorTasks(investorResponse.tasks || []);
+      setAgentTasks(agentResponse.tasks || []);
+      toast.success('Tasks updated based on conversation');
+    } catch (error) {
+      console.error('Failed to generate tasks:', error);
+      toast.error('Failed to generate tasks');
+    } finally {
+      setGeneratingTasks(false);
+    }
+  };
+
+  // Generate tasks on first load if we have messages
+  useEffect(() => {
+    if (messages.length > 0 && investorTasks.length === 0 && agentTasks.length === 0 && !generatingTasks) {
+      generateTasks();
+    }
+  }, [messages.length]);
+
   // Memoize filtered rooms to prevent unnecessary recalculations
   const filteredRooms = useMemo(() => {
     return (rooms || []).filter(r => {
