@@ -465,6 +465,7 @@ export default function Room() {
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
             {roomId && 
+             profile?.user_role === 'investor' &&
              (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
              currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
               <Button
