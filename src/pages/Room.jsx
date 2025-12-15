@@ -47,19 +47,30 @@ function useMessages(roomId) {
         );
 
         if (!cancelled) {
-          // Merge with optimistic messages, avoid duplicates
           setItems(prev => {
-            const tempMessages = prev.filter(m => m.id.toString().startsWith('temp-'));
+            // Create a map of existing message IDs
+            const existingIds = new Set(prev.map(m => m.id));
             
-            // Remove temp messages that match real messages by content and time
-            const uniqueTemp = tempMessages.filter(temp => {
-              return !messages.some(real => 
-                real.body === temp.body && 
-                Math.abs(new Date(real.created_date) - new Date(temp.created_date)) < 5000
+            // Keep optimistic messages
+            const optimisticMessages = prev.filter(m => m._isOptimistic);
+            
+            // Add only new real messages
+            const newMessages = messages.filter(m => !existingIds.has(m.id));
+            
+            // Remove optimistic messages that match new real messages
+            const activeOptimistic = optimisticMessages.filter(opt => {
+              return !newMessages.some(real => 
+                real.body === opt.body && 
+                real.sender_profile_id === opt.sender_profile_id &&
+                Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 3000
               );
             });
             
-            return [...messages, ...uniqueTemp];
+            // Combine: all previous non-optimistic + new messages + remaining optimistic
+            const nonOptimisticPrev = prev.filter(m => !m._isOptimistic);
+            return [...nonOptimisticPrev, ...newMessages, ...activeOptimistic].sort(
+              (a, b) => new Date(a.created_date) - new Date(b.created_date)
+            );
           });
         }
       } catch (error) {
@@ -69,7 +80,7 @@ function useMessages(roomId) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 2000); // Poll every 2 seconds
+    const interval = setInterval(fetchMessages, 1500); // Poll every 1.5 seconds
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -227,12 +238,14 @@ export default function Room() {
     setSending(true);
     
     // Optimistic update - show message immediately
+    const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
-      id: `temp-${Date.now()}`,
+      id: tempId,
       room_id: roomId,
       sender_profile_id: profile?.id,
       body: t,
-      created_date: new Date().toISOString()
+      created_date: new Date().toISOString(),
+      _isOptimistic: true
     };
     setItems(prev => [...prev, optimisticMessage]);
     
@@ -246,14 +259,13 @@ export default function Room() {
         throw new Error('Message send failed');
       }
       
-      // Remove optimistic message after successful send
-      // Real message will appear via polling
-      setItems(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      // Message sent successfully - it will appear via polling
+      // Keep optimistic message until real one arrives
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
       // Remove optimistic message on error
-      setItems(prev => prev.filter(m => m.id !== optimisticMessage.id));
+      setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
     }
