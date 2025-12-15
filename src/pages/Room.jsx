@@ -238,6 +238,10 @@ export default function Room() {
       if (!response.data?.ok) {
         throw new Error('Message send failed');
       }
+      
+      // Remove optimistic message after successful send
+      // Real message will appear via polling
+      setItems(prev => prev.filter(m => m.id !== optimisticMessage.id));
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
