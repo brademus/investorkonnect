@@ -77,6 +77,27 @@ function useMessages(roomId) {
   return { items, loading, setItems, messagesEndRef };
 }
 
+// Memoized sidebar header to prevent flickering
+const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
+  return (
+    <div className="p-5 border-b border-[#1F1F1F]">
+      <div className="flex items-center gap-3 mb-5">
+        <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
+        <h2 className="text-xl font-bold text-[#E3C567]">Messages</h2>
+      </div>
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+        <Input
+          placeholder="Search conversations..."
+          value={searchValue}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="h-11 pl-11 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
+        />
+      </div>
+    </div>
+  );
+});
+
 export default function Room() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -244,22 +265,11 @@ export default function Room() {
         } md:translate-x-0 flex flex-col`}
       >
         {/* Sidebar Header */}
-        <div className="p-5 border-b border-[#1F1F1F]">
-          <div className="flex items-center gap-3 mb-5">
-            <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
-            <h2 className="text-xl font-bold text-[#E3C567]">Messages</h2>
-          </div>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
-            <Input
-              placeholder="Search conversations..."
-              value={searchConversations}
-              onChange={(e) => setSearchConversations(e.target.value)}
-              className="h-11 pl-11 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
-            />
-          </div>
-        </div>
-        
+        <SidebarHeader 
+          searchValue={searchConversations}
+          onSearchChange={setSearchConversations}
+        />
+
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
           {filteredRooms.map(r => {
