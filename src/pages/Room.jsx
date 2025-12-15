@@ -400,11 +400,19 @@ Recent conversation:
 ${recentMessages || 'No messages yet'}
 `;
 
-      const investorPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable next steps for the INVESTOR. Be specific and realistic. Return as JSON array of objects with "label" and "due" fields.
+      const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      
+      const investorPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable next steps for the INVESTOR. Be specific and realistic. 
+Use RELATIVE dates only (e.g., "Today", "Tomorrow", "This Week", "Next Monday", "By end of week") - DO NOT use specific calendar dates.
+Today's date is ${today}.
+Return as JSON array of objects with "label" and "due" fields.
 
 ${dealContext}`;
 
-      const agentPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable tasks for the AGENT working this deal today. Be specific and realistic. Return as JSON array of objects with "label" and "due" fields.
+      const agentPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable tasks for the AGENT working this deal today. Be specific and realistic.
+Use RELATIVE dates only (e.g., "Today", "Tomorrow", "This Week", "Next Monday", "By end of week") - DO NOT use specific calendar dates.
+Today's date is ${today}.
+Return as JSON array of objects with "label" and "due" fields.
 
 ${dealContext}`;
 
