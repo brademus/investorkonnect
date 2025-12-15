@@ -625,176 +625,389 @@ export default function Room() {
 
           <div className="flex-1 min-w-0 flex flex-col">
           {showBoard ? (
-            /* Deal Board View */
-            <div className="space-y-6">
-              <div>
-                <h3 className="text-xl font-bold text-[#E3C567] mb-1">Deal Board</h3>
-                <p className="text-sm text-[#808080]">Documents, files, and important information for this deal</p>
-              </div>
+                            /* Deal Board View */
+                            <div className="space-y-6">
+                              {profile?.user_role === 'investor' ? (
+                                /* INVESTOR DEAL BOARD */
+                                <>
+                                  {/* 1. DEAL HEADER */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-start justify-between mb-4">
+                                      <div className="flex-1">
+                                        <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
+                                          {currentRoom?.property_address || 'Property Address'}
+                                        </h3>
+                                        <p className="text-sm text-[#808080] mb-3">
+                                          {[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location'}
+                                        </p>
+                                        <div className="text-3xl font-bold text-[#34D399] mb-4">
+                                          ${(currentRoom?.budget || 0).toLocaleString()}
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                          <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                                            <User className="w-5 h-5 text-[#E3C567]" />
+                                          </div>
+                                          <div>
+                                            <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
+                                            <p className="text-sm font-semibold text-[#FAFAFA]">
+                                              {currentRoom?.counterparty_name || 'Agent Name'}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="flex-shrink-0">
+                                        <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                                          {currentRoom?.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
 
-              {/* Pipeline Progress */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
-                <div className="space-y-3">
-                  {[
-                    { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
-                    { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
-                    { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
-                    { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
-                    { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
-                    { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
-                  ].map((stage, idx) => {
-                    const isActive = currentRoom?.pipeline_stage === stage.id;
-                    const isPast = [
-                      'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
-                    ].indexOf(currentRoom?.pipeline_stage) > idx;
-                    
-                    return (
-                      <div key={stage.id} className="flex items-center gap-3">
-                        <div 
-                          className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
-                            isActive 
-                              ? 'ring-2 ring-offset-2 ring-offset-black' 
-                              : isPast 
-                              ? 'bg-[#34D399]' 
-                              : 'bg-[#1F1F1F]'
-                          }`}
-                          style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
-                        >
-                          <span className="text-sm font-bold text-white">
-                            {isPast ? '✓' : idx + 1}
-                          </span>
-                        </div>
-                        <div className="flex-1">
-                          <p className={`text-sm font-medium ${
-                            isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
-                          }`}>
-                            {stage.label}
-                          </p>
-                          {isActive && (
-                            <p className="text-xs text-[#E3C567]">Current Stage</p>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
+                                  {/* 2. DEAL PROGRESS */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
+                                        { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
+                                        { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
+                                        { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
+                                        { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
+                                        { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
+                                      ].map((stage, idx) => {
+                                        const isActive = currentRoom?.pipeline_stage === stage.id;
+                                        const isPast = [
+                                          'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
+                                        ].indexOf(currentRoom?.pipeline_stage) > idx;
 
-              {/* Escrow Section - Hidden */}
-              {/* 
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                  <Shield className="w-5 h-5 text-[#E3C567]" />
-                  Escrow & Payments
-                </h4>
-                <EscrowPanel 
-                  room={currentRoom} 
-                  profile={profile}
-                  onUpdate={() => window.location.reload()}
-                />
-              </div> 
-              */}
+                                        return (
+                                          <div key={stage.id} className="flex items-center gap-3">
+                                            <div 
+                                              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                                                isActive 
+                                                  ? 'ring-2 ring-offset-2 ring-offset-black' 
+                                                  : isPast 
+                                                  ? 'bg-[#34D399]' 
+                                                  : 'bg-[#1F1F1F]'
+                                              }`}
+                                              style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
+                                            >
+                                              <span className="text-sm font-bold text-white">
+                                                {isPast ? '✓' : idx + 1}
+                                              </span>
+                                            </div>
+                                            <div className="flex-1">
+                                              <p className={`text-sm font-medium ${
+                                                isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
+                                              }`}>
+                                                {stage.label}
+                                              </p>
+                                              {isActive && (
+                                                <p className="text-xs text-[#E3C567]">Current Stage</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
 
-              {/* Contracts Section */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-[#E3C567]" />
-                    Contracts & Documents
-                  </h4>
-                  <Button
-                    onClick={() => setWizardOpen(true)}
-                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                    size="sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Generate Contract
-                  </Button>
-                </div>
-                <p className="text-sm text-[#808080]">
-                  Create and manage contracts for this deal using AI-powered tools.
-                </p>
-              </div>
+                                  {/* 3. AI DEAL SUMMARY */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Summary</h4>
+                                    <p className="text-sm text-[#FAFAFA] leading-relaxed">
+                                      This is a single-family residential property located in {currentRoom?.city || 'your target market'}. 
+                                      Your agent {currentRoom?.counterparty_name || 'has been assigned'} and is currently working on the initial walkthrough and evaluation. 
+                                      The property is under contract at ${(currentRoom?.budget || 0).toLocaleString()} with an estimated closing date of {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : 'TBD'}. 
+                                      Next steps include completing the property inspection and finalizing financing details.
+                                    </p>
+                                  </div>
 
-              {/* Files Section */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 text-[#E3C567]" />
-                  Deal Documents
-                </h4>
-                {currentRoom?.contract_url || currentRoom?.contract_document ? (
-                  <div className="space-y-3">
-                    <a 
-                      href={currentRoom.contract_url || currentRoom.contract_document?.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
-                          <FileText className="w-5 h-5 text-[#E3C567]" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-semibold text-[#FAFAFA]">
-                            {currentRoom.contract_document?.name || 'Purchase Agreement'}
-                          </p>
-                          <p className="text-xs text-[#808080]">
-                            {currentRoom.contract_document?.uploaded_at 
-                              ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
-                              : 'Contract PDF'
-                            }
-                          </p>
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="text-[#E3C567]">
-                        View PDF
-                      </Button>
-                    </a>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-sm text-[#808080]">No contract uploaded yet</p>
-                    <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
-                  </div>
-                )}
-              </div>
+                                  {/* 4. NEXT STEPS FOR YOU */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Next Steps For You</h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        { label: 'Confirm walkthrough time', dueDate: 'Due in 2 days', checked: false },
+                                        { label: 'Review inspection report', dueDate: 'Due in 5 days', checked: false },
+                                        { label: 'Upload additional photos', dueDate: 'Due in 7 days', checked: false }
+                                      ].map((item, idx) => (
+                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
+                                          <input 
+                                            type="checkbox" 
+                                            checked={item.checked}
+                                            readOnly
+                                            className="mt-0.5 w-4 h-4 rounded border-[#1F1F1F] bg-[#0D0D0D] text-[#E3C567] focus:ring-[#E3C567] focus:ring-offset-0"
+                                          />
+                                          <div className="flex-1">
+                                            <p className="text-sm font-medium text-[#FAFAFA]">{item.label}</p>
+                                            <p className="text-xs text-[#808080] mt-0.5">{item.dueDate}</p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
 
-              {/* Important Information */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                  <Info className="w-5 h-5 text-[#E3C567]" />
-                  Important Information
-                </h4>
-                <div className="space-y-3">
-                  {currentRoom?.property_address && (
-                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                      <span className="text-sm text-[#808080]">Property</span>
-                      <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom.property_address}</span>
-                    </div>
-                  )}
-                  {currentRoom?.budget && (
-                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                      <span className="text-sm text-[#808080]">Budget</span>
-                      <span className="text-sm text-[#34D399] font-semibold">${currentRoom.budget.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {currentRoom?.pipeline_stage && (
-                    <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                      <span className="text-sm text-[#808080]">Stage</span>
-                      <span className="text-sm text-[#FAFAFA] font-medium capitalize">{currentRoom.pipeline_stage.replace('_', ' ')}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between py-2">
-                    <span className="text-sm text-[#808080]">Deal Started</span>
-                    <span className="text-sm text-[#FAFAFA] font-medium">
-                      {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : (
+                                  {/* 5. DEAL DETAILS */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <Info className="w-5 h-5 text-[#E3C567]" />
+                                      Deal Details
+                                    </h4>
+                                    <div className="space-y-3">
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Property</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom?.property_address || '—'}</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Price / Budget</span>
+                                        <span className="text-sm text-[#34D399] font-semibold">${(currentRoom?.budget || 0).toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Agent</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom?.counterparty_name || '—'}</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Walkthrough</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">TBD</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Closing Date</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : 'TBD'}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between py-2">
+                                        <span className="text-sm text-[#808080]">Deal Started</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  {/* 6. CONTRACTS & DOCUMENTS */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                                        <FileText className="w-5 h-5 text-[#E3C567]" />
+                                        Contracts & Documents
+                                      </h4>
+                                      <Button
+                                        onClick={() => setWizardOpen(true)}
+                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                                        size="sm"
+                                      >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Generate Contract
+                                      </Button>
+                                    </div>
+                                    <p className="text-sm text-[#808080]">
+                                      View and manage contracts for this deal using AI-powered tools.
+                                    </p>
+                                  </div>
+
+                                  {/* 7. DEAL DOCUMENTS */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <FileText className="w-5 h-5 text-[#E3C567]" />
+                                      Deal Documents
+                                    </h4>
+                                    {currentRoom?.contract_url || currentRoom?.contract_document ? (
+                                      <div className="space-y-3">
+                                        <a 
+                                          href={currentRoom.contract_url || currentRoom.contract_document?.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
+                                              <FileText className="w-5 h-5 text-[#E3C567]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-[#FAFAFA]">
+                                                {currentRoom.contract_document?.name || 'Purchase Agreement'}
+                                              </p>
+                                              <p className="text-xs text-[#808080]">
+                                                {currentRoom.contract_document?.uploaded_at 
+                                                  ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
+                                                  : 'Contract PDF'
+                                                }
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <Button variant="ghost" size="sm" className="text-[#E3C567]">
+                                            View PDF
+                                          </Button>
+                                        </a>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-8">
+                                        <p className="text-sm text-[#808080]">No contract uploaded yet</p>
+                                        <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
+                                      </div>
+                                    )}
+                                  </div>
+                                </>
+                              ) : (
+                                /* AGENT DEAL BOARD (unchanged) */
+                                <>
+                                  <div>
+                                    <h3 className="text-xl font-bold text-[#E3C567] mb-1">Deal Board</h3>
+                                    <p className="text-sm text-[#808080]">Documents, files, and important information for this deal</p>
+                                  </div>
+
+                                  {/* Pipeline Progress */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
+                                        { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
+                                        { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
+                                        { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
+                                        { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
+                                        { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
+                                      ].map((stage, idx) => {
+                                        const isActive = currentRoom?.pipeline_stage === stage.id;
+                                        const isPast = [
+                                          'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
+                                        ].indexOf(currentRoom?.pipeline_stage) > idx;
+
+                                        return (
+                                          <div key={stage.id} className="flex items-center gap-3">
+                                            <div 
+                                              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                                                isActive 
+                                                  ? 'ring-2 ring-offset-2 ring-offset-black' 
+                                                  : isPast 
+                                                  ? 'bg-[#34D399]' 
+                                                  : 'bg-[#1F1F1F]'
+                                              }`}
+                                              style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
+                                            >
+                                              <span className="text-sm font-bold text-white">
+                                                {isPast ? '✓' : idx + 1}
+                                              </span>
+                                            </div>
+                                            <div className="flex-1">
+                                              <p className={`text-sm font-medium ${
+                                                isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
+                                              }`}>
+                                                {stage.label}
+                                              </p>
+                                              {isActive && (
+                                                <p className="text-xs text-[#E3C567]">Current Stage</p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+
+                                  {/* Contracts Section */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <div className="flex items-center justify-between mb-4">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                                        <FileText className="w-5 h-5 text-[#E3C567]" />
+                                        Contracts & Documents
+                                      </h4>
+                                      <Button
+                                        onClick={() => setWizardOpen(true)}
+                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                                        size="sm"
+                                      >
+                                        <Plus className="w-4 h-4 mr-2" />
+                                        Generate Contract
+                                      </Button>
+                                    </div>
+                                    <p className="text-sm text-[#808080]">
+                                      Create and manage contracts for this deal using AI-powered tools.
+                                    </p>
+                                  </div>
+
+                                  {/* Files Section */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <FileText className="w-5 h-5 text-[#E3C567]" />
+                                      Deal Documents
+                                    </h4>
+                                    {currentRoom?.contract_url || currentRoom?.contract_document ? (
+                                      <div className="space-y-3">
+                                        <a 
+                                          href={currentRoom.contract_url || currentRoom.contract_document?.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
+                                        >
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
+                                              <FileText className="w-5 h-5 text-[#E3C567]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-[#FAFAFA]">
+                                                {currentRoom.contract_document?.name || 'Purchase Agreement'}
+                                              </p>
+                                              <p className="text-xs text-[#808080]">
+                                                {currentRoom.contract_document?.uploaded_at 
+                                                  ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
+                                                  : 'Contract PDF'
+                                                }
+                                              </p>
+                                            </div>
+                                          </div>
+                                          <Button variant="ghost" size="sm" className="text-[#E3C567]">
+                                            View PDF
+                                          </Button>
+                                        </a>
+                                      </div>
+                                    ) : (
+                                      <div className="text-center py-8">
+                                        <p className="text-sm text-[#808080]">No contract uploaded yet</p>
+                                        <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Important Information */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <Info className="w-5 h-5 text-[#E3C567]" />
+                                      Important Information
+                                    </h4>
+                                    <div className="space-y-3">
+                                      {currentRoom?.property_address && (
+                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                          <span className="text-sm text-[#808080]">Property</span>
+                                          <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom.property_address}</span>
+                                        </div>
+                                      )}
+                                      {currentRoom?.budget && (
+                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                          <span className="text-sm text-[#808080]">Budget</span>
+                                          <span className="text-sm text-[#34D399] font-semibold">${currentRoom.budget.toLocaleString()}</span>
+                                        </div>
+                                      )}
+                                      {currentRoom?.pipeline_stage && (
+                                        <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                          <span className="text-sm text-[#808080]">Stage</span>
+                                          <span className="text-sm text-[#FAFAFA] font-medium capitalize">{currentRoom.pipeline_stage.replace('_', ' ')}</span>
+                                        </div>
+                                      )}
+                                      <div className="flex justify-between py-2">
+                                        <span className="text-sm text-[#808080]">Deal Started</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          ) : (
             /* Messages View */
             <>
               {/* Floating Deal Summary Box */}
