@@ -47,7 +47,13 @@ function useMessages(roomId) {
         );
 
         if (!cancelled) {
-          setItems(messages || []);
+          // Merge with optimistic messages, avoid duplicates
+          setItems(prev => {
+            const tempMessages = prev.filter(m => m.id.toString().startsWith('temp-'));
+            const realMessageIds = new Set(messages.map(m => m.id));
+            const uniqueTemp = tempMessages.filter(m => !realMessageIds.has(m.id));
+            return [...messages, ...uniqueTemp];
+          });
         }
       } catch (error) {
         console.error('Failed to fetch messages:', error);
@@ -56,7 +62,7 @@ function useMessages(roomId) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 1000); // Poll every second
+    const interval = setInterval(fetchMessages, 2000); // Poll every 2 seconds
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId]);
 
@@ -158,6 +164,16 @@ export default function Room() {
     setText("");
     setSending(true);
     
+    // Optimistic update - show message immediately
+    const optimisticMessage = {
+      id: `temp-${Date.now()}`,
+      room_id: roomId,
+      sender_profile_id: profile?.id,
+      body: t,
+      created_date: new Date().toISOString()
+    };
+    setItems(prev => [...prev, optimisticMessage]);
+    
     try {
       const response = await base44.functions.invoke('sendMessage', { 
         room_id: roomId, 
@@ -167,12 +183,11 @@ export default function Room() {
       if (!response.data?.ok) {
         throw new Error('Message send failed');
       }
-      
-      // Invalidate queries to force refresh everywhere
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
+      // Remove optimistic message on error
+      setItems(prev => prev.filter(m => m.id !== optimisticMessage.id));
     } finally { 
       setSending(false);
     }
