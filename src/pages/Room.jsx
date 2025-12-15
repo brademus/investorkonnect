@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMessages, listMyRooms, sendMessage, roomUpdate } from "@/components/functions";
+import { listMessages, listMyRooms, roomUpdate } from "@/components/functions";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
@@ -159,12 +159,20 @@ export default function Room() {
     setSending(true);
     
     try {
-      await sendMessage({ room_id: roomId, body: t });
+      const response = await base44.functions.invoke('sendMessage', { 
+        room_id: roomId, 
+        body: t 
+      });
+      
+      if (!response.data?.ok) {
+        throw new Error('Message send failed');
+      }
+      
       // Invalidate queries to force refresh everywhere
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast.error('Failed to send message');
+      toast.error(`Failed to send: ${error.message}`);
     } finally { 
       setSending(false);
     }
