@@ -435,8 +435,8 @@ export default function Room() {
           </div>
         )}
 
-        {/* Message Thread or Deal Board */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4 min-h-0">
+        {/* Message Thread or Deal Board - Scrollable Area */}
+        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4">
           {/* Deal Details Sidebar */}
           {showDealDetails && currentRoom && (
             <div className="w-80 flex-shrink-0 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 h-fit sticky top-6">
