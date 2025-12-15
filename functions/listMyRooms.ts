@@ -79,7 +79,28 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 5. Construct Final List
+    // 5. Fetch Last Messages for all rooms
+    const lastMessagesMap = new Map();
+    if (rooms.length > 0) {
+      try {
+        const roomIds = rooms.map(r => r.id);
+        // Get last message for each room
+        for (const roomId of roomIds) {
+          const msgs = await base44.entities.Message.filter(
+            { room_id: roomId },
+            '-created_date',
+            1
+          );
+          if (msgs && msgs.length > 0) {
+            lastMessagesMap.set(roomId, msgs[0]);
+          }
+        }
+      } catch (e) {
+        console.error("Error fetching last messages:", e);
+      }
+    }
+
+    // 6. Construct Final List
     const finalRooms = [];
     const usedDealIds = new Set(); // Track which deals are attached to rooms
 
@@ -95,6 +116,13 @@ Deno.serve(async (req) => {
       r.counterparty_name = counterparty.full_name || counterparty.email || "Unknown User";
       r.counterparty_role = r.investorId === profile.id ? 'agent' : 'investor';
       r.counterparty_image = counterparty.headshotUrl || null; // Add image if available
+      
+      // Add Last Message
+      const lastMsg = lastMessagesMap.get(r.id);
+      if (lastMsg) {
+        r.last_message = lastMsg;
+        r.last_message_text = lastMsg.body;
+      }
 
       // Deal Logic
       let deal = null;
@@ -130,7 +158,7 @@ Deno.serve(async (req) => {
       finalRooms.push(r);
     });
 
-    // 6. Add Orphan Deals (Deals I own that aren't linked to a room yet)
+    // 7. Add Orphan Deals (Deals I own that aren't linked to a room yet)
     // Only if they aren't already used in a valid room
     myActiveDeals.forEach(deal => {
       if (!usedDealIds.has(deal.id)) {
