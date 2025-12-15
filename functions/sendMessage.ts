@@ -3,11 +3,11 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 async function audit(base44, actor_profile_id, action, entity_type, entity_id, meta = {}) {
   try {
     await base44.entities.AuditLog.create({
-      actor_profile_id,
+      actor_id: actor_profile_id,
       action,
       entity_type,
       entity_id,
-      meta,
+      details: JSON.stringify(meta),
       timestamp: new Date().toISOString()
     });
   } catch (e) {

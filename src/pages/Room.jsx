@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMessages, listMyRooms, roomUpdate } from "@/components/functions";
+import { listMyRooms, roomUpdate } from "@/components/functions";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
@@ -43,7 +43,7 @@ function useMessages(roomId) {
       try {
         const messages = await base44.entities.Message.filter(
           { room_id: roomId },
-          '-created_date'
+          'created_date' // Sort ascending (oldest first)
         );
 
         if (!cancelled) {
