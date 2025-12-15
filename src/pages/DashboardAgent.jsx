@@ -13,6 +13,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { useRooms } from "@/components/useRooms";
 import { inboxList } from "@/components/functions";
 import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 
 function AgentDashboardContent() {
   const navigate = useNavigate();
