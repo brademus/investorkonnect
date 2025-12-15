@@ -19,15 +19,18 @@ function AgentDashboardContent() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Load agent deals
+  // Load agent deals from Deal entity
   const { data: agentDeals = [], isLoading: dealsLoading } = useQuery({
     queryKey: ['agentDeals', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
+      const { base44 } = await import('@/api/base44Client');
       const deals = await base44.entities.Deal.filter({ 
         agent_id: profile.id 
       });
-      return deals.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      return deals
+        .filter(d => d.status !== 'archived')
+        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
     staleTime: 0,
@@ -115,19 +118,18 @@ function AgentDashboardContent() {
     );
   }
 
-  // Calculate Real Stats from deals
+  // Calculate Real Stats from Deal entity
   const activeDeals = Array.isArray(agentDeals) 
-    ? agentDeals.filter(d => !['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)) 
+    ? agentDeals.filter(d => !['clear_to_close_closed', 'closed'].includes(d.pipeline_stage)) 
     : [];
 
   const dealStats = {
-    new_deal: activeDeals.filter(d => d.pipeline_stage === 'new_deal_under_contract').length,
-    walkthrough: activeDeals.filter(d => d.pipeline_stage === 'walkthrough_scheduled').length,
-    evaluate: activeDeals.filter(d => d.pipeline_stage === 'evaluate_deal').length,
-    marketing: activeDeals.filter(d => d.pipeline_stage === 'active_marketing').length,
-    closed: Array.isArray(agentDeals) 
-      ? agentDeals.filter(d => ['clear_to_close_closed', 'closed', 'cancelling_deal'].includes(d.pipeline_stage)).length 
-      : 0
+    new_deal: agentDeals.filter(d => d.pipeline_stage === 'new_deal_under_contract').length,
+    walkthrough: agentDeals.filter(d => d.pipeline_stage === 'walkthrough_scheduled').length,
+    evaluate: agentDeals.filter(d => d.pipeline_stage === 'evaluate_deal').length,
+    marketing: agentDeals.filter(d => d.pipeline_stage === 'active_marketing').length,
+    cancelling: agentDeals.filter(d => d.pipeline_stage === 'cancelling_deal').length,
+    closed: agentDeals.filter(d => d.pipeline_stage === 'clear_to_close_closed').length
   };
 
   const pendingRequests = inbox.filter(i => i.status === 'pending');
@@ -193,10 +195,11 @@ function AgentDashboardContent() {
                   <div className="space-y-2 flex-grow overflow-y-auto">
                     {[
                       { label: 'New Deal', count: dealStats.new_deal, color: 'text-[#E3C567]', icon: Plus, bg: 'bg-[#E3C567]/10' },
-                      { label: 'Walkthrough Scheduled', count: dealStats.walkthrough, color: 'text-[#E3C567]', icon: Home, bg: 'bg-[#E3C567]/10' },
-                      { label: 'Evaluate Deal', count: dealStats.evaluate, color: 'text-[#E3C567]', icon: FileText, bg: 'bg-[#E3C567]/10' },
-                      { label: 'Active Marketing', count: dealStats.marketing, color: 'text-[#E3C567]', icon: Users, bg: 'bg-[#E3C567]/10' },
-                      { label: 'Closed', count: dealStats.closed, color: 'text-[#808080]', icon: DollarSign, bg: 'bg-[#808080]/10' }
+                      { label: 'Walkthrough', count: dealStats.walkthrough, color: 'text-[#60A5FA]', icon: Home, bg: 'bg-[#60A5FA]/10' },
+                      { label: 'Evaluate', count: dealStats.evaluate, color: 'text-[#F59E0B]', icon: FileText, bg: 'bg-[#F59E0B]/10' },
+                      { label: 'Marketing', count: dealStats.marketing, color: 'text-[#DB2777]', icon: Users, bg: 'bg-[#DB2777]/10' },
+                      { label: 'Cancelling', count: dealStats.cancelling, color: 'text-[#EF4444]', icon: TrendingUp, bg: 'bg-[#EF4444]/10' },
+                      { label: 'Closed', count: dealStats.closed, color: 'text-[#34D399]', icon: DollarSign, bg: 'bg-[#34D399]/10' }
                     ].map((stat, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-[#141414] rounded-xl border border-[#1F1F1F] hover:border-[#333] transition-colors">
                         <div className="flex items-center gap-3">
@@ -234,6 +237,8 @@ function AgentDashboardContent() {
                           onClick={() => {
                             if (dealRoom) {
                               navigate(`${createPageUrl("Room")}?roomId=${dealRoom.id}`);
+                            } else {
+                              navigate(createPageUrl("Pipeline"));
                             }
                           }}
                           className="w-full text-left p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567] transition-all group"
@@ -242,11 +247,16 @@ function AgentDashboardContent() {
                             <div className="w-5 h-5 rounded border border-[#1F1F1F] bg-[#0D0D0D] mt-0.5 flex-shrink-0" />
                             <div className="flex-1 min-w-0">
                               <p className="text-sm font-medium text-[#FAFAFA] truncate">
-                                Follow up: {deal.property_address || deal.title}
+                                {deal.property_address || deal.title}
                               </p>
-                              <p className="text-xs text-[#808080] mt-0.5">
-                                Investor: {dealRoom?.counterparty_name || 'N/A'} • Stage: {deal.pipeline_stage?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <p className="text-xs text-[#808080]">
+                                  {deal.city}, {deal.state}
+                                </p>
+                                <span className="text-xs text-[#34D399] font-semibold">
+                                  ${(deal.purchase_price || 0).toLocaleString()}
+                                </span>
+                              </div>
                             </div>
                           </div>
                         </button>
