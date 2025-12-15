@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { listMyRooms, roomUpdate } from "@/components/functions";
