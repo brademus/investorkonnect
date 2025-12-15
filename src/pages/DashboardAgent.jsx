@@ -48,7 +48,10 @@ function AgentDashboardContent() {
         console.error("Inbox load failed:", e);
         return [];
       }
-    }
+    },
+    refetchInterval: 2000, // Poll every 2 seconds
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
   useEffect(() => {
@@ -129,7 +132,12 @@ function AgentDashboardContent() {
 
   const pendingRequests = inbox.filter(i => i.status === 'pending');
   const uniqueClients = new Set(activeDeals.map(d => d.investor_id).filter(Boolean)).size;
-  const unreadCount = inbox.filter(i => !i.read).length;
+  
+  // Count unread messages from rooms
+  const unreadCount = rooms.filter(r => {
+    // Count rooms with messages you haven't read
+    return r.last_message && r.last_message.sender_profile_id !== profile?.id;
+  }).length;
 
   const userData = {
     activeClients: uniqueClients,
@@ -265,7 +273,6 @@ function AgentDashboardContent() {
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
                     <MessageSquare className="w-6 h-6 text-[#E3C567]" />
                   </div>
-                  {/* Deal Rooms link removed */}
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Messages</h3>
                 
@@ -273,7 +280,7 @@ function AgentDashboardContent() {
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#E3C567]/10 border border-[#E3C567]/20">
                     <div className="flex items-center gap-2">
                       <MessageSquare className="w-4 h-4 text-[#E3C567]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Unread</span>
+                      <span className="text-sm font-medium text-[#FAFAFA]">Unread Messages</span>
                     </div>
                     <span className="text-lg font-bold text-[#E3C567]">{userData.unreadMessages}</span>
                   </div>
@@ -281,16 +288,44 @@ function AgentDashboardContent() {
                   <div className="flex items-center justify-between p-3 rounded-lg bg-[#E3C567]/10 border border-[#E3C567]/20">
                     <div className="flex items-center gap-2">
                       <Users className="w-4 h-4 text-[#E3C567]" />
-                      <span className="text-sm font-medium text-[#FAFAFA]">Pending</span>
+                      <span className="text-sm font-medium text-[#FAFAFA]">Active Conversations</span>
                     </div>
-                    <span className="text-lg font-bold text-[#E3C567]">{userData.pendingRequests}</span>
+                    <span className="text-lg font-bold text-[#E3C567]">{rooms.length}</span>
+                  </div>
+
+                  {/* Show recent messages */}
+                  <div className="mt-4 space-y-2 max-h-40 overflow-y-auto">
+                    {rooms.slice(0, 3).map(room => (
+                      <button
+                        key={room.id}
+                        onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
+                        className="w-full text-left p-2 bg-[#141414] rounded-lg hover:bg-[#1F1F1F] transition-colors border border-[#1F1F1F] hover:border-[#E3C567]"
+                      >
+                        <p className="text-xs font-semibold text-[#FAFAFA] truncate">
+                          {room.counterparty_name || 'New Message'}
+                        </p>
+                        <p className="text-xs text-[#808080] truncate">
+                          {room.property_address || room.deal_title || 'Click to view'}
+                        </p>
+                      </button>
+                    ))}
                   </div>
                 </div>
                 
-                {/* Messages button removed */}
+                <Button 
+                  onClick={() => {
+                    if (rooms.length > 0) {
+                      navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`);
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                >
+                  View All Messages
+                </Button>
               </div>
 
-              {/* Box 4: How It Works / Status */}
+              {/* Box 4: Incoming Deals */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8 min-h-[380px] flex flex-col">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center">
@@ -299,24 +334,52 @@ function AgentDashboardContent() {
                 </div>
                 <h3 className="text-xl font-bold text-[#FAFAFA] mb-4">Incoming Deals</h3>
                 
-                <div className="flex-grow">
-                  <p className="text-sm text-[#808080] mb-4">
-                    Deals are automatically matched to you based on your service area.
-                  </p>
-                  <ul className="text-sm text-[#808080] space-y-3">
-                    <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
-                      <span>Investor uploads contract</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
-                      <span>AI matches state & county</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
-                      <span>You receive the deal</span>
-                    </li>
-                  </ul>
+                <div className="flex-grow space-y-3">
+                  {/* Show recent deals awaiting response */}
+                  {rooms.filter(r => !r.deal_assigned_agent_id).length > 0 ? (
+                    <>
+                      <p className="text-sm text-[#808080] mb-3">New deals waiting for your response:</p>
+                      {rooms.filter(r => !r.deal_assigned_agent_id).slice(0, 3).map(room => (
+                        <button
+                          key={room.id}
+                          onClick={() => navigate(`${createPageUrl("Room")}?roomId=${room.id}`)}
+                          className="w-full text-left p-3 bg-[#E3C567]/10 rounded-lg hover:bg-[#E3C567]/20 transition-colors border border-[#E3C567]/20"
+                        >
+                          <p className="text-sm font-semibold text-[#E3C567] truncate">
+                            {room.property_address || room.deal_title || 'New Deal'}
+                          </p>
+                          <p className="text-xs text-[#808080] mt-1">
+                            From: {room.counterparty_name || 'Investor'}
+                          </p>
+                          {room.budget && (
+                            <p className="text-xs text-[#34D399] font-semibold mt-1">
+                              ${room.budget.toLocaleString()}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                    </>
+                  ) : (
+                    <div className="flex-grow">
+                      <p className="text-sm text-[#808080] mb-4">
+                        Deals are automatically matched to you based on your service area.
+                      </p>
+                      <ul className="text-sm text-[#808080] space-y-3">
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                          <span>Investor uploads contract</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                          <span>AI matches state & county</span>
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-1.5" />
+                          <span>You receive the deal</span>
+                        </li>
+                      </ul>
+                    </div>
+                  )}
                 </div>
                 
                 <div className="mt-4 p-3 bg-[#262626] rounded-lg">

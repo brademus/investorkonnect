@@ -6,7 +6,7 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { Shield, FileText, User, Settings, ShieldCheck } from "lucide-react";
+import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare } from "lucide-react";
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
@@ -149,9 +149,21 @@ function LayoutContent({ children }) {
       {/* Sonner toast notifications */}
       <Toaster />
 
+      {/* Floating Messages Button */}
+      {user && onboarded && !isNoNavPage && (
+        <Link 
+          to={createPageUrl("Room")}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#E3C567] hover:bg-[#EDD89F] rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110"
+        >
+          <MessageSquare className="w-6 h-6 text-black" />
+        </Link>
+      )}
+
       </div>
       );
       }
+
+import { MessageSquare } from "lucide-react";
 
 export default function Layout({ children, currentPageName }) {
   return (
