@@ -260,8 +260,7 @@ function AgentDashboardContent() {
 
                 <Button 
                   onClick={() => navigate(createPageUrl("Pipeline"))}
-                  variant="outline"
-                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                  className="w-full mt-4 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                 >
                   View Pipeline
                 </Button>
@@ -332,8 +331,7 @@ function AgentDashboardContent() {
                       navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`);
                     }
                   }}
-                  variant="outline"
-                  className="w-full mt-4 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                  className="w-full mt-4 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                 >
                   View All Messages
                 </Button>
