@@ -3,8 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import LoadingAnimation from "@/components/LoadingAnimation";
-import DashboardInvestor from "./DashboardInvestor";
-import DashboardAgent from "./DashboardAgent";
+import Pipeline from "./Pipeline";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 /**
@@ -87,22 +86,13 @@ export default function Dashboard() {
     );
   }
 
-  // Show role-specific dashboard
+  // Show Pipeline as the main dashboard for all users
   try {
-    if (profile?.user_role === 'investor') {
-      // Redirect to the dedicated Investor Dashboard page
-      // preventing "page within a page" issues
-      window.location.href = createPageUrl("DashboardInvestor");
-      return null;
-    }
-
-    if (profile?.user_role === 'agent') {
-      return (
-        <ErrorBoundary>
-          <DashboardAgent />
-        </ErrorBoundary>
-      );
-    }
+    return (
+      <ErrorBoundary>
+        <Pipeline />
+      </ErrorBoundary>
+    );
   } catch (error) {
     console.error("Dashboard render error:", error);
     return (
