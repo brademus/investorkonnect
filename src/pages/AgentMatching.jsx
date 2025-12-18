@@ -128,9 +128,10 @@ export default function AgentMatching() {
     }
   };
 
-  const handleSelectAgent = async (agentProfile) => {
+  const handleSelectAgent = async (agentMatch) => {
     if (sendingToAgent) return;
 
+    const agentProfile = agentMatch.agent;
     setSendingToAgent(agentProfile.id);
     try {
       // Create a room for this deal and agent with pending status
@@ -277,7 +278,7 @@ export default function AgentMatching() {
                     disabled={sendingToAgent !== null}
                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                   >
-                    {sendingToAgent === agent.id ? "Sending..." : "Send Deal to This Agent"}
+                    {sendingToAgent === agent.agent.id ? "Sending..." : "Send Deal to This Agent"}
                   </Button>
                 </div>
               );
