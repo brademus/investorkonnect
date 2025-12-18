@@ -540,13 +540,100 @@ export default function NewDeal() {
                     </li>
                   ))}
                 </ul>
-                <Button
-                  onClick={() => setCurrentStep(1)}
-                  className="bg-red-500 hover:bg-red-600 text-white rounded-full"
-                >
-                  <ArrowLeft className="w-4 h-4 mr-2" />
-                  Go Back to Fix Details
-                </Button>
+                <div className="flex gap-3">
+                  <Button
+                    onClick={() => setCurrentStep(1)}
+                    variant="outline"
+                    className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Go Back to Fix Details
+                  </Button>
+                  <Button
+                    onClick={async () => {
+                      const contractFileUrl = sessionStorage.getItem("contractFileUrl");
+                      if (!contractFileUrl) {
+                        toast.error("Contract file not found. Please upload again.");
+                        return;
+                      }
+                      
+                      setVerifying(true);
+                      setVerificationErrors([]);
+                      
+                      try {
+                        const extractRes = await base44.functions.invoke('extractContractData', {
+                          fileUrl: contractFileUrl
+                        });
+
+                        if (!extractRes.data?.success || !extractRes.data.data) {
+                          throw new Error("Failed to extract data from contract");
+                        }
+
+                        const extracted = extractRes.data.data;
+                        const errors = [];
+                        
+                        // Check address
+                        if (propertyAddress && extracted.address) {
+                          const inputAddr = propertyAddress.toLowerCase().trim();
+                          const extractedAddr = extracted.address.toLowerCase().trim();
+                          const firstPart = inputAddr.split(',')[0].trim();
+                          
+                          if (!extractedAddr.includes(firstPart) && !inputAddr.includes(extractedAddr.split(',')[0].trim())) {
+                            errors.push(`Address mismatch: You entered "${propertyAddress}" but contract shows "${extracted.address}"`);
+                          }
+                        }
+                        
+                        // Check state
+                        if (state && extracted.state) {
+                          if (state.toLowerCase() !== extracted.state.toLowerCase()) {
+                            errors.push(`State mismatch: You entered "${state}" but contract shows "${extracted.state}"`);
+                          }
+                        }
+                        
+                        // Check price (5% tolerance)
+                        if (purchasePrice && extracted.purchase_price) {
+                          const cleanedInputPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+                          const inputPrice = Number(cleanedInputPrice);
+                          const contractPrice = Number(extracted.purchase_price.toString().replace(/[$,\s]/g, ''));
+                          const diff = Math.abs(inputPrice - contractPrice);
+                          const tolerance = inputPrice * 0.05;
+                          
+                          if (diff > tolerance) {
+                            errors.push(`Price mismatch: You entered $${inputPrice.toLocaleString()} but contract shows $${contractPrice.toLocaleString()}`);
+                          }
+                        }
+                        
+                        // Check closing date
+                        if (closingDate && extracted.key_dates?.closing_date) {
+                          const inputDate = new Date(closingDate).toISOString().split('T')[0];
+                          const contractDate = new Date(extracted.key_dates.closing_date).toISOString().split('T')[0];
+                          
+                          if (inputDate !== contractDate) {
+                            errors.push(`Closing date mismatch: You entered ${closingDate} but contract shows ${extracted.key_dates.closing_date}`);
+                          }
+                        }
+
+                        setVerifying(false);
+
+                        if (errors.length > 0) {
+                          setVerificationErrors(errors);
+                          toast.error("Contract data still doesn't match your input");
+                        } else {
+                          setVerificationSuccess(true);
+                          toast.success("Contract verified successfully!");
+                        }
+                      } catch (error) {
+                        console.error("Verification failed:", error);
+                        toast.error("Failed to verify contract");
+                        setVerifying(false);
+                      }
+                    }}
+                    disabled={verifying}
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                  >
+                    {verifying ? "Verifying..." : "Retry Verification"}
+                  </Button>
+                </div>
               </div>
             )}
 
