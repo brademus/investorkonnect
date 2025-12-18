@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, MapPin, Briefcase, Star } from "lucide-react";
+import { CheckCircle, MapPin, Briefcase, Star, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AgentMatching() {
@@ -134,7 +134,7 @@ export default function AgentMatching() {
           <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-[#E3C567]" />
           </div>
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Select Your Agent</h1>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Top Matched Agents</h1>
           <p className="text-[#808080]">
             Choose the best agent for your deal at {deal?.property_address}
           </p>
@@ -152,8 +152,9 @@ export default function AgentMatching() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {agents.map((match, index) => {
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {agents.slice(0, 3).map((match, index) => {
               const agent = match.agent;
               const headshotUrl = agent.headshotUrl || agent.agent?.headshot_url;
               const agentName = agent.full_name || "Agent";
@@ -224,6 +225,21 @@ export default function AgentMatching() {
               );
             })}
           </div>
+          
+          {/* View All Button */}
+          {agents.length > 3 && (
+            <div className="flex justify-center mt-8">
+              <Button
+                onClick={() => navigate(createPageUrl("AgentDirectory") + `?dealId=${dealId}`)}
+                variant="outline"
+                className="border-[#E3C567]/50 text-[#E3C567] hover:bg-[#E3C567]/10 rounded-full"
+              >
+                View All {agents.length} Agents
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
+        </>
         )}
       </div>
     </div>
