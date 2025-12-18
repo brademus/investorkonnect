@@ -222,6 +222,9 @@ export default function NewDeal() {
 
           console.log('[NewDeal] Deal created successfully:', newDeal.id);
 
+          // Store deal ID for navigation
+          sessionStorage.setItem("createdDealId", newDeal.id);
+
           // Store terms in sessionStorage for agent matching
           sessionStorage.setItem("newDealData", JSON.stringify({
             commissionType,
@@ -230,14 +233,9 @@ export default function NewDeal() {
             agreementLength
           }));
           
-          toast.success("Contract verified! Finding agents...");
+          toast.success("Contract verified! Click below to find agents.");
           
-          console.log('[NewDeal] Navigating to AgentMatching with dealId:', newDeal.id);
-          
-          // Use setTimeout to ensure state updates complete before navigation
-          setTimeout(() => {
-            navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`, { replace: true });
-          }, 100);
+          console.log('[NewDeal] Deal ready, dealId stored:', newDeal.id);
         } catch (dealError) {
           console.error("Failed to create deal:", dealError);
           toast.error("Failed to create deal: " + (dealError.message || 'Unknown error'));
@@ -700,7 +698,7 @@ export default function NewDeal() {
 
             {verificationSuccess && (
               <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-5 mb-6">
-                <div className="flex items-center gap-3 mb-2">
+                <div className="flex items-center gap-3 mb-3">
                   <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -708,9 +706,24 @@ export default function NewDeal() {
                   </div>
                   <div>
                     <h3 className="text-green-400 font-semibold">Contract Verified Successfully!</h3>
-                    <p className="text-green-300/70 text-sm">Your contract matches the details you entered</p>
+                    <p className="text-green-300/70 text-sm">Ready to find matching agents</p>
                   </div>
                 </div>
+                <Button
+                  onClick={async () => {
+                    const storedDealId = sessionStorage.getItem("createdDealId");
+                    if (storedDealId) {
+                      console.log('[NewDeal] Using stored dealId:', storedDealId);
+                      navigate(createPageUrl("AgentMatching") + `?dealId=${storedDealId}`, { replace: true });
+                    } else {
+                      toast.error("Deal ID not found. Please try again.");
+                    }
+                  }}
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                >
+                  Find Matching Agents
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
               </div>
             )}
 
