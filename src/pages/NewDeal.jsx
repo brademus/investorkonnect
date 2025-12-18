@@ -114,6 +114,9 @@ export default function NewDeal() {
       // Upload file
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
+      // Store file URL immediately for retry functionality
+      sessionStorage.setItem("contractFileUrl", file_url);
+      
       setUploading(false);
       setVerifying(true);
 
@@ -179,9 +182,6 @@ export default function NewDeal() {
       } else {
         setVerificationSuccess(true);
         toast.success("Contract verified successfully!");
-        
-        // Store file URL for final submission
-        sessionStorage.setItem("contractFileUrl", file_url);
       }
 
     } catch (error) {
