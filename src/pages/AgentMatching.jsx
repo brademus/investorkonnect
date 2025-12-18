@@ -21,8 +21,16 @@ export default function AgentMatching() {
   const [agents, setAgents] = useState([]);
 
   useEffect(() => {
-    if (!dealId || !profile?.id) {
+    console.log('[AgentMatching] useEffect triggered:', { dealId, profileId: profile?.id });
+    
+    if (!dealId) {
+      console.log('[AgentMatching] No dealId, redirecting to Pipeline');
       navigate(createPageUrl("Pipeline"));
+      return;
+    }
+    
+    if (!profile?.id) {
+      console.log('[AgentMatching] No profile yet, waiting...');
       return;
     }
 
@@ -32,16 +40,23 @@ export default function AgentMatching() {
   const loadDealAndAgents = async () => {
     try {
       setLoading(true);
+      setMatching(true);
+
+      console.log('[AgentMatching] Loading deal with ID:', dealId);
 
       // Load deal
       const deals = await base44.entities.Deal.filter({ id: dealId });
+      console.log('[AgentMatching] Deals fetched:', deals?.length);
+      
       if (!deals || deals.length === 0) {
+        console.log('[AgentMatching] Deal not found');
         toast.error("Deal not found");
         navigate(createPageUrl("Pipeline"));
         return;
       }
 
       const loadedDeal = deals[0];
+      console.log('[AgentMatching] Deal loaded:', loadedDeal.property_address, loadedDeal.state);
       setDeal(loadedDeal);
 
       // Find matching agents

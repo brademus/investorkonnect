@@ -192,6 +192,14 @@ export default function NewDeal() {
           };
 
           const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+          
+          console.log('[NewDeal] Creating deal with:', {
+            investor_id: profile.id,
+            property_address: propertyAddress,
+            state,
+            purchase_price: Number(cleanedPrice)
+          });
+          
           const newDeal = await base44.entities.Deal.create({
             investor_id: profile.id,
             title: propertyAddress,
@@ -212,6 +220,8 @@ export default function NewDeal() {
             pipeline_stage: 'new_deal_under_contract'
           });
 
+          console.log('[NewDeal] Deal created successfully:', newDeal.id);
+
           // Store terms in sessionStorage for agent matching
           sessionStorage.setItem("newDealData", JSON.stringify({
             commissionType,
@@ -222,11 +232,15 @@ export default function NewDeal() {
           
           toast.success("Contract verified! Finding agents...");
           
-          // Navigate to agent matching page
-          navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
+          console.log('[NewDeal] Navigating to AgentMatching with dealId:', newDeal.id);
+          
+          // Use setTimeout to ensure state updates complete before navigation
+          setTimeout(() => {
+            navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`, { replace: true });
+          }, 100);
         } catch (dealError) {
           console.error("Failed to create deal:", dealError);
-          toast.error("Failed to create deal");
+          toast.error("Failed to create deal: " + (dealError.message || 'Unknown error'));
           setVerificationSuccess(false);
         }
       }
