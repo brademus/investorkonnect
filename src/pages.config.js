@@ -62,6 +62,7 @@ import PendingDeals from './pages/PendingDeals';
 import ClosedDeals from './pages/ClosedDeals';
 import Pipeline from './pages/Pipeline';
 import DemoDiagnostics from './pages/DemoDiagnostics';
+import NewDeal from './pages/NewDeal';
 import __Layout from './Layout.jsx';
 
 
@@ -130,6 +131,7 @@ export const PAGES = {
     "ClosedDeals": ClosedDeals,
     "Pipeline": Pipeline,
     "DemoDiagnostics": DemoDiagnostics,
+    "NewDeal": NewDeal,
 }
 
 export const pagesConfig = {

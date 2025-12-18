@@ -322,7 +322,7 @@ function PipelineContent() {
                         navigate(createPageUrl(check.redirectTo));
                         return;
                       }
-                      navigate(createPageUrl("DealWizard"));
+                      navigate(createPageUrl("NewDeal"));
                     }}
                     className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
                   >
