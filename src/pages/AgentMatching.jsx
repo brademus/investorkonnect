@@ -15,6 +15,7 @@ export default function AgentMatching() {
   const dealId = searchParams.get("dealId");
 
   const [loading, setLoading] = useState(true);
+  const [matching, setMatching] = useState(true);
   const [sending, setSending] = useState(false);
   const [deal, setDeal] = useState(null);
   const [agents, setAgents] = useState([]);
@@ -70,7 +71,11 @@ export default function AgentMatching() {
       console.error("Failed to load agents:", error);
       toast.error("Failed to load agents");
     } finally {
-      setLoading(false);
+      // Wait before showing results
+      setTimeout(() => {
+        setMatching(false);
+        setLoading(false);
+      }, 1500);
     }
   };
 
