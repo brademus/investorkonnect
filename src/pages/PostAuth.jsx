@@ -93,8 +93,8 @@ export default function PostAuth() {
             navigate(createPageUrl("RoleSelection"), { replace: true });
           }
         } else {
-          // Fully onboarded - go to Dashboard
-          navigate(createPageUrl("Dashboard"), { replace: true });
+          // Fully onboarded - go to Pipeline (main dashboard)
+          navigate(createPageUrl("Pipeline"), { replace: true });
         }
 
       } catch (error) {
