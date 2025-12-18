@@ -93,8 +93,8 @@ export default function DealRequest() {
         });
       }
 
-      toast.success("Deal accepted! You can now communicate with the investor.");
-      navigate(createPageUrl("Pipeline"));
+      toast.success("Deal accepted! Opening deal room...");
+      navigate(createPageUrl("Room") + `?roomId=${room.id}`);
 
     } catch (error) {
       console.error("Failed to accept deal:", error);
