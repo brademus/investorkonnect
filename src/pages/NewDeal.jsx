@@ -388,7 +388,7 @@ export default function NewDeal() {
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                     <Input
-                      type="number"
+                      type="text"
                       value={purchasePrice}
                       onChange={(e) => setPurchasePrice(e.target.value)}
                       placeholder="250000"
