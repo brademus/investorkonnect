@@ -88,7 +88,7 @@ function LayoutContent({ children }) {
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
               alt="Investor Konnect"
               className="h-8 w-8 object-contain cursor-pointer"
-              onClick={() => window.location.href = createPageUrl("Dashboard")}
+              onClick={() => window.location.href = createPageUrl("Pipeline")}
             />
             <span className="text-base font-light tracking-wide text-[#E3C567]">
               Investor Konnect

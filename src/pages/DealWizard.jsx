@@ -371,9 +371,9 @@ export default function DealWizard() {
       
       toast.success("Deal saved successfully");
       
-      // Clear cache and navigate to dashboard
+      // Clear cache and navigate to pipeline
       sessionStorage.clear();
-      navigate(createPageUrl("Dashboard"));
+      navigate(createPageUrl("Pipeline"));
 
     } catch (error) {
       console.error("Save failed:", error);
@@ -538,10 +538,10 @@ export default function DealWizard() {
       <header className="bg-[#0D0D0D] border-b border-[#1F1F1F] sticky top-0 z-10">
         <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
+            <Logo size="default" showText={false} linkTo={createPageUrl("Pipeline")} />
             <h1 className="text-lg font-semibold text-[#FAFAFA] font-serif">New Deal</h1>
           </div>
-          <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl("Dashboard"))} className="text-[#808080] hover:text-[#FAFAFA] hover:bg-[#1F1F1F]">
+          <Button variant="ghost" size="icon" onClick={() => navigate(createPageUrl("Pipeline"))} className="text-[#808080] hover:text-[#FAFAFA] hover:bg-[#1F1F1F]">
             <X className="w-5 h-5" />
           </Button>
         </div>

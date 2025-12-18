@@ -322,12 +322,6 @@ function PipelineContent() {
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
-                      const check = await requireInvestorSetup({ profile });
-                      if (!check.ok) {
-                        toast.error(check.message);
-                        navigate(createPageUrl(check.redirectTo));
-                        return;
-                      }
                       navigate(createPageUrl("NewDeal"));
                     }}
                     className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"

@@ -366,8 +366,8 @@ export default function Room() {
         await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
         await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
         
-        // Navigate to dashboard
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        // Navigate to pipeline
+        navigate(createPageUrl("Pipeline"), { replace: true });
       } else {
         toast.error("Failed to lock in agent. Please try again.");
       }
@@ -531,7 +531,7 @@ ${dealContext}`;
           </button>
           <button
             className="mr-4 w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#808080] hover:bg-[#333333] hover:text-[#FAFAFA] transition-all"
-            onClick={() => navigate(createPageUrl("Dashboard"))}
+            onClick={() => navigate(createPageUrl("Pipeline"))}
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
