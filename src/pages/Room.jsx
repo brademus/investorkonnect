@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import ContractLayers from "@/components/ContractLayers";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus
 } from "lucide-react";
@@ -201,6 +202,7 @@ export default function Room() {
   const [lockingIn, setLockingIn] = useState(false);
   const [showDealDetails, setShowDealDetails] = useState(false);
   const [currentRoom, setCurrentRoom] = useState(null);
+  const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
@@ -222,6 +224,7 @@ export default function Room() {
             const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
             if (dealData && dealData.length > 0) {
               const deal = dealData[0];
+              setDeal(deal); // Store deal separately
               setCurrentRoom({
                 ...room,
                 title: deal.title,
@@ -934,69 +937,43 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 6. CONTRACTS & DOCUMENTS */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                                        <FileText className="w-5 h-5 text-[#E3C567]" />
-                                        Contracts & Documents
-                                      </h4>
-                                      <Button
-                                        onClick={() => setWizardOpen(true)}
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                                        size="sm"
-                                      >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Generate Contract
-                                      </Button>
-                                    </div>
-                                    <p className="text-sm text-[#808080]">
-                                      View and manage contracts for this deal using AI-powered tools.
-                                    </p>
-                                  </div>
-
-                                  {/* 7. DEAL DOCUMENTS */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                      <FileText className="w-5 h-5 text-[#E3C567]" />
-                                      Deal Documents
-                                    </h4>
-                                    {(currentRoom?.contract_url || currentRoom?.contract_document?.url) ? (
-                                      <div className="space-y-3">
-                                        <a 
-                                          href={currentRoom.contract_url || currentRoom.contract_document?.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
-                                              <FileText className="w-5 h-5 text-[#E3C567]" />
-                                            </div>
-                                            <div>
-                                              <p className="text-sm font-semibold text-[#FAFAFA]">
-                                                {currentRoom.contract_document?.name || 'Purchase Agreement'}
-                                              </p>
-                                              <p className="text-xs text-[#808080]">
-                                                {currentRoom.contract_document?.uploaded_at 
-                                                  ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
-                                                  : 'Contract PDF'
-                                                }
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <Button variant="ghost" size="sm" className="text-[#E3C567]">
-                                            View PDF
-                                          </Button>
-                                        </a>
-                                      </div>
-                                    ) : (
-                                      <div className="text-center py-8">
-                                        <p className="text-sm text-[#808080]">No contract uploaded yet</p>
-                                        <p className="text-xs text-[#666666] mt-1">Upload via Deal Wizard</p>
-                                      </div>
-                                    )}
-                                  </div>
+                                  {/* 6. CONTRACT LAYERS */}
+                                  <ContractLayers 
+                                    room={currentRoom} 
+                                    deal={deal}
+                                    onUpdate={() => {
+                                      // Refresh room data
+                                      const fetchCurrentRoom = async () => {
+                                        const roomData = await base44.entities.Room.filter({ id: roomId });
+                                        if (roomData && roomData.length > 0) {
+                                          const room = roomData[0];
+                                          if (room.deal_id) {
+                                            const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
+                                            if (dealData && dealData.length > 0) {
+                                              const deal = dealData[0];
+                                              setCurrentRoom({
+                                                ...room,
+                                                title: deal.title,
+                                                property_address: deal.property_address,
+                                                city: deal.city,
+                                                state: deal.state,
+                                                county: deal.county,
+                                                zip: deal.zip,
+                                                budget: deal.purchase_price,
+                                                pipeline_stage: deal.pipeline_stage,
+                                                closing_date: deal.key_dates?.closing_date,
+                                                deal_assigned_agent_id: deal.agent_id,
+                                                contract_url: room.contract_url || deal.contract_url || null,
+                                                contract_document: room.contract_document || deal.contract_document || null
+                                              });
+                                            }
+                                          }
+                                        }
+                                      };
+                                      fetchCurrentRoom();
+                                    }}
+                                    userRole={profile?.user_role}
+                                  />
                                 </>
                               ) : (
                                 /* AGENT DEAL BOARD */
@@ -1225,69 +1202,43 @@ ${dealContext}`;
                                     </Button>
                                   </div>
 
-                                  {/* 7. Contracts & Documents */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                                        <FileText className="w-5 h-5 text-[#E3C567]" />
-                                        Contracts & Documents
-                                      </h4>
-                                      <Button
-                                        onClick={() => setWizardOpen(true)}
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                                        size="sm"
-                                      >
-                                        <Plus className="w-4 h-4 mr-2" />
-                                        Generate Contract
-                                      </Button>
-                                    </div>
-                                    <p className="text-sm text-[#808080]">
-                                      Create and manage contracts for this deal using AI-powered tools.
-                                    </p>
-                                  </div>
-
-                                  {/* Deal Documents */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                      <FileText className="w-5 h-5 text-[#E3C567]" />
-                                      Deal Documents
-                                    </h4>
-                                    {(currentRoom?.contract_url || currentRoom?.contract_document?.url) ? (
-                                      <div className="space-y-3">
-                                        <a 
-                                          href={currentRoom.contract_url || currentRoom.contract_document?.url}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="flex items-center justify-between p-4 bg-[#141414] border border-[#1F1F1F] rounded-xl hover:border-[#E3C567] transition-all group"
-                                        >
-                                          <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/30 transition-colors">
-                                              <FileText className="w-5 h-5 text-[#E3C567]" />
-                                            </div>
-                                            <div>
-                                              <p className="text-sm font-semibold text-[#FAFAFA]">
-                                                {currentRoom.contract_document?.name || 'Purchase Agreement'}
-                                              </p>
-                                              <p className="text-xs text-[#808080]">
-                                                {currentRoom.contract_document?.uploaded_at 
-                                                  ? `Uploaded ${new Date(currentRoom.contract_document.uploaded_at).toLocaleDateString()}`
-                                                  : 'Contract PDF'
-                                                }
-                                              </p>
-                                            </div>
-                                          </div>
-                                          <Button variant="ghost" size="sm" className="text-[#E3C567]">
-                                            View PDF
-                                          </Button>
-                                        </a>
-                                      </div>
-                                    ) : (
-                                      <div className="text-center py-8">
-                                        <p className="text-sm text-[#808080]">No contract uploaded yet</p>
-                                        <p className="text-xs text-[#666666] mt-1">Waiting for investor to upload</p>
-                                      </div>
-                                    )}
-                                  </div>
+                                  {/* 7. CONTRACT LAYERS */}
+                                  <ContractLayers 
+                                    room={currentRoom} 
+                                    deal={deal}
+                                    onUpdate={() => {
+                                      // Refresh room data
+                                      const fetchCurrentRoom = async () => {
+                                        const roomData = await base44.entities.Room.filter({ id: roomId });
+                                        if (roomData && roomData.length > 0) {
+                                          const room = roomData[0];
+                                          if (room.deal_id) {
+                                            const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
+                                            if (dealData && dealData.length > 0) {
+                                              const deal = dealData[0];
+                                              setCurrentRoom({
+                                                ...room,
+                                                title: deal.title,
+                                                property_address: deal.property_address,
+                                                city: deal.city,
+                                                state: deal.state,
+                                                county: deal.county,
+                                                zip: deal.zip,
+                                                budget: deal.purchase_price,
+                                                pipeline_stage: deal.pipeline_stage,
+                                                closing_date: deal.key_dates?.closing_date,
+                                                deal_assigned_agent_id: deal.agent_id,
+                                                contract_url: room.contract_url || deal.contract_url || null,
+                                                contract_document: room.contract_document || deal.contract_document || null
+                                              });
+                                            }
+                                          }
+                                        }
+                                      };
+                                      fetchCurrentRoom();
+                                    }}
+                                    userRole={profile?.user_role}
+                                  />
                                 </>
                               )}
                             </div>
