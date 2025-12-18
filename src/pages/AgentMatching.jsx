@@ -178,9 +178,9 @@ export default function AgentMatching() {
         await base44.entities.Room.update(room.id, {
           proposed_terms: {
             commission_type: parsed.commissionType,
-            commission_percentage: parsed.commissionPercentage,
-            flat_fee: parsed.flatFee,
-            agreement_length: parsed.agreementLength
+            commission_percentage: parsed.commissionPercentage ? Number(parsed.commissionPercentage) : null,
+            flat_fee: parsed.flatFee ? Number(parsed.flatFee) : null,
+            agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
           }
         });
       }
@@ -239,16 +239,18 @@ export default function AgentMatching() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {agents.slice(0, 3).map((match, index) => {
               const agent = match.agent;
+              const agentId = agent.id;
               const headshotUrl = agent.headshotUrl || agent.agent?.headshot_url;
               const agentName = agent.full_name || "Agent";
               const brokerage = agent.agent?.brokerage || agent.broker;
               const experienceYears = agent.agent?.experience_years;
               const markets = agent.agent?.markets || [];
               const specialties = agent.agent?.specialties || [];
+              const isThisAgentSending = sendingToAgent === agentId;
 
               return (
                 <div
-                  key={agent.id}
+                  key={agentId}
                   className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hover:border-[#E3C567] transition-all"
                 >
                   {/* Agent Photo */}
@@ -302,7 +304,7 @@ export default function AgentMatching() {
                     disabled={sendingToAgent !== null}
                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold disabled:opacity-50"
                   >
-                    {sendingToAgent === agent.id ? "Sending..." : "Send Deal to This Agent"}
+                    {isThisAgentSending ? "Sending..." : "Send Deal to This Agent"}
                   </Button>
                 </div>
               );
