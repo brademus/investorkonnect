@@ -165,12 +165,6 @@ export default function AgentMatching() {
         console.log('[AgentMatching] Room created:', room.id);
       }
 
-      // Update deal with agent assignment
-      await base44.entities.Deal.update(deal.id, {
-        agent_id: agentProfile.id,
-        status: 'active'
-      });
-
       // Store proposed terms in room
       const storedData = sessionStorage.getItem("newDealData");
       if (storedData) {
