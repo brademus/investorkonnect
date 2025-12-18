@@ -5,6 +5,7 @@ import { base44 } from "@/api/base44Client";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import Pipeline from "./Pipeline";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SetupChecklist from "@/components/SetupChecklist";
 
 /**
  * DASHBOARD - Shows role-specific dashboard
@@ -90,7 +91,10 @@ export default function Dashboard() {
   try {
     return (
       <ErrorBoundary>
-        <Pipeline />
+        <div className="min-h-screen">
+          <SetupChecklist profile={profile} />
+          <Pipeline />
+        </div>
       </ErrorBoundary>
     );
   } catch (error) {
