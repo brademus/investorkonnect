@@ -31,6 +31,7 @@ export default function DealWizard() {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const [validationError, setValidationError] = useState(null);
   
   const [dealId, setDealId] = useState(searchParams.get('dealId') || null);
   const [dealData, setDealData] = useState({
@@ -42,10 +43,23 @@ export default function DealWizard() {
     purchasePrice: '',
     closingDate: ''
   });
+  const [newDealInput, setNewDealInput] = useState(null);
 
   // Load existing deal if resuming
   useEffect(() => {
     document.title = "Start New Deal - Investor Konnect";
+    
+    // Check for newDealData from NewDeal page
+    const storedData = sessionStorage.getItem("newDealData");
+    if (storedData) {
+      try {
+        const parsed = JSON.parse(storedData);
+        setNewDealInput(parsed);
+      } catch (e) {
+        console.error("Failed to parse newDealData:", e);
+      }
+    }
+    
     if (dealId) {
       loadExistingDeal(dealId);
     }
@@ -252,6 +266,40 @@ export default function DealWizard() {
       await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       await queryClient.invalidateQueries({ queryKey: ['rooms'] });
 
+      // If we have newDealInput, validate extracted data against it
+      if (newDealInput) {
+        const validationIssues = [];
+        
+        // Compare address
+        if (newDealInput.propertyAddress && extractedData.address) {
+          const inputAddr = newDealInput.propertyAddress.toLowerCase().trim();
+          const extractedAddr = extractedData.address.toLowerCase().trim();
+          if (!extractedAddr.includes(inputAddr.split(',')[0].trim()) && !inputAddr.includes(extractedAddr.split(',')[0].trim())) {
+            validationIssues.push("Address doesn't match between your input and the contract");
+          }
+        }
+        
+        // Compare price (within 5% tolerance)
+        if (newDealInput.purchasePrice && extractedData.purchasePrice) {
+          const inputPrice = parsePrice(newDealInput.purchasePrice.toString());
+          const contractPrice = parsePrice(extractedData.purchasePrice.toString());
+          if (inputPrice && contractPrice) {
+            const diff = Math.abs(inputPrice - contractPrice);
+            const tolerance = inputPrice * 0.05;
+            if (diff > tolerance) {
+              validationIssues.push(`Purchase price mismatch: You entered $${inputPrice.toLocaleString()} but contract shows $${contractPrice.toLocaleString()}`);
+            }
+          }
+        }
+        
+        if (validationIssues.length > 0) {
+          setValidationError(validationIssues.join('. '));
+          toast.error("Contract data doesn't match your input");
+          setProcessing(false);
+          return;
+        }
+      }
+
       setStep(2);
 
     } catch (error) {
@@ -342,8 +390,23 @@ export default function DealWizard() {
       </div>
       <h2 className="text-2xl font-bold text-[#FAFAFA] mb-2 font-serif">Upload Purchase Agreement</h2>
       <p className="text-[#808080] mb-8 max-w-md mx-auto">
-        Upload your PDF contract. We'll automatically extract details and check for duplicates.
+        Upload your PDF contract. We'll automatically extract details and verify them against your input.
       </p>
+      
+      {validationError && (
+        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 mb-6 max-w-md mx-auto">
+          <p className="text-red-400 text-sm mb-3">{validationError}</p>
+          <Button
+            onClick={() => {
+              sessionStorage.removeItem("newDealData");
+              navigate(createPageUrl("NewDeal") + (dealId ? `?dealId=${dealId}` : ""));
+            }}
+            className="bg-red-500 hover:bg-red-600 text-white rounded-full"
+          >
+            Go Back to Fix Details
+          </Button>
+        </div>
+      )}
 
       {profileLoading || processing ? (
         <div className="flex flex-col items-center justify-center space-y-4">
