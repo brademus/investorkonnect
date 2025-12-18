@@ -274,11 +274,11 @@ export default function AgentMatching() {
 
                   {/* Select Button */}
                   <Button
-                    onClick={() => handleSelectAgent(agent)}
+                    onClick={() => handleSelectAgent(match)}
                     disabled={sendingToAgent !== null}
-                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold disabled:opacity-50"
                   >
-                    {sendingToAgent === agent.agent.id ? "Sending..." : "Send Deal to This Agent"}
+                    {sendingToAgent === agent.id ? "Sending..." : "Send Deal to This Agent"}
                   </Button>
                 </div>
               );
