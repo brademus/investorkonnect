@@ -76,8 +76,9 @@ export default function NewDeal() {
       toast.error("Please enter a property address");
       return false;
     }
-    const priceValue = String(purchasePrice || '').trim();
-    if (!priceValue || isNaN(Number(priceValue)) || Number(priceValue) <= 0) {
+    // Strip out $ signs, commas, and spaces, then validate
+    const cleanedPrice = String(purchasePrice || '').replace(/[$,\s]/g, '').trim();
+    if (!cleanedPrice || isNaN(Number(cleanedPrice)) || Number(cleanedPrice) <= 0) {
       toast.error("Please enter a valid purchase price");
       return false;
     }
