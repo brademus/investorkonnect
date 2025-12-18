@@ -16,7 +16,7 @@ export default function AgentMatching() {
 
   const [loading, setLoading] = useState(true);
   const [matching, setMatching] = useState(true);
-  const [sending, setSending] = useState(false);
+  const [sendingToAgent, setSendingToAgent] = useState(null);
   const [deal, setDeal] = useState(null);
   const [agents, setAgents] = useState([]);
 
@@ -129,9 +129,9 @@ export default function AgentMatching() {
   };
 
   const handleSelectAgent = async (agentProfile) => {
-    if (sending) return;
+    if (sendingToAgent) return;
 
-    setSending(true);
+    setSendingToAgent(agentProfile.id);
     try {
       // Create a room for this deal and agent with pending status
       const roomRes = await base44.functions.invoke('createDealRoom', {
@@ -168,7 +168,7 @@ export default function AgentMatching() {
     } catch (error) {
       console.error("Failed to send deal:", error);
       toast.error("Failed to send deal to agent");
-      setSending(false);
+      setSendingToAgent(null);
     }
   };
 
@@ -274,10 +274,10 @@ export default function AgentMatching() {
                   {/* Select Button */}
                   <Button
                     onClick={() => handleSelectAgent(agent)}
-                    disabled={sending}
+                    disabled={sendingToAgent !== null}
                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                   >
-                    {sending ? "Sending..." : "Send Deal to This Agent"}
+                    {sendingToAgent === agent.id ? "Sending..." : "Send Deal to This Agent"}
                   </Button>
                 </div>
               );
