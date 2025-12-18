@@ -181,48 +181,54 @@ export default function NewDeal() {
         toast.error("Contract data doesn't match your input");
       } else {
         setVerificationSuccess(true);
-        toast.success("Contract verified successfully!");
         
         // Auto-create deal and navigate to agent matching
-        setUploading(true);
-        const contractDocument = {
-          url: file_url,
-          name: "Purchase Agreement.pdf",
-          type: "contract",
-          uploaded_at: new Date().toISOString()
-        };
+        try {
+          const contractDocument = {
+            url: file_url,
+            name: "Purchase Agreement.pdf",
+            type: "contract",
+            uploaded_at: new Date().toISOString()
+          };
 
-        const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
-        const newDeal = await base44.entities.Deal.create({
-          investor_id: profile.id,
-          title: propertyAddress,
-          property_address: propertyAddress,
-          city,
-          state,
-          county: "",
-          zip,
-          purchase_price: Number(cleanedPrice),
-          property_type: propertyType,
-          notes,
-          key_dates: {
-            closing_date: closingDate
-          },
-          contract_url: file_url,
-          contract_document: contractDocument,
-          status: 'active',
-          pipeline_stage: 'new_deal_under_contract'
-        });
+          const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+          const newDeal = await base44.entities.Deal.create({
+            investor_id: profile.id,
+            title: propertyAddress,
+            property_address: propertyAddress,
+            city,
+            state,
+            county: "",
+            zip,
+            purchase_price: Number(cleanedPrice),
+            property_type: propertyType,
+            notes,
+            key_dates: {
+              closing_date: closingDate
+            },
+            contract_url: file_url,
+            contract_document: contractDocument,
+            status: 'active',
+            pipeline_stage: 'new_deal_under_contract'
+          });
 
-        // Store terms in sessionStorage for agent matching
-        sessionStorage.setItem("newDealData", JSON.stringify({
-          commissionType,
-          commissionPercentage,
-          flatFee,
-          agreementLength
-        }));
-        
-        // Navigate to agent matching page
-        navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
+          // Store terms in sessionStorage for agent matching
+          sessionStorage.setItem("newDealData", JSON.stringify({
+            commissionType,
+            commissionPercentage,
+            flatFee,
+            agreementLength
+          }));
+          
+          toast.success("Contract verified! Finding agents...");
+          
+          // Navigate to agent matching page
+          navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
+        } catch (dealError) {
+          console.error("Failed to create deal:", dealError);
+          toast.error("Failed to create deal");
+          setVerificationSuccess(false);
+        }
       }
 
     } catch (error) {
@@ -862,15 +868,6 @@ export default function NewDeal() {
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8"
             >
               Next
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          ) : verificationSuccess ? (
-            <Button
-              onClick={handleFinalSubmit}
-              disabled={uploading}
-              className="bg-[#34D399] hover:bg-[#10B981] text-black rounded-full px-8"
-            >
-              {uploading ? "Saving..." : "Complete & Save Deal"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           ) : (
