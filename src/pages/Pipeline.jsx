@@ -132,6 +132,19 @@ function PipelineContent() {
     refetchOnMount: true
   });
 
+  // 4. Load Pending Requests (for agents)
+  const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
+    queryKey: ['pendingRequests', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id || !isAgent) return [];
+      const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      return allRooms.filter(r => r.deal_status === 'pending_agent_review');
+    },
+    enabled: !!profile?.id && isAgent,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true
+  });
+
   // Force refresh on mount
   useEffect(() => {
     if (profile?.id) {
@@ -140,7 +153,7 @@ function PipelineContent() {
     }
   }, [profile?.id]);
 
-  // 4. Merge Data (no automatic dedup - user clicks button if needed)
+  // 5. Merge Data (no automatic dedup - user clicks button if needed)
   const deals = useMemo(() => {
     // Index rooms by deal_id
     const roomMap = new Map();
@@ -303,6 +316,50 @@ function PipelineContent() {
               <SetupChecklist profile={profile} />
             </div>
             
+            {/* Pending Requests for Agents */}
+            {isAgent && pendingRequests.length > 0 && (
+              <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#E3C567]">New Deal Requests</h2>
+                    <p className="text-sm text-[#808080]">{pendingRequests.length} investors want to work with you</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {pendingRequests.map((room) => (
+                    <div 
+                      key={room.id}
+                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 hover:border-[#E3C567] transition-all cursor-pointer"
+                      onClick={() => navigate(createPageUrl("DealRequest") + `?roomId=${room.id}`)}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
+                            {room.city}, {room.state}
+                          </h3>
+                          <p className="text-xs text-[#808080]">
+                            {formatCurrency(room.budget)}
+                          </p>
+                        </div>
+                        <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">
+                          New
+                        </span>
+                      </div>
+                      <Button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(createPageUrl("DealRequest") + `?roomId=${room.id}`);
+                        }}
+                        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
+                      >
+                        Review Request
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
               <div>
