@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, ArrowRight, Home, Bed, Bath, Maximize2, DollarSign, Calendar, FileText, Handshake } from "lucide-react";
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
 export default function NewDeal() {
   const navigate = useNavigate();
@@ -39,6 +40,12 @@ export default function NewDeal() {
   const [commissionPercentage, setCommissionPercentage] = useState("");
   const [flatFee, setFlatFee] = useState("");
   const [agreementLength, setAgreementLength] = useState("");
+
+  // Step 4 state (contract upload)
+  const [uploading, setUploading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [verificationErrors, setVerificationErrors] = useState([]);
 
   // Load existing deal data if editing
   useEffect(() => {
@@ -222,7 +229,14 @@ export default function NewDeal() {
         pipeline_stage: 'new_deal_under_contract'
       });
 
-      sessionStorage.clear();
+      // Store terms in sessionStorage for agent matching
+      sessionStorage.setItem("newDealData", JSON.stringify({
+        commissionType,
+        commissionPercentage,
+        flatFee,
+        agreementLength
+      }));
+      
       toast.success("Deal created successfully!");
       navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
 
@@ -248,12 +262,6 @@ export default function NewDeal() {
     { number: 4, label: "Contract Upload" }
   ];
 
-  // Step 4 state
-  const [uploading, setUploading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [verificationSuccess, setVerificationSuccess] = useState(false);
-  const [verificationErrors, setVerificationErrors] = useState([]);
-
   return (
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-2xl mx-auto">
@@ -266,7 +274,7 @@ export default function NewDeal() {
             <ArrowLeft className="w-4 h-4" /> Back to Pipeline
           </button>
           <h1 className="text-3xl font-bold text-[#E3C567] mb-2">New Deal</h1>
-          <p className="text-sm text-[#808080]">Step {currentStep} of 3</p>
+          <p className="text-sm text-[#808080]">Step {currentStep} of 4</p>
         </div>
 
         {/* Progress Indicator */}
