@@ -79,19 +79,33 @@ export default function AgentMatching() {
 
     setSending(true);
     try {
-      // Create a room for this deal and agent
+      // Create a room for this deal and agent with pending status
       const roomRes = await base44.functions.invoke('createDealRoom', {
         dealId: deal.id,
         agentProfileId: agentProfile.id
       });
 
       if (roomRes.data?.room) {
-        // Update deal with agent
-        await base44.entities.Deal.update(deal.id, {
-          agent_id: agentProfile.id
+        // Update room to pending status
+        await base44.entities.Room.update(roomRes.data.room.id, {
+          deal_status: 'pending_agent_review'
         });
 
-        toast.success(`Deal sent to ${agentProfile.full_name || 'agent'}`);
+        // Store proposed terms in room metadata
+        const storedData = sessionStorage.getItem("newDealData");
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          await base44.entities.Room.update(roomRes.data.room.id, {
+            proposed_terms: {
+              commission_type: parsed.commissionType,
+              commission_percentage: parsed.commissionPercentage,
+              flat_fee: parsed.flatFee,
+              agreement_length: parsed.agreementLength
+            }
+          });
+        }
+
+        toast.success(`Deal request sent to ${agentProfile.full_name || 'agent'}`);
         navigate(createPageUrl("Pipeline"));
       } else {
         throw new Error("Failed to create room");

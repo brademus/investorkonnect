@@ -64,6 +64,7 @@ import Pipeline from './pages/Pipeline';
 import DemoDiagnostics from './pages/DemoDiagnostics';
 import NewDeal from './pages/NewDeal';
 import AgentMatching from './pages/AgentMatching';
+import DealRequest from './pages/DealRequest';
 import __Layout from './Layout.jsx';
 
 
@@ -134,6 +135,7 @@ export const PAGES = {
     "DemoDiagnostics": DemoDiagnostics,
     "NewDeal": NewDeal,
     "AgentMatching": AgentMatching,
+    "DealRequest": DealRequest,
 }
 
 export const pagesConfig = {
