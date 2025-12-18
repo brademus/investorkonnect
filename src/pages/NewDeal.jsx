@@ -76,7 +76,8 @@ export default function NewDeal() {
       toast.error("Please enter a property address");
       return false;
     }
-    if (!purchasePrice || isNaN(Number(purchasePrice))) {
+    const priceValue = String(purchasePrice || '').trim();
+    if (!priceValue || isNaN(Number(priceValue)) || Number(priceValue) <= 0) {
       toast.error("Please enter a valid purchase price");
       return false;
     }
