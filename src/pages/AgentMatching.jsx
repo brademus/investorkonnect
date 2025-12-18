@@ -132,43 +132,67 @@ export default function AgentMatching() {
     if (sendingToAgent) return;
 
     const agentProfile = agentMatch.agent;
+    console.log('[AgentMatching] Selecting agent:', agentProfile.id, agentProfile.full_name);
     setSendingToAgent(agentProfile.id);
+    
     try {
-      // Create a room for this deal and agent with pending status
-      const roomRes = await base44.functions.invoke('createDealRoom', {
-        dealId: deal.id,
-        agentProfileId: agentProfile.id
+      // Check for existing room
+      const existingRooms = await base44.entities.Room.filter({
+        deal_id: deal.id,
+        agentId: agentProfile.id
       });
 
-      if (roomRes.data?.room) {
-        // Update room to pending status
-        await base44.entities.Room.update(roomRes.data.room.id, {
+      let room;
+      if (existingRooms && existingRooms.length > 0) {
+        room = existingRooms[0];
+        console.log('[AgentMatching] Using existing room:', room.id);
+      } else {
+        // Create new room
+        console.log('[AgentMatching] Creating new room for deal:', deal.id);
+        room = await base44.entities.Room.create({
+          deal_id: deal.id,
+          investorId: profile.id,
+          agentId: agentProfile.id,
+          title: deal.title,
+          property_address: deal.property_address,
+          city: deal.city,
+          state: deal.state,
+          county: deal.county,
+          zip: deal.zip,
+          budget: deal.purchase_price || deal.budget,
           deal_status: 'pending_agent_review'
         });
-
-        // Store proposed terms in room metadata
-        const storedData = sessionStorage.getItem("newDealData");
-        if (storedData) {
-          const parsed = JSON.parse(storedData);
-          await base44.entities.Room.update(roomRes.data.room.id, {
-            proposed_terms: {
-              commission_type: parsed.commissionType,
-              commission_percentage: parsed.commissionPercentage,
-              flat_fee: parsed.flatFee,
-              agreement_length: parsed.agreementLength
-            }
-          });
-        }
-
-        toast.success(`Deal request sent to ${agentProfile.full_name || 'agent'}`);
-        navigate(createPageUrl("Pipeline"));
-      } else {
-        throw new Error("Failed to create room");
+        console.log('[AgentMatching] Room created:', room.id);
       }
+
+      // Update deal with agent assignment
+      await base44.entities.Deal.update(deal.id, {
+        agent_id: agentProfile.id,
+        status: 'active'
+      });
+
+      // Store proposed terms in room
+      const storedData = sessionStorage.getItem("newDealData");
+      if (storedData) {
+        const parsed = JSON.parse(storedData);
+        await base44.entities.Room.update(room.id, {
+          proposed_terms: {
+            commission_type: parsed.commissionType,
+            commission_percentage: parsed.commissionPercentage,
+            flat_fee: parsed.flatFee,
+            agreement_length: parsed.agreementLength
+          }
+        });
+      }
+
+      toast.success(`Deal request sent to ${agentProfile.full_name || 'agent'}`);
+      setTimeout(() => {
+        navigate(createPageUrl("Pipeline"));
+      }, 500);
 
     } catch (error) {
       console.error("Failed to send deal:", error);
-      toast.error("Failed to send deal to agent");
+      toast.error("Failed to send deal: " + error.message);
       setSendingToAgent(null);
     }
   };
