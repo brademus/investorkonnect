@@ -182,6 +182,46 @@ export default function NewDeal() {
       } else {
         setVerificationSuccess(true);
         toast.success("Contract verified successfully!");
+        
+        // Auto-create deal and navigate to agent matching
+        const contractDocument = {
+          url: file_url,
+          name: "Purchase Agreement.pdf",
+          type: "contract",
+          uploaded_at: new Date().toISOString()
+        };
+
+        const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+        const newDeal = await base44.entities.Deal.create({
+          investor_id: profile.id,
+          title: propertyAddress,
+          property_address: propertyAddress,
+          city,
+          state,
+          county: "",
+          zip,
+          purchase_price: Number(cleanedPrice),
+          property_type: propertyType,
+          notes,
+          key_dates: {
+            closing_date: closingDate
+          },
+          contract_url: file_url,
+          contract_document: contractDocument,
+          status: 'active',
+          pipeline_stage: 'new_deal_under_contract'
+        });
+
+        // Store terms in sessionStorage for agent matching
+        sessionStorage.setItem("newDealData", JSON.stringify({
+          commissionType,
+          commissionPercentage,
+          flatFee,
+          agreementLength
+        }));
+        
+        // Navigate to agent matching
+        navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
       }
 
     } catch (error) {
