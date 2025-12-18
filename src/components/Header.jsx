@@ -34,13 +34,6 @@ export function Header({ profile }) {
       show: true
     },
     {
-      label: 'Matches',
-      icon: Users,
-      href: createPageUrl("Matches"),
-      show: isInvestor
-    },
-    /* Deal Rooms link removed */
-    {
       label: 'Documents',
       icon: FileText,
       href: createPageUrl(isInvestor ? "InvestorDocuments" : "AgentDocuments"),
