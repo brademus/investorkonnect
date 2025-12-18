@@ -89,28 +89,148 @@ export default function NewDeal() {
     setCurrentStep(currentStep - 1);
   };
 
-  const handleContinueToVerification = () => {
-    const dealData = {
-      propertyAddress,
-      city,
-      state,
-      zip,
-      sellerName,
-      purchasePrice: Number(purchasePrice),
-      closingDate,
-      beds: beds ? Number(beds) : null,
-      baths: baths ? Number(baths) : null,
-      sqft: sqft ? Number(sqft) : null,
-      propertyType,
-      notes,
-      commissionType,
-      commissionPercentage: commissionType === "percentage" ? Number(commissionPercentage) : null,
-      flatFee: commissionType === "flat" ? Number(flatFee) : null,
-      agreementLength: agreementLength ? Number(agreementLength) : null
-    };
+  const handleFileUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file || file.type !== 'application/pdf') {
+      toast.error('Please upload a PDF contract');
+      return;
+    }
 
-    sessionStorage.setItem("newDealData", JSON.stringify(dealData));
-    navigate(createPageUrl("DealWizard") + (dealId ? `?dealId=${dealId}` : ""));
+    setUploading(true);
+    setVerifying(false);
+    setVerificationSuccess(false);
+    setVerificationErrors([]);
+
+    try {
+      // Upload file
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      
+      setUploading(false);
+      setVerifying(true);
+
+      // Extract contract data
+      const extractRes = await base44.functions.invoke('extractContractData', {
+        fileUrl: file_url
+      });
+
+      if (!extractRes.data?.success || !extractRes.data.data) {
+        throw new Error("Failed to extract data from contract");
+      }
+
+      const extracted = extractRes.data.data;
+      
+      // Verify against user input
+      const errors = [];
+      
+      // Check address
+      if (propertyAddress && extracted.address) {
+        const inputAddr = propertyAddress.toLowerCase().trim();
+        const extractedAddr = extracted.address.toLowerCase().trim();
+        const firstPart = inputAddr.split(',')[0].trim();
+        
+        if (!extractedAddr.includes(firstPart) && !inputAddr.includes(extractedAddr.split(',')[0].trim())) {
+          errors.push(`Address mismatch: You entered "${propertyAddress}" but contract shows "${extracted.address}"`);
+        }
+      }
+      
+      // Check state
+      if (state && extracted.state) {
+        if (state.toLowerCase() !== extracted.state.toLowerCase()) {
+          errors.push(`State mismatch: You entered "${state}" but contract shows "${extracted.state}"`);
+        }
+      }
+      
+      // Check price (5% tolerance)
+      if (purchasePrice && extracted.purchase_price) {
+        const inputPrice = Number(purchasePrice);
+        const contractPrice = Number(extracted.purchase_price.toString().replace(/[$,\s]/g, ''));
+        const diff = Math.abs(inputPrice - contractPrice);
+        const tolerance = inputPrice * 0.05;
+        
+        if (diff > tolerance) {
+          errors.push(`Price mismatch: You entered $${inputPrice.toLocaleString()} but contract shows $${contractPrice.toLocaleString()}`);
+        }
+      }
+      
+      // Check closing date
+      if (closingDate && extracted.key_dates?.closing_date) {
+        const inputDate = new Date(closingDate).toISOString().split('T')[0];
+        const contractDate = new Date(extracted.key_dates.closing_date).toISOString().split('T')[0];
+        
+        if (inputDate !== contractDate) {
+          errors.push(`Closing date mismatch: You entered ${closingDate} but contract shows ${extracted.key_dates.closing_date}`);
+        }
+      }
+
+      setVerifying(false);
+
+      if (errors.length > 0) {
+        setVerificationErrors(errors);
+        toast.error("Contract data doesn't match your input");
+      } else {
+        setVerificationSuccess(true);
+        toast.success("Contract verified successfully!");
+        
+        // Store file URL for final submission
+        sessionStorage.setItem("contractFileUrl", file_url);
+      }
+
+    } catch (error) {
+      console.error("Upload/verification failed:", error);
+      toast.error("Failed to process contract");
+      setUploading(false);
+      setVerifying(false);
+    }
+  };
+
+  const handleFinalSubmit = async () => {
+    const contractFileUrl = sessionStorage.getItem("contractFileUrl");
+    
+    if (!contractFileUrl) {
+      toast.error("Please upload and verify your contract first");
+      return;
+    }
+
+    setUploading(true);
+    
+    try {
+      const contractDocument = {
+        url: contractFileUrl,
+        name: "Purchase Agreement.pdf",
+        type: "contract",
+        uploaded_at: new Date().toISOString()
+      };
+
+      // Create deal with all data
+      const newDeal = await base44.entities.Deal.create({
+        investor_id: profile.id,
+        title: propertyAddress,
+        property_address: propertyAddress,
+        city,
+        state,
+        county: "",
+        zip,
+        purchase_price: Number(purchasePrice),
+        property_type: propertyType,
+        notes,
+        key_dates: {
+          closing_date: closingDate
+        },
+        contract_url: contractFileUrl,
+        contract_document: contractDocument,
+        status: 'active',
+        pipeline_stage: 'new_deal_under_contract'
+      });
+
+      sessionStorage.clear();
+      toast.success("Deal created successfully!");
+      navigate(createPageUrl("Pipeline"));
+
+    } catch (error) {
+      console.error("Failed to create deal:", error);
+      toast.error("Failed to save deal");
+      setUploading(false);
+    }
   };
 
   if (loading) {
@@ -124,8 +244,15 @@ export default function NewDeal() {
   const steps = [
     { number: 1, label: "Deal Basics" },
     { number: 2, label: "Property Details" },
-    { number: 3, label: "Agreement Terms" }
+    { number: 3, label: "Agreement Terms" },
+    { number: 4, label: "Contract Upload" }
   ];
+
+  // Step 4 state
+  const [uploading, setUploading] = useState(false);
+  const [verifying, setVerifying] = useState(false);
+  const [verificationSuccess, setVerificationSuccess] = useState(false);
+  const [verificationErrors, setVerificationErrors] = useState([]);
 
   return (
     <div className="min-h-screen bg-transparent py-8 px-6">
@@ -375,6 +502,120 @@ export default function NewDeal() {
           </div>
         )}
 
+        {currentStep === 4 && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 bg-[#A78BFA]/20 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-[#A78BFA]" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-[#FAFAFA]">Upload & Verify Contract</h2>
+                <p className="text-sm text-[#808080]">We'll verify your contract matches the details you entered</p>
+              </div>
+            </div>
+
+            {verificationErrors.length > 0 && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-5 mb-6">
+                <h3 className="text-red-400 font-semibold mb-3 flex items-center gap-2">
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  Contract Verification Failed
+                </h3>
+                <ul className="space-y-2 mb-4">
+                  {verificationErrors.map((error, idx) => (
+                    <li key={idx} className="text-red-300 text-sm flex items-start gap-2">
+                      <span className="text-red-500 mt-0.5">•</span>
+                      <span>{error}</span>
+                    </li>
+                  ))}
+                </ul>
+                <Button
+                  onClick={() => setCurrentStep(1)}
+                  className="bg-red-500 hover:bg-red-600 text-white rounded-full"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Go Back to Fix Details
+                </Button>
+              </div>
+            )}
+
+            {verificationSuccess && (
+              <div className="bg-green-500/10 border border-green-500/30 rounded-xl p-5 mb-6">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-10 h-10 bg-green-500/20 rounded-full flex items-center justify-center">
+                    <svg className="w-6 h-6 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h3 className="text-green-400 font-semibold">Contract Verified Successfully!</h3>
+                    <p className="text-green-300/70 text-sm">Your contract matches the details you entered</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {!verificationSuccess && verificationErrors.length === 0 && (
+              <div className="space-y-5">
+                <div className="border-2 border-dashed border-[#1F1F1F] rounded-xl p-8 text-center hover:border-[#E3C567]/50 transition-colors">
+                  {uploading || verifying ? (
+                    <div className="flex flex-col items-center justify-center py-8">
+                      <LoadingAnimation className="w-32 h-32 mb-4" />
+                      <p className="text-sm font-medium text-[#808080]">
+                        {uploading ? "Uploading contract..." : "Verifying contract details..."}
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="w-16 h-16 bg-[#E3C567]/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-[#E3C567]" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-[#FAFAFA] mb-2">Upload Purchase Agreement</h3>
+                      <p className="text-sm text-[#808080] mb-6">PDF format only</p>
+                      <label className="cursor-pointer bg-[#E3C567] hover:bg-[#EDD89F] text-black px-6 py-3 rounded-full font-semibold inline-flex items-center gap-2 transition-colors">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        Select PDF
+                        <input 
+                          type="file" 
+                          accept="application/pdf" 
+                          className="hidden" 
+                          onChange={handleFileUpload}
+                          disabled={uploading || verifying}
+                        />
+                      </label>
+                    </>
+                  )}
+                </div>
+
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4">
+                  <h4 className="text-sm font-semibold text-[#FAFAFA] mb-3">What we'll verify:</h4>
+                  <ul className="space-y-2 text-sm text-[#808080]">
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                      Property address matches
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                      Purchase price is accurate
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                      Closing date aligns
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                      State/location is correct
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {currentStep === 3 && (
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-6">
@@ -477,7 +718,7 @@ export default function NewDeal() {
             <div />
           )}
 
-          {currentStep < 3 ? (
+          {currentStep < 4 ? (
             <Button
               onClick={handleNextStep}
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8"
@@ -485,14 +726,17 @@ export default function NewDeal() {
               Next
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-          ) : (
+          ) : verificationSuccess ? (
             <Button
-              onClick={handleContinueToVerification}
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8"
+              onClick={handleFinalSubmit}
+              disabled={uploading}
+              className="bg-[#34D399] hover:bg-[#10B981] text-black rounded-full px-8"
             >
-              Continue to Verification
+              {uploading ? "Saving..." : "Complete & Save Deal"}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
+          ) : (
+            <div />
           )}
         </div>
       </div>
