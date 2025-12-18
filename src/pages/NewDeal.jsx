@@ -224,7 +224,7 @@ export default function NewDeal() {
 
       sessionStorage.clear();
       toast.success("Deal created successfully!");
-      navigate(createPageUrl("Pipeline"));
+      navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
 
     } catch (error) {
       console.error("Failed to create deal:", error);
