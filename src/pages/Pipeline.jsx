@@ -165,12 +165,17 @@ function PipelineContent() {
 
     return dealsData.map(deal => {
       const room = roomMap.get(deal.id);
-      const hasAgentLocked = !!deal.agent_id;
+      
+      // Agent is only "locked in" if deal has agent_id AND room status is accepted
+      const hasAgentAccepted = !!deal.agent_id && room?.deal_status !== 'pending_agent_review';
+      const hasAgentPending = room?.deal_status === 'pending_agent_review';
 
       // Get agent name from Deal or Room
       let agentName = 'No Agent Selected';
-      if (hasAgentLocked) {
+      if (hasAgentAccepted) {
         agentName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
+      } else if (hasAgentPending) {
+        agentName = 'Pending Agent Review';
       }
 
       // For agents: show investor name. For investors: show agent name
@@ -208,7 +213,7 @@ function PipelineContent() {
         open_tasks: room?.open_tasks || 0,
         completed_tasks: room?.completed_tasks || 0,
 
-        is_orphan: !hasAgentLocked // Orphan if no agent assigned, regardless of room
+        is_orphan: !hasAgentAccepted && !hasAgentPending // Orphan if no agent pending or accepted
       };
     });
   }, [dealsData, rooms]);
