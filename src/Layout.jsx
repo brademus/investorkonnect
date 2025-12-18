@@ -34,8 +34,7 @@ function LayoutContent({ children }) {
     '/verify',
     '/nda',
     '/matches',
-    '/PostAuth',
-    '/DashboardInvestor'
+    '/PostAuth'
   ];
 
   // Full-bleed pages that handle their own layout completely
