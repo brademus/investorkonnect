@@ -19,6 +19,7 @@ import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
+import SetupChecklist from "@/components/SetupChecklist";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -296,6 +297,11 @@ function PipelineContent() {
       <div className="h-screen bg-transparent flex flex-col pt-4">
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="max-w-[1800px] mx-auto">
+            
+            {/* Setup Checklist */}
+            <div className="mb-6">
+              <SetupChecklist profile={profile} />
+            </div>
             
             {/* Header */}
             <div className="flex items-center justify-between mb-8">

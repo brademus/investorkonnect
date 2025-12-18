@@ -91,10 +91,7 @@ export default function Dashboard() {
   try {
     return (
       <ErrorBoundary>
-        <div className="min-h-screen">
-          <SetupChecklist profile={profile} />
-          <Pipeline />
-        </div>
+        <Pipeline profile={profile} />
       </ErrorBoundary>
     );
   } catch (error) {
