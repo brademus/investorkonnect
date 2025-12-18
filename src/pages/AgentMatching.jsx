@@ -59,32 +59,66 @@ export default function AgentMatching() {
       console.log('[AgentMatching] Deal loaded:', loadedDeal.property_address, loadedDeal.state);
       setDeal(loadedDeal);
 
-      // Find matching agents
-      const matchRes = await base44.functions.invoke('matchAgentsForInvestor', {
-        investorId: profile.id,
-        state: loadedDeal.state,
-        limit: 3
-      });
+      // Find matching agents - try AI matching first
+      let matchedAgents = [];
+      
+      try {
+        const matchRes = await base44.functions.invoke('matchAgentsForInvestor', {
+          investorId: profile.id,
+          state: loadedDeal.state,
+          limit: 10
+        });
 
-      if (matchRes.data?.matches && matchRes.data.matches.length > 0) {
-        setAgents(matchRes.data.matches);
-      } else {
-        // Fallback: get any agents in the state
-        const fallbackAgents = await base44.entities.Profile.filter({ 
-          user_role: 'agent',
-          'agent.markets': loadedDeal.state 
+        if (matchRes.data?.matches && matchRes.data.matches.length > 0) {
+          console.log('[AgentMatching] AI matched agents:', matchRes.data.matches.length);
+          matchedAgents = matchRes.data.matches;
+        }
+      } catch (matchError) {
+        console.log('[AgentMatching] AI matching failed, using fallback:', matchError.message);
+      }
+
+      // Fallback: get all verified agents in the state
+      if (matchedAgents.length === 0) {
+        console.log('[AgentMatching] Using fallback - fetching all agents in state:', loadedDeal.state);
+        
+        const allAgents = await base44.entities.Profile.filter({ 
+          user_role: 'agent'
         });
         
-        setAgents(fallbackAgents.slice(0, 3).map(agent => ({
+        console.log('[AgentMatching] Total agents found:', allAgents.length);
+        
+        // Filter by state
+        const stateAgents = allAgents.filter(agent => {
+          const markets = agent.agent?.markets || [];
+          return markets.includes(loadedDeal.state) || 
+                 markets.some(m => m.toLowerCase() === loadedDeal.state.toLowerCase());
+        });
+        
+        console.log('[AgentMatching] Agents in state:', stateAgents.length);
+        
+        matchedAgents = stateAgents.map(agent => ({
           agent: agent,
           score: 50,
           explanation: `Licensed agent in ${loadedDeal.state}`
-        })));
+        }));
+        
+        // If no agents in state, show all agents
+        if (matchedAgents.length === 0) {
+          console.log('[AgentMatching] No agents in state, showing all agents');
+          matchedAgents = allAgents.map(agent => ({
+            agent: agent,
+            score: 40,
+            explanation: `Available agent`
+          }));
+        }
       }
+
+      console.log('[AgentMatching] Final agent count:', matchedAgents.length);
+      setAgents(matchedAgents);
 
     } catch (error) {
       console.error("Failed to load agents:", error);
-      toast.error("Failed to load agents");
+      toast.error("Failed to load agents: " + error.message);
     } finally {
       // Wait before showing results
       setTimeout(() => {
