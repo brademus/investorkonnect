@@ -6,19 +6,23 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Home, Bed, Bath, Maximize2, DollarSign, Calendar, User, FileText, Handshake } from "lucide-react";
+import { ArrowLeft, ArrowRight, Home, Bed, Bath, Maximize2, DollarSign, Calendar, FileText, Handshake } from "lucide-react";
 import { toast } from "sonner";
+import { base44 } from "@/api/base44Client";
 
 export default function NewDeal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { profile, loading } = useCurrentProfile();
   
-  // Get dealId if editing
   const dealId = searchParams.get("dealId");
+  const [currentStep, setCurrentStep] = useState(1);
 
   // Deal Basics
   const [propertyAddress, setPropertyAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState("");
   const [sellerName, setSellerName] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [closingDate, setClosingDate] = useState("");
@@ -44,12 +48,13 @@ export default function NewDeal() {
           const deals = await base44.entities.Deal.filter({ id: dealId });
           if (deals.length > 0) {
             const deal = deals[0];
-            // Populate form with existing data
             setPropertyAddress(deal.property_address || "");
+            setCity(deal.city || "");
+            setState(deal.state || "");
+            setZip(deal.zip || "");
             setPurchasePrice(deal.purchase_price?.toString() || "");
             setClosingDate(deal.key_dates?.closing_date || "");
             setNotes(deal.notes || "");
-            // Add other fields as they exist in your Deal entity
           }
         } catch (error) {
           console.error("Failed to load deal:", error);
@@ -59,37 +64,45 @@ export default function NewDeal() {
     }
   }, [dealId, profile?.id]);
 
-  const handleContinue = () => {
-    // Validation
+  const validateStep1 = () => {
     if (!propertyAddress.trim()) {
       toast.error("Please enter a property address");
-      return;
+      return false;
     }
     if (!purchasePrice || isNaN(Number(purchasePrice))) {
       toast.error("Please enter a valid purchase price");
-      return;
+      return false;
     }
     if (!closingDate) {
       toast.error("Please select a target closing date");
-      return;
+      return false;
     }
+    return true;
+  };
 
-    // Store deal data in sessionStorage to pass to verification
+  const handleNextStep = () => {
+    if (currentStep === 1 && !validateStep1()) return;
+    setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrevStep = () => {
+    setCurrentStep(currentStep - 1);
+  };
+
+  const handleContinueToVerification = () => {
     const dealData = {
-      // Deal Basics
       propertyAddress,
+      city,
+      state,
+      zip,
       sellerName,
       purchasePrice: Number(purchasePrice),
       closingDate,
-      
-      // Property Details
       beds: beds ? Number(beds) : null,
       baths: baths ? Number(baths) : null,
       sqft: sqft ? Number(sqft) : null,
       propertyType,
       notes,
-      
-      // Agreement Terms
       commissionType,
       commissionPercentage: commissionType === "percentage" ? Number(commissionPercentage) : null,
       flatFee: commissionType === "flat" ? Number(flatFee) : null,
@@ -97,8 +110,6 @@ export default function NewDeal() {
     };
 
     sessionStorage.setItem("newDealData", JSON.stringify(dealData));
-    
-    // Navigate to verification page
     navigate(createPageUrl("DealWizard") + (dealId ? `?dealId=${dealId}` : ""));
   };
 
@@ -110,9 +121,15 @@ export default function NewDeal() {
     );
   }
 
+  const steps = [
+    { number: 1, label: "Deal Basics" },
+    { number: 2, label: "Property Details" },
+    { number: 3, label: "Agreement Terms" }
+  ];
+
   return (
     <div className="min-h-screen bg-transparent py-8 px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-2xl mx-auto">
         {/* Header */}
         <div className="mb-8">
           <button
@@ -122,23 +139,50 @@ export default function NewDeal() {
             <ArrowLeft className="w-4 h-4" /> Back to Pipeline
           </button>
           <h1 className="text-3xl font-bold text-[#E3C567] mb-2">New Deal</h1>
-          <p className="text-sm text-[#808080]">Enter your deal details below</p>
+          <p className="text-sm text-[#808080]">Step {currentStep} of 3</p>
         </div>
 
-        <div className="space-y-6">
-          {/* Section 1: Deal Basics */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+        {/* Progress Indicator */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            {steps.map((step, index) => (
+              <React.Fragment key={step.number}>
+                <div className="flex flex-col items-center flex-1">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
+                    currentStep >= step.number 
+                      ? 'bg-[#E3C567] text-black' 
+                      : 'bg-[#1F1F1F] text-[#808080]'
+                  }`}>
+                    {step.number}
+                  </div>
+                  <p className={`text-xs mt-2 ${currentStep >= step.number ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
+                    {step.label}
+                  </p>
+                </div>
+                {index < steps.length - 1 && (
+                  <div className={`h-0.5 flex-1 mx-2 transition-colors ${
+                    currentStep > step.number ? 'bg-[#E3C567]' : 'bg-[#1F1F1F]'
+                  }`} />
+                )}
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Step Content */}
+        {currentStep === 1 && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
-                <Home className="w-5 h-5 text-[#E3C567]" />
+              <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                <Home className="w-6 h-6 text-[#E3C567]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#FAFAFA]">Deal Basics</h2>
-                <p className="text-xs text-[#808080]">Core information about the property</p>
+                <h2 className="text-xl font-bold text-[#FAFAFA]">Deal Basics</h2>
+                <p className="text-sm text-[#808080]">Core information matching your contract</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
                   Property Address *
@@ -146,9 +190,45 @@ export default function NewDeal() {
                 <Input
                   value={propertyAddress}
                   onChange={(e) => setPropertyAddress(e.target.value)}
-                  placeholder="123 Main St, City, State 12345"
+                  placeholder="123 Main Street"
                   className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                 />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                    City
+                  </label>
+                  <Input
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Phoenix"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                    State
+                  </label>
+                  <Input
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    placeholder="AZ"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+                <div className="col-span-1">
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                    ZIP
+                  </label>
+                  <Input
+                    value={zip}
+                    onChange={(e) => setZip(e.target.value)}
+                    placeholder="85001"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
               </div>
 
               <div>
@@ -194,24 +274,25 @@ export default function NewDeal() {
               </div>
             </div>
           </div>
+        )}
 
-          {/* Section 2: Property Details */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+        {currentStep === 2 && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-[#60A5FA]/20 rounded-full flex items-center justify-center">
-                <FileText className="w-5 h-5 text-[#60A5FA]" />
+              <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center">
+                <FileText className="w-6 h-6 text-[#60A5FA]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#FAFAFA]">Property Details</h2>
-                <p className="text-xs text-[#808080]">Physical characteristics</p>
+                <h2 className="text-xl font-bold text-[#FAFAFA]">Property Details</h2>
+                <p className="text-sm text-[#808080]">Physical characteristics and condition</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                    Beds
+                    Bedrooms
                   </label>
                   <div className="relative">
                     <Bed className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
@@ -227,7 +308,7 @@ export default function NewDeal() {
 
                 <div>
                   <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                    Baths
+                    Bathrooms
                   </label>
                   <div className="relative">
                     <Bath className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
@@ -265,46 +346,48 @@ export default function NewDeal() {
                 </label>
                 <Select value={propertyType} onValueChange={setPropertyType}>
                   <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                    <SelectValue placeholder="Select type" />
+                    <SelectValue placeholder="Select property type" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="single_family">Single Family</SelectItem>
+                    <SelectItem value="single_family">Single Family Home</SelectItem>
                     <SelectItem value="condo">Condo</SelectItem>
                     <SelectItem value="townhouse">Townhouse</SelectItem>
-                    <SelectItem value="multi_family">Multi-Family</SelectItem>
-                    <SelectItem value="land">Land</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="multi_family">Multi-Family (2-4 units)</SelectItem>
+                    <SelectItem value="apartment">Apartment Building (5+ units)</SelectItem>
+                    <SelectItem value="land">Land / Lot</SelectItem>
+                    <SelectItem value="commercial">Commercial Property</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                  Notes / Description
+                  Property Notes
                 </label>
                 <Textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Any additional details about the property or deal situation..."
-                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] min-h-[100px]"
+                  placeholder="Condition, renovations needed, unique features, etc."
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] min-h-[120px]"
                 />
               </div>
             </div>
           </div>
+        )}
 
-          {/* Section 3: Agreement with Agent */}
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+        {currentStep === 3 && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 bg-[#34D399]/20 rounded-full flex items-center justify-center">
-                <Handshake className="w-5 h-5 text-[#34D399]" />
+              <div className="w-12 h-12 bg-[#34D399]/20 rounded-full flex items-center justify-center">
+                <Handshake className="w-6 h-6 text-[#34D399]" />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-[#FAFAFA]">Agreement with Your Agent</h2>
-                <p className="text-xs text-[#808080]">Business terms for this deal</p>
+                <h2 className="text-xl font-bold text-[#FAFAFA]">Agreement Terms</h2>
+                <p className="text-sm text-[#808080]">Set terms with your agent for this deal</p>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
                   Commission Structure
@@ -314,7 +397,7 @@ export default function NewDeal() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="percentage">Percentage Commission</SelectItem>
+                    <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
                     <SelectItem value="flat">Flat Fee</SelectItem>
                   </SelectContent>
                 </Select>
@@ -334,8 +417,13 @@ export default function NewDeal() {
                       placeholder="3.0"
                       className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pr-10"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080]">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] text-sm">%</span>
                   </div>
+                  {commissionPercentage && purchasePrice && (
+                    <p className="text-xs text-[#808080] mt-2">
+                      Estimated commission: ${((Number(purchasePrice) * Number(commissionPercentage)) / 100).toLocaleString()}
+                    </p>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -366,19 +454,46 @@ export default function NewDeal() {
                   placeholder="90"
                   className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                 />
+                <p className="text-xs text-[#808080] mt-2">
+                  How long will this agreement remain active?
+                </p>
               </div>
             </div>
           </div>
+        )}
 
-          {/* Action Button */}
-          <div className="flex justify-end pt-4">
+        {/* Navigation Buttons */}
+        <div className="flex justify-between items-center mt-8">
+          {currentStep > 1 ? (
             <Button
-              onClick={handleContinue}
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 py-6 text-base font-bold"
+              onClick={handlePrevStep}
+              variant="outline"
+              className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F]"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+          ) : (
+            <div />
+          )}
+
+          {currentStep < 3 ? (
+            <Button
+              onClick={handleNextStep}
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8"
+            >
+              Next
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleContinueToVerification}
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8"
             >
               Continue to Verification
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-          </div>
+          )}
         </div>
       </div>
     </div>
