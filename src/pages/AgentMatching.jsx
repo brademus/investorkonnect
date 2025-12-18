@@ -118,10 +118,14 @@ export default function AgentMatching() {
     }
   };
 
-  if (loading) {
+  if (loading || matching) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <LoadingAnimation className="w-64 h-64" />
+      <div className="min-h-screen bg-transparent flex flex-col items-center justify-center">
+        <LoadingAnimation className="w-64 h-64 mb-8" />
+        <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Finding Your Perfect Agent</h2>
+        <p className="text-[#808080] text-center max-w-md">
+          Analyzing agents in {deal?.county || deal?.state || 'your area'}...
+        </p>
       </div>
     );
   }

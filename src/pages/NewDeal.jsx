@@ -184,6 +184,7 @@ export default function NewDeal() {
         toast.success("Contract verified successfully!");
         
         // Auto-create deal and navigate to agent matching
+        setUploading(true);
         const contractDocument = {
           url: file_url,
           name: "Purchase Agreement.pdf",
@@ -220,7 +221,7 @@ export default function NewDeal() {
           agreementLength
         }));
         
-        // Navigate to agent matching
+        // Navigate to agent matching page
         navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
       }
 
