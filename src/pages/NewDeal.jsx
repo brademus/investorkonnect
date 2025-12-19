@@ -206,6 +206,7 @@ export default function NewDeal() {
           };
 
           const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+          const cleanedEarnestMoney = earnestMoney ? String(earnestMoney).replace(/[$,\s]/g, '') : null;
           
           console.log('[NewDeal] Creating deal with:', {
             investor_id: profile.id,
@@ -224,9 +225,10 @@ export default function NewDeal() {
             zip,
             purchase_price: Number(cleanedPrice),
             property_type: propertyType,
-            notes,
+            notes: [notes, specialNotes].filter(Boolean).join('\n\n'),
             key_dates: {
-              closing_date: closingDate
+              closing_date: closingDate,
+              contract_date: contractDate
             },
             contract_url: file_url,
             contract_document: contractDocument,
@@ -286,6 +288,9 @@ export default function NewDeal() {
         uploaded_at: new Date().toISOString()
       };
 
+      const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
+      const cleanedEarnestMoney = earnestMoney ? String(earnestMoney).replace(/[$,\s]/g, '') : null;
+      
       // Create deal with all data
       const newDeal = await base44.entities.Deal.create({
         investor_id: profile.id,
@@ -295,11 +300,12 @@ export default function NewDeal() {
         state,
         county: "",
         zip,
-        purchase_price: Number(purchasePrice),
+        purchase_price: Number(cleanedPrice),
         property_type: propertyType,
-        notes,
+        notes: [notes, specialNotes].filter(Boolean).join('\n\n'),
         key_dates: {
-          closing_date: closingDate
+          closing_date: closingDate,
+          contract_date: contractDate
         },
         contract_url: contractFileUrl,
         contract_document: contractDocument,
