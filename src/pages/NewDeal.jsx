@@ -381,7 +381,7 @@ export default function NewDeal() {
           
           toast.success("Contract verified! Click below to find agents.");
           
-          console.log('[NewDeal] Deal ready, dealId stored:', newDeal.id);
+          console.log('[NewDeal] Deal ready, dealId stored:', savedDeal.id);
         } catch (dealError) {
           console.error("Failed to create deal:", dealError);
           toast.error("Failed to create deal: " + (dealError.message || 'Unknown error'));
