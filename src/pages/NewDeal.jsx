@@ -69,13 +69,71 @@ export default function NewDeal() {
           const deals = await base44.entities.Deal.filter({ id: dealId });
           if (deals.length > 0) {
             const deal = deals[0];
+            
+            // Step 1: Deal Basics
             setPropertyAddress(deal.property_address || "");
             setCity(deal.city || "");
             setState(deal.state || "");
             setZip(deal.zip || "");
             setPurchasePrice(deal.purchase_price?.toString() || "");
             setClosingDate(deal.key_dates?.closing_date || "");
-            setNotes(deal.notes || "");
+            setContractDate(deal.key_dates?.contract_date || "");
+            
+            // Parse notes - might contain both notes and specialNotes
+            if (deal.notes) {
+              const noteParts = deal.notes.split('\n\n');
+              if (noteParts.length > 1) {
+                setNotes(noteParts[0] || "");
+                setSpecialNotes(noteParts[1] || "");
+              } else {
+                setNotes(deal.notes);
+              }
+            }
+            
+            // Step 2: Property Details
+            setPropertyType(deal.property_type || "");
+            
+            // Try to load terms from associated Room
+            try {
+              const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+              if (rooms.length > 0) {
+                const room = rooms[0];
+                const terms = room.proposed_terms;
+                if (terms) {
+                  // Load seller's agent terms
+                  if (terms.seller_commission_type) {
+                    setSellerCommissionType(terms.seller_commission_type);
+                    if (terms.seller_commission_type === 'percentage') {
+                      setSellerCommissionPercentage(terms.seller_commission_percentage?.toString() || "");
+                    } else {
+                      setSellerFlatFee(terms.seller_flat_fee?.toString() || "");
+                    }
+                  } else if (terms.commission_type) {
+                    // Legacy format
+                    setSellerCommissionType(terms.commission_type);
+                    if (terms.commission_type === 'percentage') {
+                      setSellerCommissionPercentage(terms.commission_percentage?.toString() || "");
+                    } else {
+                      setSellerFlatFee(terms.flat_fee?.toString() || "");
+                    }
+                  }
+                  
+                  // Load buyer's agent terms
+                  if (terms.buyer_commission_type) {
+                    setBuyerCommissionType(terms.buyer_commission_type);
+                    if (terms.buyer_commission_type === 'percentage') {
+                      setBuyerCommissionPercentage(terms.buyer_commission_percentage?.toString() || "");
+                    } else {
+                      setBuyerFlatFee(terms.buyer_flat_fee?.toString() || "");
+                    }
+                  }
+                  
+                  setAgreementLength(terms.agreement_length?.toString() || "");
+                }
+              }
+            } catch (roomError) {
+              console.log("No room found for this deal, skipping terms load");
+            }
           }
         } catch (error) {
           console.error("Failed to load deal:", error);
