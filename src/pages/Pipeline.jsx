@@ -460,48 +460,68 @@ function PipelineContent() {
                                         snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567] opacity-90' : ''
                                       }`}
                                     >
-                                      <div 
-                                        onClick={() => handleDealClick(deal)}
-                                        className="cursor-pointer"
-                                      >
-                                        <div className="flex justify-between items-start mb-2">
-                                          <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                                            {deal.property_address}
-                                          </h4>
-                                          <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
-                                            {getDaysInPipeline(deal.created_date)}
-                                          </span>
+                                      <div className="flex justify-between items-start mb-2">
+                                        <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
+                                          {deal.property_address}
+                                        </h4>
+                                        <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
+                                          {getDaysInPipeline(deal.created_date)}
+                                        </span>
+                                      </div>
+
+                                      <div className="flex items-center gap-2 mb-3">
+                                        <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
+                                          {formatCurrency(deal.budget)}
+                                        </span>
+                                        {deal.is_orphan && (
+                                          <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
+                                        )}
+                                      </div>
+
+                                      <div className="flex flex-col gap-2 mb-3">
+                                        <div className="flex items-center gap-1 text-xs text-[#666]">
+                                          <Home className="w-3 h-3" />
+                                          <span>{deal.city}, {deal.state}</span>
                                         </div>
 
-                                        <div className="flex items-center gap-2 mb-3">
-                                          <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
-                                            {formatCurrency(deal.budget)}
-                                          </span>
-                                          {deal.is_orphan && (
-                                            <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
-                                          )}
-                                        </div>
-
-                                        <div className="flex flex-col gap-2 mb-3">
-                                          <div className="flex items-center gap-1 text-xs text-[#666]">
-                                            <Home className="w-3 h-3" />
-                                            <span>{deal.city}, {deal.state}</span>
+                                        {!deal.is_orphan && deal.customer_name && (
+                                          <div className="text-xs text-[#10B981] flex items-center gap-1">
+                                            <CheckCircle className="w-3 h-3" />
+                                            <span>{deal.customer_name}</span>
                                           </div>
+                                        )}
 
-                                          {!deal.is_orphan && deal.customer_name && (
-                                            <div className="text-xs text-[#10B981] flex items-center gap-1">
-                                              <CheckCircle className="w-3 h-3" />
-                                              <span>{deal.customer_name}</span>
-                                            </div>
-                                          )}
+                                        {deal.open_tasks > 0 && (
+                                          <div className="flex items-center gap-1 text-[#E3C567] text-xs">
+                                            <CheckSquare className="w-3 h-3" />
+                                            <span>{deal.open_tasks} tasks</span>
+                                          </div>
+                                        )}
+                                      </div>
 
-                                          {deal.open_tasks > 0 && (
-                                            <div className="flex items-center gap-1 text-[#E3C567] text-xs">
-                                              <CheckSquare className="w-3 h-3" />
-                                              <span>{deal.open_tasks} tasks</span>
-                                            </div>
-                                          )}
-                                        </div>
+                                      {/* Action Buttons */}
+                                      <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
+                                        <Button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleDealClick(deal);
+                                          }}
+                                          size="sm"
+                                          className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
+                                        >
+                                          Open Deal Room
+                                        </Button>
+                                        <Button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+                                          }}
+                                          size="sm"
+                                          variant="outline"
+                                          className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1A1A1A] rounded-full text-xs py-1.5 h-auto"
+                                        >
+                                          Edit Deal
+                                        </Button>
                                       </div>
                                       </div>
                                   )}
