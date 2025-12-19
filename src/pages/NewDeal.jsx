@@ -79,19 +79,28 @@ export default function NewDeal() {
             setClosingDate(deal.key_dates?.closing_date || "");
             setContractDate(deal.key_dates?.contract_date || "");
             
-            // Parse notes - might contain both notes and specialNotes
-            if (deal.notes) {
-              const noteParts = deal.notes.split('\n\n');
-              if (noteParts.length > 1) {
-                setNotes(noteParts[0] || "");
-                setSpecialNotes(noteParts[1] || "");
-              } else {
-                setNotes(deal.notes);
-              }
+            // Seller info
+            if (deal.seller_info) {
+              setSellerName(deal.seller_info.seller_name || "");
+              setEarnestMoney(deal.seller_info.earnest_money?.toString() || "");
+              setNumberOfSigners(deal.seller_info.number_of_signers || "1");
+              setSecondSignerName(deal.seller_info.second_signer_name || "");
             }
+            
+            // Notes
+            setNotes(deal.notes || "");
+            setSpecialNotes(deal.special_notes || "");
             
             // Step 2: Property Details
             setPropertyType(deal.property_type || "");
+            if (deal.property_details) {
+              setBeds(deal.property_details.beds?.toString() || "");
+              setBaths(deal.property_details.baths?.toString() || "");
+              setSqft(deal.property_details.sqft?.toString() || "");
+              setYearBuilt(deal.property_details.year_built?.toString() || "");
+              setNumberOfStories(deal.property_details.number_of_stories || "");
+              setHasBasement(deal.property_details.has_basement || "");
+            }
             
             // Try to load terms from associated Room
             try {
