@@ -317,13 +317,53 @@ export default function NewDeal() {
               closing_date: closingDate,
               contract_date: contractDate
             },
-            contract_url: file_url,
-            contract_document: contractDocument,
-            status: 'active',
-            pipeline_stage: 'new_deal_under_contract'
-          });
+              contract_url: file_url,
+              contract_document: contractDocument,
+              status: 'active',
+              pipeline_stage: 'new_deal_under_contract'
+            });
+            savedDeal = { id: dealId };
+            console.log('[NewDeal] Deal updated successfully:', dealId);
+          } else {
+            savedDeal = await base44.entities.Deal.create({
+              investor_id: profile.id,
+              title: propertyAddress,
+              property_address: propertyAddress,
+              city,
+              state,
+              county: "",
+              zip,
+              purchase_price: Number(cleanedPrice),
+              property_type: propertyType,
+              notes: notes,
+              special_notes: specialNotes,
+              property_details: {
+                beds: beds ? Number(beds) : undefined,
+                baths: baths ? Number(baths) : undefined,
+                sqft: sqft ? Number(sqft) : undefined,
+                year_built: yearBuilt ? Number(yearBuilt) : undefined,
+                number_of_stories: numberOfStories,
+                has_basement: hasBasement
+              },
+              seller_info: {
+                seller_name: sellerName,
+                earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
+                number_of_signers: numberOfSigners,
+                second_signer_name: secondSignerName
+              },
+              key_dates: {
+                closing_date: closingDate,
+                contract_date: contractDate
+              },
+              contract_url: file_url,
+              contract_document: contractDocument,
+              status: 'active',
+              pipeline_stage: 'new_deal_under_contract'
+            });
+            console.log('[NewDeal] Deal created successfully:', savedDeal.id);
+          }
 
-          console.log('[NewDeal] Deal created successfully:', newDeal.id);
+          console.log('[NewDeal] Deal saved successfully:', savedDeal.id);
 
           // Store deal ID for navigation
           sessionStorage.setItem("createdDealId", newDeal.id);
