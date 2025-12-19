@@ -418,7 +418,9 @@ export default function NewDeal() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Pipeline
           </button>
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">New Deal</h1>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">
+            {dealId ? "Edit Deal" : "New Deal"}
+          </h1>
           <p className="text-sm text-[#808080]">Step {currentStep} of 4</p>
         </div>
 
