@@ -275,14 +275,19 @@ export default function NewDeal() {
           const cleanedPrice = String(purchasePrice).replace(/[$,\s]/g, '');
           const cleanedEarnestMoney = earnestMoney ? String(earnestMoney).replace(/[$,\s]/g, '') : null;
           
-          console.log('[NewDeal] Creating deal with:', {
+          console.log('[NewDeal] Saving deal with:', {
             investor_id: profile.id,
             property_address: propertyAddress,
             state,
-            purchase_price: Number(cleanedPrice)
+            purchase_price: Number(cleanedPrice),
+            existing_dealId: dealId
           });
           
-          const newDeal = await base44.entities.Deal.create({
+          let savedDeal;
+          
+          // If editing existing deal, update it; otherwise create new
+          if (dealId) {
+            await base44.entities.Deal.update(dealId, {
             investor_id: profile.id,
             title: propertyAddress,
             property_address: propertyAddress,
