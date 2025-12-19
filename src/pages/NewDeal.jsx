@@ -366,7 +366,7 @@ export default function NewDeal() {
           console.log('[NewDeal] Deal saved successfully:', savedDeal.id);
 
           // Store deal ID for navigation
-          sessionStorage.setItem("createdDealId", newDeal.id);
+          sessionStorage.setItem("createdDealId", savedDeal.id);
 
           // Store terms in sessionStorage for agent matching
           sessionStorage.setItem("newDealData", JSON.stringify({
