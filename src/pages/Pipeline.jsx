@@ -517,8 +517,7 @@ function PipelineContent() {
                                             navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
                                           }}
                                           size="sm"
-                                          variant="outline"
-                                          className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1A1A1A] rounded-full text-xs py-1.5 h-auto"
+                                          className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
                                         >
                                           Edit Deal
                                         </Button>
