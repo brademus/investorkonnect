@@ -241,9 +241,12 @@ export default function NewDeal() {
 
           // Store terms in sessionStorage for agent matching
           sessionStorage.setItem("newDealData", JSON.stringify({
-            commissionType,
-            commissionPercentage,
-            flatFee,
+            sellerCommissionType,
+            sellerCommissionPercentage,
+            sellerFlatFee,
+            buyerCommissionType,
+            buyerCommissionPercentage,
+            buyerFlatFee,
             agreementLength
           }));
           
@@ -306,9 +309,12 @@ export default function NewDeal() {
 
       // Store terms in sessionStorage for agent matching
       sessionStorage.setItem("newDealData", JSON.stringify({
-        commissionType,
-        commissionPercentage,
-        flatFee,
+        sellerCommissionType,
+        sellerCommissionPercentage,
+        sellerFlatFee,
+        buyerCommissionType,
+        buyerCommissionPercentage,
+        buyerFlatFee,
         agreementLength
       }));
       
