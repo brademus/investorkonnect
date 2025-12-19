@@ -27,6 +27,11 @@ export default function NewDeal() {
   const [sellerName, setSellerName] = useState("");
   const [purchasePrice, setPurchasePrice] = useState("");
   const [closingDate, setClosingDate] = useState("");
+  const [contractDate, setContractDate] = useState("");
+  const [specialNotes, setSpecialNotes] = useState("");
+  const [earnestMoney, setEarnestMoney] = useState("");
+  const [numberOfSigners, setNumberOfSigners] = useState("1");
+  const [secondSignerName, setSecondSignerName] = useState("");
 
   // Property Details
   const [beds, setBeds] = useState("");
@@ -34,11 +39,20 @@ export default function NewDeal() {
   const [sqft, setSqft] = useState("");
   const [propertyType, setPropertyType] = useState("");
   const [notes, setNotes] = useState("");
+  const [yearBuilt, setYearBuilt] = useState("");
+  const [numberOfStories, setNumberOfStories] = useState("");
+  const [hasBasement, setHasBasement] = useState("");
 
-  // Agreement Terms
-  const [commissionType, setCommissionType] = useState("percentage");
-  const [commissionPercentage, setCommissionPercentage] = useState("");
-  const [flatFee, setFlatFee] = useState("");
+  // Agreement Terms - Seller's Agent
+  const [sellerCommissionType, setSellerCommissionType] = useState("percentage");
+  const [sellerCommissionPercentage, setSellerCommissionPercentage] = useState("");
+  const [sellerFlatFee, setSellerFlatFee] = useState("");
+  
+  // Agreement Terms - Buyer's Agent
+  const [buyerCommissionType, setBuyerCommissionType] = useState("percentage");
+  const [buyerCommissionPercentage, setBuyerCommissionPercentage] = useState("");
+  const [buyerFlatFee, setBuyerFlatFee] = useState("");
+  
   const [agreementLength, setAgreementLength] = useState("");
 
   // Step 4 state (contract upload)
@@ -343,15 +357,23 @@ export default function NewDeal() {
           <div className="flex items-center justify-between">
             {steps.map((step, index) => (
               <React.Fragment key={step.number}>
-                <div className="flex flex-col items-center flex-1">
+                <div 
+                  className="flex flex-col items-center flex-1 cursor-pointer group"
+                  onClick={() => {
+                    // Allow going back to any previous step
+                    if (step.number <= currentStep) {
+                      setCurrentStep(step.number);
+                    }
+                  }}
+                >
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-colors ${
                     currentStep >= step.number 
                       ? 'bg-[#E3C567] text-black' 
                       : 'bg-[#1F1F1F] text-[#808080]'
-                  }`}>
+                  } ${step.number <= currentStep ? 'group-hover:ring-2 group-hover:ring-[#E3C567]' : ''}`}>
                     {step.number}
                   </div>
-                  <p className={`text-xs mt-2 ${currentStep >= step.number ? 'text-[#E3C567]' : 'text-[#808080]'}`}>
+                  <p className={`text-xs mt-2 ${currentStep >= step.number ? 'text-[#E3C567]' : 'text-[#808080]'} ${step.number <= currentStep ? 'group-hover:text-[#E3C567]' : ''}`}>
                     {step.label}
                   </p>
                 </div>
@@ -468,6 +490,75 @@ export default function NewDeal() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Contract Date
+                </label>
+                <Input
+                  type="date"
+                  value={contractDate}
+                  onChange={(e) => setContractDate(e.target.value)}
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Earnest Money
+                </label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+                  <Input
+                    type="text"
+                    value={earnestMoney}
+                    onChange={(e) => setEarnestMoney(e.target.value)}
+                    placeholder="5000"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Number of Signers
+                </label>
+                <Select value={numberOfSigners} onValueChange={setNumberOfSigners}>
+                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 Signer</SelectItem>
+                    <SelectItem value="2">2 Signers</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {numberOfSigners === "2" && (
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                    Second Signer Name
+                  </label>
+                  <Input
+                    value={secondSignerName}
+                    onChange={(e) => setSecondSignerName(e.target.value)}
+                    placeholder="Jane Doe"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Special Notes
+                </label>
+                <Textarea
+                  value={specialNotes}
+                  onChange={(e) => setSpecialNotes(e.target.value)}
+                  placeholder="Any additional comments or special conditions..."
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] min-h-[100px]"
+                />
+              </div>
             </div>
           </div>
         )}
@@ -552,6 +643,52 @@ export default function NewDeal() {
                     <SelectItem value="apartment">Apartment Building (5+ units)</SelectItem>
                     <SelectItem value="land">Land / Lot</SelectItem>
                     <SelectItem value="commercial">Commercial Property</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Year Built
+                </label>
+                <Input
+                  type="number"
+                  value={yearBuilt}
+                  onChange={(e) => setYearBuilt(e.target.value)}
+                  placeholder="2005"
+                  min="1800"
+                  max={new Date().getFullYear()}
+                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Number of Stories
+                </label>
+                <Select value={numberOfStories} onValueChange={setNumberOfStories}>
+                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                    <SelectValue placeholder="Select stories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">1 Story</SelectItem>
+                    <SelectItem value="2">2 Stories</SelectItem>
+                    <SelectItem value="3">3 Stories</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                  Basement
+                </label>
+                <Select value={hasBasement} onValueChange={setHasBasement}>
+                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="yes">Yes</SelectItem>
+                    <SelectItem value="no">No</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -795,66 +932,134 @@ export default function NewDeal() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-[#FAFAFA]">Agreement Terms</h2>
-                <p className="text-sm text-[#808080]">Set terms with your agent for this deal</p>
+                <p className="text-sm text-[#808080]">Set terms with your agents for this deal</p>
               </div>
             </div>
 
-            <div className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                  Commission Structure
-                </label>
-                <Select value={commissionType} onValueChange={setCommissionType}>
-                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
-                    <SelectItem value="flat">Flat Fee</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {commissionType === "percentage" ? (
-                <div>
-                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                    Commission Percentage
-                  </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      step="0.1"
-                      value={commissionPercentage}
-                      onChange={(e) => setCommissionPercentage(e.target.value)}
-                      placeholder="3.0"
-                      className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pr-10"
-                    />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] text-sm">%</span>
+            <div className="space-y-8">
+              {/* Seller's Agent Section */}
+              <div className="border-b border-[#1F1F1F] pb-6">
+                <h3 className="text-lg font-semibold text-[#E3C567] mb-4">Seller's Agent</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                      Commission Structure
+                    </label>
+                    <Select value={sellerCommissionType} onValueChange={setSellerCommissionType}>
+                      <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
+                        <SelectItem value="flat">Flat Fee</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                  {commissionPercentage && purchasePrice && (
-                    <p className="text-xs text-[#808080] mt-2">
-                      Estimated commission: ${((Number(purchasePrice) * Number(commissionPercentage)) / 100).toLocaleString()}
-                    </p>
+
+                  {sellerCommissionType === "percentage" ? (
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                        Commission Percentage
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={sellerCommissionPercentage}
+                          onChange={(e) => setSellerCommissionPercentage(e.target.value)}
+                          placeholder="3.0"
+                          className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] text-sm">%</span>
+                      </div>
+                      {sellerCommissionPercentage && purchasePrice && (
+                        <p className="text-xs text-[#808080] mt-2">
+                          Estimated commission: ${((Number(purchasePrice) * Number(sellerCommissionPercentage)) / 100).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                        Flat Fee Amount
+                      </label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+                        <Input
+                          type="number"
+                          value={sellerFlatFee}
+                          onChange={(e) => setSellerFlatFee(e.target.value)}
+                          placeholder="5000"
+                          className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                        />
+                      </div>
+                    </div>
                   )}
                 </div>
-              ) : (
-                <div>
-                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
-                    Flat Fee Amount
-                  </label>
-                  <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
-                    <Input
-                      type="number"
-                      value={flatFee}
-                      onChange={(e) => setFlatFee(e.target.value)}
-                      placeholder="5000"
-                      className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
-                    />
-                  </div>
-                </div>
-              )}
+              </div>
 
+              {/* Buyer's Agent Section */}
+              <div className="border-b border-[#1F1F1F] pb-6">
+                <h3 className="text-lg font-semibold text-[#60A5FA] mb-4">Buyer's Agent</h3>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                      Commission Structure
+                    </label>
+                    <Select value={buyerCommissionType} onValueChange={setBuyerCommissionType}>
+                      <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
+                        <SelectItem value="flat">Flat Fee</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {buyerCommissionType === "percentage" ? (
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                        Commission Percentage
+                      </label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={buyerCommissionPercentage}
+                          onChange={(e) => setBuyerCommissionPercentage(e.target.value)}
+                          placeholder="3.0"
+                          className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pr-10"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[#808080] text-sm">%</span>
+                      </div>
+                      {buyerCommissionPercentage && purchasePrice && (
+                        <p className="text-xs text-[#808080] mt-2">
+                          Estimated commission: ${((Number(purchasePrice) * Number(buyerCommissionPercentage)) / 100).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
+                        Flat Fee Amount
+                      </label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
+                        <Input
+                          type="number"
+                          value={buyerFlatFee}
+                          onChange={(e) => setBuyerFlatFee(e.target.value)}
+                          placeholder="5000"
+                          className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] pl-10"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Agreement Length */}
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">
                   Agreement Length (Days)
