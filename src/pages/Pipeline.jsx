@@ -503,28 +503,7 @@ function PipelineContent() {
                                           )}
                                         </div>
                                       </div>
-
-                                      {/* Stage selector */}
-                                      <Select
-                                        value={deal.pipeline_stage}
-                                        onValueChange={(newStage) => handleStageChange(deal.id, newStage)}
-                                      >
-                                        <SelectTrigger 
-                                          className="h-7 text-xs bg-[#1A1A1A] border-[#1F1F1F]"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                          <SelectItem value="new_deal_under_contract">New Deal</SelectItem>
-                                          <SelectItem value="walkthrough_scheduled">Walkthrough</SelectItem>
-                                          <SelectItem value="evaluate_deal">Evaluate</SelectItem>
-                                          <SelectItem value="active_marketing">Marketing</SelectItem>
-                                          <SelectItem value="cancelling_deal">Cancelling</SelectItem>
-                                          <SelectItem value="clear_to_close_closed">Closed</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
+                                      </div>
                                   )}
                                 </Draggable>
                               ))
