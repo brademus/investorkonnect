@@ -288,35 +288,35 @@ export default function NewDeal() {
           // If editing existing deal, update it; otherwise create new
           if (dealId) {
             await base44.entities.Deal.update(dealId, {
-            investor_id: profile.id,
-            title: propertyAddress,
-            property_address: propertyAddress,
-            city,
-            state,
-            county: "",
-            zip,
-            purchase_price: Number(cleanedPrice),
-            property_type: propertyType,
-            notes: notes,
-            special_notes: specialNotes,
-            property_details: {
-              beds: beds ? Number(beds) : undefined,
-              baths: baths ? Number(baths) : undefined,
-              sqft: sqft ? Number(sqft) : undefined,
-              year_built: yearBuilt ? Number(yearBuilt) : undefined,
-              number_of_stories: numberOfStories,
-              has_basement: hasBasement
-            },
-            seller_info: {
-              seller_name: sellerName,
-              earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
-              number_of_signers: numberOfSigners,
-              second_signer_name: secondSignerName
-            },
-            key_dates: {
-              closing_date: closingDate,
-              contract_date: contractDate
-            },
+              investor_id: profile.id,
+              title: propertyAddress,
+              property_address: propertyAddress,
+              city,
+              state,
+              county: "",
+              zip,
+              purchase_price: Number(cleanedPrice),
+              property_type: propertyType,
+              notes: notes,
+              special_notes: specialNotes,
+              property_details: {
+                beds: beds ? Number(beds) : undefined,
+                baths: baths ? Number(baths) : undefined,
+                sqft: sqft ? Number(sqft) : undefined,
+                year_built: yearBuilt ? Number(yearBuilt) : undefined,
+                number_of_stories: numberOfStories,
+                has_basement: hasBasement
+              },
+              seller_info: {
+                seller_name: sellerName,
+                earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
+                number_of_signers: numberOfSigners,
+                second_signer_name: secondSignerName
+              },
+              key_dates: {
+                closing_date: closingDate,
+                contract_date: contractDate
+              },
               contract_url: file_url,
               contract_document: contractDocument,
               status: 'active',
@@ -423,35 +423,35 @@ export default function NewDeal() {
       // If editing existing deal, update it; otherwise create new
       if (dealId) {
         await base44.entities.Deal.update(dealId, {
-        investor_id: profile.id,
-        title: propertyAddress,
-        property_address: propertyAddress,
-        city,
-        state,
-        county: "",
-        zip,
-        purchase_price: Number(cleanedPrice),
-        property_type: propertyType,
-        notes: notes,
-        special_notes: specialNotes,
-        property_details: {
-          beds: beds ? Number(beds) : undefined,
-          baths: baths ? Number(baths) : undefined,
-          sqft: sqft ? Number(sqft) : undefined,
-          year_built: yearBuilt ? Number(yearBuilt) : undefined,
-          number_of_stories: numberOfStories,
-          has_basement: hasBasement
-        },
-        seller_info: {
-          seller_name: sellerName,
-          earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
-          number_of_signers: numberOfSigners,
-          second_signer_name: secondSignerName
-        },
-        key_dates: {
-          closing_date: closingDate,
-          contract_date: contractDate
-        },
+          investor_id: profile.id,
+          title: propertyAddress,
+          property_address: propertyAddress,
+          city,
+          state,
+          county: "",
+          zip,
+          purchase_price: Number(cleanedPrice),
+          property_type: propertyType,
+          notes: notes,
+          special_notes: specialNotes,
+          property_details: {
+            beds: beds ? Number(beds) : undefined,
+            baths: baths ? Number(baths) : undefined,
+            sqft: sqft ? Number(sqft) : undefined,
+            year_built: yearBuilt ? Number(yearBuilt) : undefined,
+            number_of_stories: numberOfStories,
+            has_basement: hasBasement
+          },
+          seller_info: {
+            seller_name: sellerName,
+            earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
+            number_of_signers: numberOfSigners,
+            second_signer_name: secondSignerName
+          },
+          key_dates: {
+            closing_date: closingDate,
+            contract_date: contractDate
+          },
           contract_url: contractFileUrl,
           contract_document: contractDocument,
           status: 'active',
