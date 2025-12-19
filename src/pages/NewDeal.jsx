@@ -292,7 +292,22 @@ export default function NewDeal() {
             zip,
             purchase_price: Number(cleanedPrice),
             property_type: propertyType,
-            notes: [notes, specialNotes].filter(Boolean).join('\n\n'),
+            notes: notes,
+            special_notes: specialNotes,
+            property_details: {
+              beds: beds ? Number(beds) : undefined,
+              baths: baths ? Number(baths) : undefined,
+              sqft: sqft ? Number(sqft) : undefined,
+              year_built: yearBuilt ? Number(yearBuilt) : undefined,
+              number_of_stories: numberOfStories,
+              has_basement: hasBasement
+            },
+            seller_info: {
+              seller_name: sellerName,
+              earnest_money: cleanedEarnestMoney ? Number(cleanedEarnestMoney) : undefined,
+              number_of_signers: numberOfSigners,
+              second_signer_name: secondSignerName
+            },
             key_dates: {
               closing_date: closingDate,
               contract_date: contractDate
