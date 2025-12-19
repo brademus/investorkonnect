@@ -1096,8 +1096,7 @@ export default function NewDeal() {
           {currentStep > 1 ? (
             <Button
               onClick={handlePrevStep}
-              variant="outline"
-              className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F]"
+              className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Previous
