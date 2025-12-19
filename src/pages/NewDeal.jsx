@@ -509,8 +509,8 @@ export default function NewDeal() {
         agreementLength
       }));
       
-      toast.success("Deal created successfully!");
-      navigate(createPageUrl("AgentMatching") + `?dealId=${newDeal.id}`);
+      toast.success(dealId ? "Deal updated successfully!" : "Deal created successfully!");
+      navigate(createPageUrl("AgentMatching") + `?dealId=${savedDeal.id}`);
 
     } catch (error) {
       console.error("Failed to create deal:", error);
