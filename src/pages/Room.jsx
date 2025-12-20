@@ -1638,6 +1638,8 @@ ${dealContext}`;
                 <>
                   {messages.map((m) => {
                     const isMe = m.sender_profile_id === profile?.id;
+                    const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
+
                     return (
                       <div
                         key={m.id}
@@ -1651,7 +1653,31 @@ ${dealContext}`;
                                 : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
                             }`}
                           >
-                            <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                            {isFileMessage && m.metadata?.type === 'photo' ? (
+                              <div>
+                                <img 
+                                  src={m.metadata.file_url} 
+                                  alt={m.metadata.file_name}
+                                  className="rounded-lg max-w-full h-auto max-h-64 mb-2 cursor-pointer"
+                                  onClick={() => window.open(m.metadata.file_url, '_blank')}
+                                />
+                                <p className="text-sm opacity-90">{m.body}</p>
+                              </div>
+                            ) : isFileMessage && m.metadata?.type === 'file' ? (
+                              <div>
+                                <p className="text-[15px] mb-2">{m.body}</p>
+                                <a
+                                  href={m.metadata.file_url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className={`text-sm underline ${isMe ? 'text-black' : 'text-[#E3C567]'} hover:opacity-80`}
+                                >
+                                  Download →
+                                </a>
+                              </div>
+                            ) : (
+                              <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                            )}
                           </div>
                           <p className={`text-xs text-[#808080] mt-1.5 ${isMe ? 'text-right' : 'text-left'}`}>
                             {new Date(m.created_date).toLocaleTimeString([], { 
@@ -1717,6 +1743,20 @@ ${dealContext}`;
                         photos: [...photos, ...uploads]
                       });
                       
+                      // Create chat messages for each photo
+                      for (const upload of uploads) {
+                        await base44.entities.Message.create({
+                          room_id: roomId,
+                          sender_profile_id: profile?.id,
+                          body: `📷 Uploaded photo: ${upload.name}`,
+                          metadata: {
+                            type: 'photo',
+                            file_url: upload.url,
+                            file_name: upload.name
+                          }
+                        });
+                      }
+                      
                       // Log activity
                       if (currentRoom?.deal_id) {
                         base44.entities.Activity.create({
@@ -1726,7 +1766,7 @@ ${dealContext}`;
                           actor_id: profile?.id,
                           actor_name: profile?.full_name || profile?.email,
                           message: `${profile?.full_name || profile?.email} uploaded ${uploads.length} photo(s)`
-                        }).catch(() => {}); // Silent fail - activity is nice-to-have
+                        }).catch(() => {});
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
@@ -1769,6 +1809,20 @@ ${dealContext}`;
                         }]
                       });
                       
+                      // Create chat message for file
+                      await base44.entities.Message.create({
+                        room_id: roomId,
+                        sender_profile_id: profile?.id,
+                        body: `📎 Uploaded file: ${file.name}`,
+                        metadata: {
+                          type: 'file',
+                          file_url: file_url,
+                          file_name: file.name,
+                          file_size: file.size,
+                          file_type: file.type
+                        }
+                      });
+                      
                       // Log activity
                       if (currentRoom?.deal_id) {
                         base44.entities.Activity.create({
@@ -1778,7 +1832,7 @@ ${dealContext}`;
                           actor_id: profile?.id,
                           actor_name: profile?.full_name || profile?.email,
                           message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
-                        }).catch(() => {}); // Silent fail
+                        }).catch(() => {});
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
