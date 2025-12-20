@@ -532,12 +532,14 @@ ${dealContext}`;
           >
             <Menu className="w-6 h-6" />
           </button>
-          <button
-            className="mr-4 w-10 h-10 rounded-full bg-[#1F1F1F] flex items-center justify-center text-[#808080] hover:bg-[#333333] hover:text-[#FAFAFA] transition-all"
+          <Button
             onClick={() => navigate(createPageUrl("Pipeline"))}
+            variant="outline"
+            className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden md:inline">Pipeline</span>
+          </Button>
           
           {/* Avatar */}
           <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center mr-4 shadow-sm">
