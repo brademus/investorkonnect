@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -14,7 +15,7 @@ import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import ContractLayers from "@/components/ContractLayers";
 import { 
-  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus
+  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
@@ -201,7 +202,7 @@ export default function Room() {
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   const [lockingIn, setLockingIn] = useState(false);
-  const [showDealDetails, setShowDealDetails] = useState(false);
+  // Removed [showDealDetails, setShowDealDetails]
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -604,17 +605,6 @@ ${dealContext}`;
             {roomId && (
               <>
                 <Button
-                  onClick={() => setShowDealDetails(!showDealDetails)}
-                  className={`rounded-full font-semibold transition-all ${
-                    showDealDetails 
-                      ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                      : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                  }`}
-                >
-                  <Info className="w-4 h-4 mr-2" />
-                  Details
-                </Button>
-                <Button
                   onClick={() => setShowBoard(!showBoard)}
                   className={`rounded-full font-semibold transition-all ${
                     showBoard 
@@ -631,7 +621,7 @@ ${dealContext}`;
         </div>
 
         {/* Persistent Deal Header */}
-        {!showBoard && currentRoom && (
+        {!showBoard && currentRoom && ( // ONLY SHOW WHEN NOT ON DEAL BOARD
           <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md flex-shrink-0 z-10">
             {roomLoading ? (
               <div className="animate-pulse flex items-center gap-2">
@@ -679,101 +669,40 @@ ${dealContext}`;
         )}
 
         {/* Message Thread or Deal Board - SCROLLABLE MIDDLE */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 flex gap-4 min-h-0 max-h-full">
-          {/* Deal Details Sidebar */}
-          {showDealDetails && currentRoom && (
-            <div className="w-80 flex-shrink-0 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5 h-fit sticky top-6">
-              <h3 className="text-lg font-bold text-[#E3C567] mb-4 flex items-center gap-2">
-                <Info className="w-5 h-5" />
-                Deal Details
-              </h3>
-
-              <div className="space-y-3 text-sm">
-                <div>
-                  <label className="text-[#808080] text-xs uppercase tracking-wider">Property Address</label>
-                  <p className="text-[#FAFAFA] mt-1">{currentRoom.property_address || '—'}</p>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[#808080] text-xs uppercase tracking-wider">City</label>
-                    <p className="text-[#FAFAFA] mt-1">{currentRoom.city || '—'}</p>
-                  </div>
-                  <div>
-                    <label className="text-[#808080] text-xs uppercase tracking-wider">State</label>
-                    <p className="text-[#FAFAFA] mt-1">{currentRoom.state || '—'}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-[#808080] text-xs uppercase tracking-wider">County</label>
-                    <p className="text-[#FAFAFA] mt-1">{currentRoom.county || '—'}</p>
-                  </div>
-                  <div>
-                    <label className="text-[#808080] text-xs uppercase tracking-wider">Zip Code</label>
-                    <p className="text-[#FAFAFA] mt-1">{currentRoom.zip || '—'}</p>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[#808080] text-xs uppercase tracking-wider">Purchase Price</label>
-                  <p className="text-[#34D399] font-semibold mt-1">
-                    {currentRoom.budget ? `$${currentRoom.budget.toLocaleString()}` : '—'}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-[#808080] text-xs uppercase tracking-wider">Closing Date</label>
-                  <p className="text-[#FAFAFA] mt-1">
-                    {currentRoom.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : '—'}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="text-[#808080] text-xs uppercase tracking-wider">Pipeline Stage</label>
-                  <p className="text-[#FAFAFA] mt-1 capitalize">
-                    {currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : '—'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
           {showBoard ? (
-                            /* Deal Board View with Tabs */
-                            <div className="space-y-6">
-                              {/* Tab Navigation */}
-                              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
-                                {[
-                                  { id: 'details', label: 'Property Details', icon: FileText },
-                                  { id: 'agreement', label: 'My Agreement', icon: Shield },
-                                  { id: 'files', label: 'Files', icon: FileText },
-                                  { id: 'photos', label: 'Photos', icon: FileText },
-                                  { id: 'activity', label: 'Events & Activity', icon: FileText }
-                                ].map(tab => {
-                                  const Icon = tab.icon;
-                                  return (
-                                    <button
-                                      key={tab.id}
-                                      onClick={() => setActiveTab(tab.id)}
-                                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
-                                        activeTab === tab.id
-                                          ? 'bg-[#E3C567] text-black shadow-lg'
-                                          : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
-                                      }`}
-                                    >
-                                      <Icon className="w-4 h-4" />
-                                      {tab.label}
-                                    </button>
-                                  );
-                                })}
-                              </div>
+            /* Deal Board View with Tabs */
+            <div className="space-y-6 max-w-6xl mx-auto">
+              {/* Tab Navigation */}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
+                {[
+                  { id: 'details', label: 'Property Details', icon: Info },
+                  { id: 'agreement', label: 'My Agreement', icon: Shield },
+                  { id: 'files', label: 'Files', icon: FileText },
+                  { id: 'photos', label: 'Photos', icon: Image },
+                  { id: 'activity', label: 'Events & Activity', icon: FileText }
+                ].map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? 'bg-[#E3C567] text-black shadow-lg'
+                          : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
 
-                              {/* Tab Content */}
-                              {activeTab === 'details' && (
-                                <div className="space-y-6">
+              {/* Tab Content */}
+              {activeTab === 'details' && (
+                <div className="space-y-6">
                               {profile?.user_role === 'investor' ? (
                                 /* INVESTOR DEAL BOARD */
                                 <>
@@ -973,289 +902,6 @@ ${dealContext}`;
                               ) : (
                                 /* AGENT DEAL BOARD */
                                 <>
-                                  {/* 1. Deal Header (agent version) */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                        <Shield className="w-5 h-5 text-[#E3C567]" />
-                                        Agreement Summary
-                                      </h4>
-                                      <div className="space-y-4">
-                                        {currentRoom?.proposed_terms && (
-                                          <>
-                                            {currentRoom.proposed_terms.seller_commission_type && (
-                                              <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                                <h5 className="text-sm font-semibold text-[#E3C567] mb-2">Seller's Agent Commission</h5>
-                                                <p className="text-[#FAFAFA]">
-                                                  {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
-                                                    ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
-                                                    : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
-                                                  }
-                                                </p>
-                                              </div>
-                                            )}
-                                            {currentRoom.proposed_terms.buyer_commission_type && (
-                                              <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                                <h5 className="text-sm font-semibold text-[#60A5FA] mb-2">Buyer's Agent Commission</h5>
-                                                <p className="text-[#FAFAFA]">
-                                                  {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
-                                                    ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
-                                                    : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
-                                                  }
-                                                </p>
-                                              </div>
-                                            )}
-                                            {currentRoom.proposed_terms.agreement_length && (
-                                              <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                                <h5 className="text-sm font-semibold text-[#FAFAFA] mb-2">Agreement Length</h5>
-                                                <p className="text-[#808080]">{currentRoom.proposed_terms.agreement_length} days</p>
-                                              </div>
-                                            )}
-                                          </>
-                                        )}
-                                        {!currentRoom?.proposed_terms && (
-                                          <p className="text-sm text-[#808080] text-center py-8">
-                                            No agreement terms available yet
-                                          </p>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  )}
-
-                                  {activeTab === 'files' && (
-                                  <div className="space-y-6">
-                                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                      <ContractLayers 
-                                        room={currentRoom} 
-                                        deal={deal}
-                                        onUpdate={() => {
-                                          // Refresh room data
-                                          const fetchCurrentRoom = async () => {
-                                            const roomData = await base44.entities.Room.filter({ id: roomId });
-                                            if (roomData && roomData.length > 0) {
-                                              const room = roomData[0];
-                                              if (room.deal_id) {
-                                                const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
-                                                if (dealData && dealData.length > 0) {
-                                                  const deal = dealData[0];
-                                                  setCurrentRoom({
-                                                    ...room,
-                                                    title: deal.title,
-                                                    property_address: deal.property_address,
-                                                    city: deal.city,
-                                                    state: deal.state,
-                                                    county: deal.county,
-                                                    zip: deal.zip,
-                                                    budget: deal.purchase_price,
-                                                    pipeline_stage: deal.pipeline_stage,
-                                                    closing_date: deal.key_dates?.closing_date,
-                                                    deal_assigned_agent_id: deal.agent_id,
-                                                    contract_url: room.contract_url || deal.contract_url || null,
-                                                    contract_document: room.contract_document || deal.contract_document || null
-                                                  });
-                                                }
-                                              }
-                                            }
-                                          };
-                                          fetchCurrentRoom();
-                                        }}
-                                        userRole={profile?.user_role}
-                                      />
-                                    </div>
-                                  </div>
-                                  )}
-
-                                  {activeTab === 'photos' && (
-                                  <div className="space-y-6">
-                                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Photos</h4>
-                                      <div className="text-center py-12">
-                                        <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
-                                          <FileText className="w-8 h-8 text-[#808080]" />
-                                        </div>
-                                        <p className="text-sm text-[#808080] mb-4">No photos uploaded yet</p>
-                                        <Button
-                                          onClick={() => toast.info('Photo upload coming soon')}
-                                          className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                                        >
-                                          Upload Photos
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  )}
-
-                                  {activeTab === 'activity' && (
-                                  <div className="space-y-6">
-                                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
-                                      <div className="space-y-3">
-                                        {[
-                                          { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : currentRoom?.counterparty_name },
-                                          ...(currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? [
-                                            { date: new Date().toISOString(), event: 'Agent locked in', user: currentRoom?.counterparty_name }
-                                          ] : [])
-                                        ].map((item, idx) => (
-                                          <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                            <div className="w-2 h-2 bg-[#E3C567] rounded-full mt-2 flex-shrink-0"></div>
-                                            <div className="flex-1">
-                                              <p className="text-sm text-[#FAFAFA] font-medium">{item.event}</p>
-                                              <p className="text-xs text-[#808080] mt-1">
-                                                {item.user} • {new Date(item.date || Date.now()).toLocaleDateString()}
-                                              </p>
-                                            </div>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  )}
-                                </div>
-                              )}
-
-                              {activeTab === 'agreement' && (
-                                <div className="space-y-6">
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                      <Shield className="w-5 h-5 text-[#E3C567]" />
-                                      Agreement Summary
-                                    </h4>
-                                    <div className="space-y-4">
-                                      {currentRoom?.proposed_terms && (
-                                        <>
-                                          {currentRoom.proposed_terms.seller_commission_type && (
-                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                              <h5 className="text-sm font-semibold text-[#E3C567] mb-2">Seller's Agent Commission</h5>
-                                              <p className="text-[#FAFAFA]">
-                                                {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
-                                                  ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
-                                                  : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
-                                                }
-                                              </p>
-                                            </div>
-                                          )}
-                                          {currentRoom.proposed_terms.buyer_commission_type && (
-                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                              <h5 className="text-sm font-semibold text-[#60A5FA] mb-2">Buyer's Agent Commission</h5>
-                                              <p className="text-[#FAFAFA]">
-                                                {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
-                                                  ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
-                                                  : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
-                                                }
-                                              </p>
-                                            </div>
-                                          )}
-                                          {currentRoom.proposed_terms.agreement_length && (
-                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                              <h5 className="text-sm font-semibold text-[#FAFAFA] mb-2">Agreement Length</h5>
-                                              <p className="text-[#808080]">{currentRoom.proposed_terms.agreement_length} days</p>
-                                            </div>
-                                          )}
-                                        </>
-                                      )}
-                                      {!currentRoom?.proposed_terms && (
-                                        <p className="text-sm text-[#808080] text-center py-8">
-                                          No agreement terms available yet
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {activeTab === 'files' && (
-                                <div className="space-y-6">
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <ContractLayers 
-                                      room={currentRoom} 
-                                      deal={deal}
-                                      onUpdate={() => {
-                                        // Refresh room data
-                                        const fetchCurrentRoom = async () => {
-                                          const roomData = await base44.entities.Room.filter({ id: roomId });
-                                          if (roomData && roomData.length > 0) {
-                                            const room = roomData[0];
-                                            if (room.deal_id) {
-                                              const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
-                                              if (dealData && dealData.length > 0) {
-                                                const deal = dealData[0];
-                                                setCurrentRoom({
-                                                  ...room,
-                                                  title: deal.title,
-                                                  property_address: deal.property_address,
-                                                  city: deal.city,
-                                                  state: deal.state,
-                                                  county: deal.county,
-                                                  zip: deal.zip,
-                                                  budget: deal.purchase_price,
-                                                  pipeline_stage: deal.pipeline_stage,
-                                                  closing_date: deal.key_dates?.closing_date,
-                                                  deal_assigned_agent_id: deal.agent_id,
-                                                  contract_url: room.contract_url || deal.contract_url || null,
-                                                  contract_document: room.contract_document || deal.contract_document || null
-                                                });
-                                              }
-                                            }
-                                          }
-                                        };
-                                        fetchCurrentRoom();
-                                      }}
-                                      userRole={profile?.user_role}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-
-                              {activeTab === 'photos' && (
-                                <div className="space-y-6">
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Photos</h4>
-                                    <div className="text-center py-12">
-                                      <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <FileText className="w-8 h-8 text-[#808080]" />
-                                      </div>
-                                      <p className="text-sm text-[#808080] mb-4">No photos uploaded yet</p>
-                                      <Button
-                                        onClick={() => toast.info('Photo upload coming soon')}
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                                      >
-                                        Upload Photos
-                                      </Button>
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-
-                              {activeTab === 'activity' && (
-                                <div className="space-y-6">
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
-                                    <div className="space-y-3">
-                                      {[
-                                        { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : currentRoom?.counterparty_name },
-                                        ...(currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? [
-                                          { date: new Date().toISOString(), event: 'Agent locked in', user: currentRoom?.counterparty_name }
-                                        ] : [])
-                                      ].map((item, idx) => (
-                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                          <div className="w-2 h-2 bg-[#E3C567] rounded-full mt-2 flex-shrink-0"></div>
-                                          <div className="flex-1">
-                                            <p className="text-sm text-[#FAFAFA] font-medium">{item.event}</p>
-                                            <p className="text-xs text-[#808080] mt-1">
-                                              {item.user} • {new Date(item.date || Date.now()).toLocaleDateString()}
-                                            </p>
-                                          </div>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            /* AGENT - No tabs, just regular board */
-                            <div className="space-y-6">
                                   {/* 1. Deal Header (agent version) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-start justify-between mb-4">
@@ -1482,9 +1128,149 @@ ${dealContext}`;
                                 </>
                               )}
                             </div>
+              )}
+
+              {activeTab === 'agreement' && (
+                <div className="space-y-6">
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                      <Shield className="w-5 h-5 text-[#E3C567]" />
+                      Agreement Summary
+                    </h4>
+                    <div className="space-y-4">
+                      {currentRoom?.proposed_terms ? (
+                        <>
+                          {currentRoom.proposed_terms.seller_commission_type && (
+                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                              <h5 className="text-sm font-semibold text-[#E3C567] mb-2">Seller's Agent Commission</h5>
+                              <p className="text-[#FAFAFA]">
+                                {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
+                                  ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
+                                  : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
+                                }
+                              </p>
+                            </div>
+                          )}
+                          {currentRoom.proposed_terms.buyer_commission_type && (
+                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                              <h5 className="text-sm font-semibold text-[#60A5FA] mb-2">Buyer's Agent Commission</h5>
+                              <p className="text-[#FAFAFA]">
+                                {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
+                                  ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
+                                  : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
+                                }
+                              </p>
+                            </div>
+                          )}
+                          {currentRoom.proposed_terms.agreement_length && (
+                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                              <h5 className="text-sm font-semibold text-[#FAFAFA] mb-2">Agreement Length</h5>
+                              <p className="text-[#808080]">{currentRoom.proposed_terms.agreement_length} days</p>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <p className="text-sm text-[#808080] text-center py-8">
+                          No agreement terms available yet
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'files' && (
+                <div className="space-y-6">
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <ContractLayers 
+                      room={currentRoom} 
+                      deal={deal}
+                      onUpdate={() => {
+                        // Refresh room data
+                        const fetchCurrentRoom = async () => {
+                          const roomData = await base44.entities.Room.filter({ id: roomId });
+                          if (roomData && roomData.length > 0) {
+                            const room = roomData[0];
+                            if (room.deal_id) {
+                              const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
+                              if (dealData && dealData.length > 0) {
+                                const deal = dealData[0];
+                                setCurrentRoom({
+                                  ...room,
+                                  title: deal.title,
+                                  property_address: deal.property_address,
+                                  city: deal.city,
+                                  state: deal.state,
+                                  county: deal.county,
+                                  zip: deal.zip,
+                                  budget: deal.purchase_price,
+                                  pipeline_stage: deal.pipeline_stage,
+                                  closing_date: deal.key_dates?.closing_date,
+                                  deal_assigned_agent_id: deal.agent_id,
+                                  contract_url: room.contract_url || deal.contract_url || null,
+                                  contract_document: room.contract_document || deal.contract_document || null
+                                });
+                              }
+                            }
+                          }
+                        };
+                        fetchCurrentRoom();
+                      }}
+                      userRole={profile?.user_role}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'photos' && (
+                <div className="space-y-6">
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Photos</h4>
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Image className="w-8 h-8 text-[#808080]" />
+                      </div>
+                      <p className="text-sm text-[#808080] mb-4">No photos uploaded yet</p>
+                      <Button
+                        onClick={() => toast.info('Photo upload coming soon')}
+                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                      >
+                        Upload Photos
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'activity' && (
+                <div className="space-y-6">
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
+                    <div className="space-y-3">
+                      {[
+                        { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : currentRoom?.counterparty_name },
+                        ...(currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? [
+                          { date: new Date().toISOString(), event: 'Agent locked in', user: currentRoom?.counterparty_name }
+                        ] : [])
+                      ].map((item, idx) => (
+                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                          <div className="w-2 h-2 bg-[#E3C567] rounded-full mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm text-[#FAFAFA] font-medium">{item.event}</p>
+                            <p className="text-xs text-[#808080] mt-1">
+                              {item.user} • {new Date(item.date || Date.now()).toLocaleDateString()}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
                           ) : (
-            /* Messages View */
-            <>
+                            /* Messages View */
+            <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
@@ -1576,10 +1362,9 @@ ${dealContext}`;
                 </>
               )}
               </div>
-              </>
-              )}
-              </div>
-              </div>
+            </div>
+          )}
+        </div>
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
