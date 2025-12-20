@@ -96,7 +96,7 @@ function LayoutContent({ children }) {
 
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
-              <Link to={createPageUrl("Home")} className="hover:text-[#E3C567]">Home</Link>
+              <Link to={createPageUrl("Pipeline")} className="hover:text-[#E3C567]">Dashboard</Link>
               <Link to={createPageUrl("HowItWorks")} className="hover:text-[#E3C567]">How it works</Link>
               <Link to={createPageUrl("Pricing")} className="hover:text-[#E3C567]">Pricing</Link>
               <Link to={createPageUrl("Investors")} className="hover:text-[#E3C567]">For investors</Link>
