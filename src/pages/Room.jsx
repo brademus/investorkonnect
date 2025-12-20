@@ -335,16 +335,16 @@ export default function Room() {
         throw new Error('Message send failed');
       }
       
-      // Log activity
+      // Log activity - async without blocking
       if (currentRoom?.deal_id) {
-        await base44.entities.Activity.create({
+        base44.entities.Activity.create({
           type: 'message_sent',
           deal_id: currentRoom.deal_id,
           room_id: roomId,
           actor_id: profile?.id,
           actor_name: profile?.full_name || profile?.email,
           message: `${profile?.full_name || profile?.email} sent a message`
-        });
+        }).catch(() => {}); // Silent fail - activity is nice-to-have
       }
       
       // Remove optimistic message immediately after successful send
@@ -372,16 +372,16 @@ export default function Room() {
       if (response.data?.success) {
         toast.success(`Agent locked in! ${response.data.agentName || 'Agent'} is now your dedicated agent.`);
         
-        // Log activity
+        // Log activity - async without blocking
         if (currentRoom?.deal_id) {
-          await base44.entities.Activity.create({
+          base44.entities.Activity.create({
             type: 'agent_locked_in',
             deal_id: currentRoom.deal_id,
             room_id: roomId,
             actor_id: profile?.id,
             actor_name: profile?.full_name || profile?.email,
             message: `${profile?.full_name || profile?.email} locked in ${response.data.agentName || 'agent'}`
-          });
+          }).catch(() => {});
         }
         
         sessionStorage.clear();
@@ -1719,14 +1719,14 @@ ${dealContext}`;
                       
                       // Log activity
                       if (currentRoom?.deal_id) {
-                        await base44.entities.Activity.create({
+                        base44.entities.Activity.create({
                           type: 'photo_uploaded',
                           deal_id: currentRoom.deal_id,
                           room_id: roomId,
                           actor_id: profile?.id,
                           actor_name: profile?.full_name || profile?.email,
-                          message: `${profile?.full_name || profile?.email} uploaded ${files.length} photo(s)`
-                        });
+                          message: `${profile?.full_name || profile?.email} uploaded ${uploads.length} photo(s)`
+                        }).catch(() => {}); // Silent fail - activity is nice-to-have
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
@@ -1771,14 +1771,14 @@ ${dealContext}`;
                       
                       // Log activity
                       if (currentRoom?.deal_id) {
-                        await base44.entities.Activity.create({
+                        base44.entities.Activity.create({
                           type: 'file_uploaded',
                           deal_id: currentRoom.deal_id,
                           room_id: roomId,
                           actor_id: profile?.id,
                           actor_name: profile?.full_name || profile?.email,
                           message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
-                        });
+                        }).catch(() => {}); // Silent fail
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });

@@ -10,7 +10,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
-  Clock, CheckSquare, XCircle
+  Clock, CheckSquare, XCircle, MessageSquare, Circle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
