@@ -1665,8 +1665,96 @@ ${dealContext}`;
               </p>
             </div>
           ) : (
-            /* Normal chat input */
-            <div className="flex items-center gap-3">
+            /* Normal chat input with upload buttons */
+            <div className="flex items-center gap-2">
+              {/* Upload Photo Button */}
+              <button
+                onClick={async () => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.accept = 'image/*';
+                  input.multiple = true;
+                  input.onchange = async (e) => {
+                    const files = Array.from(e.target.files);
+                    if (files.length === 0) return;
+                    
+                    toast.info(`Uploading ${files.length} photo(s)...`);
+                    try {
+                      const uploads = await Promise.all(
+                        files.map(async (file) => {
+                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                          return {
+                            name: file.name,
+                            url: file_url,
+                            uploaded_by: profile?.id,
+                            uploaded_by_name: profile?.full_name || profile?.email,
+                            uploaded_at: new Date().toISOString(),
+                            size: file.size,
+                            type: file.type
+                          };
+                        })
+                      );
+                      
+                      const photos = currentRoom?.photos || [];
+                      await base44.entities.Room.update(roomId, {
+                        photos: [...photos, ...uploads]
+                      });
+                      
+                      const roomData = await base44.entities.Room.filter({ id: roomId });
+                      if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
+                      toast.success(`${files.length} photo(s) uploaded to deal`);
+                    } catch (error) {
+                      toast.error('Upload failed');
+                    }
+                  };
+                  input.click();
+                }}
+                className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+                title="Upload photos"
+              >
+                <Image className="w-5 h-5 text-[#808080]" />
+              </button>
+
+              {/* Upload File Button */}
+              <button
+                onClick={async () => {
+                  const input = document.createElement('input');
+                  input.type = 'file';
+                  input.onchange = async (e) => {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    toast.info('Uploading file...');
+                    try {
+                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                      const files = currentRoom?.files || [];
+                      await base44.entities.Room.update(roomId, {
+                        files: [...files, {
+                          name: file.name,
+                          url: file_url,
+                          uploaded_by: profile?.id,
+                          uploaded_by_name: profile?.full_name || profile?.email,
+                          uploaded_at: new Date().toISOString(),
+                          size: file.size,
+                          type: file.type
+                        }]
+                      });
+                      
+                      const roomData = await base44.entities.Room.filter({ id: roomId });
+                      if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
+                      toast.success('File uploaded to deal');
+                    } catch (error) {
+                      toast.error('Upload failed');
+                    }
+                  };
+                  input.click();
+                }}
+                className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+                title="Upload file"
+              >
+                <FileText className="w-5 h-5 text-[#808080]" />
+              </button>
+
               <div className="flex-1 relative">
                 <Input
                   value={text}
