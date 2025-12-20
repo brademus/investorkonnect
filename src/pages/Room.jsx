@@ -649,7 +649,11 @@ ${dealContext}`;
                 <div className="flex items-center gap-3 text-xs opacity-90">
                    <div className="flex items-center gap-1.5 text-[#CCC]">
                      <span>
-                       {currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected"}
+                       {/* Privacy: Hide full address from agents until locked in */}
+                       {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                         ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'} ${currentRoom.zip || ''}`
+                         : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
+                       }
                      </span>
                    </div>
 
@@ -702,6 +706,23 @@ ${dealContext}`;
               {/* Tab Content */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
+                  {/* Privacy Warning for Agents */}
+                  {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5">
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="text-md font-bold text-[#F59E0B] mb-1">
+                            Limited Access – Accept to Unlock
+                          </h4>
+                          <p className="text-sm text-[#FAFAFA]/80">
+                            Full property address and investor contact details are hidden until you accept this deal. Review the general location and terms below.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                               {profile?.user_role === 'investor' ? (
                                 /* INVESTOR DEAL BOARD */
                                 <>
@@ -713,7 +734,7 @@ ${dealContext}`;
                                           {currentRoom?.property_address || 'Property Address'}
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
-                                          {[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location'}
+                          {[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location'}
                                         </p>
                                         <div className="text-3xl font-bold text-[#34D399] mb-4">
                                           ${(currentRoom?.budget || 0).toLocaleString()}
@@ -906,10 +927,17 @@ ${dealContext}`;
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
-                                          {currentRoom?.property_address || 'Property Address'}
+                                          {/* Privacy: Hide full address until locked in */}
+                                          {currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                                            ? `Deal in ${currentRoom?.city || 'City'}, ${currentRoom?.state || 'State'}`
+                                            : (currentRoom?.property_address || 'Property Address')
+                                          }
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
-                                          {[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location'}
+                                          {currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                                            ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${currentRoom?.zip || ''}`
+                                            : ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location')
+                                          }
                                         </p>
                                         <div className="text-3xl font-bold text-[#34D399] mb-4">
                                           ${(currentRoom?.budget || 0).toLocaleString()}
@@ -1358,13 +1386,34 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+              {/* Privacy Lock Banner for Agents */}
+              {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
+                <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-md font-bold text-[#F59E0B] mb-1">
+                        Waiting for you to accept this deal
+                      </h3>
+                      <p className="text-sm text-[#FAFAFA]/80">
+                        Chat and full property details will unlock once you accept. For now, you can review the deal basics and agreement terms in the Deal Board.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                        {currentRoom.property_address || currentRoom.deal_title || 'Deal Summary'}
+                        {/* Privacy: Hide full address from agents until locked in */}
+                        {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                          ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
+                        }
                       </h3>
                       <div className="space-y-1 text-sm">
                         {currentRoom.counterparty_name && (
@@ -1374,7 +1423,11 @@ ${dealContext}`;
                         )}
                         {(currentRoom.city || currentRoom.state) && (
                           <p className="text-[#808080]">
-                            {[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}
+                            {/* Privacy: Only show city/state/zip for agents until locked in */}
+                            {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                              ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
+                              : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
+                            }
                           </p>
                         )}
                         {currentRoom.budget > 0 && (
@@ -1455,34 +1508,45 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
-          <div className="flex items-center gap-3">
-            <div className="flex-1 relative">
-              <Input
-                value={text}
-                onChange={(e) => setText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                placeholder="Type a message..."
-                className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
-                disabled={sending}
-              />
+          {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId ? (
+            /* Locked chat for agents until they accept */
+            <div className="flex items-center gap-3 px-5 py-3 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-full">
+              <Shield className="w-5 h-5 text-[#F59E0B] flex-shrink-0" />
+              <p className="text-sm text-[#FAFAFA] font-medium">
+                Waiting for you to accept to unlock chat + full property details
+              </p>
             </div>
-            <button
-              onClick={send}
-              disabled={!text.trim() || sending}
-              className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] disabled:bg-[#1F1F1F] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#E3C567]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
-            >
-              {sending ? (
-                <Loader2 className="w-5 h-5 text-white animate-spin" />
-              ) : (
-                <Send className="w-5 h-5 text-white" />
-              )}
-            </button>
-          </div>
+          ) : (
+            /* Normal chat input */
+            <div className="flex items-center gap-3">
+              <div className="flex-1 relative">
+                <Input
+                  value={text}
+                  onChange={(e) => setText(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      send();
+                    }
+                  }}
+                  placeholder="Type a message..."
+                  className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
+                  disabled={sending}
+                />
+              </div>
+              <button
+                onClick={send}
+                disabled={!text.trim() || sending}
+                className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] disabled:bg-[#1F1F1F] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#E3C567]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
+              >
+                {sending ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <Send className="w-5 h-5 text-white" />
+                )}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
