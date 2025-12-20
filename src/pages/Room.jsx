@@ -1193,9 +1193,26 @@ ${dealContext}`;
                         </span>
                       )}
                     </div>
-                    <p className="text-sm text-[#808080]">
+                    <p className="text-sm text-[#808080] mb-4">
                       This is your agreement summary for quick reference. Not a legal document.
                     </p>
+
+                    {/* Execute Contract Button */}
+                    {currentRoom?.deal_assigned_agent_id === roomAgentProfileId && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <Button
+                          onClick={() => {
+                            toast.info('Contract execution flow coming soon!\n\nNext steps:\n• Generate formal agreement\n• Send for e-signature\n• Both parties sign\n• Contract becomes binding');
+                          }}
+                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
+                        >
+                          Execute Contract
+                        </Button>
+                        <p className="text-xs text-[#808080] mt-3 text-center">
+                          This will generate the formal agreement and send it for e-signature by both parties
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   {/* Key Terms */}
