@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare } from "lucide-react";
+import HelpPanel from "@/components/HelpPanel";
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
