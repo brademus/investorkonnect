@@ -335,13 +335,23 @@ export default function Room() {
         throw new Error('Message send failed');
       }
       
+      // Log activity
+      if (currentRoom?.deal_id) {
+        await base44.entities.Activity.create({
+          type: 'message_sent',
+          deal_id: currentRoom.deal_id,
+          room_id: roomId,
+          actor_id: profile?.id,
+          actor_name: profile?.full_name || profile?.email,
+          message: `${profile?.full_name || profile?.email} sent a message`
+        });
+      }
+      
       // Remove optimistic message immediately after successful send
-      // Real message will appear via polling
       setItems(prev => prev.filter(m => m.id !== tempId));
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
-      // Remove optimistic message on error
       setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
@@ -362,15 +372,22 @@ export default function Room() {
       if (response.data?.success) {
         toast.success(`Agent locked in! ${response.data.agentName || 'Agent'} is now your dedicated agent.`);
         
-        // Clear cached data
-        sessionStorage.clear();
+        // Log activity
+        if (currentRoom?.deal_id) {
+          await base44.entities.Activity.create({
+            type: 'agent_locked_in',
+            deal_id: currentRoom.deal_id,
+            room_id: roomId,
+            actor_id: profile?.id,
+            actor_name: profile?.full_name || profile?.email,
+            message: `${profile?.full_name || profile?.email} locked in ${response.data.agentName || 'agent'}`
+          });
+        }
         
-        // Invalidate relevant queries
+        sessionStorage.clear();
         await queryClient.invalidateQueries({ queryKey: ['rooms'] });
         await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
         await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
-        
-        // Navigate to pipeline
         navigate(createPageUrl("Pipeline"), { replace: true });
       } else {
         toast.error("Failed to lock in agent. Please try again.");
@@ -1700,6 +1717,18 @@ ${dealContext}`;
                         photos: [...photos, ...uploads]
                       });
                       
+                      // Log activity
+                      if (currentRoom?.deal_id) {
+                        await base44.entities.Activity.create({
+                          type: 'photo_uploaded',
+                          deal_id: currentRoom.deal_id,
+                          room_id: roomId,
+                          actor_id: profile?.id,
+                          actor_name: profile?.full_name || profile?.email,
+                          message: `${profile?.full_name || profile?.email} uploaded ${files.length} photo(s)`
+                        });
+                      }
+                      
                       const roomData = await base44.entities.Room.filter({ id: roomId });
                       if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
                       toast.success(`${files.length} photo(s) uploaded to deal`);
@@ -1739,6 +1768,18 @@ ${dealContext}`;
                           type: file.type
                         }]
                       });
+                      
+                      // Log activity
+                      if (currentRoom?.deal_id) {
+                        await base44.entities.Activity.create({
+                          type: 'file_uploaded',
+                          deal_id: currentRoom.deal_id,
+                          room_id: roomId,
+                          actor_id: profile?.id,
+                          actor_name: profile?.full_name || profile?.email,
+                          message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
+                        });
+                      }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
                       if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });

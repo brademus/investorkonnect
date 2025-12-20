@@ -119,6 +119,24 @@ function PipelineContent() {
     refetchOnMount: true
   });
 
+  // Load recent activity/notifications
+  const { data: activities = [], isLoading: loadingActivities } = useQuery({
+    queryKey: ['activities', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return [];
+      // Get all deals for this user
+      const dealIds = dealsData.map(d => d.id);
+      if (dealIds.length === 0) return [];
+      
+      // Get activities for these deals
+      const allActivities = await base44.entities.Activity.list('-created_date', 20);
+      return allActivities.filter(a => dealIds.includes(a.deal_id));
+    },
+    enabled: !!profile?.id && dealsData.length > 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 10000 // Poll every 10 seconds
+  });
+
   // 3. Load Rooms (to link agents/status)
   const { data: rooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms'],
@@ -367,9 +385,100 @@ function PipelineContent() {
 
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
-              <div>
+              <div className="flex-1">
                 <h1 className="text-3xl font-bold text-[#E3C567]">Dashboard</h1>
                 <p className="text-sm text-[#808080] mt-1">Manage your deals across all stages</p>
+              </div>
+
+              {/* Recent Activity Dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    const notifPanel = document.getElementById('notifications-panel');
+                    notifPanel.classList.toggle('hidden');
+                  }}
+                  className="relative p-3 bg-[#0D0D0D] border border-[#1F1F1F] rounded-full hover:border-[#E3C567] transition-colors"
+                >
+                  <svg className="w-5 h-5 text-[#E3C567]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                  </svg>
+                  {activities.length > 0 && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-[#E3C567] rounded-full"></span>
+                  )}
+                </button>
+
+                {/* Notifications Panel */}
+                <div
+                  id="notifications-panel"
+                  className="hidden absolute right-0 mt-2 w-96 bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl shadow-2xl z-50 max-h-[500px] overflow-hidden flex flex-col"
+                >
+                  <div className="p-4 border-b border-[#1F1F1F]">
+                    <h3 className="text-lg font-bold text-[#E3C567]">Recent Activity</h3>
+                  </div>
+                  <div className="flex-1 overflow-y-auto">
+                    {activities.length === 0 ? (
+                      <div className="p-8 text-center">
+                        <p className="text-sm text-[#808080]">No recent activity</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-[#1F1F1F]">
+                        {activities.map((activity) => {
+                          const deal = dealsData.find(d => d.id === activity.deal_id);
+                          const getIcon = () => {
+                            switch (activity.type) {
+                              case 'agent_locked_in':
+                              case 'agent_accepted':
+                                return <CheckCircle className="w-4 h-4 text-[#10B981]" />;
+                              case 'message_sent':
+                                return <MessageSquare className="w-4 h-4 text-[#60A5FA]" />;
+                              case 'file_uploaded':
+                                return <FileText className="w-4 h-4 text-[#F59E0B]" />;
+                              case 'photo_uploaded':
+                                return <svg className="w-4 h-4 text-[#DB2777]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>;
+                              case 'deal_created':
+                                return <Plus className="w-4 h-4 text-[#E3C567]" />;
+                              default:
+                                return <Circle className="w-4 h-4 text-[#808080]" />;
+                            }
+                          };
+
+                          return (
+                            <button
+                              key={activity.id}
+                              onClick={() => {
+                                if (activity.room_id) {
+                                  navigate(`${createPageUrl("Room")}?roomId=${activity.room_id}`);
+                                }
+                                document.getElementById('notifications-panel').classList.add('hidden');
+                              }}
+                              className="w-full p-4 hover:bg-[#141414] transition-colors text-left"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="w-8 h-8 bg-[#1F1F1F] rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                  {getIcon()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-[#FAFAFA] mb-1">{activity.message}</p>
+                                  {deal && (
+                                    <p className="text-xs text-[#E3C567] mb-1 truncate">{deal.property_address || deal.title}</p>
+                                  )}
+                                  <p className="text-xs text-[#808080]">
+                                    {new Date(activity.created_date).toLocaleString('en-US', {
+                                      month: 'short',
+                                      day: 'numeric',
+                                      hour: 'numeric',
+                                      minute: '2-digit'
+                                    })}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
               <div className="flex items-center gap-3">
                 <Button 
