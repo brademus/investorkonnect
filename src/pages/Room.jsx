@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
@@ -1132,50 +1131,138 @@ ${dealContext}`;
 
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
+                  {/* Agreement Status Banner */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                      <Shield className="w-5 h-5 text-[#E3C567]" />
-                      Agreement Summary
-                    </h4>
-                    <div className="space-y-4">
-                      {currentRoom?.proposed_terms ? (
-                        <>
-                          {currentRoom.proposed_terms.seller_commission_type && (
-                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                              <h5 className="text-sm font-semibold text-[#E3C567] mb-2">Seller's Agent Commission</h5>
-                              <p className="text-[#FAFAFA]">
-                                {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
-                                  ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
-                                  : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
-                                }
-                              </p>
-                            </div>
-                          )}
-                          {currentRoom.proposed_terms.buyer_commission_type && (
-                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                              <h5 className="text-sm font-semibold text-[#60A5FA] mb-2">Buyer's Agent Commission</h5>
-                              <p className="text-[#FAFAFA]">
-                                {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
-                                  ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
-                                  : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
-                                }
-                              </p>
-                            </div>
-                          )}
-                          {currentRoom.proposed_terms.agreement_length && (
-                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                              <h5 className="text-sm font-semibold text-[#FAFAFA] mb-2">Agreement Length</h5>
-                              <p className="text-[#808080]">{currentRoom.proposed_terms.agreement_length} days</p>
-                            </div>
-                          )}
-                        </>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                        <Shield className="w-5 h-5 text-[#E3C567]" />
+                        My Agreement
+                      </h4>
+                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
+                          ✓ Active Agreement
+                        </span>
                       ) : (
-                        <p className="text-sm text-[#808080] text-center py-8">
-                          No agreement terms available yet
-                        </p>
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30">
+                          ⏳ Pending
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-[#808080]">
+                      This is your agreement summary for quick reference. Not a legal document.
+                    </p>
+                  </div>
+
+                  {/* Key Terms */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <h5 className="text-md font-semibold text-[#FAFAFA] mb-4">Key Terms</h5>
+                    <div className="space-y-4">
+                      {/* Purchase Price */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-[#808080]">Purchase Price</p>
+                          <p className="text-lg font-bold text-[#34D399] mt-1">
+                            {currentRoom?.budget ? `$${currentRoom.budget.toLocaleString()}` : '—'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Earnest Money */}
+                      {deal?.seller_info?.earnest_money && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-[#808080]">Earnest Money</p>
+                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                              ${deal.seller_info.earnest_money.toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Closing Date */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-[#808080]">Target Closing Date</p>
+                          <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                            {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'TBD'}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Seller's Agent Commission */}
+                      {currentRoom?.proposed_terms?.seller_commission_type && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-[#808080]">Seller's Agent Compensation</p>
+                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                              {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
+                                ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
+                                : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Buyer's Agent Commission */}
+                      {currentRoom?.proposed_terms?.buyer_commission_type && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
+                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                              {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
+                                ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
+                                : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Signers */}
+                      {deal?.seller_info?.seller_name && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-[#808080]">
+                              Seller ({deal.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
+                            </p>
+                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                              {deal.seller_info.seller_name}
+                              {deal.seller_info.number_of_signers === '2' && deal.seller_info.second_signer_name && (
+                                <span className="text-[#808080]"> & {deal.seller_info.second_signer_name}</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Special Notes */}
+                  {deal?.special_notes && (
+                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                      <h5 className="text-md font-semibold text-[#FAFAFA] mb-3">Special Notes</h5>
+                      <p className="text-sm text-[#FAFAFA] leading-relaxed whitespace-pre-wrap">
+                        {deal.special_notes}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Empty State */}
+                  {!currentRoom?.budget && !currentRoom?.proposed_terms && (
+                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
+                      <Shield className="w-12 h-12 text-[#808080] mx-auto mb-4 opacity-50" />
+                      <p className="text-sm text-[#808080]">
+                        No agreement terms available yet. Terms will appear once deal details are finalized.
+                      </p>
+                    </div>
+                  )}
                 </div>
               )}
 
