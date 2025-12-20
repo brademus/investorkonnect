@@ -1296,12 +1296,12 @@ ${dealContext}`;
 
               {activeTab === 'files' && (
                 <div className="space-y-6">
+                  {/* Contract Section */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <ContractLayers 
                       room={currentRoom} 
                       deal={deal}
                       onUpdate={() => {
-                        // Refresh room data
                         const fetchCurrentRoom = async () => {
                           const roomData = await base44.entities.Room.filter({ id: roomId });
                           if (roomData && roomData.length > 0) {
@@ -1334,25 +1334,173 @@ ${dealContext}`;
                       userRole={profile?.user_role}
                     />
                   </div>
+
+                  {/* Shared Files Section */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Shared Files</h4>
+                      <Button
+                        onClick={async () => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.onchange = async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            
+                            toast.info('Uploading file...');
+                            try {
+                              const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                              const files = currentRoom?.files || [];
+                              await base44.entities.Room.update(roomId, {
+                                files: [...files, {
+                                  name: file.name,
+                                  url: file_url,
+                                  uploaded_by: profile?.id,
+                                  uploaded_by_name: profile?.full_name || profile?.email,
+                                  uploaded_at: new Date().toISOString(),
+                                  size: file.size,
+                                  type: file.type
+                                }]
+                              });
+                              
+                              // Refresh room
+                              const roomData = await base44.entities.Room.filter({ id: roomId });
+                              if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
+                              toast.success('File uploaded');
+                            } catch (error) {
+                              toast.error('Upload failed');
+                            }
+                          };
+                          input.click();
+                        }}
+                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Upload File
+                      </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                      {(currentRoom?.files || []).length === 0 ? (
+                        <div className="text-center py-8">
+                          <FileText className="w-12 h-12 text-[#808080] mx-auto mb-3 opacity-50" />
+                          <p className="text-sm text-[#808080]">No files uploaded yet</p>
+                        </div>
+                      ) : (
+                        (currentRoom?.files || []).map((file, idx) => (
+                          <div key={idx} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
+                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-5 h-5 text-[#E3C567]" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-[#FAFAFA] truncate">{file.name}</p>
+                              <p className="text-xs text-[#808080]">
+                                {file.uploaded_by_name} • {new Date(file.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <a
+                              href={file.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
+                            >
+                              Open
+                            </a>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
 
               {activeTab === 'photos' && (
                 <div className="space-y-6">
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Photos</h4>
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Image className="w-8 h-8 text-[#808080]" />
-                      </div>
-                      <p className="text-sm text-[#808080] mb-4">No photos uploaded yet</p>
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Property Photos</h4>
                       <Button
-                        onClick={() => toast.info('Photo upload coming soon')}
+                        onClick={async () => {
+                          const input = document.createElement('input');
+                          input.type = 'file';
+                          input.accept = 'image/*';
+                          input.multiple = true;
+                          input.onchange = async (e) => {
+                            const files = Array.from(e.target.files);
+                            if (files.length === 0) return;
+                            
+                            toast.info(`Uploading ${files.length} photo(s)...`);
+                            try {
+                              const uploads = await Promise.all(
+                                files.map(async (file) => {
+                                  const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                  return {
+                                    name: file.name,
+                                    url: file_url,
+                                    uploaded_by: profile?.id,
+                                    uploaded_by_name: profile?.full_name || profile?.email,
+                                    uploaded_at: new Date().toISOString(),
+                                    size: file.size,
+                                    type: file.type
+                                  };
+                                })
+                              );
+                              
+                              const photos = currentRoom?.photos || [];
+                              await base44.entities.Room.update(roomId, {
+                                photos: [...photos, ...uploads]
+                              });
+                              
+                              // Refresh room
+                              const roomData = await base44.entities.Room.filter({ id: roomId });
+                              if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
+                              toast.success(`${files.length} photo(s) uploaded`);
+                            } catch (error) {
+                              toast.error('Upload failed');
+                            }
+                          };
+                          input.click();
+                        }}
                         className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
                       >
+                        <Plus className="w-4 h-4 mr-2" />
                         Upload Photos
                       </Button>
                     </div>
+
+                    {(currentRoom?.photos || []).length === 0 ? (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Image className="w-8 h-8 text-[#808080]" />
+                        </div>
+                        <p className="text-sm text-[#808080]">No photos uploaded yet</p>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {(currentRoom?.photos || []).map((photo, idx) => (
+                          <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
+                            <img
+                              src={photo.url}
+                              alt={photo.name}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-2">
+                              <a
+                                href={photo.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-4 py-2 rounded-full text-sm font-medium"
+                              >
+                                View Full Size
+                              </a>
+                              <p className="text-xs text-white/80 px-2 text-center">
+                                {photo.uploaded_by_name} • {new Date(photo.uploaded_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
