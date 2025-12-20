@@ -969,12 +969,12 @@ ${dealContext}`;
                                       </div>
                                     </div>
                                   </div>
-
-                                  </div>
-                                  )}
-
-                                  {activeTab === 'agreement' && (
-                                  <div className="space-y-6">
+                                </>
+                              ) : (
+                                /* AGENT DEAL BOARD */
+                                <>
+                                  {/* 1. Deal Header (agent version) */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                       <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                                         <Shield className="w-5 h-5 text-[#E3C567]" />
@@ -1111,12 +1111,151 @@ ${dealContext}`;
                                     </div>
                                   </div>
                                   )}
+                                </div>
+                              )}
+
+                              {activeTab === 'agreement' && (
+                                <div className="space-y-6">
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <Shield className="w-5 h-5 text-[#E3C567]" />
+                                      Agreement Summary
+                                    </h4>
+                                    <div className="space-y-4">
+                                      {currentRoom?.proposed_terms && (
+                                        <>
+                                          {currentRoom.proposed_terms.seller_commission_type && (
+                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                              <h5 className="text-sm font-semibold text-[#E3C567] mb-2">Seller's Agent Commission</h5>
+                                              <p className="text-[#FAFAFA]">
+                                                {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
+                                                  ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
+                                                  : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
+                                                }
+                                              </p>
+                                            </div>
+                                          )}
+                                          {currentRoom.proposed_terms.buyer_commission_type && (
+                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                              <h5 className="text-sm font-semibold text-[#60A5FA] mb-2">Buyer's Agent Commission</h5>
+                                              <p className="text-[#FAFAFA]">
+                                                {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
+                                                  ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
+                                                  : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
+                                                }
+                                              </p>
+                                            </div>
+                                          )}
+                                          {currentRoom.proposed_terms.agreement_length && (
+                                            <div className="p-4 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                              <h5 className="text-sm font-semibold text-[#FAFAFA] mb-2">Agreement Length</h5>
+                                              <p className="text-[#808080]">{currentRoom.proposed_terms.agreement_length} days</p>
+                                            </div>
+                                          )}
+                                        </>
+                                      )}
+                                      {!currentRoom?.proposed_terms && (
+                                        <p className="text-sm text-[#808080] text-center py-8">
+                                          No agreement terms available yet
+                                        </p>
+                                      )}
+                                    </div>
                                   </div>
-                                  ) : profile?.user_role === 'investor' ? (
-                                  /* INVESTOR DEAL BOARD */
-                                  <>
-                                /* AGENT DEAL BOARD */
-                                <>
+                                </div>
+                              )}
+
+                              {activeTab === 'files' && (
+                                <div className="space-y-6">
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <ContractLayers 
+                                      room={currentRoom} 
+                                      deal={deal}
+                                      onUpdate={() => {
+                                        // Refresh room data
+                                        const fetchCurrentRoom = async () => {
+                                          const roomData = await base44.entities.Room.filter({ id: roomId });
+                                          if (roomData && roomData.length > 0) {
+                                            const room = roomData[0];
+                                            if (room.deal_id) {
+                                              const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
+                                              if (dealData && dealData.length > 0) {
+                                                const deal = dealData[0];
+                                                setCurrentRoom({
+                                                  ...room,
+                                                  title: deal.title,
+                                                  property_address: deal.property_address,
+                                                  city: deal.city,
+                                                  state: deal.state,
+                                                  county: deal.county,
+                                                  zip: deal.zip,
+                                                  budget: deal.purchase_price,
+                                                  pipeline_stage: deal.pipeline_stage,
+                                                  closing_date: deal.key_dates?.closing_date,
+                                                  deal_assigned_agent_id: deal.agent_id,
+                                                  contract_url: room.contract_url || deal.contract_url || null,
+                                                  contract_document: room.contract_document || deal.contract_document || null
+                                                });
+                                              }
+                                            }
+                                          }
+                                        };
+                                        fetchCurrentRoom();
+                                      }}
+                                      userRole={profile?.user_role}
+                                    />
+                                  </div>
+                                </div>
+                              )}
+
+                              {activeTab === 'photos' && (
+                                <div className="space-y-6">
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Property Photos</h4>
+                                    <div className="text-center py-12">
+                                      <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <FileText className="w-8 h-8 text-[#808080]" />
+                                      </div>
+                                      <p className="text-sm text-[#808080] mb-4">No photos uploaded yet</p>
+                                      <Button
+                                        onClick={() => toast.info('Photo upload coming soon')}
+                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                                      >
+                                        Upload Photos
+                                      </Button>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
+                              {activeTab === 'activity' && (
+                                <div className="space-y-6">
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
+                                    <div className="space-y-3">
+                                      {[
+                                        { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : currentRoom?.counterparty_name },
+                                        ...(currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? [
+                                          { date: new Date().toISOString(), event: 'Agent locked in', user: currentRoom?.counterparty_name }
+                                        ] : [])
+                                      ].map((item, idx) => (
+                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                          <div className="w-2 h-2 bg-[#E3C567] rounded-full mt-2 flex-shrink-0"></div>
+                                          <div className="flex-1">
+                                            <p className="text-sm text-[#FAFAFA] font-medium">{item.event}</p>
+                                            <p className="text-xs text-[#808080] mt-1">
+                                              {item.user} • {new Date(item.date || Date.now()).toLocaleDateString()}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            /* AGENT - No tabs, just regular board */
+                            <div className="space-y-6">
                                   {/* 1. Deal Header (agent version) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-start justify-between mb-4">
@@ -1340,11 +1479,9 @@ ${dealContext}`;
                                       Save Notes
                                     </Button>
                                   </div>
-
-                                  </>
-                                  )}
-                                  </div>
-                                  </div>
+                                </>
+                              )}
+                            </div>
                           ) : (
             /* Messages View */
             <>
