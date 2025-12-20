@@ -158,6 +158,9 @@ function LayoutContent({ children }) {
         </Link>
       )}
 
+      {/* Help Panel */}
+      <HelpPanel />
+
       </div>
       );
       }
