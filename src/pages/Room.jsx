@@ -1068,30 +1068,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 5. Investor Snapshot */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Investor Snapshot</h4>
-                                    <div className="space-y-3 text-sm">
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[#808080] min-w-[100px]">Name:</span>
-                                        <span className="text-[#FAFAFA] font-medium">{currentRoom?.counterparty_name || 'N/A'}</span>
-                                      </div>
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[#808080] min-w-[100px]">Prefers:</span>
-                                        <span className="text-[#FAFAFA]">Email & Text</span>
-                                      </div>
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[#808080] min-w-[100px]">Goal:</span>
-                                        <span className="text-[#FAFAFA]">Flip in 60 days, target profit $50K</span>
-                                      </div>
-                                      <div className="flex items-start gap-2">
-                                        <span className="text-[#808080] min-w-[100px]">Strategy:</span>
-                                        <span className="text-[#FAFAFA]">BRRRR, Buy & Hold</span>
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* 6. Agent Notes (Private) */}
+                                  {/* 5. Agent Notes (Private) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-center justify-between mb-3">
                                       <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
