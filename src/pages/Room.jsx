@@ -1524,19 +1524,62 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              {/* Privacy Lock Banner for Agents */}
+              {/* Deal Request Review Banner for Agents */}
               {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && (
                 <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 mb-4">
                     <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <h3 className="text-md font-bold text-[#F59E0B] mb-1">
-                        Accept this deal request to unlock chat
+                        New Deal Request - Review & Discuss
                       </h3>
                       <p className="text-sm text-[#FAFAFA]/80">
-                        Chat will be enabled once you accept. Limited deal info (city/state/price) is visible now. Full property address unlocks after both parties sign the agreement.
+                        Chat with the investor to discuss this deal. You're viewing limited info (city/state/price). Accept to unlock more details, or decline if not interested.
                       </p>
                     </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await base44.functions.invoke('respondToDealRequest', {
+                            room_id: roomId,
+                            action: 'accept'
+                          });
+                          if (response.data?.success) {
+                            toast.success("Deal accepted! More details now visible.");
+                            queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          toast.error("Failed to accept deal");
+                        }
+                      }}
+                      className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full font-semibold"
+                    >
+                      Accept Deal
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!confirm("Are you sure you want to decline this deal request?")) return;
+                        try {
+                          const response = await base44.functions.invoke('respondToDealRequest', {
+                            room_id: roomId,
+                            action: 'reject'
+                          });
+                          if (response.data?.success) {
+                            toast.success("Deal declined");
+                            navigate(createPageUrl("Pipeline"));
+                          }
+                        } catch (error) {
+                          toast.error("Failed to decline deal");
+                        }
+                      }}
+                      variant="outline"
+                      className="flex-1 border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444]/10 rounded-full font-semibold"
+                    >
+                      Decline
+                    </Button>
                   </div>
                 </div>
               )}
@@ -1688,20 +1731,7 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
-          {currentRoom?.request_status === 'requested' ? (
-            /* Locked chat until request is accepted */
-            <div className="flex items-center gap-3 px-5 py-3 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-full">
-              <Shield className="w-5 h-5 text-[#F59E0B] flex-shrink-0" />
-              <p className="text-sm text-[#FAFAFA] font-medium">
-                {profile?.user_role === 'agent' 
-                  ? 'Accept this request to enable chat'
-                  : 'Chat will unlock when agent accepts your request'
-                }
-              </p>
-            </div>
-          ) : (
-            /* Normal chat input with upload buttons */
-            <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
               {/* Upload Photo Button */}
               <button
                 onClick={async () => {
@@ -1868,9 +1898,8 @@ ${dealContext}`;
                   <Send className="w-5 h-5 text-white" />
                 )}
               </button>
-            </div>
-          )}
-        </div>
+              </div>
+              </div>
       </div>
 
       <ContractWizard 
