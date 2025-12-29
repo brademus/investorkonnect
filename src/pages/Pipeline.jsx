@@ -156,7 +156,7 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      return allRooms.filter(r => r.deal_status === 'pending_agent_review');
+      return allRooms.filter(r => r.request_status === 'requested');
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: true,
@@ -184,9 +184,9 @@ function PipelineContent() {
     return dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       
-      // Agent is only "locked in" if deal has agent_id AND room status is accepted
-      const hasAgentAccepted = !!deal.agent_id && room?.deal_status !== 'pending_agent_review';
-      const hasAgentPending = room?.deal_status === 'pending_agent_review';
+      // Agent is accepted/signed if room status is accepted or signed
+      const hasAgentAccepted = room?.request_status === 'accepted' || room?.request_status === 'signed';
+      const hasAgentPending = room?.request_status === 'requested';
 
       // Get agent name from Deal or Room
       let agentName = 'No Agent Selected';

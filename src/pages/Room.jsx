@@ -200,8 +200,6 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-  const [lockingIn, setLockingIn] = useState(false);
-  // Removed [showDealDetails, setShowDealDetails]
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -267,45 +265,32 @@ export default function Room() {
     (currentRoom?.counterparty_role === 'agent' ? currentRoom?.counterparty_profile?.id : null) ||
     null;
 
-  // Enforce agent lock-in: investor can't access other agent rooms once deal is assigned
+  // Enforce exclusivity: redirect if trying to access non-active room for same deal
   useEffect(() => {
     if (!currentRoom || !profile) return;
 
-    const dealId = currentRoom.deal_id || currentRoom.suggested_deal_id;
+    const dealId = currentRoom.deal_id;
     if (!dealId || profile.user_role !== 'investor') return;
 
-    // Load deal to check assigned agent
-    const checkLockIn = async () => {
+    // Check if there's another room for this deal that's accepted/signed
+    const checkExclusivity = async () => {
       try {
-        const deals = await base44.entities.Deal.filter({ id: dealId });
-        if (deals.length === 0) return;
+        const allRooms = await base44.entities.Room.filter({ deal_id: dealId });
+        const activeRoom = allRooms.find(r => 
+          (r.request_status === 'accepted' || r.request_status === 'signed') && r.id !== roomId
+        );
 
-        const deal = deals[0];
-        if (!deal.agent_id) return; // No agent assigned yet, allow access
-
-        // Check if current room's agent matches the deal's assigned agent
-        if (roomAgentProfileId && roomAgentProfileId !== deal.agent_id) {
-          toast.error("This deal is locked to a different agent");
-
-          // Get or find the correct room for this deal + assigned agent
-          try {
-            const correctRoomId = await getOrCreateDealRoom({
-              dealId: dealId,
-              agentProfileId: deal.agent_id
-            });
-            navigate(`${createPageUrl("Room")}?roomId=${correctRoomId}`, { replace: true });
-          } catch (error) {
-            console.error("Failed to get correct room:", error);
-            navigate(createPageUrl("Dashboard"), { replace: true });
-          }
+        if (activeRoom) {
+          toast.error("Redirecting to active deal room");
+          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}`, { replace: true });
         }
       } catch (error) {
-        console.error("Failed to check deal lock-in:", error);
+        console.error("Failed to check exclusivity:", error);
       }
     };
 
-    checkLockIn();
-  }, [currentRoom, profile, rooms, navigate]);
+    checkExclusivity();
+  }, [currentRoom, profile, roomId, navigate]);
 
   const send = async () => {
     const t = text.trim();
@@ -358,47 +343,7 @@ export default function Room() {
     }
   };
 
-  const handleLockIn = async () => {
-    const dealId = currentRoom?.deal_id || currentRoom?.suggested_deal_id;
-    if (!dealId || !roomId || lockingIn) return;
-    
-    setLockingIn(true);
-    try {
-      const response = await base44.functions.invoke('lockInDealAgent', { 
-        room_id: roomId, 
-        deal_id: dealId
-      });
-      
-      if (response.data?.success) {
-        toast.success(`Agent locked in! ${response.data.agentName || 'Agent'} is now your dedicated agent.`);
-        
-        // Log activity - async without blocking
-        if (currentRoom?.deal_id) {
-          base44.entities.Activity.create({
-            type: 'agent_locked_in',
-            deal_id: currentRoom.deal_id,
-            room_id: roomId,
-            actor_id: profile?.id,
-            actor_name: profile?.full_name || profile?.email,
-            message: `${profile?.full_name || profile?.email} locked in ${response.data.agentName || 'agent'}`
-          }).catch(() => {});
-        }
-        
-        sessionStorage.clear();
-        await queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        await queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
-        await queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      } else {
-        toast.error("Failed to lock in agent. Please try again.");
-      }
-    } catch (error) {
-      console.error("Failed to lock in agent:", error);
-      toast.error("Failed to lock in agent. Please try again.");
-    } finally {
-      setLockingIn(false);
-    }
-  };
+  // Removed - old lock-in logic replaced by request/accept/sign flow
 
   const generateTasks = async () => {
     if (!roomId || generatingTasks) return;
@@ -568,16 +513,24 @@ ${dealContext}`;
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">{counterpartName}</h2>
             <div className="flex items-center gap-3">
-              {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+              {currentRoom?.request_status === 'signed' ? (
                 <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Agent Locked In
+                  Agreement Signed
+                </span>
+              ) : currentRoom?.request_status === 'accepted' ? (
+                <span className="bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30 px-3 py-1 rounded-full text-xs font-medium">
+                  ✓ Accepted
+                </span>
+              ) : currentRoom?.request_status === 'requested' ? (
+                <span className="bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full text-xs font-medium">
+                  Pending Response
                 </span>
               ) : (
                 <span className="bg-[#1F1F1F] text-[#808080] border border-[#333] px-2 py-0.5 rounded text-xs">
-                  Choosing agent
+                  No Status
                 </span>
               )}
             </div>
@@ -598,40 +551,18 @@ ${dealContext}`;
               </Button>
             )}
             
-            {roomId && 
-             profile?.user_role === 'investor' &&
-             (currentRoom?.deal_id || currentRoom?.suggested_deal_id) && 
-             currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
-              <Button
-                onClick={handleLockIn}
-                disabled={lockingIn}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-bold px-5 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {lockingIn ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Locking in...
-                  </>
-                ) : (
-                  'Lock in this agent'
-                )}
-              </Button>
-            )}
-            
             {roomId && (
-              <>
-                <Button
-                  onClick={() => setShowBoard(!showBoard)}
-                  className={`rounded-full font-semibold transition-all ${
-                    showBoard 
-                      ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                      : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                  }`}
-                >
-                  <FileText className="w-4 h-4 mr-2" />
-                  Deal Board
-                </Button>
-              </>
+              <Button
+                onClick={() => setShowBoard(!showBoard)}
+                className={`rounded-full font-semibold transition-all ${
+                  showBoard 
+                    ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                    : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                }`}
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                Deal Board
+              </Button>
             )}
           </div>
         </div>
@@ -648,14 +579,22 @@ ${dealContext}`;
               <>
                 {/* Row 1: Status & Title */}
                 <div className="flex items-center gap-2 mb-1">
-                  <span className={`w-2 h-2 rounded-full ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'bg-[#10B981]' : 'bg-[#E3C567]'}`}></span>
+                  <span className={`w-2 h-2 rounded-full ${
+                    currentRoom?.request_status === 'signed' ? 'bg-[#10B981]' : 
+                    currentRoom?.request_status === 'accepted' ? 'bg-[#60A5FA]' : 
+                    'bg-[#F59E0B]'
+                  }`}></span>
                   <span className="font-bold text-[#FAFAFA] text-sm">
                     {currentRoom.title || `Chat with ${counterpartName}`}
                   </span>
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
-                    {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
-                      <span className="text-[#10B981]">Active – Working with this agent</span>
+                    {currentRoom?.request_status === 'signed' ? (
+                      <span className="text-[#10B981]">Agreement Signed</span>
+                    ) : currentRoom?.request_status === 'accepted' ? (
+                      <span className="text-[#60A5FA]">Accepted – Working Together</span>
+                    ) : currentRoom?.request_status === 'requested' ? (
+                      <span className="text-[#F59E0B]">Request Pending</span>
                     ) : (
                       currentRoom.pipeline_stage ? currentRoom.pipeline_stage.replace(/_/g, ' ') : 'GENERAL'
                     )}
@@ -666,8 +605,8 @@ ${dealContext}`;
                 <div className="flex items-center gap-3 text-xs opacity-90">
                    <div className="flex items-center gap-1.5 text-[#CCC]">
                      <span>
-                       {/* Privacy: Hide full address from agents until locked in */}
-                       {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                       {/* Privacy: Hide full address from agents until signed */}
+                       {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
                          ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'} ${currentRoom.zip || ''}`
                          : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
@@ -724,16 +663,22 @@ ${dealContext}`;
               {activeTab === 'details' && (
                 <div className="space-y-6">
                   {/* Privacy Warning for Agents */}
-                  {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
+                  {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed' && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5">
                       <div className="flex items-start gap-3">
                         <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
                         <div>
                           <h4 className="text-md font-bold text-[#F59E0B] mb-1">
-                            Limited Access – Accept to Unlock
+                            {currentRoom?.request_status === 'accepted' 
+                              ? 'Limited Access – Sign Agreement to Unlock Full Details' 
+                              : 'Limited Access – Accept Request to Enable Chat'
+                            }
                           </h4>
                           <p className="text-sm text-[#FAFAFA]/80">
-                            Full property address and investor contact details are hidden until you accept this deal. Review the general location and terms below.
+                            {currentRoom?.request_status === 'accepted'
+                              ? 'Full property address and investor contact details will be visible after both parties sign the agreement.'
+                              : 'Accept this deal request to enable chat and view limited deal information. Full details unlock after signing the agreement.'
+                            }
                           </p>
                         </div>
                       </div>
@@ -944,14 +889,14 @@ ${dealContext}`;
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
-                                          {/* Privacy: Hide full address until locked in */}
-                                          {currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                                          {/* Privacy: Hide full address until signed */}
+                                          {currentRoom?.request_status !== 'signed'
                                             ? `Deal in ${currentRoom?.city || 'City'}, ${currentRoom?.state || 'State'}`
                                             : (currentRoom?.property_address || 'Property Address')
                                           }
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
-                                          {currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                                          {currentRoom?.request_status !== 'signed'
                                             ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${currentRoom?.zip || ''}`
                                             : ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location')
                                           }
@@ -1197,20 +1142,31 @@ ${dealContext}`;
                       This is your agreement summary for quick reference. Not a legal document.
                     </p>
 
-                    {/* Execute Contract Button */}
-                    {currentRoom?.deal_assigned_agent_id === roomAgentProfileId && (
+                    {/* Send Contract Button - Only show if accepted but not signed */}
+                    {currentRoom?.request_status === 'accepted' && (
                       <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
                         <Button
                           onClick={() => {
-                            toast.info('Contract execution flow coming soon!\n\nNext steps:\n• Generate formal agreement\n• Send for e-signature\n• Both parties sign\n• Contract becomes binding');
+                            toast.info('Contract execution flow coming soon!\n\nNext steps:\n• Generate formal agreement\n• Send for e-signature\n• Both parties sign\n• Full details unlock');
                           }}
                           className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
                         >
-                          Execute Contract
+                          Send Contract for Signing
                         </Button>
                         <p className="text-xs text-[#808080] mt-3 text-center">
-                          This will generate the formal agreement and send it for e-signature by both parties
+                          Generate and send the investor-agent agreement for e-signature. Full deal details unlock after both parties sign.
                         </p>
+                      </div>
+                    )}
+                    
+                    {/* Contract Signed - Show Status */}
+                    {currentRoom?.request_status === 'signed' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
+                          <CheckCircle className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-[#10B981]">Agreement Signed</p>
+                          <p className="text-xs text-[#808080] mt-1">Both parties have signed. Full details are now available.</p>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1569,16 +1525,32 @@ ${dealContext}`;
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
               {/* Privacy Lock Banner for Agents */}
-              {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId && (
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && (
                 <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="text-md font-bold text-[#F59E0B] mb-1">
-                        Waiting for you to accept this deal
+                        Accept this deal request to unlock chat
                       </h3>
                       <p className="text-sm text-[#FAFAFA]/80">
-                        Chat and full property details will unlock once you accept. For now, you can review the deal basics and agreement terms in the Deal Board.
+                        Chat will be enabled once you accept. Limited deal info (city/state/price) is visible now. Full property address unlocks after both parties sign the agreement.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && (
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">
+                        Agreement pending - Limited details visible
+                      </h3>
+                      <p className="text-sm text-[#FAFAFA]/80">
+                        You can chat and view general deal info. Full property address and investor contact details will unlock after both parties sign the agreement.
                       </p>
                     </div>
                   </div>
@@ -1591,8 +1563,8 @@ ${dealContext}`;
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                        {/* Privacy: Hide full address from agents until locked in */}
-                        {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                        {/* Privacy: Hide full address from agents until signed */}
+                        {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
                           ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                           : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
                         }
@@ -1605,8 +1577,8 @@ ${dealContext}`;
                         )}
                         {(currentRoom.city || currentRoom.state) && (
                           <p className="text-[#808080]">
-                            {/* Privacy: Only show city/state/zip for agents until locked in */}
-                            {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId
+                            {/* Privacy: Only show city/state/zip for agents until signed */}
+                            {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
                               ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
                               : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
                             }
@@ -1716,12 +1688,15 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
-          {profile?.user_role === 'agent' && currentRoom?.deal_assigned_agent_id !== roomAgentProfileId ? (
-            /* Locked chat for agents until they accept */
+          {currentRoom?.request_status === 'requested' ? (
+            /* Locked chat until request is accepted */
             <div className="flex items-center gap-3 px-5 py-3 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-full">
               <Shield className="w-5 h-5 text-[#F59E0B] flex-shrink-0" />
               <p className="text-sm text-[#FAFAFA] font-medium">
-                Waiting for you to accept to unlock chat + full property details
+                {profile?.user_role === 'agent' 
+                  ? 'Accept this request to enable chat'
+                  : 'Chat will unlock when agent accepts your request'
+                }
               </p>
             </div>
           ) : (
