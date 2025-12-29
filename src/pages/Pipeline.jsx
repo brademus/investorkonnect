@@ -354,48 +354,32 @@ function PipelineContent() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingRequests.map((room) => {
-                    console.log('Rendering pending request card:', { 
-                      roomId: room.id, 
-                      city: room.city, 
-                      state: room.state,
-                      budget: room.budget,
-                      request_status: room.request_status,
-                      deal_status: room.deal_status
-                    });
-
-                    return (
-                      <div 
-                        key={room.id}
-                        className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
-                              {room.city}, {room.state}
-                            </h3>
-                            <p className="text-xs text-[#808080]">
-                              {formatCurrency(room.budget)}
-                            </p>
-                          </div>
-                          <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">
-                            New
-                          </span>
+                  {pendingRequests.map((room) => (
+                    <div 
+                      key={room.id}
+                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
+                            {room.city}, {room.state}
+                          </h3>
+                          <p className="text-xs text-[#808080]">
+                            {formatCurrency(room.budget)}
+                          </p>
                         </div>
-                        <Button
-                          onClick={() => {
-                            console.log('Review Request clicked for room:', room.id);
-                            const targetUrl = createPageUrl("DealRequest") + `?roomId=${room.id}`;
-                            console.log('Navigating to:', targetUrl);
-                            navigate(targetUrl);
-                          }}
-                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
-                        >
-                          Review Request
-                        </Button>
+                        <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">
+                          New
+                        </span>
                       </div>
-                    );
-                  })}
+                      <Button
+                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}`)}
+                        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
+                      >
+                        Review Request
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
