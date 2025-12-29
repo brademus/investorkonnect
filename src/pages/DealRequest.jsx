@@ -79,23 +79,17 @@ export default function DealRequest() {
 
     setProcessing(true);
     try {
-      // Update room status
-      await base44.entities.Room.update(room.id, {
-        deal_status: 'active'
+      const response = await base44.functions.invoke('respondToDealRequest', {
+        room_id: room.id,
+        action: 'accept'
       });
 
-      // Update deal with agent and status
-      if (deal?.id) {
-        await base44.entities.Deal.update(deal.id, {
-          agent_id: profile.id,
-          status: 'active',
-          pipeline_stage: 'new_deal_under_contract'
-        });
+      if (response.data?.success) {
+        toast.success("Deal accepted! Chat is now enabled.");
+        navigate(createPageUrl("Room") + `?roomId=${room.id}`);
+      } else {
+        throw new Error(response.data?.error || 'Failed to accept');
       }
-
-      toast.success("Deal accepted! Opening deal room...");
-      navigate(createPageUrl("Room") + `?roomId=${room.id}`);
-
     } catch (error) {
       console.error("Failed to accept deal:", error);
       toast.error("Failed to accept deal");
@@ -108,22 +102,17 @@ export default function DealRequest() {
 
     setProcessing(true);
     try {
-      // Update room status
-      await base44.entities.Room.update(room.id, {
-        deal_status: 'rejected',
-        closedAt: new Date().toISOString()
+      const response = await base44.functions.invoke('respondToDealRequest', {
+        room_id: room.id,
+        action: 'reject'
       });
 
-      // Update deal status
-      if (deal?.id) {
-        await base44.entities.Deal.update(deal.id, {
-          status: 'archived'
-        });
+      if (response.data?.success) {
+        toast.success("Deal request declined");
+        navigate(createPageUrl("Pipeline"));
+      } else {
+        throw new Error(response.data?.error || 'Failed to reject');
       }
-
-      toast.success("Deal request declined");
-      navigate(createPageUrl("Pipeline"));
-
     } catch (error) {
       console.error("Failed to reject deal:", error);
       toast.error("Failed to reject deal");
