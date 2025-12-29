@@ -1,141 +1,143 @@
-import Home from './pages/Home';
-import HowItWorks from './pages/HowItWorks';
-import Investors from './pages/Investors';
-import Agents from './pages/Agents';
-import Pricing from './pages/Pricing';
-import Reviews from './pages/Reviews';
-import Security from './pages/Security';
-import Dashboard from './pages/Dashboard';
-import NDA from './pages/NDA';
-import AdminApprovals from './pages/AdminApprovals';
-import Resources from './pages/Resources';
-import FAQ from './pages/FAQ';
-import Contact from './pages/Contact';
+import AIAssistant from './pages/AIAssistant';
 import About from './pages/About';
 import AccountBilling from './pages/AccountBilling';
-import PrivacyPolicy from './pages/PrivacyPolicy';
-import Terms from './pages/Terms';
-import ReviewPolicy from './pages/ReviewPolicy';
-import Cookies from './pages/Cookies';
-import ThankYou from './pages/ThankYou';
-import NotFound from './pages/NotFound';
-import Verify from './pages/Verify';
-import BillingSetup from './pages/BillingSetup';
-import Logout from './pages/Logout';
-import GetStarted from './pages/GetStarted';
-import Onboarding from './pages/Onboarding';
 import AccountProfile from './pages/AccountProfile';
-import Matches from './pages/Matches';
-import Inbox from './pages/Inbox';
-import Room from './pages/Room';
-import Vetting from './pages/Vetting';
-import AdminSeed from './pages/AdminSeed';
-import AgentProfile from './pages/AgentProfile';
-import Admin from './pages/Admin';
-import AgentHome from './pages/AgentHome';
-import InvestorBuyBox from './pages/InvestorBuyBox';
-import InvestorDocuments from './pages/InvestorDocuments';
-import AgentDocuments from './pages/AgentDocuments';
-import VerifyStart from './pages/VerifyStart';
-import VerifyCallback from './pages/VerifyCallback';
-import RoleSelection from './pages/RoleSelection';
-import InvestorOnboarding from './pages/InvestorOnboarding';
-import AgentOnboarding from './pages/AgentOnboarding';
-import AgentDashboard from './pages/AgentDashboard';
-import InvestorIntake from './pages/InvestorIntake';
-import PostAuth from './pages/PostAuth';
-import BillingSuccess from './pages/BillingSuccess';
-import AgentDirectory from './pages/AgentDirectory';
-import Billing from './pages/Billing';
-import MyProfile from './pages/MyProfile';
-import AgentPerformance from './pages/AgentPerformance';
-import InvestorPortfolio from './pages/InvestorPortfolio';
-import MarketIntel from './pages/MarketIntel';
-import InvestorProfile from './pages/InvestorProfile';
-import DealWizard from './pages/DealWizard';
-import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
-import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
-import AIAssistant from './pages/AIAssistant';
-import InvestorDirectory from './pages/InvestorDirectory';
 import ActiveDeals from './pages/ActiveDeals';
-import PendingDeals from './pages/PendingDeals';
-import ClosedDeals from './pages/ClosedDeals';
-import Pipeline from './pages/Pipeline';
-import DemoDiagnostics from './pages/DemoDiagnostics';
-import NewDeal from './pages/NewDeal';
+import Admin from './pages/Admin';
+import AdminApprovals from './pages/AdminApprovals';
+import AdminSeed from './pages/AdminSeed';
+import AgentDashboard from './pages/AgentDashboard';
+import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
+import AgentDirectory from './pages/AgentDirectory';
+import AgentDocuments from './pages/AgentDocuments';
+import AgentHome from './pages/AgentHome';
 import AgentMatching from './pages/AgentMatching';
+import AgentOnboarding from './pages/AgentOnboarding';
+import AgentPerformance from './pages/AgentPerformance';
+import AgentProfile from './pages/AgentProfile';
+import Agents from './pages/Agents';
+import AuthCallback from './pages/AuthCallback';
+import Billing from './pages/Billing';
+import BillingSetup from './pages/BillingSetup';
+import BillingSuccess from './pages/BillingSuccess';
+import ClosedDeals from './pages/ClosedDeals';
+import Contact from './pages/Contact';
+import Cookies from './pages/Cookies';
+import Dashboard from './pages/Dashboard';
 import DealRequest from './pages/DealRequest';
+import DealWizard from './pages/DealWizard';
+import DemoDiagnostics from './pages/DemoDiagnostics';
+import FAQ from './pages/FAQ';
+import GetStarted from './pages/GetStarted';
+import Home from './pages/Home';
+import HowItWorks from './pages/HowItWorks';
+import Inbox from './pages/Inbox';
+import InvestorBuyBox from './pages/InvestorBuyBox';
+import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
+import InvestorDirectory from './pages/InvestorDirectory';
+import InvestorDocuments from './pages/InvestorDocuments';
+import InvestorIntake from './pages/InvestorIntake';
+import InvestorOnboarding from './pages/InvestorOnboarding';
+import InvestorPortfolio from './pages/InvestorPortfolio';
+import InvestorProfile from './pages/InvestorProfile';
+import Investors from './pages/Investors';
+import Logout from './pages/Logout';
+import MarketIntel from './pages/MarketIntel';
+import Matches from './pages/Matches';
+import MyProfile from './pages/MyProfile';
+import NDA from './pages/NDA';
+import NewDeal from './pages/NewDeal';
+import NotFound from './pages/NotFound';
+import Onboarding from './pages/Onboarding';
+import PendingDeals from './pages/PendingDeals';
+import Pipeline from './pages/Pipeline';
+import PostAuth from './pages/PostAuth';
+import Pricing from './pages/Pricing';
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import Resources from './pages/Resources';
+import ReviewPolicy from './pages/ReviewPolicy';
+import Reviews from './pages/Reviews';
+import RoleSelection from './pages/RoleSelection';
+import Room from './pages/Room';
+import Security from './pages/Security';
+import Terms from './pages/Terms';
+import ThankYou from './pages/ThankYou';
+import Verify from './pages/Verify';
+import VerifyCallback from './pages/VerifyCallback';
+import VerifyStart from './pages/VerifyStart';
+import Vetting from './pages/Vetting';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Home": Home,
-    "HowItWorks": HowItWorks,
-    "Investors": Investors,
-    "Agents": Agents,
-    "Pricing": Pricing,
-    "Reviews": Reviews,
-    "Security": Security,
-    "Dashboard": Dashboard,
-    "NDA": NDA,
-    "AdminApprovals": AdminApprovals,
-    "Resources": Resources,
-    "FAQ": FAQ,
-    "Contact": Contact,
+    "AIAssistant": AIAssistant,
     "About": About,
     "AccountBilling": AccountBilling,
-    "PrivacyPolicy": PrivacyPolicy,
-    "Terms": Terms,
-    "ReviewPolicy": ReviewPolicy,
-    "Cookies": Cookies,
-    "ThankYou": ThankYou,
-    "NotFound": NotFound,
-    "Verify": Verify,
-    "BillingSetup": BillingSetup,
-    "Logout": Logout,
-    "GetStarted": GetStarted,
-    "Onboarding": Onboarding,
     "AccountProfile": AccountProfile,
-    "Matches": Matches,
-    "Inbox": Inbox,
-    "Room": Room,
-    "Vetting": Vetting,
-    "AdminSeed": AdminSeed,
-    "AgentProfile": AgentProfile,
-    "Admin": Admin,
-    "AgentHome": AgentHome,
-    "InvestorBuyBox": InvestorBuyBox,
-    "InvestorDocuments": InvestorDocuments,
-    "AgentDocuments": AgentDocuments,
-    "VerifyStart": VerifyStart,
-    "VerifyCallback": VerifyCallback,
-    "RoleSelection": RoleSelection,
-    "InvestorOnboarding": InvestorOnboarding,
-    "AgentOnboarding": AgentOnboarding,
-    "AgentDashboard": AgentDashboard,
-    "InvestorIntake": InvestorIntake,
-    "PostAuth": PostAuth,
-    "BillingSuccess": BillingSuccess,
-    "AgentDirectory": AgentDirectory,
-    "Billing": Billing,
-    "MyProfile": MyProfile,
-    "AgentPerformance": AgentPerformance,
-    "InvestorPortfolio": InvestorPortfolio,
-    "MarketIntel": MarketIntel,
-    "InvestorProfile": InvestorProfile,
-    "DealWizard": DealWizard,
-    "InvestorDeepOnboarding": InvestorDeepOnboarding,
-    "AgentDeepOnboarding": AgentDeepOnboarding,
-    "AIAssistant": AIAssistant,
-    "InvestorDirectory": InvestorDirectory,
     "ActiveDeals": ActiveDeals,
-    "PendingDeals": PendingDeals,
-    "ClosedDeals": ClosedDeals,
-    "Pipeline": Pipeline,
-    "DemoDiagnostics": DemoDiagnostics,
-    "NewDeal": NewDeal,
+    "Admin": Admin,
+    "AdminApprovals": AdminApprovals,
+    "AdminSeed": AdminSeed,
+    "AgentDashboard": AgentDashboard,
+    "AgentDeepOnboarding": AgentDeepOnboarding,
+    "AgentDirectory": AgentDirectory,
+    "AgentDocuments": AgentDocuments,
+    "AgentHome": AgentHome,
     "AgentMatching": AgentMatching,
+    "AgentOnboarding": AgentOnboarding,
+    "AgentPerformance": AgentPerformance,
+    "AgentProfile": AgentProfile,
+    "Agents": Agents,
+    "AuthCallback": AuthCallback,
+    "Billing": Billing,
+    "BillingSetup": BillingSetup,
+    "BillingSuccess": BillingSuccess,
+    "ClosedDeals": ClosedDeals,
+    "Contact": Contact,
+    "Cookies": Cookies,
+    "Dashboard": Dashboard,
     "DealRequest": DealRequest,
+    "DealWizard": DealWizard,
+    "DemoDiagnostics": DemoDiagnostics,
+    "FAQ": FAQ,
+    "GetStarted": GetStarted,
+    "Home": Home,
+    "HowItWorks": HowItWorks,
+    "Inbox": Inbox,
+    "InvestorBuyBox": InvestorBuyBox,
+    "InvestorDeepOnboarding": InvestorDeepOnboarding,
+    "InvestorDirectory": InvestorDirectory,
+    "InvestorDocuments": InvestorDocuments,
+    "InvestorIntake": InvestorIntake,
+    "InvestorOnboarding": InvestorOnboarding,
+    "InvestorPortfolio": InvestorPortfolio,
+    "InvestorProfile": InvestorProfile,
+    "Investors": Investors,
+    "Logout": Logout,
+    "MarketIntel": MarketIntel,
+    "Matches": Matches,
+    "MyProfile": MyProfile,
+    "NDA": NDA,
+    "NewDeal": NewDeal,
+    "NotFound": NotFound,
+    "Onboarding": Onboarding,
+    "PendingDeals": PendingDeals,
+    "Pipeline": Pipeline,
+    "PostAuth": PostAuth,
+    "Pricing": Pricing,
+    "PrivacyPolicy": PrivacyPolicy,
+    "Resources": Resources,
+    "ReviewPolicy": ReviewPolicy,
+    "Reviews": Reviews,
+    "RoleSelection": RoleSelection,
+    "Room": Room,
+    "Security": Security,
+    "Terms": Terms,
+    "ThankYou": ThankYou,
+    "Verify": Verify,
+    "VerifyCallback": VerifyCallback,
+    "VerifyStart": VerifyStart,
+    "Vetting": Vetting,
 }
 
 export const pagesConfig = {
