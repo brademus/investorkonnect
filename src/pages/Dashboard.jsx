@@ -66,9 +66,8 @@ export default function Dashboard() {
         // If they've done basic but not deep onboarding, show Dashboard with checklist
         // (isOnboarded will be false, so checklist will show "Complete Profile" step)
 
-        // All good - show dashboard
-        setProfile(userProfile);
-        setLoading(false);
+        // All good - redirect to Pipeline (canonical dashboard)
+        navigate(createPageUrl("Pipeline"), { replace: true });
 
       } catch (error) {
         console.error('[Dashboard] Error:', error);
@@ -79,34 +78,13 @@ export default function Dashboard() {
     checkAccess();
   }, [navigate]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <LoadingAnimation className="w-64 h-64" />
-      </div>
-    );
-  }
-
-  // Show Pipeline as the main dashboard for all users
-  try {
-    return (
-      <ErrorBoundary>
-        <Pipeline profile={profile} />
-      </ErrorBoundary>
-    );
-  } catch (error) {
-    console.error("Dashboard render error:", error);
-    return (
-       <div className="min-h-screen flex items-center justify-center text-white">
-          <p>Something went wrong loading the dashboard. Please refresh.</p>
-       </div>
-    );
-  }
-
-  // Fallback
+  // Show loading while redirecting
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
-      <LoadingAnimation className="w-64 h-64" />
+      <div className="text-center">
+        <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
+        <p className="text-sm text-[#808080]">Redirecting to Pipeline...</p>
+      </div>
     </div>
   );
 }
