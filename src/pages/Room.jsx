@@ -1219,7 +1219,7 @@ ${dealContext}`;
                         </div>
                       )}
 
-                      {/* Signers */}
+                      {/* Signers - Privacy Protected */}
                       {deal?.seller_info?.seller_name && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
@@ -1227,12 +1227,16 @@ ${dealContext}`;
                             <p className="text-sm font-medium text-[#808080]">
                               Seller ({deal.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
                             </p>
-                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {deal.seller_info.seller_name}
-                              {deal.seller_info.number_of_signers === '2' && deal.seller_info.second_signer_name && (
-                                <span className="text-[#808080]"> & {deal.seller_info.second_signer_name}</span>
-                              )}
-                            </p>
+                            {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed' ? (
+                              <p className="text-sm text-[#F59E0B] mt-1">Hidden until agreement signed</p>
+                            ) : (
+                              <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                                {deal.seller_info.seller_name}
+                                {deal.seller_info.number_of_signers === '2' && deal.seller_info.second_signer_name && (
+                                  <span className="text-[#808080]"> & {deal.seller_info.second_signer_name}</span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         </div>
                       )}
