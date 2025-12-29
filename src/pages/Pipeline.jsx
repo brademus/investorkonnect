@@ -156,7 +156,12 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      return allRooms.filter(r => r.request_status === 'requested');
+      // Show rooms with requested status OR old pending_agent_review status (migration fallback)
+      return allRooms.filter(r => 
+        r.request_status === 'requested' || 
+        r.deal_status === 'pending_agent_review' ||
+        (!r.request_status && !r.deal_status) // New rooms without status
+      );
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: true,
