@@ -25,11 +25,16 @@ const STEPS = [
 export default function DealWizard() {
   // DISABLED: This flow is deprecated. Users should use NewDeal → ContractVerify → AgentMatching
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const dealId = searchParams.get('dealId');
   
   useEffect(() => {
-    toast.info("Redirecting to new deal flow...");
-    navigate(createPageUrl("NewDeal"), { replace: true });
-  }, [navigate]);
+    // Redirect to NewDeal with dealId if editing
+    const destination = dealId 
+      ? `${createPageUrl("NewDeal")}?dealId=${dealId}`
+      : createPageUrl("NewDeal");
+    navigate(destination, { replace: true });
+  }, [navigate, dealId]);
   
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center">
