@@ -20,6 +20,7 @@ import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
+import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -224,7 +225,7 @@ function PipelineContent() {
         seller_name: deal.seller_info?.seller_name,
 
         // Status & Agent  
-        pipeline_stage: normalizeStage(deal.pipeline_stage || 'new_deal_under_contract'),
+        pipeline_stage: normalizeStage(deal.pipeline_stage || 'new_listings'),
         raw_pipeline_stage: deal.pipeline_stage,
         customer_name: counterpartyName,
         agent_id: deal.agent_id,
@@ -244,7 +245,8 @@ function PipelineContent() {
 
   const handleDealClick = async (deal) => {
     if (deal.is_orphan) {
-      navigate(`${createPageUrl("DealWizard")}?dealId=${deal.deal_id}`);
+      // Route orphan deals to NewDeal for editing, not DealWizard
+      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
       return;
     }
     
@@ -313,22 +315,14 @@ function PipelineContent() {
     return `${days}d`;
   };
 
-  // Pipeline stages - with backward compatibility mapping
-  const LEGACY_STAGE_MAP = {
-    'new_deal_under_contract': 'new_listings',
-    'walkthrough_scheduled': 'new_listings',
-    'evaluate_deal': 'active_listings',
-    'active_marketing': 'active_listings',
-    'cancelling_deal': 'canceled',
-    'clear_to_close_closed': 'ready_to_close'
-  };
-
-  const pipelineStages = [
-    { id: 'new_listings', label: 'New Listings', icon: FileText },
-    { id: 'active_listings', label: 'Active Listings', icon: TrendingUp },
-    { id: 'ready_to_close', label: 'Ready to Close', icon: CheckCircle },
-    { id: 'canceled', label: 'Canceled', icon: XCircle }
-  ];
+  // Pipeline stages with icons
+  const pipelineStages = PIPELINE_STAGES.map(stage => ({
+    ...stage,
+    icon: stage.id === 'new_listings' ? FileText :
+          stage.id === 'active_listings' ? TrendingUp :
+          stage.id === 'ready_to_close' ? CheckCircle :
+          XCircle
+  }));
 
   if (loading || !profile || loadingDeals || loadingRooms || deduplicating) {
     return (
