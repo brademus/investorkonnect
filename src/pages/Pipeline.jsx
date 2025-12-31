@@ -86,8 +86,8 @@ function PipelineContent() {
       if (!profile?.id) return [];
       
       // PRODUCTION: Server-side access control enforces role-based redaction
-      const res = await base44.functions.invoke('getPipelineDealsForUser');
-      const deals = res.data?.deals || [];
+      const response = await base44.functions.invoke('getPipelineDealsForUser');
+      const deals = response.data?.deals || [];
       
       // Filter out archived and deals with invalid addresses
       return deals

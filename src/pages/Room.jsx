@@ -224,10 +224,10 @@ export default function Room() {
           // Use server-side access-controlled deal fetch
           if (room.deal_id) {
             try {
-              const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+              const response = await base44.functions.invoke('getDealDetailsForUser', {
                 dealId: room.deal_id
               });
-              const deal = dealResponse.data;
+              const deal = response.data;
               
               if (deal) {
                 setDeal(deal); // Store redacted deal separately
@@ -1408,10 +1408,10 @@ ${dealContext}`;
                             const room = roomData[0];
                             if (room.deal_id) {
                               try {
-                                const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+                                const response = await base44.functions.invoke('getDealDetailsForUser', {
                                   dealId: room.deal_id
                                 });
-                                const deal = dealResponse.data;
+                                const deal = response.data;
                                 if (deal) {
                                   setDeal(deal);
                                   setCurrentRoom({
@@ -1449,10 +1449,10 @@ ${dealContext}`;
                       const fetchDeal = async () => {
                         if (currentRoom?.deal_id) {
                           try {
-                            const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+                            const response = await base44.functions.invoke('getDealDetailsForUser', {
                               dealId: currentRoom.deal_id
                             });
-                            if (dealResponse.data) setDeal(dealResponse.data);
+                            if (response.data) setDeal(response.data);
                           } catch (error) {
                             console.error('Failed to fetch deal:', error);
                           }
