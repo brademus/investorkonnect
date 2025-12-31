@@ -1440,6 +1440,13 @@ ${dealContext}`;
                           input.onchange = async (e) => {
                             const file = e.target.files[0];
                             if (!file) return;
+
+                            // Validate file before upload
+                            const validation = validateSafeDocument(file);
+                            if (!validation.valid) {
+                              toast.error(validation.error);
+                              return;
+                            }
                             
                             toast.info('Uploading file...');
                             try {

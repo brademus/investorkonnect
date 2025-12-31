@@ -22,6 +22,7 @@ import BillingSetup from './pages/BillingSetup';
 import BillingSuccess from './pages/BillingSuccess';
 import ClosedDeals from './pages/ClosedDeals';
 import Contact from './pages/Contact';
+import ContractVerify from './pages/ContractVerify';
 import Cookies from './pages/Cookies';
 import Dashboard from './pages/Dashboard';
 import DealRequest from './pages/DealRequest';
@@ -66,7 +67,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import ContractVerify from './pages/ContractVerify';
 import __Layout from './Layout.jsx';
 
 
@@ -95,6 +95,7 @@ export const PAGES = {
     "BillingSuccess": BillingSuccess,
     "ClosedDeals": ClosedDeals,
     "Contact": Contact,
+    "ContractVerify": ContractVerify,
     "Cookies": Cookies,
     "Dashboard": Dashboard,
     "DealRequest": DealRequest,
@@ -139,7 +140,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "ContractVerify": ContractVerify,
 }
 
 export const pagesConfig = {
