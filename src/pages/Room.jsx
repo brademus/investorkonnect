@@ -14,8 +14,10 @@ import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import ContractLayers from "@/components/ContractLayers";
 import DocumentChecklist from "@/components/DocumentChecklist";
+import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
+import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { 
-  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image
+  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
@@ -740,18 +742,16 @@ ${dealContext}`;
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
                                     <div className="space-y-3">
-                                      {[
-                                        { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
-                                        { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
-                                        { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
-                                        { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
-                                        { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
-                                        { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
-                                      ].map((stage, idx) => {
-                                        const isActive = currentRoom?.pipeline_stage === stage.id;
-                                        const isPast = [
-                                          'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
-                                        ].indexOf(currentRoom?.pipeline_stage) > idx;
+                                      {PIPELINE_STAGES.map((stage, idx) => {
+                                        const normalizedCurrent = normalizeStage(currentRoom?.pipeline_stage);
+                                        const isActive = normalizedCurrent === stage.id;
+                                        const currentOrder = stageOrder(normalizedCurrent);
+                                        const isPast = stage.order < currentOrder;
+
+                                        const stageColor = stage.id === 'new_listings' ? '#E3C567' :
+                                                         stage.id === 'active_listings' ? '#60A5FA' :
+                                                         stage.id === 'ready_to_close' ? '#34D399' :
+                                                         '#EF4444';
 
                                         return (
                                           <div key={stage.id} className="flex items-center gap-3">
@@ -763,10 +763,10 @@ ${dealContext}`;
                                                   ? 'bg-[#34D399]' 
                                                   : 'bg-[#1F1F1F]'
                                               }`}
-                                              style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
+                                              style={isActive ? { backgroundColor: stageColor, ringColor: stageColor } : {}}
                                             >
                                               <span className="text-sm font-bold text-white">
-                                                {isPast ? '✓' : idx + 1}
+                                                {isPast ? '✓' : stage.order}
                                               </span>
                                             </div>
                                             <div className="flex-1">
@@ -933,18 +933,16 @@ ${dealContext}`;
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
                                     <p className="text-xs text-[#808080] mb-4">Click to change stage</p>
                                     <div className="space-y-3">
-                                      {[
-                                        { id: 'new_deal_under_contract', label: 'New Deal Under Contract', color: '#E3C567' },
-                                        { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', color: '#60A5FA' },
-                                        { id: 'evaluate_deal', label: 'Evaluate Deal', color: '#F59E0B' },
-                                        { id: 'active_marketing', label: 'Active Marketing', color: '#DB2777' },
-                                        { id: 'cancelling_deal', label: 'Cancelling Deal', color: '#EF4444' },
-                                        { id: 'clear_to_close_closed', label: 'Closed', color: '#34D399' }
-                                      ].map((stage, idx) => {
-                                        const isActive = currentRoom?.pipeline_stage === stage.id;
-                                        const isPast = [
-                                          'new_deal_under_contract', 'walkthrough_scheduled', 'evaluate_deal', 'active_marketing', 'cancelling_deal', 'clear_to_close_closed'
-                                        ].indexOf(currentRoom?.pipeline_stage) > idx;
+                                      {PIPELINE_STAGES.map((stage, idx) => {
+                                        const normalizedCurrent = normalizeStage(currentRoom?.pipeline_stage);
+                                        const isActive = normalizedCurrent === stage.id;
+                                        const currentOrder = stageOrder(normalizedCurrent);
+                                        const isPast = stage.order < currentOrder;
+
+                                        const stageColor = stage.id === 'new_listings' ? '#E3C567' :
+                                                         stage.id === 'active_listings' ? '#60A5FA' :
+                                                         stage.id === 'ready_to_close' ? '#34D399' :
+                                                         '#EF4444';
 
                                         return (
                                           <button
@@ -973,10 +971,10 @@ ${dealContext}`;
                                                   ? 'bg-[#34D399]' 
                                                   : 'bg-[#1F1F1F]'
                                               }`}
-                                              style={isActive ? { backgroundColor: stage.color, ringColor: stage.color } : {}}
+                                              style={isActive ? { backgroundColor: stageColor, ringColor: stageColor } : {}}
                                             >
                                               <span className="text-sm font-bold text-white">
-                                                {isPast ? '✓' : idx + 1}
+                                                {isPast ? '✓' : stage.order}
                                               </span>
                                             </div>
                                             <div className="flex-1">
@@ -1856,7 +1854,6 @@ ${dealContext}`;
               {/* Upload Photo Button */}
               <button
                 onClick={async () => {
-                  const { validateImage } = await import('@/components/utils/fileValidation');
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/*';
@@ -1931,7 +1928,6 @@ ${dealContext}`;
               {/* Upload File Button */}
               <button
                 onClick={async () => {
-                  const { validateSafeDocument } = await import('@/components/utils/fileValidation');
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.onchange = async (e) => {

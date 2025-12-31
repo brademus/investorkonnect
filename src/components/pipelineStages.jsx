@@ -4,7 +4,7 @@
  */
 
 export const PIPELINE_STAGES = [
-  { id: 'new_listings', label: 'New Listings', order: 1 },
+  { id: 'new_listings', label: 'New Deal / New Contracts', order: 1 },
   { id: 'active_listings', label: 'Active Listings', order: 2 },
   { id: 'ready_to_close', label: 'Ready to Close', order: 3 },
   { id: 'canceled', label: 'Canceled', order: 4 }
@@ -57,7 +57,7 @@ export function normalizeStage(stageId) {
 export function getStageLabel(stageId) {
   const normalized = normalizeStage(stageId);
   const stage = PIPELINE_STAGES.find(s => s.id === normalized);
-  return stage ? stage.label : 'New Listings';
+  return stage ? stage.label : 'New Deal / New Contracts';
 }
 
 /**
