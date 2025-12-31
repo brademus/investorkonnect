@@ -79,18 +79,18 @@ function PipelineContent() {
   const isAgent = profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor';
 
-  // 2. Load Active Deals (Source of Truth)
+  // 2. Load Active Deals via Server-Side Access Control
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
     queryFn: async () => {
       if (!profile?.id) return [];
       
-      // Filter by role - agents see their assigned deals, investors see their created deals
-      const filterKey = isAgent ? { agent_id: profile.id } : { investor_id: profile.id };
-      const res = await base44.entities.Deal.filter(filterKey);
+      // Use server-side access-controlled endpoint
+      const res = await base44.functions.invoke('getPipelineDealsForUser');
+      const deals = res.data?.deals || [];
       
       // Filter out archived and deals with invalid addresses
-      return res
+      return deals
         .filter(d => {
           if (d.status === 'archived') return false;
           
