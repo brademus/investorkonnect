@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { validatePDF } from "@/components/utils/fileValidation";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
@@ -11,7 +11,10 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 
 export default function ContractVerify() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { profile } = useCurrentProfile();
+  
+  const dealIdFromUrl = searchParams.get("dealId");
   
   const [uploading, setUploading] = useState(false);
   const [verifying, setVerifying] = useState(false);
@@ -209,7 +212,7 @@ export default function ContractVerify() {
         uploaded_at: new Date().toISOString()
       };
 
-      const deal = await base44.entities.Deal.create({
+      const dealPayload = {
         investor_id: profile.id,
         title: dealData.propertyAddress,
         property_address: dealData.propertyAddress,
@@ -243,10 +246,27 @@ export default function ContractVerify() {
         contract_document: contractDocument,
         status: 'active',
         pipeline_stage: 'new_listings'
-      });
+      };
+
+      // Determine dealId - from URL, from dealData, or will create new
+      const existingDealId = dealIdFromUrl || dealData.dealId;
+      
+      let finalDealId;
+      
+      if (existingDealId) {
+        // UPDATE existing deal
+        await base44.entities.Deal.update(existingDealId, dealPayload);
+        finalDealId = existingDealId;
+        toast.success("Deal updated successfully!");
+      } else {
+        // CREATE new deal
+        const deal = await base44.entities.Deal.create(dealPayload);
+        finalDealId = deal.id;
+        toast.success("Deal created successfully!");
+      }
 
       // Store deal ID and terms for agent matching
-      sessionStorage.setItem("createdDealId", deal.id);
+      sessionStorage.setItem("createdDealId", finalDealId);
       sessionStorage.setItem("newDealData", JSON.stringify({
         sellerCommissionType: dealData.sellerCommissionType,
         sellerCommissionPercentage: dealData.sellerCommissionPercentage,
@@ -257,12 +277,11 @@ export default function ContractVerify() {
         agreementLength: dealData.agreementLength
       }));
 
-      toast.success("Deal created successfully!");
-      navigate(createPageUrl("AgentMatching") + `?dealId=${deal.id}`);
+      navigate(createPageUrl("AgentMatching") + `?dealId=${finalDealId}`);
 
     } catch (error) {
-      console.error("Failed to create deal:", error);
-      toast.error("Failed to create deal: " + (error.message || 'Unknown error'));
+      console.error("Failed to save deal:", error);
+      toast.error("Failed to save deal: " + (error.message || 'Unknown error'));
     }
   };
 
@@ -280,7 +299,10 @@ export default function ContractVerify() {
         {/* Header */}
         <div className="mb-8">
           <button
-            onClick={() => navigate(createPageUrl("NewDeal"))}
+            onClick={() => {
+              const editDealId = dealIdFromUrl || dealData?.dealId;
+              navigate(editDealId ? `${createPageUrl("NewDeal")}?dealId=${editDealId}` : createPageUrl("NewDeal"));
+            }}
             className="text-[#808080] hover:text-[#E3C567] text-sm flex items-center gap-2 mb-4"
           >
             <ArrowLeft className="w-4 h-4" /> Back to Deal Details
@@ -331,7 +353,7 @@ export default function ContractVerify() {
               onClick={handleCreateDeal}
               className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
             >
-              Create Deal & Find Agents
+              {dealIdFromUrl || dealData?.dealId ? 'Update Deal & Continue' : 'Create Deal & Find Agents'}
             </Button>
           </div>
         )}
