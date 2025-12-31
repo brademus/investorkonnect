@@ -1,8 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Server-side access control for single deal details
- * Returns redacted deal data based on user role and agreement status
+ * Server-Side Access Control: Get Single Deal Details
+ * 
+ * Enforces role-based field-level access control:
+ * - Agents: Limited info until agreement fully signed
+ * - Investors: Full access to their own deals
  */
 Deno.serve(async (req) => {
   try {
@@ -19,51 +22,64 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'dealId required' }, { status: 400 });
     }
 
-    // Get user profile
-    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    // Get user's profile
+    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
     
     if (!profile) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const userRole = profile.user_role || profile.role;
-
-    // Get deal
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    // Fetch deal
+    const deals = await base44.entities.Deal.filter({ id: dealId });
     const deal = deals[0];
     
     if (!deal) {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
 
-    // Verify user has access to this deal
-    if (userRole === 'investor' && deal.investor_id !== profile.id) {
-      return Response.json({ error: 'Access denied' }, { status: 403 });
-    }
-    
-    if (userRole === 'agent' && deal.agent_id !== profile.id) {
+    const isAgent = profile.user_role === 'agent';
+    const isInvestor = profile.user_role === 'investor';
+
+    // Verify access rights
+    if (isInvestor && deal.investor_id !== profile.id) {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Get room if agent to check agreement status
-    let isFullySigned = true; // Investors always get full access
-    
-    if (userRole === 'agent') {
-      const rooms = await base44.asServiceRole.entities.Room.filter({ 
+    if (isAgent && deal.agent_id !== profile.id) {
+      // Check if agent has a room for this deal
+      const agentRooms = await base44.entities.Room.filter({ 
         deal_id: dealId,
         agentId: profile.id 
       });
-      const room = rooms[0];
-      isFullySigned = room?.agreement_status === 'fully_signed' || 
-                     room?.request_status === 'signed';
+      
+      if (agentRooms.length === 0) {
+        return Response.json({ error: 'Access denied' }, { status: 403 });
+      }
     }
 
-    // Build response with appropriate redaction
-    const response = {
+    // Get room to check signature status
+    let room = null;
+    if (isAgent) {
+      const rooms = await base44.entities.Room.filter({ 
+        deal_id: dealId,
+        agentId: profile.id 
+      });
+      room = rooms[0];
+    } else if (isInvestor) {
+      const rooms = await base44.entities.Room.filter({ 
+        deal_id: dealId,
+        investorId: profile.id 
+      });
+      room = rooms[0];
+    }
+
+    const isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
+
+    // Base fields everyone can see
+    const baseDeal = {
       id: deal.id,
       title: deal.title,
-      description: deal.description,
       city: deal.city,
       state: deal.state,
       county: deal.county,
@@ -74,32 +90,39 @@ Deno.serve(async (req) => {
       created_date: deal.created_date,
       updated_date: deal.updated_date,
       key_dates: deal.key_dates,
-      property_type: deal.property_type,
-      property_details: deal.property_details,
-      agent_id: deal.agent_id,
       investor_id: deal.investor_id,
-      documents: deal.documents, // Document URLs handled separately
+      agent_id: deal.agent_id,
       is_fully_signed: isFullySigned
     };
 
-    // Add sensitive fields only if allowed
-    if (userRole === 'investor' || isFullySigned) {
-      response.property_address = deal.property_address;
-      response.seller_info = deal.seller_info;
-      response.notes = deal.notes;
-      response.special_notes = deal.special_notes;
-    } else {
-      response.property_address = null;
-      response.seller_info = null;
-      response.redaction_reason = 'pending_signature';
+    // Sensitive fields - only visible to investors OR fully signed agents
+    if (isInvestor || isFullySigned) {
+      return Response.json({
+        ...baseDeal,
+        property_address: deal.property_address,
+        seller_info: deal.seller_info,
+        property_details: deal.property_details,
+        documents: deal.documents,
+        notes: deal.notes,
+        special_notes: deal.special_notes,
+        audit_log: deal.audit_log
+      });
     }
 
-    return Response.json(response);
-
+    // Agents see limited info until fully signed
+    return Response.json({
+      ...baseDeal,
+      property_address: null, // Hidden
+      seller_info: null, // Hidden
+      property_details: null, // Hidden
+      documents: null, // Hidden
+      notes: null, // Hidden
+      special_notes: null // Hidden
+    });
   } catch (error) {
     console.error('getDealDetailsForUser error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to fetch deal' 
+      error: error.message 
     }, { status: 500 });
   }
 });

@@ -1,8 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Canonical state transition for deal requests
- * Enforces allowed transitions and updates both legacy and new status fields
+ * Canonical State Transition Handler for Deal Requests
+ * 
+ * All room status changes go through this single function to ensure
+ * consistent state transitions and prevent conflicting paths.
+ * 
+ * Actions:
+ * - accept: Agent accepts deal request (requested → accepted)
+ * - reject: Agent rejects deal request (requested → rejected)
+ * - send_agreement: Investor sends agreement (accepted → agreement sent)
+ * - investor_sign: Investor signs agreement
+ * - agent_sign: Agent signs agreement
+ * - finalize_signatures: Complete signing (→ fully_signed)
  */
 Deno.serve(async (req) => {
   try {
@@ -21,86 +31,159 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Get user profile
-    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    // Get user's profile
+    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
     
     if (!profile) {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    const userRole = profile.user_role || profile.role;
-
-    // Get room
-    const rooms = await base44.asServiceRole.entities.Room.filter({ id: roomId });
+    // Fetch room
+    const rooms = await base44.entities.Room.filter({ id: roomId });
     const room = rooms[0];
     
     if (!room) {
       return Response.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    // Get current status
-    const currentRequestStatus = room.request_status || 'requested';
-    const currentAgreementStatus = room.agreement_status || 'draft';
+    // Verify user has access to this room
+    const isInvestor = room.investorId === profile.id;
+    const isAgent = room.agentId === profile.id;
+    
+    if (!isInvestor && !isAgent) {
+      return Response.json({ error: 'Access denied' }, { status: 403 });
+    }
 
-    // Define allowed transitions
-    const updates = {};
-    let allowed = false;
+    // Handle state transitions
+    let updates = {};
+    let activityMessage = '';
 
     switch (action) {
       case 'accept':
-        // Agent accepting investor's request
-        if (userRole === 'agent' && currentRequestStatus === 'requested') {
-          updates.request_status = 'accepted';
-          updates.accepted_at = new Date().toISOString();
-          allowed = true;
+        // Agent accepts deal request
+        if (!isAgent) {
+          return Response.json({ 
+            error: 'Only agents can accept requests' 
+          }, { status: 403 });
         }
+        
+        if (room.request_status !== 'requested') {
+          return Response.json({ 
+            error: 'Deal not in requested state' 
+          }, { status: 400 });
+        }
+        
+        updates = {
+          request_status: 'accepted',
+          accepted_at: new Date().toISOString()
+        };
+        activityMessage = `${profile.full_name} accepted the deal request`;
         break;
 
       case 'reject':
-        // Agent declining investor's request
-        if (userRole === 'agent' && currentRequestStatus === 'requested') {
-          updates.request_status = 'rejected';
-          updates.rejected_at = new Date().toISOString();
-          allowed = true;
+        // Agent rejects deal request
+        if (!isAgent) {
+          return Response.json({ 
+            error: 'Only agents can reject requests' 
+          }, { status: 403 });
         }
+        
+        updates = {
+          request_status: 'rejected',
+          rejected_at: new Date().toISOString()
+        };
+        activityMessage = `${profile.full_name} declined the deal request`;
         break;
 
       case 'send_agreement':
-        // Send agreement for signing (either party)
-        if (currentRequestStatus === 'accepted' && currentAgreementStatus === 'draft') {
-          updates.agreement_status = 'sent';
-          allowed = true;
+        // Send agreement for signing
+        if (room.request_status !== 'accepted') {
+          return Response.json({ 
+            error: 'Deal must be accepted first' 
+          }, { status: 400 });
         }
+        
+        updates = {
+          agreement_status: 'sent'
+        };
+        activityMessage = 'Agreement sent for signature';
         break;
 
       case 'investor_sign':
-        // Investor signing agreement
-        if (userRole === 'investor' && currentAgreementStatus === 'sent') {
-          updates.agreement_status = 'investor_signed';
-          allowed = true;
+        // Investor signs agreement
+        if (!isInvestor) {
+          return Response.json({ 
+            error: 'Only investors can sign as investor' 
+          }, { status: 403 });
+        }
+        
+        if (room.agreement_status !== 'sent' && room.agreement_status !== 'agent_signed') {
+          return Response.json({ 
+            error: 'Agreement not ready for investor signature' 
+          }, { status: 400 });
+        }
+        
+        // Check if agent already signed
+        if (room.agreement_status === 'agent_signed') {
+          updates = {
+            agreement_status: 'fully_signed',
+            request_status: 'signed',
+            signed_at: new Date().toISOString()
+          };
+          activityMessage = `${profile.full_name} completed signing - Agreement fully executed`;
+        } else {
+          updates = {
+            agreement_status: 'investor_signed'
+          };
+          activityMessage = `${profile.full_name} signed the agreement`;
         }
         break;
 
       case 'agent_sign':
-        // Agent signing agreement
-        if (userRole === 'agent' && currentAgreementStatus === 'sent') {
-          updates.agreement_status = 'agent_signed';
-          allowed = true;
+        // Agent signs agreement
+        if (!isAgent) {
+          return Response.json({ 
+            error: 'Only agents can sign as agent' 
+          }, { status: 403 });
+        }
+        
+        if (room.agreement_status !== 'sent' && room.agreement_status !== 'investor_signed') {
+          return Response.json({ 
+            error: 'Agreement not ready for agent signature' 
+          }, { status: 400 });
+        }
+        
+        // Check if investor already signed
+        if (room.agreement_status === 'investor_signed') {
+          updates = {
+            agreement_status: 'fully_signed',
+            request_status: 'signed',
+            signed_at: new Date().toISOString()
+          };
+          activityMessage = `${profile.full_name} completed signing - Agreement fully executed`;
+        } else {
+          updates = {
+            agreement_status: 'agent_signed'
+          };
+          activityMessage = `${profile.full_name} signed the agreement`;
         }
         break;
 
       case 'finalize_signatures':
-        // Both parties signed - finalize
-        if (
-          (userRole === 'investor' && currentAgreementStatus === 'agent_signed') ||
-          (userRole === 'agent' && currentAgreementStatus === 'investor_signed')
-        ) {
-          updates.agreement_status = 'fully_signed';
-          updates.request_status = 'signed'; // Update legacy field too
-          updates.signed_at = new Date().toISOString();
-          allowed = true;
+        // Final signature completing the agreement
+        if (room.agreement_status !== 'investor_signed' && room.agreement_status !== 'agent_signed') {
+          return Response.json({ 
+            error: 'Both parties must sign first' 
+          }, { status: 400 });
         }
+        
+        updates = {
+          agreement_status: 'fully_signed',
+          request_status: 'signed',
+          signed_at: new Date().toISOString()
+        };
+        activityMessage = 'Agreement fully executed - All parties signed';
         break;
 
       default:
@@ -109,39 +192,37 @@ Deno.serve(async (req) => {
         }, { status: 400 });
     }
 
-    if (!allowed) {
-      return Response.json({ 
-        error: `Transition not allowed: ${currentRequestStatus}/${currentAgreementStatus} -> ${action} by ${userRole}` 
-      }, { status: 403 });
-    }
+    // Apply updates
+    await base44.entities.Room.update(roomId, updates);
 
-    // Update room with new status
-    await base44.asServiceRole.entities.Room.update(roomId, updates);
-
-    // Log activity
-    if (room.deal_id) {
-      await base44.asServiceRole.entities.Activity.create({
-        type: action === 'accept' ? 'agent_accepted' : 
-              action === 'reject' ? 'agent_rejected' : 
-              'deal_stage_changed',
-        deal_id: room.deal_id,
-        room_id: roomId,
-        actor_id: profile.id,
-        actor_name: profile.full_name || profile.email,
-        message: `${profile.full_name || profile.email} performed action: ${action}`,
-        metadata: { action, from: currentRequestStatus, to: updates.request_status || updates.agreement_status }
-      }).catch(() => {}); // Silent fail - activity is nice-to-have
+    // Log activity if deal_id exists
+    if (room.deal_id && activityMessage) {
+      try {
+        await base44.entities.Activity.create({
+          type: action === 'accept' ? 'agent_accepted' : 
+                action === 'reject' ? 'agent_rejected' : 
+                'agreement_updated',
+          deal_id: room.deal_id,
+          room_id: roomId,
+          actor_id: profile.id,
+          actor_name: profile.full_name || profile.email,
+          message: activityMessage
+        });
+      } catch (activityError) {
+        // Activity logging is optional, don't fail the request
+        console.error('Failed to log activity:', activityError);
+      }
     }
 
     return Response.json({ 
       success: true,
-      updates 
+      newStatus: updates.request_status || room.request_status,
+      agreementStatus: updates.agreement_status || room.agreement_status
     });
-
   } catch (error) {
     console.error('transitionDealRequestStatus error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to transition status' 
+      error: error.message 
     }, { status: 500 });
   }
 });

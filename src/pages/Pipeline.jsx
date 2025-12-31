@@ -85,7 +85,7 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id) return [];
       
-      // Use server-side access-controlled endpoint
+      // PRODUCTION: Server-side access control enforces role-based redaction
       const res = await base44.functions.invoke('getPipelineDealsForUser');
       const deals = res.data?.deals || [];
       
