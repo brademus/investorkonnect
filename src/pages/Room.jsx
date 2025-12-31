@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import ContractLayers from "@/components/ContractLayers";
+import DocumentChecklist from "@/components/DocumentChecklist";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image
 } from "lucide-react";
@@ -1281,6 +1282,7 @@ ${dealContext}`;
                               const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
                               if (dealData && dealData.length > 0) {
                                 const deal = dealData[0];
+                                setDeal(deal);
                                 setCurrentRoom({
                                   ...room,
                                   title: deal.title,
@@ -1305,6 +1307,21 @@ ${dealContext}`;
                       userRole={profile?.user_role}
                     />
                   </div>
+
+                  {/* Document Checklist */}
+                  <DocumentChecklist 
+                    deal={deal}
+                    userRole={profile?.user_role}
+                    onUpdate={() => {
+                      const fetchDeal = async () => {
+                        if (currentRoom?.deal_id) {
+                          const dealData = await base44.entities.Deal.filter({ id: currentRoom.deal_id });
+                          if (dealData?.[0]) setDeal(dealData[0]);
+                        }
+                      };
+                      fetchDeal();
+                    }}
+                  />
 
                   {/* Shared Files Section */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
@@ -1399,7 +1416,16 @@ ${dealContext}`;
                           input.onchange = async (e) => {
                             const files = Array.from(e.target.files);
                             if (files.length === 0) return;
-                            
+
+                            // Validate all files first
+                            for (const file of files) {
+                              const validation = validateImage(file);
+                              if (!validation.valid) {
+                                toast.error(validation.error);
+                                return;
+                              }
+                            }
+
                             toast.info(`Uploading ${files.length} photo(s)...`);
                             try {
                               const uploads = await Promise.all(
@@ -1716,6 +1742,7 @@ ${dealContext}`;
               {/* Upload Photo Button */}
               <button
                 onClick={async () => {
+                  const { validateImage } = await import('@/components/utils/fileValidation');
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.accept = 'image/*';
@@ -1790,11 +1817,18 @@ ${dealContext}`;
               {/* Upload File Button */}
               <button
                 onClick={async () => {
+                  const { validateSafeDocument } = await import('@/components/utils/fileValidation');
                   const input = document.createElement('input');
                   input.type = 'file';
                   input.onchange = async (e) => {
                     const file = e.target.files[0];
                     if (!file) return;
+
+                    const validation = validateSafeDocument(file);
+                    if (!validation.valid) {
+                      toast.error(validation.error);
+                      return;
+                    }
                     
                     toast.info('Uploading file...');
                     try {

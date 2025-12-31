@@ -220,10 +220,12 @@ function PipelineContent() {
         property_address: deal.property_address || 'Address Pending',
         city: deal.city,
         state: deal.state,
-        budget: deal.purchase_price, // The number saved in Deal entity
+        budget: deal.purchase_price,
+        seller_name: deal.seller_info?.seller_name,
 
-        // Status & Agent
-        pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
+        // Status & Agent  
+        pipeline_stage: normalizeStage(deal.pipeline_stage || 'new_deal_under_contract'),
+        raw_pipeline_stage: deal.pipeline_stage,
         customer_name: counterpartyName,
         agent_id: deal.agent_id,
 
@@ -232,11 +234,10 @@ function PipelineContent() {
         updated_date: deal.updated_date,
         closing_date: deal.key_dates?.closing_date,
 
-        // Room extras
-        open_tasks: room?.open_tasks || 0,
-        completed_tasks: room?.completed_tasks || 0,
+        // Privacy flags
+        is_fully_signed: room?.agreement_status === 'fully_signed' || room?.request_status === 'signed',
 
-        is_orphan: !hasAgentAccepted && !hasAgentPending // Orphan if no agent pending or accepted
+        is_orphan: !hasAgentAccepted && !hasAgentPending
       };
     });
   }, [dealsData, rooms]);
@@ -268,6 +269,7 @@ function PipelineContent() {
 
   const handleStageChange = async (dealId, newStage) => {
     try {
+      // Store new stage directly (no reverse mapping needed)
       await base44.entities.Deal.update(dealId, {
         pipeline_stage: newStage
       });
@@ -311,13 +313,21 @@ function PipelineContent() {
     return `${days}d`;
   };
 
+  // Pipeline stages - with backward compatibility mapping
+  const LEGACY_STAGE_MAP = {
+    'new_deal_under_contract': 'new_listings',
+    'walkthrough_scheduled': 'new_listings',
+    'evaluate_deal': 'active_listings',
+    'active_marketing': 'active_listings',
+    'cancelling_deal': 'canceled',
+    'clear_to_close_closed': 'ready_to_close'
+  };
+
   const pipelineStages = [
-    { id: 'new_deal_under_contract', label: 'New Deal (Under Contract)', icon: FileText },
-    { id: 'walkthrough_scheduled', label: 'Walkthrough Scheduled', icon: Calendar },
-    { id: 'evaluate_deal', label: 'Evaluate Deal', icon: TrendingUp },
-    { id: 'active_marketing', label: 'Active Marketing', icon: Megaphone },
-    { id: 'cancelling_deal', label: 'Cancelling', icon: XCircle },
-    { id: 'clear_to_close_closed', label: 'Closed', icon: CheckCircle }
+    { id: 'new_listings', label: 'New Listings', icon: FileText },
+    { id: 'active_listings', label: 'Active Listings', icon: TrendingUp },
+    { id: 'ready_to_close', label: 'Ready to Close', icon: CheckCircle },
+    { id: 'canceled', label: 'Canceled', icon: XCircle }
   ];
 
   if (loading || !profile || loadingDeals || loadingRooms || deduplicating) {
@@ -572,20 +582,15 @@ function PipelineContent() {
                                     >
                                       <div className="flex justify-between items-start mb-2">
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                                          {deal.property_address}
+                                          {/* Role-based privacy: agents see city/state only until fully signed */}
+                                          {isAgent && !deal.is_fully_signed
+                                            ? `${deal.city}, ${deal.state}`
+                                            : deal.property_address
+                                          }
                                         </h4>
                                         <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
                                           {getDaysInPipeline(deal.created_date)}
                                         </span>
-                                      </div>
-
-                                      <div className="flex items-center gap-2 mb-3">
-                                        <span className="text-xs text-[#E3C567] bg-[#E3C567]/10 px-2 py-0.5 rounded border border-[#E3C567]/20">
-                                          {formatCurrency(deal.budget)}
-                                        </span>
-                                        {deal.is_orphan && (
-                                          <span className="text-[10px] text-amber-500 border border-amber-900/50 px-1.5 rounded">Pending Agent</span>
-                                        )}
                                       </div>
 
                                       <div className="flex flex-col gap-2 mb-3">
@@ -594,17 +599,17 @@ function PipelineContent() {
                                           <span>{deal.city}, {deal.state}</span>
                                         </div>
 
+                                        {/* Show seller name only for investors OR fully signed deals */}
+                                        {(isInvestor || deal.is_fully_signed) && deal.seller_name && (
+                                          <div className="text-xs text-[#808080]">
+                                            Seller: {deal.seller_name}
+                                          </div>
+                                        )}
+
                                         {!deal.is_orphan && deal.customer_name && (
                                           <div className="text-xs text-[#10B981] flex items-center gap-1">
                                             <CheckCircle className="w-3 h-3" />
                                             <span>{deal.customer_name}</span>
-                                          </div>
-                                        )}
-
-                                        {deal.open_tasks > 0 && (
-                                          <div className="flex items-center gap-1 text-[#E3C567] text-xs">
-                                            <CheckSquare className="w-3 h-3" />
-                                            <span>{deal.open_tasks} tasks</span>
                                           </div>
                                         )}
                                       </div>
