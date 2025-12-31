@@ -136,16 +136,30 @@ export default function AgentMatching() {
     setSendingToAgent(agentProfile.id);
     
     try {
-      // Check for existing room
-      const existingRooms = await base44.entities.Room.filter({
-        deal_id: deal.id,
-        agentId: agentProfile.id
-      });
+      // ENFORCED: Only one concurrent agent request per deal
+      const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
+      const activeRoom = allRoomsForDeal.find(r => 
+        r.request_status === 'requested' || 
+        r.request_status === 'accepted' || 
+        r.request_status === 'signed'
+      );
+
+      if (activeRoom) {
+        toast.error("You already have an active agent request for this deal. Open the existing Deal Room to continue.");
+        setSendingToAgent(null);
+        setTimeout(() => {
+          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}`);
+        }, 1500);
+        return;
+      }
+
+      // Check for existing room with this specific agent
+      const existingRoomWithAgent = allRoomsForDeal.find(r => r.agentId === agentProfile.id);
 
       let room;
-      if (existingRooms && existingRooms.length > 0) {
-        room = existingRooms[0];
-        console.log('[AgentMatching] Using existing room:', room.id);
+      if (existingRoomWithAgent) {
+        room = existingRoomWithAgent;
+        console.log('[AgentMatching] Reusing existing room:', room.id);
       } else {
         // Create new room
         console.log('[AgentMatching] Creating new room for deal:', deal.id);
@@ -160,20 +174,24 @@ export default function AgentMatching() {
           county: deal.county,
           zip: deal.zip,
           budget: deal.purchase_price || deal.budget,
-          deal_status: 'pending_agent_review'
+          request_status: 'requested',
+          requested_at: new Date().toISOString()
         });
         console.log('[AgentMatching] Room created:', room.id);
       }
 
-      // Store proposed terms in room
+      // Store proposed terms using CORRECT seller/buyer keys
       const storedData = sessionStorage.getItem("newDealData");
       if (storedData) {
         const parsed = JSON.parse(storedData);
         await base44.entities.Room.update(room.id, {
           proposed_terms: {
-            commission_type: parsed.commissionType,
-            commission_percentage: parsed.commissionPercentage ? Number(parsed.commissionPercentage) : null,
-            flat_fee: parsed.flatFee ? Number(parsed.flatFee) : null,
+            seller_commission_type: parsed.sellerCommissionType,
+            seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
+            seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
+            buyer_commission_type: parsed.buyerCommissionType,
+            buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
+            buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
             agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
           }
         });
@@ -304,20 +322,6 @@ export default function AgentMatching() {
               );
             })}
           </div>
-          
-          {/* View All Button */}
-          {agents.length > 3 && (
-            <div className="flex justify-center mt-8">
-              <Button
-                onClick={() => navigate(createPageUrl("AgentDirectory") + `?dealId=${dealId}`)}
-                variant="outline"
-                className="border-[#E3C567]/50 text-[#E3C567] hover:bg-[#E3C567]/10 rounded-full"
-              >
-                View All {agents.length} Agents
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </div>
-          )}
         </>
         )}
       </div>

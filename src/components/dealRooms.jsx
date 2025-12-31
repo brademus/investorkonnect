@@ -20,7 +20,7 @@ export async function getOrCreateDealRoom({ dealId, agentProfileId }) {
   const rooms = getRoomsFromListMyRoomsResponse(roomsResponse);
   
   const existingRoom = rooms.find(room => 
-    (room.deal_id === dealId || room.suggested_deal_id === dealId) && 
+    room.deal_id === dealId && 
     (
       room.agentId === agentProfileId || 
       room.agent_id === agentProfileId ||
