@@ -64,15 +64,20 @@ Return a verification result with any discrepancies found.
         }
       });
 
-      // Update room with listing agreement
-      await base44.entities.Room.update(room.id, {
-        listing_agreement_document: {
-          url: file_url,
-          name: file.name,
+      // Update Deal.documents with listing agreement (canonical source)
+      const updatedDocs = {
+        ...(deal?.documents || {}),
+        listing_agreement: {
+          file_url,
+          filename: file.name,
           uploaded_at: new Date().toISOString(),
           verified: verification.verified,
           verification_notes: verification.notes
         }
+      };
+      
+      await base44.entities.Deal.update(deal.id, {
+        documents: updatedDocs
       });
 
       if (verification.verified) {
@@ -94,8 +99,9 @@ Return a verification result with any discrepancies found.
   const getContractStatus = (type) => {
     switch (type) {
       case 'seller':
-        return deal?.contract_url || deal?.contract_document?.url ? 
-          (deal?.contract_document?.verified ? 'verified' : 'uploaded') : 'pending';
+        // Read from Deal.documents only (canonical source)
+        return deal?.documents?.purchase_contract?.file_url ? 
+          (deal?.documents?.purchase_contract?.verified ? 'verified' : 'uploaded') : 'pending';
       case 'internal':
         return room?.agreement_status === 'fully_signed' ? 'signed' : 
                room?.agreement_status === 'investor_signed' ? 'pending_agent' :
@@ -103,8 +109,9 @@ Return a verification result with any discrepancies found.
                room?.agreement_status === 'sent' ? 'sent' :
                room?.proposed_terms ? 'draft' : 'pending';
       case 'listing':
-        return room?.listing_agreement_document?.url ? 
-          (room?.listing_agreement_document?.verified ? 'verified' : 'uploaded') : 
+        // Read from Deal.documents only (canonical source)
+        return deal?.documents?.listing_agreement?.file_url ? 
+          (deal?.documents?.listing_agreement?.verified ? 'verified' : 'uploaded') : 
           'pending_upload';
       default:
         return 'pending';
@@ -169,15 +176,15 @@ Return a verification result with any discrepancies found.
                 }
               </span>
             </div>
-          ) : (deal?.contract_url || deal?.contract_document?.url) ? (
+          ) : deal?.documents?.purchase_contract?.file_url ? (
             <a
-              href={deal.contract_url || deal.contract_document?.url}
+              href={deal.documents.purchase_contract.file_url}
               target="_blank"
               rel="noopener noreferrer"
               className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
             >
               <FileText className="w-3 h-3" />
-              {deal.contract_document?.name || 'View Contract'}
+              {deal.documents.purchase_contract.filename || 'View Contract'}
             </a>
           ) : null}
         </div>
@@ -226,24 +233,24 @@ Return a verification result with any discrepancies found.
             </div>
           </div>
 
-          {room?.listing_agreement_document?.url ? (
+          {deal?.documents?.listing_agreement?.file_url ? (
             <div className="space-y-2">
               <a
-                href={room.listing_agreement_document.url}
+                href={deal.documents.listing_agreement.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
               >
                 <FileText className="w-3 h-3" />
-                {room.listing_agreement_document.name || 'View Listing Agreement'}
+                {deal.documents.listing_agreement.filename || 'View Listing Agreement'}
               </a>
-              {room.listing_agreement_document.verification_notes && (
+              {deal.documents.listing_agreement.verification_notes && (
                 <div className={`text-xs p-2 rounded border ${
-                  room.listing_agreement_document.verified 
+                  deal.documents.listing_agreement.verified 
                     ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30' 
                     : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30'
                 }`}>
-                  {room.listing_agreement_document.verification_notes}
+                  {deal.documents.listing_agreement.verification_notes}
                 </div>
               )}
             </div>

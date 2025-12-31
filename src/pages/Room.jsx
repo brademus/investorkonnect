@@ -210,7 +210,7 @@ export default function Room() {
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
 
-  // Fetch current room directly for instant loading
+  // Fetch current room with server-side access control
   useEffect(() => {
     if (!roomId) return;
     
@@ -221,29 +221,35 @@ export default function Room() {
         if (roomData && roomData.length > 0) {
           const room = roomData[0];
           
-          // Always fetch deal data if deal_id exists to get contract info
+          // Use server-side access-controlled deal fetch
           if (room.deal_id) {
-            const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
-            if (dealData && dealData.length > 0) {
-              const deal = dealData[0];
-              setDeal(deal); // Store deal separately
-              setCurrentRoom({
-                ...room,
-                title: deal.title,
-                property_address: deal.property_address,
-                city: deal.city,
-                state: deal.state,
-                county: deal.county,
-                zip: deal.zip,
-                budget: deal.purchase_price,
-                pipeline_stage: deal.pipeline_stage,
-                closing_date: deal.key_dates?.closing_date,
-                deal_assigned_agent_id: deal.agent_id,
-                // Merge contract fields from both room and deal
-                contract_url: room.contract_url || deal.contract_url || null,
-                contract_document: room.contract_document || deal.contract_document || null
+            try {
+              const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+                dealId: room.deal_id
               });
-            } else {
+              const deal = dealResponse.data;
+              
+              if (deal) {
+                setDeal(deal); // Store redacted deal separately
+                setCurrentRoom({
+                  ...room,
+                  title: deal.title,
+                  property_address: deal.property_address, // Already redacted by server
+                  city: deal.city,
+                  state: deal.state,
+                  county: deal.county,
+                  zip: deal.zip,
+                  budget: deal.purchase_price,
+                  pipeline_stage: deal.pipeline_stage,
+                  closing_date: deal.key_dates?.closing_date,
+                  deal_assigned_agent_id: deal.agent_id,
+                  is_fully_signed: deal.is_fully_signed
+                });
+              } else {
+                setCurrentRoom(room);
+              }
+            } catch (error) {
+              console.error('Failed to fetch deal (access denied?):', error);
               setCurrentRoom(room);
             }
           } else {
@@ -1136,11 +1142,14 @@ ${dealContext}`;
                         <Button
                           onClick={async () => {
                             try {
-                              await base44.entities.Room.update(roomId, {
-                                agreement_status: 'sent'
+                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                                roomId: roomId,
+                                action: 'send_agreement'
                               });
-                              toast.success('Agreement sent for signature!');
-                              window.location.reload();
+                              if (response.data?.success) {
+                                toast.success('Agreement sent for signature!');
+                                window.location.reload();
+                              }
                             } catch (error) {
                               toast.error('Failed to send agreement');
                             }
@@ -1161,12 +1170,15 @@ ${dealContext}`;
                         <Button
                           onClick={async () => {
                             try {
-                              const newStatus = profile?.user_role === 'investor' ? 'investor_signed' : 'agent_signed';
-                              await base44.entities.Room.update(roomId, {
-                                agreement_status: newStatus
+                              const action = profile?.user_role === 'investor' ? 'investor_sign' : 'agent_sign';
+                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                                roomId: roomId,
+                                action: action
                               });
-                              toast.success('You have signed the agreement!');
-                              window.location.reload();
+                              if (response.data?.success) {
+                                toast.success('You have signed the agreement!');
+                                window.location.reload();
+                              }
                             } catch (error) {
                               toast.error('Failed to sign agreement');
                             }
@@ -1206,11 +1218,16 @@ ${dealContext}`;
                         <Button
                           onClick={async () => {
                             try {
-                              await base44.entities.Room.update(roomId, {
-                                agreement_status: 'fully_signed'
+                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                                roomId: roomId,
+                                action: 'finalize_signatures'
                               });
-                              toast.success('Agreement fully executed! Full details now unlocked.');
-                              window.location.reload();
+                              if (response.data?.success) {
+                                toast.success('Agreement fully executed! Full details now unlocked.');
+                                queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                                window.location.reload();
+                              }
                             } catch (error) {
                               toast.error('Failed to sign agreement');
                             }
@@ -1227,11 +1244,16 @@ ${dealContext}`;
                         <Button
                           onClick={async () => {
                             try {
-                              await base44.entities.Room.update(roomId, {
-                                agreement_status: 'fully_signed'
+                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                                roomId: roomId,
+                                action: 'finalize_signatures'
                               });
-                              toast.success('Agreement fully executed! Full details now unlocked.');
-                              window.location.reload();
+                              if (response.data?.success) {
+                                toast.success('Agreement fully executed! Full details now unlocked.');
+                                queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                                window.location.reload();
+                              }
                             } catch (error) {
                               toast.error('Failed to sign agreement');
                             }
@@ -1385,25 +1407,30 @@ ${dealContext}`;
                           if (roomData && roomData.length > 0) {
                             const room = roomData[0];
                             if (room.deal_id) {
-                              const dealData = await base44.entities.Deal.filter({ id: room.deal_id });
-                              if (dealData && dealData.length > 0) {
-                                const deal = dealData[0];
-                                setDeal(deal);
-                                setCurrentRoom({
-                                  ...room,
-                                  title: deal.title,
-                                  property_address: deal.property_address,
-                                  city: deal.city,
-                                  state: deal.state,
-                                  county: deal.county,
-                                  zip: deal.zip,
-                                  budget: deal.purchase_price,
-                                  pipeline_stage: deal.pipeline_stage,
-                                  closing_date: deal.key_dates?.closing_date,
-                                  deal_assigned_agent_id: deal.agent_id,
-                                  contract_url: room.contract_url || deal.contract_url || null,
-                                  contract_document: room.contract_document || deal.contract_document || null
+                              try {
+                                const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+                                  dealId: room.deal_id
                                 });
+                                const deal = dealResponse.data;
+                                if (deal) {
+                                  setDeal(deal);
+                                  setCurrentRoom({
+                                    ...room,
+                                    title: deal.title,
+                                    property_address: deal.property_address,
+                                    city: deal.city,
+                                    state: deal.state,
+                                    county: deal.county,
+                                    zip: deal.zip,
+                                    budget: deal.purchase_price,
+                                    pipeline_stage: deal.pipeline_stage,
+                                    closing_date: deal.key_dates?.closing_date,
+                                    deal_assigned_agent_id: deal.agent_id,
+                                    is_fully_signed: deal.is_fully_signed
+                                  });
+                                }
+                              } catch (error) {
+                                console.error('Failed to fetch deal:', error);
                               }
                             }
                           }
@@ -1421,8 +1448,14 @@ ${dealContext}`;
                     onUpdate={() => {
                       const fetchDeal = async () => {
                         if (currentRoom?.deal_id) {
-                          const dealData = await base44.entities.Deal.filter({ id: currentRoom.deal_id });
-                          if (dealData?.[0]) setDeal(dealData[0]);
+                          try {
+                            const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+                              dealId: currentRoom.deal_id
+                            });
+                            if (dealResponse.data) setDeal(dealResponse.data);
+                          } catch (error) {
+                            console.error('Failed to fetch deal:', error);
+                          }
                         }
                       };
                       fetchDeal();
@@ -1662,13 +1695,14 @@ ${dealContext}`;
                     <Button
                       onClick={async () => {
                         try {
-                          const response = await base44.functions.invoke('respondToDealRequest', {
-                            room_id: roomId,
+                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                            roomId: roomId,
                             action: 'accept'
                           });
                           if (response.data?.success) {
                             toast.success("Deal accepted! More details now visible.");
                             queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                            queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                             window.location.reload();
                           }
                         } catch (error) {
@@ -1683,8 +1717,8 @@ ${dealContext}`;
                       onClick={async () => {
                         if (!confirm("Are you sure you want to decline this deal request?")) return;
                         try {
-                          const response = await base44.functions.invoke('respondToDealRequest', {
-                            room_id: roomId,
+                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                            roomId: roomId,
                             action: 'reject'
                           });
                           if (response.data?.success) {

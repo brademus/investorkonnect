@@ -271,16 +271,18 @@ function PipelineContent() {
 
   const handleStageChange = async (dealId, newStage) => {
     try {
-      // Store new stage directly (no reverse mapping needed)
+      // Normalize stage before saving (ensure canonical ID)
+      const normalizedNewStage = normalizeStage(newStage);
+
       await base44.entities.Deal.update(dealId, {
-        pipeline_stage: newStage
+        pipeline_stage: normalizedNewStage
       });
-      
+
       // Invalidate Dashboard caches to update counts immediately
       queryClient.invalidateQueries({ queryKey: ['investorDeals', profile.id] });
       queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      
+
       // Refetch local data
       refetchDeals();
     } catch (error) {
@@ -291,11 +293,11 @@ function PipelineContent() {
 
   const handleDragEnd = async (result) => {
     if (!result.destination) return;
-    
+
     const { draggableId, destination } = result;
     const dealId = draggableId;
-    const newStage = destination.droppableId;
-    
+    const newStage = normalizeStage(destination.droppableId); // Normalize before saving
+
     // Update the deal's pipeline stage
     await handleStageChange(dealId, newStage);
   };
