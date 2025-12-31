@@ -51,6 +51,7 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
     try {
       const { file_url } = await base44.integrations.Core.UploadFile({ file });
       
+      // PRODUCTION: Write ONLY to Deal.documents (canonical source)
       const updatedDocs = {
         ...documents,
         [docKey]: {
@@ -61,6 +62,7 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
         }
       };
 
+      // Single source of truth: Deal entity only
       await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
       
       toast.success(`${file.name} uploaded successfully`);
