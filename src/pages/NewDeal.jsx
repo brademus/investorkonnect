@@ -146,8 +146,9 @@ export default function NewDeal() {
       return;
     }
 
-    // Save to sessionStorage
+    // Save to sessionStorage - include dealId if editing
     sessionStorage.setItem("newDealDraft", JSON.stringify({
+      dealId: dealId || null, // Preserve dealId for edit flow
       propertyAddress,
       city,
       state,
@@ -178,7 +179,12 @@ export default function NewDeal() {
       hasBasement
     }));
 
-    navigate(createPageUrl("ContractVerify"));
+    // Navigate with dealId if editing
+    if (dealId) {
+      navigate(`${createPageUrl("ContractVerify")}?dealId=${dealId}`);
+    } else {
+      navigate(createPageUrl("ContractVerify"));
+    }
   };
 
   if (loading) {
