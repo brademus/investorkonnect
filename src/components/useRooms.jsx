@@ -59,8 +59,11 @@ function normalizeRoom(room) {
     property_address: room.property_address || null,
     customer_name: room.customer_name || room.counterparty_name || null,
     budget: room.budget || room.contract_price || null,
-    pipeline_stage: room.pipeline_stage || (room.deal_id ? 'new_deal_under_contract' : null),
+    pipeline_stage: room.pipeline_stage || (room.deal_id ? 'new_listings' : null),
     deal_title: room.deal_title || room.title || null,
+    // Status tracking - use request_status + agreement_status for lock-in
+    is_orphan: !room.agentId && !room.agent_id,
+    has_agent_locked_in: room.request_status === 'accepted' || room.request_status === 'signed' || room.agreement_status === 'fully_signed',
     // Last message already fetched by backend
     last_message: room.last_message,
     last_message_text: room.last_message_text,
@@ -70,7 +73,7 @@ function normalizeRoom(room) {
 /**
  * Shared hook for loading rooms/deals across all pages
  * Ensures consistency between Pipeline, Room/Messages, and other pages
- * Merges database rooms with client-side fetched deals for robustness
+ * NO VIRTUAL ROOM INJECTION - Database rooms only
  */
 export function useRooms() {
   return useQuery({
@@ -80,11 +83,11 @@ export function useRooms() {
     refetchOnMount: false, // Don't refetch on mount if we have cached data
     refetchOnWindowFocus: false,
     refetchOnReconnect: true,
-    refetchInterval: 15000, // Poll every 15 seconds (much less aggressive)
+    refetchInterval: 15000, // Poll every 15 seconds
     placeholderData: (prev) => prev, // Keep previous data while loading
     queryFn: async () => {
       try {
-        // 1. Load from backend function listMyRooms
+        // Load from backend function listMyRooms (DB-only)
         let dbRooms = [];
         try {
           const response = await base44.functions.invoke('listMyRooms');
@@ -93,119 +96,9 @@ export function useRooms() {
           console.log('[useRooms] Backend listMyRooms failed:', err.message);
         }
         
-        // 2. Client-Side Deal Enrichment (Backup for Backend)
-        // This ensures that even if backend inference fails, we patch it here
-        try {
-            const user = await base44.auth.me();
-            if (user) {
-                // Email-first profile lookup (matches useCurrentProfile pattern)
-                const emailLower = user.email.toLowerCase().trim();
-                let profiles = await base44.entities.Profile.filter({ email: emailLower });
-                
-                // Fallback to user_id if not found by email
-                if (!profiles || profiles.length === 0) {
-                  profiles = await base44.entities.Profile.filter({ user_id: user.id });
-                }
-                
-                if (profiles.length > 0) {
-                    const myProfileId = profiles[0].id;
-                    
-                    // Fetch all deals for this user
-                    const myDeals = await base44.entities.Deal.filter({ investor_id: myProfileId });
-                    
-                    // Identify the "Active" deal (latest one) for inference
-                    // Broader status check to catch more deals
-                    const activeDeals = myDeals
-                        .filter(d => !d.status || ['active', 'new_deal_under_contract', 'under_contract', 'draft'].includes(d.status))
-                        .sort((a,b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
-                    
-                    const latestDeal = activeDeals[0];
-
-                    // 1. Enrich existing rooms with deal data
-                    dbRooms = dbRooms.map(r => {
-                        let dealToUse = null;
-
-                        // Case A: Room has explicit deal_id -> Find it in myDeals
-                        if (r.deal_id) {
-                            dealToUse = myDeals.find(d => d.id === r.deal_id);
-                        }
-                        
-                        // Case B: Inference only if no explicit deal_id (No link OR Broken link)
-                        if (!r.deal_id && !dealToUse && r.investorId === myProfileId && latestDeal) {
-                            dealToUse = latestDeal;
-                        }
-
-                        if (dealToUse) {
-                            return {
-                                ...r,
-                                deal_id: dealToUse.id, // Ensure deal_id is set
-                                deal_title: dealToUse.title,
-                                property_address: dealToUse.property_address,
-                                budget: dealToUse.purchase_price,
-                                pipeline_stage: dealToUse.pipeline_stage,
-                                suggested_deal_id: dealToUse.id,
-                                deal_assigned_agent_id: dealToUse.agent_id,
-                                closing_date: dealToUse.key_dates?.closing_date,
-                                city: dealToUse.city,
-                                state: dealToUse.state,
-                                county: dealToUse.county,
-                                zip: dealToUse.zip,
-                                status: dealToUse.status
-                            };
-                        }
-                        return r;
-                    });
-
-                    // 2. Clean up exploration rooms for deals with locked-in agents
-                    // Remove rooms where deal has agent_id but room has suggested_deal_id
-                    dbRooms = dbRooms.filter(r => {
-                        // If room has suggested_deal_id (exploration room)
-                        if (r.suggested_deal_id && !r.deal_id) {
-                            const deal = myDeals.find(d => d.id === r.suggested_deal_id);
-                            // Keep only if deal doesn't have locked-in agent
-                            return deal && !deal.agent_id;
-                        }
-                        return true;
-                    });
-
-                    // 3. Inject Orphan Deal if missing
-                    // Check if we have an active deal without an agent that isn't represented in the rooms list
-                    if (latestDeal && !latestDeal.agent_id) {
-                        const isRepresented = dbRooms.some(r => 
-                            r.deal_id === latestDeal.id || 
-                            r.suggested_deal_id === latestDeal.id ||
-                            (r.is_orphan && r.id === `virtual_${latestDeal.id}`)
-                        );
-
-                        if (!isRepresented) {
-                            console.log("[useRooms] Injecting client-side orphan deal:", latestDeal.id);
-                            dbRooms.push({
-                                id: `virtual_${latestDeal.id}`,
-                                deal_id: latestDeal.id,
-                                title: latestDeal.title,
-                                property_address: latestDeal.property_address,
-                                city: latestDeal.city,
-                                state: latestDeal.state,
-                                budget: latestDeal.purchase_price,
-                                pipeline_stage: latestDeal.pipeline_stage || 'new_deal_under_contract',
-                                created_date: latestDeal.created_date,
-                                counterparty_name: 'No Agent Selected',
-                                counterparty_role: 'none',
-                                is_orphan: true
-                            });
-                            
-                            // Sort again to ensure it appears at top if new
-                            dbRooms.sort((a, b) => new Date(b.created_date || 0) - new Date(a.created_date || 0));
-                        }
-                    }
-                }
-            }
-        } catch (e) {
-            console.error("[useRooms] Client-side enrichment failed:", e);
-        }
-
-        // 3. Enrich with Counterparty Profiles
-        let allRooms = [...dbRooms];
+        // NO virtual room injection - orphan deals should appear in Pipeline only
+        
+        // Enrich with Counterparty Profiles
         const user = await base44.auth.me();
         let myProfileId = null;
         if (user) {
@@ -222,12 +115,13 @@ export function useRooms() {
             myProfileId = profiles[0].id;
           }
         }
-        allRooms = await Promise.all(allRooms.map(room => enrichRoomWithProfile(room, myProfileId)));
         
-        // 4. Normalize (sync - backend already has messages)
+        const allRooms = await Promise.all(dbRooms.map(room => enrichRoomWithProfile(room, myProfileId)));
+        
+        // Normalize
         const normalizedRooms = allRooms.map(normalizeRoom);
         
-        console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms`);
+        console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms (DB-only, no virtual injection)`);
         
         return normalizedRooms;
       } catch (error) {
