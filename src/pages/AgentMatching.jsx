@@ -66,12 +66,13 @@ export default function AgentMatching() {
         const matchRes = await base44.functions.invoke('matchAgentsForInvestor', {
           investorId: profile.id,
           state: loadedDeal.state,
-          limit: 10
+          limit: 3 // ENFORCED: Request only top 3 agents
         });
 
         if (matchRes.data?.matches && matchRes.data.matches.length > 0) {
           console.log('[AgentMatching] AI matched agents:', matchRes.data.matches.length);
-          matchedAgents = matchRes.data.matches;
+          // ENFORCED: Limit to top 3
+          matchedAgents = matchRes.data.matches.slice(0, 3);
         }
       } catch (matchError) {
         console.log('[AgentMatching] AI matching failed, using fallback:', matchError.message);
@@ -96,16 +97,17 @@ export default function AgentMatching() {
         
         console.log('[AgentMatching] Agents in state:', stateAgents.length);
         
-        matchedAgents = stateAgents.map(agent => ({
+        // ENFORCED: Format and limit to top 3 only
+        matchedAgents = stateAgents.slice(0, 3).map(agent => ({
           agent: agent,
           score: 50,
           explanation: `Licensed agent in ${loadedDeal.state}`
         }));
         
-        // If no agents in state, show all agents
+        // If no agents in state, show top 3 from all agents
         if (matchedAgents.length === 0) {
-          console.log('[AgentMatching] No agents in state, showing all agents');
-          matchedAgents = allAgents.map(agent => ({
+          console.log('[AgentMatching] No agents in state, showing top 3 available');
+          matchedAgents = allAgents.slice(0, 3).map(agent => ({
             agent: agent,
             score: 40,
             explanation: `Available agent`
@@ -113,7 +115,7 @@ export default function AgentMatching() {
         }
       }
 
-      console.log('[AgentMatching] Final agent count:', matchedAgents.length);
+      console.log('[AgentMatching] Final agent count (max 3):', matchedAgents.length);
       setAgents(matchedAgents);
 
     } catch (error) {
@@ -229,9 +231,9 @@ export default function AgentMatching() {
           <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-[#E3C567]" />
           </div>
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Top Matched Agents</h1>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Top 3 Matched Agents</h1>
           <p className="text-[#808080]">
-            Choose the best agent for your deal at {deal?.property_address}
+            Best agents for {deal?.city}, {deal?.state} • Select one to send your deal
           </p>
         </div>
 
@@ -249,7 +251,7 @@ export default function AgentMatching() {
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {agents.slice(0, 3).map((match, index) => {
+              {agents.map((match, index) => {
               const agent = match.agent;
               const agentId = agent.id;
               const headshotUrl = agent.headshotUrl || agent.agent?.headshot_url;

@@ -242,7 +242,7 @@ export default function ContractVerify() {
         contract_url: fileUrl,
         contract_document: contractDocument,
         status: 'active',
-        pipeline_stage: 'new_deal_under_contract'
+        pipeline_stage: 'new_listings'
       });
 
       // Store deal ID and terms for agent matching
