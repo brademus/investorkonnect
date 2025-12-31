@@ -235,7 +235,7 @@ function PipelineContent() {
         closing_date: deal.key_dates?.closing_date,
 
         // Privacy flags
-        is_fully_signed: room?.agreement_status === 'fully_signed' || room?.request_status === 'signed',
+        is_fully_signed: room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed',
 
         is_orphan: !hasAgentAccepted && !hasAgentPending
       };

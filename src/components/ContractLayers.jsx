@@ -94,11 +94,14 @@ Return a verification result with any discrepancies found.
   const getContractStatus = (type) => {
     switch (type) {
       case 'seller':
-        return deal?.contract_url || deal?.contract_document?.url ? 'uploaded' : 'pending';
+        return deal?.contract_url || deal?.contract_document?.url ? 
+          (deal?.contract_document?.verified ? 'verified' : 'uploaded') : 'pending';
       case 'internal':
-        return room?.internal_agreement_status === 'both_signed' ? 'signed' : 
-               room?.internal_agreement_status === 'investor_signed' ? 'pending_agent' :
-               room?.proposed_terms ? 'pending_signatures' : 'pending';
+        return room?.agreement_status === 'fully_signed' ? 'signed' : 
+               room?.agreement_status === 'investor_signed' ? 'pending_agent' :
+               room?.agreement_status === 'agent_signed' ? 'pending_investor' :
+               room?.agreement_status === 'sent' ? 'sent' :
+               room?.proposed_terms ? 'draft' : 'pending';
       case 'listing':
         return room?.listing_agreement_document?.url ? 
           (room?.listing_agreement_document?.verified ? 'verified' : 'uploaded') : 
@@ -111,10 +114,12 @@ Return a verification result with any discrepancies found.
   const StatusBadge = ({ status }) => {
     const config = {
       uploaded: { label: 'Uploaded', icon: CheckCircle, className: 'bg-[#34D399]/20 text-[#34D399] border-[#34D399]/30' },
-      signed: { label: 'Signed', icon: CheckCircle, className: 'bg-[#34D399]/20 text-[#34D399] border-[#34D399]/30' },
+      signed: { label: 'Fully Signed', icon: CheckCircle, className: 'bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30' },
       verified: { label: 'Verified', icon: CheckCircle, className: 'bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30' },
-      pending_signatures: { label: 'Pending Signatures', icon: Clock, className: 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30' },
-      pending_agent: { label: 'Awaiting Agent Signature', icon: Clock, className: 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30' },
+      draft: { label: 'Draft', icon: Clock, className: 'bg-[#808080]/20 text-[#808080] border-[#808080]/30' },
+      sent: { label: 'Sent for Signature', icon: Clock, className: 'bg-[#60A5FA]/20 text-[#60A5FA] border-[#60A5FA]/30' },
+      pending_agent: { label: 'Awaiting Agent', icon: Clock, className: 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30' },
+      pending_investor: { label: 'Awaiting Investor', icon: Clock, className: 'bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30' },
       pending_upload: { label: 'Pending Upload', icon: AlertCircle, className: 'bg-[#808080]/20 text-[#808080] border-[#808080]/30' },
       pending: { label: 'Pending', icon: Clock, className: 'bg-[#808080]/20 text-[#808080] border-[#808080]/30' }
     }[status] || { label: 'Unknown', icon: AlertCircle, className: 'bg-[#808080]/20 text-[#808080] border-[#808080]/30' };
