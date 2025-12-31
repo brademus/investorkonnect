@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
-import { getRoomsFromListMyRoomsResponse } from '@/components/utils/getRoomsFromListMyRooms';
 
 /**
  * Enrich room with full profile data from matched counterparty
@@ -72,58 +71,29 @@ function normalizeRoom(room) {
 
 /**
  * Shared hook for loading rooms/deals across all pages
- * Ensures consistency between Pipeline, Room/Messages, and other pages
+ * Uses server-side enriched endpoint - NO client N+1 queries
  * NO VIRTUAL ROOM INJECTION - Database rooms only
  */
 export function useRooms() {
   return useQuery({
     queryKey: ['rooms'],
-    staleTime: 10000, // Consider data fresh for 10 seconds
-    gcTime: 1000 * 60 * 60, // Cache for 1 hour
-    refetchOnMount: false, // Don't refetch on mount if we have cached data
-    refetchOnWindowFocus: false,
+    staleTime: 1000 * 30, // Consider data fresh for 30 seconds
+    gcTime: 1000 * 60 * 10, // Cache for 10 minutes
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
     refetchOnReconnect: true,
-    refetchInterval: 15000, // Poll every 15 seconds
+    refetchInterval: 1000 * 30, // Poll every 30 seconds (reduced from 15)
+    refetchIntervalInBackground: false, // Pause when tab hidden
     placeholderData: (prev) => prev, // Keep previous data while loading
     queryFn: async () => {
       try {
-        // Load from backend function listMyRooms (DB-only)
-        let dbRooms = [];
-        try {
-          const response = await base44.functions.invoke('listMyRooms');
-          dbRooms = getRoomsFromListMyRoomsResponse(response);
-        } catch (err) {
-          console.log('[useRooms] Backend listMyRooms failed:', err.message);
-        }
+        // Use server-side enriched endpoint - eliminates N+1 profile fetches
+        const response = await base44.functions.invoke('listMyRoomsEnriched');
+        const rooms = response.data?.rooms || [];
         
-        // NO virtual room injection - orphan deals should appear in Pipeline only
+        console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side, no N+1)`);
         
-        // Enrich with Counterparty Profiles
-        const user = await base44.auth.me();
-        let myProfileId = null;
-        if (user) {
-          // Email-first profile lookup (matches useCurrentProfile pattern)
-          const emailLower = user.email.toLowerCase().trim();
-          let profiles = await base44.entities.Profile.filter({ email: emailLower });
-          
-          // Fallback to user_id if not found by email
-          if (!profiles || profiles.length === 0) {
-            profiles = await base44.entities.Profile.filter({ user_id: user.id });
-          }
-          
-          if (profiles.length > 0) {
-            myProfileId = profiles[0].id;
-          }
-        }
-        
-        const allRooms = await Promise.all(dbRooms.map(room => enrichRoomWithProfile(room, myProfileId)));
-        
-        // Normalize
-        const normalizedRooms = allRooms.map(normalizeRoom);
-        
-        console.log(`[useRooms] Loaded ${normalizedRooms.length} rooms (DB-only, no virtual injection)`);
-        
-        return normalizedRooms;
+        return rooms;
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
         return [];
