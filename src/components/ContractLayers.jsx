@@ -10,8 +10,12 @@ export default function ContractLayers({ room, deal, onUpdate, userRole }) {
 
   const handleListingAgreementUpload = async (event) => {
     const file = event.target.files?.[0];
-    if (!file || !file.type.includes('pdf')) {
-      toast.error("Please upload a PDF file");
+    if (!file) return;
+    
+    const { validatePDF } = await import('@/components/utils/fileValidation');
+    const validation = validatePDF(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
       return;
     }
 
@@ -32,9 +36,8 @@ SELLER CONTRACT DETAILS:
 - Closing Date: ${deal?.key_dates?.closing_date || 'N/A'}
 
 INTERNAL AGREEMENT TERMS:
-- Commission Type: ${room?.proposed_terms?.commission_type || 'N/A'}
-- Commission Rate: ${room?.proposed_terms?.commission_percentage ? `${room.proposed_terms.commission_percentage}%` : 'N/A'}
-- Flat Fee: ${room?.proposed_terms?.flat_fee ? `$${room.proposed_terms.flat_fee.toLocaleString()}` : 'N/A'}
+- Seller Agent Commission: ${room?.proposed_terms?.seller_commission_type === 'percentage' ? `${room.proposed_terms.seller_commission_percentage}%` : room?.proposed_terms?.seller_flat_fee ? `$${room.proposed_terms.seller_flat_fee.toLocaleString()}` : 'N/A'}
+- Buyer Agent Commission: ${room?.proposed_terms?.buyer_commission_type === 'percentage' ? `${room.proposed_terms.buyer_commission_percentage}%` : room?.proposed_terms?.buyer_flat_fee ? `$${room.proposed_terms.buyer_flat_fee.toLocaleString()}` : 'N/A'}
 - Agreement Length: ${room?.proposed_terms?.agreement_length ? `${room.proposed_terms.agreement_length} days` : 'N/A'}
 
 Analyze the uploaded listing agreement and check if:
@@ -182,10 +185,18 @@ Return a verification result with any discrepancies found.
           </div>
           {room?.proposed_terms && (
             <div className="text-xs text-[#FAFAFA] space-y-1 mt-2">
-              <p>Commission: {room.proposed_terms.commission_type === 'percentage' 
-                ? `${room.proposed_terms.commission_percentage}%` 
-                : `$${room.proposed_terms.flat_fee?.toLocaleString()}`}
-              </p>
+              {room.proposed_terms.seller_commission_type && (
+                <p>Seller Agent: {room.proposed_terms.seller_commission_type === 'percentage' 
+                  ? `${room.proposed_terms.seller_commission_percentage}%` 
+                  : `$${room.proposed_terms.seller_flat_fee?.toLocaleString()}`}
+                </p>
+              )}
+              {room.proposed_terms.buyer_commission_type && (
+                <p>Buyer Agent: {room.proposed_terms.buyer_commission_type === 'percentage' 
+                  ? `${room.proposed_terms.buyer_commission_percentage}%` 
+                  : `$${room.proposed_terms.buyer_flat_fee?.toLocaleString()}`}
+                </p>
+              )}
               {room.proposed_terms.agreement_length && (
                 <p>Term: {room.proposed_terms.agreement_length} days</p>
               )}

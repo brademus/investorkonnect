@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
@@ -23,7 +23,21 @@ const STEPS = [
 ];
 
 export default function DealWizard() {
+  // DISABLED: This flow is deprecated. Users should use NewDeal → ContractVerify → AgentMatching
   const navigate = useNavigate();
+  
+  useEffect(() => {
+    toast.info("Redirecting to new deal flow...");
+    navigate(createPageUrl("NewDeal"), { replace: true });
+  }, [navigate]);
+  
+  return (
+    <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <p className="text-[#808080]">Redirecting...</p>
+    </div>
+  );
+  
+  /* DEPRECATED CODE - kept for reference
   const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
   const { profile, loading: profileLoading } = useCurrentProfile();
@@ -533,6 +547,10 @@ export default function DealWizard() {
     </div>
   );
 
+  */ 
+}
+
+/* DEPRECATED UI CODE
   return (
     <div className="min-h-screen bg-[#050505]">
       <header className="bg-[#0D0D0D] border-b border-[#1F1F1F] sticky top-0 z-10">
@@ -558,4 +576,4 @@ export default function DealWizard() {
       </main>
     </div>
   );
-}
+*/
