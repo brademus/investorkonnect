@@ -159,10 +159,15 @@ Return a verification result with any discrepancies found.
               <p className="text-xs text-[#808080]">Purchase agreement uploaded by investor</p>
             </div>
           </div>
-          {userRole === 'agent' && room?.request_status === 'requested' ? (
+          {userRole === 'agent' && (room?.request_status === 'requested' || room?.agreement_status !== 'fully_signed') ? (
             <div className="text-xs text-[#F59E0B] bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded p-2 flex items-center gap-2">
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
-              <span>Hidden until you accept this deal request</span>
+              <span>
+                {room?.request_status === 'requested' 
+                  ? 'Hidden until you accept this deal request'
+                  : 'Hidden until agreement is fully signed'
+                }
+              </span>
             </div>
           ) : (deal?.contract_url || deal?.contract_document?.url) ? (
             <a

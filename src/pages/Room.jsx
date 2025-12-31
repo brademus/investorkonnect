@@ -606,8 +606,8 @@ ${dealContext}`;
                 <div className="flex items-center gap-3 text-xs opacity-90">
                    <div className="flex items-center gap-1.5 text-[#CCC]">
                      <span>
-                       {/* Privacy: Hide full address from agents until signed */}
-                       {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
+                       {/* Privacy: Hide full address from agents until fully signed */}
+                       {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
                          ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'} ${currentRoom.zip || ''}`
                          : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
@@ -664,7 +664,7 @@ ${dealContext}`;
               {activeTab === 'details' && (
                 <div className="space-y-6">
                   {/* Privacy Warning for Agents */}
-                  {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed' && (
+                  {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed' && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5">
                       <div className="flex items-start gap-3">
                         <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
@@ -677,7 +677,7 @@ ${dealContext}`;
                           </h4>
                           <p className="text-sm text-[#FAFAFA]/80">
                             {currentRoom?.request_status === 'accepted'
-                              ? 'Full property address and investor contact details will be visible after both parties sign the agreement.'
+                              ? 'Full property address and seller details will be visible after both parties sign the agreement.'
                               : 'Accept this deal request to enable chat and view limited deal information. Full details unlock after signing the agreement.'
                             }
                           </p>
@@ -1106,13 +1106,25 @@ ${dealContext}`;
                         <Shield className="w-5 h-5 text-[#E3C567]" />
                         My Agreement
                       </h4>
-                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                      {currentRoom?.agreement_status === 'fully_signed' ? (
                         <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
-                          ✓ Active Agreement
+                          ✓ Fully Signed
+                        </span>
+                      ) : currentRoom?.agreement_status === 'sent' ? (
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30">
+                          Pending Signatures
+                        </span>
+                      ) : currentRoom?.agreement_status === 'investor_signed' ? (
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                          Awaiting Agent
+                        </span>
+                      ) : currentRoom?.agreement_status === 'agent_signed' ? (
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                          Awaiting Investor
                         </span>
                       ) : (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30">
-                          ⏳ Pending
+                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#808080]/20 text-[#808080] border border-[#808080]/30">
+                          Draft
                         </span>
                       )}
                     </div>
@@ -1120,29 +1132,125 @@ ${dealContext}`;
                       This is your agreement summary for quick reference. Not a legal document.
                     </p>
 
-                    {/* Send Contract Button - Only show if accepted but not signed */}
-                    {currentRoom?.request_status === 'accepted' && (
+                    {/* Agreement Actions based on status */}
+                    {currentRoom?.request_status === 'accepted' && !currentRoom?.agreement_status && (
                       <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
                         <Button
-                          onClick={() => {
-                            toast.info('Contract execution flow coming soon!\n\nNext steps:\n• Generate formal agreement\n• Send for e-signature\n• Both parties sign\n• Full details unlock');
+                          onClick={async () => {
+                            try {
+                              await base44.entities.Room.update(roomId, {
+                                agreement_status: 'sent'
+                              });
+                              toast.success('Agreement sent for signature!');
+                              window.location.reload();
+                            } catch (error) {
+                              toast.error('Failed to send agreement');
+                            }
                           }}
                           className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
                         >
-                          Send Contract for Signing
+                          Send Agreement for Signing
                         </Button>
                         <p className="text-xs text-[#808080] mt-3 text-center">
                           Generate and send the investor-agent agreement for e-signature. Full deal details unlock after both parties sign.
                         </p>
                       </div>
                     )}
-                    
-                    {/* Contract Signed - Show Status */}
-                    {currentRoom?.request_status === 'signed' && (
+
+                    {/* Agreement sent - show signing options */}
+                    {currentRoom?.agreement_status === 'sent' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <Button
+                          onClick={async () => {
+                            try {
+                              const newStatus = profile?.user_role === 'investor' ? 'investor_signed' : 'agent_signed';
+                              await base44.entities.Room.update(roomId, {
+                                agreement_status: newStatus
+                              });
+                              toast.success('You have signed the agreement!');
+                              window.location.reload();
+                            } catch (error) {
+                              toast.error('Failed to sign agreement');
+                            }
+                          }}
+                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
+                        >
+                          Sign Agreement
+                        </Button>
+                        <p className="text-xs text-[#808080] mt-3 text-center">
+                          Review and sign the agreement to proceed with this deal.
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Waiting for other party */}
+                    {currentRoom?.agreement_status === 'investor_signed' && profile?.user_role === 'investor' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                          <p className="text-sm font-semibold text-[#60A5FA]">Waiting for Agent to Sign</p>
+                          <p className="text-xs text-[#808080] mt-1">You'll be notified when the agent signs.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentRoom?.agreement_status === 'agent_signed' && profile?.user_role === 'agent' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                          <p className="text-sm font-semibold text-[#60A5FA]">Waiting for Investor to Sign</p>
+                          <p className="text-xs text-[#808080] mt-1">You'll be notified when the investor signs.</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Both signed - allow other party to sign */}
+                    {currentRoom?.agreement_status === 'investor_signed' && profile?.user_role === 'agent' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <Button
+                          onClick={async () => {
+                            try {
+                              await base44.entities.Room.update(roomId, {
+                                agreement_status: 'fully_signed'
+                              });
+                              toast.success('Agreement fully executed! Full details now unlocked.');
+                              window.location.reload();
+                            } catch (error) {
+                              toast.error('Failed to sign agreement');
+                            }
+                          }}
+                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
+                        >
+                          Sign Agreement (Investor Already Signed)
+                        </Button>
+                      </div>
+                    )}
+
+                    {currentRoom?.agreement_status === 'agent_signed' && profile?.user_role === 'investor' && (
+                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
+                        <Button
+                          onClick={async () => {
+                            try {
+                              await base44.entities.Room.update(roomId, {
+                                agreement_status: 'fully_signed'
+                              });
+                              toast.success('Agreement fully executed! Full details now unlocked.');
+                              window.location.reload();
+                            } catch (error) {
+                              toast.error('Failed to sign agreement');
+                            }
+                          }}
+                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
+                        >
+                          Sign Agreement (Agent Already Signed)
+                        </Button>
+                      </div>
+                    )}
+
+                    {/* Fully Signed - Show Status */}
+                    {currentRoom?.agreement_status === 'fully_signed' && (
                       <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
                         <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
                           <CheckCircle className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-[#10B981]">Agreement Signed</p>
+                          <p className="text-sm font-semibold text-[#10B981]">Agreement Fully Signed</p>
                           <p className="text-xs text-[#808080] mt-1">Both parties have signed. Full details are now available.</p>
                         </div>
                       </div>
@@ -1228,8 +1336,8 @@ ${dealContext}`;
                             <p className="text-sm font-medium text-[#808080]">
                               Seller ({deal.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
                             </p>
-                            {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed' ? (
-                              <p className="text-sm text-[#F59E0B] mt-1">Hidden until agreement signed</p>
+                            {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed' ? (
+                              <p className="text-sm text-[#F59E0B] mt-1">Hidden until agreement fully signed</p>
                             ) : (
                               <p className="text-md font-semibold text-[#FAFAFA] mt-1">
                                 {deal.seller_info.seller_name}
@@ -1591,16 +1699,22 @@ ${dealContext}`;
                 </div>
               )}
               
-              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && (
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && currentRoom?.agreement_status !== 'fully_signed' && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                        Agreement pending - Limited details visible
+                        {currentRoom?.agreement_status === 'sent' ? 'Sign Agreement to Unlock' :
+                         currentRoom?.agreement_status === 'investor_signed' ? 'Sign to Unlock Full Details' :
+                         currentRoom?.agreement_status === 'agent_signed' ? 'Waiting for Investor' :
+                         'Agreement Pending'}
                       </h3>
                       <p className="text-sm text-[#FAFAFA]/80">
-                        You can chat and view general deal info. Full property address and investor contact details will unlock after both parties sign the agreement.
+                        {currentRoom?.agreement_status === 'sent' ? 'Review and sign the agreement to unlock full property details.' :
+                         currentRoom?.agreement_status === 'investor_signed' ? 'Investor has signed. Sign to unlock full property address and seller details.' :
+                         currentRoom?.agreement_status === 'agent_signed' ? 'You signed. Full details unlock when investor signs.' :
+                         'You can chat and view general deal info. Full details unlock after both parties sign the agreement.'}
                       </p>
                     </div>
                   </div>
@@ -1613,11 +1727,11 @@ ${dealContext}`;
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                        {/* Privacy: Hide full address from agents until signed */}
-                        {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
-                          ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
-                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
-                        }
+                      {/* Privacy: Hide full address from agents until fully signed */}
+                      {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
+                        ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                        : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
+                      }
                       </h3>
                       <div className="space-y-1 text-sm">
                         {currentRoom.counterparty_name && (
