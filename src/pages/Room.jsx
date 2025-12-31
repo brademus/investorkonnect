@@ -1727,11 +1727,11 @@ ${dealContext}`;
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                      {/* Privacy: Hide full address from agents until fully signed */}
-                      {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
-                        ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
-                        : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
-                      }
+                        {/* Privacy: Hide full address from agents until fully signed */}
+                        {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
+                          ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
+                        }
                       </h3>
                       <div className="space-y-1 text-sm">
                         {currentRoom.counterparty_name && (
@@ -1741,8 +1741,8 @@ ${dealContext}`;
                         )}
                         {(currentRoom.city || currentRoom.state) && (
                           <p className="text-[#808080]">
-                            {/* Privacy: Only show city/state/zip for agents until signed */}
-                            {profile?.user_role === 'agent' && currentRoom?.request_status !== 'signed'
+                            {/* Privacy: Only show city/state/zip for agents until fully signed */}
+                            {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
                               ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
                               : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
                             }
