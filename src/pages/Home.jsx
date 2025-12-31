@@ -18,8 +18,8 @@ export default function Home() {
   };
 
   const handleGetStarted = () => {
-    // Always go through PostAuth - it handles all routing
-    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+    // PRODUCTION: Force role selection - no bypasses
+    base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
   };
 
   return (
@@ -71,7 +71,7 @@ export default function Home() {
               onClick={handleGetStarted}
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(227,197,103,0.4)] transition-all"
             >
-              Submit Your First Deal
+              Get Started
             </Button>
           </div>
 
