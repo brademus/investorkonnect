@@ -67,6 +67,9 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
+import RoleLanding from './pages/RoleLanding';
+import InvestorLanding from './pages/InvestorLanding';
+import AgentLanding from './pages/AgentLanding';
 import __Layout from './Layout.jsx';
 
 
@@ -140,6 +143,9 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
+    "RoleLanding": RoleLanding,
+    "InvestorLanding": InvestorLanding,
+    "AgentLanding": AgentLanding,
 }
 
 export const pagesConfig = {
