@@ -18,6 +18,21 @@ export default function Home() {
     navigate(createPageUrl("RoleLanding"), { replace: true });
   }, [navigate]);
 
+  // Return null while redirecting
+  return null;
+}
+
+function OriginalHome() {
+  const navigate = useNavigate();
+
+  const handleLogin = () => {
+    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+  };
+
+  const handleGetStarted = () => {
+    base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
+  };
+
   return (
     <div className="min-h-screen bg-transparent">
       {/* Fixed Header */}
