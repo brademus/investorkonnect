@@ -27,8 +27,10 @@ export default function RoleLanding() {
             onClick={() => navigate(createPageUrl("InvestorLanding"))}
             className="group relative bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8 hover:border-[#E3C567] transition-all hover:shadow-[0_0_40px_rgba(227,197,103,0.2)]"
           >
-            <div className="absolute top-8 right-8 w-16 h-16 bg-[#E3C567]/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <TrendingUp className="w-8 h-8 text-[#E3C567]" />
+            <div className="flex items-start justify-between mb-6">
+              <div className="w-16 h-16 bg-[#E3C567]/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <TrendingUp className="w-8 h-8 text-[#E3C567]" />
+              </div>
             </div>
             
             <div className="text-left">
@@ -64,8 +66,10 @@ export default function RoleLanding() {
             onClick={() => navigate(createPageUrl("AgentLanding"))}
             className="group relative bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-8 hover:border-[#E3C567] transition-all hover:shadow-[0_0_40px_rgba(227,197,103,0.2)]"
           >
-            <div className="absolute top-8 right-8 w-16 h-16 bg-[#E3C567]/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Users className="w-8 h-8 text-[#E3C567]" />
+            <div className="flex items-start justify-between mb-6">
+              <div className="w-16 h-16 bg-[#E3C567]/10 rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                <Users className="w-8 h-8 text-[#E3C567]" />
+              </div>
             </div>
             
             <div className="text-left">
