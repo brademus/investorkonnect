@@ -319,7 +319,7 @@ export default function Room() {
       try {
         const allRooms = await base44.entities.Room.filter({ deal_id: dealId });
         const activeRoom = allRooms.find(r => 
-          (r.request_status === 'accepted' || r.request_status === 'signed') && r.id !== roomId
+        r.request_status === 'accepted' && r.id !== roomId
         );
 
         if (activeRoom) {
@@ -563,7 +563,7 @@ ${dealContext}`;
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">{counterpartName}</h2>
             <div className="flex items-center gap-3">
-              {currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'signed' ? (
+              {currentRoom?.is_fully_signed ? (
                 <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -630,7 +630,7 @@ ${dealContext}`;
                 {/* Row 1: Status & Title */}
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`w-2 h-2 rounded-full ${
-                    currentRoom?.request_status === 'signed' ? 'bg-[#10B981]' : 
+                    currentRoom?.is_fully_signed ? 'bg-[#10B981]' : 
                     currentRoom?.request_status === 'accepted' ? 'bg-[#60A5FA]' : 
                     'bg-[#F59E0B]'
                   }`}></span>
@@ -639,7 +639,7 @@ ${dealContext}`;
                   </span>
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
-                    {currentRoom?.request_status === 'signed' ? (
+                    {currentRoom?.is_fully_signed ? (
                       <span className="text-[#10B981]">Agreement Signed</span>
                     ) : currentRoom?.request_status === 'accepted' ? (
                       <span className="text-[#60A5FA]">Accepted – Working Together</span>
@@ -739,7 +739,7 @@ ${dealContext}`;
                   )}
                   
                   {/* Privacy Warning for Agents */}
-                  {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed' && (
+                  {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5">
                       <div className="flex items-start gap-3">
                         <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
@@ -963,14 +963,14 @@ ${dealContext}`;
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
-                                          {/* Privacy: Hide full address until signed */}
-                                          {currentRoom?.request_status !== 'signed'
+                                          {/* Privacy: Hide full address until fully signed */}
+                                          {!currentRoom?.is_fully_signed
                                             ? `Deal in ${currentRoom?.city || 'City'}, ${currentRoom?.state || 'State'}`
                                             : (currentRoom?.property_address || 'Property Address')
                                           }
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
-                                          {currentRoom?.request_status !== 'signed'
+                                          {!currentRoom?.is_fully_signed
                                             ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${currentRoom?.zip || ''}`
                                             : ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location')
                                           }
@@ -1835,22 +1835,16 @@ ${dealContext}`;
                 </div>
               )}
               
-              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && currentRoom?.agreement_status !== 'fully_signed' && (
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div>
                       <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                        {currentRoom?.agreement_status === 'sent' ? 'Sign Agreement to Unlock' :
-                         currentRoom?.agreement_status === 'investor_signed' ? 'Sign to Unlock Full Details' :
-                         currentRoom?.agreement_status === 'agent_signed' ? 'Waiting for Investor' :
-                         'Agreement Pending'}
+                        Sign Agreement to Unlock Full Details
                       </h3>
                       <p className="text-sm text-[#FAFAFA]/80">
-                        {currentRoom?.agreement_status === 'sent' ? 'Review and sign the agreement to unlock full property details.' :
-                         currentRoom?.agreement_status === 'investor_signed' ? 'Investor has signed. Sign to unlock full property address and seller details.' :
-                         currentRoom?.agreement_status === 'agent_signed' ? 'You signed. Full details unlock when investor signs.' :
-                         'You can chat and view general deal info. Full details unlock after both parties sign the agreement.'}
+                        You can chat and view general deal info. Full property address and seller details unlock after both parties sign the agreement in the Agreement tab.
                       </p>
                     </div>
                   </div>
@@ -1864,7 +1858,7 @@ ${dealContext}`;
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
                         {/* Privacy: Hide full address from agents until fully signed */}
-                        {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
+                        {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                           ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                           : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
                         }
@@ -1878,7 +1872,7 @@ ${dealContext}`;
                         {(currentRoom.city || currentRoom.state) && (
                           <p className="text-[#808080]">
                             {/* Privacy: Only show city/state/zip for agents until fully signed */}
-                            {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed'
+                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                               ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
                               : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
                             }
