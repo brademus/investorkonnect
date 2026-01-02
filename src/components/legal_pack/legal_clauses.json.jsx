@@ -1,110 +1,87 @@
 {
-  "version": "1.0.1",
   "clauses": {
     "A_AGENCY_STD": {
       "id": "A_AGENCY_STD",
       "category": "A",
-      "title": "Standard Disclosure",
-      "text": "Agent acknowledges that execution of this Agreement constitutes substantive contact. Agent represents they have delivered the mandatory state-specific Agency Law Disclosure pamphlet to Investor prior to execution.",
+      "title": "Agency Relationship",
+      "text": "Agent represents Investor as a transaction broker under applicable state law. Agent's duty is to facilitate the transaction and does not extend to fiduciary obligations unless otherwise specified by law.",
       "dependencies": []
     },
     "A_TRANS_BROKER": {
       "id": "A_TRANS_BROKER",
       "category": "A",
-      "title": "Transaction Broker",
-      "text": "The Parties agree that Agent is acting as a Transaction Broker (neutral facilitator) and NOT as a fiduciary advocate, unless a specific Single Agency agreement is signed.",
+      "title": "Transaction Broker Status",
+      "text": "Agent acts as a transaction broker and will provide limited representation as defined by state regulations. Agent will assist in locating properties, coordinating due diligence, and facilitating closing.",
       "dependencies": []
-    },
-    "A_TX_IABS": {
-      "id": "A_TX_IABS",
-      "category": "A",
-      "title": "Texas IABS",
-      "text": "Agent represents they have delivered the Texas Information About Brokerage Services (IABS) form to Investor via the Platform.",
-      "dependencies": [{"type": "state", "value": "TX"}]
-    },
-    "A_NY_DISCL": {
-      "id": "A_NY_DISCL",
-      "category": "A",
-      "title": "NY Agency",
-      "text": "Agent represents they have provided the New York State Disclosure Form for Buyer and Seller pursuant to RPL § 443.",
-      "dependencies": [{"type": "state", "value": "NY"}]
     },
     "B_NET_BANNED": {
       "id": "B_NET_BANNED",
       "category": "B",
-      "title": "Net Prohibited",
-      "text": "**WARNING: NET LISTINGS PROHIBITED.** The laws of this State prohibit Net Listings. Any 'Net' or 'Spread' calculation in Exhibit A is for estimation only. The Parties agree to execute a Brokerage Listing with a fixed Flat Fee or Commission %.",
-      "dependencies": []
+      "title": "Net Listing Prohibition",
+      "text": "Net listings are prohibited in this jurisdiction. All compensation shall be structured as either a flat fee or percentage of purchase price.",
+      "dependencies": [
+        { "type": "net_policy", "value": "BANNED" }
+      ]
     },
     "B_NET_RESTR": {
       "id": "B_NET_RESTR",
       "category": "B",
-      "title": "Net Restricted",
-      "text": "**NET LISTING RESTRICTIONS.** Agent agrees to execute the specific State-Approved Net Listing Addendum to ensure the maximum commission amount is clearly disclosed to the Principal as required by License Law.",
-      "dependencies": []
+      "title": "Net Listing Addendum Required",
+      "text": "If compensation is structured as a net listing, the parties acknowledge that a separate Net Listing Addendum complying with state requirements must be executed.",
+      "dependencies": [
+        { "type": "net_policy", "value": "RESTRICTED" }
+      ]
     },
     "B_NET_STD": {
       "id": "B_NET_STD",
       "category": "B",
-      "title": "Net Standard",
-      "text": "Compensation shall be calculated based on the 'Net' or 'Spread' model as defined in Exhibit A, subject to the Agent's Brokerage Policy.",
+      "title": "Standard Compensation Terms",
+      "text": "Compensation shall be as specified in Exhibit A and is due upon successful closing of the transaction or as otherwise agreed in writing.",
       "dependencies": []
     },
     "C_EQ_INT_STD": {
       "id": "C_EQ_INT_STD",
       "category": "C",
-      "title": "Standard Notice",
-      "text": "Agent acknowledges Investor is marketing an Equitable Interest (contract rights) and not legal title. All marketing must explicitly state: 'Sale of Equitable Interest' or 'Assignment of Contract'.",
+      "title": "Equitable Interest",
+      "text": "Investor acknowledges that entering into this agreement creates an equitable interest in any property identified under its terms. Investor agrees not to circumvent Agent or attempt direct contact with sellers.",
       "dependencies": []
-    },
-    "C_IL_STRICT": {
-      "id": "C_IL_STRICT",
-      "category": "C",
-      "title": "IL Warning",
-      "text": "**ILLINOIS LICENSE ACT NOTICE:** Agent shall ensure all advertising explicitly identifies the property interest as an 'Equitable Interest'. Investor represents they are a principal in the transaction.",
-      "dependencies": [{"type": "state", "value": "IL"}]
-    },
-    "C_OK_PRED": {
-      "id": "C_OK_PRED",
-      "category": "C",
-      "title": "OK Predatory Act",
-      "text": "**OKLAHOMA NOTICE:** Pursuant to the Predatory Real Estate Wholesaler Prohibition Act, Agent shall not market the Property without a valid written brokerage agreement and clear disclosure of the Investor's interest type.",
-      "dependencies": [{"type": "state", "value": "OK"}]
     },
     "E_LIST_REQ": {
       "id": "E_LIST_REQ",
       "category": "E",
-      "title": "Listing Required",
-      "text": "**NO MARKETING UNTIL LISTED.** This Agreement is a preliminary operating agreement. Agent agrees NOT to activate any MLS listing or public marketing until the Parties execute the official State-Mandated Exclusive Listing Agreement.",
+      "title": "Listing Agreement Required",
+      "text": "Agent warrants that they will obtain a valid listing agreement or procuring cause documentation for any property presented to Investor under this agreement.",
       "dependencies": []
     },
     "E_BROKER_ACK": {
       "id": "E_BROKER_ACK",
       "category": "E",
-      "title": "Broker Auth",
-      "text": "Agent represents that their Broker of Record has authorized this transaction type. Agent shall upload a 'Broker Acknowledgement' to the Platform within 48 hours.",
+      "title": "Brokerage Acknowledgment",
+      "text": "Agent acknowledges they are acting under the supervision of their sponsoring broker and will comply with all brokerage policies and state licensing requirements.",
       "dependencies": []
     },
     "G_NO_SELLER": {
       "id": "G_NO_SELLER",
       "category": "G",
-      "title": "Privacy Guard",
-      "text": "Agent shall NOT publicly identify the Record Owner (Seller) in any MLS public remarks or internet advertising.",
+      "title": "No Direct Seller Contact",
+      "text": "Investor agrees not to contact sellers directly or attempt to circumvent Agent's involvement in any transaction introduced under this agreement.",
       "dependencies": []
     },
     "H_PAY_BROKER": {
       "id": "H_PAY_BROKER",
       "category": "H",
-      "title": "Payment Routing",
-      "text": "All compensation must be paid directly to Agent's Brokerage of Record via the Closing Statement. Direct payments to Agent are prohibited.",
+      "title": "Payment Through Broker",
+      "text": "All compensation due to Agent shall be paid through Agent's sponsoring broker in accordance with standard real estate closing procedures.",
       "dependencies": []
     },
     "J_PHL_LIC": {
       "id": "J_PHL_LIC",
       "category": "J",
-      "title": "Philadelphia Lic",
-      "text": "**PHILADELPHIA WHOLESALER LICENSE.** Investor warrants they hold a valid Philadelphia Residential Property Wholesaler License (Code 9-5200) and have provided their License Number to the Platform.",
-      "dependencies": [{"type": "city", "value": "PHILA"}]
+      "title": "Philadelphia License Requirement",
+      "text": "Agent warrants that they hold an active real estate license in Pennsylvania and are authorized to conduct transactions in Philadelphia County. Agent will comply with all Philadelphia-specific real estate regulations and disclosure requirements.",
+      "dependencies": [
+        { "type": "city", "value": "PHILA" }
+      ]
     }
   }
 }

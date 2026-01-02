@@ -1,44 +1,48 @@
 {
-  "version": "1.0.1",
   "modules": {
     "IL_DEEP_DIVE": {
       "id": "IL_DEEP_DIVE",
-      "name": "Illinois Deep Dive",
-      "trigger": {"type": "state", "value": "IL"},
+      "name": "Illinois Wholesaling & Net Listing Restrictions",
+      "trigger": {
+        "type": "state",
+        "value": "IL"
+      },
       "injections": [
         {
           "target": "section_5",
-          "title": "Illinois License Act Compliance",
-          "content": "**5.1 ILLINOIS LICENSE ACT COMPLIANCE.** The Parties acknowledge that under the Illinois Real Estate License Act (225 ILCS 454), the marketing of an equitable interest is a licensed activity unless the Investor is a \"principal\" to the transaction.\n\n**5.2 ONE-TRANSACTION LIMIT.** If Investor is unlicensed, Investor represents they have not engaged in a pattern of business (defined as more than 1 transaction in a 12-month period) that would require licensure."
+          "content": "**Section 5: Illinois-Specific Wholesaling Requirements**\n\nThe parties acknowledge that Illinois law imposes specific restrictions on wholesaling activities:\n\n(a) **License Requirement**: Illinois prohibits unlicensed individuals from engaging in a pattern of real estate business. An unlicensed person may complete no more than one (1) assignment transaction per calendar year without obtaining a real estate license.\n\n(b) **Pattern of Business**: If Investor is unlicensed and has completed more than one transaction in the preceding 365 days, Investor must obtain a valid Illinois real estate license before executing any assignment contract under this agreement.\n\n(c) **Compliance Certification**: Investor certifies compliance with Illinois wholesaling restrictions and agrees to obtain all required licenses before executing any prohibited transactions."
         },
         {
           "target": "section_6",
-          "title": "Net Listings Void",
-          "content": "**6.1 NET LISTINGS VOID.** Net listings are illegal in Illinois. Compensation defaults to the Flat Fee equivalent defined in Exhibit A."
+          "content": "**Section 6: Illinois Net Listing Prohibition**\n\n(a) **Prohibition**: Net listings are expressly prohibited under Illinois real estate law (225 ILCS 454). All compensation under this agreement shall be structured as either:\n   - A flat fee dollar amount, OR\n   - A percentage of the purchase price\n\n(b) **Conversion**: If any prior agreement or understanding contemplated net listing compensation, the parties agree such terms are void and replaced by the compensation structure specified in Exhibit A.\n\n(c) **Broker Compliance**: Agent's sponsoring broker acknowledges and agrees to enforce this prohibition."
         }
       ]
     },
     "PA_DEEP_DIVE": {
       "id": "PA_DEEP_DIVE",
-      "name": "Pennsylvania Deep Dive",
-      "trigger": {"type": "state", "value": "PA"},
+      "name": "Pennsylvania Wholesaling Notice",
+      "trigger": {
+        "type": "state",
+        "value": "PA"
+      },
       "injections": [
         {
           "target": "section_5",
-          "title": "Equitable Interest Disclosure",
-          "content": "**5.1 EQUITABLE INTEREST DISCLOSURE.** Pursuant to the Real Estate Licensing and Registration Act (RELRA), Agent must disclose in all advertisements that the Property is not owned by Investor but is subject to a contract of sale.\n\n**5.2 CONSUMER NOTICE.** Agent acknowledges delivery of the PA Consumer Notice to Investor."
+          "content": "**Section 5: Pennsylvania Wholesaling Notice**\n\n(a) **Assignment Disclosure**: Pennsylvania requires that assignment contracts clearly disclose Investor's intent to assign the contract to another party. Agent will ensure all purchase agreements include appropriate assignment language and seller acknowledgment.\n\n(b) **Good Faith Deposit**: Investor agrees to provide a good faith deposit as required by Pennsylvania law and as specified in any purchase agreement.\n\n(c) **Licensing Compliance**: If Investor is unlicensed and engages in multiple transactions, Investor acknowledges the potential need for licensure and will consult legal counsel regarding Pennsylvania licensing requirements."
         }
       ]
     },
-    "NJ_ATTORNEY_REVIEW": {
-      "id": "NJ_ATTORNEY_REVIEW",
-      "name": "New Jersey Attorney Review",
-      "trigger": {"type": "state", "value": "NJ"},
+    "NJ_DEEP_DIVE": {
+      "id": "NJ_DEEP_DIVE",
+      "name": "New Jersey Attorney Review Period",
+      "trigger": {
+        "type": "state",
+        "value": "NJ"
+      },
       "injections": [
         {
           "target": "section_7",
-          "title": "Attorney Review Period",
-          "content": "**7.1 THREE-DAY ATTORNEY REVIEW.** This Agreement is subject to New Jersey's Three Business Day Attorney Review Period. Either party may cancel within three (3) business days of delivery (Day 0 = delivery day; weekends and holidays excluded). If no cancellation notice is received by 11:59 PM on Day 3, this Agreement becomes binding and non-cancellable."
+          "content": "**Section 7: New Jersey Attorney Review Period**\n\n(a) **Three-Day Review**: This agreement is subject to a three (3) business day attorney review period as required by New Jersey law, beginning on the date both parties have signed this agreement (Day 0 = delivery date).\n\n(b) **Cancellation Right**: Either party may cancel this agreement during the attorney review period by providing written notice to the other party. Cancellation must be delivered before 11:59 PM on the third business day (excluding weekends and legal holidays).\n\n(c) **Effect of Non-Cancellation**: If neither party cancels during the review period, this agreement becomes binding and enforceable at 11:59 PM on the third business day.\n\n(d) **Business Days**: Business days exclude Saturdays, Sundays, and federally recognized holidays."
         }
       ]
     }

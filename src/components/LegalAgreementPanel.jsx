@@ -51,8 +51,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const loadAgreement = async () => {
     try {
       setLoading(true);
-      const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
-      setAgreement(data.agreement);
+      const params = new URLSearchParams({ deal_id: deal.id });
+      const response = await fetch(`/api/functions/getLegalAgreement?${params}`, {
+        headers: { 'Authorization': `Bearer ${await base44.auth.getAccessToken()}` }
+      });
+      const data = await response.json();
+      setAgreement(data.agreement || null);
     } catch (error) {
       console.error('Failed to load agreement:', error);
     } finally {
@@ -61,30 +65,54 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   const handleGenerate = async () => {
+    if (!deal?.id) return;
+    
+    setGenerating(true);
     try {
-      setGenerating(true);
-      const { data } = await base44.functions.invoke('generateLegalAgreement', {
+      // Derive exhibit_a from deal's existing terms
+      const derivedExhibitA = {
+        compensation_model: deal.proposed_terms?.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 
+                           deal.proposed_terms?.seller_commission_type === 'net' ? 'NET_SPREAD' :
+                           'FLAT_FEE',
+        flat_fee_amount: deal.proposed_terms?.seller_flat_fee || exhibitA.flat_fee_amount || 5000,
+        commission_percentage: deal.proposed_terms?.seller_commission_percentage || exhibitA.commission_percentage,
+        net_target: deal.proposed_terms?.net_target || exhibitA.net_target,
+        transaction_type: deal.transaction_type || exhibitA.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: exhibitA.agreement_length_days || 180,
+        termination_notice_days: exhibitA.termination_notice_days || 30,
+        buyer_commission_type: deal.proposed_terms?.buyer_commission_type,
+        buyer_commission_amount: deal.proposed_terms?.buyer_commission_percentage || deal.proposed_terms?.buyer_flat_fee,
+        seller_commission_type: deal.proposed_terms?.seller_commission_type,
+        seller_commission_amount: deal.proposed_terms?.seller_commission_percentage || deal.proposed_terms?.seller_flat_fee
+      };
+      
+      const response = await base44.functions.invoke('generateLegalAgreement', {
         deal_id: deal.id,
-        exhibit_a: exhibitA
+        exhibit_a: derivedExhibitA
       });
       
-      if (data.error) {
-        toast.error(data.error);
+      if (response.data?.error) {
+        toast.error(response.data.error);
         return;
       }
       
-      if (data.converted_from_net) {
+      if (response.data?.converted_from_net) {
         toast.warning('Net listing converted to Flat Fee due to state restrictions');
       }
       
-      toast.success('Agreement generated successfully');
-      setAgreement(data.agreement);
+      if (response.data?.regenerated === false) {
+        toast.info('Agreement already up to date (no changes needed)');
+      } else {
+        toast.success('Agreement generated successfully');
+      }
+      
+      setAgreement(response.data.agreement);
       setShowGenerateModal(false);
       
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Generate error:', error);
-      toast.error('Failed to generate agreement');
+      toast.error(error.message || 'Failed to generate agreement');
     } finally {
       setGenerating(false);
     }
@@ -184,14 +212,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       {!agreement && !isInvestor && (
         <div className="text-center py-8">
           <Clock className="w-12 h-12 text-[#808080] mx-auto mb-4" />
-          <p className="text-[#808080]">Waiting for investor to generate agreement</p>
-        </div>
-      )}
-      
-      {!agreement && !isInvestor && (
-        <div className="text-center py-8">
-          <Clock className="w-12 h-12 text-[#808080] mx-auto mb-4" />
-          <p className="text-[#808080]">Waiting for investor to generate agreement</p>
+          <p className="text-[#808080] mb-2">Waiting for investor to generate agreement</p>
+          <p className="text-xs text-[#666]">The investor will initiate contract generation from the Agreement tab</p>
         </div>
       )}
       

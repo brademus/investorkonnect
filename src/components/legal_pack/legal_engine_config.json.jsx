@@ -1,38 +1,74 @@
 {
   "version": "1.0.1",
-  "governing_law": "PROPERTY_STATE",
   "net_policy_by_state": {
     "IL": "BANNED",
     "NY": "BANNED",
     "TX": "RESTRICTED",
     "CA": "RESTRICTED",
-    "FL": "ALLOWED"
+    "PA": "ALLOWED",
+    "NJ": "ALLOWED",
+    "FL": "ALLOWED",
+    "GA": "ALLOWED"
   },
-  "nj_attorney_review": {
-    "enabled": true,
-    "business_days": 3,
-    "day_zero_is_delivery": true,
-    "auto_approve_on_expiry": true
-  },
-  "transaction_types": ["ASSIGNMENT", "DOUBLE_CLOSE"],
-  "evaluation_order": [
-    "deep_dive_checks",
-    "local_overlays",
-    "state_defaults"
-  ],
   "city_overlay_mapping": {
-    "19103": "PHILA",
+    "19101": "PHILA",
     "19102": "PHILA",
+    "19103": "PHILA",
     "19104": "PHILA",
     "19106": "PHILA",
-    "19107": "PHILA"
+    "19107": "PHILA",
+    "19111": "PHILA",
+    "19114": "PHILA",
+    "19115": "PHILA",
+    "19116": "PHILA",
+    "19118": "PHILA",
+    "19119": "PHILA",
+    "19120": "PHILA",
+    "19121": "PHILA",
+    "19122": "PHILA",
+    "19123": "PHILA",
+    "19124": "PHILA",
+    "19125": "PHILA",
+    "19126": "PHILA",
+    "19127": "PHILA",
+    "19128": "PHILA",
+    "19129": "PHILA",
+    "19130": "PHILA",
+    "19131": "PHILA",
+    "19132": "PHILA",
+    "19133": "PHILA",
+    "19134": "PHILA",
+    "19135": "PHILA",
+    "19136": "PHILA",
+    "19137": "PHILA",
+    "19138": "PHILA",
+    "19139": "PHILA",
+    "19140": "PHILA",
+    "19141": "PHILA",
+    "19142": "PHILA",
+    "19143": "PHILA",
+    "19144": "PHILA",
+    "19145": "PHILA",
+    "19146": "PHILA",
+    "19147": "PHILA",
+    "19148": "PHILA",
+    "19149": "PHILA",
+    "19150": "PHILA",
+    "19151": "PHILA",
+    "19152": "PHILA",
+    "19153": "PHILA",
+    "19154": "PHILA"
   },
   "hard_blocks": {
     "IL_UNLICENSED_PATTERN": {
-      "state": "IL",
-      "investor_status": "UNLICENSED",
-      "deal_count_threshold": 1,
-      "message": "Illinois law prohibits unlicensed individuals from engaging in a pattern of business (more than 1 transaction in 12 months). Cannot proceed."
+      "condition": "state == IL && investor_status == UNLICENSED && deal_count_last_365 > 1",
+      "message": "Illinois law prohibits unlicensed individuals from engaging in a pattern of real estate business (more than 1 transaction per year). You must obtain a real estate license to proceed with assignment contracts in Illinois."
     }
+  },
+  "nj_attorney_review": {
+    "business_days": 3,
+    "day_zero_is_delivery": true,
+    "exclude_weekends": true,
+    "cutoff_time": "23:59"
   }
 }
