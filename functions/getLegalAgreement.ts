@@ -16,14 +16,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
-    
     // Get agreement
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
     
@@ -33,18 +25,18 @@ Deno.serve(async (req) => {
     
     const agreement = agreements[0];
     
-    // Verify access
-    if (agreement.investor_profile_id !== profile.id && agreement.agent_profile_id !== profile.id) {
+    // Verify access using user_id (not profile_id)
+    if (agreement.investor_user_id !== user.id && agreement.agent_user_id !== user.id) {
       return Response.json({ error: 'Not authorized' }, { status: 403 });
     }
     
-    // Check if NJ attorney review period has expired
+    // Check if NJ attorney review period has expired (auto-approval)
     if (agreement.status === 'attorney_review_pending' && agreement.nj_review_end_at) {
       const now = new Date();
       const reviewEnd = new Date(agreement.nj_review_end_at);
       
       if (now > reviewEnd) {
-        // Auto-approve
+        // Auto-approve - idempotent update
         const updated = await base44.asServiceRole.entities.LegalAgreement.update(
           agreement.id,
           {
@@ -54,8 +46,20 @@ Deno.serve(async (req) => {
               {
                 timestamp: new Date().toISOString(),
                 actor: 'system',
-                action: 'nj_review_expired',
-                details: 'NJ attorney review period expired - auto-approved'
+                action: 'attorney_review_completed',
+                details: 'NJ attorney review period expired without cancellation'
+              },
+              {
+                timestamp: new Date().toISOString(),
+                actor: 'system',
+                action: 'fully_signed_effective',
+                details: 'Agreement is fully executed and effective'
+              },
+              {
+                timestamp: new Date().toISOString(),
+                actor: 'system',
+                action: 'unlock_event',
+                details: 'Sensitive data unlocked for agent access'
               }
             ]
           }

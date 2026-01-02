@@ -10,6 +10,10 @@ export interface AddendumInput {
   exhibit_a_json: string;
 }
 
+/**
+ * Assembles the State Addendum with proper section injection/replacement
+ * Deep dive modules REPLACE or INJECT into specific sections, not append
+ */
 export function assembleAddendum(input: AddendumInput): string {
   const pack = loadLegalPack();
   let chassis = pack.templates.addendum_chassis;
@@ -43,20 +47,43 @@ export function assembleAddendum(input: AddendumInput): string {
   chassis = chassis.replace('{{INSERT_CLAUSE_CATEGORY_C_G}}', categoryCG);
   chassis = chassis.replace('{{INSERT_CLAUSE_CATEGORY_D_E_J}}', categoryDEJ);
   
-  // Insert deep dive modules
+  // Handle deep dive modules - INJECT/REPLACE specific sections
   let deepDiveText = '';
+  
   if (input.evaluation.deep_dive_module_ids.length > 0) {
-    deepDiveText = '\n---\n\n## STATE-SPECIFIC PROVISIONS\n\n';
+    const sectionReplacements: Record<string, string> = {};
     
+    // Collect all injections by target section
     input.evaluation.deep_dive_module_ids.forEach(moduleId => {
       const module = pack.modules.modules[moduleId];
       if (module) {
-        deepDiveText += `\n### ${module.name}\n\n`;
         module.injections.forEach(injection => {
-          deepDiveText += `${injection.content}\n\n`;
+          const target = injection.target; // e.g., "section_5"
+          if (!sectionReplacements[target]) {
+            sectionReplacements[target] = '';
+          }
+          sectionReplacements[target] += `\n${injection.content}\n`;
         });
       }
     });
+    
+    // Build deep dive sections
+    deepDiveText = '\n---\n\n## STATE-SPECIFIC PROVISIONS\n';
+    
+    // Section 5 (Wholesaling/IL/PA)
+    if (sectionReplacements.section_5) {
+      deepDiveText += `\n### Section 5: State-Specific Requirements\n\n${sectionReplacements.section_5}`;
+    }
+    
+    // Section 6 (IL Net/NJ Attorney Review)
+    if (sectionReplacements.section_6) {
+      deepDiveText += `\n### Section 6: Additional Provisions\n\n${sectionReplacements.section_6}`;
+    }
+    
+    // Section 7 (NJ Attorney Review)
+    if (sectionReplacements.section_7) {
+      deepDiveText += `\n### Section 7: Attorney Review Period\n\n${sectionReplacements.section_7}`;
+    }
   }
   
   chassis = chassis.replace('{{INSERT_DEEP_DIVE_MODULES}}', deepDiveText);

@@ -21,9 +21,14 @@ export interface ExhibitAResult {
   error?: string;
 }
 
+/**
+ * Builds and validates Exhibit A terms
+ * Enforces net policy: BANNED states reject NET_SPREAD (no conversion unless legacy)
+ */
 export function buildExhibitA(
   input: ExhibitAInput,
-  evaluation: EvaluationResult
+  evaluation: EvaluationResult,
+  isLegacy = false
 ): ExhibitAResult {
   const pack = loadLegalPack();
   const net_policy = evaluation.net_policy;
@@ -31,9 +36,18 @@ export function buildExhibitA(
   let terms = { ...input };
   let converted = false;
   
-  // Enforce net policy
+  // STRICT NET POLICY ENFORCEMENT
   if (net_policy === 'BANNED' && input.compensation_model === 'NET_SPREAD') {
-    // Convert to FLAT_FEE
+    // Only allow conversion if this is explicitly legacy data
+    if (!isLegacy) {
+      return {
+        terms,
+        converted: false,
+        error: `NET/SPREAD compensation is prohibited in ${evaluation.selected_rule_id.split('_')[0]}. Choose Flat Fee or Percentage.`
+      };
+    }
+    
+    // Legacy conversion path
     terms.compensation_model = 'FLAT_FEE';
     terms.flat_fee_amount = input.net_target || input.flat_fee_amount || 0;
     terms.converted_from_net = true;
@@ -41,12 +55,29 @@ export function buildExhibitA(
     delete terms.net_target;
   }
   
-  // Validate against schema (basic validation)
+  // Validate required fields
   if (!terms.compensation_model || !terms.transaction_type) {
     return {
       terms,
       converted,
       error: 'Missing required fields: compensation_model and transaction_type'
+    };
+  }
+  
+  // Validate compensation amounts
+  if (terms.compensation_model === 'FLAT_FEE' && !terms.flat_fee_amount) {
+    return {
+      terms,
+      converted,
+      error: 'Flat fee amount is required when using FLAT_FEE model'
+    };
+  }
+  
+  if (terms.compensation_model === 'COMMISSION_PCT' && !terms.commission_percentage) {
+    return {
+      terms,
+      converted,
+      error: 'Commission percentage is required when using COMMISSION_PCT model'
     };
   }
   

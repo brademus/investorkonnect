@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
     }
     
     // Get deal
-    const deal = await base44.entities.Deal.get(deal_id);
+    const deal = await base44.asServiceRole.entities.Deal.get(deal_id);
     
     if (!deal) {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
     }
     
     // Get agent profile
-    const agentProfile = await base44.entities.Profile.get(deal.agent_id);
+    const agentProfile = await base44.asServiceRole.entities.Profile.get(deal.agent_id);
     
     if (!agentProfile) {
       return Response.json({ error: 'Agent profile not found' }, { status: 404 });
@@ -91,6 +91,40 @@ Deno.serve(async (req) => {
       return Response.json({ error: result.error }, { status: 400 });
     }
     
+    // Create inputs fingerprint for regeneration guard
+    const inputsFingerprint = JSON.stringify({
+      version: '1.0.1',
+      state: deal.state,
+      zip: deal.zip,
+      city_overlay: result.evaluation.city_overlay,
+      transaction_type: exhibit_a.transaction_type,
+      property_type: deal.property_type,
+      investor_status: profile.investor?.certification === 'licensed' ? 'LICENSED' : 'UNLICENSED',
+      deal_count: recentDeals.length,
+      rule_id: result.evaluation.selected_rule_id,
+      clause_ids: result.evaluation.selected_clause_ids,
+      modules: result.evaluation.deep_dive_module_ids,
+      terms: result.exhibit_a_terms
+    });
+    
+    const inputsHash = createHash('sha256').update(inputsFingerprint).digest('hex');
+    
+    // Check if existing agreement has same inputs
+    const existingAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+    
+    if (existingAgreements.length > 0) {
+      const existing = existingAgreements[0];
+      if (existing.agreement_inputs_sha256 === inputsHash && existing.pdf_file_url) {
+        // Inputs unchanged, return existing agreement
+        return Response.json({ 
+          success: true, 
+          agreement: existing,
+          converted_from_net: result.exhibit_a_terms.converted_from_net || false,
+          regenerated: false
+        });
+      }
+    }
+    
     // Generate PDF from markdown
     const doc = new jsPDF();
     const lines = result.full_md.split('\n');
@@ -129,10 +163,10 @@ Deno.serve(async (req) => {
     
     const pdfBytes = doc.output('arraybuffer');
     
-    // Compute SHA-256
-    const hash = createHash('sha256');
-    hash.update(new Uint8Array(pdfBytes));
-    const sha256 = hash.digest('hex');
+    // Compute PDF SHA-256
+    const pdfHash = createHash('sha256');
+    pdfHash.update(new Uint8Array(pdfBytes));
+    const pdf_sha256 = pdfHash.digest('hex');
     
     // Upload PDF
     const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -140,11 +174,15 @@ Deno.serve(async (req) => {
     
     const { file_url } = await base44.integrations.Core.UploadFile({ file: pdfFile });
     
-    // Create or update LegalAgreement
-    const existingAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+    // Get investor and agent user IDs
+    const investorUser = await base44.asServiceRole.entities.User.filter({ email: profile.email });
+    const agentUser = await base44.asServiceRole.entities.User.filter({ email: agentProfile.email });
     
+    // Create or update LegalAgreement
     const agreementData = {
       deal_id,
+      investor_user_id: investorUser[0]?.id || user.id,
+      agent_user_id: agentUser[0]?.id || agentProfile.user_id,
       investor_profile_id: profile.id,
       agent_profile_id: agentProfile.id,
       governing_state: deal.state,
@@ -162,13 +200,14 @@ Deno.serve(async (req) => {
       exhibit_a_terms: result.exhibit_a_terms,
       rendered_markdown_full: result.full_md,
       pdf_file_url: file_url,
-      pdf_sha256: sha256,
+      pdf_sha256,
+      agreement_inputs_sha256: inputsHash,
       audit_log: [
         {
           timestamp: new Date().toISOString(),
           actor: user.email,
-          action: 'generated',
-          details: 'Agreement generated'
+          action: 'generated_draft',
+          details: 'Agreement draft generated'
         }
       ]
     };
@@ -177,7 +216,13 @@ Deno.serve(async (req) => {
     if (existingAgreements.length > 0) {
       agreement = await base44.asServiceRole.entities.LegalAgreement.update(
         existingAgreements[0].id,
-        agreementData
+        {
+          ...agreementData,
+          audit_log: [
+            ...existingAgreements[0].audit_log,
+            ...agreementData.audit_log
+          ]
+        }
       );
     } else {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
@@ -186,7 +231,8 @@ Deno.serve(async (req) => {
     return Response.json({ 
       success: true, 
       agreement,
-      converted_from_net: result.exhibit_a_terms.converted_from_net || false
+      converted_from_net: result.exhibit_a_terms.converted_from_net || false,
+      regenerated: true
     });
     
   } catch (error) {

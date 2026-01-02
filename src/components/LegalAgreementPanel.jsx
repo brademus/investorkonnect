@@ -24,12 +24,29 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     termination_notice_days: 30
   });
   
+  const [netPolicy, setNetPolicy] = useState('ALLOWED');
+  
   const isInvestor = deal.investor_id === profile.id;
   const isAgent = deal.agent_id === profile.id;
   
   useEffect(() => {
     loadAgreement();
+    determineNetPolicy();
   }, [deal.id]);
+  
+  const determineNetPolicy = () => {
+    const state = deal.state;
+    const bannedStates = ['IL', 'NY'];
+    const restrictedStates = ['TX', 'CA'];
+    
+    if (bannedStates.includes(state)) {
+      setNetPolicy('BANNED');
+    } else if (restrictedStates.includes(state)) {
+      setNetPolicy('RESTRICTED');
+    } else {
+      setNetPolicy('ALLOWED');
+    }
+  };
   
   const loadAgreement = async () => {
     try {
@@ -101,9 +118,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const getStatusDisplay = () => {
     if (!agreement) return null;
     
-    const statusConfig = {
+      const statusConfig = {
       draft: { icon: FileText, color: 'text-gray-400', bg: 'bg-gray-400/10', label: 'Draft' },
-      sent: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Sent for Signature' },
+      sent: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Sent' },
       investor_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Investor Signed' },
       agent_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Agent Signed' },
       attorney_review_pending: { icon: Clock, color: 'text-orange-400', bg: 'bg-orange-400/10', label: 'Attorney Review' },
@@ -161,6 +178,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
             Generate Agreement
           </Button>
+        </div>
+      )}
+      
+      {!agreement && !isInvestor && (
+        <div className="text-center py-8">
+          <Clock className="w-12 h-12 text-[#808080] mx-auto mb-4" />
+          <p className="text-[#808080]">Waiting for investor to generate agreement</p>
         </div>
       )}
       
@@ -274,12 +298,34 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             )}
             
             {isInvestor && agreement.status === 'draft' && (
-              <Button
-                onClick={() => setShowGenerateModal(true)}
-                variant="outline"
-                className="flex-1">
-                Regenerate
-              </Button>
+              <>
+                <Button
+                  onClick={() => setShowGenerateModal(true)}
+                  variant="outline"
+                  className="flex-1">
+                  Regenerate
+                </Button>
+                <Button
+                  onClick={async () => {
+                    try {
+                      const { data } = await base44.functions.invoke('sendLegalAgreement', {
+                        agreement_id: agreement.id
+                      });
+                      if (data.error) {
+                        toast.error(data.error);
+                      } else {
+                        toast.success('Agreement sent');
+                        setAgreement(data.agreement);
+                        if (onUpdate) onUpdate();
+                      }
+                    } catch (error) {
+                      toast.error('Failed to send agreement');
+                    }
+                  }}
+                  className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                  Send for Signature
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -304,9 +350,21 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                 <SelectContent>
                   <SelectItem value="FLAT_FEE">Flat Fee</SelectItem>
                   <SelectItem value="COMMISSION_PCT">Commission %</SelectItem>
-                  <SelectItem value="NET_SPREAD">Net/Spread</SelectItem>
+                  {netPolicy !== 'BANNED' && (
+                    <SelectItem value="NET_SPREAD">Net/Spread</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {netPolicy === 'BANNED' && (
+                <p className="text-xs text-yellow-400 mt-1">
+                  Net/Spread not permitted in {deal.state}
+                </p>
+              )}
+              {netPolicy === 'RESTRICTED' && exhibitA.compensation_model === 'NET_SPREAD' && (
+                <p className="text-xs text-yellow-400 mt-1">
+                  {deal.state} requires Net Listing Addendum / restricted clause
+                </p>
+              )}
             </div>
             
             {exhibitA.compensation_model === 'FLAT_FEE' && (

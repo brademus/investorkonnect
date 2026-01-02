@@ -15,14 +15,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid signature type' }, { status: 400 });
     }
     
-    // Get profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
-    
     // Get agreement
     const agreement = await base44.asServiceRole.entities.LegalAgreement.get(agreement_id);
     
@@ -31,11 +23,11 @@ Deno.serve(async (req) => {
     }
     
     // Verify signer
-    if (signature_type === 'investor' && agreement.investor_profile_id !== profile.id) {
+    if (signature_type === 'investor' && agreement.investor_user_id !== user.id) {
       return Response.json({ error: 'Not authorized to sign as investor' }, { status: 403 });
     }
     
-    if (signature_type === 'agent' && agreement.agent_profile_id !== profile.id) {
+    if (signature_type === 'agent' && agreement.agent_user_id !== user.id) {
       return Response.json({ error: 'Not authorized to sign as agent' }, { status: 403 });
     }
     
@@ -57,7 +49,7 @@ Deno.serve(async (req) => {
       ]
     };
     
-    // Update signature fields
+    // Update signature fields based on type
     if (signature_type === 'investor') {
       if (agreement.investor_signed_at) {
         return Response.json({ error: 'Investor already signed' }, { status: 400 });
@@ -67,6 +59,7 @@ Deno.serve(async (req) => {
       updates.investor_ip = ip;
       updates.status = 'investor_signed';
     } else {
+      // Agent signing
       if (!agreement.investor_signed_at) {
         return Response.json({ error: 'Investor must sign first' }, { status: 400 });
       }
@@ -77,15 +70,37 @@ Deno.serve(async (req) => {
       
       updates.agent_signed_at = timestamp;
       updates.agent_ip = ip;
+      updates.status = 'agent_signed';
       
       // Check if NJ - if so, set attorney review period
       if (agreement.governing_state === 'NJ') {
-        // Calculate 3 business days from now
         const reviewEnd = calculateNJReviewEnd(new Date());
         updates.nj_review_end_at = reviewEnd.toISOString();
         updates.status = 'attorney_review_pending';
+        
+        updates.audit_log.push({
+          timestamp: new Date().toISOString(),
+          actor: 'system',
+          action: 'attorney_review_started',
+          details: `NJ attorney review period started. Ends at ${reviewEnd.toISOString()}`
+        });
       } else {
+        // Not NJ - immediately fully signed
         updates.status = 'fully_signed';
+        
+        updates.audit_log.push({
+          timestamp: new Date().toISOString(),
+          actor: 'system',
+          action: 'fully_signed_effective',
+          details: 'Agreement is fully executed and effective'
+        });
+        
+        updates.audit_log.push({
+          timestamp: new Date().toISOString(),
+          actor: 'system',
+          action: 'unlock_event',
+          details: 'Sensitive data unlocked for agent access'
+        });
       }
     }
     
