@@ -211,7 +211,7 @@ Deno.serve(async (req) => {
       status: 'draft',
       selected_rule_id,
       selected_clause_ids: { A: [], B: [], C: [], E: [], G: [], H: [], J: [] },
-      deep_dive_module_ids: getDee pDiveModules(deal.state),
+      deep_dive_module_ids: getDeepDiveModules(deal.state),
       exhibit_a_terms: exhibit_a,
       rendered_markdown_full: fullMd,
       pdf_file_url: file_url,
@@ -243,7 +243,7 @@ Deno.serve(async (req) => {
   }
 });
 
-function getDe epDiveModules(state: string): string[] {
+function getDeepDiveModules(state: string): string[] {
   const modules = [];
   if (state === 'IL') modules.push('IL_DEEP_DIVE');
   if (state === 'PA') modules.push('PA_DEEP_DIVE');
