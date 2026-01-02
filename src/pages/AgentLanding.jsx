@@ -5,8 +5,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
   Users, DollarSign, TrendingUp, Shield, Award,
-  CheckCircle, ArrowLeft, Briefcase } from
-"lucide-react";
+  CheckCircle, ArrowLeft, Briefcase
+} from "lucide-react";
 
 export default function AgentLanding() {
   const navigate = useNavigate();
@@ -107,8 +107,8 @@ export default function AgentLanding() {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-              <div className="bg-[#0D0D0D] text-[#E3C567] mb-4 rounded-full w-12 h-12 flex items-center justify-center">
-                <Users className="text-[#0D0D0D] lucide lucide-users w-6 h-6" />
+              <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
+                <Users style={{ width: '24px', height: '24px', color: '#E3C567' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Qualified Investors</h3>
               <p className="text-[#808080]">
@@ -116,8 +116,8 @@ export default function AgentLanding() {
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-              <div className="bg-[#0D0D0D] mb-4 rounded-full w-12 h-12 flex items-center justify-center">
-                <Briefcase className="bg-[#E3C567] text-[#E3C567] lucide lucide-briefcase w-6 h-6" />
+              <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
+                <Briefcase style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Management</h3>
               <p className="text-[#808080]">
@@ -125,8 +125,8 @@ export default function AgentLanding() {
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-              <div className="bg-[#0D0D0D] mb-4 rounded-full w-12 h-12 flex items-center justify-center">
-                <Award className="text-[#E3C567] lucide lucide-award w-6 h-6" />
+              <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
+                <Award style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Showcase Your Track Record</h3>
               <p className="text-[#808080]">
