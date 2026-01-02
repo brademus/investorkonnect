@@ -29,7 +29,7 @@ export default function AgentLanding() {
               onClick={() => navigate(createPageUrl("RoleLanding"))}
               className="text-[#808080] hover:text-[#E3C567] transition-colors">
 
-              <ArrowLeft style={{ width: '20px', height: '20px' }} />
+              <ArrowLeft size={20} />
             </button>
             <Logo size="default" showText={true} />
             <span className="text-sm text-[#60A5FA] font-medium"></span>
@@ -84,15 +84,15 @@ export default function AgentLanding() {
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
-              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
+              <CheckCircle size={20} color="#E3C567" />
               <span>Qualified Investor Leads</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
+              <CheckCircle size={20} color="#E3C567" />
               <span>Deal Management Tools</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
+              <CheckCircle size={20} color="#E3C567" />
               <span>Smart Matching</span>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function AgentLanding() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
-                <Users style={{ width: '24px', height: '24px', color: '#E3C567' }} />
+                <Users size={24} color="#E3C567" />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Qualified Investors</h3>
               <p className="text-[#808080]">
@@ -117,7 +117,7 @@ export default function AgentLanding() {
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
-                <Briefcase style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
+                <Briefcase size={24} color="#60A5FA" />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Management</h3>
               <p className="text-[#808080]">
@@ -126,7 +126,7 @@ export default function AgentLanding() {
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
-                <Award style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
+                <Award size={24} color="#60A5FA" />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Showcase Your Track Record</h3>
               <p className="text-[#808080]">
