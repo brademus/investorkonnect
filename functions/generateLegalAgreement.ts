@@ -17,8 +17,13 @@ Deno.serve(async (req) => {
   
   const deal = await base44.asServiceRole.entities.Deal.get(deal_id);
   if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
+  if (!deal.agent_id) return Response.json({ error: 'No agent assigned to deal' }, { status: 400 });
   
-  const agentProfile = await base44.asServiceRole.entities.Profile.get(deal.agent_id);
+  const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
+  if (!agentProfiles || agentProfiles.length === 0) {
+    return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+  }
+  const agentProfile = agentProfiles[0];
   
   // Generate master agreement
   const masterText = `INVESTOR-AGENT OPERATING AGREEMENT
