@@ -5,8 +5,8 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import {
   Users, DollarSign, TrendingUp, Shield, Award,
-  CheckCircle, ArrowLeft, Briefcase } from
-"lucide-react";
+  CheckCircle, ArrowLeft, Briefcase
+} from "lucide-react";
 
 export default function AgentLanding() {
   const navigate = useNavigate();
