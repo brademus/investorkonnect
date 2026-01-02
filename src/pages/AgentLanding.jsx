@@ -49,9 +49,9 @@ export default function AgentLanding() {
       <section className="pt-32 pb-16 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* Top Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#60A5FA]/20 border border-[#60A5FA]/30 rounded-full mb-8">
-            <div className="w-2 h-2 rounded-full bg-[#60A5FA]" />
-            <span className="text-sm font-medium text-[#60A5FA]">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-full mb-8">
+            <div className="w-2 h-2 rounded-full bg-[#E3C567]" />
+            <span className="text-sm font-medium text-[#E3C567]">
               For Real Estate Agents
             </span>
           </div>
