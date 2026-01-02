@@ -1,8 +1,8 @@
-import config from '../../../legal_pack/v1_0_1/legal_engine_config.json';
-import clauses from '../../../legal_pack/v1_0_1/legal_clauses.json';
-import modules from '../../../legal_pack/v1_0_1/deep_dive_modules.json';
-import templates from '../../../legal_pack/v1_0_1/templates.json';
-import termsSchema from '../../../legal_pack/v1_0_1/terms_schema.json';
+import config from '../legal_pack/legal_engine_config.json';
+import clauses from '../legal_pack/legal_clauses.json';
+import modules from '../legal_pack/deep_dive_modules.json';
+import templates from '../legal_pack/templates.json';
+import termsSchema from '../legal_pack/terms_schema.json';
 
 export interface LegalPack {
   config: typeof config;
