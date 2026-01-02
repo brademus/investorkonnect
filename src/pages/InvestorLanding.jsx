@@ -32,7 +32,6 @@ export default function InvestorLanding() {
               <ArrowLeft className="w-5 h-5" />
             </button>
             <Logo size="default" showText={true} />
-            <span className="text-sm text-[#E3C567] font-medium">For Investors</span>
           </div>
           <div className="flex items-center gap-3">
             <button 

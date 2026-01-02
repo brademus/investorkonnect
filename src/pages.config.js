@@ -11,6 +11,7 @@ import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
 import AgentDirectory from './pages/AgentDirectory';
 import AgentDocuments from './pages/AgentDocuments';
 import AgentHome from './pages/AgentHome';
+import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
 import AgentOnboarding from './pages/AgentOnboarding';
 import AgentPerformance from './pages/AgentPerformance';
@@ -38,6 +39,7 @@ import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import InvestorDirectory from './pages/InvestorDirectory';
 import InvestorDocuments from './pages/InvestorDocuments';
 import InvestorIntake from './pages/InvestorIntake';
+import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorPortfolio from './pages/InvestorPortfolio';
 import InvestorProfile from './pages/InvestorProfile';
@@ -58,6 +60,7 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import Resources from './pages/Resources';
 import ReviewPolicy from './pages/ReviewPolicy';
 import Reviews from './pages/Reviews';
+import RoleLanding from './pages/RoleLanding';
 import RoleSelection from './pages/RoleSelection';
 import Room from './pages/Room';
 import Security from './pages/Security';
@@ -67,9 +70,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import RoleLanding from './pages/RoleLanding';
-import InvestorLanding from './pages/InvestorLanding';
-import AgentLanding from './pages/AgentLanding';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +87,7 @@ export const PAGES = {
     "AgentDirectory": AgentDirectory,
     "AgentDocuments": AgentDocuments,
     "AgentHome": AgentHome,
+    "AgentLanding": AgentLanding,
     "AgentMatching": AgentMatching,
     "AgentOnboarding": AgentOnboarding,
     "AgentPerformance": AgentPerformance,
@@ -114,6 +115,7 @@ export const PAGES = {
     "InvestorDirectory": InvestorDirectory,
     "InvestorDocuments": InvestorDocuments,
     "InvestorIntake": InvestorIntake,
+    "InvestorLanding": InvestorLanding,
     "InvestorOnboarding": InvestorOnboarding,
     "InvestorPortfolio": InvestorPortfolio,
     "InvestorProfile": InvestorProfile,
@@ -134,6 +136,7 @@ export const PAGES = {
     "Resources": Resources,
     "ReviewPolicy": ReviewPolicy,
     "Reviews": Reviews,
+    "RoleLanding": RoleLanding,
     "RoleSelection": RoleSelection,
     "Room": Room,
     "Security": Security,
@@ -143,9 +146,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "RoleLanding": RoleLanding,
-    "InvestorLanding": InvestorLanding,
-    "AgentLanding": AgentLanding,
 }
 
 export const pagesConfig = {
