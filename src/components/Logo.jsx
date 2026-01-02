@@ -14,7 +14,7 @@ export function Logo({ size = 'default', showText = true, linkTo = '/', classNam
   const sizeClasses = sizes[size] || sizes.default;
 
   const LogoContent = () => (
-    <div className={`flex items-center gap-2 ${className}`}>
+    <div className={`flex items-center gap-2 ${className || ''}`}>
       {/* Logo Image */}
       <img 
         src={LOGO_URL}
