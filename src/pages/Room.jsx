@@ -210,19 +210,38 @@ export default function Room() {
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
+  const [agreement, setAgreement] = useState(null);
   
   const loadAgreement = async () => {
     if (currentRoom?.deal_id) {
       try {
+        // Reload deal details
         const response = await base44.functions.invoke('getDealDetailsForUser', {
           dealId: currentRoom.deal_id
         });
         if (response.data) setDeal(response.data);
+        
+        // Load legal agreement
+        const params = new URLSearchParams({ deal_id: currentRoom.deal_id });
+        const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`, {
+          headers: { 'Authorization': `Bearer ${await base44.auth.getAccessToken()}` }
+        });
+        const agreementData = await agreementResponse.json();
+        if (agreementData.agreement) {
+          setAgreement(agreementData.agreement);
+        }
       } catch (error) {
         console.error('Failed to reload deal:', error);
       }
     }
   };
+  
+  // Load agreement on mount and when deal changes
+  useEffect(() => {
+    if (currentRoom?.deal_id) {
+      loadAgreement();
+    }
+  }, [currentRoom?.deal_id]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -339,8 +358,16 @@ export default function Room() {
         body: t 
       });
       
+      // Check for contact info violation
+      if (response.data?.violations) {
+        setItems(prev => prev.filter(m => m.id !== tempId));
+        toast.error(response.data.error || 'Message blocked: Please do not share contact info until agreement is signed.');
+        setSending(false);
+        return;
+      }
+      
       if (!response.data?.ok) {
-        throw new Error('Message send failed');
+        throw new Error(response.data?.error || 'Message send failed');
       }
       
       // Log activity - async without blocking
@@ -685,6 +712,32 @@ ${dealContext}`;
               {/* Tab Content */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
+                  {/* Auto-Generate Contract CTA (Investor Only) */}
+                  {profile?.user_role === 'investor' && !agreement && currentRoom?.deal_id && (
+                    <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                          <Shield className="w-6 h-6 text-[#E3C567]" />
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="text-lg font-bold text-[#E3C567] mb-2">
+                            Ready to Formalize This Deal?
+                          </h4>
+                          <p className="text-sm text-[#FAFAFA]/90 mb-4">
+                            Generate your Investor-Agent Operating Agreement to lock in terms, unlock full property details, and move forward with confidence.
+                          </p>
+                          <Button
+                            onClick={() => setActiveTab('agreement')}
+                            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full px-6 py-2.5 flex items-center gap-2"
+                          >
+                            <FileText className="w-4 h-4" />
+                            Auto-Generate Contract
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* Privacy Warning for Agents */}
                   {profile?.user_role === 'agent' && currentRoom?.agreement_status !== 'fully_signed' && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5">
@@ -1117,6 +1170,23 @@ ${dealContext}`;
 
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
+                  {/* Anti-Circumvention Notice */}
+                  {!agreement && (
+                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5">
+                      <div className="flex items-start gap-3">
+                        <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
+                        <div>
+                          <h4 className="text-md font-bold text-[#60A5FA] mb-1">
+                            Platform Protection Notice
+                          </h4>
+                          <p className="text-sm text-[#FAFAFA]/80">
+                            To protect both parties, sharing contact information (emails, phone numbers, social handles) is restricted in chat until the agreement is signed. This ensures fair compensation and platform integrity.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   {/* LegalAgreement Panel (v1.0.1) */}
                   {currentRoom?.deal_id && deal && (
                     <LegalAgreementPanel

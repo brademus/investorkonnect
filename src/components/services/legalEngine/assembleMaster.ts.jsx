@@ -1,33 +1,28 @@
 import { loadLegalPack } from './loadPack';
 
 export interface MasterInput {
-  agreement_date: string;
   investor_name: string;
   investor_email: string;
   agent_name: string;
   agent_email: string;
   agent_license: string;
-  property_address: string;
-  property_city: string;
-  property_state: string;
-  property_zip: string;
-  transaction_type: string;
-  agreement_length_days: number;
-  termination_notice_days: number;
-  governing_state: string;
-  investor_signed_date?: string;
-  agent_signed_date?: string;
+  effective_date: string;
 }
 
+/**
+ * Assembles the Master Agreement from template
+ */
 export function assembleMaster(input: MasterInput): string {
   const pack = loadLegalPack();
-  let master = pack.templates.master_template;
+  let template = pack.templates.master_agreement;
   
-  // Replace all placeholders
-  Object.entries(input).forEach(([key, value]) => {
-    const placeholder = `{{${key}}}`;
-    master = master.replace(new RegExp(placeholder, 'g'), String(value || ''));
-  });
+  // Replace placeholders
+  template = template.replace(/\{\{investor_name\}\}/g, input.investor_name);
+  template = template.replace(/\{\{investor_email\}\}/g, input.investor_email);
+  template = template.replace(/\{\{agent_name\}\}/g, input.agent_name);
+  template = template.replace(/\{\{agent_email\}\}/g, input.agent_email);
+  template = template.replace(/\{\{agent_license\}\}/g, input.agent_license);
+  template = template.replace(/\{\{effective_date\}\}/g, input.effective_date);
   
-  return master;
+  return template;
 }

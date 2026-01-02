@@ -1,10 +1,10 @@
+import { loadLegalPack } from './loadPack';
 import { evaluateRules, EvaluationInput } from './evaluateRules';
-import { assembleMaster, MasterInput } from './assembleMaster';
-import { assembleAddendum, AddendumInput } from './assembleAddendum';
+import { assembleAddendum } from './assembleAddendum';
+import { assembleMaster } from './assembleMaster';
 import { buildExhibitA, ExhibitAInput } from './buildExhibitA';
 
-export interface RenderPackageInput {
-  // Deal info
+export interface RenderInput {
   deal: {
     property_address: string;
     city: string;
@@ -12,7 +12,6 @@ export interface RenderPackageInput {
     zip: string;
     property_type: string;
   };
-  // Parties
   investor: {
     name: string;
     email: string;
@@ -24,33 +23,39 @@ export interface RenderPackageInput {
     email: string;
     license_number: string;
   };
-  // Terms
-  transaction_type: 'ASSIGNMENT' | 'DOUBLE_CLOSE';
+  transaction_type: string;
   exhibit_a: ExhibitAInput;
 }
 
-export interface RenderPackageResult {
+export interface RenderResult {
   success: boolean;
   error?: string;
+  full_md?: string;
   master_md?: string;
   addendum_md?: string;
-  full_md?: string;
   evaluation?: any;
   exhibit_a_terms?: any;
 }
 
-export function renderPackage(input: RenderPackageInput): RenderPackageResult {
+/**
+ * Orchestrates full contract package rendering
+ * Returns Master + Addendum markdown
+ */
+export function renderPackage(input: RenderInput): RenderResult {
   try {
+    const pack = loadLegalPack();
+    
     // Step 1: Evaluate rules
-    const evaluationInput: EvaluationInput = {
+    const evalInput: EvaluationInput = {
       governing_state: input.deal.state,
       property_zip: input.deal.zip,
       transaction_type: input.transaction_type,
+      property_type: input.deal.property_type,
       investor_status: input.investor.status,
       deal_count_last_365: input.investor.deal_count_last_365
     };
     
-    const evaluation = evaluateRules(evaluationInput);
+    const evaluation = evaluateRules(evalInput);
     
     if (!evaluation.success) {
       return {
@@ -69,55 +74,46 @@ export function renderPackage(input: RenderPackageInput): RenderPackageResult {
       };
     }
     
-    const exhibit_a_json = JSON.stringify(exhibitResult.terms, null, 2);
-    
-    // Step 3: Assemble Master
-    const masterInput: MasterInput = {
-      agreement_date: new Date().toLocaleDateString(),
+    // Step 3: Assemble Master Agreement
+    const masterMd = assembleMaster({
       investor_name: input.investor.name,
       investor_email: input.investor.email,
       agent_name: input.agent.name,
       agent_email: input.agent.email,
       agent_license: input.agent.license_number,
-      property_address: input.deal.property_address,
-      property_city: input.deal.city,
-      property_state: input.deal.state,
-      property_zip: input.deal.zip,
-      transaction_type: input.transaction_type,
-      agreement_length_days: input.exhibit_a.agreement_length_days,
-      termination_notice_days: input.exhibit_a.termination_notice_days,
-      governing_state: input.deal.state
-    };
+      effective_date: new Date().toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      })
+    });
     
-    const master_md = assembleMaster(masterInput);
-    
-    // Step 4: Assemble Addendum
-    const addendumInput: AddendumInput = {
+    // Step 4: Assemble State Addendum
+    const addendumMd = assembleAddendum({
       evaluation,
       property_address: input.deal.property_address,
       property_city: input.deal.city,
       property_state: input.deal.state,
       property_zip: input.deal.zip,
-      exhibit_a_json
-    };
-    
-    const addendum_md = assembleAddendum(addendumInput);
+      exhibit_a_json: JSON.stringify(exhibitResult.terms, null, 2)
+    });
     
     // Step 5: Combine
-    const full_md = `${master_md}\n\n---\n\n${addendum_md}`;
+    const fullMd = `${masterMd}\n\n---\n\n${addendumMd}`;
     
     return {
       success: true,
-      master_md,
-      addendum_md,
-      full_md,
+      full_md: fullMd,
+      master_md: masterMd,
+      addendum_md: addendumMd,
       evaluation,
       exhibit_a_terms: exhibitResult.terms
     };
+    
   } catch (error) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Unknown error'
+      error: error.message || 'Failed to render package'
     };
   }
 }
