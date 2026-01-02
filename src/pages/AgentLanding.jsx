@@ -3,10 +3,10 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
-import { 
-  Users, DollarSign, TrendingUp, Shield, Award, 
-  CheckCircle, ArrowLeft, Briefcase
-} from "lucide-react";
+import {
+  Users, DollarSign, TrendingUp, Shield, Award,
+  CheckCircle, ArrowLeft, Briefcase } from
+"lucide-react";
 
 export default function AgentLanding() {
   const navigate = useNavigate();
@@ -27,18 +27,18 @@ export default function AgentLanding() {
           <div className="flex items-center gap-4">
             <button
               onClick={() => navigate(createPageUrl("RoleLanding"))}
-              className="text-[#808080] hover:text-[#E3C567] transition-colors"
-            >
+              className="text-[#808080] hover:text-[#E3C567] transition-colors">
+
               <ArrowLeft className="w-5 h-5" />
             </button>
             <Logo size="default" showText={true} />
-            <span className="text-sm text-[#60A5FA] font-medium">For Agents</span>
+            <span className="text-sm text-[#60A5FA] font-medium"></span>
           </div>
           <div className="flex items-center gap-3">
-            <button 
-              onClick={handleLogin} 
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1F1F1F] bg-[#0D0D0D] px-5 py-2.5 text-sm font-medium text-[#FAFAFA] shadow-sm transition-all hover:border-[#E3C567] hover:bg-[#141414]"
-            >
+            <button
+              onClick={handleLogin}
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#1F1F1F] bg-[#0D0D0D] px-5 py-2.5 text-sm font-medium text-[#FAFAFA] shadow-sm transition-all hover:border-[#E3C567] hover:bg-[#141414]">
+
               Log in
             </button>
           </div>
@@ -75,8 +75,8 @@ export default function AgentLanding() {
           <div className="mb-8">
             <Button
               onClick={handleGetStarted}
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(227,197,103,0.4)] transition-all"
-            >
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black px-12 py-4 rounded-full font-semibold text-lg shadow-lg hover:shadow-[0_8px_20px_rgba(227,197,103,0.4)] transition-all">
+
               Get Started as Agent
             </Button>
           </div>
@@ -107,8 +107,8 @@ export default function AgentLanding() {
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-              <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-[#60A5FA]" />
+              <div className="bg-[#000000] text-[#E3C567] mb-4 rounded-full w-12 h-12 flex items-center justify-center">
+                <Users className="text-[#E3C567] lucide lucide-users w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Qualified Investors</h3>
               <p className="text-[#808080]">
@@ -200,6 +200,6 @@ export default function AgentLanding() {
           </div>
         </div>
       </section>
-    </div>
-  );
+    </div>);
+
 }
