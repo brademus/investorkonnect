@@ -59,7 +59,18 @@ Deno.serve(async (req) => {
         ? agentRooms?.filter(r => r.deal_id === deal.id) || []
         : [];
       const room = rooms[0];
-      const isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
+      // Get LegalAgreement status (source of truth for gating)
+      let isFullySigned = false;
+      try {
+        const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal.id });
+        if (agreements.length > 0) {
+          const agreement = agreements[0];
+          isFullySigned = agreement.status === 'fully_signed';
+        }
+      } catch (e) {
+        // LegalAgreement may not exist yet - fallback to Room status
+        isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
+      }
 
       // Base fields everyone can see
       const baseDeal = {
