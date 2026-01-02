@@ -29,7 +29,7 @@ export default function AgentLanding() {
               onClick={() => navigate(createPageUrl("RoleLanding"))}
               className="text-[#808080] hover:text-[#E3C567] transition-colors">
 
-              <ArrowLeft className="w-5 h-5" />
+              <ArrowLeft style={{ width: '20px', height: '20px' }} />
             </button>
             <Logo size="default" showText={true} />
             <span className="text-sm text-[#60A5FA] font-medium"></span>
@@ -84,15 +84,15 @@ export default function AgentLanding() {
           {/* Trust Badges */}
           <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
               <span>Qualified Investor Leads</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
               <span>Deal Management Tools</span>
             </div>
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-5 h-5 text-[#E3C567]" />
+              <CheckCircle style={{ width: '20px', height: '20px', color: '#E3C567' }} />
               <span>Smart Matching</span>
             </div>
           </div>
