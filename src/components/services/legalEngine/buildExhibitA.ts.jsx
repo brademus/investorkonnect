@@ -1,4 +1,4 @@
-import { loadLegalPack } from './loadPack';
+import { loadLegalPackSync } from './loadPack';
 import { EvaluationResult } from './evaluateRules';
 
 export interface ExhibitAInput {
@@ -21,16 +21,11 @@ export interface ExhibitAResult {
   error?: string;
 }
 
-/**
- * Builds and validates Exhibit A terms
- * Enforces net policy: BANNED states reject NET_SPREAD (no conversion unless legacy)
- */
 export function buildExhibitA(
   input: ExhibitAInput,
   evaluation: EvaluationResult,
   isLegacy = false
 ): ExhibitAResult {
-  const pack = loadLegalPack();
   const net_policy = evaluation.net_policy;
   
   let terms = { ...input };
@@ -38,16 +33,16 @@ export function buildExhibitA(
   
   // STRICT NET POLICY ENFORCEMENT
   if (net_policy === 'BANNED' && input.compensation_model === 'NET_SPREAD') {
-    // Only allow conversion if this is explicitly legacy data
     if (!isLegacy) {
+      const state = evaluation.selected_rule_id.split('_')[0];
       return {
         terms,
         converted: false,
-        error: `NET/SPREAD compensation is prohibited in ${evaluation.selected_rule_id.split('_')[0]}. Choose Flat Fee or Percentage.`
+        error: `NET/SPREAD compensation is prohibited in ${state}. Choose Flat Fee or Percentage.`
       };
     }
     
-    // Legacy conversion path
+    // Legacy conversion
     terms.compensation_model = 'FLAT_FEE';
     terms.flat_fee_amount = input.net_target || input.flat_fee_amount || 0;
     terms.converted_from_net = true;
@@ -55,7 +50,7 @@ export function buildExhibitA(
     delete terms.net_target;
   }
   
-  // Validate required fields
+  // Validation
   if (!terms.compensation_model || !terms.transaction_type) {
     return {
       terms,
@@ -64,25 +59,5 @@ export function buildExhibitA(
     };
   }
   
-  // Validate compensation amounts
-  if (terms.compensation_model === 'FLAT_FEE' && !terms.flat_fee_amount) {
-    return {
-      terms,
-      converted,
-      error: 'Flat fee amount is required when using FLAT_FEE model'
-    };
-  }
-  
-  if (terms.compensation_model === 'COMMISSION_PCT' && !terms.commission_percentage) {
-    return {
-      terms,
-      converted,
-      error: 'Commission percentage is required when using COMMISSION_PCT model'
-    };
-  }
-  
-  return {
-    terms,
-    converted
-  };
+  return { terms, converted };
 }

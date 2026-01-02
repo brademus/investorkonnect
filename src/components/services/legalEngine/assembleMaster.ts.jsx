@@ -1,4 +1,4 @@
-import { loadLegalPack } from './loadPack';
+import { loadLegalPackSync } from './loadPack';
 
 export interface MasterInput {
   investor_name: string;
@@ -9,14 +9,10 @@ export interface MasterInput {
   effective_date: string;
 }
 
-/**
- * Assembles the Master Agreement from template
- */
 export function assembleMaster(input: MasterInput): string {
-  const pack = loadLegalPack();
+  const pack = loadLegalPackSync();
   let template = pack.templates.master_agreement;
   
-  // Replace placeholders
   template = template.replace(/\{\{investor_name\}\}/g, input.investor_name);
   template = template.replace(/\{\{investor_email\}\}/g, input.investor_email);
   template = template.replace(/\{\{agent_name\}\}/g, input.agent_name);

@@ -1,4 +1,4 @@
-import { loadLegalPack } from './loadPack';
+import { loadLegalPackSync } from './loadPack';
 import { resolveOverlay } from './resolveOverlay';
 
 export interface EvaluationInput {
@@ -21,26 +21,16 @@ export interface EvaluationResult {
   net_policy: 'BANNED' | 'RESTRICTED' | 'ALLOWED';
 }
 
-/**
- * Deterministic rule evaluation following strict precedence:
- * 1. Input validation
- * 2. Deep Dive Checks (IL hard block, etc.)
- * 3. Local Overlays (ZIP → City)
- * 4. State Defaults
- */
 export function evaluateRules(input: EvaluationInput): EvaluationResult {
-  const pack = loadLegalPack();
+  const pack = loadLegalPackSync();
   const validation_errors: string[] = [];
   
-  // STEP 1: Input Validation
+  // Input validation
   if (!input.governing_state) {
     validation_errors.push('Cannot generate agreement: missing property state');
   }
   if (!input.property_zip) {
     validation_errors.push('Cannot generate agreement: missing property ZIP code');
-  }
-  if (!input.transaction_type) {
-    validation_errors.push('Cannot generate agreement: missing transaction type');
   }
   
   if (validation_errors.length > 0) {
@@ -59,14 +49,13 @@ export function evaluateRules(input: EvaluationInput): EvaluationResult {
   const city_overlay = resolveOverlay(input.property_zip);
   const net_policy = pack.config.net_policy_by_state[input.governing_state] || 'ALLOWED';
   
-  // STEP 2: Deep Dive Checks (Hard Blocks)
-  // IL hard block: unlicensed + pattern of business
+  // IL hard block
   if (input.governing_state === 'IL' && 
       input.investor_status === 'UNLICENSED' && 
       input.deal_count_last_365 > 1) {
     return {
       success: false,
-      error: pack.config.hard_blocks.IL_UNLICENSED_PATTERN.message,
+      error: pack.config.hard_blocks?.IL_UNLICENSED_PATTERN?.message || 'IL licensing required',
       selected_rule_id: '',
       selected_clause_ids: {},
       deep_dive_module_ids: [],
@@ -75,90 +64,28 @@ export function evaluateRules(input: EvaluationInput): EvaluationResult {
     };
   }
   
-  // STEP 3: Determine Deep Dive Modules (by trigger conditions)
+  // Determine deep dive modules
   const deep_dive_module_ids: string[] = [];
+  if (input.governing_state === 'IL') deep_dive_module_ids.push('IL_DEEP_DIVE');
+  if (input.governing_state === 'PA') deep_dive_module_ids.push('PA_DEEP_DIVE');
+  if (input.governing_state === 'NJ') deep_dive_module_ids.push('NJ_DEEP_DIVE');
   
-  Object.entries(pack.modules.modules).forEach(([moduleId, module]) => {
-    if (module.trigger.type === 'state' && module.trigger.value === input.governing_state) {
-      deep_dive_module_ids.push(moduleId);
-    }
-    // Future: add other trigger types (city, property_type, etc.)
-  });
-  
-  // STEP 4: Build deterministic rule_id
-  // Format: STATE_TRANSTYPE_OVERLAY (if overlay exists)
+  // Build rule ID
   let selected_rule_id = `${input.governing_state}_${input.transaction_type}`;
   if (city_overlay) {
     selected_rule_id += `_${city_overlay}`;
   }
   
-  // STEP 5: Select Clauses by Category
+  // Select base clauses
   const selected_clause_ids: Record<string, string[]> = {
-    A: [],
-    B: [],
-    C: [],
-    E: [],
-    G: [],
-    H: [],
-    J: []
+    A: ['A_AGENCY_STD', 'A_TRANS_BROKER'],
+    B: [net_policy === 'BANNED' ? 'B_NET_BANNED' : net_policy === 'RESTRICTED' ? 'B_NET_RESTR' : 'B_NET_STD'],
+    C: ['C_EQ_INT_STD'],
+    E: ['E_LIST_REQ', 'E_BROKER_ACK'],
+    G: ['G_NO_SELLER'],
+    H: ['H_PAY_BROKER'],
+    J: city_overlay === 'PHILA' ? ['J_PHL_LIC'] : []
   };
-  
-  // Evaluate each clause's dependencies
-  Object.entries(pack.clauses.clauses).forEach(([clauseId, clause]) => {
-    let include = true;
-    
-    // Check dependencies
-    for (const dep of clause.dependencies) {
-      if (dep.type === 'state' && dep.value !== input.governing_state) {
-        include = false;
-      }
-      if (dep.type === 'city' && dep.value !== city_overlay) {
-        include = false;
-      }
-    }
-    
-    if (include) {
-      const category = clause.category;
-      if (!selected_clause_ids[category]) {
-        selected_clause_ids[category] = [];
-      }
-      selected_clause_ids[category].push(clauseId);
-    }
-  });
-  
-  // Add mandatory base clauses
-  if (!selected_clause_ids.A.includes('A_AGENCY_STD')) {
-    selected_clause_ids.A.push('A_AGENCY_STD');
-  }
-  if (!selected_clause_ids.A.includes('A_TRANS_BROKER')) {
-    selected_clause_ids.A.push('A_TRANS_BROKER');
-  }
-  
-  // Add appropriate net policy clause
-  if (net_policy === 'BANNED') {
-    selected_clause_ids.B.push('B_NET_BANNED');
-  } else if (net_policy === 'RESTRICTED') {
-    selected_clause_ids.B.push('B_NET_RESTR');
-  } else {
-    selected_clause_ids.B.push('B_NET_STD');
-  }
-  
-  // Add standard clauses
-  if (!selected_clause_ids.C.includes('C_EQ_INT_STD')) {
-    selected_clause_ids.C.push('C_EQ_INT_STD');
-  }
-  if (!selected_clause_ids.E.includes('E_LIST_REQ')) {
-    selected_clause_ids.E.push('E_LIST_REQ');
-  }
-  if (!selected_clause_ids.E.includes('E_BROKER_ACK')) {
-    selected_clause_ids.E.push('E_BROKER_ACK');
-  }
-  if (!selected_clause_ids.G.includes('G_NO_SELLER')) {
-    selected_clause_ids.G.push('G_NO_SELLER');
-  }
-  if (!selected_clause_ids.H.includes('H_PAY_BROKER')) {
-    selected_clause_ids.H.push('H_PAY_BROKER');
-  }
   
   return {
     success: true,

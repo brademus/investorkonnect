@@ -1,4 +1,4 @@
-import { loadLegalPack } from './loadPack';
+import { loadLegalPackSync } from './loadPack';
 import { evaluateRules, EvaluationInput } from './evaluateRules';
 import { assembleAddendum } from './assembleAddendum';
 import { assembleMaster } from './assembleMaster';
@@ -37,14 +37,8 @@ export interface RenderResult {
   exhibit_a_terms?: any;
 }
 
-/**
- * Orchestrates full contract package rendering
- * Returns Master + Addendum markdown
- */
 export function renderPackage(input: RenderInput): RenderResult {
   try {
-    const pack = loadLegalPack();
-    
     // Step 1: Evaluate rules
     const evalInput: EvaluationInput = {
       governing_state: input.deal.state,
@@ -58,23 +52,17 @@ export function renderPackage(input: RenderInput): RenderResult {
     const evaluation = evaluateRules(evalInput);
     
     if (!evaluation.success) {
-      return {
-        success: false,
-        error: evaluation.error
-      };
+      return { success: false, error: evaluation.error };
     }
     
     // Step 2: Build Exhibit A
     const exhibitResult = buildExhibitA(input.exhibit_a, evaluation);
     
     if (exhibitResult.error) {
-      return {
-        success: false,
-        error: exhibitResult.error
-      };
+      return { success: false, error: exhibitResult.error };
     }
     
-    // Step 3: Assemble Master Agreement
+    // Step 3: Assemble Master
     const masterMd = assembleMaster({
       investor_name: input.investor.name,
       investor_email: input.investor.email,
@@ -82,13 +70,11 @@ export function renderPackage(input: RenderInput): RenderResult {
       agent_email: input.agent.email,
       agent_license: input.agent.license_number,
       effective_date: new Date().toLocaleDateString('en-US', { 
-        month: 'long', 
-        day: 'numeric', 
-        year: 'numeric' 
+        month: 'long', day: 'numeric', year: 'numeric' 
       })
     });
     
-    // Step 4: Assemble State Addendum
+    // Step 4: Assemble Addendum
     const addendumMd = assembleAddendum({
       evaluation,
       property_address: input.deal.property_address,
@@ -98,7 +84,6 @@ export function renderPackage(input: RenderInput): RenderResult {
       exhibit_a_json: JSON.stringify(exhibitResult.terms, null, 2)
     });
     
-    // Step 5: Combine
     const fullMd = `${masterMd}\n\n---\n\n${addendumMd}`;
     
     return {
@@ -109,7 +94,6 @@ export function renderPackage(input: RenderInput): RenderResult {
       evaluation,
       exhibit_a_terms: exhibitResult.terms
     };
-    
   } catch (error) {
     return {
       success: false,
