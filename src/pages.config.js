@@ -11,6 +11,7 @@ import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
 import AgentDirectory from './pages/AgentDirectory';
 import AgentDocuments from './pages/AgentDocuments';
 import AgentHome from './pages/AgentHome';
+import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
 import AgentOnboarding from './pages/AgentOnboarding';
 import AgentPerformance from './pages/AgentPerformance';
@@ -69,7 +70,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import AgentLanding from './pages/AgentLanding';
 import __Layout from './Layout.jsx';
 
 
@@ -87,6 +87,7 @@ export const PAGES = {
     "AgentDirectory": AgentDirectory,
     "AgentDocuments": AgentDocuments,
     "AgentHome": AgentHome,
+    "AgentLanding": AgentLanding,
     "AgentMatching": AgentMatching,
     "AgentOnboarding": AgentOnboarding,
     "AgentPerformance": AgentPerformance,
@@ -145,7 +146,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "AgentLanding": AgentLanding,
 }
 
 export const pagesConfig = {

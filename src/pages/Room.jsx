@@ -14,6 +14,7 @@ import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import ContractLayers from "@/components/ContractLayers";
 import DocumentChecklist from "@/components/DocumentChecklist";
+import LegalAgreementPanel from "@/components/LegalAgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { 
@@ -209,6 +210,19 @@ export default function Room() {
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
+  
+  const loadAgreement = async () => {
+    if (currentRoom?.deal_id) {
+      try {
+        const response = await base44.functions.invoke('getDealDetailsForUser', {
+          dealId: currentRoom.deal_id
+        });
+        if (response.data) setDeal(response.data);
+      } catch (error) {
+        console.error('Failed to reload deal:', error);
+      }
+    }
+  };
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -1103,7 +1117,20 @@ ${dealContext}`;
 
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {/* Agreement Status Banner */}
+                  {/* LegalAgreement Panel (v1.0.1) */}
+                  {currentRoom?.deal_id && deal && (
+                    <LegalAgreementPanel
+                      deal={deal}
+                      profile={profile}
+                      onUpdate={() => {
+                        loadAgreement();
+                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                      }}
+                    />
+                  )}
+                  
+                  {/* Legacy Agreement Status Banner (kept for backward compatibility) */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
