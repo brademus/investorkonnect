@@ -108,7 +108,7 @@ export default function AgentLanding() {
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
-                <Users className="w-6 h-6 text-[#E3C567]" />
+                <Users style={{ width: '24px', height: '24px', color: '#E3C567' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Qualified Investors</h3>
               <p className="text-[#808080]">
@@ -117,7 +117,7 @@ export default function AgentLanding() {
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
-                <Briefcase className="w-6 h-6" style={{ color: '#60A5FA' }} />
+                <Briefcase style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Management</h3>
               <p className="text-[#808080]">
@@ -126,7 +126,7 @@ export default function AgentLanding() {
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#60A5FA]/10 rounded-full flex items-center justify-center mb-4">
-                <Award className="w-6 h-6 text-[#60A5FA]" />
+                <Award style={{ width: '24px', height: '24px', color: '#60A5FA' }} />
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Showcase Your Track Record</h3>
               <p className="text-[#808080]">
