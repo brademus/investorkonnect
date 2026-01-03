@@ -49,9 +49,30 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   const loadAgreement = async () => {
+    // Validate required params
+    if (!deal?.id) {
+      toast.error('Missing deal ID — cannot load agreement.');
+      setLoading(false);
+      return;
+    }
+    if (!profile?.user_id) {
+      toast.error('Missing user ID — cannot load agreement.');
+      setLoading(false);
+      return;
+    }
+    if (!profile?.user_role) {
+      toast.error('Missing user role — cannot load agreement.');
+      setLoading(false);
+      return;
+    }
+    
     try {
       setLoading(true);
-      const params = new URLSearchParams({ deal_id: deal.id });
+      const actorRole = (profile.user_role || '').toLowerCase();
+      const params = new URLSearchParams({ 
+        deal_id: deal.id,
+        role: actorRole
+      });
       const response = await fetch(`/api/functions/getLegalAgreement?${params}`, {
         headers: { 'Authorization': `Bearer ${await base44.auth.getAccessToken()}` }
       });
@@ -59,16 +80,32 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       setAgreement(data.agreement || null);
     } catch (error) {
       console.error('Failed to load agreement:', error);
+      toast.error(`Failed to load agreement: ${error.message || error}`);
     } finally {
       setLoading(false);
     }
   };
   
   const handleGenerate = async () => {
-    if (!deal?.id) return;
+    // Validate required params
+    if (!deal?.id) {
+      toast.error('Missing deal ID — cannot generate agreement.');
+      return;
+    }
+    if (!profile?.user_id) {
+      toast.error('Missing user ID — cannot generate agreement.');
+      return;
+    }
+    if (!profile?.user_role) {
+      toast.error('Missing user role — cannot generate agreement.');
+      return;
+    }
     
     setGenerating(true);
     try {
+      // Normalize role to lowercase
+      const actorRole = (profile.user_role || '').toLowerCase();
+      
       // Derive exhibit_a from deal's existing terms
       const derivedExhibitA = {
         compensation_model: deal.proposed_terms?.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 
@@ -88,6 +125,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       const response = await base44.functions.invoke('generateLegalAgreement', {
         deal_id: deal.id,
+        actor_user_id: profile.user_id,
+        actor_role: actorRole,
         exhibit_a: derivedExhibitA
       });
       
@@ -109,10 +148,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       setAgreement(response.data.agreement);
       setShowGenerateModal(false);
       
+      // Reload agreement to ensure we have the latest data
+      await loadAgreement();
+      
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Generate error:', error);
-      toast.error(error.message || 'Failed to generate agreement');
+      toast.error(`Generate agreement failed: ${error.message || error}`);
     } finally {
       setGenerating(false);
     }
