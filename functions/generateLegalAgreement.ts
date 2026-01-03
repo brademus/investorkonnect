@@ -22,11 +22,14 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
+    console.log('Deal:', deal.id, 'agent_id:', deal.agent_id);
+    
     // Find agent from Room (new flow) or deal.agent_id (legacy)
     let agentProfile = null;
     
     if (deal.agent_id) {
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
+      console.log('Found agent profiles by deal.agent_id:', agentProfiles.length);
       if (agentProfiles && agentProfiles.length > 0) {
         agentProfile = agentProfiles[0];
       }
@@ -35,10 +38,21 @@ Deno.serve(async (req) => {
     // If no agent_id on deal, look for accepted room
     if (!agentProfile) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
+      console.log('Rooms for deal:', rooms.length);
       const acceptedRoom = rooms.find(r => r.request_status === 'accepted' || r.is_fully_signed);
+      console.log('Accepted room:', acceptedRoom ? acceptedRoom.id : 'none', 'agentId:', acceptedRoom?.agentId);
       
       if (!acceptedRoom || !acceptedRoom.agentId) {
-        return Response.json({ error: 'No agent assigned to deal' }, { status: 400 });
+        return Response.json({ 
+          error: 'No agent assigned to deal. Please accept a deal request first.',
+          debug: {
+            deal_id,
+            deal_agent_id: deal.agent_id,
+            rooms_count: rooms.length,
+            accepted_room: !!acceptedRoom,
+            agent_in_room: acceptedRoom?.agentId
+          }
+        }, { status: 400 });
       }
       
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: acceptedRoom.agentId });
