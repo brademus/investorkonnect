@@ -73,9 +73,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         deal_id: deal.id,
         role: actorRole
       });
-      const response = await fetch(`/api/functions/getLegalAgreement?${params}`, {
-        headers: { 'Authorization': `Bearer ${await base44.auth.getAccessToken()}` }
-      });
+      const response = await fetch(`/api/functions/getLegalAgreement?${params}`);
       const data = await response.json();
       setAgreement(data.agreement || null);
     } catch (error) {
