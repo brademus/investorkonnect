@@ -123,8 +123,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       const response = await base44.functions.invoke('generateLegalAgreement', {
         deal_id: deal.id,
-        actor_user_id: profile.user_id,
-        actor_role: actorRole,
         exhibit_a: derivedExhibitA
       });
       
