@@ -22,15 +22,31 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
-    if (!deal.agent_id) {
-      return Response.json({ error: 'No agent assigned to deal' }, { status: 400 });
+    // Find agent from Room (new flow) or deal.agent_id (legacy)
+    let agentProfile = null;
+    
+    if (deal.agent_id) {
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
+      if (agentProfiles && agentProfiles.length > 0) {
+        agentProfile = agentProfiles[0];
+      }
     }
     
-    const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
-    if (!agentProfiles || agentProfiles.length === 0) {
-      return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+    // If no agent_id on deal, look for accepted room
+    if (!agentProfile) {
+      const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
+      const acceptedRoom = rooms.find(r => r.request_status === 'accepted' || r.is_fully_signed);
+      
+      if (!acceptedRoom || !acceptedRoom.agentId) {
+        return Response.json({ error: 'No agent assigned to deal' }, { status: 400 });
+      }
+      
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: acceptedRoom.agentId });
+      if (!agentProfiles || agentProfiles.length === 0) {
+        return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+      }
+      agentProfile = agentProfiles[0];
     }
-    const agentProfile = agentProfiles[0];
     
     // Generate master agreement
     const masterText = `INVESTOR-AGENT OPERATING AGREEMENT
