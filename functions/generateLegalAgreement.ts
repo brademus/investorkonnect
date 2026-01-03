@@ -62,54 +62,93 @@ Deno.serve(async (req) => {
       agentProfile = agentProfiles[0];
     }
     
-    // Generate master agreement
+    // Build master agreement
     const masterText = `INVESTOR-AGENT OPERATING AGREEMENT
 
-Effective Date: ${new Date().toLocaleDateString()}
+This Agreement is entered into as of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} (the "Effective Date") between:
 
-PARTIES:
-- Investor: ${profile.full_name || user.email}
-- Agent: ${agentProfile.full_name || agentProfile.email}
+INVESTOR: ${profile.full_name || user.email}
+AGENT: ${agentProfile.full_name || agentProfile.email}
+Licensed in: ${deal.state}
 
-1. ENGAGEMENT
-Investor engages Agent for real estate services.
+PROPERTY LOCATION: ${deal.city}, ${deal.state} ${deal.zip}
+
+1. ENGAGEMENT AND SCOPE
+   Investor engages Agent to provide real estate brokerage services for investment property transactions in ${deal.state}.
 
 2. COMPENSATION
-As specified in Exhibit A.
+   Agent's compensation is set forth in Exhibit A attached hereto and incorporated by reference.
+   - Model: ${exhibit_a.compensation_model || 'FLAT_FEE'}
+   ${exhibit_a.compensation_model === 'FLAT_FEE' ? `- Amount: $${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}` : ''}
+   ${exhibit_a.compensation_model === 'COMMISSION_PCT' ? `- Percentage: ${exhibit_a.commission_percentage}%` : ''}
+   - Transaction Type: ${exhibit_a.transaction_type || 'ASSIGNMENT'}
 
-3. GOVERNING LAW
-Governed by ${deal.state} law.`;
+3. TERM AND TERMINATION
+   This Agreement shall remain in effect for ${exhibit_a.agreement_length_days || 180} days from the Effective Date.
+   Either party may terminate with ${exhibit_a.termination_notice_days || 30} days written notice.
 
-    // Generate state addendum
-    let stateText = `\n\nSTATE ADDENDUM - ${deal.state}
+4. REPRESENTATIONS
+   Agent represents that they hold a valid real estate license in ${deal.state} and will comply with all state laws.
+   Investor represents that all information provided is accurate and complete.
 
-Property: ${deal.property_address || deal.city + ', ' + deal.state}
-ZIP: ${deal.zip}
+5. GOVERNING LAW
+   This Agreement shall be governed by and construed in accordance with the laws of the State of ${deal.state}.`;
 
-EXHIBIT A:
-- Compensation: ${exhibit_a.compensation_model || 'FLAT_FEE'}
-- Amount: $${exhibit_a.flat_fee_amount || 5000}
-- Type: ${exhibit_a.transaction_type || 'ASSIGNMENT'}`;
-
-    // Add state-specific sections
+    // Build state-specific addendum
+    let addendumText = `\n\n=== STATE-SPECIFIC ADDENDUM: ${deal.state} ===\n`;
+    
     if (deal.state === 'IL') {
-      stateText += `\n\nILLINOIS PROVISIONS:
-- Wholesaling limited to 1 transaction/year for unlicensed
-- Net listings prohibited`;
+      addendumText += `\nILLINOIS ADDENDUM
+
+1. WHOLESALING RESTRICTIONS
+   Illinois law restricts unlicensed individuals to no more than one (1) assignment transaction per 365-day period.
+   Investor acknowledges this limitation and represents compliance.
+
+2. NET LISTING PROHIBITION
+   Net listings are prohibited in Illinois. All compensation must be disclosed and structured as commission or flat fee.
+
+3. DISCLOSURE REQUIREMENTS
+   All parties must receive written disclosure of Agent's role and compensation structure prior to contract execution.`;
+    } else if (deal.state === 'PA') {
+      addendumText += `\nPENNSYLVANIA ADDENDUM
+
+1. ASSIGNMENT DISCLOSURE
+   Pennsylvania law requires disclosure of assignment intent to sellers. Agent will ensure proper disclosure is made.
+
+2. GOOD FAITH DEPOSIT
+   A good faith deposit is required for all purchase agreements. Amount and terms to be negotiated per transaction.
+
+3. AGENCY DISCLOSURE
+   Written agency disclosure must be provided to all parties at first substantive contact.`;
+    } else if (deal.state === 'NJ') {
+      addendumText += `\nNEW JERSEY ADDENDUM
+
+1. ATTORNEY REVIEW PERIOD
+   This Agreement and all contracts are subject to New Jersey's three (3) business day attorney review period.
+   Either party may cancel within this period upon attorney's written notice.
+
+2. AGENCY DISCLOSURE
+   Agent must provide Consumer Information Statement on Agency at first substantive contact.
+
+3. GOOD FAITH DEPOSIT
+   New Jersey requires good faith deposits for all purchase contracts. Terms to be specified per transaction.`;
+    } else {
+      addendumText += `\n${deal.state} PROVISIONS
+
+This Agreement is subject to all applicable ${deal.state} real estate laws and regulations.
+Agent represents compliance with all state-specific licensing and disclosure requirements.`;
     }
     
-    if (deal.state === 'PA') {
-      stateText += `\n\nPENNSYLVANIA PROVISIONS:
-- Assignment contracts must disclose intent
-- Good faith deposit required`;
-    }
+    addendumText += `\n\n=== EXHIBIT A: COMPENSATION TERMS ===
+
+Transaction Type: ${exhibit_a.transaction_type || 'ASSIGNMENT'}
+Compensation Model: ${exhibit_a.compensation_model || 'FLAT_FEE'}
+${exhibit_a.compensation_model === 'FLAT_FEE' ? `Flat Fee Amount: $${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}` : ''}
+${exhibit_a.compensation_model === 'COMMISSION_PCT' ? `Commission Rate: ${exhibit_a.commission_percentage}%` : ''}
+Agreement Duration: ${exhibit_a.agreement_length_days || 180} days
+Termination Notice: ${exhibit_a.termination_notice_days || 30} days`;
     
-    if (deal.state === 'NJ') {
-      stateText += `\n\nNEW JERSEY PROVISIONS:
-- 3 business day attorney review period applies`;
-    }
-    
-    const fullText = masterText + stateText;
+    const fullText = masterText + addendumText;
     
     // Create PDF
     const doc = new jsPDF();
