@@ -128,6 +128,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       if (response.data?.error) {
         toast.error(response.data.error);
+        if (response.data?.debug) {
+          console.error('Backend debug info:', response.data.debug);
+        }
         return;
       }
       
@@ -150,7 +153,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Generate error:', error);
-      toast.error(`Generate agreement failed: ${error.message || error}`);
+      const errorMessage = error?.response?.data?.error || error?.message || error;
+      toast.error(`Generate agreement failed: ${errorMessage}`);
     } finally {
       setGenerating(false);
     }
