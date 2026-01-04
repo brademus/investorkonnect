@@ -116,7 +116,8 @@ Deno.serve(async (req) => {
     }
 
     // Get template URL for this state
-    const templateUrl = STATE_TEMPLATES[deal.state];
+    const stateCode = (deal.state || '').toUpperCase();
+    const templateUrl = STATE_TEMPLATES[stateCode];
     if (!templateUrl) {
       return Response.json({ error: `No template available for state: ${deal.state}` }, { status: 400 });
     }
