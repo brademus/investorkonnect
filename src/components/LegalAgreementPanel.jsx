@@ -144,10 +144,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         toast.success('Agreement generated successfully');
       }
       
-      // Set agreement immediately from response
-      setAgreement(response.data.agreement);
       setShowGenerateModal(false);
-      setLoading(false);
+      
+      // Reload to get the complete agreement data
+      await loadAgreement();
       
       if (onUpdate) onUpdate();
     } catch (error) {
