@@ -138,16 +138,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         toast.warning('Net listing converted to Flat Fee due to state restrictions');
       }
       
+      console.log('Generate response:', response.data);
+      
+      if (!response.data?.agreement) {
+        toast.error('Agreement generated but not returned from server');
+        console.error('No agreement in response:', response.data);
+        return;
+      }
+      
       if (response.data?.regenerated === false) {
         toast.info('Agreement already up to date (no changes needed)');
       } else {
         toast.success('Agreement generated successfully');
       }
       
+      // Set agreement immediately from response
+      setAgreement(response.data.agreement);
       setShowGenerateModal(false);
-      
-      // Reload to get the complete agreement data
-      await loadAgreement();
       
       if (onUpdate) onUpdate();
     } catch (error) {
