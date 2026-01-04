@@ -135,69 +135,88 @@ Deno.serve(async (req) => {
     // Prepare replacement values
     const effectiveDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
     const replacements = {
-      '{DEAL_ID}': deal.id || '',
-      '{EFFECTIVE_DATE}': effectiveDate,
-      '{INVESTOR_LEGAL_NAME}': profile.full_name || user.email || '',
-      '{AGENT_LEGAL_NAME}': agentProfile.full_name || agentProfile.email || '',
-      '{AGENT_LICENSE_NUMBER}': agentProfile.agent?.license_number || agentProfile.license_number || '',
-      '{AGENT_BROKERAGE}': agentProfile.agent?.brokerage || agentProfile.broker || '',
-      '{PROPERTY_ADDRESS}': deal.property_address || '',
-      '{CITY}': deal.city || '',
-      '{STATE}': deal.state || '',
-      '{ZIP}': deal.zip || '',
-      '{COUNTY}': deal.county || '',
-      '{TRANSACTION_TYPE}': exhibit_a.transaction_type || 'ASSIGNMENT',
-      '{COMPENSATION_MODEL}': exhibit_a.compensation_model || 'FLAT_FEE',
-      '{FLAT_FEE_AMOUNT}': exhibit_a.flat_fee_amount ? `$${exhibit_a.flat_fee_amount.toLocaleString()}` : '$5,000',
-      '{COMMISSION_PERCENTAGE}': exhibit_a.commission_percentage ? `${exhibit_a.commission_percentage}%` : '',
-      '{AGREEMENT_LENGTH_DAYS}': (exhibit_a.agreement_length_days || 180).toString(),
-      '{TERMINATION_NOTICE_DAYS}': (exhibit_a.termination_notice_days || 30).toString(),
-      '{INVESTOR_EMAIL}': user.email || '',
-      '{AGENT_EMAIL}': agentProfile.email || '',
-      '{INVESTOR_PHONE}': profile.phone || '',
-      '{AGENT_PHONE}': agentProfile.phone || ''
+      'DEAL_ID': deal.id || '',
+      'EFFECTIVE_DATE': effectiveDate,
+      'INVESTOR_LEGAL_NAME': profile.full_name || user.email || '',
+      'INVESTOR_ENTITY_TYPE': 'Individual',
+      'INVESTOR_EMAIL': user.email || '',
+      'INVESTOR_PHONE': profile.phone || '',
+      'AGENT_LEGAL_NAME': agentProfile.full_name || agentProfile.email || '',
+      'LICENSE_NUMBER': agentProfile.agent?.license_number || agentProfile.license_number || '',
+      'BROKERAGE_NAME': agentProfile.agent?.brokerage || agentProfile.broker || '',
+      'AGENT_EMAIL': agentProfile.email || '',
+      'AGENT_PHONE': agentProfile.phone || '',
+      'PROPERTY_ADDRESS': deal.property_address || '',
+      'CITY': deal.city || '',
+      'STATE': deal.state || '',
+      'ZIP': deal.zip || '',
+      'COUNTY': deal.county || '',
+      'TRANSACTION_TYPE': exhibit_a.transaction_type || 'ASSIGNMENT',
+      'COMPENSATION_MODEL': exhibit_a.compensation_model || 'FLAT_FEE',
+      'FLAT_FEE_AMOUNT': exhibit_a.flat_fee_amount ? `$${exhibit_a.flat_fee_amount.toLocaleString()}` : '$5,000',
+      'COMMISSION_PERCENTAGE': exhibit_a.commission_percentage ? `${exhibit_a.commission_percentage}%` : '',
+      'AGREEMENT_LENGTH_DAYS': (exhibit_a.agreement_length_days || 180).toString(),
+      'TERMINATION_NOTICE_DAYS': (exhibit_a.termination_notice_days || 30).toString()
     };
 
-    // Get form fields and fill them
+    // Check if PDF has form fields
     const form = pdfDoc.getForm();
     const fields = form.getFields();
 
-    console.log(`Found ${fields.length} form fields in template`);
-    fields.forEach(field => {
-      const fieldName = field.getName();
-      console.log(`Field: ${fieldName}`);
-    });
+    if (fields.length > 0) {
+      console.log(`Found ${fields.length} form fields in template`);
 
-    // Try multiple field name formats
-    fields.forEach(field => {
-      const fieldName = field.getName();
+      // Fill form fields
+      fields.forEach(field => {
+        const fieldName = field.getName();
+        console.log(`Field: ${fieldName}`);
 
-      // Try exact match with braces
-      if (replacements[fieldName]) {
-        try {
-          const textField = form.getTextField(fieldName);
-          textField.setText(replacements[fieldName]);
-          console.log(`Filled field: ${fieldName}`);
-        } catch (e) {
-          console.log(`Could not fill field ${fieldName}:`, e.message);
+        // Try exact match
+        if (replacements[fieldName]) {
+          try {
+            const textField = form.getTextField(fieldName);
+            textField.setText(replacements[fieldName]);
+            console.log(`Filled field: ${fieldName}`);
+          } catch (e) {
+            console.log(`Could not fill field ${fieldName}:`, e.message);
+          }
         }
-      }
+      });
 
-      // Try without braces
-      const withBraces = `{${fieldName}}`;
-      if (replacements[withBraces]) {
-        try {
-          const textField = form.getTextField(fieldName);
-          textField.setText(replacements[withBraces]);
-          console.log(`Filled field (added braces): ${fieldName}`);
-        } catch (e) {
-          console.log(`Could not fill field ${fieldName}:`, e.message);
+      // Flatten the form
+      form.flatten();
+    } else {
+      console.log('No form fields found - PDF has text placeholders. Adding overlay text.');
+
+      // Get first page and add text overlays at approximate locations
+      const pages = pdfDoc.getPages();
+      const firstPage = pages[0];
+      const { height } = firstPage.getSize();
+
+      // Add text overlays for key fields (coordinates may need adjustment per template)
+      const overlays = [
+        { text: replacements.DEAL_ID, x: 255, y: height - 203 },
+        { text: replacements.EFFECTIVE_DATE, x: 310, y: height - 234 },
+        { text: replacements.INVESTOR_LEGAL_NAME, x: 285, y: height - 337 },
+        { text: replacements.INVESTOR_EMAIL, x: 240, y: height - 359 },
+        { text: replacements.BROKERAGE_NAME, x: 465, y: height - 390 },
+        { text: replacements.AGENT_LEGAL_NAME, x: 355, y: height - 412 },
+        { text: replacements.LICENSE_NUMBER, x: 185, y: height - 433 },
+        { text: replacements.CITY, x: 480, y: height - 433 },
+        { text: replacements.STATE, x: 550, y: height - 433 }
+      ];
+
+      overlays.forEach(({ text, x, y }) => {
+        if (text) {
+          firstPage.drawText(text, {
+            x,
+            y,
+            size: 11,
+            color: rgb(0, 0, 0)
+          });
         }
-      }
-    });
-
-    // Flatten the form to make fields non-editable
-    form.flatten();
+      });
+    }
 
     // Save modified PDF
     const pdfBytes = await pdfDoc.save();
