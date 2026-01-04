@@ -423,16 +423,7 @@ export default function AgentProfile() {
                       {connecting ? "Connecting..." : "Connect"}
                     </button>
                   )}
-                  {dealId && roomId && (
-                    <button 
-                      className="bg-[#10B981] hover:bg-[#059669] text-white text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                      onClick={handleLockIn}
-                      disabled={lockingIn}
-                    >
-                      {lockingIn ? <LoadingAnimation className="w-5 h-5 mr-2" /> : <CheckCircle className="w-5 h-5 mr-2" />}
-                      {lockingIn ? "Locking In..." : "Lock in this Agent"}
-                    </button>
-                  )}
+
                   {!dealId && (
                     <button 
                       className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-lg font-bold px-8 py-3 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
@@ -571,25 +562,14 @@ export default function AgentProfile() {
           {/* Actually the button is in the top header section. I will add a large CTA at the bottom of the main profile card too, or just rely on the sticky header if there was one, but there isn't. */}
           
           <div className="mt-8 pt-6 border-t border-[#1F1F1F] flex justify-center">
-            {dealId && roomId ? (
-              <button 
-                className="bg-[#10B981] hover:bg-[#059669] text-white text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(16,185,129,0.4)] hover:shadow-[0_0_30px_rgba(16,185,129,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                onClick={handleLockIn}
-                disabled={lockingIn}
-              >
-                {lockingIn ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <CheckCircle className="w-6 h-6 mr-3" />}
-                {lockingIn ? "Locking In..." : "Lock in this Agent"}
-              </button>
-            ) : (
-              <button 
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
-                onClick={handleConnect}
-                disabled={connecting}
-              >
-                {connecting ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <MessageCircle className="w-6 h-6 mr-3" />}
-                {connecting ? "Starting..." : "Start Conversation"}
-              </button>
-            )}
+            <button 
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xl font-bold px-10 py-4 rounded-full shadow-[0_0_20px_rgba(227,197,103,0.4)] hover:shadow-[0_0_30px_rgba(227,197,103,0.6)] flex items-center transition-all hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+              onClick={handleConnect}
+              disabled={connecting}
+            >
+              {connecting ? <LoadingAnimation className="w-6 h-6 mr-3" /> : <MessageCircle className="w-6 h-6 mr-3" />}
+              {connecting ? "Starting..." : "Start Conversation"}
+            </button>
           </div>
 
         </div>
