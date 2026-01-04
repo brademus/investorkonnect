@@ -162,12 +162,34 @@ Deno.serve(async (req) => {
     const form = pdfDoc.getForm();
     const fields = form.getFields();
 
+    console.log(`Found ${fields.length} form fields in template`);
     fields.forEach(field => {
       const fieldName = field.getName();
+      console.log(`Field: ${fieldName}`);
+    });
+
+    // Try multiple field name formats
+    fields.forEach(field => {
+      const fieldName = field.getName();
+
+      // Try exact match with braces
       if (replacements[fieldName]) {
         try {
           const textField = form.getTextField(fieldName);
           textField.setText(replacements[fieldName]);
+          console.log(`Filled field: ${fieldName}`);
+        } catch (e) {
+          console.log(`Could not fill field ${fieldName}:`, e.message);
+        }
+      }
+
+      // Try without braces
+      const withBraces = `{${fieldName}}`;
+      if (replacements[withBraces]) {
+        try {
+          const textField = form.getTextField(fieldName);
+          textField.setText(replacements[withBraces]);
+          console.log(`Filled field (added braces): ${fieldName}`);
         } catch (e) {
           console.log(`Could not fill field ${fieldName}:`, e.message);
         }
