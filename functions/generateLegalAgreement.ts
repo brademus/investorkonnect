@@ -35,27 +35,27 @@ Deno.serve(async (req) => {
       }
     }
     
-    // If no agent_id on deal, look for accepted room
+    // If no agent_id on deal, look for any room with this deal
     if (!agentProfile) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
       console.log('Rooms for deal:', rooms.length);
-      const acceptedRoom = rooms.find(r => r.request_status === 'accepted' || r.is_fully_signed);
-      console.log('Accepted room:', acceptedRoom ? acceptedRoom.id : 'none', 'agentId:', acceptedRoom?.agentId);
+      // Accept any room (requested, accepted, or signed) - investor chooses agent when creating room
+      const dealRoom = rooms.find(r => r.agentId);
+      console.log('Deal room:', dealRoom ? dealRoom.id : 'none', 'agentId:', dealRoom?.agentId, 'status:', dealRoom?.request_status);
       
-      if (!acceptedRoom || !acceptedRoom.agentId) {
+      if (!dealRoom || !dealRoom.agentId) {
         return Response.json({ 
-          error: 'No agent assigned to deal. Please accept a deal request first.',
+          error: 'No agent selected for this deal. Please select an agent to work with.',
           debug: {
             deal_id,
             deal_agent_id: deal.agent_id,
             rooms_count: rooms.length,
-            accepted_room: !!acceptedRoom,
-            agent_in_room: acceptedRoom?.agentId
+            rooms: rooms.map(r => ({ id: r.id, agentId: r.agentId, status: r.request_status }))
           }
         }, { status: 400 });
       }
       
-      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: acceptedRoom.agentId });
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: dealRoom.agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
         return Response.json({ error: 'Agent profile not found' }, { status: 404 });
       }
