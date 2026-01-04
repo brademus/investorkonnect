@@ -75,7 +75,8 @@
     "vaul": "^1.1.2",
     "zod": "^3.24.2",
     "lottie-react": "^2.4.1",
-    "lottie-web": "^5.12.2"
+    "lottie-web": "^5.12.2",
+    "pdf-lib": "^1.17.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.19.0",

@@ -1,32 +1,82 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { jsPDF } from 'npm:jspdf@2.5.2';
+import { PDFDocument, rgb } from 'npm:pdf-lib@1.17.1';
+
+// State-to-template URL mapping
+const STATE_TEMPLATES = {
+  'AL': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alabama%20contract%20.pdf',
+  'AK': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alaska.pdf',
+  'AZ': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Arizona%20.pdf',
+  'AR': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Arkansas%20.pdf',
+  'CA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/California%20.pdf',
+  'CO': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Colorado%20.pdf',
+  'CT': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Connecticut%20.pdf',
+  'DE': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Delaware%20.pdf',
+  'FL': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Florida.pdf',
+  'HI': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Hawaii%20.pdf',
+  'ID': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Idaho%20.pdf',
+  'IL': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Illinois.pdf',
+  'IN': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Indiana.pdf',
+  'IA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Iowa%20.pdf',
+  'KS': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Kansas%20.pdf',
+  'KY': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Kentucky.pdf',
+  'LA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Louisiana.pdf',
+  'ME': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Maine%20.pdf',
+  'MD': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Maryland%20.pdf',
+  'MA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Massachusetts%20.pdf',
+  'MI': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Michigan%20.pdf',
+  'MN': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Minnesota%20.pdf',
+  'MS': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Mississippi.pdf',
+  'MO': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Missouri%20.pdf',
+  'MT': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Montana.pdf',
+  'NE': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Nebraska%20.pdf',
+  'NV': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Nevada%20.pdf',
+  'NH': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/New%20Hampshire.pdf',
+  'NJ': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/New%20Jersey%20.pdf',
+  'NM': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/New%20Mexico%20.pdf',
+  'NY': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/New%20York.pdf',
+  'NC': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/North%20Carolina%20.pdf',
+  'ND': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/North%20Dakota%20.pdf',
+  'OH': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Ohio.pdf',
+  'OK': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Oklahoma.pdf',
+  'OR': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Oregon.pdf',
+  'PA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Penssylvania.pdf',
+  'RI': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Rhode%20Island.pdf',
+  'SC': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/South%20Carolina%20.pdf',
+  'SD': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/South%20Dakota%20.pdf',
+  'TN': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Tennessee%20.pdf',
+  'TX': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Texas.pdf',
+  'UT': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Utah%20.pdf',
+  'VT': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Vermont%20.pdf',
+  'VA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Virginia.pdf',
+  'WA': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Washington.pdf'
+};
 
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    
+
     const body = await req.json();
     const deal_id = body.deal_id;
     const exhibit_a = body.exhibit_a || {};
-    
+
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
-    
+
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
-    
+
     const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
     if (!deals || deals.length === 0) {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
     const deal = deals[0];
-    
+
     console.log('Deal:', deal.id, 'agent_id:', deal.agent_id);
-    
+
     // Find agent from Room (new flow) or deal.agent_id (legacy)
     let agentProfile = null;
-    
+
     if (deal.agent_id) {
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
       console.log('Found agent profiles by deal.agent_id:', agentProfiles.length);
@@ -34,15 +84,14 @@ Deno.serve(async (req) => {
         agentProfile = agentProfiles[0];
       }
     }
-    
+
     // If no agent_id on deal, look for any room with this deal
     if (!agentProfile) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
       console.log('Rooms for deal:', rooms.length);
-      // Accept any room (requested, accepted, or signed) - investor chooses agent when creating room
       const dealRoom = rooms.find(r => r.agentId);
       console.log('Deal room:', dealRoom ? dealRoom.id : 'none', 'agentId:', dealRoom?.agentId, 'status:', dealRoom?.request_status);
-      
+
       if (!dealRoom || !dealRoom.agentId) {
         return Response.json({ 
           error: 'No agent selected for this deal. Please select an agent to work with.',
@@ -54,127 +103,82 @@ Deno.serve(async (req) => {
           }
         }, { status: 400 });
       }
-      
+
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: dealRoom.agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
         return Response.json({ error: 'Agent profile not found' }, { status: 404 });
       }
       agentProfile = agentProfiles[0];
     }
-    
-    // Build master agreement
-    const masterText = `INVESTOR-AGENT OPERATING AGREEMENT
 
-This Agreement is entered into as of ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} (the "Effective Date") between:
-
-INVESTOR: ${profile.full_name || user.email}
-AGENT: ${agentProfile.full_name || agentProfile.email}
-Licensed in: ${deal.state}
-
-PROPERTY LOCATION: ${deal.city}, ${deal.state} ${deal.zip}
-
-1. ENGAGEMENT AND SCOPE
-   Investor engages Agent to provide real estate brokerage services for investment property transactions in ${deal.state}.
-
-2. COMPENSATION
-   Agent's compensation is set forth in Exhibit A attached hereto and incorporated by reference.
-   - Model: ${exhibit_a.compensation_model || 'FLAT_FEE'}
-   ${exhibit_a.compensation_model === 'FLAT_FEE' ? `- Amount: $${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}` : ''}
-   ${exhibit_a.compensation_model === 'COMMISSION_PCT' ? `- Percentage: ${exhibit_a.commission_percentage}%` : ''}
-   - Transaction Type: ${exhibit_a.transaction_type || 'ASSIGNMENT'}
-
-3. TERM AND TERMINATION
-   This Agreement shall remain in effect for ${exhibit_a.agreement_length_days || 180} days from the Effective Date.
-   Either party may terminate with ${exhibit_a.termination_notice_days || 30} days written notice.
-
-4. REPRESENTATIONS
-   Agent represents that they hold a valid real estate license in ${deal.state} and will comply with all state laws.
-   Investor represents that all information provided is accurate and complete.
-
-5. GOVERNING LAW
-   This Agreement shall be governed by and construed in accordance with the laws of the State of ${deal.state}.`;
-
-    // Build state-specific addendum
-    let addendumText = `\n\n=== STATE-SPECIFIC ADDENDUM: ${deal.state} ===\n`;
-    
-    if (deal.state === 'IL') {
-      addendumText += `\nILLINOIS ADDENDUM
-
-1. WHOLESALING RESTRICTIONS
-   Illinois law restricts unlicensed individuals to no more than one (1) assignment transaction per 365-day period.
-   Investor acknowledges this limitation and represents compliance.
-
-2. NET LISTING PROHIBITION
-   Net listings are prohibited in Illinois. All compensation must be disclosed and structured as commission or flat fee.
-
-3. DISCLOSURE REQUIREMENTS
-   All parties must receive written disclosure of Agent's role and compensation structure prior to contract execution.`;
-    } else if (deal.state === 'PA') {
-      addendumText += `\nPENNSYLVANIA ADDENDUM
-
-1. ASSIGNMENT DISCLOSURE
-   Pennsylvania law requires disclosure of assignment intent to sellers. Agent will ensure proper disclosure is made.
-
-2. GOOD FAITH DEPOSIT
-   A good faith deposit is required for all purchase agreements. Amount and terms to be negotiated per transaction.
-
-3. AGENCY DISCLOSURE
-   Written agency disclosure must be provided to all parties at first substantive contact.`;
-    } else if (deal.state === 'NJ') {
-      addendumText += `\nNEW JERSEY ADDENDUM
-
-1. ATTORNEY REVIEW PERIOD
-   This Agreement and all contracts are subject to New Jersey's three (3) business day attorney review period.
-   Either party may cancel within this period upon attorney's written notice.
-
-2. AGENCY DISCLOSURE
-   Agent must provide Consumer Information Statement on Agency at first substantive contact.
-
-3. GOOD FAITH DEPOSIT
-   New Jersey requires good faith deposits for all purchase contracts. Terms to be specified per transaction.`;
-    } else {
-      addendumText += `\n${deal.state} PROVISIONS
-
-This Agreement is subject to all applicable ${deal.state} real estate laws and regulations.
-Agent represents compliance with all state-specific licensing and disclosure requirements.`;
+    // Get template URL for this state
+    const templateUrl = STATE_TEMPLATES[deal.state];
+    if (!templateUrl) {
+      return Response.json({ error: `No template available for state: ${deal.state}` }, { status: 400 });
     }
-    
-    addendumText += `\n\n=== EXHIBIT A: COMPENSATION TERMS ===
 
-Transaction Type: ${exhibit_a.transaction_type || 'ASSIGNMENT'}
-Compensation Model: ${exhibit_a.compensation_model || 'FLAT_FEE'}
-${exhibit_a.compensation_model === 'FLAT_FEE' ? `Flat Fee Amount: $${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}` : ''}
-${exhibit_a.compensation_model === 'COMMISSION_PCT' ? `Commission Rate: ${exhibit_a.commission_percentage}%` : ''}
-Agreement Duration: ${exhibit_a.agreement_length_days || 180} days
-Termination Notice: ${exhibit_a.termination_notice_days || 30} days`;
-    
-    const fullText = masterText + addendumText;
-    
-    // Create PDF
-    const doc = new jsPDF();
-    const lines = fullText.split('\n');
-    let y = 20;
-    
-    for (const line of lines) {
-      if (y > 280) {
-        doc.addPage();
-        y = 20;
-      }
-      if (line.trim()) {
-        const split = doc.splitTextToSize(line, 170);
-        doc.text(split, 20, y);
-        y += split.length * 7;
-      } else {
-        y += 7;
-      }
+    // Fetch template PDF
+    const templateResponse = await fetch(templateUrl);
+    if (!templateResponse.ok) {
+      return Response.json({ error: 'Failed to fetch template PDF' }, { status: 500 });
     }
-    
-    const pdfBytes = doc.output('arraybuffer');
+    const templateBytes = await templateResponse.arrayBuffer();
+
+    // Load PDF with pdf-lib
+    const pdfDoc = await PDFDocument.load(templateBytes);
+
+    // Prepare replacement values
+    const effectiveDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const replacements = {
+      '{DEAL_ID}': deal.id || '',
+      '{EFFECTIVE_DATE}': effectiveDate,
+      '{INVESTOR_LEGAL_NAME}': profile.full_name || user.email || '',
+      '{AGENT_LEGAL_NAME}': agentProfile.full_name || agentProfile.email || '',
+      '{AGENT_LICENSE_NUMBER}': agentProfile.agent?.license_number || agentProfile.license_number || '',
+      '{AGENT_BROKERAGE}': agentProfile.agent?.brokerage || agentProfile.broker || '',
+      '{PROPERTY_ADDRESS}': deal.property_address || '',
+      '{CITY}': deal.city || '',
+      '{STATE}': deal.state || '',
+      '{ZIP}': deal.zip || '',
+      '{COUNTY}': deal.county || '',
+      '{TRANSACTION_TYPE}': exhibit_a.transaction_type || 'ASSIGNMENT',
+      '{COMPENSATION_MODEL}': exhibit_a.compensation_model || 'FLAT_FEE',
+      '{FLAT_FEE_AMOUNT}': exhibit_a.flat_fee_amount ? `$${exhibit_a.flat_fee_amount.toLocaleString()}` : '$5,000',
+      '{COMMISSION_PERCENTAGE}': exhibit_a.commission_percentage ? `${exhibit_a.commission_percentage}%` : '',
+      '{AGREEMENT_LENGTH_DAYS}': (exhibit_a.agreement_length_days || 180).toString(),
+      '{TERMINATION_NOTICE_DAYS}': (exhibit_a.termination_notice_days || 30).toString(),
+      '{INVESTOR_EMAIL}': user.email || '',
+      '{AGENT_EMAIL}': agentProfile.email || '',
+      '{INVESTOR_PHONE}': profile.phone || '',
+      '{AGENT_PHONE}': agentProfile.phone || ''
+    };
+
+    // Get form fields and fill them
+    const form = pdfDoc.getForm();
+    const fields = form.getFields();
+
+    fields.forEach(field => {
+      const fieldName = field.getName();
+      if (replacements[fieldName]) {
+        try {
+          const textField = form.getTextField(fieldName);
+          textField.setText(replacements[fieldName]);
+        } catch (e) {
+          console.log(`Could not fill field ${fieldName}:`, e.message);
+        }
+      }
+    });
+
+    // Flatten the form to make fields non-editable
+    form.flatten();
+
+    // Save modified PDF
+    const pdfBytes = await pdfDoc.save();
     const pdfBlob = new Blob([pdfBytes], { type: 'application/pdf' });
     const pdfFile = new File([pdfBlob], `agreement_${deal_id}.pdf`);
-    
+
     const upload = await base44.integrations.Core.UploadFile({ file: pdfFile });
-    
+
     // Save agreement
     const agreementData = {
       deal_id: deal_id,
@@ -188,33 +192,33 @@ Termination Notice: ${exhibit_a.termination_notice_days || 30} days`;
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '1.0.1',
+      agreement_version: '2.0.0',
       status: 'draft',
-      selected_rule_id: deal.state + '_ASSIGNMENT',
+      selected_rule_id: deal.state + '_TEMPLATE',
       selected_clause_ids: {},
       deep_dive_module_ids: [],
       exhibit_a_terms: exhibit_a,
-      rendered_markdown_full: fullText,
+      rendered_markdown_full: `Template-based agreement for ${deal.state}`,
       pdf_file_url: upload.file_url,
       pdf_sha256: 'generated',
       agreement_inputs_sha256: 'hash',
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
-        action: 'generated_draft',
-        details: 'Generated'
+        action: 'generated_from_template',
+        details: `Generated from ${deal.state} template`
       }]
     };
-    
+
     const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
-    
+
     let agreement;
     if (existing.length > 0) {
       agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, agreementData);
     } else {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
     }
-    
+
     return Response.json({ success: true, agreement: agreement, regenerated: true });
   } catch (error) {
     console.error('Generate error:', error);
