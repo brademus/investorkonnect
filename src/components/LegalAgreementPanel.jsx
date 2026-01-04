@@ -339,10 +339,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           
           {/* Actions */}
           <div className="flex gap-3">
-            {agreement.pdf_file_url && (
+            {(agreement.final_pdf_url || agreement.pdf_file_url) && (
               <Button
                 variant="outline"
-                onClick={() => window.open(agreement.pdf_file_url, '_blank')}
+                onClick={() => window.open(agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
                 className="flex-1">
                 <Download className="w-4 h-4 mr-2" />
                 Download PDF
