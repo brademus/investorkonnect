@@ -3,6 +3,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import {
   Users, DollarSign, TrendingUp, Shield, Award,
   CheckCircle, ArrowLeft, Briefcase
@@ -136,6 +137,9 @@ export default function AgentLanding() {
           </div>
         </div>
       </section>
+
+      {/* Legal Footer Links */}
+      <LegalFooterLinks />
     </div>);
 
 }

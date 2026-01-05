@@ -3,6 +3,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   Shield, MapPin, FileText, TrendingUp, Star, 
   CheckCircle, ArrowLeft
@@ -145,6 +146,9 @@ export default function InvestorLanding() {
           </div>
         </div>
       </section>
+
+      {/* Legal Footer Links */}
+      <LegalFooterLinks />
     </div>
   );
 }

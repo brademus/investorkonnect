@@ -7,6 +7,7 @@ import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
@@ -647,6 +648,9 @@ function PipelineContent() {
                 })}
               </div>
             </DragDropContext>
+
+            {/* Legal Footer Links */}
+            <LegalFooterLinks />
 
           </div>
         </div>
