@@ -503,27 +503,31 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             
             <div>
               <Label className="text-[#FAFAFA]">Transaction Type</Label>
-              <Select
-                value={exhibitA.transaction_type}
-                onValueChange={(value) => setExhibitA({ ...exhibitA, transaction_type: value })}>
-                <SelectTrigger className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ASSIGNMENT">Assignment</SelectItem>
-                  <SelectItem value="DOUBLE_CLOSE">Double Close</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                {exhibitA.transaction_type === 'ASSIGNMENT' ? 'Assignment' : 'Double Close'}
+              </div>
             </div>
             
             <div>
-              <Label className="text-[#FAFAFA]">Agreement Length (Days)</Label>
-              <Input
-                type="number"
-                value={exhibitA.agreement_length_days}
-                onChange={(e) => setExhibitA({ ...exhibitA, agreement_length_days: Number(e.target.value) })}
-                className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
-              />
+              <Label className="text-[#FAFAFA]">Agreement Length</Label>
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                {exhibitA.agreement_length_days || 180} Days
+              </div>
+            </div>
+            
+            <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 mt-4">
+              <p className="text-sm text-[#FAFAFA]/80 mb-3">
+                Need to change these terms? Go to the edit deal page to update commission type, amounts, or agreement length.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowGenerateModal(false);
+                  window.location.href = `/NewDeal?dealId=${deal.id}`;
+                }}
+                className="border-[#60A5FA] text-[#60A5FA] hover:bg-[#60A5FA]/10 w-full">
+                Edit Deal Terms
+              </Button>
             </div>
           </div>
           )}
