@@ -397,7 +397,7 @@ Deno.serve(async (req) => {
     
     // Extract text from PDF
     console.log('Extracting text from template...');
-    const pdfData = await pdfParse(Buffer.from(templateBytes));
+    const pdfData = await pdfParse(new Uint8Array(templateBytes));
     let templateText = pdfData.text;
     console.log(`Extracted ${templateText.length} characters`);
     
