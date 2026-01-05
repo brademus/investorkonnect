@@ -23,17 +23,34 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const isInvestor = deal.investor_id === profile.id;
   const isAgent = deal.agent_id === profile.id;
   
-  // Initialize exhibitA whenever deal data changes
+  // Initialize exhibitA whenever deal.proposed_terms changes
   useEffect(() => {
     if (!deal) return;
     
-    const terms = deal.proposed_terms || {};
+    const terms = deal.proposed_terms;
     
-    console.log('[LegalAgreement] 🔄 Deal data received:', {
+    console.log('[LegalAgreement] 🔄 Syncing with deal.proposed_terms:', {
       deal_id: deal.id,
-      full_deal: deal,
-      proposed_terms: terms
+      has_terms: !!terms,
+      seller_commission_type: terms?.seller_commission_type,
+      seller_commission_percentage: terms?.seller_commission_percentage,
+      seller_flat_fee: terms?.seller_flat_fee,
+      agreement_length: terms?.agreement_length
     });
+    
+    if (!terms || !terms.seller_commission_type) {
+      console.log('[LegalAgreement] ⚠️  No proposed_terms found, using defaults');
+      setExhibitA({
+        compensation_model: 'FLAT_FEE',
+        flat_fee_amount: 5000,
+        commission_percentage: null,
+        net_target: null,
+        transaction_type: deal.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: 180,
+        termination_notice_days: 30
+      });
+      return;
+    }
     
     // Map seller_commission_type to compensation_model
     let compensationModel = 'FLAT_FEE';
@@ -55,10 +72,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       termination_notice_days: 30
     };
     
-    console.log('[LegalAgreement] ✅ Setting modal state:', newExhibitA);
+    console.log('[LegalAgreement] ✅ Setting modal to:', newExhibitA);
     setExhibitA(newExhibitA);
     
-  }, [deal]);
+  }, [deal?.id, deal?.proposed_terms?.seller_commission_type, deal?.proposed_terms?.seller_commission_percentage, deal?.proposed_terms?.seller_flat_fee, deal?.proposed_terms?.agreement_length]);
   
   useEffect(() => {
     loadAgreement();
