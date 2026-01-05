@@ -200,6 +200,17 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     sellerCompValue = `Net: $${(exhibit_a.net_target || 0).toLocaleString()}`;
   }
   
+  // Buyer compensation
+  let buyerCompType = 'Commission Percentage';
+  let buyerCompValue = '3%';
+  if (exhibit_a.buyer_commission_type === 'flat') {
+    buyerCompType = 'Flat Fee';
+    buyerCompValue = `$${(exhibit_a.buyer_commission_amount || 5000).toLocaleString()}`;
+  } else if (exhibit_a.buyer_commission_type === 'percentage') {
+    buyerCompType = 'Commission Percentage';
+    buyerCompValue = `${exhibit_a.buyer_commission_amount || 3}%`;
+  }
+  
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     DEAL_ID: deal.id || 'N/A',
@@ -225,8 +236,12 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     COMMISSION_PERCENTAGE: `${exhibit_a.commission_percentage || 3}%`,
     SELLER_COMP_TYPE: sellerCompType,
     SELLER_COMP_VALUE: sellerCompValue,
+    BUYER_COMP_TYPE: buyerCompType,
+    BUYER_COMP_VALUE: buyerCompValue,
     AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
+    TERM_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
     TERMINATION_NOTICE_DAYS: (exhibit_a.termination_notice_days || 30).toString(),
+    EXCLUSIVITY_ON_OFF: exhibit_a.exclusive_agreement ? 'ON' : 'OFF',
     ROFR_ON_OFF: rofrEnabled ? 'ON' : 'OFF',
     ROFR_PERIOD_DAYS: rofrDays.toString()
   };
