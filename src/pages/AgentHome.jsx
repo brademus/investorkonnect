@@ -5,6 +5,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
 import { SetupChecklist } from "@/components/SetupChecklist";
 import { Logo } from "@/components/Logo";
+import LegalFooterLinks from "@/components/LegalFooterLinks";
 import {
   Shield, FileText, CheckCircle,
   AlertCircle, Building, Award, MapPin, ArrowRight, Loader2, User, X
@@ -258,6 +259,9 @@ export default function AgentHome() {
               </div>
             </section>
           </div>
+
+          {/* Legal Footer Links */}
+          <LegalFooterLinks />
         </div>
       </main>
     </div>
