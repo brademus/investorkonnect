@@ -49,7 +49,7 @@ export default function AgentHome() {
       <header className="border-b border-[#E5E7EB] bg-white/95 backdrop-blur-sm sticky top-0 z-20">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:max-w-7xl lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <Logo size="default" showText={true} linkTo={createPageUrl("Dashboard")} />
+            <Logo size="default" showText={true} linkTo={createPageUrl("Pipeline")} />
             <div className="flex items-center gap-3">
               {isAdmin && (
                 <button onClick={() => navigate(createPageUrl("Admin"))} className="inline-flex items-center gap-2 rounded-full border border-[#E5E7EB] bg-white px-4 py-2 text-sm font-medium text-[#111827] shadow-sm hover:border-[#D3A029] hover:shadow-md transition-all">
