@@ -475,29 +475,38 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           ) : (
           <div className="space-y-4 py-4">
             <div>
-              <Label className="text-[#FAFAFA]">Commission Type</Label>
+              <Label className="text-[#FAFAFA]">Seller's Agent Commission Type</Label>
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                 {exhibitA.commission_type === 'percentage' ? 'Percentage of Purchase Price' : 
                  exhibitA.commission_type === 'flat' ? 'Flat Fee' : 
                  exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
               </div>
+              <p className="text-xs text-[#808080] mt-1">
+                From deal: seller_commission_type = "{exhibitA.commission_type}"
+              </p>
             </div>
             
             {exhibitA.commission_type === 'flat' && (
               <div>
-                <Label className="text-[#FAFAFA]">Flat Fee Amount</Label>
+                <Label className="text-[#FAFAFA]">Seller's Agent Flat Fee</Label>
                 <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                   ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
                 </div>
+                <p className="text-xs text-[#808080] mt-1">
+                  From deal: seller_flat_fee = {exhibitA.flat_fee_amount}
+                </p>
               </div>
             )}
             
             {exhibitA.commission_type === 'percentage' && (
               <div>
-                <Label className="text-[#FAFAFA]">Commission Percentage</Label>
+                <Label className="text-[#FAFAFA]">Seller's Agent Commission %</Label>
                 <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                   {exhibitA.commission_percentage || 0}%
                 </div>
+                <p className="text-xs text-[#808080] mt-1">
+                  From deal: seller_commission_percentage = {exhibitA.commission_percentage}
+                </p>
               </div>
             )}
             
