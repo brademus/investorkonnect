@@ -10,6 +10,9 @@ import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-rea
 import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
+  console.log('[LegalAgreementPanel] Rendered with deal:', deal);
+  console.log('[LegalAgreementPanel] Deal proposed_terms:', deal?.proposed_terms);
+  
   const [agreement, setAgreement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -29,10 +32,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   
   // When the modal opens, initialize exhibitA from deal.proposed_terms
   const handleOpenGenerateModal = () => {
-    if (!deal) return;
+    if (!deal) {
+      console.error('[LegalAgreementPanel] No deal object available');
+      return;
+    }
 
     const terms = deal.proposed_terms || {};
-    console.log('[LegalAgreementPanel] Opening modal. Initializing exhibitA from deal.proposed_terms:', terms);
+    console.log('[LegalAgreementPanel] 🚀 Opening modal with full deal:', {
+      deal_id: deal.id,
+      full_deal: deal,
+      proposed_terms: terms
+    });
 
     let compensationModel = 'FLAT_FEE';
     if (terms.seller_commission_type === 'percentage') {
@@ -52,9 +62,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       agreement_length_days: terms.agreement_length || 180,
       termination_notice_days: 30
     };
+    
+    console.log('[LegalAgreementPanel] ✅ exhibitA state initialized:', newExhibitAState);
     setExhibitA(newExhibitAState);
-    console.log('[LegalAgreementPanel] exhibitA set for modal:', newExhibitAState);
-
     setShowGenerateModal(true);
   };
 
