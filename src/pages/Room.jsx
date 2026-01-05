@@ -582,14 +582,16 @@ ${dealContext}`;
           
           {/* Name and Status */}
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-[#FAFAFA]">{counterpartName}</h2>
+            <h2 className="text-lg font-semibold text-[#FAFAFA]">
+              {currentRoom?.is_fully_signed ? counterpartName : (profile?.user_role === 'agent' ? 'Investor' : 'Agent')}
+            </h2>
             <div className="flex items-center gap-3">
               {currentRoom?.is_fully_signed ? (
                 <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
-                  Agreement Signed
+                  Working Together
                 </span>
               ) : currentRoom?.request_status === 'accepted' ? (
                 <span className="bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30 px-3 py-1 rounded-full text-xs font-medium">
@@ -665,9 +667,9 @@ ${dealContext}`;
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
                     {currentRoom?.is_fully_signed ? (
-                      <span className="text-[#10B981]">Agreement Signed</span>
+                      <span className="text-[#10B981]">Working Together</span>
                     ) : currentRoom?.request_status === 'accepted' ? (
-                      <span className="text-[#60A5FA]">Accepted – Working Together</span>
+                      <span className="text-[#60A5FA]">Accepted</span>
                     ) : currentRoom?.request_status === 'requested' ? (
                       <span className="text-[#F59E0B]">Request Pending</span>
                     ) : (
@@ -1010,7 +1012,10 @@ ${dealContext}`;
                                           <div>
                                             <p className="text-xs text-[#808080] uppercase tracking-wider">Investor</p>
                                             <p className="text-sm font-semibold text-[#FAFAFA]">
-                                              {currentRoom?.counterparty_name || 'Loading...'}
+                                              {currentRoom?.is_fully_signed 
+                                                ? (currentRoom?.counterparty_name || 'Loading...')
+                                                : 'Hidden until agreement signed'
+                                              }
                                             </p>
                                           </div>
                                         </div>
@@ -1889,7 +1894,7 @@ ${dealContext}`;
                         }
                       </h3>
                       <div className="space-y-1 text-sm">
-                        {currentRoom.counterparty_name && (
+                        {currentRoom.counterparty_name && currentRoom.is_fully_signed && (
                           <p className="text-[#FAFAFA]">
                             {currentRoom.counterparty_role === 'agent' ? 'Agent' : 'Investor'}: {currentRoom.counterparty_name}
                           </p>
