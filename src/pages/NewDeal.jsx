@@ -148,7 +148,7 @@ export default function NewDeal() {
     }
   }, [dealId, profile?.id]);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Validation
     if (!propertyAddress.trim()) {
       toast.error("Please enter a property address");
@@ -174,9 +174,44 @@ export default function NewDeal() {
       return;
     }
 
+    // If editing existing deal, save proposed_terms to Deal entity immediately
+    if (dealId) {
+      try {
+        await base44.entities.Deal.update(dealId, {
+          proposed_terms: {
+            seller_commission_type: sellerCommissionType,
+            seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
+            seller_flat_fee: sellerFlatFee ? Number(sellerFlatFee) : null,
+            buyer_commission_type: buyerCommissionType,
+            buyer_commission_percentage: buyerCommissionPercentage ? Number(buyerCommissionPercentage) : null,
+            buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
+            agreement_length: agreementLength ? Number(agreementLength) : null
+          }
+        });
+        
+        // Also update Room if it exists
+        const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+        if (rooms.length > 0) {
+          await base44.entities.Room.update(rooms[0].id, {
+            proposed_terms: {
+              seller_commission_type: sellerCommissionType,
+              seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
+              seller_flat_fee: sellerFlatFee ? Number(sellerFlatFee) : null,
+              buyer_commission_type: buyerCommissionType,
+              buyer_commission_percentage: buyerCommissionPercentage ? Number(buyerCommissionPercentage) : null,
+              buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
+              agreement_length: agreementLength ? Number(agreementLength) : null
+            }
+          });
+        }
+      } catch (e) {
+        console.error("Failed to save proposed terms:", e);
+      }
+    }
+
     // Save to sessionStorage - include dealId if editing
     sessionStorage.setItem("newDealDraft", JSON.stringify({
-      dealId: dealId || null, // Preserve dealId for edit flow
+      dealId: dealId || null,
       propertyAddress,
       city,
       state,
