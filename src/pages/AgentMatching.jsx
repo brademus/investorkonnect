@@ -255,7 +255,8 @@ export default function AgentMatching() {
               const agent = match.agent;
               const agentId = agent.id;
               const headshotUrl = agent.headshotUrl || agent.agent?.headshot_url;
-              const agentName = agent.full_name || "Agent";
+              const fullName = agent.full_name || "Agent";
+              const agentName = fullName.split(' ')[0]; // Show only first name
               const brokerage = agent.agent?.brokerage || agent.broker;
               const experienceYears = agent.agent?.experience_years;
               const markets = agent.agent?.markets || [];
@@ -287,13 +288,6 @@ export default function AgentMatching() {
                         <p className="text-xs text-[#808080] mt-1">{experienceYears} years experience</p>
                       )}
                     </div>
-                  </div>
-
-                  {/* Match Reason */}
-                  <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-lg p-3 mb-4">
-                    <p className="text-sm text-[#E3C567] font-medium">
-                      {match.explanation || `Match score: ${match.score}%`}
-                    </p>
                   </div>
 
                   {/* Quick Info */}
