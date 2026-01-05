@@ -1783,9 +1783,9 @@ ${dealContext}`;
                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
                     <div className="space-y-3">
                       {[
-                        { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : currentRoom?.counterparty_name },
-                        ...(currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? [
-                          { date: new Date().toISOString(), event: 'Agent locked in', user: currentRoom?.counterparty_name }
+                        { date: currentRoom?.created_date, event: 'Deal created', user: profile?.user_role === 'investor' ? 'You' : (currentRoom?.is_fully_signed ? currentRoom?.counterparty_name : 'User') },
+                        ...(currentRoom?.is_fully_signed ? [
+                          { date: new Date().toISOString(), event: 'Agreement signed - Working together', user: 'Both parties' }
                         ] : [])
                       ].map((item, idx) => (
                         <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
