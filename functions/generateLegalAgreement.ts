@@ -491,7 +491,7 @@ Deno.serve(async (req) => {
       selected_clause_ids: {},
       deep_dive_module_ids: [],
       exhibit_a_terms: exhibit_a,
-      rendered_markdown_full: rendered.substring(0, 10000),
+      rendered_markdown_full: templateText.substring(0, 10000),
       missing_placeholders: [],
       audit_log: [{
         timestamp: new Date().toISOString(),
