@@ -26,7 +26,64 @@ export default function ContractVerify() {
 
   useEffect(() => {
     const loadData = async () => {
-      // Load deal data from sessionStorage
+      // If editing existing deal, load directly from Deal entity
+      const existingDealId = dealIdFromUrl;
+      if (existingDealId) {
+        try {
+          const deals = await base44.entities.Deal.filter({ id: existingDealId });
+          if (deals.length > 0) {
+            const deal = deals[0];
+            
+            // Build dealData from Deal entity (same structure as sessionStorage)
+            const loadedData = {
+              dealId: deal.id,
+              propertyAddress: deal.property_address || "",
+              city: deal.city || "",
+              state: deal.state || "",
+              zip: deal.zip || "",
+              county: deal.county || "",
+              purchasePrice: deal.purchase_price?.toString() || "",
+              closingDate: deal.key_dates?.closing_date || "",
+              contractDate: deal.key_dates?.contract_date || "",
+              specialNotes: deal.special_notes || "",
+              sellerName: deal.seller_info?.seller_name || "",
+              earnestMoney: deal.seller_info?.earnest_money?.toString() || "",
+              numberOfSigners: deal.seller_info?.number_of_signers || "1",
+              secondSignerName: deal.seller_info?.second_signer_name || "",
+              sellerCommissionType: deal.proposed_terms?.seller_commission_type || "percentage",
+              sellerCommissionPercentage: deal.proposed_terms?.seller_commission_percentage?.toString() || "",
+              sellerFlatFee: deal.proposed_terms?.seller_flat_fee?.toString() || "",
+              buyerCommissionType: deal.proposed_terms?.buyer_commission_type || "percentage",
+              buyerCommissionPercentage: deal.proposed_terms?.buyer_commission_percentage?.toString() || "",
+              buyerFlatFee: deal.proposed_terms?.buyer_flat_fee?.toString() || "",
+              agreementLength: deal.proposed_terms?.agreement_length?.toString() || "",
+              beds: deal.property_details?.beds?.toString() || "",
+              baths: deal.property_details?.baths?.toString() || "",
+              sqft: deal.property_details?.sqft?.toString() || "",
+              propertyType: deal.property_type || "",
+              notes: deal.notes || "",
+              yearBuilt: deal.property_details?.year_built?.toString() || "",
+              numberOfStories: deal.property_details?.number_of_stories || "",
+              hasBasement: deal.property_details?.has_basement || "",
+              contractFileUrl: deal.contract_url || "",
+              contractFileName: deal.contract_document?.name || "Contract.pdf"
+            };
+            
+            console.log('[ContractVerify] Loaded existing deal from DB:', loadedData);
+            setDealData(loadedData);
+            
+            if (loadedData.contractFileUrl) {
+              setFileUrl(loadedData.contractFileUrl);
+              setFileName(loadedData.contractFileName);
+            }
+            return;
+          }
+        } catch (e) {
+          console.error('[ContractVerify] Failed to load existing deal:', e);
+        }
+      }
+      
+      // Otherwise load from sessionStorage (new deal flow)
       const stored = sessionStorage.getItem("newDealDraft");
       if (!stored) {
         toast.error("No deal data found. Please start from Build Your Deal.");
@@ -37,61 +94,8 @@ export default function ContractVerify() {
       try {
         const parsed = JSON.parse(stored);
         console.log('[ContractVerify] Loaded from sessionStorage:', parsed);
-        
-        // If this is an existing deal, load proposed terms from Room
-        const existingDealId = dealIdFromUrl || parsed.dealId;
-        if (existingDealId) {
-          try {
-            const rooms = await base44.entities.Room.filter({ deal_id: existingDealId });
-            if (rooms.length > 0 && rooms[0].proposed_terms) {
-              const terms = rooms[0].proposed_terms;
-              console.log('[ContractVerify] Loading existing proposed terms from Room:', terms);
-              
-              // Merge terms into parsed deal data - ONLY if not already in sessionStorage
-              if (!parsed.sellerCommissionType) {
-                parsed.sellerCommissionType = terms.seller_commission_type || parsed.sellerCommissionType;
-              }
-              if (!parsed.sellerCommissionPercentage) {
-                parsed.sellerCommissionPercentage = terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined 
-                  ? terms.seller_commission_percentage 
-                  : parsed.sellerCommissionPercentage;
-              }
-              if (!parsed.sellerFlatFee) {
-                parsed.sellerFlatFee = terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined
-                  ? terms.seller_flat_fee
-                  : parsed.sellerFlatFee;
-              }
-              
-              if (!parsed.buyerCommissionType) {
-                parsed.buyerCommissionType = terms.buyer_commission_type || parsed.buyerCommissionType;
-              }
-              if (!parsed.buyerCommissionPercentage) {
-                parsed.buyerCommissionPercentage = terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined
-                  ? terms.buyer_commission_percentage
-                  : parsed.buyerCommissionPercentage;
-              }
-              if (!parsed.buyerFlatFee) {
-                parsed.buyerFlatFee = terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined
-                  ? terms.buyer_flat_fee
-                  : parsed.buyerFlatFee;
-              }
-              
-              if (!parsed.agreementLength) {
-                parsed.agreementLength = terms.agreement_length !== null && terms.agreement_length !== undefined
-                  ? terms.agreement_length
-                  : parsed.agreementLength;
-              }
-              
-              console.log('[ContractVerify] Final merged data:', parsed);
-            }
-          } catch (e) {
-            console.log('[ContractVerify] No existing room terms to load:', e);
-          }
-        }
-        
         setDealData(parsed);
         
-        // Check if contract already uploaded
         if (parsed.contractFileUrl) {
           setFileUrl(parsed.contractFileUrl);
           setFileName(parsed.contractFileName || "Contract.pdf");
