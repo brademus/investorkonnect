@@ -37,9 +37,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
 
     const terms = deal.proposed_terms || {};
+    
+    console.log('[LegalAgreementPanel] 📋 Deal proposed_terms:', terms);
 
     // Normalize commission type (handle both short and full text versions)
     let commissionType = (terms.seller_commission_type || '').toLowerCase().trim();
+    
+    console.log('[LegalAgreementPanel] 🔍 seller_commission_type:', terms.seller_commission_type);
+    console.log('[LegalAgreementPanel] 🔍 normalized:', commissionType);
     
     let compensationModel = 'FLAT_FEE';
     if (commissionType.includes('percentage') || commissionType.includes('percent')) {
@@ -60,7 +65,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       termination_notice_days: 30
     };
     
-    console.log('[LegalAgreementPanel] ✅ exhibitA state initialized:', newExhibitAState);
+    console.log('[LegalAgreementPanel] ✅ Final exhibitA:', newExhibitAState);
     setExhibitA(newExhibitAState);
     setShowGenerateModal(true);
   };
