@@ -179,6 +179,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       // Capture current page URL for return
       const returnTo = window.location.href;
       
+      console.log('[LegalAgreement] Starting signing flow:', { agreementId: agreement.id, role: signatureType, returnTo });
+      
       // Create embedded signing session with token-based return
       const { data } = await base44.functions.invoke('docusignCreateSigningSession', {
         agreementId: agreement.id,
@@ -197,6 +199,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         setSigning(false);
         return;
       }
+      
+      console.log('[LegalAgreement] Redirecting to DocuSign:', data.signingUrl);
+      console.log('[LegalAgreement] Will return to:', data.returnUrl);
       
       // Redirect to DocuSign embedded signing
       window.location.assign(data.signingUrl);
