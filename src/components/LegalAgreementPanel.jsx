@@ -10,9 +10,6 @@ import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-rea
 import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
-  console.log('[LegalAgreementPanel] Rendered with deal:', deal);
-  console.log('[LegalAgreementPanel] Deal proposed_terms:', deal?.proposed_terms);
-  
   const [agreement, setAgreement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -22,13 +19,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [exhibitA, setExhibitA] = useState(null);
   const [netPolicy, setNetPolicy] = useState('ALLOWED');
   
-  const isInvestor = deal.investor_id === profile.id;
-  const isAgent = deal.agent_id === profile.id;
+  const isInvestor = deal?.investor_id === profile?.id;
+  const isAgent = deal?.agent_id === profile?.id;
 
   useEffect(() => {
-    loadAgreement();
-    determineNetPolicy();
-  }, [deal.id]);
+    if (deal?.id) {
+      loadAgreement();
+      determineNetPolicy();
+    }
+  }, [deal?.id]);
   
   // When the modal opens, initialize exhibitA from deal.proposed_terms
   const handleOpenGenerateModal = () => {
@@ -74,6 +73,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   const determineNetPolicy = () => {
+    if (!deal) return;
     const state = deal.state;
     const bannedStates = ['IL', 'NY'];
     const restrictedStates = ['TX', 'CA'];
