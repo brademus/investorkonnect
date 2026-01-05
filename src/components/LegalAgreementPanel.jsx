@@ -37,18 +37,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
 
     const terms = deal.proposed_terms || {};
-    console.log('[LegalAgreementPanel] 🚀 Opening modal with full deal:', {
-      deal_id: deal.id,
-      full_deal: deal,
-      proposed_terms: terms
-    });
 
+    // Normalize commission type (handle both short and full text versions)
+    let commissionType = (terms.seller_commission_type || '').toLowerCase().trim();
+    
     let compensationModel = 'FLAT_FEE';
-    if (terms.seller_commission_type === 'percentage') {
+    if (commissionType.includes('percentage') || commissionType.includes('percent')) {
       compensationModel = 'COMMISSION_PCT';
-    } else if (terms.seller_commission_type === 'flat') { 
+    } else if (commissionType.includes('flat')) { 
       compensationModel = 'FLAT_FEE';
-    } else if (terms.seller_commission_type === 'net') {
+    } else if (commissionType.includes('net')) {
       compensationModel = 'NET_SPREAD';
     }
 
