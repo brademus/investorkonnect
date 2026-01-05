@@ -671,7 +671,7 @@ ${dealContext}`;
                    <div className="flex items-center gap-1.5 text-[#CCC]">
                      <span>
                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                       {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at && !agreement?.agent_signed_at
+                       {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                          ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                          : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
@@ -979,13 +979,13 @@ ${dealContext}`;
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
                                           {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                                          {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at
+                                          {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                                             ? `Deal in ${currentRoom?.city || 'City'}, ${currentRoom?.state || 'State'}`
                                             : (currentRoom?.property_address || 'Property Address')
                                           }
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
-                                          {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at
+                                          {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                                             ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${currentRoom?.city}, ${currentRoom?.state} ${currentRoom?.zip || ''}`
                                             : ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location')
                                           }
@@ -1468,7 +1468,7 @@ ${dealContext}`;
                             <p className="text-sm font-medium text-[#808080]">
                               Seller ({deal.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
                             </p>
-                            {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at ? (
+                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed ? (
                               <p className="text-sm text-[#F59E0B] mt-1">Hidden until agreement fully signed</p>
                             ) : (
                               <p className="text-md font-semibold text-[#FAFAFA] mt-1">
@@ -1873,7 +1873,7 @@ ${dealContext}`;
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
                         {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                        {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at
+                        {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                           ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                           : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
                         }
@@ -1887,7 +1887,7 @@ ${dealContext}`;
                         {(currentRoom.city || currentRoom.state) && (
                           <p className="text-[#808080]">
                             {/* Privacy: Only show city/state/zip for agents until internal agreement is fully signed */}
-                            {profile?.user_role === 'agent' && agreement?.status !== 'fully_signed' && !agreement?.investor_signed_at
+                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
                               ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
                               : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
                             }
