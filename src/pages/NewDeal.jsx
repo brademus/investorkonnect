@@ -91,10 +91,30 @@ export default function NewDeal() {
               setHasBasement(deal.property_details.has_basement || "");
             }
             
-            // Load terms from Deal entity (canonical source)
-            if (deal.proposed_terms) {
-              const terms = deal.proposed_terms;
-              
+            // Load terms from Deal entity first, fallback to Room for backward compatibility
+            let terms = deal.proposed_terms;
+            
+            // If not on Deal, try loading from Room (backward compatibility)
+            if (!terms) {
+              try {
+                const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+                if (rooms.length > 0 && rooms[0].proposed_terms) {
+                  terms = rooms[0].proposed_terms;
+                  console.log('[NewDeal] Loaded terms from Room (backward compatibility):', terms);
+                  
+                  // Migrate: Save to Deal entity for future use
+                  await base44.entities.Deal.update(dealId, { proposed_terms: terms });
+                  console.log('[NewDeal] Migrated terms to Deal entity');
+                }
+              } catch (e) {
+                console.error("Failed to load terms from Room:", e);
+              }
+            } else {
+              console.log('[NewDeal] Loaded terms from Deal entity:', terms);
+            }
+            
+            // Populate form fields if terms exist
+            if (terms) {
               if (terms.seller_commission_type) {
                 setSellerCommissionType(terms.seller_commission_type);
               }
@@ -118,8 +138,6 @@ export default function NewDeal() {
               if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
                 setAgreementLength(terms.agreement_length.toString());
               }
-              
-              console.log('[NewDeal] Loaded proposed terms from Deal:', terms);
             }
           }
         } catch (error) {
