@@ -37,21 +37,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
 
     const terms = deal.proposed_terms || {};
-    
-    console.log('[LegalAgreementPanel] 📋 Deal proposed_terms:', terms);
 
-    // Normalize commission type (handle both short and full text versions)
-    let commissionType = (terms.seller_commission_type || '').toLowerCase().trim();
-    
-    console.log('[LegalAgreementPanel] 🔍 seller_commission_type:', terms.seller_commission_type);
-    console.log('[LegalAgreementPanel] 🔍 normalized:', commissionType);
-    
+    // Map commission type values: "percentage" or "flat" from NewDeal page
     let compensationModel = 'FLAT_FEE';
-    if (commissionType.includes('percentage') || commissionType.includes('percent')) {
+    if (terms.seller_commission_type === 'percentage') {
       compensationModel = 'COMMISSION_PCT';
-    } else if (commissionType.includes('flat')) { 
+    } else if (terms.seller_commission_type === 'flat') { 
       compensationModel = 'FLAT_FEE';
-    } else if (commissionType.includes('net')) {
+    } else if (terms.seller_commission_type === 'net') {
       compensationModel = 'NET_SPREAD';
     }
 
