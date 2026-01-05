@@ -127,7 +127,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       });
       
       if (response.data?.error) {
-        toast.error(response.data.error);
+        // Show detailed error with missing placeholders if available
+        if (response.data?.missing_placeholders && response.data.missing_placeholders.length > 0) {
+          const missingList = response.data.missing_placeholders.join(', ');
+          toast.error(`Missing required data: ${missingList}`, { duration: 6000 });
+        } else {
+          toast.error(response.data.error);
+        }
         if (response.data?.debug) {
           console.error('Backend debug info:', response.data.debug);
         }
