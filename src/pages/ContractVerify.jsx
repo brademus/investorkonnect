@@ -280,7 +280,7 @@ export default function ContractVerify() {
         property_address: dealData.propertyAddress,
         city: dealData.city,
         state: dealData.state,
-        county: dealData.county || "",
+        county: dealData.county,
         zip: dealData.zip,
         purchase_price: Number(cleanedPrice),
         property_type: dealData.propertyType,
