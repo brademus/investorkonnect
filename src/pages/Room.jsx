@@ -122,7 +122,10 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
 });
 
 // Memoized conversation item to prevent flickering
-const ConversationItem = React.memo(({ room, isActive, onClick }) => {
+const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
+  // Determine if agent can see full address (check if agreement is fully signed)
+  const canSeeFullAddress = userRole === 'investor' || room.is_fully_signed;
+  
   return (
     <button
       onClick={onClick}
@@ -139,30 +142,38 @@ const ConversationItem = React.memo(({ room, isActive, onClick }) => {
       
       {/* Content */}
       <div className="flex-1 min-w-0">
+        {/* Show price and city for agents, or full name for investors */}
         <div className="flex items-center justify-between mb-1">
           <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
-            {room.counterparty_name || `Room ${room.id.slice(0, 6)}`}
+            {userRole === 'agent' && room.budget > 0 && room.city 
+              ? `$${room.budget.toLocaleString()} • ${room.city}`
+              : (room.counterparty_name || `Room ${room.id.slice(0, 6)}`)
+            }
           </p>
           <span className="text-xs text-[#808080] flex-shrink-0 ml-2">
             {new Date(room.created_date || Date.now()).toLocaleDateString()}
           </span>
         </div>
-        {/* Deal Address or Title */}
-        {(room.property_address || room.deal_title || room.title) && (
+        
+        {/* Location line - show city/state for agents until signed, full address for investors */}
+        {(room.city || room.property_address) && (
           <p className="text-sm text-[#E3C567] truncate font-medium">
-            {room.property_address || room.deal_title || room.title}
+            {canSeeFullAddress 
+              ? (room.property_address || room.deal_title || room.title)
+              : `${room.city || 'City'}, ${room.state || 'State'}`
+            }
           </p>
         )}
         
-        {/* Deal Budget */}
-        {(room.budget > 0) && (
+        {/* Deal Budget - only show if not already in title */}
+        {userRole === 'investor' && room.budget > 0 && (
           <p className="text-sm text-[#34D399] font-semibold mt-0.5">
             ${room.budget.toLocaleString()}
           </p>
         )}
 
         {/* Fallback state */}
-        {!room.property_address && !room.deal_title && !room.title && !room.budget && (
+        {!room.city && !room.property_address && !room.deal_title && !room.title && !room.budget && (
           <p className="text-sm text-[#808080] truncate">
             {room.counterparty_role || "Active room"}
           </p>
@@ -172,17 +183,20 @@ const ConversationItem = React.memo(({ room, isActive, onClick }) => {
   );
 }, (prevProps, nextProps) => {
   // Custom comparison to prevent unnecessary re-renders
-  // Normalize values to handle undefined/null/0 consistently
   const normalize = (val) => val || '';
   
   return (
     prevProps.room.id === nextProps.room.id &&
     prevProps.isActive === nextProps.isActive &&
+    prevProps.userRole === nextProps.userRole &&
     normalize(prevProps.room.counterparty_name) === normalize(nextProps.room.counterparty_name) &&
     normalize(prevProps.room.property_address) === normalize(nextProps.room.property_address) &&
+    normalize(prevProps.room.city) === normalize(nextProps.room.city) &&
+    normalize(prevProps.room.state) === normalize(nextProps.room.state) &&
     normalize(prevProps.room.deal_title) === normalize(nextProps.room.deal_title) &&
     normalize(prevProps.room.title) === normalize(nextProps.room.title) &&
     (prevProps.room.budget || 0) === (nextProps.room.budget || 0) &&
+    prevProps.room.is_fully_signed === nextProps.room.is_fully_signed &&
     normalize(prevProps.room.created_date) === normalize(nextProps.room.created_date)
   );
 });
@@ -529,6 +543,7 @@ ${dealContext}`;
                 room={r}
                 isActive={r.id === roomId}
                 onClick={handleClick}
+                userRole={profile?.user_role}
               />
             );
           })}
