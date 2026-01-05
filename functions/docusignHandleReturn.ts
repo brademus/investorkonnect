@@ -116,26 +116,33 @@ Deno.serve(async (req) => {
       // Check if NJ attorney review applies
       if (agreement.governing_state === 'NJ') {
         updateData.status = 'attorney_review_pending';
-        // Set 3-day review period ending at 11:59 PM
-        const reviewEnd = new Date();
-        reviewEnd.setDate(reviewEnd.getDate() + 3);
+        // Calculate 3 business days (excluding weekends)
+        let reviewEnd = new Date();
+        let businessDays = 0;
+        while (businessDays < 3) {
+          reviewEnd.setDate(reviewEnd.getDate() + 1);
+          const day = reviewEnd.getDay();
+          if (day !== 0 && day !== 6) { // Not weekend
+            businessDays++;
+          }
+        }
         reviewEnd.setHours(23, 59, 59, 999);
         updateData.nj_review_end_at = reviewEnd.toISOString();
         
         updateData.audit_log.push({
           timestamp: new Date().toISOString(),
           actor: 'SYSTEM',
-          action: 'NJ_REVIEW_STARTED',
-          details: `3-day attorney review period started (ends ${reviewEnd.toISOString()})`
+          action: 'NJ_ATTORNEY_REVIEW_STARTED',
+          details: `3 business day attorney review period started (ends ${reviewEnd.toISOString()})`
         });
       } else {
         updateData.status = 'fully_signed';
         
-        // UNLOCK DEAL: Mark sensitive fields as accessible
+        // UNLOCK DEAL: Emit unlock audit event
         updateData.audit_log.push({
           timestamp: new Date().toISOString(),
           actor: 'SYSTEM',
-          action: 'UNLOCK_EVENT',
+          action: 'LEGAL_AGREEMENT_UNLOCK',
           details: 'Agreement fully signed - sensitive deal data unlocked'
         });
       }

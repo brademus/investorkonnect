@@ -101,8 +101,8 @@ Deno.serve(async (req) => {
     const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
     const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
     
-    // Construct return URL with token
-    const returnUrl = `${appBaseUrl}/docusign/return?token=${token}`;
+    // Construct return URL with token (Base44 uses page name as path)
+    const returnUrl = `${appBaseUrl}/DocuSignReturn?token=${token}`;
     
     // Create recipient view request
     const recipientViewRequest = {
