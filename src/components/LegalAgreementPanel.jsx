@@ -176,10 +176,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     try {
       setSigning(true);
       
-      // Get DocuSign recipient view URL
-      const { data } = await base44.functions.invoke('docusignRecipientView', {
+      // Capture current page URL for return
+      const returnTo = window.location.href;
+      
+      // Create embedded signing session with token-based return
+      const { data } = await base44.functions.invoke('docusignCreateSigningSession', {
         agreementId: agreement.id,
-        role: signatureType // 'investor' or 'agent'
+        role: signatureType, // 'investor' or 'agent'
+        returnTo
       });
       
       if (data.error) {
@@ -188,14 +192,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         return;
       }
       
-      if (!data.url) {
+      if (!data.signingUrl) {
         toast.error('Failed to get signing URL');
         setSigning(false);
         return;
       }
       
       // Redirect to DocuSign embedded signing
-      window.location.href = data.url;
+      window.location.assign(data.signingUrl);
     } catch (error) {
       console.error('Sign error:', error);
       toast.error('Failed to open signing: ' + error.message);
