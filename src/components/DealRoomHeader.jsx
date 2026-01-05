@@ -102,7 +102,11 @@ export default function DealRoomHeader({ deal, room, role, onAction }) {
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h1 className="text-2xl font-light text-[#FAFAFA] mb-1 tracking-wide">
-              {deal?.property_address || deal?.title || "Deal Room"}
+              {/* Security: Hide address from agents until agreement signed */}
+              {role === 'agent' && deal?._is_redacted
+                ? `${deal?.city || 'City'}, ${deal?.state || 'State'}`
+                : (deal?.property_address || deal?.title || "Deal Room")
+              }
             </h1>
             <div className="flex items-center gap-3">
               <span className="text-sm text-[#A6A6A6]">

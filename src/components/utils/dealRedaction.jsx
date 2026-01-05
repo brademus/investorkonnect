@@ -4,45 +4,62 @@
  */
 
 /**
- * Check if sensitive deal info is unlocked
+ * Check if sensitive deal info is unlocked for a specific user
  * @param {Object} deal - Deal object
- * @returns {boolean} - True if both parties signed IOA
+ * @param {Object} agreement - LegalAgreement object (optional)
+ * @param {string} userRole - Current user's role ('investor' | 'agent')
+ * @returns {boolean} - True if user can see full address
  */
-export function isDealInfoUnlocked(deal) {
+export function isDealInfoUnlocked(deal, agreement = null, userRole = null) {
   if (!deal) return false;
   
-  // If IOA not required, info is unlocked
-  if (deal.ioa_required === false) return true;
+  // Investors always see full address (they own the deal)
+  if (userRole === 'investor') return true;
   
-  // Check if both signatures are present
-  return !!(deal.ioa_investor_signed_at && deal.ioa_agent_signed_at);
+  // For agents: check if internal agreement is fully signed
+  if (userRole === 'agent') {
+    // Check agreement signature status
+    if (agreement?.status === 'fully_signed') return true;
+    if (agreement?.investor_signed_at && agreement?.agent_signed_at) return true;
+    
+    // Legacy: check deal-level IOA status
+    if (deal.ioa_investor_signed_at && deal.ioa_agent_signed_at) return true;
+    if (deal.ioa_status === 'fully_signed') return true;
+    
+    // Not unlocked for agent
+    return false;
+  }
+  
+  // Default: locked
+  return false;
 }
 
 /**
  * Get redacted version of deal data
  * @param {Object} deal - Original deal object
+ * @param {Object} agreement - LegalAgreement object (optional)
  * @param {string} userRole - Current user's role ('investor' | 'agent')
  * @returns {Object} - Deal with sensitive fields redacted if not unlocked
  */
-export function getRedactedDeal(deal, userRole) {
+export function getRedactedDeal(deal, agreement = null, userRole = null) {
   if (!deal) return null;
   
-  const isUnlocked = isDealInfoUnlocked(deal);
+  const isUnlocked = isDealInfoUnlocked(deal, agreement, userRole);
   
   if (isUnlocked) {
     return deal; // Return full data if unlocked
   }
   
-  // Return redacted version
+  // Return redacted version for agents
   return {
     ...deal,
     // REDACTED: Full address replaced with city/state only
-    property_address: `[Address Hidden - ${deal.city || 'City'}, ${deal.state || 'State'}]`,
+    property_address: `${deal.city || 'City'}, ${deal.state || 'State'}`,
     
     // REDACTED: Seller info hidden
     seller_info: deal.seller_info ? {
       ...deal.seller_info,
-      seller_name: '[Seller Name Hidden Until IOA Signed]',
+      seller_name: '[Hidden Until Agreement Signed]',
       second_signer_name: deal.seller_info.second_signer_name ? '[Hidden]' : undefined
     } : undefined,
     
@@ -53,29 +70,56 @@ export function getRedactedDeal(deal, userRole) {
 }
 
 /**
- * Get user-friendly IOA status message
- * @param {Object} deal - Deal object
+ * Get user-friendly agreement status message
+ * @param {Object} agreement - LegalAgreement object
+ * @param {Object} deal - Deal object (fallback)
  * @param {string} userRole - Current user's role
  * @returns {string} - Status message
  */
-export function getIOAStatusMessage(deal, userRole) {
-  if (!deal) return '';
+export function getIOAStatusMessage(agreement, deal, userRole) {
+  // Check agreement status first
+  if (agreement) {
+    const status = agreement.status;
+    
+    switch (status) {
+      case 'draft':
+        return 'Agreement not sent - full address hidden from agent';
+      case 'sent':
+        return userRole === 'agent'
+          ? 'Sign the agreement to unlock full property address'
+          : 'Waiting for both parties to sign';
+      case 'investor_signed':
+        return userRole === 'agent'
+          ? 'Sign the agreement to unlock full property address'
+          : 'Waiting for agent to sign';
+      case 'agent_signed':
+        return userRole === 'investor'
+          ? 'Sign the agreement to finalize'
+          : 'Waiting for investor to sign';
+      case 'fully_signed':
+        return 'Agreement fully signed - all details unlocked';
+      default:
+        return '';
+    }
+  }
   
+  // Fallback to legacy IOA status
+  if (!deal) return '';
   const status = deal.ioa_status || 'not_started';
   
   switch (status) {
     case 'not_started':
-      return 'IOA not started - sensitive details hidden';
+      return 'Agreement not started - full address hidden from agent';
     case 'awaiting_investor':
       return userRole === 'investor' 
-        ? 'Sign the IOA to unlock full deal details'
-        : 'Waiting for investor to sign IOA';
+        ? 'Sign to unlock full deal details'
+        : 'Waiting for investor to sign';
     case 'awaiting_agent':
       return userRole === 'agent'
-        ? 'Sign the IOA to unlock full deal details'
-        : 'Waiting for agent to sign IOA';
+        ? 'Sign to unlock full property address'
+        : 'Waiting for agent to sign';
     case 'fully_signed':
-      return 'IOA fully signed - all details unlocked';
+      return 'Agreement fully signed - all details unlocked';
     default:
       return '';
   }
