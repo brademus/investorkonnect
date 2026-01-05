@@ -67,6 +67,8 @@ export default function NewDeal() {
             setState(deal.state || "");
             setZip(deal.zip || "");
             setCounty(deal.county || "");
+            
+            console.log('[NewDeal] Loaded county from deal:', deal.county);
             setPurchasePrice(deal.purchase_price?.toString() || "");
             setClosingDate(deal.key_dates?.closing_date || "");
             setContractDate(deal.key_dates?.contract_date || "");
@@ -217,12 +219,14 @@ export default function NewDeal() {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
       try {
+        console.log('[NewDeal] Saving county to deal:', county);
+        
         await base44.entities.Deal.update(dealId, {
           property_address: propertyAddress,
           city: city,
           state: state,
           zip: zip,
-          county: county,
+          county: county || null,
           purchase_price: Number(cleanedPrice),
           key_dates: {
             closing_date: closingDate,
