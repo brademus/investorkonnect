@@ -32,6 +32,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   useEffect(() => {
     loadAgreement();
     determineNetPolicy();
+    
+    // Initialize exhibitA from deal.proposed_terms
+    if (deal.proposed_terms) {
+      const terms = deal.proposed_terms;
+      setExhibitA({
+        compensation_model: terms.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 
+                           terms.seller_commission_type === 'flat_fee' ? 'FLAT_FEE' :
+                           terms.seller_commission_type === 'net' ? 'NET_SPREAD' : 'FLAT_FEE',
+        flat_fee_amount: terms.seller_flat_fee || 5000,
+        commission_percentage: terms.seller_commission_percentage,
+        net_target: terms.net_target,
+        transaction_type: deal.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: terms.agreement_length || 180,
+        termination_notice_days: 30
+      });
+    }
   }, [deal.id]);
   
   const determineNetPolicy = () => {
@@ -466,6 +482,32 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   value={exhibitA.flat_fee_amount}
                   onChange={(e) => setExhibitA({ ...exhibitA, flat_fee_amount: Number(e.target.value) })}
                   className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
+                />
+              </div>
+            )}
+            
+            {exhibitA.compensation_model === 'COMMISSION_PCT' && (
+              <div>
+                <Label className="text-[#FAFAFA]">Commission Percentage (%)</Label>
+                <Input
+                  type="number"
+                  value={exhibitA.commission_percentage || ''}
+                  onChange={(e) => setExhibitA({ ...exhibitA, commission_percentage: Number(e.target.value) })}
+                  className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
+                  placeholder="e.g., 3"
+                />
+              </div>
+            )}
+            
+            {exhibitA.compensation_model === 'NET_SPREAD' && (
+              <div>
+                <Label className="text-[#FAFAFA]">Net Target Amount ($)</Label>
+                <Input
+                  type="number"
+                  value={exhibitA.net_target || ''}
+                  onChange={(e) => setExhibitA({ ...exhibitA, net_target: Number(e.target.value) })}
+                  className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
+                  placeholder="Minimum seller net amount"
                 />
               </div>
             )}
