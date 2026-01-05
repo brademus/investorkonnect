@@ -650,7 +650,11 @@ ${dealContext}`;
                     'bg-[#F59E0B]'
                   }`}></span>
                   <span className="font-bold text-[#FAFAFA] text-sm">
-                    {currentRoom.title || `Chat with ${counterpartName}`}
+                    {/* Privacy: Hide full address from agents until agreement is fully signed */}
+                    {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
+                      ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                      : (currentRoom.title || `Chat with ${counterpartName}`)
+                    }
                   </span>
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
