@@ -97,18 +97,34 @@ export default function NewDeal() {
               if (rooms.length > 0 && rooms[0].proposed_terms) {
                 const terms = rooms[0].proposed_terms;
                 
-                // Seller commission
-                setSellerCommissionType(terms.seller_commission_type || "percentage");
-                setSellerCommissionPercentage(terms.seller_commission_percentage?.toString() || "");
-                setSellerFlatFee(terms.seller_flat_fee?.toString() || "");
+                // Seller commission - set defaults if not present
+                if (terms.seller_commission_type) {
+                  setSellerCommissionType(terms.seller_commission_type);
+                }
+                if (terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined) {
+                  setSellerCommissionPercentage(terms.seller_commission_percentage.toString());
+                }
+                if (terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined) {
+                  setSellerFlatFee(terms.seller_flat_fee.toString());
+                }
                 
-                // Buyer commission  
-                setBuyerCommissionType(terms.buyer_commission_type || "percentage");
-                setBuyerCommissionPercentage(terms.buyer_commission_percentage?.toString() || "");
-                setBuyerFlatFee(terms.buyer_flat_fee?.toString() || "");
+                // Buyer commission - set defaults if not present
+                if (terms.buyer_commission_type) {
+                  setBuyerCommissionType(terms.buyer_commission_type);
+                }
+                if (terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined) {
+                  setBuyerCommissionPercentage(terms.buyer_commission_percentage.toString());
+                }
+                if (terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined) {
+                  setBuyerFlatFee(terms.buyer_flat_fee.toString());
+                }
                 
                 // Agreement length
-                setAgreementLength(terms.agreement_length?.toString() || "");
+                if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
+                  setAgreementLength(terms.agreement_length.toString());
+                }
+                
+                console.log('[NewDeal] Loaded proposed terms:', terms);
               }
             } catch (e) {
               console.error("Failed to load proposed terms:", e);
