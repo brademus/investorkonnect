@@ -149,7 +149,7 @@ export default function NewDeal() {
   }, [dealId, profile?.id]);
 
   const handleContinue = async () => {
-    // Validation
+    // Validation - All fields required except special notes and county
     if (!propertyAddress.trim()) {
       toast.error("Please enter a property address");
       return;
@@ -160,6 +160,10 @@ export default function NewDeal() {
     }
     if (!state.trim()) {
       toast.error("Please enter a state");
+      return;
+    }
+    if (!zip.trim()) {
+      toast.error("Please enter a ZIP code");
       return;
     }
     
@@ -173,11 +177,60 @@ export default function NewDeal() {
       toast.error("Please select a target closing date");
       return;
     }
+    
+    if (!sellerName.trim()) {
+      toast.error("Please enter the seller name");
+      return;
+    }
+    if (!earnestMoney.trim()) {
+      toast.error("Please enter the earnest money amount");
+      return;
+    }
+    
+    if (sellerCommissionType === "percentage" && !sellerCommissionPercentage.trim()) {
+      toast.error("Please enter the seller's agent commission percentage");
+      return;
+    }
+    if (sellerCommissionType === "flat" && !sellerFlatFee.trim()) {
+      toast.error("Please enter the seller's agent flat fee");
+      return;
+    }
+    
+    if (buyerCommissionType === "percentage" && !buyerCommissionPercentage.trim()) {
+      toast.error("Please enter the buyer's agent commission percentage");
+      return;
+    }
+    if (buyerCommissionType === "flat" && !buyerFlatFee.trim()) {
+      toast.error("Please enter the buyer's agent flat fee");
+      return;
+    }
+    
+    if (!agreementLength.trim()) {
+      toast.error("Please enter the agreement length");
+      return;
+    }
 
-    // If editing existing deal, save proposed_terms to Deal entity immediately
+    // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
       try {
         await base44.entities.Deal.update(dealId, {
+          property_address: propertyAddress,
+          city: city,
+          state: state,
+          zip: zip,
+          county: county,
+          purchase_price: Number(cleanedPrice),
+          key_dates: {
+            closing_date: closingDate,
+            contract_date: contractDate
+          },
+          special_notes: specialNotes,
+          seller_info: {
+            seller_name: sellerName,
+            earnest_money: earnestMoney ? Number(earnestMoney) : null,
+            number_of_signers: numberOfSigners,
+            second_signer_name: secondSignerName
+          },
           proposed_terms: {
             seller_commission_type: sellerCommissionType,
             seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
@@ -328,7 +381,7 @@ export default function NewDeal() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">ZIP</label>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">ZIP *</label>
                 <Input
                   value={zip}
                   onChange={(e) => setZip(e.target.value)}
@@ -390,7 +443,7 @@ export default function NewDeal() {
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name *</label>
               <Input
                 value={sellerName}
                 onChange={(e) => setSellerName(e.target.value)}
@@ -400,7 +453,7 @@ export default function NewDeal() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Earnest Money</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Earnest Money *</label>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                 <Input
@@ -414,7 +467,7 @@ export default function NewDeal() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Number of Signers</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Number of Signers *</label>
               <Select value={numberOfSigners} onValueChange={setNumberOfSigners}>
                 <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectValue />
@@ -428,7 +481,7 @@ export default function NewDeal() {
 
             {numberOfSigners === "2" && (
               <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Second Signer Name</label>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Second Signer Name *</label>
                 <Input
                   value={secondSignerName}
                   onChange={(e) => setSecondSignerName(e.target.value)}
@@ -458,7 +511,7 @@ export default function NewDeal() {
               <h3 className="text-lg font-semibold text-[#E3C567] mb-4">Seller's Agent Commission</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission Type</label>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission Type *</label>
                   <Select value={sellerCommissionType} onValueChange={setSellerCommissionType}>
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
@@ -472,7 +525,7 @@ export default function NewDeal() {
 
                 {sellerCommissionType === "percentage" ? (
                   <div>
-                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission %</label>
+                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission % *</label>
                     <div className="relative">
                       <Input
                         type="number"
@@ -508,7 +561,7 @@ export default function NewDeal() {
               <h3 className="text-lg font-semibold text-[#60A5FA] mb-4">Buyer's Agent Commission</h3>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission Type</label>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission Type *</label>
                   <Select value={buyerCommissionType} onValueChange={setBuyerCommissionType}>
                     <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                       <SelectValue />
@@ -522,7 +575,7 @@ export default function NewDeal() {
 
                 {buyerCommissionType === "percentage" ? (
                   <div>
-                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission %</label>
+                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Commission % *</label>
                     <div className="relative">
                       <Input
                         type="number"
@@ -537,7 +590,7 @@ export default function NewDeal() {
                   </div>
                 ) : (
                   <div>
-                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Flat Fee</label>
+                    <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Flat Fee *</label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#808080]" />
                       <Input
@@ -555,7 +608,7 @@ export default function NewDeal() {
 
             {/* Agreement Length */}
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Agreement Length (Days)</label>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Agreement Length (Days) *</label>
               <Input
                 type="number"
                 value={agreementLength}
