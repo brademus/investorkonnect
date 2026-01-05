@@ -142,12 +142,14 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
       
       {/* Content */}
       <div className="flex-1 min-w-0">
-        {/* Show price and city for agents, or full name for investors */}
+        {/* Show price and city for agents, or full name for investors ONLY AFTER FULLY SIGNED */}
         <div className="flex items-center justify-between mb-1">
           <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
             {userRole === 'agent' && room.budget > 0 && room.city 
               ? `$${room.budget.toLocaleString()} • ${room.city}`
-              : (room.counterparty_name || `Room ${room.id.slice(0, 6)}`)
+              : room.is_fully_signed 
+              ? (room.counterparty_name || `Room ${room.id.slice(0, 6)}`)
+              : (userRole === 'investor' ? 'Agent' : 'Investor')
             }
           </p>
           <span className="text-xs text-[#808080] flex-shrink-0 ml-2">
@@ -594,8 +596,8 @@ ${dealContext}`;
                   Working Together
                 </span>
               ) : currentRoom?.request_status === 'accepted' ? (
-                <span className="bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30 px-3 py-1 rounded-full text-xs font-medium">
-                  ✓ Accepted
+                <span className="bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full text-xs font-medium">
+                  Awaiting Agreement Signatures
                 </span>
               ) : currentRoom?.request_status === 'requested' ? (
                 <span className="bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full text-xs font-medium">
@@ -669,7 +671,7 @@ ${dealContext}`;
                     {currentRoom?.is_fully_signed ? (
                       <span className="text-[#10B981]">Working Together</span>
                     ) : currentRoom?.request_status === 'accepted' ? (
-                      <span className="text-[#60A5FA]">Accepted</span>
+                      <span className="text-[#F59E0B]">Awaiting Agreement Signatures</span>
                     ) : currentRoom?.request_status === 'requested' ? (
                       <span className="text-[#F59E0B]">Request Pending</span>
                     ) : (
