@@ -32,7 +32,9 @@ function AccountProfileContent() {
     markets: "",
     phone: "",
     accreditation: "",
-    goals: ""
+    goals: "",
+    brokerage: "",
+    license_number: ""
   });
 
   useEffect(() => {
@@ -46,7 +48,9 @@ function AccountProfileContent() {
         markets: Array.isArray(profile.markets) ? profile.markets.join(", ") : "",
         phone: profile.phone || "",
         accreditation: profile.accreditation || "",
-        goals: profile.goals || ""
+        goals: profile.goals || "",
+        brokerage: profile.agent?.brokerage || profile.broker || "",
+        license_number: profile.agent?.license_number || profile.license_number || ""
       });
       setLoading(false);
     }
@@ -74,6 +78,15 @@ function AccountProfileContent() {
         accreditation: formData.accreditation.trim(),
         goals: formData.goals.trim()
       };
+      
+      // Add agent-specific fields if user is an agent
+      if (formData.role === 'agent') {
+        updateData.agent = {
+          ...(profile.agent || {}),
+          brokerage: formData.brokerage.trim(),
+          license_number: formData.license_number.trim()
+        };
+      }
 
       console.log('[AccountProfile] 📤 Updating profile:', updateData);
 
@@ -233,6 +246,41 @@ function AccountProfileContent() {
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
             </div>
+
+            {/* Agent-specific fields */}
+            {formData.role === 'agent' && (
+              <>
+                <div className="pt-4 border-t border-[#1F1F1F]">
+                  <h3 className="text-lg font-semibold text-[#FAFAFA] mb-4">Agent Information</h3>
+                </div>
+
+                <div>
+                  <Label htmlFor="brokerage" className="text-[#FAFAFA]">Brokerage Name *</Label>
+                  <Input
+                    id="brokerage"
+                    value={formData.brokerage}
+                    onChange={(e) => setFormData({...formData, brokerage: e.target.value})}
+                    placeholder="RE/MAX, Keller Williams, etc."
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">Required for generating agreements</p>
+                </div>
+
+                <div>
+                  <Label htmlFor="license_number" className="text-[#FAFAFA]">License Number *</Label>
+                  <Input
+                    id="license_number"
+                    value={formData.license_number}
+                    onChange={(e) => setFormData({...formData, license_number: e.target.value})}
+                    placeholder="Your real estate license number"
+                    disabled={saving}
+                    className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                  />
+                  <p className="text-xs text-[#808080] mt-1">Required for generating agreements</p>
+                </div>
+              </>
+            )}
 
             {/* Submit */}
             <div className="flex gap-3 pt-4">
