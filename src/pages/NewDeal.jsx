@@ -94,23 +94,25 @@ export default function NewDeal() {
             // Load terms from associated Room
             try {
               const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-              if (rooms.length > 0) {
+              if (rooms.length > 0 && rooms[0].proposed_terms) {
                 const terms = rooms[0].proposed_terms;
-                if (terms) {
-                  if (terms.seller_commission_type) {
-                    setSellerCommissionType(terms.seller_commission_type);
-                    setSellerCommissionPercentage(terms.seller_commission_percentage?.toString() || "");
-                    setSellerFlatFee(terms.seller_flat_fee?.toString() || "");
-                  }
-                  if (terms.buyer_commission_type) {
-                    setBuyerCommissionType(terms.buyer_commission_type);
-                    setBuyerCommissionPercentage(terms.buyer_commission_percentage?.toString() || "");
-                    setBuyerFlatFee(terms.buyer_flat_fee?.toString() || "");
-                  }
-                  setAgreementLength(terms.agreement_length?.toString() || "");
-                }
+                
+                // Seller commission
+                setSellerCommissionType(terms.seller_commission_type || "percentage");
+                setSellerCommissionPercentage(terms.seller_commission_percentage?.toString() || "");
+                setSellerFlatFee(terms.seller_flat_fee?.toString() || "");
+                
+                // Buyer commission  
+                setBuyerCommissionType(terms.buyer_commission_type || "percentage");
+                setBuyerCommissionPercentage(terms.buyer_commission_percentage?.toString() || "");
+                setBuyerFlatFee(terms.buyer_flat_fee?.toString() || "");
+                
+                // Agreement length
+                setAgreementLength(terms.agreement_length?.toString() || "");
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error("Failed to load proposed terms:", e);
+            }
           }
         } catch (error) {
           console.error("Failed to load deal:", error);
