@@ -17,70 +17,51 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [signing, setSigning] = useState(false);
   
   const [exhibitA, setExhibitA] = useState(null);
-  
   const [netPolicy, setNetPolicy] = useState('ALLOWED');
   
   const isInvestor = deal.investor_id === profile.id;
   const isAgent = deal.agent_id === profile.id;
-  
-  // Initialize exhibitA whenever deal.proposed_terms changes
-  useEffect(() => {
-    if (!deal) return;
-    
-    const terms = deal.proposed_terms;
-    
-    console.log('[LegalAgreement] 🔄 Syncing with deal.proposed_terms:', {
-      deal_id: deal.id,
-      has_terms: !!terms,
-      seller_commission_type: terms?.seller_commission_type,
-      seller_commission_percentage: terms?.seller_commission_percentage,
-      seller_flat_fee: terms?.seller_flat_fee,
-      agreement_length: terms?.agreement_length
-    });
-    
-    if (!terms || !terms.seller_commission_type) {
-      console.log('[LegalAgreement] ⚠️  No proposed_terms found, using defaults');
-      setExhibitA({
-        compensation_model: 'FLAT_FEE',
-        flat_fee_amount: 5000,
-        commission_percentage: null,
-        net_target: null,
-        transaction_type: deal.transaction_type || 'ASSIGNMENT',
-        agreement_length_days: 180,
-        termination_notice_days: 30
-      });
-      return;
-    }
-    
-    // Map seller_commission_type to compensation_model
-    let compensationModel = 'FLAT_FEE';
-    if (terms.seller_commission_type === 'percentage') {
-      compensationModel = 'COMMISSION_PCT';
-    } else if (terms.seller_commission_type === 'flat' || terms.seller_commission_type === 'flat_fee') {
-      compensationModel = 'FLAT_FEE';
-    } else if (terms.seller_commission_type === 'net') {
-      compensationModel = 'NET_SPREAD';
-    }
-    
-    const newExhibitA = {
-      compensation_model: compensationModel,
-      flat_fee_amount: terms.seller_flat_fee || 5000,
-      commission_percentage: terms.seller_commission_percentage || null,
-      net_target: terms.net_target || null,
-      transaction_type: deal.transaction_type || 'ASSIGNMENT',
-      agreement_length_days: terms.agreement_length || 180,
-      termination_notice_days: 30
-    };
-    
-    console.log('[LegalAgreement] ✅ Setting modal to:', newExhibitA);
-    setExhibitA(newExhibitA);
-    
-  }, [deal?.id, deal?.proposed_terms?.seller_commission_type, deal?.proposed_terms?.seller_commission_percentage, deal?.proposed_terms?.seller_flat_fee, deal?.proposed_terms?.agreement_length]);
-  
+
   useEffect(() => {
     loadAgreement();
     determineNetPolicy();
   }, [deal.id]);
+  
+  // When the modal opens, initialize exhibitA from deal.proposed_terms
+  const handleOpenGenerateModal = () => {
+    if (!deal) return;
+
+    const terms = deal.proposed_terms || {};
+    console.log('[LegalAgreementPanel] Opening modal. Initializing exhibitA from deal.proposed_terms:', terms);
+
+    let compensationModel = 'FLAT_FEE';
+    if (terms.seller_commission_type === 'percentage') {
+      compensationModel = 'COMMISSION_PCT';
+    } else if (terms.seller_commission_type === 'flat') { 
+      compensationModel = 'FLAT_FEE';
+    } else if (terms.seller_commission_type === 'net') {
+      compensationModel = 'NET_SPREAD';
+    }
+
+    const newExhibitAState = {
+      compensation_model: compensationModel,
+      flat_fee_amount: terms.seller_flat_fee || 0, 
+      commission_percentage: terms.seller_commission_percentage || 0,
+      net_target: terms.net_target || 0,
+      transaction_type: deal.transaction_type || 'ASSIGNMENT',
+      agreement_length_days: terms.agreement_length || 180,
+      termination_notice_days: 30
+    };
+    setExhibitA(newExhibitAState);
+    console.log('[LegalAgreementPanel] exhibitA set for modal:', newExhibitAState);
+
+    setShowGenerateModal(true);
+  };
+
+  const handleCloseGenerateModal = () => {
+    setExhibitA(null);
+    setShowGenerateModal(false);
+  };
   
   const determineNetPolicy = () => {
     const state = deal.state;
@@ -152,20 +133,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       // Normalize role to lowercase
       const actorRole = (profile.user_role || '').toLowerCase();
       
-      // Derive exhibit_a from deal's existing terms
+      // Use exhibitA state directly
       const derivedExhibitA = {
-        compensation_model: deal.proposed_terms?.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 
-                           deal.proposed_terms?.seller_commission_type === 'net' ? 'NET_SPREAD' :
-                           'FLAT_FEE',
-        flat_fee_amount: deal.proposed_terms?.seller_flat_fee || exhibitA.flat_fee_amount || 5000,
-        commission_percentage: deal.proposed_terms?.seller_commission_percentage || exhibitA.commission_percentage,
-        net_target: deal.proposed_terms?.net_target || exhibitA.net_target,
-        transaction_type: deal.transaction_type || exhibitA.transaction_type || 'ASSIGNMENT',
-        agreement_length_days: exhibitA.agreement_length_days || 180,
-        termination_notice_days: exhibitA.termination_notice_days || 30,
-        buyer_commission_type: deal.proposed_terms?.buyer_commission_type,
+        compensation_model: exhibitA?.compensation_model || 'FLAT_FEE',
+        flat_fee_amount: exhibitA?.flat_fee_amount || 0,
+        commission_percentage: exhibitA?.commission_percentage || 0,
+        net_target: exhibitA?.net_target || 0,
+        transaction_type: exhibitA?.transaction_type || deal.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: exhibitA?.agreement_length_days || 180,
+        termination_notice_days: exhibitA?.termination_notice_days || 30,
+        buyer_commission_type: deal.proposed_terms?.buyer_commission_type, 
         buyer_commission_amount: deal.proposed_terms?.buyer_commission_percentage || deal.proposed_terms?.buyer_flat_fee,
-        seller_commission_type: deal.proposed_terms?.seller_commission_type,
+        seller_commission_type: deal.proposed_terms?.seller_commission_type, 
         seller_commission_amount: deal.proposed_terms?.seller_commission_percentage || deal.proposed_terms?.seller_flat_fee
       };
       
@@ -319,7 +298,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
           <p className="text-[#808080] mb-4">No agreement generated yet</p>
           <Button
-            onClick={() => setShowGenerateModal(true)}
+            onClick={handleOpenGenerateModal}
             className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
             Generate Agreement
           </Button>
@@ -439,7 +418,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             {isInvestor && agreement.status === 'draft' && (
               <>
                 <Button
-                  onClick={() => setShowGenerateModal(true)}
+                  onClick={handleOpenGenerateModal}
                   variant="outline"
                   className="flex-1">
                   Regenerate
@@ -471,15 +450,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       )}
       
       {/* Generate Modal */}
-      <Dialog open={showGenerateModal} onOpenChange={setShowGenerateModal}>
+      <Dialog open={showGenerateModal} onOpenChange={handleCloseGenerateModal}>
         <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F]">
           <DialogHeader>
             <DialogTitle className="text-[#FAFAFA]">Generate Agreement</DialogTitle>
           </DialogHeader>
           
-          {!exhibitA ? (
-            <div className="py-8 text-center text-[#808080]">Loading terms...</div>
-          ) : (
           <div className="space-y-4 py-4">
             <div>
               <Label className="text-[#FAFAFA]">Compensation Model</Label>
@@ -572,9 +548,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               />
             </div>
           </div>
-          )}
           
-          {exhibitA && (
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -589,7 +563,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               {generating ? 'Generating...' : 'Generate'}
             </Button>
           </div>
-          )}
         </DialogContent>
       </Dialog>
     </Card>
