@@ -37,6 +37,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
 
     const terms = deal.proposed_terms || {};
+    
+    console.log('[LegalAgreementPanel] 📋 Loading terms from deal:', {
+      seller_commission_type: terms.seller_commission_type,
+      seller_commission_percentage: terms.seller_commission_percentage,
+      seller_flat_fee: terms.seller_flat_fee,
+      agreement_length: terms.agreement_length
+    });
 
     // Use the same commission type format as NewDeal page: "percentage" or "flat"
     const newExhibitAState = {
@@ -48,6 +55,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       agreement_length_days: terms.agreement_length || 180,
       termination_notice_days: 30
     };
+    
+    console.log('[LegalAgreementPanel] ✅ Loaded exhibitA state:', newExhibitAState);
     
     setExhibitA(newExhibitAState);
     setShowGenerateModal(true);
