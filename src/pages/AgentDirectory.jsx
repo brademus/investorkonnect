@@ -380,7 +380,7 @@ export default function AgentDirectory() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <h2 className="text-sm font-semibold text-[#FAFAFA] truncate">
-                            {agent.full_name || 'Agent'}
+                            {agent.full_name?.split(' ')[0] || 'Agent'}
                           </h2>
                           {isDemo && (
                             <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-medium rounded">Demo</span>
