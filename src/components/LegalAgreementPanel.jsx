@@ -16,13 +16,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
   
-  const [exhibitA, setExhibitA] = useState({
-    compensation_model: 'FLAT_FEE',
-    flat_fee_amount: 5000,
-    transaction_type: 'ASSIGNMENT',
-    agreement_length_days: 180,
-    termination_notice_days: 30
-  });
+  const [exhibitA, setExhibitA] = useState(null);
   
   const [netPolicy, setNetPolicy] = useState('ALLOWED');
   
@@ -33,11 +27,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     loadAgreement();
     determineNetPolicy();
     
-    // Initialize exhibitA from deal.proposed_terms (sync with verified contract data)
-    if (deal?.proposed_terms) {
-      const terms = deal.proposed_terms;
+    // ALWAYS initialize exhibitA from deal data (for existing deals with saved terms)
+    if (deal) {
+      const terms = deal.proposed_terms || {};
       
-      console.log('[LegalAgreement] Syncing modal with deal terms:', terms);
+      console.log('[LegalAgreement] Loading deal terms into modal:', {
+        deal_id: deal.id,
+        proposed_terms: terms,
+        transaction_type: deal.transaction_type
+      });
       
       // Map seller_commission_type from NewDeal/ContractVerify to compensation_model
       let compensationModel = 'FLAT_FEE'; // default
@@ -52,21 +50,21 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       setExhibitA({
         compensation_model: compensationModel,
         flat_fee_amount: terms.seller_flat_fee || 5000,
-        commission_percentage: terms.seller_commission_percentage,
-        net_target: terms.net_target,
+        commission_percentage: terms.seller_commission_percentage || null,
+        net_target: terms.net_target || null,
         transaction_type: deal.transaction_type || 'ASSIGNMENT',
         agreement_length_days: terms.agreement_length || 180,
         termination_notice_days: 30
       });
       
-      console.log('[LegalAgreement] Modal values set to:', {
+      console.log('[LegalAgreement] Modal initialized with:', {
         compensation_model: compensationModel,
-        flat_fee_amount: terms.seller_flat_fee || 5000,
+        flat_fee_amount: terms.seller_flat_fee,
         commission_percentage: terms.seller_commission_percentage,
-        agreement_length_days: terms.agreement_length || 180
+        agreement_length_days: terms.agreement_length
       });
     }
-  }, [deal?.id, deal?.proposed_terms]);
+  }, [deal.id]);
   
   const determineNetPolicy = () => {
     const state = deal.state;
@@ -463,6 +461,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             <DialogTitle className="text-[#FAFAFA]">Generate Agreement</DialogTitle>
           </DialogHeader>
           
+          {!exhibitA ? (
+            <div className="py-8 text-center text-[#808080]">Loading terms...</div>
+          ) : (
           <div className="space-y-4 py-4">
             <div>
               <Label className="text-[#FAFAFA]">Compensation Model</Label>
@@ -555,7 +556,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               />
             </div>
           </div>
+          )}
           
+          {exhibitA && (
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -570,6 +573,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               {generating ? 'Generating...' : 'Generate'}
             </Button>
           </div>
+          )}
         </DialogContent>
       </Dialog>
     </Card>
