@@ -91,9 +91,10 @@ function LayoutContent({ children }) {
               className="h-8 w-8 object-contain cursor-pointer"
               onClick={() => window.location.href = createPageUrl("Pipeline")}
             />
-            <span className="text-base font-light tracking-wide text-[#E3C567]">
+            <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
               Investor Konnect
-            </span>
+            </Link>
+
 
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
