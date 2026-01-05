@@ -397,7 +397,7 @@ export default function AgentProfile() {
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <h1 className="text-3xl font-bold text-[#FAFAFA]">
-                      {profile.full_name || "Agent"}
+                      {profile.full_name?.split(' ')[0] || "Agent"}
                     </h1>
                     {isDemo && (
                       <span className="inline-flex items-center rounded-full bg-[#1F1F1F] px-2.5 py-1 text-xs font-medium text-[#808080]">
