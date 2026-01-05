@@ -401,25 +401,39 @@ Deno.serve(async (req) => {
     // Log first 500 chars to debug
     console.log('Template text preview:', templateText.substring(0, 500));
     
+    // Log all available context keys
+    console.log('Available render context keys:', Object.keys(renderContext));
+
     // Replace all placeholders
     const missingTokens = new Set();
+    const foundTokens = new Set();
+
     templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
-      if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '') {
-        console.log(`Replacing ${token} with: ${renderContext[token]}`);
+      if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '' && renderContext[token] !== 'N/A' && renderContext[token] !== 'TBD') {
+        console.log(`✓ Replacing ${token} with: ${renderContext[token]}`);
+        foundTokens.add(token);
         return String(renderContext[token]);
       } else {
-        console.log(`Missing token: ${token}`);
+        console.log(`✗ Missing token: ${token} (value: ${renderContext[token]})`);
         missingTokens.add(token);
         return match;
       }
     });
-    
+
+    console.log(`Processed ${foundTokens.size} placeholders successfully`);
+    console.log(`Missing ${missingTokens.size} placeholders:`, Array.from(missingTokens));
+
     if (missingTokens.size > 0) {
-      console.log('Missing tokens:', Array.from(missingTokens));
+      const missingList = Array.from(missingTokens).map(token => {
+        const value = renderContext[token];
+        return `${token} (current: ${value || 'empty'})`;
+      });
+
       return Response.json({
-        error: 'Incomplete template rendering',
+        error: `Missing required fields for contract: ${Array.from(missingTokens).join(', ')}`,
         missing_placeholders: Array.from(missingTokens),
-        message: 'Complete these fields in the deal/profile to generate an executable agreement.'
+        missing_details: missingList,
+        message: 'Please complete these fields in the deal/profile to generate the agreement.'
       }, { status: 400 });
     }
     
