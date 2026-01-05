@@ -36,6 +36,7 @@ export default function ContractVerify() {
       
       try {
         const parsed = JSON.parse(stored);
+        console.log('[ContractVerify] Loaded from sessionStorage:', parsed);
         
         // If this is an existing deal, load proposed terms from Room
         const existingDealId = dealIdFromUrl || parsed.dealId;
@@ -44,31 +45,47 @@ export default function ContractVerify() {
             const rooms = await base44.entities.Room.filter({ deal_id: existingDealId });
             if (rooms.length > 0 && rooms[0].proposed_terms) {
               const terms = rooms[0].proposed_terms;
-              console.log('[ContractVerify] Loading existing proposed terms:', terms);
+              console.log('[ContractVerify] Loading existing proposed terms from Room:', terms);
               
-              // Merge terms into parsed deal data
-              parsed.sellerCommissionType = terms.seller_commission_type || parsed.sellerCommissionType;
-              parsed.sellerCommissionPercentage = terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined 
-                ? terms.seller_commission_percentage 
-                : parsed.sellerCommissionPercentage;
-              parsed.sellerFlatFee = terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined
-                ? terms.seller_flat_fee
-                : parsed.sellerFlatFee;
+              // Merge terms into parsed deal data - ONLY if not already in sessionStorage
+              if (!parsed.sellerCommissionType) {
+                parsed.sellerCommissionType = terms.seller_commission_type || parsed.sellerCommissionType;
+              }
+              if (!parsed.sellerCommissionPercentage) {
+                parsed.sellerCommissionPercentage = terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined 
+                  ? terms.seller_commission_percentage 
+                  : parsed.sellerCommissionPercentage;
+              }
+              if (!parsed.sellerFlatFee) {
+                parsed.sellerFlatFee = terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined
+                  ? terms.seller_flat_fee
+                  : parsed.sellerFlatFee;
+              }
               
-              parsed.buyerCommissionType = terms.buyer_commission_type || parsed.buyerCommissionType;
-              parsed.buyerCommissionPercentage = terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined
-                ? terms.buyer_commission_percentage
-                : parsed.buyerCommissionPercentage;
-              parsed.buyerFlatFee = terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined
-                ? terms.buyer_flat_fee
-                : parsed.buyerFlatFee;
+              if (!parsed.buyerCommissionType) {
+                parsed.buyerCommissionType = terms.buyer_commission_type || parsed.buyerCommissionType;
+              }
+              if (!parsed.buyerCommissionPercentage) {
+                parsed.buyerCommissionPercentage = terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined
+                  ? terms.buyer_commission_percentage
+                  : parsed.buyerCommissionPercentage;
+              }
+              if (!parsed.buyerFlatFee) {
+                parsed.buyerFlatFee = terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined
+                  ? terms.buyer_flat_fee
+                  : parsed.buyerFlatFee;
+              }
               
-              parsed.agreementLength = terms.agreement_length !== null && terms.agreement_length !== undefined
-                ? terms.agreement_length
-                : parsed.agreementLength;
+              if (!parsed.agreementLength) {
+                parsed.agreementLength = terms.agreement_length !== null && terms.agreement_length !== undefined
+                  ? terms.agreement_length
+                  : parsed.agreementLength;
+              }
+              
+              console.log('[ContractVerify] Final merged data:', parsed);
             }
           } catch (e) {
-            console.log('[ContractVerify] No existing room terms to load');
+            console.log('[ContractVerify] No existing room terms to load:', e);
           }
         }
         
@@ -80,6 +97,7 @@ export default function ContractVerify() {
           setFileName(parsed.contractFileName || "Contract.pdf");
         }
       } catch (e) {
+        console.error('[ContractVerify] Error loading data:', e);
         toast.error("Invalid deal data");
         navigate(createPageUrl("NewDeal"));
       }
