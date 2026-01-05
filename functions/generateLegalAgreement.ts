@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
-import { PDFDocument, rgb, PDFName, PDFString } from 'npm:pdf-lib@1.17.1';
+import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
+import pdfParse from 'npm:pdf-parse@1.1.1';
 
 // State-to-template URL mapping
 const STATE_TEMPLATES = {
@@ -61,6 +62,112 @@ async function sha256(data) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function generatePdfFromText(text, dealId) {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  const fontSize = 10;
+  const lineHeight = 13;
+  const margin = 60;
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const maxWidth = pageWidth - 2 * margin;
+  
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let yPosition = pageHeight - margin;
+  
+  const lines = text.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // Add new page if needed
+    if (yPosition < margin + 30) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      yPosition = pageHeight - margin;
+    }
+    
+    // Skip empty lines but add spacing
+    if (!line.trim()) {
+      yPosition -= lineHeight * 0.5;
+      continue;
+    }
+    
+    // Detect headings (all caps or numbered)
+    const isTitle = line.includes('INTERNAL OPERATING AGREEMENT') || line.includes('InvestorKonnect');
+    const isHeading = /^[A-Z\s]{15,}$/.test(line.trim()) || /^\d+\)/.test(line.trim()) || /^[A-Z]\)/.test(line.trim());
+    const isSubheading = /^\d+\./.test(line.trim());
+    
+    const currentFont = (isTitle || isHeading) ? boldFont : font;
+    const currentSize = isTitle ? 14 : isHeading ? 11 : isSubheading ? 10.5 : fontSize;
+    const textColor = rgb(0, 0, 0);
+    
+    // Word wrap
+    const words = line.split(' ');
+    let currentLine = '';
+    
+    for (const word of words) {
+      const testLine = currentLine ? `${currentLine} ${word}` : word;
+      const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+      
+      if (width > maxWidth && currentLine) {
+        // Draw current line
+        page.drawText(currentLine, {
+          x: margin,
+          y: yPosition,
+          size: currentSize,
+          font: currentFont,
+          color: textColor
+        });
+        yPosition -= lineHeight;
+        
+        // Check if new page needed
+        if (yPosition < margin + 30) {
+          page = pdfDoc.addPage([pageWidth, pageHeight]);
+          yPosition = pageHeight - margin;
+        }
+        
+        currentLine = word;
+      } else {
+        currentLine = testLine;
+      }
+    }
+    
+    // Draw remaining text
+    if (currentLine) {
+      page.drawText(currentLine, {
+        x: margin,
+        y: yPosition,
+        size: currentSize,
+        font: currentFont,
+        color: textColor
+      });
+      yPosition -= lineHeight;
+    }
+    
+    // Extra spacing after headings
+    if (isHeading || isTitle) {
+      yPosition -= lineHeight * 0.5;
+    }
+  }
+  
+  // Add footer
+  const pages = pdfDoc.getPages();
+  for (let i = 0; i < pages.length; i++) {
+    const pg = pages[i];
+    pg.drawText(`Page ${i + 1} of ${pages.length}`, {
+      x: pageWidth / 2 - 30,
+      y: 30,
+      size: 8,
+      font: font,
+      color: rgb(0.5, 0.5, 0.5)
+    });
+  }
+  
+  return await pdfDoc.save();
 }
 
 function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
@@ -256,67 +363,27 @@ Deno.serve(async (req) => {
     }
     const templateBytes = await templateResponse.arrayBuffer();
     
-    // Load PDF with pdf-lib
-    console.log('Loading PDF for placeholder replacement...');
-    const pdfDoc = await PDFDocument.load(templateBytes);
+    // Extract text from PDF
+    console.log('Extracting text from template...');
+    const pdfData = await pdfParse(Buffer.from(templateBytes));
+    let templateText = pdfData.text;
+    console.log(`Extracted ${templateText.length} characters`);
     
-    // Track missing placeholders
+    // Log first 500 chars to debug
+    console.log('Template text preview:', templateText.substring(0, 500));
+    
+    // Replace all placeholders
     const missingTokens = new Set();
-    
-    // Replace placeholders in all text content
-    const pages = pdfDoc.getPages();
-    console.log(`Processing ${pages.length} pages...`);
-    
-    for (let pageIndex = 0; pageIndex < pages.length; pageIndex++) {
-      const page = pages[pageIndex];
-      
-      // Get the page's content stream
-      const contentStream = page.node.Contents();
-      
-      if (!contentStream) continue;
-      
-      // Handle both single stream and array of streams
-      const streams = Array.isArray(contentStream) ? contentStream : [contentStream];
-      
-      for (const stream of streams) {
-        if (!stream || typeof stream.lookup !== 'function') continue;
-        
-        // Get the decoded content
-        let content;
-        try {
-          const streamDict = stream.lookup();
-          if (!streamDict || typeof streamDict.contents !== 'function') continue;
-          content = new TextDecoder().decode(streamDict.contents());
-        } catch (e) {
-          console.log(`Could not decode stream on page ${pageIndex}:`, e.message);
-          continue;
-        }
-        
-        // Replace all placeholders in the content
-        let modified = false;
-        let newContent = content.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
-          if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '') {
-            modified = true;
-            return String(renderContext[token]);
-          } else {
-            missingTokens.add(token);
-            return match;
-          }
-        });
-        
-        // If content was modified, update the stream
-        if (modified) {
-          try {
-            const newBytes = new TextEncoder().encode(newContent);
-            stream.dict.set(PDFName.of('Length'), pdfDoc.context.obj(newBytes.length));
-            stream.contents = newBytes;
-            console.log(`Updated page ${pageIndex + 1}`);
-          } catch (e) {
-            console.log(`Could not update stream on page ${pageIndex}:`, e.message);
-          }
-        }
+    templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
+      if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '') {
+        console.log(`Replacing ${token} with: ${renderContext[token]}`);
+        return String(renderContext[token]);
+      } else {
+        console.log(`Missing token: ${token}`);
+        missingTokens.add(token);
+        return match;
       }
-    }
+    });
     
     if (missingTokens.size > 0) {
       console.log('Missing tokens:', Array.from(missingTokens));
@@ -327,11 +394,11 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
     
-    console.log('All placeholders filled successfully');
+    console.log('All placeholders replaced successfully');
     
-    // Generate final PDF
-    console.log('Saving final PDF...');
-    const finalPdfBytes = await pdfDoc.save();
+    // Generate new PDF from filled text
+    console.log('Generating final PDF from filled text...');
+    const finalPdfBytes = await generatePdfFromText(templateText, deal.id);
     const pdfSha256 = await sha256(new TextDecoder().decode(finalPdfBytes));
     
     // Upload final PDF
