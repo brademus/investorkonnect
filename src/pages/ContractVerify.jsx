@@ -25,28 +25,68 @@ export default function ContractVerify() {
   const [dealData, setDealData] = useState(null);
 
   useEffect(() => {
-    // Load deal data from sessionStorage
-    const stored = sessionStorage.getItem("newDealDraft");
-    if (!stored) {
-      toast.error("No deal data found. Please start from Build Your Deal.");
-      navigate(createPageUrl("NewDeal"));
-      return;
-    }
-    
-    try {
-      const parsed = JSON.parse(stored);
-      setDealData(parsed);
-      
-      // Check if contract already uploaded
-      if (parsed.contractFileUrl) {
-        setFileUrl(parsed.contractFileUrl);
-        setFileName(parsed.contractFileName || "Contract.pdf");
+    const loadData = async () => {
+      // Load deal data from sessionStorage
+      const stored = sessionStorage.getItem("newDealDraft");
+      if (!stored) {
+        toast.error("No deal data found. Please start from Build Your Deal.");
+        navigate(createPageUrl("NewDeal"));
+        return;
       }
-    } catch (e) {
-      toast.error("Invalid deal data");
-      navigate(createPageUrl("NewDeal"));
-    }
-  }, [navigate]);
+      
+      try {
+        const parsed = JSON.parse(stored);
+        
+        // If this is an existing deal, load proposed terms from Room
+        const existingDealId = dealIdFromUrl || parsed.dealId;
+        if (existingDealId) {
+          try {
+            const rooms = await base44.entities.Room.filter({ deal_id: existingDealId });
+            if (rooms.length > 0 && rooms[0].proposed_terms) {
+              const terms = rooms[0].proposed_terms;
+              console.log('[ContractVerify] Loading existing proposed terms:', terms);
+              
+              // Merge terms into parsed deal data
+              parsed.sellerCommissionType = terms.seller_commission_type || parsed.sellerCommissionType;
+              parsed.sellerCommissionPercentage = terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined 
+                ? terms.seller_commission_percentage 
+                : parsed.sellerCommissionPercentage;
+              parsed.sellerFlatFee = terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined
+                ? terms.seller_flat_fee
+                : parsed.sellerFlatFee;
+              
+              parsed.buyerCommissionType = terms.buyer_commission_type || parsed.buyerCommissionType;
+              parsed.buyerCommissionPercentage = terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined
+                ? terms.buyer_commission_percentage
+                : parsed.buyerCommissionPercentage;
+              parsed.buyerFlatFee = terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined
+                ? terms.buyer_flat_fee
+                : parsed.buyerFlatFee;
+              
+              parsed.agreementLength = terms.agreement_length !== null && terms.agreement_length !== undefined
+                ? terms.agreement_length
+                : parsed.agreementLength;
+            }
+          } catch (e) {
+            console.log('[ContractVerify] No existing room terms to load');
+          }
+        }
+        
+        setDealData(parsed);
+        
+        // Check if contract already uploaded
+        if (parsed.contractFileUrl) {
+          setFileUrl(parsed.contractFileUrl);
+          setFileName(parsed.contractFileName || "Contract.pdf");
+        }
+      } catch (e) {
+        toast.error("Invalid deal data");
+        navigate(createPageUrl("NewDeal"));
+      }
+    };
+    
+    loadData();
+  }, [navigate, dealIdFromUrl]);
 
   const normalizeString = (str) => {
     if (!str) return '';
