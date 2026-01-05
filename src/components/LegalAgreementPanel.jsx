@@ -33,13 +33,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     loadAgreement();
     determineNetPolicy();
     
-    // Initialize exhibitA from deal.proposed_terms
-    if (deal.proposed_terms) {
+    // Initialize exhibitA from deal.proposed_terms (sync with verified contract data)
+    if (deal?.proposed_terms) {
       const terms = deal.proposed_terms;
+      
+      console.log('[LegalAgreement] Syncing modal with deal terms:', terms);
+      
+      // Map seller_commission_type from NewDeal/ContractVerify to compensation_model
+      let compensationModel = 'FLAT_FEE'; // default
+      if (terms.seller_commission_type === 'percentage') {
+        compensationModel = 'COMMISSION_PCT';
+      } else if (terms.seller_commission_type === 'flat' || terms.seller_commission_type === 'flat_fee') {
+        compensationModel = 'FLAT_FEE';
+      } else if (terms.seller_commission_type === 'net') {
+        compensationModel = 'NET_SPREAD';
+      }
+      
       setExhibitA({
-        compensation_model: terms.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 
-                           terms.seller_commission_type === 'flat_fee' ? 'FLAT_FEE' :
-                           terms.seller_commission_type === 'net' ? 'NET_SPREAD' : 'FLAT_FEE',
+        compensation_model: compensationModel,
         flat_fee_amount: terms.seller_flat_fee || 5000,
         commission_percentage: terms.seller_commission_percentage,
         net_target: terms.net_target,
@@ -47,8 +58,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         agreement_length_days: terms.agreement_length || 180,
         termination_notice_days: 30
       });
+      
+      console.log('[LegalAgreement] Modal values set to:', {
+        compensation_model: compensationModel,
+        flat_fee_amount: terms.seller_flat_fee || 5000,
+        commission_percentage: terms.seller_commission_percentage,
+        agreement_length_days: terms.agreement_length || 180
+      });
     }
-  }, [deal.id]);
+  }, [deal?.id, deal?.proposed_terms]);
   
   const determineNetPolicy = () => {
     const state = deal.state;
