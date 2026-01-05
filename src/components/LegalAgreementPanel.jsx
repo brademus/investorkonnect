@@ -456,6 +456,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             <DialogTitle className="text-[#FAFAFA]">Generate Agreement</DialogTitle>
           </DialogHeader>
           
+          {!exhibitA ? (
+            <div className="py-8 text-center text-[#808080]">Loading terms...</div>
+          ) : (
           <div className="space-y-4 py-4">
             <div>
               <Label className="text-[#FAFAFA]">Compensation Model</Label>
@@ -548,7 +551,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               />
             </div>
           </div>
+          )}
           
+          {exhibitA && (
           <div className="flex gap-3">
             <Button
               variant="outline"
@@ -563,6 +568,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               {generating ? 'Generating...' : 'Generate'}
             </Button>
           </div>
+          )}
         </DialogContent>
       </Dialog>
     </Card>
