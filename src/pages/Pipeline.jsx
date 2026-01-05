@@ -194,11 +194,14 @@ function PipelineContent() {
       // Agent is accepted/signed if room status is accepted or signed
       const hasAgentAccepted = room?.request_status === 'accepted' || room?.request_status === 'signed';
       const hasAgentPending = room?.request_status === 'requested';
+      const isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
 
       // Get agent name from Deal or Room
       let agentName = 'No Agent Selected';
       if (hasAgentAccepted) {
-        agentName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
+        const fullName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
+        // Show only first name until fully signed
+        agentName = isFullySigned ? fullName : (fullName.split(' ')[0] || 'Agent');
       } else if (hasAgentPending) {
         agentName = 'Pending Agent Review';
       }
