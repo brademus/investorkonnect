@@ -278,9 +278,15 @@ export default function Room() {
               
               if (deal) {
                 setDeal(deal); // Store redacted deal separately
+                
+                // Redact title for agents if not fully signed
+                const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
+                  ? `${deal.city || 'City'}, ${deal.state || 'State'}`
+                  : deal.title;
+                
                 setCurrentRoom({
                   ...room,
-                  title: deal.title,
+                  title: displayTitle,
                   property_address: deal.property_address, // Already redacted by server
                   city: deal.city,
                   state: deal.state,
