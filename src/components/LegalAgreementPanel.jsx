@@ -175,24 +175,30 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const handleSign = async (signatureType) => {
     try {
       setSigning(true);
-      const { data } = await base44.functions.invoke('signLegalAgreement', {
-        agreement_id: agreement.id,
-        signature_type: signatureType
+      
+      // Get DocuSign recipient view URL
+      const { data } = await base44.functions.invoke('docusignRecipientView', {
+        agreementId: agreement.id,
+        role: signatureType // 'investor' or 'agent'
       });
       
       if (data.error) {
         toast.error(data.error);
+        setSigning(false);
         return;
       }
       
-      toast.success('Agreement signed successfully');
-      setAgreement(data.agreement);
+      if (!data.url) {
+        toast.error('Failed to get signing URL');
+        setSigning(false);
+        return;
+      }
       
-      if (onUpdate) onUpdate();
+      // Redirect to DocuSign embedded signing
+      window.location.href = data.url;
     } catch (error) {
       console.error('Sign error:', error);
-      toast.error('Failed to sign agreement');
-    } finally {
+      toast.error('Failed to open signing: ' + error.message);
       setSigning(false);
     }
   };
