@@ -177,9 +177,9 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     year: 'numeric' 
   });
   
-  // Build venue
-  let venue = deal.state || '';
-  if (deal.county) {
+  // Build venue - ensure it's never empty
+  let venue = deal.state || 'N/A';
+  if (deal.county && deal.state) {
     venue = `${deal.county} County, ${deal.state}`;
   }
   
@@ -189,15 +189,12 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   
   // Compensation
   const compensationModel = exhibit_a.compensation_model || 'FLAT_FEE';
-  let sellerCompType = '';
-  let sellerCompValue = '';
+  let sellerCompType = 'Flat Fee';
+  let sellerCompValue = `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`;
   
-  if (compensationModel === 'FLAT_FEE') {
-    sellerCompType = 'Flat Fee';
-    sellerCompValue = `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`;
-  } else if (compensationModel === 'COMMISSION_PCT') {
+  if (compensationModel === 'COMMISSION_PCT') {
     sellerCompType = 'Commission Percentage';
-    sellerCompValue = `${exhibit_a.commission_percentage || 0}%`;
+    sellerCompValue = `${exhibit_a.commission_percentage || 3}%`;
   } else if (compensationModel === 'NET_SPREAD') {
     sellerCompType = 'Net Listing';
     sellerCompValue = `Net: $${(exhibit_a.net_target || 0).toLocaleString()}`;
@@ -205,27 +202,27 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
-    DEAL_ID: deal.id || '',
+    DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
-    INVESTOR_LEGAL_NAME: profile.full_name || profile.email || '',
+    INVESTOR_LEGAL_NAME: profile.full_name || profile.email || 'N/A',
     INVESTOR_ENTITY_TYPE: 'Individual',
-    INVESTOR_EMAIL: profile.email || '',
-    INVESTOR_PHONE: profile.phone || '',
-    AGENT_LEGAL_NAME: agentProfile.full_name || agentProfile.email || '',
-    LICENSE_NUMBER: agentProfile.agent?.license_number || agentProfile.license_number || '',
-    BROKERAGE_NAME: agentProfile.agent?.brokerage || agentProfile.broker || '',
-    AGENT_EMAIL: agentProfile.email || '',
-    AGENT_PHONE: agentProfile.phone || '',
-    PROPERTY_ADDRESS: deal.property_address || '',
-    CITY: deal.city || '',
-    STATE: deal.state || '',
-    ZIP: deal.zip || '',
-    COUNTY: deal.county || '',
+    INVESTOR_EMAIL: profile.email || 'N/A',
+    INVESTOR_PHONE: profile.phone || 'N/A',
+    AGENT_LEGAL_NAME: agentProfile.full_name || agentProfile.email || 'N/A',
+    LICENSE_NUMBER: agentProfile.agent?.license_number || agentProfile.license_number || 'N/A',
+    BROKERAGE_NAME: agentProfile.agent?.brokerage || agentProfile.broker || 'N/A',
+    AGENT_EMAIL: agentProfile.email || 'N/A',
+    AGENT_PHONE: agentProfile.phone || 'N/A',
+    PROPERTY_ADDRESS: deal.property_address || 'TBD',
+    CITY: deal.city || 'TBD',
+    STATE: deal.state || 'N/A',
+    ZIP: deal.zip || 'N/A',
+    COUNTY: deal.county || 'N/A',
     VENUE: venue,
     TRANSACTION_TYPE: exhibit_a.transaction_type || 'ASSIGNMENT',
     COMPENSATION_MODEL: compensationModel,
     FLAT_FEE_AMOUNT: `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`,
-    COMMISSION_PERCENTAGE: `${exhibit_a.commission_percentage || 0}%`,
+    COMMISSION_PERCENTAGE: `${exhibit_a.commission_percentage || 3}%`,
     SELLER_COMP_TYPE: sellerCompType,
     SELLER_COMP_VALUE: sellerCompValue,
     AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
