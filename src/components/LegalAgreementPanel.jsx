@@ -23,47 +23,46 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const isInvestor = deal.investor_id === profile.id;
   const isAgent = deal.agent_id === profile.id;
   
+  // Initialize exhibitA whenever deal data changes
+  useEffect(() => {
+    if (!deal) return;
+    
+    const terms = deal.proposed_terms || {};
+    
+    console.log('[LegalAgreement] 🔄 Deal data received:', {
+      deal_id: deal.id,
+      full_deal: deal,
+      proposed_terms: terms
+    });
+    
+    // Map seller_commission_type to compensation_model
+    let compensationModel = 'FLAT_FEE';
+    if (terms.seller_commission_type === 'percentage') {
+      compensationModel = 'COMMISSION_PCT';
+    } else if (terms.seller_commission_type === 'flat' || terms.seller_commission_type === 'flat_fee') {
+      compensationModel = 'FLAT_FEE';
+    } else if (terms.seller_commission_type === 'net') {
+      compensationModel = 'NET_SPREAD';
+    }
+    
+    const newExhibitA = {
+      compensation_model: compensationModel,
+      flat_fee_amount: terms.seller_flat_fee || 5000,
+      commission_percentage: terms.seller_commission_percentage || null,
+      net_target: terms.net_target || null,
+      transaction_type: deal.transaction_type || 'ASSIGNMENT',
+      agreement_length_days: terms.agreement_length || 180,
+      termination_notice_days: 30
+    };
+    
+    console.log('[LegalAgreement] ✅ Setting modal state:', newExhibitA);
+    setExhibitA(newExhibitA);
+    
+  }, [deal]);
+  
   useEffect(() => {
     loadAgreement();
     determineNetPolicy();
-    
-    // ALWAYS initialize exhibitA from deal data (for existing deals with saved terms)
-    if (deal) {
-      const terms = deal.proposed_terms || {};
-      
-      console.log('[LegalAgreement] Loading deal terms into modal:', {
-        deal_id: deal.id,
-        proposed_terms: terms,
-        transaction_type: deal.transaction_type
-      });
-      
-      // Map seller_commission_type from NewDeal/ContractVerify to compensation_model
-      let compensationModel = 'FLAT_FEE'; // default
-      if (terms.seller_commission_type === 'percentage') {
-        compensationModel = 'COMMISSION_PCT';
-      } else if (terms.seller_commission_type === 'flat' || terms.seller_commission_type === 'flat_fee') {
-        compensationModel = 'FLAT_FEE';
-      } else if (terms.seller_commission_type === 'net') {
-        compensationModel = 'NET_SPREAD';
-      }
-      
-      setExhibitA({
-        compensation_model: compensationModel,
-        flat_fee_amount: terms.seller_flat_fee || 5000,
-        commission_percentage: terms.seller_commission_percentage || null,
-        net_target: terms.net_target || null,
-        transaction_type: deal.transaction_type || 'ASSIGNMENT',
-        agreement_length_days: terms.agreement_length || 180,
-        termination_notice_days: 30
-      });
-      
-      console.log('[LegalAgreement] Modal initialized with:', {
-        compensation_model: compensationModel,
-        flat_fee_amount: terms.seller_flat_fee,
-        commission_percentage: terms.seller_commission_percentage,
-        agreement_length_days: terms.agreement_length
-      });
-    }
   }, [deal.id]);
   
   const determineNetPolicy = () => {
