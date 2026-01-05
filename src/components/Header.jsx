@@ -30,7 +30,7 @@ export function Header({ profile }) {
     {
       label: 'Dashboard',
       icon: Home,
-      href: createPageUrl(isInvestor ? "DashboardInvestor" : "Dashboard"),
+      href: createPageUrl("Pipeline"),
       show: true
     },
     {
@@ -56,7 +56,7 @@ export function Header({ profile }) {
           <Logo 
             size="default"
             showText={true}
-            linkTo={createPageUrl("Dashboard")}
+            linkTo={createPageUrl("Pipeline")}
           />
 
           {/* Desktop Navigation */}
