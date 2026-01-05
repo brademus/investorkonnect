@@ -289,19 +289,51 @@ Deno.serve(async (req) => {
       agentProfile = agentProfiles[0];
     }
     
-    // Validate required fields
+    // Validate required fields with detailed info
     const missing = [];
-    if (!deal.state) missing.push('deal.state');
-    if (!profile.full_name && !profile.email) missing.push('investor.legal_name');
-    if (!agentProfile.full_name && !agentProfile.email) missing.push('agent.legal_name');
-    if (!agentProfile.agent?.license_number && !agentProfile.license_number) missing.push('agent.license_number');
-    if (!agentProfile.agent?.brokerage && !agentProfile.broker) missing.push('agent.brokerage');
+    const details = [];
+    
+    if (!deal.state) {
+      missing.push('deal.state');
+      details.push('Property state is required');
+    }
+    
+    const investorName = profile.full_name || profile.email;
+    if (!investorName) {
+      missing.push('investor.full_name');
+      details.push('Investor legal name is required');
+    }
+    
+    const agentName = agentProfile.full_name || agentProfile.email;
+    if (!agentName) {
+      missing.push('agent.full_name');
+      details.push('Agent legal name is required');
+    }
+    
+    const licenseNumber = agentProfile.agent?.license_number || agentProfile.license_number;
+    if (!licenseNumber) {
+      missing.push('agent.license_number');
+      details.push('Agent license number is required');
+    }
+    
+    const brokerage = agentProfile.agent?.brokerage || agentProfile.broker;
+    if (!brokerage) {
+      missing.push('agent.brokerage');
+      details.push('Agent brokerage name is required');
+    }
     
     if (missing.length > 0) {
+      console.log('Validation failed. Missing:', missing);
+      console.log('Deal state:', deal.state);
+      console.log('Investor name:', investorName);
+      console.log('Agent name:', agentName);
+      console.log('License:', licenseNumber);
+      console.log('Brokerage:', brokerage);
+      
       return Response.json({ 
-        error: 'Missing required fields',
+        error: `Missing required fields: ${details.join(', ')}`,
         missing_fields: missing,
-        message: 'Complete these fields in the deal/profile to generate an executable agreement.'
+        details: details
       }, { status: 400 });
     }
     
