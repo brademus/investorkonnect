@@ -38,18 +38,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
 
     const terms = deal.proposed_terms || {};
 
-    // Map commission type values: "percentage" or "flat" from NewDeal page
-    let compensationModel = 'FLAT_FEE';
-    if (terms.seller_commission_type === 'percentage') {
-      compensationModel = 'COMMISSION_PCT';
-    } else if (terms.seller_commission_type === 'flat') { 
-      compensationModel = 'FLAT_FEE';
-    } else if (terms.seller_commission_type === 'net') {
-      compensationModel = 'NET_SPREAD';
-    }
-
+    // Use the same commission type format as NewDeal page: "percentage" or "flat"
     const newExhibitAState = {
-      compensation_model: compensationModel,
+      commission_type: terms.seller_commission_type || 'flat',
       flat_fee_amount: terms.seller_flat_fee || 0, 
       commission_percentage: terms.seller_commission_percentage || 0,
       net_target: terms.net_target || 0,
@@ -58,7 +49,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       termination_notice_days: 30
     };
     
-    console.log('[LegalAgreementPanel] ✅ Final exhibitA:', newExhibitAState);
     setExhibitA(newExhibitAState);
     setShowGenerateModal(true);
   };
@@ -139,9 +129,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       // Normalize role to lowercase
       const actorRole = (profile.user_role || '').toLowerCase();
       
-      // Use exhibitA state directly
+      // Convert commission_type to compensation_model for backend
+      let compensationModel = 'FLAT_FEE';
+      if (exhibitA?.commission_type === 'percentage') {
+        compensationModel = 'COMMISSION_PCT';
+      } else if (exhibitA?.commission_type === 'flat') { 
+        compensationModel = 'FLAT_FEE';
+      } else if (exhibitA?.commission_type === 'net') {
+        compensationModel = 'NET_SPREAD';
+      }
+      
       const derivedExhibitA = {
-        compensation_model: exhibitA?.compensation_model || 'FLAT_FEE',
+        compensation_model: compensationModel,
         flat_fee_amount: exhibitA?.flat_fee_amount || 0,
         commission_percentage: exhibitA?.commission_percentage || 0,
         net_target: exhibitA?.net_target || 0,
@@ -467,18 +466,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           ) : (
           <div className="space-y-4 py-4">
             <div>
-              <Label className="text-[#FAFAFA]">Compensation Model</Label>
+              <Label className="text-[#FAFAFA]">Commission Type</Label>
               <Select
-                value={exhibitA.compensation_model}
-                onValueChange={(value) => setExhibitA({ ...exhibitA, compensation_model: value })}>
+                value={exhibitA.commission_type}
+                onValueChange={(value) => setExhibitA({ ...exhibitA, commission_type: value })}>
                 <SelectTrigger className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="FLAT_FEE">Flat Fee</SelectItem>
-                  <SelectItem value="COMMISSION_PCT">Commission %</SelectItem>
+                  <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
+                  <SelectItem value="flat">Flat Fee</SelectItem>
                   {netPolicy !== 'BANNED' && (
-                    <SelectItem value="NET_SPREAD">Net/Spread</SelectItem>
+                    <SelectItem value="net">Net/Spread</SelectItem>
                   )}
                 </SelectContent>
               </Select>
@@ -487,14 +486,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   Net/Spread not permitted in {deal.state}
                 </p>
               )}
-              {netPolicy === 'RESTRICTED' && exhibitA.compensation_model === 'NET_SPREAD' && (
+              {netPolicy === 'RESTRICTED' && exhibitA.commission_type === 'net' && (
                 <p className="text-xs text-yellow-400 mt-1">
                   {deal.state} requires Net Listing Addendum / restricted clause
                 </p>
               )}
             </div>
             
-            {exhibitA.compensation_model === 'FLAT_FEE' && (
+            {exhibitA.commission_type === 'flat' && (
               <div>
                 <Label className="text-[#FAFAFA]">Flat Fee Amount ($)</Label>
                 <Input
@@ -506,7 +505,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </div>
             )}
             
-            {exhibitA.compensation_model === 'COMMISSION_PCT' && (
+            {exhibitA.commission_type === 'percentage' && (
               <div>
                 <Label className="text-[#FAFAFA]">Commission Percentage (%)</Label>
                 <Input
@@ -519,7 +518,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </div>
             )}
             
-            {exhibitA.compensation_model === 'NET_SPREAD' && (
+            {exhibitA.commission_type === 'net' && (
               <div>
                 <Label className="text-[#FAFAFA]">Net Target Amount ($)</Label>
                 <Input
