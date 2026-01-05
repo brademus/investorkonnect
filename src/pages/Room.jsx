@@ -1806,8 +1806,8 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              {/* Deal Request Review Banner for Agents */}
-              {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && (
+              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3 mb-4">
                     <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
@@ -1867,7 +1867,9 @@ ${dealContext}`;
                 </div>
               )}
               
-              {profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed && (
+              {/* Show this banner for agents when deal is accepted but not fully signed, OR for investors waiting for signatures */}
+              {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
+                (profile?.user_role === 'investor' && currentRoom?.request_status !== 'requested' && !currentRoom?.is_fully_signed)) && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
@@ -1876,7 +1878,10 @@ ${dealContext}`;
                         Sign Agreement to Unlock Full Details
                       </h3>
                       <p className="text-sm text-[#FAFAFA]/80">
-                        You can chat and view general deal info. Full property address and seller details unlock after both parties sign the agreement in the Agreement tab.
+                        {profile?.user_role === 'agent' 
+                          ? 'You can chat and view general deal info. Full property address and seller details unlock after both parties sign the agreement in the Agreement tab.'
+                          : 'Chat with the agent to discuss this deal. Full details including agent name and contact unlock after both parties sign the agreement in the Agreement tab.'
+                        }
                       </p>
                     </div>
                   </div>
