@@ -166,6 +166,10 @@ export default function NewDeal() {
       toast.error("Please enter a ZIP code");
       return;
     }
+    if (!county.trim()) {
+      toast.error("Please enter a county");
+      return;
+    }
     
     const cleanedPrice = String(purchasePrice || '').replace(/[$,\s]/g, '').trim();
     if (!cleanedPrice || isNaN(Number(cleanedPrice)) || Number(cleanedPrice) <= 0) {
@@ -372,7 +376,7 @@ export default function NewDeal() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">County</label>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">County *</label>
                 <Input
                   value={county}
                   onChange={(e) => setCounty(e.target.value)}
