@@ -91,43 +91,35 @@ export default function NewDeal() {
               setHasBasement(deal.property_details.has_basement || "");
             }
             
-            // Load terms from associated Room
-            try {
-              const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-              if (rooms.length > 0 && rooms[0].proposed_terms) {
-                const terms = rooms[0].proposed_terms;
-                
-                // Seller commission - set defaults if not present
-                if (terms.seller_commission_type) {
-                  setSellerCommissionType(terms.seller_commission_type);
-                }
-                if (terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined) {
-                  setSellerCommissionPercentage(terms.seller_commission_percentage.toString());
-                }
-                if (terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined) {
-                  setSellerFlatFee(terms.seller_flat_fee.toString());
-                }
-                
-                // Buyer commission - set defaults if not present
-                if (terms.buyer_commission_type) {
-                  setBuyerCommissionType(terms.buyer_commission_type);
-                }
-                if (terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined) {
-                  setBuyerCommissionPercentage(terms.buyer_commission_percentage.toString());
-                }
-                if (terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined) {
-                  setBuyerFlatFee(terms.buyer_flat_fee.toString());
-                }
-                
-                // Agreement length
-                if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
-                  setAgreementLength(terms.agreement_length.toString());
-                }
-                
-                console.log('[NewDeal] Loaded proposed terms:', terms);
+            // Load terms from Deal entity (canonical source)
+            if (deal.proposed_terms) {
+              const terms = deal.proposed_terms;
+              
+              if (terms.seller_commission_type) {
+                setSellerCommissionType(terms.seller_commission_type);
               }
-            } catch (e) {
-              console.error("Failed to load proposed terms:", e);
+              if (terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined) {
+                setSellerCommissionPercentage(terms.seller_commission_percentage.toString());
+              }
+              if (terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined) {
+                setSellerFlatFee(terms.seller_flat_fee.toString());
+              }
+              
+              if (terms.buyer_commission_type) {
+                setBuyerCommissionType(terms.buyer_commission_type);
+              }
+              if (terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined) {
+                setBuyerCommissionPercentage(terms.buyer_commission_percentage.toString());
+              }
+              if (terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined) {
+                setBuyerFlatFee(terms.buyer_flat_fee.toString());
+              }
+              
+              if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
+                setAgreementLength(terms.agreement_length.toString());
+              }
+              
+              console.log('[NewDeal] Loaded proposed terms from Deal:', terms);
             }
           }
         } catch (error) {

@@ -300,6 +300,15 @@ export default function ContractVerify() {
           closing_date: dealData.closingDate,
           contract_date: dealData.contractDate
         },
+        proposed_terms: {
+          seller_commission_type: dealData.sellerCommissionType || "percentage",
+          seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
+          seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
+          buyer_commission_type: dealData.buyerCommissionType || "percentage",
+          buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
+          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
+        },
         contract_url: fileUrl,
         contract_document: contractDocument,
         status: 'active',
@@ -323,25 +332,16 @@ export default function ContractVerify() {
         toast.success("Deal created successfully!");
       }
 
-      // Always save proposed terms to Room entity (for both new and existing deals with rooms)
+      // Also update Room entity if it exists (for backward compatibility)
       try {
         const existingRooms = await base44.entities.Room.filter({ deal_id: finalDealId });
         if (existingRooms.length > 0) {
-          // Update existing room with proposed terms
           await base44.entities.Room.update(existingRooms[0].id, {
-            proposed_terms: {
-              seller_commission_type: dealData.sellerCommissionType || "percentage",
-              seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
-              seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
-              buyer_commission_type: dealData.buyerCommissionType || "percentage",
-              buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
-              buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
-              agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
-            }
+            proposed_terms: dealPayload.proposed_terms
           });
         }
       } catch (e) {
-        console.log("No existing room to update terms");
+        console.log("No existing room to sync terms");
       }
       
       // Store deal ID and terms for agent matching (for new deals)
