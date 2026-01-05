@@ -265,23 +265,25 @@ export default function ContractVerify() {
         toast.success("Deal created successfully!");
       }
 
-      // Store proposed terms directly in Room entity if updating existing deal
-      if (existingDealId) {
-        // For existing deals, update the Room's proposed_terms immediately
-        const existingRooms = await base44.entities.Room.filter({ deal_id: existingDealId });
+      // Always save proposed terms to Room entity (for both new and existing deals with rooms)
+      try {
+        const existingRooms = await base44.entities.Room.filter({ deal_id: finalDealId });
         if (existingRooms.length > 0) {
+          // Update existing room with proposed terms
           await base44.entities.Room.update(existingRooms[0].id, {
             proposed_terms: {
-              seller_commission_type: dealData.sellerCommissionType,
+              seller_commission_type: dealData.sellerCommissionType || "percentage",
               seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
               seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
-              buyer_commission_type: dealData.buyerCommissionType,
+              buyer_commission_type: dealData.buyerCommissionType || "percentage",
               buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
               buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
               agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
             }
           });
         }
+      } catch (e) {
+        console.log("No existing room to update terms");
       }
       
       // Store deal ID and terms for agent matching (for new deals)
