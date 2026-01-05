@@ -467,67 +467,37 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           <div className="space-y-4 py-4">
             <div>
               <Label className="text-[#FAFAFA]">Commission Type</Label>
-              <Select
-                value={exhibitA.commission_type}
-                onValueChange={(value) => setExhibitA({ ...exhibitA, commission_type: value })}>
-                <SelectTrigger className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
-                  <SelectItem value="flat">Flat Fee</SelectItem>
-                  {netPolicy !== 'BANNED' && (
-                    <SelectItem value="net">Net/Spread</SelectItem>
-                  )}
-                </SelectContent>
-              </Select>
-              {netPolicy === 'BANNED' && (
-                <p className="text-xs text-yellow-400 mt-1">
-                  Net/Spread not permitted in {deal.state}
-                </p>
-              )}
-              {netPolicy === 'RESTRICTED' && exhibitA.commission_type === 'net' && (
-                <p className="text-xs text-yellow-400 mt-1">
-                  {deal.state} requires Net Listing Addendum / restricted clause
-                </p>
-              )}
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                {exhibitA.commission_type === 'percentage' ? 'Percentage of Purchase Price' : 
+                 exhibitA.commission_type === 'flat' ? 'Flat Fee' : 
+                 exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
+              </div>
             </div>
             
             {exhibitA.commission_type === 'flat' && (
               <div>
-                <Label className="text-[#FAFAFA]">Flat Fee Amount ($)</Label>
-                <Input
-                  type="number"
-                  value={exhibitA.flat_fee_amount}
-                  onChange={(e) => setExhibitA({ ...exhibitA, flat_fee_amount: Number(e.target.value) })}
-                  className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
-                />
+                <Label className="text-[#FAFAFA]">Flat Fee Amount</Label>
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                  ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
+                </div>
               </div>
             )}
             
             {exhibitA.commission_type === 'percentage' && (
               <div>
-                <Label className="text-[#FAFAFA]">Commission Percentage (%)</Label>
-                <Input
-                  type="number"
-                  value={exhibitA.commission_percentage || ''}
-                  onChange={(e) => setExhibitA({ ...exhibitA, commission_percentage: Number(e.target.value) })}
-                  className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
-                  placeholder="e.g., 3"
-                />
+                <Label className="text-[#FAFAFA]">Commission Percentage</Label>
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                  {exhibitA.commission_percentage || 0}%
+                </div>
               </div>
             )}
             
             {exhibitA.commission_type === 'net' && (
               <div>
-                <Label className="text-[#FAFAFA]">Net Target Amount ($)</Label>
-                <Input
-                  type="number"
-                  value={exhibitA.net_target || ''}
-                  onChange={(e) => setExhibitA({ ...exhibitA, net_target: Number(e.target.value) })}
-                  className="bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]"
-                  placeholder="Minimum seller net amount"
-                />
+                <Label className="text-[#FAFAFA]">Net Target Amount</Label>
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                  ${(exhibitA.net_target || 0).toLocaleString()}
+                </div>
               </div>
             )}
             
