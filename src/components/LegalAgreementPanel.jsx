@@ -29,37 +29,56 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
   }, [deal?.id]);
   
-  // When the modal opens, initialize exhibitA from deal.proposed_terms
-  const handleOpenGenerateModal = () => {
+  // When the modal opens, fetch fresh deal data and initialize exhibitA
+  const handleOpenGenerateModal = async () => {
     if (!deal) {
       console.error('[LegalAgreementPanel] No deal object available');
       return;
     }
 
-    const terms = deal.proposed_terms || {};
-    
-    console.log('[LegalAgreementPanel] 📋 Loading terms from deal:', {
-      seller_commission_type: terms.seller_commission_type,
-      seller_commission_percentage: terms.seller_commission_percentage,
-      seller_flat_fee: terms.seller_flat_fee,
-      agreement_length: terms.agreement_length
-    });
+    try {
+      // Fetch fresh deal data from database to ensure we have latest changes
+      const deals = await base44.entities.Deal.filter({ id: deal.id });
+      if (deals.length === 0) {
+        toast.error('Deal not found');
+        return;
+      }
+      
+      const freshDeal = deals[0];
+      console.log('[LegalAgreementPanel] 🔄 Fetched fresh deal data:', {
+        county: freshDeal.county,
+        state: freshDeal.state,
+        proposed_terms: freshDeal.proposed_terms
+      });
+      
+      const terms = freshDeal.proposed_terms || {};
+      
+      console.log('[LegalAgreementPanel] 📋 Loading terms from fresh deal:', {
+        seller_commission_type: terms.seller_commission_type,
+        seller_commission_percentage: terms.seller_commission_percentage,
+        seller_flat_fee: terms.seller_flat_fee,
+        agreement_length: terms.agreement_length
+      });
 
-    // Use the same commission type format as NewDeal page: "percentage" or "flat"
-    const newExhibitAState = {
-      commission_type: terms.seller_commission_type || 'flat',
-      flat_fee_amount: terms.seller_flat_fee || 0, 
-      commission_percentage: terms.seller_commission_percentage || 0,
-      net_target: terms.net_target || 0,
-      transaction_type: deal.transaction_type || 'ASSIGNMENT',
-      agreement_length_days: terms.agreement_length || 180,
-      termination_notice_days: 30
-    };
-    
-    console.log('[LegalAgreementPanel] ✅ Loaded exhibitA state:', newExhibitAState);
-    
-    setExhibitA(newExhibitAState);
-    setShowGenerateModal(true);
+      // Use the same commission type format as NewDeal page: "percentage" or "flat"
+      const newExhibitAState = {
+        commission_type: terms.seller_commission_type || 'flat',
+        flat_fee_amount: terms.seller_flat_fee || 0, 
+        commission_percentage: terms.seller_commission_percentage || 0,
+        net_target: terms.net_target || 0,
+        transaction_type: freshDeal.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: terms.agreement_length || 180,
+        termination_notice_days: 30
+      };
+      
+      console.log('[LegalAgreementPanel] ✅ Loaded exhibitA state:', newExhibitAState);
+      
+      setExhibitA(newExhibitAState);
+      setShowGenerateModal(true);
+    } catch (error) {
+      console.error('[LegalAgreementPanel] Failed to fetch fresh deal data:', error);
+      toast.error('Failed to load deal data');
+    }
   };
 
   const handleCloseGenerateModal = () => {
