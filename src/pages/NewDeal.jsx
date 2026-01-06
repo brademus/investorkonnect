@@ -268,7 +268,13 @@ export default function NewDeal() {
         await base44.entities.Deal.update(dealId, updateData);
         
         console.log('[NewDeal] ✅ Deal updated successfully');
-        toast.success('Deal updated successfully');
+        
+        // Verify the update by refetching the deal
+        const verifyDeals = await base44.entities.Deal.filter({ id: dealId });
+        if (verifyDeals.length > 0) {
+          console.log('[NewDeal] ✅ Verified county after update:', verifyDeals[0].county);
+          console.log('[NewDeal] ✅ Verified seller terms:', verifyDeals[0].proposed_terms);
+        }
         
         // Also update Room if it exists
         const rooms = await base44.entities.Room.filter({ deal_id: dealId });
@@ -293,6 +299,8 @@ export default function NewDeal() {
           });
           console.log('[NewDeal] ✅ Room synced successfully');
         }
+        
+        toast.success('Deal updated successfully');
       } catch (e) {
         console.error("Failed to update deal:", e);
         toast.error('Failed to update deal: ' + e.message);
