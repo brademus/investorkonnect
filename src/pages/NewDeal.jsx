@@ -301,6 +301,14 @@ export default function NewDeal() {
         }
         
         toast.success('Deal updated successfully');
+        
+        // Clear any cached data to force fresh load
+        sessionStorage.removeItem("newDealDraft");
+        sessionStorage.removeItem("dealDraft");
+        
+        // Use full page reload to ensure fresh data
+        window.location.href = `${createPageUrl("ContractVerify")}?dealId=${dealId}&t=${Date.now()}`;
+        return;
       } catch (e) {
         console.error("Failed to update deal:", e);
         toast.error('Failed to update deal: ' + e.message);
@@ -308,7 +316,7 @@ export default function NewDeal() {
       }
     }
 
-    // Save to sessionStorage - include dealId if editing
+    // Save to sessionStorage for new deals only
     sessionStorage.setItem("newDealDraft", JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -341,12 +349,8 @@ export default function NewDeal() {
       hasBasement
     }));
 
-    // Navigate with dealId if editing
-    if (dealId) {
-      navigate(`${createPageUrl("ContractVerify")}?dealId=${dealId}`);
-    } else {
-      navigate(createPageUrl("ContractVerify"));
-    }
+    // Navigate for new deals
+    navigate(createPageUrl("ContractVerify"));
   };
 
   if (loading) {
