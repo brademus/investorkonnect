@@ -238,19 +238,32 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       console.log('[LegalAgreement] Starting signing flow:', { agreementId: agreement.id, role: signatureType, returnTo });
       
       // Create embedded signing session with token-based return
-      const { data } = await base44.functions.invoke('docusignCreateSigningSession', {
+      const response = await base44.functions.invoke('docusignCreateSigningSession', {
         agreementId: agreement.id,
         role: signatureType, // 'investor' or 'agent'
         returnTo
       });
       
+      console.log('[LegalAgreement] Full response:', response);
+      
+      if (!response || !response.data) {
+        console.error('[LegalAgreement] No response data:', response);
+        toast.error('No response from signing service');
+        setSigning(false);
+        return;
+      }
+      
+      const data = response.data;
+      
       if (data.error) {
+        console.error('[LegalAgreement] Error from backend:', data.error);
         toast.error(data.error);
         setSigning(false);
         return;
       }
       
       if (!data.signingUrl) {
+        console.error('[LegalAgreement] No signing URL in response:', data);
         toast.error('Failed to get signing URL');
         setSigning(false);
         return;
@@ -262,7 +275,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       // Redirect to DocuSign embedded signing
       window.location.assign(data.signingUrl);
     } catch (error) {
-      console.error('Sign error:', error);
+      console.error('[LegalAgreement] Sign error:', error);
       toast.error('Failed to open signing: ' + error.message);
       setSigning(false);
     }
