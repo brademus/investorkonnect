@@ -1733,9 +1733,40 @@ ${dealContext}`;
                           </div>
                         ))
                       )}
-                    </div>
-                  </div>
-                </div>
+                      </div>
+
+                      {/* Price Change Suggestion Prompt */}
+                      {priceChangeSuggestion && (
+                        <div className="mt-3 bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-4 flex items-center justify-between animate-fade-in">
+                          <div className="flex-1">
+                            <p className="text-sm text-[#FAFAFA] font-medium mb-1">
+                              Change purchase price to ${priceChangeSuggestion.toLocaleString()}?
+                            </p>
+                            <p className="text-xs text-[#808080]">
+                              Current price: ${(currentRoom?.budget || 0).toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              onClick={() => handlePriceUpdate(priceChangeSuggestion)}
+                              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                            >
+                              Yes
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setPriceChangeSuggestion(null)}
+                              className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] rounded-full"
+                            >
+                              No
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      </div>
+                      </div>
               )}
 
               {activeTab === 'photos' && (
