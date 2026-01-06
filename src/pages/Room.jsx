@@ -356,9 +356,40 @@ export default function Room() {
     checkExclusivity();
   }, [currentRoom, profile, roomId, navigate]);
 
+  const [priceChangeSuggestion, setPriceChangeSuggestion] = useState(null);
+
+  // Detect price mentions and suggest updates
+  const detectPriceChange = (message) => {
+    // Pattern to detect dollar amounts: $X, $X,XXX, $XXX,XXX, etc.
+    const pricePattern = /\$[\d,]+(?:\.\d{2})?/g;
+    const matches = message.match(pricePattern);
+    
+    if (!matches || matches.length === 0) return null;
+    
+    // Extract the largest price mentioned
+    const prices = matches.map(p => {
+      const cleaned = p.replace(/[$,]/g, '');
+      return parseFloat(cleaned);
+    });
+    
+    const suggestedPrice = Math.max(...prices);
+    const currentPrice = currentRoom?.budget || 0;
+    
+    // Only suggest if different from current price and reasonable (> $1000)
+    if (suggestedPrice !== currentPrice && suggestedPrice > 1000) {
+      return suggestedPrice;
+    }
+    
+    return null;
+  };
+
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
+    
+    // Detect potential price change
+    const detectedPrice = detectPriceChange(t);
+    
     setText("");
     setSending(true);
     
