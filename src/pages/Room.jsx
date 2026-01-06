@@ -437,12 +437,42 @@ export default function Room() {
       
       // Remove optimistic message immediately after successful send
       setItems(prev => prev.filter(m => m.id !== tempId));
+      
+      // Show price change suggestion if detected
+      if (detectedPrice) {
+        setPriceChangeSuggestion(detectedPrice);
+      }
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
       setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
+    }
+  };
+  
+  const handlePriceUpdate = async (newPrice) => {
+    try {
+      if (currentRoom?.deal_id) {
+        await base44.entities.Deal.update(currentRoom.deal_id, {
+          purchase_price: newPrice
+        });
+        
+        // Also update room
+        await base44.entities.Room.update(roomId, {
+          budget: newPrice
+        });
+        
+        setCurrentRoom({ ...currentRoom, budget: newPrice });
+        toast.success(`Purchase price updated to $${newPrice.toLocaleString()}`);
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+      }
+    } catch (error) {
+      console.error('Failed to update price:', error);
+      toast.error('Failed to update purchase price');
+    } finally {
+      setPriceChangeSuggestion(null);
     }
   };
 
