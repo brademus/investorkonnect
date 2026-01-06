@@ -572,6 +572,21 @@ ${dealContext}`;
     }
   }, [messages.length]);
 
+  // Monitor conversation for deal changes (price, dates, etc.)
+  useEffect(() => {
+    if (messages.length === 0 || !currentRoom || priceChangeSuggestion) return;
+    
+    // Check last 5 messages for price mentions
+    const recentMessages = messages.slice(-5);
+    for (const msg of recentMessages.reverse()) {
+      const detectedPrice = detectPriceChange(msg.body);
+      if (detectedPrice) {
+        setPriceChangeSuggestion(detectedPrice);
+        break;
+      }
+    }
+  }, [messages.length, currentRoom?.budget]);
+
   // Memoize filtered rooms to prevent unnecessary recalculations
   const filteredRooms = useMemo(() => {
     return (rooms || []).filter(r => {
