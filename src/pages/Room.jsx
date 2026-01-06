@@ -1733,40 +1733,9 @@ ${dealContext}`;
                           </div>
                         ))
                       )}
-                      </div>
-
-                      {/* Price Change Suggestion Prompt */}
-                      {priceChangeSuggestion && (
-                        <div className="mt-3 bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-4 flex items-center justify-between animate-fade-in">
-                          <div className="flex-1">
-                            <p className="text-sm text-[#FAFAFA] font-medium mb-1">
-                              Change purchase price to ${priceChangeSuggestion.toLocaleString()}?
-                            </p>
-                            <p className="text-xs text-[#808080]">
-                              Current price: ${(currentRoom?.budget || 0).toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="flex gap-2 ml-4">
-                            <Button
-                              size="sm"
-                              onClick={() => handlePriceUpdate(priceChangeSuggestion)}
-                              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                            >
-                              Yes
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => setPriceChangeSuggestion(null)}
-                              className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#1F1F1F] rounded-full"
-                            >
-                              No
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                      </div>
-                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {activeTab === 'photos' && (
@@ -2111,6 +2080,36 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
+          {/* Price Change Suggestion Banner */}
+          {priceChangeSuggestion && !showBoard && (
+            <div className="mb-3 bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4 animate-slide-in">
+              <div className="flex items-center justify-between gap-4">
+                <p className="text-sm text-[#FAFAFA]">
+                  Would you like to change the purchase price to{' '}
+                  <span className="font-bold text-[#34D399]">
+                    ${priceChangeSuggestion.toLocaleString()}
+                  </span>
+                  ?
+                </p>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    onClick={() => handlePriceUpdate(priceChangeSuggestion)}
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-5 py-1.5 text-sm font-semibold"
+                  >
+                    Yes
+                  </Button>
+                  <Button
+                    onClick={() => setPriceChangeSuggestion(null)}
+                    variant="outline"
+                    className="border-[#808080] text-[#808080] hover:bg-[#1F1F1F] rounded-full px-5 py-1.5 text-sm"
+                  >
+                    No
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div className="flex items-center gap-2">
               {/* Upload Photo Button */}
               <button
