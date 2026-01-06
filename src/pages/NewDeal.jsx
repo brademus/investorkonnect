@@ -219,25 +219,40 @@ export default function NewDeal() {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
       try {
-        console.log('[NewDeal] Saving county to deal:', county);
+        console.log('[NewDeal] Updating deal with:', {
+          county,
+          seller_commission_type: sellerCommissionType,
+          seller_flat_fee: sellerFlatFee,
+          seller_commission_percentage: sellerCommissionPercentage
+        });
         
-        await base44.entities.Deal.update(dealId, {
+        const updateData = {
           property_address: propertyAddress,
           city: city,
           state: state,
           zip: zip,
           county: county || null,
           purchase_price: Number(cleanedPrice),
+          property_type: propertyType || null,
+          notes: notes || null,
+          special_notes: specialNotes || null,
           key_dates: {
             closing_date: closingDate,
-            contract_date: contractDate
+            contract_date: contractDate || null
           },
-          special_notes: specialNotes,
           seller_info: {
             seller_name: sellerName,
             earnest_money: earnestMoney ? Number(earnestMoney) : null,
             number_of_signers: numberOfSigners,
-            second_signer_name: secondSignerName
+            second_signer_name: secondSignerName || null
+          },
+          property_details: {
+            beds: beds ? Number(beds) : null,
+            baths: baths ? Number(baths) : null,
+            sqft: sqft ? Number(sqft) : null,
+            year_built: yearBuilt ? Number(yearBuilt) : null,
+            number_of_stories: numberOfStories || null,
+            has_basement: hasBasement || null
           },
           proposed_terms: {
             seller_commission_type: sellerCommissionType,
@@ -248,12 +263,24 @@ export default function NewDeal() {
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
           }
-        });
+        };
+        
+        await base44.entities.Deal.update(dealId, updateData);
+        
+        console.log('[NewDeal] ✅ Deal updated successfully');
+        toast.success('Deal updated successfully');
         
         // Also update Room if it exists
         const rooms = await base44.entities.Room.filter({ deal_id: dealId });
         if (rooms.length > 0) {
           await base44.entities.Room.update(rooms[0].id, {
+            property_address: propertyAddress,
+            city: city,
+            state: state,
+            county: county || null,
+            zip: zip,
+            budget: Number(cleanedPrice),
+            closing_date: closingDate,
             proposed_terms: {
               seller_commission_type: sellerCommissionType,
               seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
@@ -264,9 +291,12 @@ export default function NewDeal() {
               agreement_length: agreementLength ? Number(agreementLength) : null
             }
           });
+          console.log('[NewDeal] ✅ Room synced successfully');
         }
       } catch (e) {
-        console.error("Failed to save proposed terms:", e);
+        console.error("Failed to update deal:", e);
+        toast.error('Failed to update deal: ' + e.message);
+        return;
       }
     }
 
