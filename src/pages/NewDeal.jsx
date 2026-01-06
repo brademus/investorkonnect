@@ -219,40 +219,25 @@ export default function NewDeal() {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
       try {
-        console.log('[NewDeal] Updating deal with:', {
-          county,
-          seller_commission_type: sellerCommissionType,
-          seller_flat_fee: sellerFlatFee,
-          seller_commission_percentage: sellerCommissionPercentage
-        });
+        console.log('[NewDeal] Saving county to deal:', county);
         
-        const updateData = {
+        await base44.entities.Deal.update(dealId, {
           property_address: propertyAddress,
           city: city,
           state: state,
           zip: zip,
           county: county || null,
           purchase_price: Number(cleanedPrice),
-          property_type: propertyType || null,
-          notes: notes || null,
-          special_notes: specialNotes || null,
           key_dates: {
             closing_date: closingDate,
-            contract_date: contractDate || null
+            contract_date: contractDate
           },
+          special_notes: specialNotes,
           seller_info: {
             seller_name: sellerName,
             earnest_money: earnestMoney ? Number(earnestMoney) : null,
             number_of_signers: numberOfSigners,
-            second_signer_name: secondSignerName || null
-          },
-          property_details: {
-            beds: beds ? Number(beds) : null,
-            baths: baths ? Number(baths) : null,
-            sqft: sqft ? Number(sqft) : null,
-            year_built: yearBuilt ? Number(yearBuilt) : null,
-            number_of_stories: numberOfStories || null,
-            has_basement: hasBasement || null
+            second_signer_name: secondSignerName
           },
           proposed_terms: {
             seller_commission_type: sellerCommissionType,
@@ -263,30 +248,12 @@ export default function NewDeal() {
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
           }
-        };
-        
-        await base44.entities.Deal.update(dealId, updateData);
-        
-        console.log('[NewDeal] ✅ Deal updated successfully');
-        
-        // Verify the update by refetching the deal
-        const verifyDeals = await base44.entities.Deal.filter({ id: dealId });
-        if (verifyDeals.length > 0) {
-          console.log('[NewDeal] ✅ Verified county after update:', verifyDeals[0].county);
-          console.log('[NewDeal] ✅ Verified seller terms:', verifyDeals[0].proposed_terms);
-        }
+        });
         
         // Also update Room if it exists
         const rooms = await base44.entities.Room.filter({ deal_id: dealId });
         if (rooms.length > 0) {
           await base44.entities.Room.update(rooms[0].id, {
-            property_address: propertyAddress,
-            city: city,
-            state: state,
-            county: county || null,
-            zip: zip,
-            budget: Number(cleanedPrice),
-            closing_date: closingDate,
             proposed_terms: {
               seller_commission_type: sellerCommissionType,
               seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
@@ -297,26 +264,13 @@ export default function NewDeal() {
               agreement_length: agreementLength ? Number(agreementLength) : null
             }
           });
-          console.log('[NewDeal] ✅ Room synced successfully');
         }
-        
-        toast.success('Deal updated successfully');
-        
-        // Clear any cached data to force fresh load
-        sessionStorage.removeItem("newDealDraft");
-        sessionStorage.removeItem("dealDraft");
-        
-        // Use full page reload to ensure fresh data
-        window.location.href = `${createPageUrl("ContractVerify")}?dealId=${dealId}&t=${Date.now()}`;
-        return;
       } catch (e) {
-        console.error("Failed to update deal:", e);
-        toast.error('Failed to update deal: ' + e.message);
-        return;
+        console.error("Failed to save proposed terms:", e);
       }
     }
 
-    // Save to sessionStorage for new deals only
+    // Save to sessionStorage - include dealId if editing
     sessionStorage.setItem("newDealDraft", JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -349,8 +303,12 @@ export default function NewDeal() {
       hasBasement
     }));
 
-    // Navigate for new deals
-    navigate(createPageUrl("ContractVerify"));
+    // Navigate with dealId if editing
+    if (dealId) {
+      navigate(`${createPageUrl("ContractVerify")}?dealId=${dealId}`);
+    } else {
+      navigate(createPageUrl("ContractVerify"));
+    }
   };
 
   if (loading) {

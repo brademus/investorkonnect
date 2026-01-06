@@ -356,40 +356,9 @@ export default function Room() {
     checkExclusivity();
   }, [currentRoom, profile, roomId, navigate]);
 
-  const [priceChangeSuggestion, setPriceChangeSuggestion] = useState(null);
-
-  // Detect price mentions and suggest updates
-  const detectPriceChange = (message) => {
-    // Pattern to detect dollar amounts: $X, $X,XXX, $XXX,XXX, etc.
-    const pricePattern = /\$[\d,]+(?:\.\d{2})?/g;
-    const matches = message.match(pricePattern);
-    
-    if (!matches || matches.length === 0) return null;
-    
-    // Extract the largest price mentioned
-    const prices = matches.map(p => {
-      const cleaned = p.replace(/[$,]/g, '');
-      return parseFloat(cleaned);
-    });
-    
-    const suggestedPrice = Math.max(...prices);
-    const currentPrice = currentRoom?.budget || 0;
-    
-    // Only suggest if different from current price and reasonable (> $1000)
-    if (suggestedPrice !== currentPrice && suggestedPrice > 1000) {
-      return suggestedPrice;
-    }
-    
-    return null;
-  };
-
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
-    
-    // Detect potential price change
-    const detectedPrice = detectPriceChange(t);
-    
     setText("");
     setSending(true);
     
@@ -437,42 +406,12 @@ export default function Room() {
       
       // Remove optimistic message immediately after successful send
       setItems(prev => prev.filter(m => m.id !== tempId));
-      
-      // Show price change suggestion if detected
-      if (detectedPrice) {
-        setPriceChangeSuggestion(detectedPrice);
-      }
     } catch (error) {
       console.error('Failed to send message:', error);
       toast.error(`Failed to send: ${error.message}`);
       setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
-    }
-  };
-  
-  const handlePriceUpdate = async (newPrice) => {
-    try {
-      if (currentRoom?.deal_id) {
-        await base44.entities.Deal.update(currentRoom.deal_id, {
-          purchase_price: newPrice
-        });
-        
-        // Also update room
-        await base44.entities.Room.update(roomId, {
-          budget: newPrice
-        });
-        
-        setCurrentRoom({ ...currentRoom, budget: newPrice });
-        toast.success(`Purchase price updated to $${newPrice.toLocaleString()}`);
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-      }
-    } catch (error) {
-      console.error('Failed to update price:', error);
-      toast.error('Failed to update purchase price');
-    } finally {
-      setPriceChangeSuggestion(null);
     }
   };
 
@@ -571,21 +510,6 @@ ${dealContext}`;
       generateTasks();
     }
   }, [messages.length]);
-
-  // Monitor conversation for deal changes (price, dates, etc.)
-  useEffect(() => {
-    if (messages.length === 0 || !currentRoom || priceChangeSuggestion) return;
-    
-    // Check last 5 messages for price mentions
-    const recentMessages = messages.slice(-5);
-    for (const msg of recentMessages.reverse()) {
-      const detectedPrice = detectPriceChange(msg.body);
-      if (detectedPrice) {
-        setPriceChangeSuggestion(detectedPrice);
-        break;
-      }
-    }
-  }, [messages.length, currentRoom?.budget]);
 
   // Memoize filtered rooms to prevent unnecessary recalculations
   const filteredRooms = useMemo(() => {
@@ -2095,36 +2019,6 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
-          {/* Price Change Suggestion Banner */}
-          {priceChangeSuggestion && !showBoard && (
-            <div className="mb-3 bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4 animate-slide-in">
-              <div className="flex items-center justify-between gap-4">
-                <p className="text-sm text-[#FAFAFA]">
-                  Would you like to change the purchase price to{' '}
-                  <span className="font-bold text-[#34D399]">
-                    ${priceChangeSuggestion.toLocaleString()}
-                  </span>
-                  ?
-                </p>
-                <div className="flex gap-2 flex-shrink-0">
-                  <Button
-                    onClick={() => handlePriceUpdate(priceChangeSuggestion)}
-                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-5 py-1.5 text-sm font-semibold"
-                  >
-                    Yes
-                  </Button>
-                  <Button
-                    onClick={() => setPriceChangeSuggestion(null)}
-                    variant="outline"
-                    className="border-[#808080] text-[#808080] hover:bg-[#1F1F1F] rounded-full px-5 py-1.5 text-sm"
-                  >
-                    No
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          
           <div className="flex items-center gap-2">
               {/* Upload Photo Button */}
               <button
