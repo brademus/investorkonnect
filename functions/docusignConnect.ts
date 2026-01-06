@@ -7,14 +7,24 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
+    
+    // Check if authenticated
+    const isAuthenticated = await base44.auth.isAuthenticated();
+    if (!isAuthenticated) {
+      return Response.json({ error: 'Unauthorized - Please log in first' }, { status: 401 });
+    }
+    
     const user = await base44.auth.me();
     
     if (!user) {
       return Response.json({ error: 'Unauthorized - Please log in first' }, { status: 401 });
     }
     
-    // Admin only - check user role directly
-    if (user.role !== 'admin') {
+    // Admin only - check both user.role and profile role
+    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    const profile = profiles[0];
+    
+    if (user.role !== 'admin' && profile?.role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
     
