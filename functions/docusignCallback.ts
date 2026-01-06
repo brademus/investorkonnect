@@ -91,28 +91,41 @@ Deno.serve(async (req) => {
       return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=No%20DocuSign%20account%20found`);
     }
     
-    // Store tokens and account info in Secrets (or a dedicated tokens table)
-    // For now, we'll store in environment-specific secrets
-    const tokenKey = `DOCUSIGN_ACCESS_TOKEN_${env.toUpperCase()}`;
-    const refreshKey = `DOCUSIGN_REFRESH_TOKEN_${env.toUpperCase()}`;
-    const accountIdKey = `DOCUSIGN_ACCOUNT_ID_${env.toUpperCase()}`;
-    const baseUriKey = `DOCUSIGN_BASE_URI_${env.toUpperCase()}`;
-    const expiresKey = `DOCUSIGN_TOKEN_EXPIRES_${env.toUpperCase()}`;
-    
     // Calculate expiration timestamp
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
     
-    // Note: In production, you'd want to store these securely in a database
-    // For now, we'll log them and expect admin to set them as secrets
-    console.log('[DocuSign Callback] Store these as secrets:');
-    console.log(`${tokenKey}=${tokens.access_token}`);
-    console.log(`${refreshKey}=${tokens.refresh_token}`);
-    console.log(`${accountIdKey}=${account.account_id}`);
-    console.log(`${baseUriKey}=${account.base_uri}`);
-    console.log(`${expiresKey}=${expiresAt}`);
+    // Store tokens in database per user
+    const existingConnections = await base44.asServiceRole.entities.DocuSignConnection.filter({ 
+      user_id: user.id 
+    });
     
-    // For demo purposes, we'll store in a simple JSON file or use the functions to update secrets
-    // In a real app, use a proper token storage mechanism
+    if (existingConnections.length > 0) {
+      // Update existing connection
+      await base44.asServiceRole.entities.DocuSignConnection.update(existingConnections[0].id, {
+        account_id: account.account_id,
+        base_uri: account.base_uri,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: expiresAt,
+        env
+      });
+    } else {
+      // Create new connection
+      await base44.asServiceRole.entities.DocuSignConnection.create({
+        user_id: user.id,
+        user_email: user.email,
+        account_id: account.account_id,
+        base_uri: account.base_uri,
+        access_token: tokens.access_token,
+        refresh_token: tokens.refresh_token,
+        expires_at: expiresAt,
+        env
+      });
+    }
+    
+    console.log('[DocuSign Callback] Connection stored for user:', user.email);
+    console.log('[DocuSign Callback] Account ID:', account.account_id);
+    console.log('[DocuSign Callback] Base URI:', account.base_uri);
     
     return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=connected&account=${account.account_id}`);
   } catch (error) {

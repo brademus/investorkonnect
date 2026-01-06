@@ -1,11 +1,24 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-async function getAccessToken(env) {
-  const accessToken = Deno.env.get(`DOCUSIGN_ACCESS_TOKEN_${env.toUpperCase()}`);
-  if (!accessToken) {
+async function getDocuSignConnection(base44) {
+  // Get the most recent DocuSign connection from any admin user
+  const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
+  
+  if (!connections || connections.length === 0) {
     throw new Error('DocuSign not connected. Admin must connect DocuSign first.');
   }
-  return accessToken;
+  
+  const connection = connections[0];
+  
+  // Check if token is expired
+  const now = new Date();
+  const expiresAt = new Date(connection.expires_at);
+  
+  if (now >= expiresAt) {
+    throw new Error('DocuSign token expired. Admin must reconnect DocuSign.');
+  }
+  
+  return connection;
 }
 
 /**
@@ -78,15 +91,9 @@ Deno.serve(async (req) => {
       used: false
     });
     
-    // Get DocuSign config
-    const env = Deno.env.get('DOCUSIGN_ENV') || 'demo';
-    const accessToken = await getAccessToken(env);
-    const accountId = Deno.env.get(`DOCUSIGN_ACCOUNT_ID_${env.toUpperCase()}`);
-    const baseUri = Deno.env.get(`DOCUSIGN_BASE_URI_${env.toUpperCase()}`);
-    
-    if (!accountId || !baseUri) {
-      return Response.json({ error: 'DocuSign account not configured' }, { status: 500 });
-    }
+    // Get DocuSign connection from database
+    const connection = await getDocuSignConnection(base44);
+    const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
     // Load profile for this role
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
