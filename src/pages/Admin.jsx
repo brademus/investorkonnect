@@ -574,24 +574,41 @@ Type "RESET" to confirm:`;
               onClick={async () => {
                 try {
                   toast.info('Connecting to DocuSign...');
+                  console.log('[Admin] Calling docusignConnect function...');
+                  
                   const response = await base44.functions.invoke('docusignConnect');
 
-                  console.log('[Admin] DocuSign connect response:', response);
+                  console.log('[Admin] Full response object:', response);
+                  console.log('[Admin] Response status:', response.status);
+                  console.log('[Admin] Response data:', response.data);
 
-                  if (response.data?.error) {
-                    toast.error('DocuSign connection failed: ' + response.data.error);
+                  // Check for errors at multiple levels
+                  if (response.status !== 200) {
+                    toast.error('Server error: ' + response.status);
+                    console.error('[Admin] Non-200 status:', response);
                     return;
                   }
 
-                  if (response.data?.authUrl) {
-                    console.log('[Admin] Redirecting to:', response.data.authUrl);
-                    window.location.href = response.data.authUrl;
+                  if (response.data?.error) {
+                    toast.error('DocuSign connection failed: ' + response.data.error);
+                    console.error('[Admin] API error:', response.data);
+                    return;
+                  }
+
+                  if (response.data?.ok && response.data?.authUrl) {
+                    console.log('[Admin] Auth URL received, redirecting to:', response.data.authUrl);
+                    // Use setTimeout to ensure toast is visible before redirect
+                    setTimeout(() => {
+                      window.location.href = response.data.authUrl;
+                    }, 500);
                   } else {
-                    toast.error('No authorization URL received from DocuSign');
-                    console.error('[Admin] Response data:', response.data);
+                    toast.error('No authorization URL in response');
+                    console.error('[Admin] Missing authUrl. Full response:', response);
+                    console.error('[Admin] Response.data:', response.data);
                   }
                 } catch (error) {
                   console.error('[Admin] DocuSign connect error:', error);
+                  console.error('[Admin] Error stack:', error.stack);
                   toast.error('Failed to connect DocuSign: ' + error.message);
                 }
               }}
