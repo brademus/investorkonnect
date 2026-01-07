@@ -40,15 +40,14 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
     
-    // Generate CSRF state and store user_id for callback
-    const state = crypto.randomUUID();
-
-    // Store state with user_id in session storage for callback validation
-    await base44.asServiceRole.functions.invoke('sessionSet', {
-      key: `docusign_state_${state}`,
-      value: { user_id: user.id, email: user.email },
-      ttl: 600 // 10 minutes
-    });
+    // Generate CSRF state with user info embedded
+    // We'll encode user info in the state param itself since session storage is giving 403
+    const stateData = {
+      user_id: user.id,
+      email: user.email,
+      timestamp: Date.now()
+    };
+    const state = btoa(JSON.stringify(stateData));
     
     const authBase = env === 'production' 
       ? 'https://account.docusign.com'

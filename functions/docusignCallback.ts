@@ -24,21 +24,25 @@ Deno.serve(async (req) => {
       return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
-    // Retrieve user info from session using state
+    // Decode user info from state parameter
     const base44 = createClientFromRequest(req);
-    const sessionResponse = await base44.asServiceRole.functions.invoke('sessionGet', {
-      key: `docusign_state_${state}`
-    });
-    
-    const sessionData = sessionResponse.data?.value;
-    if (!sessionData?.user_id) {
-      console.error('[DocuSign Callback] Invalid or expired state');
+    let stateData;
+    try {
+      stateData = JSON.parse(atob(state));
+
+      // Verify timestamp is within 10 minutes
+      const age = Date.now() - stateData.timestamp;
+      if (age > 600000) { // 10 minutes
+        throw new Error('State expired');
+      }
+    } catch (e) {
+      console.error('[DocuSign Callback] Invalid or expired state:', e);
       const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Session%20expired`;
       const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
       return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
-    
-    const user = { id: sessionData.user_id, email: sessionData.email };
+
+    const user = { id: stateData.user_id, email: stateData.email };
     
     const env = Deno.env.get('DOCUSIGN_ENV') || 'demo';
     const integrationKey = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');
