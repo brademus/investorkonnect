@@ -5,22 +5,25 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  * Handle OAuth callback and exchange code for tokens
  */
 Deno.serve(async (req) => {
+  const appBaseUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL');
+  
   try {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
     const error = url.searchParams.get('error');
     
-    const appBaseUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL');
     const fallbackUrl = `${appBaseUrl}/Admin?docusign=error`;
     
     if (error) {
       console.error('[DocuSign Callback] OAuth error:', error);
-      return Response.redirect(`${fallbackUrl}&message=${encodeURIComponent(error)}`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${fallbackUrl}&message=${encodeURIComponent(error)}"></head><body>OAuth error. Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     if (!code || !state) {
-      return Response.redirect(`${fallbackUrl}&message=Missing%20code%20or%20state`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${fallbackUrl}&message=Missing%20parameters"></head><body>Missing parameters. Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const base44 = createClientFromRequest(req);
@@ -30,7 +33,8 @@ Deno.serve(async (req) => {
     
     if (stateRecords.length === 0) {
       console.error('[DocuSign Callback] Invalid state - not found in database');
-      return Response.redirect(`${fallbackUrl}&message=Invalid%20or%20expired%20session`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=Invalid%20session"></head><body><h3>Invalid or expired session</h3><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const stateRecord = stateRecords[0];
@@ -39,7 +43,8 @@ Deno.serve(async (req) => {
     if (new Date(stateRecord.expires_at) < new Date()) {
       console.error('[DocuSign Callback] State expired');
       await base44.asServiceRole.entities.DocuSignOAuthState.delete(stateRecord.id);
-      return Response.redirect(`${fallbackUrl}&message=Session%20expired`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=Session%20expired"></head><body><h3>Session expired</h3><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const user = { id: stateRecord.user_id, email: stateRecord.user_email };
@@ -51,7 +56,8 @@ Deno.serve(async (req) => {
     const clientSecret = Deno.env.get('DOCUSIGN_CLIENT_SECRET');
     
     if (!integrationKey || !clientSecret) {
-      return Response.redirect(`${fallbackUrl}&message=DocuSign%20not%20configured`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=Configuration%20missing"></head><body><h3>DocuSign not configured</h3><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const authBase = env === 'production' 
@@ -80,7 +86,8 @@ Deno.serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('[DocuSign Callback] Token exchange failed:', errorText);
-      return Response.redirect(`${fallbackUrl}&message=Token%20exchange%20failed`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=Token%20exchange%20failed"></head><body><h3>Token exchange failed</h3><p>${errorText}</p><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const tokens = await tokenResponse.json();
@@ -92,14 +99,16 @@ Deno.serve(async (req) => {
     
     if (!userInfoResponse.ok) {
       console.error('[DocuSign Callback] User info failed');
-      return Response.redirect(`${fallbackUrl}&message=User%20info%20failed`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=User%20info%20failed"></head><body><h3>User info failed</h3><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const userInfo = await userInfoResponse.json();
     const account = userInfo.accounts?.[0];
     
     if (!account) {
-      return Response.redirect(`${fallbackUrl}&message=No%20DocuSign%20account`, 302);
+      const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="2;url=${fallbackUrl}&message=No%20account"></head><body><h3>No DocuSign account found</h3><p>Redirecting...</p></body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const expiresAt = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
@@ -141,10 +150,11 @@ Deno.serve(async (req) => {
       ? `${returnTo}&docusign=connected`
       : `${returnTo}?docusign=connected`;
     
-    return Response.redirect(finalUrl, 302);
+    const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="0;url=${finalUrl}"><script>window.location.href="${finalUrl}";</script></head><body><h3>✅ DocuSign Connected!</h3><p>Account: ${account.account_id}</p><p>Redirecting to admin panel...</p></body></html>`;
+    return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
   } catch (error) {
     console.error('[DocuSign Callback] Error:', error);
-    const appBaseUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL');
-    return Response.redirect(`${appBaseUrl}/Admin?docusign=error&message=${encodeURIComponent(error.message)}`, 302);
+    const html = `<!DOCTYPE html><html><head><meta http-equiv="refresh" content="3;url=${appBaseUrl}/Admin?docusign=error"></head><body><h3>❌ Error</h3><p>${error.message}</p><p>Redirecting...</p></body></html>`;
+    return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
   }
 });
