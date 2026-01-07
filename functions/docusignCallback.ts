@@ -13,7 +13,9 @@ Deno.serve(async (req) => {
     
     if (error) {
       console.error('[DocuSign Callback] OAuth error:', error);
-      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=${encodeURIComponent(error)}`);
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=${encodeURIComponent(error)}`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     if (!code || !state) {
