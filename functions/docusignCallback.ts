@@ -76,7 +76,9 @@ Deno.serve(async (req) => {
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
       console.error('[DocuSign Callback] Token exchange failed:', errorText);
-      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Token%20exchange%20failed`);
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Token%20exchange%20failed`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const tokens = await tokenResponse.json();
