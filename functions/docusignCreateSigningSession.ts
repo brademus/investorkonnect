@@ -97,12 +97,12 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Investor or agent profile not found' }, { status: 404 });
       }
       
-      // Download PDF
-      const pdfUrl = agreement.final_pdf_url || agreement.pdf_file_url;
+      // Download PDF (use signing_pdf_url which has the signature page)
+      const pdfUrl = agreement.signing_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url;
       if (!pdfUrl) {
         return Response.json({ error: 'Agreement PDF not generated yet' }, { status: 400 });
       }
-      
+
       const pdfBase64 = await downloadPdfAsBase64(pdfUrl);
       
       // Generate unique clientUserIds for embedded signing
@@ -128,22 +128,22 @@ Deno.serve(async (req) => {
               clientUserId: investorClientUserId,
               tabs: {
                 signHereTabs: [{
-                  anchorString: '[[INVESTOR_SIGN]]',
+                  anchorString: '[[INV_SIGN]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '-10'
+                  anchorXOffset: '20',
+                  anchorYOffset: '-5'
                 }],
                 dateSignedTabs: [{
-                  anchorString: '[[INVESTOR_DATE]]',
+                  anchorString: '[[INV_DATE]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '-10'
+                  anchorXOffset: '20',
+                  anchorYOffset: '-5'
                 }],
                 textTabs: [{
-                  anchorString: '[[INVESTOR_PRINT]]',
+                  anchorString: '[[INV_PRINT]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '-10',
+                  anchorXOffset: '20',
+                  anchorYOffset: '-5',
                   value: investor.full_name || investor.email,
                   locked: false,
                   required: true,
@@ -159,43 +159,43 @@ Deno.serve(async (req) => {
               clientUserId: agentClientUserId,
               tabs: {
                 signHereTabs: [{
-                  anchorString: '[[AGENT_SIGN]]',
+                  anchorString: '[[AGT_SIGN]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '-10'
+                  anchorXOffset: '20',
+                  anchorYOffset: '-5'
                 }],
                 dateSignedTabs: [{
-                  anchorString: '[[AGENT_DATE]]',
+                  anchorString: '[[AGT_DATE]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '-10'
+                  anchorXOffset: '20',
+                  anchorYOffset: '-5'
                 }],
                 textTabs: [
                   {
-                    anchorString: '[[AGENT_PRINT]]',
+                    anchorString: '[[AGT_PRINT]]',
                     anchorUnits: 'pixels',
-                    anchorXOffset: '0',
-                    anchorYOffset: '-10',
+                    anchorXOffset: '20',
+                    anchorYOffset: '-5',
                     value: agent.full_name || agent.email,
                     locked: false,
                     required: true,
                     width: 200
                   },
                   {
-                    anchorString: '[[AGENT_LICENSE]]',
+                    anchorString: '[[AGT_LIC]]',
                     anchorUnits: 'pixels',
-                    anchorXOffset: '0',
-                    anchorYOffset: '-10',
+                    anchorXOffset: '20',
+                    anchorYOffset: '-5',
                     value: agent.agent?.license_number || agent.license_number || '',
                     locked: false,
                     required: true,
                     width: 200
                   },
                   {
-                    anchorString: '[[AGENT_BROKERAGE]]',
+                    anchorString: '[[AGT_BROKER]]',
                     anchorUnits: 'pixels',
-                    anchorXOffset: '0',
-                    anchorYOffset: '-10',
+                    anchorXOffset: '20',
+                    anchorYOffset: '-5',
                     value: agent.agent?.brokerage || agent.broker || '',
                     locked: false,
                     required: true,

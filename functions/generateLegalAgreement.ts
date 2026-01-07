@@ -60,33 +60,14 @@ function normalizeSignatureSection(text) {
   console.log('[normalizeSignatureSection] Starting normalization...');
   console.log('[normalizeSignatureSection] Text length:', text.length);
   
-  // Standard signature block with DocuSign anchor tokens
-  const standardSignatureBlock = `
-
-SIGNATURES
-
-Investor:
-Signature: ____________________________ [[INVESTOR_SIGN]]
-Printed Name: _________________________ [[INVESTOR_PRINT]]
-Date: ________________________________ [[INVESTOR_DATE]]
-
-Agent:
-Signature: ____________________________ [[AGENT_SIGN]]
-Printed Name: _________________________ [[AGENT_PRINT]]
-License No.: __________________________ [[AGENT_LICENSE]]
-Brokerage: ____________________________ [[AGENT_BROKERAGE]]
-Date: ________________________________ [[AGENT_DATE]]
-`;
-
   // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
-    /^\s*SIGNATURES?\s*$/gim,                    // "SIGNATURES" or "SIGNATURE" alone
-    /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,          // "15. Signatures" or "15 Signatures"
-    /^[\s\d.]*signatures?\s*$/gim                // Very flexible pattern
+    /^\s*SIGNATURES?\s*$/gim,
+    /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,
+    /^[\s\d.]*signatures?\s*$/gim
   ];
   
   let signatureIndex = -1;
-  let matchedPattern = null;
   
   // Find the LAST occurrence of any signature header
   for (let i = 0; i < signaturePatterns.length; i++) {
@@ -95,8 +76,7 @@ Date: ________________________________ [[AGENT_DATE]]
     if (matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       signatureIndex = lastMatch.index;
-      matchedPattern = i;
-      console.log(`[normalizeSignatureSection] Found signature with pattern ${i} at index ${signatureIndex}: "${lastMatch[0]}"`);
+      console.log(`[normalizeSignatureSection] Found signature with pattern ${i} at index ${signatureIndex}`);
       break;
     }
   }
@@ -107,13 +87,9 @@ Date: ________________________________ [[AGENT_DATE]]
     text = text.substring(0, signatureIndex);
     console.log(`[normalizeSignatureSection] Removed existing signature section (removed ${beforeLength - text.length} chars)`);
   } else {
-    console.log('[normalizeSignatureSection] No signature section found, appending to end');
+    console.log('[normalizeSignatureSection] No signature section found (will append signature page separately)');
   }
   
-  // Append standardized signature block
-  text += standardSignatureBlock;
-  
-  console.log('[normalizeSignatureSection] Appended standard signature block with anchor tokens');
   return text;
 }
 
@@ -123,6 +99,122 @@ async function sha256(data) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function appendSignaturePage(pdfDoc) {
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const margin = 60;
+  
+  const page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+  
+  // Title
+  page.drawText('SIGNATURE PAGE (INVESTORKONNECT)', {
+    x: margin,
+    y: y,
+    size: 14,
+    font: boldFont,
+    color: rgb(0, 0, 0)
+  });
+  y -= 40;
+  
+  // Investor Section
+  page.drawText('Investor:', {
+    x: margin,
+    y: y,
+    size: 11,
+    font: boldFont,
+    color: rgb(0, 0, 0)
+  });
+  y -= 25;
+  
+  page.drawText('Signature: ____________________   [[INV_SIGN]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('Printed Name: _________________   [[INV_PRINT]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('Date: ________________________   [[INV_DATE]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 40;
+  
+  // Agent Section
+  page.drawText('Agent:', {
+    x: margin,
+    y: y,
+    size: 11,
+    font: boldFont,
+    color: rgb(0, 0, 0)
+  });
+  y -= 25;
+  
+  page.drawText('Signature: ____________________   [[AGT_SIGN]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('Printed Name: _________________   [[AGT_PRINT]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('License No.: __________________   [[AGT_LIC]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('Brokerage: ____________________   [[AGT_BROKER]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  y -= 20;
+  
+  page.drawText('Date: ________________________   [[AGT_DATE]]', {
+    x: margin + 10,
+    y: y,
+    size: 10,
+    font: font,
+    color: rgb(0, 0, 0)
+  });
+  
+  console.log('[appendSignaturePage] Signature page appended with anchor tokens');
+  return pdfDoc;
 }
 
 async function generatePdfFromText(text, dealId) {
@@ -215,7 +307,10 @@ async function generatePdfFromText(text, dealId) {
     }
   }
   
-  // Add footer
+  // Append signature page
+  await appendSignaturePage(pdfDoc);
+  
+  // Add footer to all pages
   const pages = pdfDoc.getPages();
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i];
@@ -551,6 +646,7 @@ Deno.serve(async (req) => {
       status: 'draft',
       template_url: templateUrl,
       final_pdf_url: upload.file_url,
+      signing_pdf_url: upload.file_url,
       pdf_file_url: upload.file_url,
       pdf_sha256: pdfSha256,
       render_context_json: renderContext,
@@ -565,7 +661,7 @@ Deno.serve(async (req) => {
         timestamp: new Date().toISOString(),
         actor: user.email,
         action: 'generated_filled_agreement',
-        details: `Generated from ${stateCode} template with all placeholders filled`
+        details: `Generated from ${stateCode} template with appended signature page`
       }]
     };
     
