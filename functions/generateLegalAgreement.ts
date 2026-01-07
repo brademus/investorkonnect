@@ -60,6 +60,23 @@ function normalizeSignatureSection(text) {
   console.log('[normalizeSignatureSection] Starting normalization...');
   console.log('[normalizeSignatureSection] Text length:', text.length);
   
+  const standardSignatureBlock = `
+
+SIGNATURES
+
+Investor:
+Signature: ____________________   [[INV_SIGN]]
+Printed Name: _________________   [[INV_PRINT]]
+Date: ________________________   [[INV_DATE]]
+
+Agent:
+Signature: ____________________   [[AGT_SIGN]]
+Printed Name: _________________   [[AGT_PRINT]]
+License No.: __________________   [[AGT_LIC]]
+Brokerage: ____________________   [[AGT_BROKER]]
+Date: ________________________   [[AGT_DATE]]
+`;
+  
   // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
     /^\s*SIGNATURES?\s*$/gim,
@@ -76,18 +93,19 @@ function normalizeSignatureSection(text) {
     if (matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       signatureIndex = lastMatch.index;
-      console.log(`[normalizeSignatureSection] Found signature with pattern ${i} at index ${signatureIndex}`);
+      console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex}, replacing with standard block`);
       break;
     }
   }
   
   if (signatureIndex >= 0) {
-    // Truncate from the signature section onwards
-    const beforeLength = text.length;
-    text = text.substring(0, signatureIndex);
-    console.log(`[normalizeSignatureSection] Removed existing signature section (removed ${beforeLength - text.length} chars)`);
+    // Replace everything from signature section onwards with standard block
+    text = text.substring(0, signatureIndex) + standardSignatureBlock;
+    console.log('[normalizeSignatureSection] Replaced signature section with standard block');
   } else {
-    console.log('[normalizeSignatureSection] No signature section found (will append signature page separately)');
+    // No signature found, append to end
+    text += standardSignatureBlock;
+    console.log('[normalizeSignatureSection] No signature found, appended standard block');
   }
   
   return text;
@@ -99,122 +117,6 @@ async function sha256(data) {
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-async function appendSignaturePage(pdfDoc) {
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-  
-  const pageWidth = 612;
-  const pageHeight = 792;
-  const margin = 60;
-  
-  const page = pdfDoc.addPage([pageWidth, pageHeight]);
-  let y = pageHeight - margin;
-  
-  // Title
-  page.drawText('SIGNATURE PAGE (INVESTORKONNECT)', {
-    x: margin,
-    y: y,
-    size: 14,
-    font: boldFont,
-    color: rgb(0, 0, 0)
-  });
-  y -= 40;
-  
-  // Investor Section
-  page.drawText('Investor:', {
-    x: margin,
-    y: y,
-    size: 11,
-    font: boldFont,
-    color: rgb(0, 0, 0)
-  });
-  y -= 25;
-  
-  page.drawText('Signature: ____________________   [[INV_SIGN]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('Printed Name: _________________   [[INV_PRINT]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('Date: ________________________   [[INV_DATE]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 40;
-  
-  // Agent Section
-  page.drawText('Agent:', {
-    x: margin,
-    y: y,
-    size: 11,
-    font: boldFont,
-    color: rgb(0, 0, 0)
-  });
-  y -= 25;
-  
-  page.drawText('Signature: ____________________   [[AGT_SIGN]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('Printed Name: _________________   [[AGT_PRINT]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('License No.: __________________   [[AGT_LIC]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('Brokerage: ____________________   [[AGT_BROKER]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  y -= 20;
-  
-  page.drawText('Date: ________________________   [[AGT_DATE]]', {
-    x: margin + 10,
-    y: y,
-    size: 10,
-    font: font,
-    color: rgb(0, 0, 0)
-  });
-  
-  console.log('[appendSignaturePage] Signature page appended with anchor tokens');
-  return pdfDoc;
 }
 
 async function generatePdfFromText(text, dealId) {
@@ -306,9 +208,6 @@ async function generatePdfFromText(text, dealId) {
       yPosition -= lineHeight * 0.5;
     }
   }
-  
-  // Append signature page
-  await appendSignaturePage(pdfDoc);
   
   // Add footer to all pages
   const pages = pdfDoc.getPages();
