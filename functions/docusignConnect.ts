@@ -64,26 +64,44 @@ Deno.serve(async (req) => {
     crypto.getRandomValues(stateBytes);
     const state = Array.from(stateBytes, byte => byte.toString(16).padStart(2, '0')).join('');
     
+    // Generate PKCE code_verifier and code_challenge
+    const verifierBytes = new Uint8Array(32);
+    crypto.getRandomValues(verifierBytes);
+    const codeVerifier = Array.from(verifierBytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    
+    // Create SHA-256 hash of code_verifier for code_challenge
+    const encoder = new TextEncoder();
+    const data = encoder.encode(codeVerifier);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const codeChallenge = btoa(String.fromCharCode(...hashArray))
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
     // Determine return_to URL
     const finalReturnTo = returnTo || `${origin}/Admin`;
     
-    // Persist state in database
+    // Persist state and code_verifier in database
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 minutes
     await base44.asServiceRole.entities.DocuSignOAuthState.create({
       state,
       user_id: user.id,
       user_email: user.email,
       return_to: finalReturnTo,
-      expires_at: expiresAt
+      expires_at: expiresAt,
+      code_verifier: codeVerifier
     });
     
-    // Build DocuSign OAuth URL
+    // Build DocuSign OAuth URL with PKCE
     const authUrl = new URL(`${authBase}/oauth/auth`);
     authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('scope', scopes);
     authUrl.searchParams.set('client_id', clientId);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
+    authUrl.searchParams.set('code_challenge', codeChallenge);
+    authUrl.searchParams.set('code_challenge_method', 'S256');
     
     // Structured logging
     console.log('[docusignConnect_called]', {

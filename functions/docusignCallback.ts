@@ -77,11 +77,12 @@ Deno.serve(async (req) => {
     
     const redirectUri = `${origin}/api/functions/docusignCallback`;
     
-    // Exchange code for tokens
+    // Exchange code for tokens with PKCE code_verifier
     const tokenBody = new URLSearchParams({
       grant_type: 'authorization_code',
       code: code,
-      redirect_uri: redirectUri
+      redirect_uri: redirectUri,
+      code_verifier: stateRecord.code_verifier
     });
     
     const basicAuth = btoa(`${clientId}:${clientSecret}`);
