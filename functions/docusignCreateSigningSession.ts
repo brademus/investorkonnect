@@ -59,17 +59,35 @@ Deno.serve(async (req) => {
     
     // Ensure envelope exists
     if (!agreement.docusign_envelope_id) {
-      const createResponse = await base44.functions.invoke('docusignCreateEnvelope', {
-        agreementId
+      console.log('[DocuSign] No envelope ID found, creating envelope...');
+      
+      // Call docusignCreateEnvelope directly via HTTP
+      const createUrl = `${Deno.env.get('PUBLIC_APP_URL') || 'http://localhost:3000'}/api/functions/docusignCreateEnvelope`;
+      const createResponse = await fetch(createUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cookie': req.headers.get('Cookie') || ''
+        },
+        body: JSON.stringify({ agreementId })
       });
       
-      if (createResponse.data?.error) {
-        return Response.json({ error: createResponse.data.error }, { status: 500 });
+      if (!createResponse.ok) {
+        const errorText = await createResponse.text();
+        console.error('[DocuSign] Failed to create envelope:', errorText);
+        return Response.json({ error: 'Failed to create DocuSign envelope: ' + errorText }, { status: 500 });
+      }
+      
+      const createData = await createResponse.json();
+      if (createData.error) {
+        return Response.json({ error: createData.error }, { status: 500 });
       }
       
       // Reload agreement
       const updatedAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreementId });
       Object.assign(agreement, updatedAgreements[0]);
+      
+      console.log('[DocuSign] Envelope created:', agreement.docusign_envelope_id);
     }
     
     // Generate secure token (random 32-char string)
@@ -136,10 +154,12 @@ Deno.serve(async (req) => {
     
     if (!viewResponse.ok) {
       const errorText = await viewResponse.text();
-      console.error('[DocuSign] Recipient view failed:', errorText);
+      console.error('[DocuSign] Recipient view failed:', viewResponse.status, errorText);
+      console.error('[DocuSign] Request was:', JSON.stringify(recipientViewRequest, null, 2));
       return Response.json({ 
-        error: 'Failed to get signing URL',
-        details: errorText
+        error: 'Failed to get signing URL from DocuSign',
+        details: errorText,
+        status: viewResponse.status
       }, { status: 500 });
     }
     
