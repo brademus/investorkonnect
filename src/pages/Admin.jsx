@@ -510,6 +510,25 @@ Type "RESET" to confirm:`;
           </div>
         </div>
 
+        {/* DOCUSIGN CONNECTION */}
+        <div className="mb-8">
+          <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
+            <h3 className="text-lg font-semibold text-[#111827] mb-4">DocuSign Integration</h3>
+            <p className="text-sm text-[#6B7280] mb-4">
+              Connect your DocuSign account to enable electronic signature functionality for legal agreements.
+            </p>
+            <Button
+              onClick={() => {
+                window.location.href = '/api/functions/docusignConnect';
+              }}
+              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+            >
+              <FileText className="w-4 h-4" />
+              Connect DocuSign
+            </Button>
+          </div>
+        </div>
+
         {/* GRANT ADMIN ACCESS */}
         <div className="mb-8">
           <div className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl">
