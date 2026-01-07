@@ -46,10 +46,9 @@ Deno.serve(async (req) => {
     const redirectUri = Deno.env.get('DOCUSIGN_REDIRECT_URI');
     
     if (!integrationKey || !clientSecret || !redirectUri) {
-      return Response.json({ 
-        error: 'DocuSign not configured',
-        details: 'Missing required environment variables' 
-      }, { status: 500 });
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=DocuSign%20not%20configured`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const authBase = env === 'production' 
