@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
     
     console.log('Final PDF uploaded:', upload.file_url);
     
-    // Save agreement
+    // Save agreement - clear DocuSign data to force new envelope with updated PDF
     const agreementData = {
       deal_id: deal_id,
       investor_user_id: user.id,
@@ -556,11 +556,17 @@ Deno.serve(async (req) => {
       exhibit_a_terms: exhibit_a,
       rendered_markdown_full: templateText.substring(0, 10000),
       missing_placeholders: [],
+      docusign_envelope_id: null,
+      docusign_status: null,
+      investor_recipient_id: null,
+      agent_recipient_id: null,
+      investor_client_user_id: null,
+      agent_client_user_id: null,
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
         action: 'generated_filled_agreement',
-        details: `Generated from ${stateCode} template with appended signature page`
+        details: `Generated from ${stateCode} template with standardized signatures - DocuSign envelope cleared`
       }]
     };
     
