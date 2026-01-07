@@ -6,7 +6,7 @@ import { Logo } from './Logo';
 import { Button } from './ui/button';
 import { 
   Home, Users, MessageSquare, FileText, CreditCard, 
-  User, LogOut, Menu, X, ChevronDown
+  User, LogOut, Menu, X, ChevronDown, ShieldCheck
 } from 'lucide-react';
 
 export function Header({ profile }) {
@@ -17,6 +17,7 @@ export function Header({ profile }) {
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   const firstName = profile?.full_name?.split(' ')[0] || 'User';
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
   
   const handleLogout = async () => {
     try {
@@ -110,6 +111,17 @@ export function Header({ profile }) {
                       </span>
                     </div>
                     
+                    {isAdmin && (
+                      <Link 
+                        to={createPageUrl("Admin")}
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-[#141414] transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <ShieldCheck className="w-4 h-4 text-[#E3C567]" />
+                        <span className="text-sm text-[#E3C567] font-medium">Admin Panel</span>
+                      </Link>
+                    )}
+                    
                     <Link 
                       to={createPageUrl("AccountProfile")}
                       className="flex items-center gap-3 px-4 py-2 hover:bg-[#141414] transition-colors"
@@ -194,6 +206,17 @@ export function Header({ profile }) {
 
             {/* Profile & Logout */}
             <div className="border-t border-[#1F1F1F] pt-3 space-y-1">
+              {isAdmin && (
+                <Link 
+                  to={createPageUrl("Admin")}
+                  className="flex items-center gap-3 px-3 py-3 text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  <ShieldCheck className="w-5 h-5" />
+                  <span className="font-medium">Admin Panel</span>
+                </Link>
+              )}
+              
               <Link 
                 to={createPageUrl("AccountProfile")}
                 className="flex items-center gap-3 px-3 py-3 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
