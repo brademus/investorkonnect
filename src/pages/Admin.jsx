@@ -31,6 +31,8 @@ function AdminContent() {
   const [adminEmail, setAdminEmail] = useState("");
   const [ndaUpdating, setNdaUpdating] = useState({});
   const [wipingData, setWipingData] = useState(false);
+  const [docusignConnection, setDocusignConnection] = useState(null);
+  const [checkingDocusign, setCheckingDocusign] = useState(true);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalInvestors: 0,
@@ -92,6 +94,18 @@ function AdminContent() {
 
   const loadData = async () => {
     try {
+      // Check DocuSign connection
+      setCheckingDocusign(true);
+      try {
+        const connections = await base44.entities.DocuSignConnection.filter({});
+        if (connections.length > 0) {
+          setDocusignConnection(connections[0]);
+        }
+      } catch (e) {
+        console.log('[Admin] No DocuSign connections found');
+      }
+      setCheckingDocusign(false);
+
       const allProfiles = await base44.entities.Profile.filter({});
       setProfiles(allProfiles);
 
@@ -517,7 +531,46 @@ Type "RESET" to confirm:`;
             <p className="text-sm text-[#6B7280] mb-4">
               Connect your DocuSign account to enable electronic signature functionality for legal agreements.
             </p>
-            <Button
+
+            {checkingDocusign ? (
+              <div className="flex items-center gap-2 text-sm text-[#6B7280]">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Checking connection...
+              </div>
+            ) : docusignConnection ? (
+              <div className="space-y-4">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-emerald-600" />
+                    <span className="font-semibold text-emerald-900">Connected</span>
+                  </div>
+                  <div className="text-sm text-emerald-800 space-y-1">
+                    <p><strong>Account ID:</strong> {docusignConnection.account_id}</p>
+                    <p><strong>Environment:</strong> {docusignConnection.env}</p>
+                    <p><strong>User:</strong> {docusignConnection.user_email}</p>
+                    <p><strong>Base URI:</strong> {docusignConnection.base_uri}</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={async () => {
+                    if (confirm('Disconnect DocuSign? You will need to reconnect to use signatures.')) {
+                      try {
+                        await base44.entities.DocuSignConnection.delete(docusignConnection.id);
+                        setDocusignConnection(null);
+                        toast.success('DocuSign disconnected');
+                      } catch (error) {
+                        toast.error('Failed to disconnect: ' + error.message);
+                      }
+                    }
+                  }}
+                  variant="outline"
+                  className="border-red-300 text-red-700 hover:bg-red-50"
+                >
+                  Disconnect DocuSign
+                </Button>
+              </div>
+            ) : (
+              <Button
               onClick={async () => {
                 try {
                   toast.info('Connecting to DocuSign...');
@@ -546,9 +599,10 @@ Type "RESET" to confirm:`;
             >
               <FileText className="w-4 h-4" />
               Connect DocuSign
-            </Button>
-          </div>
-        </div>
+              </Button>
+              )}
+              </div>
+              </div>
 
         {/* GRANT ADMIN ACCESS */}
         <div className="mb-8">
