@@ -558,15 +558,18 @@ Deno.serve(async (req) => {
       missing_placeholders: [],
       docusign_envelope_id: null,
       docusign_status: null,
+      docusign_envelope_pdf_hash: null,
       investor_recipient_id: null,
       agent_recipient_id: null,
       investor_client_user_id: null,
       agent_client_user_id: null,
+      investor_signing_url: null,
+      agent_signing_url: null,
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
         action: 'generated_filled_agreement',
-        details: `Generated from ${stateCode} template with standardized signatures - DocuSign envelope cleared`
+        details: `Generated from ${stateCode} template with standardized signatures - PDF hash: ${pdfSha256.substring(0, 16)}... - DocuSign envelope cleared for fresh signing`
       }]
     };
     
