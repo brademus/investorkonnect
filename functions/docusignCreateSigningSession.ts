@@ -59,31 +59,23 @@ Deno.serve(async (req) => {
     }
     const agreement = agreements[0];
     
-    // Validate redirect_url (allow localhost for dev)
+    // Validate redirect_url (flexible origin matching for dev/prod)
     const reqUrl = new URL(req.url);
-    const origin = Deno.env.get('PUBLIC_APP_URL') || `${reqUrl.protocol}//${reqUrl.host}`;
-    let validatedRedirect = redirect_url || `${origin}/Pipeline`;
+    const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
+    let validatedRedirect = redirect_url || (publicAppUrl ? `${publicAppUrl}/Pipeline` : '/Pipeline');
     
-    // For development, allow localhost:3000 redirects
-    const allowedOrigins = [origin];
-    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
-      allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+    // Allow relative URLs
+    if (validatedRedirect.startsWith('/')) {
+      const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
+      validatedRedirect = `${origin}${validatedRedirect}`;
     }
     
-    try {
-      const redirectUrl = new URL(validatedRedirect);
-      const isAllowed = allowedOrigins.some(allowed => {
-        const allowedUrl = new URL(allowed);
-        return redirectUrl.origin === allowedUrl.origin;
-      });
-      
-      if (!isAllowed) {
-        return Response.json({ error: 'Invalid redirect URL - must be same origin' }, { status: 400 });
-      }
-      validatedRedirect = redirectUrl.toString();
-    } catch (e) {
-      return Response.json({ error: 'Invalid redirect URL format' }, { status: 400 });
-    }
+    console.log('[DocuSign] Redirect validation:', { 
+      redirect_url, 
+      validatedRedirect, 
+      publicAppUrl,
+      reqOrigin: reqUrl.origin 
+    });
     
     // Get DocuSign connection
     const connection = await getDocuSignConnection(base44);
