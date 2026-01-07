@@ -56,6 +56,62 @@ const STATE_TEMPLATES = {
   'WY': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Wyoming.pdf'
 };
 
+function normalizeSignatureSection(text) {
+  console.log('[normalizeSignatureSection] Starting normalization...');
+  
+  // Standard signature block with DocuSign anchor tokens
+  const standardSignatureBlock = `
+
+SIGNATURES
+
+Investor:
+Signature: ____________________________ [[INVESTOR_SIGN]]
+Printed Name: _________________________ [[INVESTOR_PRINT]]
+Date: ________________________________ [[INVESTOR_DATE]]
+
+Agent:
+Signature: ____________________________ [[AGENT_SIGN]]
+Printed Name: _________________________ [[AGENT_PRINT]]
+License No.: __________________________ [[AGENT_LICENSE]]
+Brokerage: ____________________________ [[AGENT_BROKERAGE]]
+Date: ________________________________ [[AGENT_DATE]]
+`;
+
+  // Patterns to find signature sections (ordered by priority)
+  const signaturePatterns = [
+    /^\s*SIGNATURES\s*$/mi,
+    /^\s*\d+(\.\d+)?\s*SIGNATURES\s*$/mi,
+    /^\s*SIGNATURE\s*$/mi
+  ];
+  
+  let signatureIndex = -1;
+  
+  // Find the LAST occurrence of any signature header
+  for (const pattern of signaturePatterns) {
+    const matches = [...text.matchAll(new RegExp(pattern, 'gmi'))];
+    if (matches.length > 0) {
+      const lastMatch = matches[matches.length - 1];
+      signatureIndex = lastMatch.index;
+      console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex}`);
+      break;
+    }
+  }
+  
+  if (signatureIndex >= 0) {
+    // Truncate from the signature section onwards
+    text = text.substring(0, signatureIndex);
+    console.log('[normalizeSignatureSection] Removed existing signature section');
+  } else {
+    console.log('[normalizeSignatureSection] No signature section found, appending to end');
+  }
+  
+  // Append standardized signature block
+  text += standardSignatureBlock;
+  
+  console.log('[normalizeSignatureSection] Appended standard signature block with anchor tokens');
+  return text;
+}
+
 async function sha256(data) {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
@@ -453,6 +509,9 @@ Deno.serve(async (req) => {
     }
     
     console.log('All placeholders replaced successfully');
+    
+    // Normalize signature section BEFORE generating PDF
+    templateText = normalizeSignatureSection(templateText);
     
     // Generate new PDF from filled text
     console.log('Generating final PDF from filled text...');

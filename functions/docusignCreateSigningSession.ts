@@ -128,16 +128,26 @@ Deno.serve(async (req) => {
               clientUserId: investorClientUserId,
               tabs: {
                 signHereTabs: [{
-                  anchorString: '/INVESTOR_SIGNATURE/',
+                  anchorString: '[[INVESTOR_SIGN]]',
                   anchorUnits: 'pixels',
                   anchorXOffset: '0',
-                  anchorYOffset: '0'
+                  anchorYOffset: '-10'
                 }],
                 dateSignedTabs: [{
-                  anchorString: '/INVESTOR_DATE/',
+                  anchorString: '[[INVESTOR_DATE]]',
                   anchorUnits: 'pixels',
                   anchorXOffset: '0',
-                  anchorYOffset: '0'
+                  anchorYOffset: '-10'
+                }],
+                textTabs: [{
+                  anchorString: '[[INVESTOR_PRINT]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '-10',
+                  value: investor.full_name || investor.email,
+                  locked: false,
+                  required: true,
+                  width: 200
                 }]
               }
             },
@@ -149,17 +159,49 @@ Deno.serve(async (req) => {
               clientUserId: agentClientUserId,
               tabs: {
                 signHereTabs: [{
-                  anchorString: '/AGENT_SIGNATURE/',
+                  anchorString: '[[AGENT_SIGN]]',
                   anchorUnits: 'pixels',
                   anchorXOffset: '0',
-                  anchorYOffset: '0'
+                  anchorYOffset: '-10'
                 }],
                 dateSignedTabs: [{
-                  anchorString: '/AGENT_DATE/',
+                  anchorString: '[[AGENT_DATE]]',
                   anchorUnits: 'pixels',
                   anchorXOffset: '0',
-                  anchorYOffset: '0'
-                }]
+                  anchorYOffset: '-10'
+                }],
+                textTabs: [
+                  {
+                    anchorString: '[[AGENT_PRINT]]',
+                    anchorUnits: 'pixels',
+                    anchorXOffset: '0',
+                    anchorYOffset: '-10',
+                    value: agent.full_name || agent.email,
+                    locked: false,
+                    required: true,
+                    width: 200
+                  },
+                  {
+                    anchorString: '[[AGENT_LICENSE]]',
+                    anchorUnits: 'pixels',
+                    anchorXOffset: '0',
+                    anchorYOffset: '-10',
+                    value: agent.agent?.license_number || agent.license_number || '',
+                    locked: false,
+                    required: true,
+                    width: 200
+                  },
+                  {
+                    anchorString: '[[AGENT_BROKERAGE]]',
+                    anchorUnits: 'pixels',
+                    anchorXOffset: '0',
+                    anchorYOffset: '-10',
+                    value: agent.agent?.brokerage || agent.broker || '',
+                    locked: false,
+                    required: true,
+                    width: 200
+                  }
+                ]
               }
             }
           ]
