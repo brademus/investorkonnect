@@ -6,13 +6,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
  */
 Deno.serve(async (req) => {
   try {
-    const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
     const state = url.searchParams.get('state');
@@ -23,11 +16,23 @@ Deno.serve(async (req) => {
       return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=${encodeURIComponent(error)}`);
     }
     
-    if (!code) {
-      return Response.json({ error: 'Missing authorization code' }, { status: 400 });
+    if (!code || !state) {
+      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Missing%20code%20or%20state`);
     }
     
-    // TODO: Validate state (CSRF protection) - store in session/db and verify
+    // Retrieve user info from session using state
+    const base44 = createClientFromRequest(req);
+    const sessionResponse = await base44.asServiceRole.functions.invoke('sessionGet', {
+      key: `docusign_state_${state}`
+    });
+    
+    const sessionData = sessionResponse.data?.value;
+    if (!sessionData?.user_id) {
+      console.error('[DocuSign Callback] Invalid or expired state');
+      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Session%20expired`);
+    }
+    
+    const user = { id: sessionData.user_id, email: sessionData.email };
     
     const env = Deno.env.get('DOCUSIGN_ENV') || 'demo';
     const integrationKey = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');

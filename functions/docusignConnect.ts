@@ -40,11 +40,15 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
     
-    // Generate CSRF state
+    // Generate CSRF state and store user_id for callback
     const state = crypto.randomUUID();
-    
-    // Store state in a temporary way (you might want to use a proper session store)
-    // For now, we'll include it in the redirect and validate it in callback
+
+    // Store state with user_id in session storage for callback validation
+    await base44.asServiceRole.functions.invoke('sessionSet', {
+      key: `docusign_state_${state}`,
+      value: { user_id: user.id, email: user.email },
+      ttl: 600 // 10 minutes
+    });
     
     const authBase = env === 'production' 
       ? 'https://account.docusign.com'
