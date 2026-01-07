@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
     
     // Validate returnTo is within our app domain (prevent open redirects)
     const appBaseUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL');
-    if (!returnTo.startsWith(appBaseUrl)) {
+    if (!returnTo.startsWith(appBaseUrl) && !returnTo.startsWith('http://localhost')) {
       return Response.json({ error: 'Invalid return URL' }, { status: 400 });
     }
     
@@ -111,14 +111,16 @@ Deno.serve(async (req) => {
     // Construct return URL with token (Base44 uses page name as path)
     const returnUrl = `${appBaseUrl}/DocuSignReturn?token=${token}`;
     
-    // Create recipient view request
+    // Create recipient view request for embedded signing
     const recipientViewRequest = {
       returnUrl,
       authenticationMethod: 'none',
       email: profile.email,
       userName: profile.full_name || profile.email,
       clientUserId: clientUserId,
-      recipientId: recipientId
+      recipientId: recipientId,
+      frameAncestors: [appBaseUrl.replace(/:\d+$/, '')], // Remove port for iframe embedding
+      messageOrigins: [appBaseUrl.replace(/:\d+$/, '')]
     };
     
     // Get recipient view URL
