@@ -407,6 +407,13 @@ Type "RESET" to confirm:`;
     <div className="min-h-screen bg-[#FAF7F2] py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="mb-8">
+          <Button
+            onClick={() => window.location.href = createPageUrl("Pipeline")}
+            variant="outline"
+            className="mb-4"
+          >
+            ← Back to Pipeline
+          </Button>
           <h1 className="text-3xl font-bold text-[#111827] mb-2 flex items-center gap-2">
             <Shield className="w-8 h-8 text-[#D3A029]" />
             Admin Panel
