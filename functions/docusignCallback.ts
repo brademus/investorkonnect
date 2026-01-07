@@ -33,7 +33,9 @@ Deno.serve(async (req) => {
     const sessionData = sessionResponse.data?.value;
     if (!sessionData?.user_id) {
       console.error('[DocuSign Callback] Invalid or expired state');
-      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Session%20expired`);
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Session%20expired`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const user = { id: sessionData.user_id, email: sessionData.email };
