@@ -230,6 +230,7 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] Signing token created');
     
     // Build DocuSign return URL
+    const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
     
     // Get recipient details
