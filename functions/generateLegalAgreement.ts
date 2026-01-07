@@ -58,6 +58,7 @@ const STATE_TEMPLATES = {
 
 function normalizeSignatureSection(text) {
   console.log('[normalizeSignatureSection] Starting normalization...');
+  console.log('[normalizeSignatureSection] Text length:', text.length);
   
   // Standard signature block with DocuSign anchor tokens
   const standardSignatureBlock = `
@@ -77,30 +78,34 @@ Brokerage: ____________________________ [[AGENT_BROKERAGE]]
 Date: ________________________________ [[AGENT_DATE]]
 `;
 
-  // Patterns to find signature sections (ordered by priority)
+  // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
-    /^\s*SIGNATURES\s*$/mi,
-    /^\s*\d+(\.\d+)?\s*SIGNATURES\s*$/mi,
-    /^\s*SIGNATURE\s*$/mi
+    /^\s*SIGNATURES?\s*$/im,                    // "SIGNATURES" or "SIGNATURE" alone
+    /^\s*\d+\.?\s*SIGNATURES?\s*$/im,          // "15. Signatures" or "15 Signatures"
+    /^[\s\d.]*signatures?\s*$/im                // Very flexible pattern
   ];
   
   let signatureIndex = -1;
+  let matchedPattern = null;
   
   // Find the LAST occurrence of any signature header
-  for (const pattern of signaturePatterns) {
-    const matches = [...text.matchAll(new RegExp(pattern, 'gmi'))];
+  for (let i = 0; i < signaturePatterns.length; i++) {
+    const pattern = signaturePatterns[i];
+    const matches = [...text.matchAll(pattern)];
     if (matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       signatureIndex = lastMatch.index;
-      console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex}`);
+      matchedPattern = i;
+      console.log(`[normalizeSignatureSection] Found signature with pattern ${i} at index ${signatureIndex}: "${lastMatch[0]}"`);
       break;
     }
   }
   
   if (signatureIndex >= 0) {
     // Truncate from the signature section onwards
+    const beforeLength = text.length;
     text = text.substring(0, signatureIndex);
-    console.log('[normalizeSignatureSection] Removed existing signature section');
+    console.log(`[normalizeSignatureSection] Removed existing signature section (removed ${beforeLength - text.length} chars)`);
   } else {
     console.log('[normalizeSignatureSection] No signature section found, appending to end');
   }
@@ -437,7 +442,7 @@ Deno.serve(async (req) => {
         brokerage: agentProfile.agent?.brokerage || agentProfile.broker
       },
       exhibit_a: exhibit_a,
-      version: '2.0'
+      version: '2.1-normalized-signatures'
     });
     const renderInputHash = await sha256(inputData);
     
@@ -445,7 +450,10 @@ Deno.serve(async (req) => {
     const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
     if (existing.length > 0) {
       const existingAgreement = existing[0];
-      if (existingAgreement.render_input_hash === renderInputHash && existingAgreement.final_pdf_url) {
+      // Force regeneration if version changed (signature normalization update)
+      if (existingAgreement.render_input_hash === renderInputHash && 
+          existingAgreement.final_pdf_url && 
+          existingAgreement.agreement_version === '2.1-normalized-signatures') {
         console.log('Returning existing agreement (unchanged inputs)');
         return Response.json({ 
           success: true, 
@@ -453,6 +461,7 @@ Deno.serve(async (req) => {
           regenerated: false 
         });
       }
+      console.log('Regenerating due to version update or input changes');
     }
     
     // Fetch template PDF
@@ -538,7 +547,7 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.0.0',
+      agreement_version: '2.1-normalized-signatures',
       status: 'draft',
       template_url: templateUrl,
       final_pdf_url: upload.file_url,
