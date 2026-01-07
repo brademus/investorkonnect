@@ -520,13 +520,22 @@ Type "RESET" to confirm:`;
             <Button
               onClick={async () => {
                 try {
+                  toast.info('Connecting to DocuSign...');
                   const response = await base44.functions.invoke('docusignConnect');
+
+                  console.log('[Admin] DocuSign connect response:', response);
+
                   if (response.data?.error) {
-                    toast.error(response.data.error);
+                    toast.error('DocuSign connection failed: ' + response.data.error);
                     return;
                   }
+
                   if (response.data?.authUrl) {
+                    console.log('[Admin] Redirecting to:', response.data.authUrl);
                     window.location.href = response.data.authUrl;
+                  } else {
+                    toast.error('No authorization URL received from DocuSign');
+                    console.error('[Admin] Response data:', response.data);
                   }
                 } catch (error) {
                   console.error('[Admin] DocuSign connect error:', error);
