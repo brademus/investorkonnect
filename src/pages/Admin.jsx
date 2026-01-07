@@ -581,27 +581,36 @@ Type "RESET" to confirm:`;
                 <Button
                 onClick={async () => {
                   try {
-                    // First check if already connected
+                    console.log('[Admin] DocuSign Connect button clicked');
+                    
+                    // Check if already connected
                     await loadData();
                     if (docusignConnection) {
+                      console.log('[Admin] Already connected to DocuSign');
                       toast.info('Already connected to DocuSign');
                       return;
                     }
 
+                    console.log('[Admin] Calling docusignConnect function...');
                     const response = await base44.functions.invoke('docusignConnect');
+                    console.log('[Admin] Function response:', response);
 
                     if (response.status !== 200 || response.data?.error) {
+                      console.error('[Admin] Connection failed:', response.data);
                       toast.error('Connection failed: ' + (response.data?.error || 'Server error'));
                       return;
                     }
 
                     if (response.data?.ok && response.data?.authUrl) {
+                      console.log('[Admin] Redirecting to DocuSign OAuth:', response.data.authUrl);
                       // Redirect immediately to DocuSign
                       window.location.href = response.data.authUrl;
                     } else {
+                      console.error('[Admin] No authUrl in response:', response.data);
                       toast.error('No authorization URL received');
                     }
                   } catch (error) {
+                    console.error('[Admin] Connect error:', error);
                     toast.error('Failed to connect: ' + error.message);
                   }
                 }}
