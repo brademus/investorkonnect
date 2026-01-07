@@ -582,36 +582,42 @@ Type "RESET" to confirm:`;
                 <Button
                 onClick={async () => {
                   setConnectingDocusign(true);
-                  toast.info('Step 1: Initiating DocuSign connection...');
+                  toast.info('Initiating DocuSign OAuth...');
                   
                   try {
-                    const response = await base44.functions.invoke('docusignConnect');
-                    
-                    toast.info('Step 2: Got response from server');
+                    const response = await base44.functions.invoke('docusignConnect', {
+                      returnTo: window.location.href,
+                      force: true
+                    });
                     
                     if (!response || !response.data) {
-                      toast.error('Step 3 ERROR: No response data');
+                      toast.error('No response from server');
                       setConnectingDocusign(false);
                       return;
                     }
 
                     if (response.data.error) {
-                      toast.error('Step 3 ERROR: ' + response.data.error);
+                      toast.error('Error: ' + response.data.error);
+                      setConnectingDocusign(false);
+                      return;
+                    }
+
+                    if (response.data.connected) {
+                      toast.info(response.data.message || 'Already connected');
+                      await loadData();
                       setConnectingDocusign(false);
                       return;
                     }
 
                     if (response.data.authUrl) {
-                      toast.success('Step 3: Redirecting to DocuSign...');
-                      setTimeout(() => {
-                        window.location.href = response.data.authUrl;
-                      }, 500);
+                      toast.success('Redirecting to DocuSign...');
+                      window.location.href = response.data.authUrl;
                     } else {
-                      toast.error('Step 3 ERROR: No authUrl in response - received: ' + JSON.stringify(response.data));
+                      toast.error('No authUrl received: ' + JSON.stringify(response.data));
                       setConnectingDocusign(false);
                     }
                   } catch (error) {
-                    toast.error('Step ERROR: ' + error.message);
+                    toast.error('Connection failed: ' + error.message);
                     setConnectingDocusign(false);
                   }
                 }}
