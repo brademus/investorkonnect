@@ -147,12 +147,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       toast.error('Missing user role — cannot generate agreement.');
       return;
     }
-    
+
     setGenerating(true);
     try {
       // Normalize role to lowercase
       const actorRole = (profile.user_role || '').toLowerCase();
-      
+
       // Convert commission_type to compensation_model for backend
       let compensationModel = 'FLAT_FEE';
       if (exhibitA?.commission_type === 'percentage') {
@@ -162,7 +162,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       } else if (exhibitA?.commission_type === 'net') {
         compensationModel = 'NET_SPREAD';
       }
-      
+
       const derivedExhibitA = {
         compensation_model: compensationModel,
         flat_fee_amount: exhibitA?.flat_fee_amount || 0,
@@ -176,12 +176,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         seller_commission_type: deal.proposed_terms?.seller_commission_type, 
         seller_commission_amount: deal.proposed_terms?.seller_commission_percentage || deal.proposed_terms?.seller_flat_fee
       };
-      
+
       const response = await base44.functions.invoke('generateLegalAgreement', {
         deal_id: deal.id,
         exhibit_a: derivedExhibitA
       });
-      
+
       if (response.data?.error) {
         // Show detailed error with missing placeholders if available
         if (response.data?.missing_placeholders && response.data.missing_placeholders.length > 0) {
@@ -195,29 +195,29 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         }
         return;
       }
-      
+
       if (response.data?.converted_from_net) {
         toast.warning('Net listing converted to Flat Fee due to state restrictions');
       }
-      
+
       console.log('Generate response:', response.data);
-      
+
       if (!response.data?.agreement) {
         toast.error('Agreement generated but not returned from server');
         console.error('No agreement in response:', response.data);
         return;
       }
-      
+
       if (response.data?.regenerated === false) {
         toast.info('Agreement already up to date (no changes needed)');
       } else {
-        toast.success('Agreement generated successfully');
+        toast.success('Agreement generated successfully - old DocuSign envelope cleared');
       }
-      
-      // Set agreement immediately from response
-      setAgreement(response.data.agreement);
+
+      // Reload agreement from database to get latest state
+      await loadAgreement();
       setShowGenerateModal(false);
-      
+
       if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Generate error:', error);
