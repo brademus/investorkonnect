@@ -59,14 +59,25 @@ Deno.serve(async (req) => {
     }
     const agreement = agreements[0];
     
-    // Validate redirect_url
+    // Validate redirect_url (allow localhost for dev)
     const reqUrl = new URL(req.url);
     const origin = Deno.env.get('PUBLIC_APP_URL') || `${reqUrl.protocol}//${reqUrl.host}`;
     let validatedRedirect = redirect_url || `${origin}/Pipeline`;
     
+    // For development, allow localhost:3000 redirects
+    const allowedOrigins = [origin];
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      allowedOrigins.push('http://localhost:3000', 'http://127.0.0.1:3000');
+    }
+    
     try {
-      const redirectUrl = new URL(validatedRedirect, origin);
-      if (redirectUrl.origin !== origin) {
+      const redirectUrl = new URL(validatedRedirect);
+      const isAllowed = allowedOrigins.some(allowed => {
+        const allowedUrl = new URL(allowed);
+        return redirectUrl.origin === allowedUrl.origin;
+      });
+      
+      if (!isAllowed) {
         return Response.json({ error: 'Invalid redirect URL - must be same origin' }, { status: 400 });
       }
       validatedRedirect = redirectUrl.toString();
