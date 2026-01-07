@@ -577,38 +577,43 @@ Type "RESET" to confirm:`;
                 </Button>
               </div>
             ) : (
-              <Button
-              onClick={async () => {
-                try {
-                  // First check if already connected
-                  await loadData();
-                  if (docusignConnection) {
-                    toast.info('Already connected to DocuSign');
-                    return;
-                  }
+              <div className="flex items-center gap-4">
+                <Button
+                onClick={async () => {
+                  try {
+                    // First check if already connected
+                    await loadData();
+                    if (docusignConnection) {
+                      toast.info('Already connected to DocuSign');
+                      return;
+                    }
 
-                  const response = await base44.functions.invoke('docusignConnect');
+                    const response = await base44.functions.invoke('docusignConnect');
 
-                  if (response.status !== 200 || response.data?.error) {
-                    toast.error('Connection failed: ' + (response.data?.error || 'Server error'));
-                    return;
-                  }
+                    if (response.status !== 200 || response.data?.error) {
+                      toast.error('Connection failed: ' + (response.data?.error || 'Server error'));
+                      return;
+                    }
 
-                  if (response.data?.ok && response.data?.authUrl) {
-                    // Redirect immediately to DocuSign
-                    window.location.href = response.data.authUrl;
-                  } else {
-                    toast.error('No authorization URL received');
+                    if (response.data?.ok && response.data?.authUrl) {
+                      // Redirect immediately to DocuSign
+                      window.location.href = response.data.authUrl;
+                    } else {
+                      toast.error('No authorization URL received');
+                    }
+                  } catch (error) {
+                    toast.error('Failed to connect: ' + error.message);
                   }
-                } catch (error) {
-                  toast.error('Failed to connect: ' + error.message);
-                }
-              }}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
-            >
-              <FileText className="w-4 h-4" />
-              Connect DocuSign
-              </Button>
+                }}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+              >
+                <FileText className="w-4 h-4" />
+                Connect DocuSign
+                </Button>
+                <span className="text-sm text-[#6B7280]">
+                  Connected: <strong>No</strong>
+                </span>
+              </div>
               )}
               </div>
               </div>
