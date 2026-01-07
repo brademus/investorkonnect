@@ -18,18 +18,53 @@ async function getDocuSignConnection(base44) {
   return connection;
 }
 
-async function downloadPdfAsBase64(url) {
+async function downloadPdfAsBase64AndHash(url) {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error('Failed to download agreement PDF');
   }
   const buffer = await response.arrayBuffer();
-  return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  
+  // Compute hash
+  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+  const hash = Array.from(new Uint8Array(hashBuffer))
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('');
+  
+  // Convert to base64
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  
+  return { base64, hash };
+}
+
+async function voidEnvelope(baseUri, accountId, accessToken, envelopeId, reason) {
+  try {
+    const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+    const voidResponse = await fetch(voidUrl, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        status: 'voided',
+        voidedReason: reason
+      })
+    });
+    
+    if (!voidResponse.ok) {
+      console.warn('[DocuSign] Failed to void old envelope:', envelopeId);
+    } else {
+      console.log('[DocuSign] Successfully voided old envelope:', envelopeId);
+    }
+  } catch (error) {
+    console.warn('[DocuSign] Error voiding envelope:', error.message);
+  }
 }
 
 /**
  * POST /api/functions/docusignCreateSigningSession
- * Creates embedded signing session with token-based return flow
+ * Creates embedded signing session with hash-based envelope recreation
  */
 Deno.serve(async (req) => {
   try {
@@ -42,7 +77,7 @@ Deno.serve(async (req) => {
     
     const { agreement_id, role, redirect_url } = await req.json();
     
-    console.log('[docusignCreateSigningSession]', { agreement_id, role, redirect_url });
+    console.log('[docusignCreateSigningSession] START:', { agreement_id, role, redirect_url });
     
     if (!agreement_id || !role) {
       return Response.json({ error: 'agreement_id and role required' }, { status: 400 });
@@ -58,6 +93,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Agreement not found' }, { status: 404 });
     }
     const agreement = agreements[0];
+    
+    // Determine which PDF to use (prefer final_pdf_url, fallback to pdf_file_url)
+    const pdfUrl = agreement.final_pdf_url || agreement.pdf_file_url;
+    if (!pdfUrl) {
+      console.error('[DocuSign] No PDF URL found in agreement');
+      return Response.json({ error: 'No final_pdf_url/pdf_file_url found - agreement PDF not generated yet' }, { status: 400 });
+    }
+    
+    console.log('[DocuSign] Using PDF URL:', pdfUrl);
+    
+    // Download PDF and compute current hash
+    const { base64: pdfBase64, hash: currentPdfHash } = await downloadPdfAsBase64AndHash(pdfUrl);
+    console.log('[DocuSign] Current PDF hash:', currentPdfHash);
+    console.log('[DocuSign] Stored envelope hash:', agreement.docusign_envelope_pdf_hash || 'none');
     
     // Validate redirect_url (flexible origin matching for dev/prod)
     const reqUrl = new URL(req.url);
@@ -81,11 +130,26 @@ Deno.serve(async (req) => {
     const connection = await getDocuSignConnection(base44);
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // Create or reuse envelope
+    // Decide whether to recreate envelope
     let envelopeId = agreement.docusign_envelope_id;
+    const storedHash = agreement.docusign_envelope_pdf_hash;
+    const needsNewEnvelope = !envelopeId || 
+                             !storedHash || 
+                             storedHash !== currentPdfHash || 
+                             agreement.docusign_status === 'completed' || 
+                             agreement.docusign_status === 'voided';
     
-    if (!envelopeId || agreement.docusign_status === 'completed' || agreement.docusign_status === 'voided') {
-      console.log('[DocuSign] Creating new envelope...');
+    if (needsNewEnvelope) {
+      console.log('[DocuSign] Creating new envelope (reason:', 
+        !envelopeId ? 'no envelope' : 
+        !storedHash ? 'no stored hash' :
+        storedHash !== currentPdfHash ? 'hash mismatch' :
+        'envelope completed/voided', ')');
+      
+      // Void old envelope if it exists
+      if (envelopeId && agreement.docusign_status !== 'completed' && agreement.docusign_status !== 'voided') {
+        await voidEnvelope(baseUri, accountId, accessToken, envelopeId, 'Agreement regenerated – replacing document');
+      }
       
       // Load profiles
       const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agreement.investor_profile_id });
@@ -97,24 +161,18 @@ Deno.serve(async (req) => {
         return Response.json({ error: 'Investor or agent profile not found' }, { status: 404 });
       }
       
-      // Download PDF (use signing_pdf_url which has the signature page)
-      const pdfUrl = agreement.signing_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url;
-      if (!pdfUrl) {
-        return Response.json({ error: 'Agreement PDF not generated yet' }, { status: 400 });
-      }
-
-      const pdfBase64 = await downloadPdfAsBase64(pdfUrl);
-      
       // Generate unique clientUserIds for embedded signing
       const investorClientUserId = `investor_${agreement.id}_${Date.now()}`;
       const agentClientUserId = `agent_${agreement.id}_${Date.now()}`;
       
-      // Create envelope with both signers
+      // Create envelope with both signers - use descriptive document name
+      const docName = `InvestorKonnect Internal Agreement – ${agreement.governing_state} – ${agreement.deal_id} – v${agreement.agreement_version || '2.1'}.pdf`;
+      
       const envelopeDefinition = {
         emailSubject: `Sign Agreement - ${agreement.governing_state} Deal`,
         documents: [{
           documentBase64: pdfBase64,
-          name: 'Investor-Agent Operating Agreement',
+          name: docName,
           fileExtension: 'pdf',
           documentId: '1'
         }],
@@ -228,11 +286,12 @@ Deno.serve(async (req) => {
       const envelope = await createResponse.json();
       envelopeId = envelope.envelopeId;
       
-      console.log('[DocuSign] Envelope created:', envelopeId);
+      console.log('[DocuSign] NEW envelope created:', envelopeId, '- PDF hash:', currentPdfHash.substring(0, 16) + '...');
       
-      // Update agreement with envelope details
+      // Update agreement with new envelope details
       await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
         docusign_envelope_id: envelopeId,
+        docusign_envelope_pdf_hash: currentPdfHash,
         docusign_status: 'sent',
         investor_recipient_id: '1',
         agent_recipient_id: '2',
@@ -245,7 +304,7 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString(),
             actor: user.email,
             action: 'envelope_created',
-            details: `DocuSign envelope ${envelopeId} created`
+            details: `DocuSign envelope ${envelopeId} created with PDF hash ${currentPdfHash.substring(0, 16)}...`
           }
         ]
       });
@@ -253,6 +312,8 @@ Deno.serve(async (req) => {
       // Reload agreement
       const updated = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
       Object.assign(agreement, updated[0]);
+    } else {
+      console.log('[DocuSign] REUSING existing envelope:', envelopeId, '- hash matched');
     }
     
     // Create signing token
@@ -326,15 +387,16 @@ Deno.serve(async (req) => {
           timestamp: new Date().toISOString(),
           actor: user.email,
           action: 'signing_session_created',
-          details: `${role} signing session created`
+          details: `${role} signing session created for envelope ${envelopeId}`
         }
       ]
     });
     
-    console.log('[DocuSign] Signing session created successfully');
+    console.log('[DocuSign] Signing session created successfully - returning URL');
     
     return Response.json({ 
-      signing_url: viewData.url
+      signing_url: viewData.url,
+      envelope_status: needsNewEnvelope ? 'Agreement PDF changed; new envelope created' : 'DocuSign envelope reused; hash matched'
     });
   } catch (error) {
     console.error('[docusignCreateSigningSession] Error:', error);
