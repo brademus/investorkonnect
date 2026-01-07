@@ -1,7 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 async function getDocuSignConnection(base44) {
-  // Get the most recent DocuSign connection from any admin user
   const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
   
   if (!connections || connections.length === 0) {
@@ -9,8 +8,6 @@ async function getDocuSignConnection(base44) {
   }
   
   const connection = connections[0];
-  
-  // Check if token is expired
   const now = new Date();
   const expiresAt = new Date(connection.expires_at);
   
