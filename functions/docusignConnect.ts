@@ -56,11 +56,16 @@ Deno.serve(async (req) => {
     authUrl.searchParams.set('client_id', integrationKey);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('state', state);
-    
-    console.log('[DocuSign Connect] Redirecting to:', authUrl.toString());
+
+    console.log('[DocuSign Connect] Returning OAuth URL:', authUrl.toString());
     console.log('[DocuSign Connect] Redirect URI configured:', redirectUri);
-    
-    return Response.redirect(authUrl.toString(), 302);
+
+    // Return the URL as JSON so the frontend can redirect
+    // This preserves the auth context through the SDK call
+    return Response.json({ 
+      ok: true,
+      authUrl: authUrl.toString() 
+    });
   } catch (error) {
     console.error('[DocuSign Connect] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });

@@ -518,8 +518,20 @@ Type "RESET" to confirm:`;
               Connect your DocuSign account to enable electronic signature functionality for legal agreements.
             </p>
             <Button
-              onClick={() => {
-                window.location.assign('/api/functions/docusignConnect');
+              onClick={async () => {
+                try {
+                  const response = await base44.functions.invoke('docusignConnect');
+                  if (response.data?.error) {
+                    toast.error(response.data.error);
+                    return;
+                  }
+                  if (response.data?.authUrl) {
+                    window.location.href = response.data.authUrl;
+                  }
+                } catch (error) {
+                  console.error('[Admin] DocuSign connect error:', error);
+                  toast.error('Failed to connect DocuSign: ' + error.message);
+                }
               }}
               className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
             >
