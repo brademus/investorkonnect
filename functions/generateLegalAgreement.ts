@@ -80,9 +80,9 @@ Date: ________________________________ [[AGENT_DATE]]
 
   // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
-    /^\s*SIGNATURES?\s*$/im,                    // "SIGNATURES" or "SIGNATURE" alone
-    /^\s*\d+\.?\s*SIGNATURES?\s*$/im,          // "15. Signatures" or "15 Signatures"
-    /^[\s\d.]*signatures?\s*$/im                // Very flexible pattern
+    /^\s*SIGNATURES?\s*$/gim,                    // "SIGNATURES" or "SIGNATURE" alone
+    /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,          // "15. Signatures" or "15 Signatures"
+    /^[\s\d.]*signatures?\s*$/gim                // Very flexible pattern
   ];
   
   let signatureIndex = -1;
