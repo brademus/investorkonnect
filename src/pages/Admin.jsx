@@ -33,6 +33,7 @@ function AdminContent() {
   const [wipingData, setWipingData] = useState(false);
   const [docusignConnection, setDocusignConnection] = useState(null);
   const [checkingDocusign, setCheckingDocusign] = useState(true);
+  const [connectingDocusign, setConnectingDocusign] = useState(false);
   const [stats, setStats] = useState({
     totalUsers: 0,
     totalInvestors: 0,
@@ -580,44 +581,45 @@ Type "RESET" to confirm:`;
               <div className="flex items-center gap-4">
                 <Button
                 onClick={async () => {
+                  setConnectingDocusign(true);
+                  toast.info('Step 1: Initiating DocuSign connection...');
+                  
                   try {
-                    console.log('[Admin] DocuSign Connect button clicked');
-                    
-                    // Check if already connected
-                    await loadData();
-                    if (docusignConnection) {
-                      console.log('[Admin] Already connected to DocuSign');
-                      toast.info('Already connected to DocuSign');
-                      return;
-                    }
-
-                    console.log('[Admin] Calling docusignConnect function...');
                     const response = await base44.functions.invoke('docusignConnect');
-                    console.log('[Admin] Function response:', response);
-
-                    if (response.status !== 200 || response.data?.error) {
-                      console.error('[Admin] Connection failed:', response.data);
-                      toast.error('Connection failed: ' + (response.data?.error || 'Server error'));
+                    
+                    toast.info('Step 2: Got response from server');
+                    
+                    if (!response || !response.data) {
+                      toast.error('Step 3 ERROR: No response data');
+                      setConnectingDocusign(false);
                       return;
                     }
 
-                    if (response.data?.ok && response.data?.authUrl) {
-                      console.log('[Admin] Redirecting to DocuSign OAuth:', response.data.authUrl);
-                      // Redirect immediately to DocuSign
-                      window.location.href = response.data.authUrl;
+                    if (response.data.error) {
+                      toast.error('Step 3 ERROR: ' + response.data.error);
+                      setConnectingDocusign(false);
+                      return;
+                    }
+
+                    if (response.data.authUrl) {
+                      toast.success('Step 3: Redirecting to DocuSign...');
+                      setTimeout(() => {
+                        window.location.href = response.data.authUrl;
+                      }, 500);
                     } else {
-                      console.error('[Admin] No authUrl in response:', response.data);
-                      toast.error('No authorization URL received');
+                      toast.error('Step 3 ERROR: No authUrl in response - received: ' + JSON.stringify(response.data));
+                      setConnectingDocusign(false);
                     }
                   } catch (error) {
-                    console.error('[Admin] Connect error:', error);
-                    toast.error('Failed to connect: ' + error.message);
+                    toast.error('Step ERROR: ' + error.message);
+                    setConnectingDocusign(false);
                   }
                 }}
-                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5"
+                disabled={connectingDocusign}
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-[#D3A029] px-6 py-3 text-base font-semibold text-white shadow-lg shadow-[#D3A029]/30 transition-all hover:bg-[#B98413] hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50"
               >
-                <FileText className="w-4 h-4" />
-                Connect DocuSign
+                {connectingDocusign ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+                {connectingDocusign ? 'Connecting...' : 'Connect DocuSign'}
                 </Button>
                 <span className="text-sm text-[#6B7280]">
                   Connected: <strong>No</strong>
