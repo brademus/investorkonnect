@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
     }
     
     if (!code || !state) {
-      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Missing%20code%20or%20state`);
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=Missing%20code%20or%20state`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     // Retrieve user info from session using state
