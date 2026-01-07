@@ -519,7 +519,6 @@ Deno.serve(async (req) => {
     // Generate new PDF from filled text
     console.log('Generating final PDF from filled text...');
     const finalPdfBytes = await generatePdfFromText(templateText, deal.id);
-    const pdfSha256 = await sha256(new TextDecoder().decode(finalPdfBytes));
     
     // Upload final PDF
     const pdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
@@ -527,6 +526,13 @@ Deno.serve(async (req) => {
     const upload = await base44.integrations.Core.UploadFile({ file: pdfFile });
     
     console.log('Final PDF uploaded:', upload.file_url);
+    
+    // Compute PDF hash for DocuSign envelope tracking
+    const hashBuffer = await crypto.subtle.digest('SHA-256', finalPdfBytes);
+    const pdfSha256 = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    console.log('PDF SHA-256:', pdfSha256);
     
     // Save agreement - clear DocuSign data to force new envelope with updated PDF
     const agreementData = {
