@@ -134,6 +134,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   const handleGenerate = async () => {
+    toast.info('Generate button clicked - starting...');
     console.log('[handleGenerate] Called with:', { deal: deal?.id, profile: profile?.id, exhibitA });
     
     // Validate required params
