@@ -93,7 +93,9 @@ Deno.serve(async (req) => {
     
     if (!userInfoResponse.ok) {
       console.error('[DocuSign Callback] User info fetch failed');
-      return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=User%20info%20failed`);
+      const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=User%20info%20failed`;
+      const html = `<!DOCTYPE html><html><head><script>window.location.href="${redirectUrl}";</script></head><body>Redirecting...</body></html>`;
+      return new Response(html, { status: 200, headers: { 'Content-Type': 'text/html' } });
     }
     
     const userInfo = await userInfoResponse.json();
