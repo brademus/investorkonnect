@@ -134,6 +134,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   const handleGenerate = async () => {
+    console.log('[handleGenerate] Called with:', { deal: deal?.id, profile: profile?.id, exhibitA });
+    
     // Validate required params
     if (!deal?.id) {
       toast.error('Missing deal ID — cannot generate agreement.');
@@ -145,6 +147,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     }
     if (!profile?.user_role) {
       toast.error('Missing user role — cannot generate agreement.');
+      return;
+    }
+    
+    if (!exhibitA) {
+      toast.error('Missing exhibit data — cannot generate agreement.');
       return;
     }
 
