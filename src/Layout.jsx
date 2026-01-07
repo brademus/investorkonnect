@@ -6,8 +6,14 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare } from "lucide-react";
+import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
 import HelpPanel from "@/components/HelpPanel";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
@@ -131,14 +137,32 @@ function LayoutContent({ children }) {
                 >
                   <ShieldCheck className="w-4 h-4" />
                   <span className="hidden sm:inline text-sm">Admin</span>
-                </Link>
-                )}
+                  </Link>
+                  )}
 
-                <Link to={createPageUrl("AccountProfile")}>
-                <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#0D0D0D] hover:bg-[#1F1F1F]">
-                  <User className="w-4 h-4 text-[#E3C567]" />
-                </button>
-              </Link>
+                  <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#0D0D0D] hover:bg-[#1F1F1F]">
+                      <User className="w-4 h-4 text-[#E3C567]" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="bg-[#0D0D0D] border-[#1F1F1F]">
+                    {isAdmin && (
+                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Admin")} className="text-[#E3C567] cursor-pointer">
+                        <ShieldCheck className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </DropdownMenuItem>
+                    )}
+                    <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountProfile")} className="text-[#FAFAFA] cursor-pointer">
+                      <User className="w-4 h-4 mr-2" />
+                      Account
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Logout")} className="text-[#FAFAFA] cursor-pointer">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                  </DropdownMenu>
             </div>
           </div>
         </header>
