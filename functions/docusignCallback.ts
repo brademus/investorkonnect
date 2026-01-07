@@ -131,8 +131,28 @@ Deno.serve(async (req) => {
     console.log('[DocuSign Callback] Connection stored for user:', user.email);
     console.log('[DocuSign Callback] Account ID:', account.account_id);
     console.log('[DocuSign Callback] Base URI:', account.base_uri);
-    
-    return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=connected&account=${account.account_id}`);
+
+    // Return HTML with auto-redirect to preserve client-side auth
+    const redirectUrl = `${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=connected&account=${account.account_id}`;
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>DocuSign Connected</title>
+          <script>
+            window.location.href = "${redirectUrl}";
+          </script>
+        </head>
+        <body>
+          <p>DocuSign connected successfully! Redirecting...</p>
+        </body>
+      </html>
+    `;
+
+    return new Response(html, {
+      status: 200,
+      headers: { 'Content-Type': 'text/html' }
+    });
   } catch (error) {
     console.error('[DocuSign Callback] Error:', error);
     return Response.redirect(`${Deno.env.get('PUBLIC_APP_URL')}/Admin?docusign=error&message=${encodeURIComponent(error.message)}`);
