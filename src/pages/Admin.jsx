@@ -51,6 +51,22 @@ function AdminContent() {
     checkAdminAccess();
   }, []);
 
+  // Check for DocuSign connection success on page load
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('docusign') === 'connected') {
+      toast.success('DocuSign connected successfully!');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      // Reload data to show updated connection
+      loadData();
+    } else if (urlParams.get('docusign') === 'error') {
+      const message = urlParams.get('message') || 'Unknown error';
+      toast.error('DocuSign connection failed: ' + message);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   const checkAdminAccess = async () => {
     try {
       const user = await base44.auth.me();
