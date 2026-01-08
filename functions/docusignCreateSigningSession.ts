@@ -95,13 +95,23 @@ Deno.serve(async (req) => {
     const agreement = agreements[0];
     
     // Use DocuSign-specific PDF (with invisible anchors)
-    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
+    // CRITICAL: Only use docusign_pdf_url or signing_pdf_url (NOT final_pdf_url which has no anchors)
+    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url;
     if (!pdfUrl) {
       console.error('[DocuSign] No DocuSign PDF URL found in agreement');
-      return Response.json({ error: 'No docusign_pdf_url found - agreement PDF not generated yet' }, { status: 400 });
+      console.error('[DocuSign] Available URLs:', {
+        docusign_pdf_url: agreement.docusign_pdf_url || 'MISSING',
+        signing_pdf_url: agreement.signing_pdf_url || 'MISSING',
+        final_pdf_url: agreement.final_pdf_url || 'none'
+      });
+      return Response.json({ 
+        error: 'DocuSign PDF not generated. Please regenerate the agreement to create a new signing PDF with anchors.',
+        details: 'The agreement must be regenerated to include invisible DocuSign anchors'
+      }, { status: 400 });
     }
     
     console.log('[DocuSign] Using DocuSign PDF URL:', pdfUrl);
+    console.log('[DocuSign] ✓ Confirmed using DocuSign-specific PDF (has invisible anchors)');
     
     // Download DocuSign PDF and compute current hash
     const { base64: pdfBase64, hash: currentPdfHash } = await downloadPdfAsBase64AndHash(pdfUrl);
