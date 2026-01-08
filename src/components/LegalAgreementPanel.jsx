@@ -374,7 +374,7 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
         {agreement && getStatusDisplay()}
       </div>
       
-      {!agreement && isInvestor && (
+      {!agreement && !loading && isInvestor && (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
           <p className="text-[#808080] mb-4">No agreement generated yet</p>
@@ -386,7 +386,7 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
         </div>
       )}
       
-      {!agreement && !isInvestor && (
+      {!agreement && !loading && !isInvestor && (
         <div className="text-center py-8">
           <Clock className="w-12 h-12 text-[#808080] mx-auto mb-4" />
           <p className="text-[#808080] mb-2">Waiting for investor to generate agreement</p>

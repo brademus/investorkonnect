@@ -903,36 +903,10 @@ ${dealContext}`;
               {activeTab === 'details' && (
                 <div className="space-y-6">
                   {/* Agreement Status CTA (Investor Only) - Phase-Based Display */}
-                  {profile?.user_role === 'investor' && currentRoom?.deal_id && (
+                  {profile?.user_role === 'investor' && currentRoom?.deal_id && agreement && (
                     <>
-                      {/* CRITICAL: Only show Generate CTA if no agreement exists OR agreement is draft */}
-                      {(!agreement || agreement.status === 'draft') && (
-                        <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Shield className="w-6 h-6 text-[#E3C567]" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="text-lg font-bold text-[#E3C567] mb-2">
-                                Ready to Formalize This Deal?
-                              </h4>
-                              <p className="text-sm text-[#FAFAFA]/90 mb-4">
-                                Generate your Investor-Agent Operating Agreement to lock in terms, unlock full property details, and move forward with confidence.
-                              </p>
-                              <Button
-                                onClick={() => setActiveTab('agreement')}
-                                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full px-6 py-2.5 flex items-center gap-2"
-                              >
-                                <FileText className="w-4 h-4" />
-                                Generate Agreement
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
                       {/* Phase: Investor Signed, Agent Pending - MUST SHOW THIS */}
-                      {agreement && (agreement.status === 'investor_signed') && (
+                      {agreement.status === 'investor_signed' && (
                         <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center flex-shrink-0">
