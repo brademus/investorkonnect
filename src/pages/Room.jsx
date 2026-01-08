@@ -342,8 +342,11 @@ export default function Room() {
       setCurrentRoom(updatedRoom);
       
       console.log('[Room] ✅ STATE REFRESH COMPLETE:', {
-        agreement_status: agreement?.status || 'none',
-        is_fully_signed: updatedRoom.is_fully_signed
+        room_agreement_status: updatedRoom.agreement_status,
+        live_agreement_status: agreement?.status || 'none',
+        is_fully_signed: updatedRoom.is_fully_signed,
+        investor_signed: agreement?.investor_signed_at ? 'YES' : 'NO',
+        agent_signed: agreement?.agent_signed_at ? 'YES' : 'NO'
       });
       
     } catch (error) {
@@ -437,14 +440,26 @@ export default function Room() {
                   is_fully_signed: deal.is_fully_signed
                 });
                 
-                // Load agreement on initial room load
-                const params = new URLSearchParams({ deal_id: room.deal_id });
-                const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
-                
+                // Load agreement on initial room load with cache busting
+                const cacheBuster = Date.now();
+                const params = new URLSearchParams({ deal_id: room.deal_id, _cb: cacheBuster });
+                const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`, {
+                  cache: 'no-store',
+                  headers: { 'Cache-Control': 'no-cache' }
+                });
+
                 if (agreementResponse.ok) {
                   const agreementData = await agreementResponse.json();
-                  console.log('[Room] Initial agreement load:', agreementData.agreement?.status);
+                  console.log('[Room] Initial agreement load:', {
+                    status: agreementData.agreement?.status,
+                    investor_signed: agreementData.agreement?.investor_signed_at,
+                    agent_signed: agreementData.agreement?.agent_signed_at,
+                    is_fully_signed: agreementData.agreement?.status === 'fully_signed' || agreementData.agreement?.status === 'attorney_review_pending'
+                  });
                   setAgreement(agreementData.agreement || null);
+                } else {
+                  console.log('[Room] No agreement found or error loading');
+                  setAgreement(null);
                 }
               } else {
                 setCurrentRoom(room);
