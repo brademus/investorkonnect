@@ -226,7 +226,7 @@ export default function Room() {
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
-  const [agreement, setAgreement] = useState(null);
+  const [agreement, setAgreement] = useState(undefined); // undefined = loading, null = confirmed none, object = exists
   
   const refreshRoomState = async () => {
     if (!roomId) return;
