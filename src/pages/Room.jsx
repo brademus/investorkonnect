@@ -227,12 +227,15 @@ export default function Room() {
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreement, setAgreement] = useState(undefined); // undefined = loading, null = confirmed none, object = exists
+  const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   
-  const refreshRoomState = async () => {
+  const refreshRoomState = async (freshAgreementFromSync = null) => {
     if (!roomId) return;
     
     try {
-      console.log('[Room] 🔄 FULL STATE REFRESH STARTING...');
+      console.log('[Room] 🔄 FULL STATE REFRESH STARTING...', { 
+        hasFreshAgreement: !!freshAgreementFromSync 
+      });
       
       // 1. Refetch room data directly from database
       const roomData = await base44.entities.Room.filter({ id: roomId });
@@ -267,6 +270,7 @@ export default function Room() {
         setCurrentRoom(freshRoom);
         setDeal(null);
         setAgreement(null);
+        setAgreementPanelKey(prev => prev + 1);
         return;
       }
       
@@ -278,45 +282,58 @@ export default function Room() {
       
       setDeal(freshDeal);
       
-      // 3. CRITICAL: Fetch agreement directly with cache busting
-      console.log('[Room] 📜 Fetching agreement for deal:', freshRoom.deal_id);
-      const cacheBuster = Date.now();
-      const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}&_cb=${cacheBuster}`;
-      const agreementResponse = await fetch(agreementUrl, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
+      // 3. CRITICAL: Use fresh agreement from sync if provided, otherwise fetch
+      let finalAgreement = null;
       
-      console.log('[Room] Agreement fetch response:', {
-        ok: agreementResponse.ok,
-        status: agreementResponse.status
-      });
-      
-      if (!agreementResponse.ok) {
-        console.error('[Room] ❌ Agreement fetch failed:', agreementResponse.status);
-        setAgreement(null);
+      if (freshAgreementFromSync) {
+        console.log('[Room] ✅ Using fresh agreement from DocuSign sync:', {
+          id: freshAgreementFromSync.id,
+          status: freshAgreementFromSync.status,
+          investor_signed_at: freshAgreementFromSync.investor_signed_at,
+          agent_signed_at: freshAgreementFromSync.agent_signed_at
+        });
+        finalAgreement = freshAgreementFromSync;
       } else {
-        const agreementData = await agreementResponse.json();
-        console.log('[Room] 📜 Agreement response:', agreementData);
+        console.log('[Room] 📜 Fetching agreement for deal:', freshRoom.deal_id);
+        const cacheBuster = Date.now();
+        const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}&_cb=${cacheBuster}`;
+        const agreementResponse = await fetch(agreementUrl, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' }
+        });
         
-        if (agreementData.agreement) {
-          console.log('[Room] ✅ AGREEMENT FOUND:', {
-            id: agreementData.agreement.id,
-            status: agreementData.agreement.status,
-            investor_signed_at: agreementData.agreement.investor_signed_at,
-            agent_signed_at: agreementData.agreement.agent_signed_at
-          });
-          setAgreement(agreementData.agreement);
-          
-          // Force update currentRoom.is_fully_signed based on agreement
-          if (agreementData.agreement.status === 'fully_signed' || agreementData.agreement.status === 'attorney_review_pending') {
-            freshRoom.is_fully_signed = true;
-            freshDeal.is_fully_signed = true;
-          }
+        console.log('[Room] Agreement fetch response:', {
+          ok: agreementResponse.ok,
+          status: agreementResponse.status
+        });
+        
+        if (!agreementResponse.ok) {
+          console.error('[Room] ❌ Agreement fetch failed:', agreementResponse.status);
         } else {
-          console.log('[Room] ⚠️ No agreement in response (agreement is null)');
-          setAgreement(null);
+          const agreementData = await agreementResponse.json();
+          console.log('[Room] 📜 Agreement response:', agreementData);
+          
+          if (agreementData.agreement) {
+            console.log('[Room] ✅ AGREEMENT FOUND:', {
+              id: agreementData.agreement.id,
+              status: agreementData.agreement.status,
+              investor_signed_at: agreementData.agreement.investor_signed_at,
+              agent_signed_at: agreementData.agreement.agent_signed_at
+            });
+            finalAgreement = agreementData.agreement;
+          } else {
+            console.log('[Room] ⚠️ No agreement in response (agreement is null)');
+          }
         }
+      }
+      
+      setAgreement(finalAgreement);
+      setAgreementPanelKey(prev => prev + 1); // Force LegalAgreementPanel remount
+      
+      // Force update is_fully_signed based on agreement
+      if (finalAgreement && (finalAgreement.status === 'fully_signed' || finalAgreement.status === 'attorney_review_pending')) {
+        freshRoom.is_fully_signed = true;
+        freshDeal.is_fully_signed = true;
       }
       
       // 4. Update currentRoom with all fresh data
@@ -343,10 +360,10 @@ export default function Room() {
       
       console.log('[Room] ✅ STATE REFRESH COMPLETE:', {
         room_agreement_status: updatedRoom.agreement_status,
-        live_agreement_status: agreement?.status || 'none',
+        live_agreement_status: finalAgreement?.status || 'none',
         is_fully_signed: updatedRoom.is_fully_signed,
-        investor_signed: agreement?.investor_signed_at ? 'YES' : 'NO',
-        agent_signed: agreement?.agent_signed_at ? 'YES' : 'NO'
+        investor_signed: finalAgreement?.investor_signed_at ? 'YES' : 'NO',
+        agent_signed: finalAgreement?.agent_signed_at ? 'YES' : 'NO'
       });
       
     } catch (error) {
@@ -360,23 +377,34 @@ export default function Room() {
     if (params.get('signed') && roomId && currentRoom?.deal_id) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
       
-      // Immediate sync with DocuSign
+      // Immediate sync with DocuSign and use returned agreement
       const doSync = async () => {
         try {
           // First, sync with DocuSign to ensure latest status
           console.log('[Room] 📡 Syncing with DocuSign...');
-          await base44.functions.invoke('docusignSyncEnvelope', {
+          const syncResponse = await base44.functions.invoke('docusignSyncEnvelope', {
             deal_id: currentRoom.deal_id
           });
           console.log('[Room] ✅ DocuSign sync complete');
+          
+          // Use the fresh agreement returned by sync
+          const freshAgreement = syncResponse?.data?.agreement;
+          if (freshAgreement) {
+            console.log('[Room] 🎯 Using fresh agreement from sync:', {
+              id: freshAgreement.id,
+              status: freshAgreement.status
+            });
+          }
+          
+          // Refresh UI state with fresh agreement
+          await refreshRoomState(freshAgreement);
+          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
         } catch (error) {
           console.error('[Room] DocuSign sync failed:', error);
+          // Still try to refresh even if sync fails
+          await refreshRoomState();
         }
-        
-        // Then refresh UI state
-        await refreshRoomState();
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
       };
       
       doSync();
@@ -1415,6 +1443,7 @@ ${dealContext}`;
                   {/* LegalAgreement Panel (v1.0.1) */}
                   {currentRoom?.deal_id && deal && (
                     <LegalAgreementPanel
+                      key={agreementPanelKey}
                       deal={deal}
                       profile={profile}
                       agreement={agreement}
