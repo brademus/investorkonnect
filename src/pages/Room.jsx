@@ -232,77 +232,118 @@ export default function Room() {
     if (!roomId) return;
     
     try {
-      console.log('[Room] 🔄 Refreshing room state...');
+      console.log('[Room] 🔄 FULL STATE REFRESH STARTING...');
       
-      // 1. Refetch room data
+      // 1. Refetch room data directly from database
       const roomData = await base44.entities.Room.filter({ id: roomId });
       if (!roomData || roomData.length === 0) {
-        console.error('[Room] Room not found');
+        console.error('[Room] ❌ Room not found');
         return;
       }
       
       const freshRoom = roomData[0];
-      console.log('[Room] Fresh room data:', {
+      console.log('[Room] 📦 Fresh room:', {
+        id: freshRoom.id,
         request_status: freshRoom.request_status,
         agreement_status: freshRoom.agreement_status,
-        is_fully_signed: freshRoom.is_fully_signed
+        is_fully_signed: freshRoom.is_fully_signed,
+        deal_id: freshRoom.deal_id
       });
       
+      if (!freshRoom.deal_id) {
+        console.error('[Room] ❌ No deal_id in room');
+        setCurrentRoom(freshRoom);
+        return;
+      }
+      
       // 2. Refetch deal data with access control
-      if (freshRoom.deal_id) {
-        const response = await base44.functions.invoke('getDealDetailsForUser', {
-          dealId: freshRoom.deal_id
-        });
-        const freshDeal = response.data;
+      const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+        dealId: freshRoom.deal_id
+      });
+      const freshDeal = dealResponse.data;
+      
+      if (!freshDeal) {
+        console.error('[Room] ❌ Deal not found or access denied');
+        setCurrentRoom(freshRoom);
+        setDeal(null);
+        setAgreement(null);
+        return;
+      }
+      
+      console.log('[Room] 📄 Fresh deal:', {
+        id: freshDeal.id,
+        is_fully_signed: freshDeal.is_fully_signed,
+        title: freshDeal.title
+      });
+      
+      setDeal(freshDeal);
+      
+      // 3. CRITICAL: Fetch agreement directly
+      console.log('[Room] 📜 Fetching agreement for deal:', freshRoom.deal_id);
+      const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}`;
+      const agreementResponse = await fetch(agreementUrl);
+      
+      console.log('[Room] Agreement fetch response:', {
+        ok: agreementResponse.ok,
+        status: agreementResponse.status
+      });
+      
+      if (!agreementResponse.ok) {
+        console.error('[Room] ❌ Agreement fetch failed:', agreementResponse.status);
+        setAgreement(null);
+      } else {
+        const agreementData = await agreementResponse.json();
+        console.log('[Room] 📜 Agreement response:', agreementData);
         
-        if (freshDeal) {
-          setDeal(freshDeal);
-          console.log('[Room] Fresh deal loaded, is_fully_signed:', freshDeal.is_fully_signed);
-          
-          // Update currentRoom with fresh deal data
-          const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
-            ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
-            : freshDeal.title;
-          
-          setCurrentRoom({
-            ...freshRoom,
-            title: displayTitle,
-            property_address: freshDeal.property_address,
-            city: freshDeal.city,
-            state: freshDeal.state,
-            county: freshDeal.county,
-            zip: freshDeal.zip,
-            budget: freshDeal.purchase_price,
-            pipeline_stage: freshDeal.pipeline_stage,
-            closing_date: freshDeal.key_dates?.closing_date,
-            deal_assigned_agent_id: freshDeal.agent_id,
-            is_fully_signed: freshDeal.is_fully_signed
+        if (agreementData.agreement) {
+          console.log('[Room] ✅ AGREEMENT FOUND:', {
+            id: agreementData.agreement.id,
+            status: agreementData.agreement.status,
+            investor_signed_at: agreementData.agreement.investor_signed_at,
+            agent_signed_at: agreementData.agreement.agent_signed_at
           });
+          setAgreement(agreementData.agreement);
+          
+          // Force update currentRoom.is_fully_signed based on agreement
+          if (agreementData.agreement.status === 'fully_signed' || agreementData.agreement.status === 'attorney_review_pending') {
+            freshRoom.is_fully_signed = true;
+            freshDeal.is_fully_signed = true;
+          }
         } else {
-          setCurrentRoom(freshRoom);
-        }
-        
-        // 3. Refetch agreement
-        const params = new URLSearchParams({ deal_id: freshRoom.deal_id });
-        const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
-        
-        if (agreementResponse.ok) {
-          const agreementData = await agreementResponse.json();
-          console.log('[Room] ✓ Fresh agreement loaded:', {
-            status: agreementData.agreement?.status,
-            investor_signed: !!agreementData.agreement?.investor_signed_at,
-            agent_signed: !!agreementData.agreement?.agent_signed_at
-          });
-          setAgreement(agreementData.agreement || null);
-        } else {
-          console.log('[Room] No agreement found');
+          console.log('[Room] ⚠️ No agreement in response (agreement is null)');
           setAgreement(null);
         }
       }
       
-      console.log('[Room] ✅ Room state refresh complete');
+      // 4. Update currentRoom with all fresh data
+      const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
+        ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
+        : freshDeal.title;
+      
+      const updatedRoom = {
+        ...freshRoom,
+        title: displayTitle,
+        property_address: freshDeal.property_address,
+        city: freshDeal.city,
+        state: freshDeal.state,
+        county: freshDeal.county,
+        zip: freshDeal.zip,
+        budget: freshDeal.purchase_price,
+        pipeline_stage: freshDeal.pipeline_stage,
+        closing_date: freshDeal.key_dates?.closing_date,
+        deal_assigned_agent_id: freshDeal.agent_id,
+        is_fully_signed: freshDeal.is_fully_signed
+      };
+      
+      setCurrentRoom(updatedRoom);
+      
+      console.log('[Room] ✅ STATE REFRESH COMPLETE:', {
+        agreement_status: agreement?.status || 'none',
+        is_fully_signed: updatedRoom.is_fully_signed
+      });
+      
     } catch (error) {
-      console.error('[Room] Failed to refresh room state:', error);
+      console.error('[Room] ❌ Failed to refresh room state:', error);
     }
   };
   

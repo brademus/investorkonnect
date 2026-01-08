@@ -108,41 +108,42 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
   };
   
   const loadAgreement = async () => {
-    // Validate required params
     if (!deal?.id) {
-      setLoading(false);
-      return;
-    }
-    if (!profile?.user_id) {
-      setLoading(false);
-      return;
-    }
-    if (!profile?.user_role) {
       setLoading(false);
       return;
     }
     
     try {
       setLoading(true);
-      const actorRole = (profile.user_role || '').toLowerCase();
-      const params = new URLSearchParams({ 
-        deal_id: deal.id,
-        role: actorRole
-      });
+      console.log('[LegalAgreementPanel] Loading agreement for deal:', deal.id);
+      
+      // Use consistent param naming - backend only needs deal_id
+      const params = new URLSearchParams({ deal_id: deal.id });
       const response = await fetch(`/api/functions/getLegalAgreement?${params}`);
       
+      console.log('[LegalAgreementPanel] Agreement response:', {
+        ok: response.ok,
+        status: response.status
+      });
+      
       if (!response.ok) {
-        console.error('Failed to load agreement:', response.status);
+        console.error('[LegalAgreementPanel] Failed to load agreement:', response.status);
         setAgreement(null);
         setLoading(false);
         return;
       }
       
       const data = await response.json();
-      console.log('[LegalAgreementPanel] Loaded agreement:', data.agreement?.status);
+      console.log('[LegalAgreementPanel] Agreement data:', {
+        has_agreement: !!data.agreement,
+        status: data.agreement?.status,
+        investor_signed: !!data.agreement?.investor_signed_at,
+        agent_signed: !!data.agreement?.agent_signed_at
+      });
+      
       setAgreement(data.agreement || null);
     } catch (error) {
-      console.error('Failed to load agreement:', error);
+      console.error('[LegalAgreementPanel] Error loading agreement:', error);
       setAgreement(null);
     } finally {
       setLoading(false);
