@@ -65,16 +65,16 @@ function normalizeSignatureSection(text) {
 SIGNATURES
 
 Investor:
-Signature: ____________________   [[INV_SIGN]]
-Printed Name: _________________   [[INV_PRINT]]
-Date: ________________________   [[INV_DATE]]
+Signature: ____________________   [[INVESTOR_SIGN]]
+Printed Name: _________________   [[INVESTOR_PRINT]]
+Date: ________________________   [[INVESTOR_DATE]]
 
 Agent:
-Signature: ____________________   [[AGT_SIGN]]
-Printed Name: _________________   [[AGT_PRINT]]
-License No.: __________________   [[AGT_LIC]]
-Brokerage: ____________________   [[AGT_BROKER]]
-Date: ________________________   [[AGT_DATE]]
+Signature: ____________________   [[AGENT_SIGN]]
+Printed Name: _________________   [[AGENT_PRINT]]
+License No.: __________________   [[AGENT_LICENSE]]
+Brokerage: ____________________   [[AGENT_BROKERAGE]]
+Date: ________________________   [[AGENT_DATE]]
 `;
   
   // Patterns to find signature sections (case-insensitive, more flexible)
