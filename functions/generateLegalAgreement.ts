@@ -119,7 +119,7 @@ async function sha256(data) {
   return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generatePdfFromText(text, dealId) {
+async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
   const pdfDoc = await PDFDocument.create();
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
   const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
@@ -164,8 +164,8 @@ async function generatePdfFromText(text, dealId) {
     const anchorPattern = /\[\[([A-Z_]+)\]\]/g;
     const hasAnchors = anchorPattern.test(line);
     
-    if (hasAnchors) {
-      // Split line by anchors, render visible text, then render anchors as invisible
+    if (hasAnchors && isDocuSignVersion) {
+      // DocuSign version: render anchors as invisible text
       const parts = line.split(/(\[\[[A-Z_]+\]\])/);
       let xPos = margin;
       
@@ -175,17 +175,18 @@ async function generatePdfFromText(text, dealId) {
         const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
         
         if (isAnchor) {
-          // Draw anchor as WHITE text (invisible but searchable)
+          // Draw anchor as WHITE 1px text (invisible but searchable by DocuSign)
           page.drawText(part, {
             x: xPos,
             y: yPosition,
-            size: 1, // Tiny font
+            size: 1,
             font: font,
-            color: rgb(1, 1, 1) // White (invisible)
+            color: rgb(1, 1, 1), // Pure white
+            opacity: 0.01 // Nearly invisible
           });
           // Don't advance xPos - anchor takes no visible space
         } else if (part.trim()) {
-          // Draw visible text
+          // Draw visible text normally
           page.drawText(part, {
             x: xPos,
             y: yPosition,
@@ -197,6 +198,47 @@ async function generatePdfFromText(text, dealId) {
         }
       }
       yPosition -= lineHeight;
+    } else if (hasAnchors && !isDocuSignVersion) {
+      // Human PDF version: strip anchors completely
+      const cleanLine = line.replace(/\[\[[A-Z_]+\]\]/g, '');
+      const words = cleanLine.split(' ');
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+        
+        if (width > maxWidth && currentLine) {
+          page.drawText(currentLine, {
+            x: margin,
+            y: yPosition,
+            size: currentSize,
+            font: currentFont,
+            color: textColor
+          });
+          yPosition -= lineHeight;
+          
+          if (yPosition < margin + 30) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            yPosition = pageHeight - margin;
+          }
+          
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      if (currentLine.trim()) {
+        page.drawText(currentLine, {
+          x: margin,
+          y: yPosition,
+          size: currentSize,
+          font: currentFont,
+          color: textColor
+        });
+        yPosition -= lineHeight;
+      }
     } else {
       // Normal word wrap for non-anchor lines
       const words = line.split(' ');
@@ -555,10 +597,6 @@ Deno.serve(async (req) => {
     // Normalize signature section BEFORE generating PDF
     templateText = normalizeSignatureSection(templateText);
     
-    // Generate new PDF from filled text
-    console.log('Generating final PDF from filled text...');
-    const finalPdfBytes = await generatePdfFromText(templateText, deal.id);
-    
     // Verify all required anchors exist exactly once
     const requiredAnchors = [
       'INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE',
@@ -596,21 +634,43 @@ Deno.serve(async (req) => {
     
     console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
     
-    // Upload final PDF
-    const pdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
-    const pdfFile = new File([pdfBlob], `agreement_${deal_id}_filled.pdf`);
-    const upload = await base44.integrations.Core.UploadFile({ file: pdfFile });
+    // Generate TWO PDFs: human-readable and DocuSign-specific
+    console.log('Generating human-readable PDF (no anchors visible)...');
+    const humanPdfBytes = await generatePdfFromText(templateText, deal.id, false);
     
-    console.log('Final PDF uploaded:', upload.file_url);
+    console.log('Generating DocuSign PDF (invisible anchors)...');
+    const docusignPdfBytes = await generatePdfFromText(templateText, deal.id, true);
     
-    // Compute PDF hash for DocuSign envelope tracking
-    const hashBuffer = await crypto.subtle.digest('SHA-256', finalPdfBytes);
-    const pdfSha256 = Array.from(new Uint8Array(hashBuffer))
+    // Compute hashes for both
+    const humanHashBuffer = await crypto.subtle.digest('SHA-256', humanPdfBytes);
+    const humanPdfSha256 = Array.from(new Uint8Array(humanHashBuffer))
       .map(b => b.toString(16).padStart(2, '0'))
       .join('');
-    console.log('PDF SHA-256:', pdfSha256);
     
-    // Save agreement - clear DocuSign data to force new envelope with updated PDF
+    const docusignHashBuffer = await crypto.subtle.digest('SHA-256', docusignPdfBytes);
+    const docusignPdfSha256 = Array.from(new Uint8Array(docusignHashBuffer))
+      .map(b => b.toString(16).padStart(2, '0'))
+      .join('');
+    
+    console.log('[PDF Hashes]');
+    console.log('  Human PDF SHA-256:', humanPdfSha256.substring(0, 16) + '...');
+    console.log('  DocuSign PDF SHA-256:', docusignPdfSha256.substring(0, 16) + '...');
+    
+    // Upload human-readable PDF
+    const humanBlob = new Blob([humanPdfBytes], { type: 'application/pdf' });
+    const humanFile = new File([humanBlob], `agreement_${deal_id}_human.pdf`);
+    const humanUpload = await base44.integrations.Core.UploadFile({ file: humanFile });
+    
+    // Upload DocuSign PDF with hash in filename to prevent caching
+    const docusignBlob = new Blob([docusignPdfBytes], { type: 'application/pdf' });
+    const docusignFile = new File([docusignBlob], `agreement_${deal_id}_docusign_${docusignPdfSha256.substring(0, 8)}.pdf`);
+    const docusignUpload = await base44.integrations.Core.UploadFile({ file: docusignFile });
+    
+    console.log('[PDF Uploads]');
+    console.log('  Human PDF URL:', humanUpload.file_url);
+    console.log('  DocuSign PDF URL:', docusignUpload.file_url);
+    
+    // Save agreement with both PDFs and hashes - clear DocuSign envelope to force recreation
     const agreementData = {
       deal_id: deal_id,
       investor_user_id: user.id,
@@ -623,13 +683,15 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.1-normalized-signatures',
+      agreement_version: '2.2-dual-pdf',
       status: 'draft',
       template_url: templateUrl,
-      final_pdf_url: upload.file_url,
-      signing_pdf_url: upload.file_url,
-      pdf_file_url: upload.file_url,
-      pdf_sha256: pdfSha256,
+      final_pdf_url: humanUpload.file_url,
+      pdf_file_url: humanUpload.file_url,
+      pdf_sha256: humanPdfSha256,
+      docusign_pdf_url: docusignUpload.file_url,
+      docusign_pdf_sha256: docusignPdfSha256,
+      signing_pdf_url: docusignUpload.file_url,
       render_context_json: renderContext,
       render_input_hash: renderInputHash,
       selected_rule_id: stateCode + '_TEMPLATE',
@@ -641,6 +703,7 @@ Deno.serve(async (req) => {
       docusign_envelope_id: null,
       docusign_status: null,
       docusign_envelope_pdf_hash: null,
+      docusign_last_sent_sha256: null,
       investor_recipient_id: null,
       agent_recipient_id: null,
       investor_client_user_id: null,
@@ -650,8 +713,8 @@ Deno.serve(async (req) => {
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
-        action: 'generated_filled_agreement',
-        details: `Generated from ${stateCode} template with standardized signatures - PDF hash: ${pdfSha256.substring(0, 16)}... - DocuSign envelope cleared for fresh signing`
+        action: 'generated_dual_pdfs',
+        details: `Generated human PDF (${humanPdfSha256.substring(0, 8)}...) and DocuSign PDF (${docusignPdfSha256.substring(0, 8)}...) from ${stateCode} template - DocuSign envelope cleared for fresh signing`
       }]
     };
     

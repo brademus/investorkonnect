@@ -94,19 +94,20 @@ Deno.serve(async (req) => {
     }
     const agreement = agreements[0];
     
-    // Determine which PDF to use (prefer final_pdf_url, fallback to pdf_file_url)
-    const pdfUrl = agreement.final_pdf_url || agreement.pdf_file_url;
+    // Use DocuSign-specific PDF (with invisible anchors)
+    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
     if (!pdfUrl) {
-      console.error('[DocuSign] No PDF URL found in agreement');
-      return Response.json({ error: 'No final_pdf_url/pdf_file_url found - agreement PDF not generated yet' }, { status: 400 });
+      console.error('[DocuSign] No DocuSign PDF URL found in agreement');
+      return Response.json({ error: 'No docusign_pdf_url found - agreement PDF not generated yet' }, { status: 400 });
     }
     
-    console.log('[DocuSign] Using PDF URL:', pdfUrl);
+    console.log('[DocuSign] Using DocuSign PDF URL:', pdfUrl);
     
-    // Download PDF and compute current hash
+    // Download DocuSign PDF and compute current hash
     const { base64: pdfBase64, hash: currentPdfHash } = await downloadPdfAsBase64AndHash(pdfUrl);
-    console.log('[DocuSign] Current PDF hash:', currentPdfHash);
-    console.log('[DocuSign] Stored envelope hash:', agreement.docusign_envelope_pdf_hash || 'none');
+    console.log('[DocuSign] Current DocuSign PDF hash:', currentPdfHash);
+    console.log('[DocuSign] Stored agreement.docusign_pdf_sha256:', agreement.docusign_pdf_sha256 || 'none');
+    console.log('[DocuSign] Stored agreement.docusign_last_sent_sha256:', agreement.docusign_last_sent_sha256 || 'none');
     
     // Validate redirect_url (flexible origin matching for dev/prod)
     const reqUrl = new URL(req.url);
@@ -130,21 +131,37 @@ Deno.serve(async (req) => {
     const connection = await getDocuSignConnection(base44);
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // Decide whether to recreate envelope
+    // Decide whether to recreate envelope based on DocuSign PDF hash
     let envelopeId = agreement.docusign_envelope_id;
-    const storedHash = agreement.docusign_envelope_pdf_hash;
+    const lastSentHash = agreement.docusign_last_sent_sha256 || agreement.docusign_envelope_pdf_hash;
+    const storedPdfHash = agreement.docusign_pdf_sha256;
+    
+    // Critical decision logic: create new envelope if PDF changed
     const needsNewEnvelope = !envelopeId || 
-                             !storedHash || 
-                             storedHash !== currentPdfHash || 
+                             !lastSentHash || 
+                             lastSentHash !== currentPdfHash ||
+                             (storedPdfHash && storedPdfHash !== currentPdfHash) ||
                              agreement.docusign_status === 'completed' || 
-                             agreement.docusign_status === 'voided';
+                             agreement.docusign_status === 'voided' ||
+                             agreement.docusign_status === 'declined' ||
+                             agreement.docusign_status === 'expired';
+    
+    console.log('[DocuSign] Envelope Decision:', {
+      needsNewEnvelope,
+      reason: !envelopeId ? 'no_envelope' : 
+              !lastSentHash ? 'no_last_sent_hash' :
+              lastSentHash !== currentPdfHash ? 'hash_mismatch' :
+              (storedPdfHash && storedPdfHash !== currentPdfHash) ? 'stored_hash_mismatch' :
+              ['completed', 'voided', 'declined', 'expired'].includes(agreement.docusign_status) ? `status_${agreement.docusign_status}` :
+              'reuse_existing',
+      currentPdfHash: currentPdfHash.substring(0, 16) + '...',
+      lastSentHash: lastSentHash ? lastSentHash.substring(0, 16) + '...' : 'none',
+      storedPdfHash: storedPdfHash ? storedPdfHash.substring(0, 16) + '...' : 'none',
+      existingEnvelopeId: envelopeId || 'none'
+    });
     
     if (needsNewEnvelope) {
-      console.log('[DocuSign] Creating new envelope (reason:', 
-        !envelopeId ? 'no envelope' : 
-        !storedHash ? 'no stored hash' :
-        storedHash !== currentPdfHash ? 'hash mismatch' :
-        'envelope completed/voided', ')');
+      console.log('[DocuSign] ⚠️ Creating NEW envelope because PDF changed or no valid envelope exists');
       
       // Void old envelope if it exists
       if (envelopeId && agreement.docusign_status !== 'completed' && agreement.docusign_status !== 'voided') {
@@ -339,10 +356,11 @@ Deno.serve(async (req) => {
         offsets: 'anchorXOffset=0, anchorYOffset=0'
       });
       
-      // Update agreement with new envelope details
+      // Update agreement with new envelope details and store hash
       await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
         docusign_envelope_id: envelopeId,
         docusign_envelope_pdf_hash: currentPdfHash,
+        docusign_last_sent_sha256: currentPdfHash,
         docusign_status: 'sent',
         investor_recipient_id: '1',
         agent_recipient_id: '2',
@@ -355,7 +373,7 @@ Deno.serve(async (req) => {
             timestamp: new Date().toISOString(),
             actor: user.email,
             action: 'envelope_created',
-            details: `DocuSign envelope ${envelopeId} created with PDF hash ${currentPdfHash.substring(0, 16)}...`
+            details: `NEW DocuSign envelope ${envelopeId} created with DocuSign PDF hash ${currentPdfHash.substring(0, 16)}... (DocuSign-specific PDF with invisible anchors)`
           }
         ]
       });
@@ -364,7 +382,8 @@ Deno.serve(async (req) => {
       const updated = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
       Object.assign(agreement, updated[0]);
     } else {
-      console.log('[DocuSign] REUSING existing envelope:', envelopeId, '- hash matched');
+      console.log('[DocuSign] ✓ REUSING existing envelope:', envelopeId);
+      console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
     }
     
     // Create signing token
