@@ -77,64 +77,45 @@ Brokerage: [[AGENT_BROKERAGE]]
 Date: [[AGENT_DATE]]
 `;
   
-  // ULTRA AGGRESSIVE: Find the last occurrence of "Investor:" in the document
-  // This is where the signature section usually starts
-  const investorMatches = [...text.matchAll(/Investor:/gi)];
-  const lastInvestorMatch = investorMatches[investorMatches.length - 1];
+  // More aggressive patterns to catch various signature formats
+  const signaturePatterns = [
+    /SIGNATURES?\s*$/im,
+    /^\s*SIGNATURES?\s*$/gim,
+    /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,
+    /^[\s\d.]*signatures?\s*$/gim,
+    /Investor.*Signature.*:.*_+/im,
+    /Agent.*Signature.*:.*_+/im
+  ];
   
   let signatureIndex = -1;
+  let foundPattern = null;
   
-  if (lastInvestorMatch) {
-    // Go back to find the start of this section (look for "SIGNATURES" or numbered section before it)
-    const investorIndex = lastInvestorMatch.index;
-    
-    // Search backwards from investorIndex for "SIGNATURES" or section number
-    const textBefore = text.substring(Math.max(0, investorIndex - 500), investorIndex);
-    const signatureHeaderMatch = textBefore.match(/(SIGNATURES?|^\d+\.\s*SIGNATURES?|^\d+\)\s*SIGNATURES?)/im);
-    
-    if (signatureHeaderMatch) {
-      // Found "SIGNATURES" header before the Investor: line
-      signatureIndex = investorIndex - (textBefore.length - signatureHeaderMatch.index);
-    } else {
-      // No explicit header, just use the Investor: line as start
-      // But back up a bit to catch any preceding whitespace
-      const textBeforeInvestor = text.substring(0, investorIndex).trimEnd();
-      signatureIndex = textBeforeInvestor.length;
-    }
-  } else {
-    // Fallback: look for "SIGNATURES" header anywhere
-    const sigMatch = text.match(/SIGNATURES?/i);
-    if (sigMatch) {
-      signatureIndex = sigMatch.index;
+  // Find ANY signature-related pattern
+  for (const pattern of signaturePatterns) {
+    const match = text.search(pattern);
+    if (match >= 0 && (signatureIndex < 0 || match > signatureIndex)) {
+      signatureIndex = match;
+      foundPattern = pattern.toString();
     }
   }
   
   if (signatureIndex >= 0) {
-    // Replace everything from this point onwards
-    const textBefore = text.substring(0, signatureIndex).trimEnd();
+    // Replace everything from signature section onwards with standard block
+    const before = text.substring(0, signatureIndex);
+    const textBefore = before.trimEnd();
     text = textBefore + standardSignatureBlock;
-    console.log(`[normalizeSignatureSection] ✓ Found and replaced signature section at index ${signatureIndex}`);
-    console.log(`[normalizeSignatureSection] ✓ Removed ${text.length - textBefore.length - standardSignatureBlock.length} characters of old signature block`);
+    console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex} using pattern ${foundPattern}`);
+    console.log('[normalizeSignatureSection] ✓ Replaced signature section with NO underscores');
   } else {
-    // Last resort: just append
-    text = text.trimEnd() + standardSignatureBlock;
-    console.log('[normalizeSignatureSection] ⚠️ Could not find signature section, appended to end');
+    // No signature found, append to end
+    text += standardSignatureBlock;
+    console.log('[normalizeSignatureSection] ⚠️ No signature found, appended standard block');
   }
   
-  // Verify the result
-  const finalSigIndex = text.indexOf('SIGNATURES');
-  if (finalSigIndex >= 0) {
-    const sigSection = text.substring(finalSigIndex, Math.min(finalSigIndex + 500, text.length));
-    console.log('========== FINAL SIGNATURE SECTION ==========');
-    console.log(sigSection);
-    console.log('=============================================');
-    
-    // Critical check: ensure NO underscores in signature section
-    if (sigSection.includes('___')) {
-      console.error('❌ CRITICAL: Underscores still present after normalization!');
-    } else {
-      console.log('✅ Verified: No underscores in signature section');
-    }
+  // Log the new signature section to verify
+  const sigIndex = text.indexOf('SIGNATURES');
+  if (sigIndex >= 0) {
+    console.log('[normalizeSignatureSection] New signature section:', text.substring(sigIndex, sigIndex + 400));
   }
   
   return text;
@@ -551,22 +532,22 @@ Deno.serve(async (req) => {
     });
     const renderInputHash = await sha256(inputData);
     
-    // Check for existing agreement - always regenerate and void old envelope
+    // Check for existing agreement with same hash
     const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
     if (existing.length > 0) {
       const existingAgreement = existing[0];
-      console.log('Regenerating agreement - will void any existing DocuSign envelope');
-      
-      // Void existing envelope if it exists
-      if (existingAgreement.docusign_envelope_id) {
-        try {
-          console.log('[Voiding Old Envelope]', existingAgreement.docusign_envelope_id);
-          // Note: Actual voiding will happen in docusignCreateSigningSession
-          // We just log here and clear the envelope ID
-        } catch (error) {
-          console.log('Could not check envelope status:', error.message);
-        }
+      // Force regeneration if version changed (signature normalization update)
+      if (existingAgreement.render_input_hash === renderInputHash && 
+          existingAgreement.final_pdf_url && 
+          existingAgreement.agreement_version === '2.1-normalized-signatures') {
+        console.log('Returning existing agreement (unchanged inputs)');
+        return Response.json({ 
+          success: true, 
+          agreement: existingAgreement, 
+          regenerated: false 
+        });
       }
+      console.log('Regenerating due to version update or input changes');
     }
     
     // Fetch template PDF
