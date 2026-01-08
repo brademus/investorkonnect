@@ -1403,15 +1403,15 @@ ${dealContext}`;
                       </div>
                     </div>
                   )}
-                  
+
                   {/* LegalAgreement Panel (v1.0.1) */}
                   {currentRoom?.deal_id && deal && (
                     <LegalAgreementPanel
                       deal={deal}
                       profile={profile}
                       agreement={agreement}
-                      onUpdate={() => {
-                        loadAgreement();
+                      onUpdate={async () => {
+                        await refreshRoomState();
                         queryClient.invalidateQueries({ queryKey: ['rooms'] });
                         queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                       }}
