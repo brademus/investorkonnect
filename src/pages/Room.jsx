@@ -267,6 +267,15 @@ export default function Room() {
       loadAgreement();
     }
   }, [currentRoom?.deal_id, profile?.user_role]);
+  
+  // Also reload on URL change (after DocuSign return)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('docusign_event') && currentRoom?.deal_id && profile?.user_role) {
+      console.log('[Room] DocuSign return detected, reloading agreement...');
+      setTimeout(() => loadAgreement(), 500);
+    }
+  }, [location.search, currentRoom?.deal_id, profile?.user_role]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -753,7 +762,7 @@ ${dealContext}`;
                   {/* Agreement Status CTA (Investor Only) */}
                   {profile?.user_role === 'investor' && currentRoom?.deal_id && (
                     <>
-                      {!agreement && (
+                      {(!agreement || agreement.status === 'draft') && (
                         <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -778,7 +787,7 @@ ${dealContext}`;
                         </div>
                       )}
                       
-                      {agreement && agreement.status === 'investor_signed' && (
+                      {agreement && (agreement.status === 'investor_signed' || agreement.status === 'sent') && (
                         <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center flex-shrink-0">
