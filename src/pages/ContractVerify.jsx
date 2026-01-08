@@ -184,7 +184,12 @@ export default function ContractVerify() {
       const extracted = extractRes.data.data;
       const validationErrors = [];
 
-      // Verify address (normalized comparison)
+      console.log('[Verification] Comparing entered data vs extracted:', {
+        entered: dealData,
+        extracted: extracted
+      });
+
+      // 1. Verify property address (normalized comparison)
       if (dealData.propertyAddress && extracted.address) {
         const inputAddr = normalizeString(dealData.propertyAddress);
         const extractedAddr = normalizeString(extracted.address);
@@ -192,40 +197,98 @@ export default function ContractVerify() {
         const extractedStreet = extractedAddr.split(',')[0].trim();
         
         if (!extractedAddr.includes(inputStreet) && !inputAddr.includes(extractedStreet)) {
-          validationErrors.push(`Address mismatch: You entered "${dealData.propertyAddress}" but contract shows "${extracted.address}"`);
+          validationErrors.push(`❌ Address: You entered "${dealData.propertyAddress}" but contract shows "${extracted.address}"`);
+        } else {
+          console.log('✅ Address matches');
         }
       }
 
-      // Verify state (exact match, case-insensitive)
+      // 2. Verify city
+      if (dealData.city && extracted.city) {
+        const inputCity = normalizeString(dealData.city);
+        const extractedCity = normalizeString(extracted.city);
+        if (inputCity !== extractedCity) {
+          validationErrors.push(`❌ City: You entered "${dealData.city}" but contract shows "${extracted.city}"`);
+        } else {
+          console.log('✅ City matches');
+        }
+      }
+
+      // 3. Verify state (exact match, case-insensitive)
       if (dealData.state && extracted.state) {
-        if (dealData.state.toLowerCase() !== extracted.state.toLowerCase()) {
-          validationErrors.push(`State mismatch: You entered "${dealData.state}" but contract shows "${extracted.state}"`);
+        if (dealData.state.toUpperCase() !== extracted.state.toUpperCase()) {
+          validationErrors.push(`❌ State: You entered "${dealData.state}" but contract shows "${extracted.state}"`);
+        } else {
+          console.log('✅ State matches');
         }
       }
 
-      // Verify purchase price (5% tolerance)
+      // 4. Verify ZIP code
+      if (dealData.zip && extracted.zip) {
+        const inputZip = String(dealData.zip).replace(/\D/g, ''); // Remove non-digits
+        const extractedZip = String(extracted.zip).replace(/\D/g, '');
+        if (inputZip !== extractedZip) {
+          validationErrors.push(`❌ ZIP Code: You entered "${dealData.zip}" but contract shows "${extracted.zip}"`);
+        } else {
+          console.log('✅ ZIP code matches');
+        }
+      }
+
+      // 5. Verify county
+      if (dealData.county && extracted.county) {
+        const inputCounty = normalizeString(dealData.county);
+        const extractedCounty = normalizeString(extracted.county);
+        if (!extractedCounty.includes(inputCounty) && !inputCounty.includes(extractedCounty)) {
+          validationErrors.push(`❌ County: You entered "${dealData.county}" but contract shows "${extracted.county}"`);
+        } else {
+          console.log('✅ County matches');
+        }
+      }
+
+      // 6. Verify purchase price (CRITICAL - strict 2% tolerance)
       if (dealData.purchasePrice && extracted.purchase_price) {
         const inputPrice = Number(String(dealData.purchasePrice).replace(/[$,\s]/g, ''));
         const contractPrice = Number(String(extracted.purchase_price).replace(/[$,\s]/g, ''));
         const diff = Math.abs(inputPrice - contractPrice);
-        const tolerance = inputPrice * 0.05;
+        const tolerance = inputPrice * 0.02; // 2% tolerance for OCR/formatting errors
+        
+        console.log('[Verification] Purchase price:', {
+          entered: inputPrice,
+          contract: contractPrice,
+          diff: diff,
+          tolerance: tolerance,
+          percentDiff: ((diff / inputPrice) * 100).toFixed(2) + '%'
+        });
         
         if (diff > tolerance) {
-          validationErrors.push(`Price mismatch: You entered $${inputPrice.toLocaleString()} but contract shows $${contractPrice.toLocaleString()}`);
+          validationErrors.push(`❌ Purchase Price: You entered $${inputPrice.toLocaleString()} but contract shows $${contractPrice.toLocaleString()} (difference: $${diff.toLocaleString()})`);
+        } else {
+          console.log('✅ Purchase price matches (within 2% tolerance)');
         }
       }
 
-      // Verify closing date (normalized YYYY-MM-DD)
-      if (dealData.closingDate && extracted.key_dates?.closing_date) {
-        const inputDate = new Date(dealData.closingDate).toISOString().split('T')[0];
-        const contractDate = new Date(extracted.key_dates.closing_date).toISOString().split('T')[0];
+      // 7. Verify earnest money (10% tolerance for smaller amounts)
+      if (dealData.earnestMoney && extracted.seller_info?.earnest_money) {
+        const inputEM = Number(String(dealData.earnestMoney).replace(/[$,\s]/g, ''));
+        const contractEM = Number(String(extracted.seller_info.earnest_money).replace(/[$,\s]/g, ''));
+        const diff = Math.abs(inputEM - contractEM);
+        const tolerance = Math.max(inputEM * 0.10, 100); // 10% or $100 minimum
         
-        if (inputDate !== contractDate) {
-          validationErrors.push(`Closing date mismatch: You entered ${dealData.closingDate} but contract shows ${extracted.key_dates.closing_date}`);
+        console.log('[Verification] Earnest money:', {
+          entered: inputEM,
+          contract: contractEM,
+          diff: diff,
+          tolerance: tolerance
+        });
+        
+        if (diff > tolerance) {
+          validationErrors.push(`❌ Earnest Money: You entered $${inputEM.toLocaleString()} but contract shows $${contractEM.toLocaleString()}`);
+        } else {
+          console.log('✅ Earnest money matches');
         }
       }
 
-      // Verify seller name
+      // 8. Verify seller name
       if (dealData.sellerName && extracted.seller_info?.seller_name) {
         const inputName = normalizeName(dealData.sellerName);
         const extractedName = normalizeName(extracted.seller_info.seller_name);
@@ -235,32 +298,69 @@ export default function ContractVerify() {
           (inputName.length >= 3 && extractedName.includes(inputName)) ||
           (extractedName.length >= 3 && inputName.includes(extractedName));
         
+        console.log('[Verification] Seller name:', {
+          entered: dealData.sellerName,
+          contract: extracted.seller_info.seller_name,
+          normalized_entered: inputName,
+          normalized_contract: extractedName,
+          match: isMatch
+        });
+        
         if (!isMatch) {
-          validationErrors.push(`Seller name mismatch: You entered "${dealData.sellerName}" but contract shows "${extracted.seller_info.seller_name}"`);
+          validationErrors.push(`❌ Seller Name: You entered "${dealData.sellerName}" but contract shows "${extracted.seller_info.seller_name}"`);
+        } else {
+          console.log('✅ Seller name matches');
         }
       }
 
-      // Verify earnest money (10% tolerance)
-      if (dealData.earnestMoney && extracted.seller_info?.earnest_money) {
-        const inputEM = Number(String(dealData.earnestMoney).replace(/[$,\s]/g, ''));
-        const contractEM = Number(String(extracted.seller_info.earnest_money).replace(/[$,\s]/g, ''));
-        const diff = Math.abs(inputEM - contractEM);
-        const tolerance = inputEM * 0.10;
-        
-        if (diff > tolerance) {
-          validationErrors.push(`Earnest money mismatch: You entered $${inputEM.toLocaleString()} but contract shows $${contractEM.toLocaleString()}`);
+      // 9. Verify closing date (normalized YYYY-MM-DD)
+      if (dealData.closingDate && extracted.key_dates?.closing_date) {
+        try {
+          const inputDate = new Date(dealData.closingDate).toISOString().split('T')[0];
+          const contractDate = new Date(extracted.key_dates.closing_date).toISOString().split('T')[0];
+          
+          console.log('[Verification] Closing date:', {
+            entered: dealData.closingDate,
+            contract: extracted.key_dates.closing_date,
+            normalized_entered: inputDate,
+            normalized_contract: contractDate
+          });
+          
+          if (inputDate !== contractDate) {
+            validationErrors.push(`❌ Closing Date: You entered ${dealData.closingDate} but contract shows ${extracted.key_dates.closing_date}`);
+          } else {
+            console.log('✅ Closing date matches');
+          }
+        } catch (e) {
+          console.warn('[Verification] Could not parse closing date:', e);
         }
       }
 
-      // Verify contract date if entered
+      // 10. Verify contract date if entered
       if (dealData.contractDate && extracted.key_dates?.contract_date) {
-        const inputDate = new Date(dealData.contractDate).toISOString().split('T')[0];
-        const contractDate = new Date(extracted.key_dates.contract_date).toISOString().split('T')[0];
-        
-        if (inputDate !== contractDate) {
-          validationErrors.push(`Contract date mismatch: You entered ${dealData.contractDate} but contract shows ${extracted.key_dates.contract_date}`);
+        try {
+          const inputDate = new Date(dealData.contractDate).toISOString().split('T')[0];
+          const contractDate = new Date(extracted.key_dates.contract_date).toISOString().split('T')[0];
+          
+          console.log('[Verification] Contract date:', {
+            entered: dealData.contractDate,
+            contract: extracted.key_dates.contract_date
+          });
+          
+          if (inputDate !== contractDate) {
+            validationErrors.push(`❌ Contract Date: You entered ${dealData.contractDate} but contract shows ${extracted.key_dates.contract_date}`);
+          } else {
+            console.log('✅ Contract date matches');
+          }
+        } catch (e) {
+          console.warn('[Verification] Could not parse contract date:', e);
         }
       }
+
+      console.log('[Verification] Validation complete:', {
+        totalErrors: validationErrors.length,
+        errors: validationErrors
+      });
 
       if (validationErrors.length > 0) {
         setErrors(validationErrors);
