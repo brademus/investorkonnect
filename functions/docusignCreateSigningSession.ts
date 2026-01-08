@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
@@ -219,7 +219,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true
                 }],
                 fullNameTabs: [{
@@ -229,7 +229,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true,
                   name: 'Investor Full Name',
                   value: investor.full_name || investor.email,
@@ -253,7 +253,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true
                 }],
                 fullNameTabs: [{
@@ -273,7 +273,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
+                  anchorCaseSensitive: true,
                   anchorMatchWholeWord: true,
                   name: 'Agent Full Name',
                   value: agent.full_name || agent.email,
@@ -289,7 +289,7 @@ Deno.serve(async (req) => {
                     anchorXOffset: '0',
                     anchorYOffset: '0',
                     anchorIgnoreIfNotPresent: false,
-                    anchorCaseSensitive: false,
+                    anchorCaseSensitive: true,
                     anchorMatchWholeWord: true,
                     name: 'License Number',
                     value: agent.agent?.license_number || agent.license_number || '',
@@ -304,7 +304,7 @@ Deno.serve(async (req) => {
                     anchorXOffset: '0',
                     anchorYOffset: '0',
                     anchorIgnoreIfNotPresent: false,
-                    anchorCaseSensitive: false,
+                    anchorCaseSensitive: true,
                     anchorMatchWholeWord: true,
                     name: 'Brokerage',
                     value: agent.agent?.brokerage || agent.broker || '',
@@ -340,6 +340,21 @@ Deno.serve(async (req) => {
       envelopeId = envelope.envelopeId;
       
       console.log('[DocuSign] NEW envelope created:', envelopeId, '- PDF hash:', currentPdfHash.substring(0, 16) + '...');
+      console.log('[DocuSign] Tab configuration:', {
+        investor: {
+          signHere: '[[INVESTOR_SIGN]]',
+          fullName: '[[INVESTOR_PRINT]]',
+          dateSigned: '[[INVESTOR_DATE]]'
+        },
+        agent: {
+          signHere: '[[AGENT_SIGN]]',
+          fullName: '[[AGENT_PRINT]]',
+          license: '[[AGENT_LICENSE]]',
+          brokerage: '[[AGENT_BROKERAGE]]',
+          dateSigned: '[[AGENT_DATE]]'
+        },
+        offsets: 'anchorXOffset=0, anchorYOffset=0'
+      });
       console.log('[DocuSign] Tab configuration:', {
         investor: {
           signHere: '[[INVESTOR_SIGN]]',
