@@ -100,17 +100,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const loadAgreement = async () => {
     // Validate required params
     if (!deal?.id) {
-      toast.error('Missing deal ID — cannot load agreement.');
       setLoading(false);
       return;
     }
     if (!profile?.user_id) {
-      toast.error('Missing user ID — cannot load agreement.');
       setLoading(false);
       return;
     }
     if (!profile?.user_role) {
-      toast.error('Missing user role — cannot load agreement.');
       setLoading(false);
       return;
     }
@@ -127,7 +124,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       setAgreement(data.agreement || null);
     } catch (error) {
       console.error('Failed to load agreement:', error);
-      toast.error(`Failed to load agreement: ${error.message || error}`);
+      setAgreement(null);
     } finally {
       setLoading(false);
     }
