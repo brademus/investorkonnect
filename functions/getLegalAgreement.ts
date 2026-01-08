@@ -1,5 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * GET /api/functions/getLegalAgreement?deal_id=<id>
+ * Returns the legal agreement for a deal (with access control)
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -12,22 +16,37 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const deal_id = url.searchParams.get('deal_id');
     
+    console.log('[getLegalAgreement] Request:', { deal_id, user_id: user.id });
+    
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get agreement
+    // Get agreement using service role
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
     
+    console.log('[getLegalAgreement] Found agreements:', agreements.length);
+    
     if (agreements.length === 0) {
+      console.log('[getLegalAgreement] No agreement found for deal:', deal_id);
       return Response.json({ agreement: null });
     }
     
     const agreement = agreements[0];
     
-    // Verify access using user_id (not profile_id)
+    console.log('[getLegalAgreement] Agreement found:', {
+      id: agreement.id,
+      status: agreement.status,
+      investor_user_id: agreement.investor_user_id,
+      agent_user_id: agreement.agent_user_id,
+      investor_signed_at: agreement.investor_signed_at,
+      agent_signed_at: agreement.agent_signed_at
+    });
+    
+    // Verify access - user must be either investor or agent on this agreement
     if (agreement.investor_user_id !== user.id && agreement.agent_user_id !== user.id) {
-      return Response.json({ error: 'Not authorized' }, { status: 403 });
+      console.log('[getLegalAgreement] Access denied - user not authorized');
+      return Response.json({ error: 'Not authorized to view this agreement' }, { status: 403 });
     }
     
     // Check if NJ attorney review period has expired (auto-approval)
@@ -36,13 +55,15 @@ Deno.serve(async (req) => {
       const reviewEnd = new Date(agreement.nj_review_end_at);
       
       if (now > reviewEnd) {
-        // Auto-approve - idempotent update
+        console.log('[getLegalAgreement] NJ review period expired - auto-approving');
+        
+        // Auto-approve
         const updated = await base44.asServiceRole.entities.LegalAgreement.update(
           agreement.id,
           {
             status: 'fully_signed',
             audit_log: [
-              ...agreement.audit_log,
+              ...(agreement.audit_log || []),
               {
                 timestamp: new Date().toISOString(),
                 actor: 'system',
@@ -65,16 +86,19 @@ Deno.serve(async (req) => {
           }
         );
         
+        console.log('[getLegalAgreement] ✓ Auto-approved, returning updated agreement');
         return Response.json({ agreement: updated });
       }
     }
     
+    console.log('[getLegalAgreement] ✓ Returning agreement with status:', agreement.status);
     return Response.json({ agreement });
     
   } catch (error) {
-    console.error('Get agreement error:', error);
+    console.error('[getLegalAgreement] Error:', error);
     return Response.json({ 
-      error: error.message || 'Failed to get agreement' 
+      error: error.message || 'Failed to get agreement',
+      details: error.toString()
     }, { status: 500 });
   }
 });
