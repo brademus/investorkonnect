@@ -39,6 +39,7 @@ async function downloadPdfAsBase64AndHash(url) {
 
 async function voidEnvelope(baseUri, accountId, accessToken, envelopeId, reason) {
   try {
+    console.log(`[DocuSign] Attempting to void envelope ${envelopeId}...`);
     const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
     const voidResponse = await fetch(voidUrl, {
       method: 'PUT',
@@ -53,9 +54,10 @@ async function voidEnvelope(baseUri, accountId, accessToken, envelopeId, reason)
     });
     
     if (!voidResponse.ok) {
-      console.warn('[DocuSign] Failed to void old envelope:', envelopeId);
+      const errorText = await voidResponse.text();
+      console.warn('[DocuSign] Failed to void envelope:', envelopeId, '-', errorText);
     } else {
-      console.log('[DocuSign] Successfully voided old envelope:', envelopeId);
+      console.log('[DocuSign] ✅ Successfully voided envelope:', envelopeId);
     }
   } catch (error) {
     console.warn('[DocuSign] Error voiding envelope:', error.message);
@@ -163,9 +165,10 @@ Deno.serve(async (req) => {
     if (needsNewEnvelope) {
       console.log('[DocuSign] ⚠️ Creating NEW envelope because PDF changed or no valid envelope exists');
       
-      // Void old envelope if it exists
-      if (envelopeId && agreement.docusign_status !== 'completed' && agreement.docusign_status !== 'voided') {
-        await voidEnvelope(baseUri, accountId, accessToken, envelopeId, 'Agreement regenerated – replacing document');
+      // ALWAYS void old envelope if it exists (even if completed/voided - prevents any confusion)
+      if (envelopeId) {
+        console.log('[DocuSign] Voiding old envelope to ensure clean slate...');
+        await voidEnvelope(baseUri, accountId, accessToken, envelopeId, 'Agreement PDF regenerated - old envelope voided, new envelope will be created');
       }
       
       // Load profiles
