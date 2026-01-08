@@ -354,24 +354,35 @@ export default function Room() {
   // CRITICAL: Reload after DocuSign return with signed=1
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') && roomId) {
+    if (params.get('signed') && roomId && currentRoom?.deal_id) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
       
-      // Immediate refresh with cache busting
-      const doRefresh = async () => {
+      // Immediate sync with DocuSign
+      const doSync = async () => {
+        try {
+          // First, sync with DocuSign to ensure latest status
+          console.log('[Room] 📡 Syncing with DocuSign...');
+          await base44.functions.invoke('docusignSyncEnvelope', {
+            deal_id: currentRoom.deal_id
+          });
+          console.log('[Room] ✅ DocuSign sync complete');
+        } catch (error) {
+          console.error('[Room] DocuSign sync failed:', error);
+        }
+        
+        // Then refresh UI state
         await refreshRoomState();
         queryClient.invalidateQueries({ queryKey: ['rooms'] });
         queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
       };
       
-      doRefresh();
+      doSync();
       
       // Aggressive retry schedule
-      setTimeout(doRefresh, 500);
-      setTimeout(doRefresh, 1500);
-      setTimeout(doRefresh, 3000);
+      setTimeout(doSync, 1000);
+      setTimeout(doSync, 2500);
     }
-  }, [location.search, roomId]);
+  }, [location.search, roomId, currentRoom?.deal_id]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
