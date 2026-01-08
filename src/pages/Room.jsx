@@ -252,12 +252,12 @@ export default function Room() {
     }
   };
   
-  // Load agreement on mount and when deal changes or cache buster
+  // Load agreement on mount and when deal changes
   useEffect(() => {
     if (currentRoom?.deal_id) {
       loadAgreement();
     }
-  }, [currentRoom?.deal_id, location.search]); // Reload when URL params change (after DocuSign return)
+  }, [currentRoom?.deal_id]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
