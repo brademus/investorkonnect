@@ -27,16 +27,34 @@ Deno.serve(async (req) => {
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
+    console.log('[getPipelineDealsForUser]', {
+      profile_id: profile.id,
+      user_id: user.id,
+      user_role: profile.user_role,
+      isAgent,
+      isInvestor
+    });
+
     // Fetch deals based on role
     let deals = [];
+    let agentRooms = [];
+    
     if (isInvestor) {
       // Investors see their own deals
       deals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      console.log('[getPipelineDealsForUser] Investor deals found:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
-      const agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
       const roomDealIds = agentRooms.map(r => r.deal_id).filter(Boolean);
+      
+      console.log('[getPipelineDealsForUser] Agent data:', {
+        agentDeals: agentDeals.length,
+        agentRooms: agentRooms.length,
+        roomDealIds: roomDealIds,
+        rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status }))
+      });
       
       // Merge deals from both sources
       const allDealIds = new Set([
@@ -44,12 +62,16 @@ Deno.serve(async (req) => {
         ...roomDealIds
       ]);
       
+      console.log('[getPipelineDealsForUser] All deal IDs to fetch:', Array.from(allDealIds));
+      
       deals = await Promise.all(
         Array.from(allDealIds).map(id => 
           base44.entities.Deal.filter({ id }).then(arr => arr[0])
         )
       );
       deals = deals.filter(Boolean);
+      
+      console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
     }
 
     // Apply role-based redaction
