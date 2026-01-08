@@ -211,14 +211,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       if (response.data?.regenerated === false) {
         toast.info('Agreement already up to date (no changes needed)');
       } else {
-        toast.success('Agreement generated successfully');
-      }
-      
-      // Set agreement immediately from response
-      setAgreement(response.data.agreement);
-      setShowGenerateModal(false);
-      
-      if (onUpdate) onUpdate();
+        toast.success('Agreement regenerated - old DocuSign envelope will be voided on next signing', { duration: 5000 });
+        }
+
+        // Set agreement immediately from response
+        setAgreement(response.data.agreement);
+        setShowGenerateModal(false);
+
+        // Show additional notice about needing to re-sign
+        if (response.data?.regenerated) {
+        toast.info('Click "Sign as Investor/Agent" to create a new signing session with the updated agreement', { duration: 7000 });
+        }
+
+        if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Generate error:', error);
       const errorMessage = error?.response?.data?.error || error?.message || error;
@@ -456,13 +461,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </Button>
             )}
             
-            {isInvestor && agreement.status === 'draft' && (
+            {isInvestor && (agreement.status === 'draft' || agreement.status === 'sent') && (
               <>
                 <Button
                   onClick={handleOpenGenerateModal}
                   variant="outline"
                   className="flex-1">
-                  Regenerate
+                  Regenerate Agreement
                 </Button>
                 <Button
                   onClick={async () => {
