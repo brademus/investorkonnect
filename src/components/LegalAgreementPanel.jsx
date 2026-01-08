@@ -371,7 +371,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </div>
             </div>
           )}
-          
+
           {/* Agreement Details */}
           <div className="bg-[#0D0D0D] rounded-lg p-4 space-y-2 text-sm">
             <div className="flex justify-between">
@@ -392,7 +392,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </div>
             )}
           </div>
-          
+
           {/* Signature Status */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-[#0D0D0D] rounded-lg p-4">
@@ -409,7 +409,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                 </div>
               )}
             </div>
-            
+
             <div className="bg-[#0D0D0D] rounded-lg p-4">
               <div className="text-xs text-[#808080] mb-2">Agent</div>
               {agreement.agent_signed_at ? (
@@ -425,16 +425,20 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               )}
             </div>
           </div>
-          
+
           {/* Actions */}
           <div className="flex gap-3">
-            {(agreement.final_pdf_url || agreement.pdf_file_url) && (
+            {/* Show signed PDF if available, otherwise show unsigned PDF */}
+            {(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
               <Button
                 variant="outline"
-                onClick={() => window.open(agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
+                onClick={() => window.open(
+                  agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, 
+                  '_blank'
+                )}
                 className="flex-1">
                 <Download className="w-4 h-4 mr-2" />
-                Download PDF
+                {agreement.signed_pdf_url ? 'Download Signed PDF' : 'Download PDF'}
               </Button>
             )}
             
