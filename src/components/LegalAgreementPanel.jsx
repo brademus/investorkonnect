@@ -232,8 +232,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
     try {
       setSigning(true);
       
-      // Capture current page URL for return
-      const returnTo = window.location.href;
+      // Capture current page URL including pathname + search for accurate return
+      const returnTo = window.location.pathname + window.location.search;
       
       console.log('[LegalAgreement] Starting signing flow:', { agreementId: agreement.id, role: signatureType, returnTo });
       

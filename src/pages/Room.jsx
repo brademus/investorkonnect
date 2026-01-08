@@ -252,12 +252,12 @@ export default function Room() {
     }
   };
   
-  // Load agreement on mount and when deal changes
+  // Load agreement on mount and when deal changes or cache buster
   useEffect(() => {
     if (currentRoom?.deal_id) {
       loadAgreement();
     }
-  }, [currentRoom?.deal_id]);
+  }, [currentRoom?.deal_id, location.search]); // Reload when URL params change (after DocuSign return)
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -1232,179 +1232,75 @@ ${dealContext}`;
                     />
                   )}
                   
-                  {/* Legacy Agreement Status Banner (kept for backward compatibility) */}
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                        <Shield className="w-5 h-5 text-[#E3C567]" />
-                        My Agreement
-                      </h4>
-                      {currentRoom?.agreement_status === 'fully_signed' ? (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
-                          ✓ Fully Signed
-                        </span>
-                      ) : currentRoom?.agreement_status === 'sent' ? (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30">
-                          Pending Signatures
-                        </span>
-                      ) : currentRoom?.agreement_status === 'investor_signed' ? (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
-                          Awaiting Agent
-                        </span>
-                      ) : currentRoom?.agreement_status === 'agent_signed' ? (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
-                          Awaiting Investor
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#808080]/20 text-[#808080] border border-[#808080]/30">
-                          Draft
-                        </span>
+                  {/* Agreement Status Info - Use live agreement data if available */}
+                  {agreement && (
+                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
+                          <Shield className="w-5 h-5 text-[#E3C567]" />
+                          Agreement Status
+                        </h4>
+                        {agreement.status === 'fully_signed' ? (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
+                            ✓ Fully Signed
+                          </span>
+                        ) : agreement.status === 'sent' ? (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30">
+                            Pending Signatures
+                          </span>
+                        ) : agreement.status === 'investor_signed' ? (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                            Awaiting Agent
+                          </span>
+                        ) : agreement.status === 'agent_signed' ? (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
+                            Awaiting Investor
+                          </span>
+                        ) : agreement.status === 'attorney_review_pending' ? (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30">
+                            Attorney Review
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#808080]/20 text-[#808080] border border-[#808080]/30">
+                            Draft
+                          </span>
+                        )}
+                      </div>
+                      
+                      {/* Status-specific messaging */}
+                      {agreement.status === 'investor_signed' && (
+                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 mb-4">
+                          <p className="text-sm font-semibold text-[#60A5FA]">
+                            {profile?.user_role === 'investor' 
+                              ? 'You signed! Waiting for agent signature.'
+                              : 'Investor signed - your turn to sign!'}
+                          </p>
+                        </div>
                       )}
+                      
+                      {agreement.status === 'agent_signed' && (
+                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 mb-4">
+                          <p className="text-sm font-semibold text-[#60A5FA]">
+                            {profile?.user_role === 'agent'
+                              ? 'You signed! Waiting for investor signature.'
+                              : 'Agent signed - your turn to sign!'}
+                          </p>
+                        </div>
+                      )}
+                      
+                      {agreement.status === 'fully_signed' && (
+                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 mb-4">
+                          <CheckCircle className="w-6 h-6 text-[#10B981] mx-auto mb-2" />
+                          <p className="text-sm font-semibold text-[#10B981] text-center">Agreement Fully Signed</p>
+                          <p className="text-xs text-[#808080] mt-1 text-center">Both parties have signed. Full details are now available.</p>
+                        </div>
+                      )}
+                      
+                      <p className="text-sm text-[#808080]">
+                        See full agreement details in the Agreement tab above.
+                      </p>
                     </div>
-                    <p className="text-sm text-[#808080] mb-4">
-                      This is your agreement summary for quick reference. Not a legal document.
-                    </p>
-
-                    {/* Agreement Actions based on status */}
-                    {currentRoom?.request_status === 'accepted' && !currentRoom?.agreement_status && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                                roomId: roomId,
-                                action: 'send_agreement'
-                              });
-                              if (response.data?.success) {
-                                toast.success('Agreement sent for signature!');
-                                window.location.reload();
-                              }
-                            } catch (error) {
-                              toast.error('Failed to send agreement');
-                            }
-                          }}
-                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
-                        >
-                          Send Agreement for Signing
-                        </Button>
-                        <p className="text-xs text-[#808080] mt-3 text-center">
-                          Generate and send the investor-agent agreement for e-signature. Full deal details unlock after both parties sign.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Agreement sent - show signing options */}
-                    {currentRoom?.agreement_status === 'sent' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const action = profile?.user_role === 'investor' ? 'investor_sign' : 'agent_sign';
-                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                                roomId: roomId,
-                                action: action
-                              });
-                              if (response.data?.success) {
-                                toast.success('You have signed the agreement!');
-                                window.location.reload();
-                              }
-                            } catch (error) {
-                              toast.error('Failed to sign agreement');
-                            }
-                          }}
-                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
-                        >
-                          Sign Agreement
-                        </Button>
-                        <p className="text-xs text-[#808080] mt-3 text-center">
-                          Review and sign the agreement to proceed with this deal.
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Waiting for other party */}
-                    {currentRoom?.agreement_status === 'investor_signed' && profile?.user_role === 'investor' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                          <p className="text-sm font-semibold text-[#60A5FA]">Waiting for Agent to Sign</p>
-                          <p className="text-xs text-[#808080] mt-1">You'll be notified when the agent signs.</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {currentRoom?.agreement_status === 'agent_signed' && profile?.user_role === 'agent' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                          <p className="text-sm font-semibold text-[#60A5FA]">Waiting for Investor to Sign</p>
-                          <p className="text-xs text-[#808080] mt-1">You'll be notified when the investor signs.</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Both signed - allow other party to sign */}
-                    {currentRoom?.agreement_status === 'investor_signed' && profile?.user_role === 'agent' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                                roomId: roomId,
-                                action: 'finalize_signatures'
-                              });
-                              if (response.data?.success) {
-                                toast.success('Agreement fully executed! Full details now unlocked.');
-                                queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                                queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                                window.location.reload();
-                              }
-                            } catch (error) {
-                              toast.error('Failed to sign agreement');
-                            }
-                          }}
-                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
-                        >
-                          Sign Agreement (Investor Already Signed)
-                        </Button>
-                      </div>
-                    )}
-
-                    {currentRoom?.agreement_status === 'agent_signed' && profile?.user_role === 'investor' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <Button
-                          onClick={async () => {
-                            try {
-                              const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                                roomId: roomId,
-                                action: 'finalize_signatures'
-                              });
-                              if (response.data?.success) {
-                                toast.success('Agreement fully executed! Full details now unlocked.');
-                                queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                                queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                                window.location.reload();
-                              }
-                            } catch (error) {
-                              toast.error('Failed to sign agreement');
-                            }
-                          }}
-                          className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold py-3 rounded-full"
-                        >
-                          Sign Agreement (Agent Already Signed)
-                        </Button>
-                      </div>
-                    )}
-
-                    {/* Fully Signed - Show Status */}
-                    {currentRoom?.agreement_status === 'fully_signed' && (
-                      <div className="mt-6 pt-6 border-t border-[#1F1F1F]">
-                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
-                          <CheckCircle className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-[#10B981]">Agreement Fully Signed</p>
-                          <p className="text-xs text-[#808080] mt-1">Both parties have signed. Full details are now available.</p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  )}
 
                   {/* Key Terms */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">

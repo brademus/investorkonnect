@@ -23,35 +23,44 @@ export default function DocuSignReturn() {
       try {
         const response = await base44.functions.invoke('docusignHandleReturn', {
           token,
-          event
+          event: event || 'signing_complete'
         });
 
         if (response.data.error) {
           setError(true);
           setMessage(`Error: ${response.data.error}`);
           setTimeout(() => {
-            window.location.href = response.data.returnTo || '/';
+            window.location.href = response.data.returnTo || '/Pipeline';
           }, 3000);
           return;
         }
 
-        setMessage(response.data.message || 'Signing complete!');
-        if (response.data.returnTo) {
-          setTimeout(() => {
-            window.location.href = response.data.returnTo;
-          }, 1000);
-        } else {
-          setTimeout(() => {
-            window.location.href = '/';
-          }, 1000);
-        }
+        const status = response.data.status;
+        const statusMessage = status === 'fully_signed' 
+          ? 'Agreement fully signed! Deal unlocked.' 
+          : status === 'investor_signed'
+          ? 'You signed! Waiting for agent signature.'
+          : status === 'agent_signed'
+          ? 'You signed! Waiting for investor signature.'
+          : 'Signing complete!';
+        
+        setMessage(statusMessage);
+        
+        // Add cache buster to force reload fresh data
+        const returnTo = response.data.returnTo || '/Pipeline';
+        const cacheBuster = returnTo.includes('?') ? '&_t=' : '?_t=';
+        const finalUrl = `${returnTo}${cacheBuster}${Date.now()}`;
+        
+        setTimeout(() => {
+          window.location.href = finalUrl;
+        }, 1500);
 
       } catch (err) {
         console.error('Error handling DocuSign return:', err);
         setError(true);
         setMessage('An unexpected error occurred.');
         setTimeout(() => {
-          window.location.href = '/';
+          window.location.href = '/Pipeline';
         }, 3000);
       }
     }
