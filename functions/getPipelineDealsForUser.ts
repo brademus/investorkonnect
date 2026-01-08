@@ -74,6 +74,21 @@ Deno.serve(async (req) => {
       console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
     }
 
+    // Fetch all LegalAgreements for these deals (BEFORE mapping)
+    const dealIds = deals.map(d => d.id);
+    let agreementsMap = new Map();
+    if (dealIds.length > 0) {
+      try {
+        const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({
+          deal_id: { $in: dealIds }
+        });
+        allAgreements.forEach(a => agreementsMap.set(a.deal_id, a));
+        console.log('[getPipelineDealsForUser] Loaded agreements:', allAgreements.length);
+      } catch (e) {
+        console.error('Error fetching agreements:', e);
+      }
+    }
+
     // Apply role-based redaction
     const redactedDeals = deals.map(deal => {
       // Get room for this deal to check signature status
@@ -81,18 +96,13 @@ Deno.serve(async (req) => {
         ? agentRooms?.filter(r => r.deal_id === deal.id) || []
         : [];
       const room = rooms[0];
+      
       // Get LegalAgreement status (source of truth for gating)
-      let isFullySigned = false;
-      try {
-        const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal.id });
-        if (agreements.length > 0) {
-          const agreement = agreements[0];
-          isFullySigned = agreement.status === 'fully_signed';
-        }
-      } catch (e) {
-        // LegalAgreement may not exist yet - fallback to Room status
-        isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
-      }
+      const agreement = agreementsMap.get(deal.id);
+      const isFullySigned = agreement?.status === 'fully_signed' || 
+                           agreement?.status === 'attorney_review_pending' ||
+                           room?.agreement_status === 'fully_signed' || 
+                           room?.request_status === 'signed';
 
       // Base fields everyone can see
       const baseDeal = {
@@ -110,7 +120,8 @@ Deno.serve(async (req) => {
         key_dates: deal.key_dates,
         investor_id: deal.investor_id,
         agent_id: deal.agent_id,
-        is_fully_signed: isFullySigned
+        is_fully_signed: isFullySigned,
+        proposed_terms: deal.proposed_terms
       };
 
       // Sensitive fields - only visible to investors OR fully signed agents
