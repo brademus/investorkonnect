@@ -225,12 +225,11 @@ export default function ContractVerify() {
         }
       }
 
-      // NEW: Verify seller name
+      // Verify seller name
       if (dealData.sellerName && extracted.seller_info?.seller_name) {
         const inputName = normalizeName(dealData.sellerName);
         const extractedName = normalizeName(extracted.seller_info.seller_name);
         
-        // Check exact match or strong containment
         const isMatch = 
           inputName === extractedName ||
           (inputName.length >= 3 && extractedName.includes(inputName)) ||
@@ -238,6 +237,28 @@ export default function ContractVerify() {
         
         if (!isMatch) {
           validationErrors.push(`Seller name mismatch: You entered "${dealData.sellerName}" but contract shows "${extracted.seller_info.seller_name}"`);
+        }
+      }
+
+      // Verify earnest money (10% tolerance)
+      if (dealData.earnestMoney && extracted.seller_info?.earnest_money) {
+        const inputEM = Number(String(dealData.earnestMoney).replace(/[$,\s]/g, ''));
+        const contractEM = Number(String(extracted.seller_info.earnest_money).replace(/[$,\s]/g, ''));
+        const diff = Math.abs(inputEM - contractEM);
+        const tolerance = inputEM * 0.10;
+        
+        if (diff > tolerance) {
+          validationErrors.push(`Earnest money mismatch: You entered $${inputEM.toLocaleString()} but contract shows $${contractEM.toLocaleString()}`);
+        }
+      }
+
+      // Verify contract date if entered
+      if (dealData.contractDate && extracted.key_dates?.contract_date) {
+        const inputDate = new Date(dealData.contractDate).toISOString().split('T')[0];
+        const contractDate = new Date(extracted.key_dates.contract_date).toISOString().split('T')[0];
+        
+        if (inputDate !== contractDate) {
+          validationErrors.push(`Contract date mismatch: You entered ${dealData.contractDate} but contract shows ${extracted.key_dates.contract_date}`);
         }
       }
 
@@ -543,6 +564,14 @@ export default function ContractVerify() {
               <li className="flex items-center gap-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
                 Seller name matches
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                Earnest money amount (10% tolerance)
+              </li>
+              <li className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
+                Contract date (if entered)
               </li>
             </ul>
           </div>
