@@ -741,30 +741,70 @@ ${dealContext}`;
               {/* Tab Content */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
-                  {/* Auto-Generate Contract CTA (Investor Only) */}
-                  {profile?.user_role === 'investor' && !agreement && currentRoom?.deal_id && (
-                    <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                          <Shield className="w-6 h-6 text-[#E3C567]" />
+                  {/* Agreement Status CTA (Investor Only) */}
+                  {profile?.user_role === 'investor' && currentRoom?.deal_id && (
+                    <>
+                      {!agreement && (
+                        <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Shield className="w-6 h-6 text-[#E3C567]" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-lg font-bold text-[#E3C567] mb-2">
+                                Ready to Formalize This Deal?
+                              </h4>
+                              <p className="text-sm text-[#FAFAFA]/90 mb-4">
+                                Generate your Investor-Agent Operating Agreement to lock in terms, unlock full property details, and move forward with confidence.
+                              </p>
+                              <Button
+                                onClick={() => setActiveTab('agreement')}
+                                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full px-6 py-2.5 flex items-center gap-2"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Auto-Generate Contract
+                              </Button>
+                            </div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <h4 className="text-lg font-bold text-[#E3C567] mb-2">
-                            Ready to Formalize This Deal?
-                          </h4>
-                          <p className="text-sm text-[#FAFAFA]/90 mb-4">
-                            Generate your Investor-Agent Operating Agreement to lock in terms, unlock full property details, and move forward with confidence.
-                          </p>
-                          <Button
-                            onClick={() => setActiveTab('agreement')}
-                            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full px-6 py-2.5 flex items-center gap-2"
-                          >
-                            <FileText className="w-4 h-4" />
-                            Auto-Generate Contract
-                          </Button>
+                      )}
+                      
+                      {agreement && agreement.status === 'investor_signed' && (
+                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <Clock className="w-6 h-6 text-[#60A5FA]" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-lg font-bold text-[#60A5FA] mb-2">
+                                Awaiting Agent Signature
+                              </h4>
+                              <p className="text-sm text-[#FAFAFA]/90">
+                                You've signed the agreement! Waiting for the agent to complete their signature. You'll be notified when they sign.
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                      </div>
-                    </div>
+                      )}
+                      
+                      {agreement && agreement.status === 'fully_signed' && (
+                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-2xl p-6">
+                          <div className="flex items-start gap-4">
+                            <div className="w-12 h-12 bg-[#10B981]/20 rounded-full flex items-center justify-center flex-shrink-0">
+                              <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
+                            </div>
+                            <div className="flex-1">
+                              <h4 className="text-lg font-bold text-[#10B981] mb-2">
+                                Deal Locked In!
+                              </h4>
+                              <p className="text-sm text-[#FAFAFA]/90">
+                                Both parties have signed. Full property details and agent contact information are now unlocked.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </>
                   )}
                   
                   {/* Privacy Warning for Agents */}
@@ -1224,6 +1264,7 @@ ${dealContext}`;
                     <LegalAgreementPanel
                       deal={deal}
                       profile={profile}
+                      agreement={agreement}
                       onUpdate={() => {
                         loadAgreement();
                         queryClient.invalidateQueries({ queryKey: ['rooms'] });

@@ -9,9 +9,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
-  const [agreement, setAgreement] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function LegalAgreementPanel({ deal, profile, agreement: agreementProp, onUpdate }) {
+  const [agreement, setAgreement] = useState(agreementProp || null);
+  const [loading, setLoading] = useState(!agreementProp);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -22,9 +22,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const isInvestor = deal?.investor_id === profile?.id;
   const isAgent = deal?.agent_id === profile?.id;
 
+  // Update local state when prop changes
   useEffect(() => {
-    if (deal?.id) {
+    if (agreementProp) {
+      setAgreement(agreementProp);
+      setLoading(false);
+    }
+  }, [agreementProp]);
+
+  useEffect(() => {
+    if (deal?.id && !agreementProp) {
       loadAgreement();
+      determineNetPolicy();
+    } else if (deal?.id) {
       determineNetPolicy();
     }
   }, [deal?.id]);
