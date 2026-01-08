@@ -24,19 +24,23 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
 
   // Update local state when prop changes
   useEffect(() => {
-    if (agreementProp) {
+    if (agreementProp !== undefined) {
+      console.log('[LegalAgreementPanel] Prop updated:', agreementProp);
       setAgreement(agreementProp);
       setLoading(false);
     }
   }, [agreementProp]);
 
   useEffect(() => {
-    // Always load agreement on mount and when deal changes
-    if (deal?.id) {
+    // Only load if agreementProp is undefined (not provided by parent)
+    if (deal?.id && agreementProp === undefined) {
+      console.log('[LegalAgreementPanel] Loading agreement (no prop provided)');
       loadAgreement();
+    }
+    if (deal?.id) {
       determineNetPolicy();
     }
-  }, [deal?.id]);
+  }, [deal?.id, agreementProp]);
   
   // Also reload when returning from DocuSign
   useEffect(() => {
