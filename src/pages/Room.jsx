@@ -229,57 +229,70 @@ export default function Room() {
   const [agreement, setAgreement] = useState(null);
   
   const loadAgreement = async () => {
-    if (!currentRoom?.deal_id || !profile?.user_role) {
+    if (!currentRoom?.deal_id) {
       return;
     }
     
     try {
+      console.log('[Room] Loading agreement for deal:', currentRoom.deal_id);
+      
       // Reload deal details
       const response = await base44.functions.invoke('getDealDetailsForUser', {
         dealId: currentRoom.deal_id
       });
-      if (response.data) setDeal(response.data);
+      if (response.data) {
+        setDeal(response.data);
+        console.log('[Room] Deal loaded, is_fully_signed:', response.data.is_fully_signed);
+      }
       
-      // Load legal agreement
-      const actorRole = (profile.user_role || '').toLowerCase();
-      const params = new URLSearchParams({ 
-        deal_id: currentRoom.deal_id,
-        role: actorRole
-      });
+      // Load legal agreement (backend only needs deal_id, verifies access via user auth)
+      const params = new URLSearchParams({ deal_id: currentRoom.deal_id });
       const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
       
       if (agreementResponse.ok) {
         const agreementData = await agreementResponse.json();
-        console.log('[Room] Loaded agreement:', agreementData.agreement?.status);
+        console.log('[Room] ✓ Agreement loaded:', {
+          status: agreementData.agreement?.status,
+          investor_signed: !!agreementData.agreement?.investor_signed_at,
+          agent_signed: !!agreementData.agreement?.agent_signed_at
+        });
         setAgreement(agreementData.agreement || null);
       } else {
+        console.log('[Room] No agreement found or access denied');
         setAgreement(null);
       }
     } catch (error) {
-      console.error('Failed to reload deal/agreement:', error);
+      console.error('[Room] Failed to reload deal/agreement:', error);
       setAgreement(null);
     }
   };
   
   // Load agreement on mount and when deal changes
   useEffect(() => {
-    if (currentRoom?.deal_id && profile?.user_role) {
+    if (currentRoom?.deal_id) {
       loadAgreement();
     }
-  }, [currentRoom?.deal_id, profile?.user_role]);
+  }, [currentRoom?.deal_id]);
   
-  // Also reload on URL change (after DocuSign return with signed=1)
+  // CRITICAL: Reload after DocuSign return with signed=1
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') && currentRoom?.deal_id && profile?.user_role) {
-      console.log('[Room] Post-signing reload detected, refreshing agreement and room...');
+    if (params.get('signed') && currentRoom?.deal_id) {
+      console.log('[Room] 🔄 Post-signing reload triggered - refetching agreement and rooms...');
+      
+      // Aggressive refresh with delays to ensure backend has processed
       setTimeout(() => {
         loadAgreement();
-        // Also invalidate cache to refetch rooms
         queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      }, 500);
+      }, 300);
+      
+      // Second refresh to catch any delayed updates
+      setTimeout(() => {
+        loadAgreement();
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      }, 1000);
     }
-  }, [location.search, currentRoom?.deal_id, profile?.user_role]);
+  }, [location.search, currentRoom?.deal_id]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -763,9 +776,10 @@ ${dealContext}`;
               {/* Tab Content */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
-                  {/* Agreement Status CTA (Investor Only) */}
+                  {/* Agreement Status CTA (Investor Only) - Phase-Based Display */}
                   {profile?.user_role === 'investor' && currentRoom?.deal_id && (
                     <>
+                      {/* Phase: No Agreement or Draft */}
                       {(!agreement || agreement.status === 'draft') && (
                         <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
@@ -784,13 +798,14 @@ ${dealContext}`;
                                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full px-6 py-2.5 flex items-center gap-2"
                               >
                                 <FileText className="w-4 h-4" />
-                                Auto-Generate Contract
+                                Generate Agreement
                               </Button>
                             </div>
                           </div>
                         </div>
                       )}
                       
+                      {/* Phase: Investor Signed, Agent Pending */}
                       {agreement && (agreement.status === 'investor_signed' || agreement.status === 'sent') && (
                         <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
@@ -801,15 +816,20 @@ ${dealContext}`;
                               <h4 className="text-lg font-bold text-[#60A5FA] mb-2">
                                 Awaiting Agent Signature
                               </h4>
-                              <p className="text-sm text-[#FAFAFA]/90">
-                                You've signed the agreement! Waiting for the agent to complete their signature. You'll be notified when they sign.
+                              <p className="text-sm text-[#FAFAFA]/90 mb-3">
+                                You've signed the agreement! Waiting for {currentRoom.counterparty_name || 'the agent'} to complete their signature.
                               </p>
+                              <div className="flex items-center gap-2 text-xs text-[#FAFAFA]/70">
+                                <CheckCircle className="w-4 h-4 text-[#10B981]" />
+                                <span>You signed {agreement.investor_signed_at ? new Date(agreement.investor_signed_at).toLocaleDateString() : 'recently'}</span>
+                              </div>
                             </div>
                           </div>
                         </div>
                       )}
                       
-                      {agreement && agreement.status === 'fully_signed' && (
+                      {/* Phase: Fully Signed / Locked In */}
+                      {agreement && (agreement.status === 'fully_signed' || agreement.status === 'attorney_review_pending') && (
                         <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-[#10B981]/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -817,10 +837,13 @@ ${dealContext}`;
                             </div>
                             <div className="flex-1">
                               <h4 className="text-lg font-bold text-[#10B981] mb-2">
-                                Deal Locked In!
+                                {agreement.status === 'attorney_review_pending' ? 'Attorney Review Period' : 'Deal Locked In!'}
                               </h4>
                               <p className="text-sm text-[#FAFAFA]/90">
-                                Both parties have signed. Full property details and agent contact information are now unlocked.
+                                {agreement.status === 'attorney_review_pending' 
+                                  ? 'Both parties have signed. NJ attorney review period in progress - full details unlocked.'
+                                  : 'Both parties have signed. Full property details and agent contact information are now unlocked.'
+                                }
                               </p>
                             </div>
                           </div>
