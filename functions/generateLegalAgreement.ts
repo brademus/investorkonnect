@@ -176,15 +176,14 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
         
         if (isAnchor) {
           // Draw anchor as WHITE 1px text (invisible but searchable by DocuSign)
-          // Note: pdf-lib doesn't support opacity, so we rely on white color matching white background
           page.drawText(part, {
             x: xPos,
             y: yPosition,
-            size: 0.1, // Extremely tiny
+            size: 1,
             font: font,
-            color: rgb(1, 1, 1) // Pure white (invisible on white background)
+            color: rgb(1, 1, 1), // Pure white
+            opacity: 0.01 // Nearly invisible
           });
-          console.log(`[DocuSign PDF] Rendered invisible anchor: ${part} at position (${xPos}, ${yPosition})`);
           // Don't advance xPos - anchor takes no visible space
         } else if (part.trim()) {
           // Draw visible text normally
@@ -634,14 +633,12 @@ Deno.serve(async (req) => {
     }
     
     console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
-    console.log('[PDF Generation] Starting dual PDF generation...');
-    console.log('[PDF Generation] Signature section preview:', templateText.substring(templateText.indexOf('SIGNATURES'), templateText.indexOf('SIGNATURES') + 500));
     
     // Generate TWO PDFs: human-readable and DocuSign-specific
-    console.log('[PDF Generation] Creating human-readable PDF (anchors stripped)...');
+    console.log('Generating human-readable PDF (no anchors visible)...');
     const humanPdfBytes = await generatePdfFromText(templateText, deal.id, false);
     
-    console.log('[PDF Generation] Creating DocuSign PDF (anchors invisible white text)...');
+    console.log('Generating DocuSign PDF (invisible anchors)...');
     const docusignPdfBytes = await generatePdfFromText(templateText, deal.id, true);
     
     // Compute hashes for both
