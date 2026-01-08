@@ -10,8 +10,8 @@ import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-rea
 import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, agreement: agreementProp, onUpdate }) {
-  const [agreement, setAgreement] = useState(agreementProp || null);
-  const [loading, setLoading] = useState(!agreementProp);
+  const [agreement, setAgreement] = useState(agreementProp);
+  const [loading, setLoading] = useState(agreementProp === undefined);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
