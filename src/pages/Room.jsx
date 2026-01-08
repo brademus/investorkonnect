@@ -278,10 +278,14 @@ export default function Room() {
       
       setDeal(freshDeal);
       
-      // 3. CRITICAL: Fetch agreement directly
+      // 3. CRITICAL: Fetch agreement directly with cache busting
       console.log('[Room] 📜 Fetching agreement for deal:', freshRoom.deal_id);
-      const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}`;
-      const agreementResponse = await fetch(agreementUrl);
+      const cacheBuster = Date.now();
+      const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}&_cb=${cacheBuster}`;
+      const agreementResponse = await fetch(agreementUrl, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       
       console.log('[Room] Agreement fetch response:', {
         ok: agreementResponse.ok,
@@ -353,23 +357,19 @@ export default function Room() {
     if (params.get('signed') && roomId) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
       
-      // Immediate refresh
-      refreshRoomState();
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      
-      // Second refresh after 1 second to catch any delayed backend updates
-      setTimeout(() => {
-        console.log('[Room] 🔄 Second refresh (1s delay)');
-        refreshRoomState();
+      // Immediate refresh with cache busting
+      const doRefresh = async () => {
+        await refreshRoomState();
         queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      }, 1000);
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+      };
       
-      // Third refresh after 2 seconds as final safety net
-      setTimeout(() => {
-        console.log('[Room] 🔄 Third refresh (2s delay)');
-        refreshRoomState();
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      }, 2000);
+      doRefresh();
+      
+      // Aggressive retry schedule
+      setTimeout(doRefresh, 500);
+      setTimeout(doRefresh, 1500);
+      setTimeout(doRefresh, 3000);
     }
   }, [location.search, roomId]);
 

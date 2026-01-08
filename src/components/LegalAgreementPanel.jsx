@@ -117,9 +117,13 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
       setLoading(true);
       console.log('[LegalAgreementPanel] Loading agreement for deal:', deal.id);
       
-      // Use consistent param naming - backend only needs deal_id
-      const params = new URLSearchParams({ deal_id: deal.id });
-      const response = await fetch(`/api/functions/getLegalAgreement?${params}`);
+      // Use consistent param naming - backend only needs deal_id with cache busting
+      const cacheBuster = Date.now();
+      const params = new URLSearchParams({ deal_id: deal.id, _cb: cacheBuster });
+      const response = await fetch(`/api/functions/getLegalAgreement?${params}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       
       console.log('[LegalAgreementPanel] Agreement response:', {
         ok: response.ok,
