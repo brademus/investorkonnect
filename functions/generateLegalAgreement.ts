@@ -160,9 +160,8 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
     const currentSize = isTitle ? 14 : isHeading ? 11 : isSubheading ? 10.5 : fontSize;
     const textColor = rgb(0, 0, 0);
     
-    // Check if line contains DocuSign anchors
-    const anchorPattern = /\[\[([A-Z_]+)\]\]/g;
-    const hasAnchors = anchorPattern.test(line);
+    // Check if line contains DocuSign anchors (test without consuming regex)
+    const hasAnchors = /\[\[([A-Z_]+)\]\]/.test(line);
     
     if (hasAnchors && isDocuSignVersion) {
       // DocuSign version: render anchors as invisible text
@@ -181,8 +180,7 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
             y: yPosition,
             size: 1,
             font: font,
-            color: rgb(1, 1, 1), // Pure white
-            opacity: 0.01 // Nearly invisible
+            color: rgb(1, 1, 1) // Pure white
           });
           // Don't advance xPos - anchor takes no visible space
         } else if (part.trim()) {
