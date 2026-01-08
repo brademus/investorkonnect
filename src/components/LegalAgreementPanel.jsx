@@ -262,7 +262,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       if (data.error) {
         console.error('[LegalAgreement] Error from backend:', data.error);
-        toast.error(data.error);
+        
+        // Show detailed error if available
+        if (data.details) {
+          toast.error(data.error, { 
+            description: data.details,
+            duration: 10000 
+          });
+        } else {
+          toast.error(data.error, { duration: 7000 });
+        }
+        
         setSigning(false);
         return;
       }
