@@ -49,11 +49,19 @@ Deno.serve(async (req) => {
     const roomDealIds = new Set(rooms.map(r => r.deal_id).filter(Boolean));
     const dealsMap = new Map();
 
-    // Fetch user's own deals
+    // Fetch user's own deals based on role
     let myActiveDeals = [];
     try {
-      // Get all deals for this investor to support inference and orphans
-      const myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      // Get deals based on user role
+      let myDeals = [];
+      if (profile.user_role === 'investor') {
+        // Investors see their own deals
+        myDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      } else if (profile.user_role === 'agent') {
+        // Agents see deals they're assigned to
+        myDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
+      }
+      
       myDeals.forEach(d => {
         dealsMap.set(d.id, d);
         // Track active ones for inference
@@ -162,10 +170,12 @@ Deno.serve(async (req) => {
       finalRooms.push(r);
     });
 
-    // 7. Add Orphan Deals (Deals I own that aren't linked to a room yet)
-    // Only if they aren't already used in a valid room
+    // 7. Add Orphan Deals (Deals without rooms)
     myActiveDeals.forEach(deal => {
       if (!usedDealIds.has(deal.id)) {
+        // Different labels for investor vs agent
+        const orphanLabel = profile.user_role === 'agent' ? 'No Investor Yet' : 'No Agent Selected';
+        
         finalRooms.push({
           id: `virtual_${deal.id}`,
           deal_id: deal.id,
@@ -173,10 +183,12 @@ Deno.serve(async (req) => {
           property_address: deal.property_address,
           city: deal.city,
           state: deal.state,
+          county: deal.county,
+          zip: deal.zip,
           budget: deal.purchase_price,
-          pipeline_stage: deal.pipeline_stage || 'new_deal_under_contract',
+          pipeline_stage: deal.pipeline_stage || 'new_listings',
           created_date: deal.created_date,
-          counterparty_name: 'No Agent Selected',
+          counterparty_name: orphanLabel,
           counterparty_role: 'none',
           is_orphan: true
         });
