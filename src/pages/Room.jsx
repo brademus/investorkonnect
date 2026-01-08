@@ -228,71 +228,109 @@ export default function Room() {
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreement, setAgreement] = useState(null);
   
-  const loadAgreement = async () => {
-    if (!currentRoom?.deal_id) {
-      return;
-    }
+  const refreshRoomState = async () => {
+    if (!roomId) return;
     
     try {
-      console.log('[Room] Loading agreement for deal:', currentRoom.deal_id);
+      console.log('[Room] 🔄 Refreshing room state...');
       
-      // Reload deal details
-      const response = await base44.functions.invoke('getDealDetailsForUser', {
-        dealId: currentRoom.deal_id
+      // 1. Refetch room data
+      const roomData = await base44.entities.Room.filter({ id: roomId });
+      if (!roomData || roomData.length === 0) {
+        console.error('[Room] Room not found');
+        return;
+      }
+      
+      const freshRoom = roomData[0];
+      console.log('[Room] Fresh room data:', {
+        request_status: freshRoom.request_status,
+        agreement_status: freshRoom.agreement_status,
+        is_fully_signed: freshRoom.is_fully_signed
       });
-      if (response.data) {
-        setDeal(response.data);
-        console.log('[Room] Deal loaded, is_fully_signed:', response.data.is_fully_signed);
-      }
       
-      // Load legal agreement (backend only needs deal_id, verifies access via user auth)
-      const params = new URLSearchParams({ deal_id: currentRoom.deal_id });
-      const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
-      
-      if (agreementResponse.ok) {
-        const agreementData = await agreementResponse.json();
-        console.log('[Room] ✓ Agreement loaded:', {
-          status: agreementData.agreement?.status,
-          investor_signed: !!agreementData.agreement?.investor_signed_at,
-          agent_signed: !!agreementData.agreement?.agent_signed_at
+      // 2. Refetch deal data with access control
+      if (freshRoom.deal_id) {
+        const response = await base44.functions.invoke('getDealDetailsForUser', {
+          dealId: freshRoom.deal_id
         });
-        setAgreement(agreementData.agreement || null);
-      } else {
-        console.log('[Room] No agreement found or access denied');
-        setAgreement(null);
+        const freshDeal = response.data;
+        
+        if (freshDeal) {
+          setDeal(freshDeal);
+          console.log('[Room] Fresh deal loaded, is_fully_signed:', freshDeal.is_fully_signed);
+          
+          // Update currentRoom with fresh deal data
+          const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
+            ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
+            : freshDeal.title;
+          
+          setCurrentRoom({
+            ...freshRoom,
+            title: displayTitle,
+            property_address: freshDeal.property_address,
+            city: freshDeal.city,
+            state: freshDeal.state,
+            county: freshDeal.county,
+            zip: freshDeal.zip,
+            budget: freshDeal.purchase_price,
+            pipeline_stage: freshDeal.pipeline_stage,
+            closing_date: freshDeal.key_dates?.closing_date,
+            deal_assigned_agent_id: freshDeal.agent_id,
+            is_fully_signed: freshDeal.is_fully_signed
+          });
+        } else {
+          setCurrentRoom(freshRoom);
+        }
+        
+        // 3. Refetch agreement
+        const params = new URLSearchParams({ deal_id: freshRoom.deal_id });
+        const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
+        
+        if (agreementResponse.ok) {
+          const agreementData = await agreementResponse.json();
+          console.log('[Room] ✓ Fresh agreement loaded:', {
+            status: agreementData.agreement?.status,
+            investor_signed: !!agreementData.agreement?.investor_signed_at,
+            agent_signed: !!agreementData.agreement?.agent_signed_at
+          });
+          setAgreement(agreementData.agreement || null);
+        } else {
+          console.log('[Room] No agreement found');
+          setAgreement(null);
+        }
       }
+      
+      console.log('[Room] ✅ Room state refresh complete');
     } catch (error) {
-      console.error('[Room] Failed to reload deal/agreement:', error);
-      setAgreement(null);
+      console.error('[Room] Failed to refresh room state:', error);
     }
   };
-  
-  // Load agreement on mount and when deal changes
-  useEffect(() => {
-    if (currentRoom?.deal_id) {
-      loadAgreement();
-    }
-  }, [currentRoom?.deal_id]);
   
   // CRITICAL: Reload after DocuSign return with signed=1
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') && currentRoom?.deal_id) {
-      console.log('[Room] 🔄 Post-signing reload triggered - refetching agreement and rooms...');
+    if (params.get('signed') && roomId) {
+      console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
       
-      // Aggressive refresh with delays to ensure backend has processed
-      setTimeout(() => {
-        loadAgreement();
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      }, 300);
+      // Immediate refresh
+      refreshRoomState();
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
       
-      // Second refresh to catch any delayed updates
+      // Second refresh after 1 second to catch any delayed backend updates
       setTimeout(() => {
-        loadAgreement();
+        console.log('[Room] 🔄 Second refresh (1s delay)');
+        refreshRoomState();
         queryClient.invalidateQueries({ queryKey: ['rooms'] });
       }, 1000);
+      
+      // Third refresh after 2 seconds as final safety net
+      setTimeout(() => {
+        console.log('[Room] 🔄 Third refresh (2s delay)');
+        refreshRoomState();
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      }, 2000);
     }
-  }, [location.search, currentRoom?.deal_id]);
+  }, [location.search, roomId]);
 
   // Fetch current room with server-side access control
   useEffect(() => {
@@ -305,6 +343,13 @@ export default function Room() {
         if (roomData && roomData.length > 0) {
           const room = roomData[0];
           
+          console.log('[Room] Initial room load:', {
+            room_id: room.id,
+            request_status: room.request_status,
+            is_fully_signed: room.is_fully_signed,
+            agreement_status: room.agreement_status
+          });
+          
           // Use server-side access-controlled deal fetch
           if (room.deal_id) {
             try {
@@ -314,7 +359,11 @@ export default function Room() {
               const deal = response.data;
               
               if (deal) {
-                setDeal(deal); // Store redacted deal separately
+                setDeal(deal);
+                console.log('[Room] Deal loaded:', {
+                  is_fully_signed: deal.is_fully_signed,
+                  pipeline_stage: deal.pipeline_stage
+                });
                 
                 // Redact title for agents if not fully signed
                 const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
@@ -324,7 +373,7 @@ export default function Room() {
                 setCurrentRoom({
                   ...room,
                   title: displayTitle,
-                  property_address: deal.property_address, // Already redacted by server
+                  property_address: deal.property_address,
                   city: deal.city,
                   state: deal.state,
                   county: deal.county,
@@ -335,6 +384,16 @@ export default function Room() {
                   deal_assigned_agent_id: deal.agent_id,
                   is_fully_signed: deal.is_fully_signed
                 });
+                
+                // Load agreement on initial room load
+                const params = new URLSearchParams({ deal_id: room.deal_id });
+                const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
+                
+                if (agreementResponse.ok) {
+                  const agreementData = await agreementResponse.json();
+                  console.log('[Room] Initial agreement load:', agreementData.agreement?.status);
+                  setAgreement(agreementData.agreement || null);
+                }
               } else {
                 setCurrentRoom(room);
               }
