@@ -229,35 +229,44 @@ export default function Room() {
   const [agreement, setAgreement] = useState(null);
   
   const loadAgreement = async () => {
-    if (currentRoom?.deal_id) {
-      try {
-        // Reload deal details
-        const response = await base44.functions.invoke('getDealDetailsForUser', {
-          dealId: currentRoom.deal_id
-        });
-        if (response.data) setDeal(response.data);
-        
-        // Load legal agreement
-        const params = new URLSearchParams({ deal_id: currentRoom.deal_id });
-        const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`, {
-          headers: { 'Authorization': `Bearer ${await base44.auth.getAccessToken()}` }
-        });
+    if (!currentRoom?.deal_id || !profile?.user_role) {
+      return;
+    }
+    
+    try {
+      // Reload deal details
+      const response = await base44.functions.invoke('getDealDetailsForUser', {
+        dealId: currentRoom.deal_id
+      });
+      if (response.data) setDeal(response.data);
+      
+      // Load legal agreement
+      const actorRole = (profile.user_role || '').toLowerCase();
+      const params = new URLSearchParams({ 
+        deal_id: currentRoom.deal_id,
+        role: actorRole
+      });
+      const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`);
+      
+      if (agreementResponse.ok) {
         const agreementData = await agreementResponse.json();
-        if (agreementData.agreement) {
-          setAgreement(agreementData.agreement);
-        }
-      } catch (error) {
-        console.error('Failed to reload deal:', error);
+        console.log('[Room] Loaded agreement:', agreementData.agreement?.status);
+        setAgreement(agreementData.agreement || null);
+      } else {
+        setAgreement(null);
       }
+    } catch (error) {
+      console.error('Failed to reload deal/agreement:', error);
+      setAgreement(null);
     }
   };
   
   // Load agreement on mount and when deal changes
   useEffect(() => {
-    if (currentRoom?.deal_id) {
+    if (currentRoom?.deal_id && profile?.user_role) {
       loadAgreement();
     }
-  }, [currentRoom?.deal_id]);
+  }, [currentRoom?.deal_id, profile?.user_role]);
 
   // Fetch current room with server-side access control
   useEffect(() => {

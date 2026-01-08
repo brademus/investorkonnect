@@ -130,7 +130,16 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
         role: actorRole
       });
       const response = await fetch(`/api/functions/getLegalAgreement?${params}`);
+      
+      if (!response.ok) {
+        console.error('Failed to load agreement:', response.status);
+        setAgreement(null);
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
+      console.log('[LegalAgreementPanel] Loaded agreement:', data.agreement?.status);
       setAgreement(data.agreement || null);
     } catch (error) {
       console.error('Failed to load agreement:', error);
