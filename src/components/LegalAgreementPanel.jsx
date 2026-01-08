@@ -477,34 +477,12 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
             )}
             
             {isInvestor && agreement.status === 'draft' && (
-              <>
-                <Button
-                  onClick={handleOpenGenerateModal}
-                  variant="outline"
-                  className="flex-1">
-                  Regenerate
-                </Button>
-                <Button
-                  onClick={async () => {
-                    try {
-                      const { data } = await base44.functions.invoke('sendLegalAgreement', {
-                        agreement_id: agreement.id
-                      });
-                      if (data.error) {
-                        toast.error(data.error);
-                      } else {
-                        toast.success('Agreement sent');
-                        setAgreement(data.agreement);
-                        if (onUpdate) onUpdate();
-                      }
-                    } catch (error) {
-                      toast.error('Failed to send agreement');
-                    }
-                  }}
-                  className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                  Send for Signature
-                </Button>
-              </>
+              <Button
+                onClick={handleOpenGenerateModal}
+                variant="outline"
+                className="flex-1">
+                Regenerate Agreement
+              </Button>
             )}
           </div>
         </div>
