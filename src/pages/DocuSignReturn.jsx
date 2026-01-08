@@ -21,21 +21,21 @@ export default function DocuSignReturn() {
       }
 
       try {
-        const response = await base44.functions.invoke('docusignHandleReturn', {
-          token,
-          event: event || 'signing_complete'
-        });
+        // Call backend via direct fetch to pass query params correctly
+        const url = `/api/functions/docusignHandleReturn?token=${token}&event=${event || 'signing_complete'}`;
+        const response = await fetch(url);
+        const data = await response.json();
 
-        if (response.data.error) {
+        if (!response.ok || data.error) {
           setError(true);
-          setMessage(`Error: ${response.data.error}`);
+          setMessage(`Error: ${data.error}`);
           setTimeout(() => {
-            window.location.href = response.data.returnTo || '/Pipeline';
+            window.location.href = data.returnTo || '/Pipeline';
           }, 3000);
           return;
         }
 
-        const status = response.data.status;
+        const status = data.status;
         const statusMessage = status === 'fully_signed' 
           ? 'Agreement fully signed! Deal unlocked.' 
           : status === 'investor_signed'
@@ -47,9 +47,11 @@ export default function DocuSignReturn() {
         setMessage(statusMessage);
         
         // Add cache buster to force reload fresh data
-        const returnTo = response.data.returnTo || '/Pipeline';
-        const cacheBuster = returnTo.includes('?') ? '&_t=' : '?_t=';
+        const returnTo = data.returnTo || '/Pipeline';
+        const cacheBuster = returnTo.includes('?') ? '&signed=1&_t=' : '?signed=1&_t=';
         const finalUrl = `${returnTo}${cacheBuster}${Date.now()}`;
+        
+        console.log('[DocuSignReturn] Redirecting to:', finalUrl);
         
         setTimeout(() => {
           window.location.href = finalUrl;

@@ -268,12 +268,16 @@ export default function Room() {
     }
   }, [currentRoom?.deal_id, profile?.user_role]);
   
-  // Also reload on URL change (after DocuSign return)
+  // Also reload on URL change (after DocuSign return with signed=1)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('docusign_event') && currentRoom?.deal_id && profile?.user_role) {
-      console.log('[Room] DocuSign return detected, reloading agreement...');
-      setTimeout(() => loadAgreement(), 500);
+    if (params.get('signed') && currentRoom?.deal_id && profile?.user_role) {
+      console.log('[Room] Post-signing reload detected, refreshing agreement and room...');
+      setTimeout(() => {
+        loadAgreement();
+        // Also invalidate cache to refetch rooms
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      }, 500);
     }
   }, [location.search, currentRoom?.deal_id, profile?.user_role]);
 

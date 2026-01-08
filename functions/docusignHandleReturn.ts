@@ -26,9 +26,12 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     
-    const { token, event } = await req.json();
+    // Parse from URL params (DocuSign appends event as query param)
+    const url = new URL(req.url);
+    const token = url.searchParams.get('token');
+    const event = url.searchParams.get('event') || 'signing_complete';
     
-    console.log('[docusignHandleReturn] START:', { token, event });
+    console.log('[docusignHandleReturn] START:', { token: token ? 'present' : 'missing', event });
     
     if (!token) {
       return Response.json({ error: 'token required' }, { status: 400 });
@@ -57,6 +60,17 @@ Deno.serve(async (req) => {
       });
     }
     
+    // Only process signing_complete event
+    if (event !== 'signing_complete') {
+      console.log('[docusignHandleReturn] Non-signing event:', event, '- redirecting');
+      await base44.asServiceRole.entities.SigningToken.update(signingToken.id, { used: true });
+      return Response.json({ 
+        success: true,
+        returnTo: signingToken.return_to,
+        message: `Event: ${event} (not processed)`
+      });
+    }
+    
     // Mark token as used
     await base44.asServiceRole.entities.SigningToken.update(signingToken.id, { used: true });
     
@@ -67,7 +81,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Agreement not found' }, { status: 404 });
     }
     
-    const agreement = agreements[0];
+    let agreement = agreements[0];
     
     console.log('[docusignHandleReturn] Agreement loaded:', {
       agreement_id: agreement.id,
@@ -164,6 +178,7 @@ Deno.serve(async (req) => {
           action: 'nj_review_started',
           details: 'NJ attorney review period started (3 business days)'
         });
+        console.log('[docusignHandleReturn] NJ attorney review period started');
       } else {
         updates.status = 'fully_signed';
         updates.audit_log.push({
@@ -172,11 +187,14 @@ Deno.serve(async (req) => {
           action: 'unlock_event',
           details: 'Agreement fully signed - deal unlocked'
         });
+        console.log('[docusignHandleReturn] Status: fully_signed');
       }
     } else if (investorCompleted && !agentCompleted) {
       updates.status = 'investor_signed';
+      console.log('[docusignHandleReturn] Status: investor_signed');
     } else if (agentCompleted && !investorCompleted) {
       updates.status = 'agent_signed';
+      console.log('[docusignHandleReturn] Status: agent_signed');
     }
     
     console.log('[docusignHandleReturn] New status:', updates.status);
@@ -199,6 +217,12 @@ Deno.serve(async (req) => {
         const upload = await base44.integrations.Core.UploadFile({ file: pdfFile });
         
         updates.signed_pdf_url = upload.file_url;
+        
+        // Compute hash
+        const hashBuffer = await crypto.subtle.digest('SHA-256', pdfBytes);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        updates.signed_pdf_sha256 = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
         console.log('[docusignHandleReturn] ✓ Signed PDF uploaded:', upload.file_url);
       }
     }
@@ -207,7 +231,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.LegalAgreement.update(signingToken.agreement_id, updates);
     console.log('[docusignHandleReturn] ✓ Agreement updated');
     
-    // CRITICAL: Sync status to Room for UI consistency
+    // CRITICAL: Sync status to Room and Deal for UI consistency
     if (signingToken.deal_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: signingToken.deal_id });
       
@@ -221,6 +245,7 @@ Deno.serve(async (req) => {
         if (updates.status === 'fully_signed') {
           roomUpdates.request_status = 'signed';
           roomUpdates.signed_at = now;
+          roomUpdates.is_fully_signed = true;
           roomUpdates.audit_log = [
             ...(room.audit_log || []),
             {
@@ -230,10 +255,20 @@ Deno.serve(async (req) => {
               details: 'Agreement fully signed - room unlocked'
             }
           ];
+          
+          console.log('[docusignHandleReturn] Unlocking room - setting is_fully_signed=true');
         }
         
         await base44.asServiceRole.entities.Room.update(room.id, roomUpdates);
         console.log('[docusignHandleReturn] ✓ Room synced:', roomUpdates);
+      }
+      
+      // Also update Deal entity
+      if (updates.status === 'fully_signed') {
+        await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
+          is_fully_signed: true
+        });
+        console.log('[docusignHandleReturn] ✓ Deal marked as fully_signed');
       }
     }
     
@@ -244,6 +279,9 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error('[docusignHandleReturn] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return Response.json({ 
+      error: error.message,
+      returnTo: '/Pipeline'
+    }, { status: 500 });
   }
 });
