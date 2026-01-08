@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
  * GET /api/functions/getLegalAgreement?deal_id=<id>
+ * POST /api/functions/getLegalAgreement with { deal_id }
  * Returns the legal agreement for a deal (with access control)
  */
 Deno.serve(async (req) => {
@@ -13,10 +14,17 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const url = new URL(req.url);
-    const deal_id = url.searchParams.get('deal_id');
+    // Support both GET (query params) and POST (body params)
+    let deal_id;
+    if (req.method === 'GET') {
+      const url = new URL(req.url);
+      deal_id = url.searchParams.get('deal_id');
+    } else {
+      const body = await req.json();
+      deal_id = body.deal_id;
+    }
     
-    console.log('[getLegalAgreement] Request:', { deal_id, user_id: user.id });
+    console.log('[getLegalAgreement] Request:', { method: req.method, deal_id, user_id: user.id });
     
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
