@@ -1440,13 +1440,11 @@ ${dealContext}`;
                     </div>
                   )}
 
-                  {/* LegalAgreement Panel (v1.0.1) */}
+                  {/* LegalAgreement Panel - Self-Contained */}
                   {currentRoom?.deal_id && deal && (
                     <LegalAgreementPanel
-                      key={agreementPanelKey}
                       deal={deal}
                       profile={profile}
-                      agreement={agreement}
                       onUpdate={async () => {
                         await refreshRoomState();
                         queryClient.invalidateQueries({ queryKey: ['rooms'] });

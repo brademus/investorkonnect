@@ -3,64 +3,43 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LegalAgreementPanel({ deal, profile, agreement: agreementProp, onUpdate }) {
-  const [agreement, setAgreement] = useState(agreementProp);
-  const [loading, setLoading] = useState(agreementProp === undefined);
+export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
+  const [agreement, setAgreement] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
-  
   const [exhibitA, setExhibitA] = useState(null);
-  const [netPolicy, setNetPolicy] = useState('ALLOWED');
   
   const isInvestor = deal?.investor_id === profile?.id;
   const isAgent = deal?.agent_id === profile?.id;
 
-  // Update local state when prop changes
+  // Load agreement on mount and when deal changes
   useEffect(() => {
-    if (agreementProp !== undefined) {
-      console.log('[LegalAgreementPanel] Prop updated:', agreementProp);
-      setAgreement(agreementProp);
-      setLoading(false);
-    }
-  }, [agreementProp]);
-
-  useEffect(() => {
-    // CRITICAL: Always attempt to load agreement on mount unless prop already has a valid agreement
-    if (deal?.id && !agreementProp) {
-      console.log('[LegalAgreementPanel] Loading agreement on mount (prop is undefined or null)');
+    if (deal?.id) {
       loadAgreement();
     }
-    if (deal?.id) {
-      determineNetPolicy();
-    }
-  }, [deal?.id, agreementProp]);
+  }, [deal?.id]);
   
-  // Also reload when returning from DocuSign
+  // Reload after DocuSign return
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') && deal?.id) {
-      console.log('[LegalAgreementPanel] 🔄 DocuSign return detected - syncing and reloading');
-      
+    if (params.get('signed') === '1' && deal?.id) {
       const syncAndReload = async () => {
         try {
           await base44.functions.invoke('docusignSyncEnvelope', { deal_id: deal.id });
-          await loadAgreement();
         } catch (error) {
           console.error('[LegalAgreementPanel] Sync failed:', error);
-          await loadAgreement(); // Still try to reload even if sync fails
         }
+        await loadAgreement();
       };
-      
       syncAndReload();
     }
-  }, [window.location.search, deal?.id]);
+  }, [deal?.id]);
   
   // When the modal opens, fetch fresh deal data and initialize exhibitA
   const handleOpenGenerateModal = async () => {
@@ -115,21 +94,6 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
     setShowGenerateModal(false);
   };
   
-  const determineNetPolicy = () => {
-    if (!deal) return;
-    const state = deal.state;
-    const bannedStates = ['IL', 'NY'];
-    const restrictedStates = ['TX', 'CA'];
-    
-    if (bannedStates.includes(state)) {
-      setNetPolicy('BANNED');
-    } else if (restrictedStates.includes(state)) {
-      setNetPolicy('RESTRICTED');
-    } else {
-      setNetPolicy('ALLOWED');
-    }
-  };
-  
   const loadAgreement = async () => {
     if (!deal?.id) {
       setLoading(false);
@@ -138,39 +102,23 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
     
     try {
       setLoading(true);
-      console.log('[LegalAgreementPanel] Loading agreement for deal:', deal.id);
+      console.log('[LegalAgreementPanel] 📜 Loading agreement for deal:', deal.id);
       
-      // Use consistent param naming - backend only needs deal_id with cache busting
-      const cacheBuster = Date.now();
-      const params = new URLSearchParams({ deal_id: deal.id, _cb: cacheBuster });
-      const response = await fetch(`/api/functions/getLegalAgreement?${params}`, {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
+      const response = await base44.functions.invoke('getLegalAgreement', { 
+        deal_id: deal.id 
       });
       
-      console.log('[LegalAgreementPanel] Agreement response:', {
-        ok: response.ok,
-        status: response.status
+      const data = response.data;
+      console.log('[LegalAgreementPanel] ✅ Agreement loaded:', {
+        exists: !!data?.agreement,
+        status: data?.agreement?.status,
+        investor_signed: !!data?.agreement?.investor_signed_at,
+        agent_signed: !!data?.agreement?.agent_signed_at
       });
       
-      if (!response.ok) {
-        console.error('[LegalAgreementPanel] Failed to load agreement:', response.status);
-        setAgreement(null);
-        setLoading(false);
-        return;
-      }
-      
-      const data = await response.json();
-      console.log('[LegalAgreementPanel] Agreement data:', {
-        has_agreement: !!data.agreement,
-        status: data.agreement?.status,
-        investor_signed: !!data.agreement?.investor_signed_at,
-        agent_signed: !!data.agreement?.agent_signed_at
-      });
-      
-      setAgreement(data.agreement || null);
+      setAgreement(data?.agreement || null);
     } catch (error) {
-      console.error('[LegalAgreementPanel] Error loading agreement:', error);
+      console.error('[LegalAgreementPanel] ❌ Error loading agreement:', error);
       setAgreement(null);
     } finally {
       setLoading(false);
@@ -258,8 +206,8 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
         toast.success('Agreement generated successfully');
       }
       
-      // Set agreement immediately from response
-      setAgreement(response.data.agreement);
+      // Reload agreement to get fresh state
+      await loadAgreement();
       setShowGenerateModal(false);
       
       if (onUpdate) onUpdate();
