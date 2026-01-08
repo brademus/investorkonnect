@@ -32,9 +32,9 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
   }, [agreementProp]);
 
   useEffect(() => {
-    // Only load if agreementProp is undefined (not provided by parent)
-    if (deal?.id && agreementProp === undefined) {
-      console.log('[LegalAgreementPanel] Loading agreement (no prop provided)');
+    // CRITICAL: Always attempt to load agreement on mount unless prop already has a valid agreement
+    if (deal?.id && !agreementProp) {
+      console.log('[LegalAgreementPanel] Loading agreement on mount (prop is undefined or null)');
       loadAgreement();
     }
     if (deal?.id) {
