@@ -186,29 +186,39 @@ Deno.serve(async (req) => {
               clientUserId: investorClientUserId,
               tabs: {
                 signHereTabs: [{
+                  documentId: '1',
                   anchorString: '[[INVESTOR_SIGN]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '20',
-                  anchorYOffset: '-5',
-                  anchorIgnoreIfNotPresent: false
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
+                  documentId: '1',
                   anchorString: '[[INVESTOR_DATE]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '20',
-                  anchorYOffset: '-5',
-                  anchorIgnoreIfNotPresent: false
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true
                 }],
-                textTabs: [{
+                fullNameTabs: [{
+                  documentId: '1',
                   anchorString: '[[INVESTOR_PRINT]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '20',
-                  anchorYOffset: '-5',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'Investor Full Name',
                   value: investor.full_name || investor.email,
-                  locked: false,
+                  locked: true,
                   required: true,
-                  width: 250,
-                  anchorIgnoreIfNotPresent: false
+                  tabLabel: 'investorFullName'
                 }]
               }
             },
@@ -220,52 +230,70 @@ Deno.serve(async (req) => {
               clientUserId: agentClientUserId,
               tabs: {
                 signHereTabs: [{
+                  documentId: '1',
                   anchorString: '[[AGENT_SIGN]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '20',
-                  anchorYOffset: '-5',
-                  anchorIgnoreIfNotPresent: false
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
+                  documentId: '1',
                   anchorString: '[[AGENT_DATE]]',
                   anchorUnits: 'pixels',
-                  anchorXOffset: '20',
-                  anchorYOffset: '-5',
-                  anchorIgnoreIfNotPresent: false
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true
+                }],
+                fullNameTabs: [{
+                  documentId: '1',
+                  anchorString: '[[AGENT_PRINT]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'Agent Full Name',
+                  value: agent.full_name || agent.email,
+                  locked: true,
+                  required: true,
+                  tabLabel: 'agentFullName'
                 }],
                 textTabs: [
                   {
-                    anchorString: '[[AGENT_PRINT]]',
-                    anchorUnits: 'pixels',
-                    anchorXOffset: '20',
-                    anchorYOffset: '-5',
-                    value: agent.full_name || agent.email,
-                    locked: false,
-                    required: true,
-                    width: 250,
-                    anchorIgnoreIfNotPresent: false
-                  },
-                  {
+                    documentId: '1',
                     anchorString: '[[AGENT_LICENSE]]',
                     anchorUnits: 'pixels',
-                    anchorXOffset: '20',
-                    anchorYOffset: '-5',
+                    anchorXOffset: '0',
+                    anchorYOffset: '0',
+                    anchorIgnoreIfNotPresent: false,
+                    anchorCaseSensitive: false,
+                    anchorMatchWholeWord: true,
+                    name: 'License Number',
                     value: agent.agent?.license_number || agent.license_number || '',
                     locked: false,
                     required: true,
-                    width: 250,
-                    anchorIgnoreIfNotPresent: false
+                    tabLabel: 'agentLicense'
                   },
                   {
+                    documentId: '1',
                     anchorString: '[[AGENT_BROKERAGE]]',
                     anchorUnits: 'pixels',
-                    anchorXOffset: '20',
-                    anchorYOffset: '-5',
+                    anchorXOffset: '0',
+                    anchorYOffset: '0',
+                    anchorIgnoreIfNotPresent: false,
+                    anchorCaseSensitive: false,
+                    anchorMatchWholeWord: true,
+                    name: 'Brokerage',
                     value: agent.agent?.brokerage || agent.broker || '',
                     locked: false,
                     required: true,
-                    width: 300,
-                    anchorIgnoreIfNotPresent: false
+                    tabLabel: 'agentBrokerage'
                   }
                 ]
               }
@@ -295,6 +323,21 @@ Deno.serve(async (req) => {
       envelopeId = envelope.envelopeId;
       
       console.log('[DocuSign] NEW envelope created:', envelopeId, '- PDF hash:', currentPdfHash.substring(0, 16) + '...');
+      console.log('[DocuSign] Tab configuration:', {
+        investor: {
+          signHere: '[[INVESTOR_SIGN]]',
+          fullName: '[[INVESTOR_PRINT]]',
+          dateSigned: '[[INVESTOR_DATE]]'
+        },
+        agent: {
+          signHere: '[[AGENT_SIGN]]',
+          fullName: '[[AGENT_PRINT]]',
+          license: '[[AGENT_LICENSE]]',
+          brokerage: '[[AGENT_BROKERAGE]]',
+          dateSigned: '[[AGENT_DATE]]'
+        },
+        offsets: 'anchorXOffset=0, anchorYOffset=0'
+      });
       
       // Update agreement with new envelope details
       await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {

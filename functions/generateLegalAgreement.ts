@@ -65,16 +65,16 @@ function normalizeSignatureSection(text) {
 SIGNATURES
 
 Investor:
-Signature: ____________________   [[INVESTOR_SIGN]]
-Printed Name: _________________   [[INVESTOR_PRINT]]
-Date: ________________________   [[INVESTOR_DATE]]
+Signature: [[INVESTOR_SIGN]]____________________
+Printed Name: [[INVESTOR_PRINT]]_________________
+Date: [[INVESTOR_DATE]]________________________
 
 Agent:
-Signature: ____________________   [[AGENT_SIGN]]
-Printed Name: _________________   [[AGENT_PRINT]]
-License No.: __________________   [[AGENT_LICENSE]]
-Brokerage: ____________________   [[AGENT_BROKERAGE]]
-Date: ________________________   [[AGENT_DATE]]
+Signature: [[AGENT_SIGN]]____________________
+Printed Name: [[AGENT_PRINT]]_________________
+License No.: [[AGENT_LICENSE]]__________________
+Brokerage: [[AGENT_BROKERAGE]]____________________
+Date: [[AGENT_DATE]]________________________
 `;
   
   // Patterns to find signature sections (case-insensitive, more flexible)
@@ -137,7 +137,7 @@ async function generatePdfFromText(text, dealId) {
   const lines = text.split('\n');
   
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
+    let line = lines[i];
     
     // Add new page if needed
     if (yPosition < margin + 30) {
@@ -160,16 +160,77 @@ async function generatePdfFromText(text, dealId) {
     const currentSize = isTitle ? 14 : isHeading ? 11 : isSubheading ? 10.5 : fontSize;
     const textColor = rgb(0, 0, 0);
     
-    // Word wrap
-    const words = line.split(' ');
-    let currentLine = '';
+    // Check if line contains DocuSign anchors
+    const anchorPattern = /\[\[([A-Z_]+)\]\]/g;
+    const hasAnchors = anchorPattern.test(line);
     
-    for (const word of words) {
-      const testLine = currentLine ? `${currentLine} ${word}` : word;
-      const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+    if (hasAnchors) {
+      // Split line by anchors, render visible text, then render anchors as invisible
+      const parts = line.split(/(\[\[[A-Z_]+\]\])/);
+      let xPos = margin;
       
-      if (width > maxWidth && currentLine) {
-        // Draw current line
+      for (const part of parts) {
+        if (!part) continue;
+        
+        const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
+        
+        if (isAnchor) {
+          // Draw anchor as WHITE text (invisible but searchable)
+          page.drawText(part, {
+            x: xPos,
+            y: yPosition,
+            size: 1, // Tiny font
+            font: font,
+            color: rgb(1, 1, 1) // White (invisible)
+          });
+          // Don't advance xPos - anchor takes no visible space
+        } else if (part.trim()) {
+          // Draw visible text
+          page.drawText(part, {
+            x: xPos,
+            y: yPosition,
+            size: currentSize,
+            font: currentFont,
+            color: textColor
+          });
+          xPos += currentFont.widthOfTextAtSize(part, currentSize);
+        }
+      }
+      yPosition -= lineHeight;
+    } else {
+      // Normal word wrap for non-anchor lines
+      const words = line.split(' ');
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+        
+        if (width > maxWidth && currentLine) {
+          // Draw current line
+          page.drawText(currentLine, {
+            x: margin,
+            y: yPosition,
+            size: currentSize,
+            font: currentFont,
+            color: textColor
+          });
+          yPosition -= lineHeight;
+          
+          // Check if new page needed
+          if (yPosition < margin + 30) {
+            page = pdfDoc.addPage([pageWidth, pageHeight]);
+            yPosition = pageHeight - margin;
+          }
+          
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      // Draw remaining text
+      if (currentLine) {
         page.drawText(currentLine, {
           x: margin,
           y: yPosition,
@@ -178,29 +239,7 @@ async function generatePdfFromText(text, dealId) {
           color: textColor
         });
         yPosition -= lineHeight;
-        
-        // Check if new page needed
-        if (yPosition < margin + 30) {
-          page = pdfDoc.addPage([pageWidth, pageHeight]);
-          yPosition = pageHeight - margin;
-        }
-        
-        currentLine = word;
-      } else {
-        currentLine = testLine;
       }
-    }
-    
-    // Draw remaining text
-    if (currentLine) {
-      page.drawText(currentLine, {
-        x: margin,
-        y: yPosition,
-        size: currentSize,
-        font: currentFont,
-        color: textColor
-      });
-      yPosition -= lineHeight;
     }
     
     // Extra spacing after headings
@@ -519,6 +558,43 @@ Deno.serve(async (req) => {
     // Generate new PDF from filled text
     console.log('Generating final PDF from filled text...');
     const finalPdfBytes = await generatePdfFromText(templateText, deal.id);
+    
+    // Verify all required anchors exist exactly once
+    const requiredAnchors = [
+      'INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE',
+      'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'
+    ];
+    
+    const missingAnchors = [];
+    const duplicateAnchors = [];
+    
+    for (const anchor of requiredAnchors) {
+      const anchorString = `[[${anchor}]]`;
+      const regex = new RegExp(anchorString.replace(/[[\]]/g, '\\$&'), 'g');
+      const matches = templateText.match(regex);
+      const count = matches ? matches.length : 0;
+      
+      if (count === 0) {
+        missingAnchors.push(anchor);
+      } else if (count > 1) {
+        duplicateAnchors.push(`${anchor} (${count}x)`);
+      }
+    }
+    
+    if (missingAnchors.length > 0 || duplicateAnchors.length > 0) {
+      const errors = [];
+      if (missingAnchors.length > 0) errors.push(`Missing: ${missingAnchors.join(', ')}`);
+      if (duplicateAnchors.length > 0) errors.push(`Duplicates: ${duplicateAnchors.join(', ')}`);
+      
+      console.error('[Anchor Verification FAILED]', errors.join('; '));
+      return Response.json({
+        error: 'DocuSign anchor verification failed: ' + errors.join('; '),
+        missing_anchors: missingAnchors,
+        duplicate_anchors: duplicateAnchors
+      }, { status: 500 });
+    }
+    
+    console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
     
     // Upload final PDF
     const pdfBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
