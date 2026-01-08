@@ -237,12 +237,14 @@ Deno.serve(async (req) => {
       
       if (rooms.length > 0) {
         const room = rooms[0];
+        const newStatus = updates.status || agreement.status;
+        
         const roomUpdates = {
-          agreement_status: updates.status || agreement.status
+          agreement_status: newStatus
         };
         
         // Unlock room if fully signed
-        if (updates.status === 'fully_signed') {
+        if (newStatus === 'fully_signed' || newStatus === 'attorney_review_pending') {
           roomUpdates.request_status = 'signed';
           roomUpdates.signed_at = now;
           roomUpdates.is_fully_signed = true;
@@ -256,19 +258,30 @@ Deno.serve(async (req) => {
             }
           ];
           
-          console.log('[docusignHandleReturn] Unlocking room - setting is_fully_signed=true');
+          console.log('[docusignHandleReturn] 🔓 Unlocking room - setting is_fully_signed=true');
+        } else {
+          roomUpdates.is_fully_signed = false;
+          console.log('[docusignHandleReturn] 🔒 Room remains locked - status:', newStatus);
         }
         
         await base44.asServiceRole.entities.Room.update(room.id, roomUpdates);
-        console.log('[docusignHandleReturn] ✓ Room synced:', roomUpdates);
+        console.log('[docusignHandleReturn] ✓ Room synced:', {
+          agreement_status: roomUpdates.agreement_status,
+          is_fully_signed: roomUpdates.is_fully_signed
+        });
       }
       
       // Also update Deal entity
-      if (updates.status === 'fully_signed') {
+      if (updates.status === 'fully_signed' || updates.status === 'attorney_review_pending') {
         await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
           is_fully_signed: true
         });
         console.log('[docusignHandleReturn] ✓ Deal marked as fully_signed');
+      } else {
+        await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
+          is_fully_signed: false
+        });
+        console.log('[docusignHandleReturn] Deal marked as NOT fully_signed (partial signature)');
       }
     }
     
