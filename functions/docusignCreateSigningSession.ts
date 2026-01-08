@@ -340,36 +340,7 @@ Deno.serve(async (req) => {
       envelopeId = envelope.envelopeId;
       
       console.log('[DocuSign] NEW envelope created:', envelopeId, '- PDF hash:', currentPdfHash.substring(0, 16) + '...');
-      console.log('[DocuSign] Tab configuration:', {
-        investor: {
-          signHere: '[[INVESTOR_SIGN]]',
-          fullName: '[[INVESTOR_PRINT]]',
-          dateSigned: '[[INVESTOR_DATE]]'
-        },
-        agent: {
-          signHere: '[[AGENT_SIGN]]',
-          fullName: '[[AGENT_PRINT]]',
-          license: '[[AGENT_LICENSE]]',
-          brokerage: '[[AGENT_BROKERAGE]]',
-          dateSigned: '[[AGENT_DATE]]'
-        },
-        offsets: 'anchorXOffset=0, anchorYOffset=0'
-      });
-      console.log('[DocuSign] Tab configuration:', {
-        investor: {
-          signHere: '[[INVESTOR_SIGN]]',
-          fullName: '[[INVESTOR_PRINT]]',
-          dateSigned: '[[INVESTOR_DATE]]'
-        },
-        agent: {
-          signHere: '[[AGENT_SIGN]]',
-          fullName: '[[AGENT_PRINT]]',
-          license: '[[AGENT_LICENSE]]',
-          brokerage: '[[AGENT_BROKERAGE]]',
-          dateSigned: '[[AGENT_DATE]]'
-        },
-        offsets: 'anchorXOffset=0, anchorYOffset=0'
-      });
+      console.log('[DocuSign] All 8 tabs configured with case-sensitive anchors and 0,0 offsets');
       
       // Update agreement with new envelope details and store hash
       await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
