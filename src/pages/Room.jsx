@@ -890,7 +890,7 @@ ${dealContext}`;
                   {/* Agreement Status CTA (Investor Only) - Phase-Based Display */}
                   {profile?.user_role === 'investor' && currentRoom?.deal_id && (
                     <>
-                      {/* Phase: No Agreement or Draft */}
+                      {/* CRITICAL: Only show Generate CTA if no agreement exists OR agreement is draft */}
                       {(!agreement || agreement.status === 'draft') && (
                         <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
@@ -916,8 +916,8 @@ ${dealContext}`;
                         </div>
                       )}
                       
-                      {/* Phase: Investor Signed, Agent Pending */}
-                      {agreement && (agreement.status === 'investor_signed' || agreement.status === 'sent') && (
+                      {/* Phase: Investor Signed, Agent Pending - MUST SHOW THIS */}
+                      {agreement && (agreement.status === 'investor_signed') && (
                         <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
                           <div className="flex items-start gap-4">
                             <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center flex-shrink-0">
@@ -928,7 +928,7 @@ ${dealContext}`;
                                 Awaiting Agent Signature
                               </h4>
                               <p className="text-sm text-[#FAFAFA]/90 mb-3">
-                                You've signed the agreement! Waiting for {currentRoom.counterparty_name || 'the agent'} to complete their signature.
+                                You've signed the agreement on {new Date(agreement.investor_signed_at).toLocaleDateString()}. Waiting for {currentRoom.counterparty_name || 'the agent'} to complete their signature.
                               </p>
                               <div className="flex items-center gap-2 text-xs text-[#FAFAFA]/70">
                                 <CheckCircle className="w-4 h-4 text-[#10B981]" />

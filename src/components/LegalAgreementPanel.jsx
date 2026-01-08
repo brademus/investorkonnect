@@ -31,13 +31,32 @@ export default function LegalAgreementPanel({ deal, profile, agreement: agreemen
   }, [agreementProp]);
 
   useEffect(() => {
-    if (deal?.id && !agreementProp) {
+    // Always load agreement on mount and when deal changes
+    if (deal?.id) {
       loadAgreement();
-      determineNetPolicy();
-    } else if (deal?.id) {
       determineNetPolicy();
     }
   }, [deal?.id]);
+  
+  // Also reload when returning from DocuSign
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('signed') && deal?.id) {
+      console.log('[LegalAgreementPanel] 🔄 DocuSign return detected - syncing and reloading');
+      
+      const syncAndReload = async () => {
+        try {
+          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: deal.id });
+          await loadAgreement();
+        } catch (error) {
+          console.error('[LegalAgreementPanel] Sync failed:', error);
+          await loadAgreement(); // Still try to reload even if sync fails
+        }
+      };
+      
+      syncAndReload();
+    }
+  }, [window.location.search, deal?.id]);
   
   // When the modal opens, fetch fresh deal data and initialize exhibitA
   const handleOpenGenerateModal = async () => {
