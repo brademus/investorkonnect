@@ -393,6 +393,8 @@ export default function Room() {
     
     const fetchCurrentRoom = async () => {
       setRoomLoading(true);
+      setAgreement(undefined); // Set to undefined while loading so LegalAgreementPanel knows to wait
+      
       try {
         const roomData = await base44.entities.Room.filter({ id: roomId });
         if (roomData && roomData.length > 0) {
@@ -440,7 +442,8 @@ export default function Room() {
                   is_fully_signed: deal.is_fully_signed
                 });
                 
-                // Load agreement on initial room load with cache busting
+                // CRITICAL: Load agreement on initial room load with cache busting
+                console.log('[Room] 📜 Fetching agreement for deal:', room.deal_id);
                 const cacheBuster = Date.now();
                 const params = new URLSearchParams({ deal_id: room.deal_id, _cb: cacheBuster });
                 const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`, {
@@ -450,37 +453,42 @@ export default function Room() {
 
                 if (agreementResponse.ok) {
                   const agreementData = await agreementResponse.json();
-                  console.log('[Room] Initial agreement load:', {
+                  console.log('[Room] ✅ Initial agreement load SUCCESS:', {
+                    has_agreement: !!agreementData.agreement,
                     status: agreementData.agreement?.status,
-                    investor_signed: agreementData.agreement?.investor_signed_at,
-                    agent_signed: agreementData.agreement?.agent_signed_at,
+                    investor_signed: !!agreementData.agreement?.investor_signed_at,
+                    agent_signed: !!agreementData.agreement?.agent_signed_at,
                     is_fully_signed: agreementData.agreement?.status === 'fully_signed' || agreementData.agreement?.status === 'attorney_review_pending'
                   });
                   setAgreement(agreementData.agreement || null);
                 } else {
-                  console.log('[Room] No agreement found or error loading');
+                  console.log('[Room] ❌ No agreement found or error loading');
                   setAgreement(null);
                 }
               } else {
                 setCurrentRoom(room);
+                setAgreement(null);
               }
             } catch (error) {
               console.error('Failed to fetch deal (access denied?):', error);
               setCurrentRoom(room);
+              setAgreement(null);
             }
           } else {
             setCurrentRoom(room);
+            setAgreement(null);
           }
         }
       } catch (error) {
         console.error('Failed to fetch room:', error);
+        setAgreement(null);
       } finally {
         setRoomLoading(false);
       }
     };
     
     fetchCurrentRoom();
-  }, [roomId]);
+  }, [roomId, profile?.user_role]);
 
   const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
   
