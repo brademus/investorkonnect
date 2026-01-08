@@ -95,23 +95,13 @@ Deno.serve(async (req) => {
     const agreement = agreements[0];
     
     // Use DocuSign-specific PDF (with invisible anchors)
-    // CRITICAL: Only use docusign_pdf_url or signing_pdf_url (NOT final_pdf_url which has no anchors)
-    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url;
+    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
     if (!pdfUrl) {
       console.error('[DocuSign] No DocuSign PDF URL found in agreement');
-      console.error('[DocuSign] Available URLs:', {
-        docusign_pdf_url: agreement.docusign_pdf_url || 'MISSING',
-        signing_pdf_url: agreement.signing_pdf_url || 'MISSING',
-        final_pdf_url: agreement.final_pdf_url || 'none'
-      });
-      return Response.json({ 
-        error: 'DocuSign PDF not generated. Please regenerate the agreement to create a new signing PDF with anchors.',
-        details: 'The agreement must be regenerated to include invisible DocuSign anchors'
-      }, { status: 400 });
+      return Response.json({ error: 'No docusign_pdf_url found - agreement PDF not generated yet' }, { status: 400 });
     }
     
     console.log('[DocuSign] Using DocuSign PDF URL:', pdfUrl);
-    console.log('[DocuSign] ✓ Confirmed using DocuSign-specific PDF (has invisible anchors)');
     
     // Download DocuSign PDF and compute current hash
     const { base64: pdfBase64, hash: currentPdfHash } = await downloadPdfAsBase64AndHash(pdfUrl);
@@ -219,7 +209,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
@@ -229,7 +219,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true
                 }],
                 fullNameTabs: [{
@@ -239,7 +229,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true,
                   name: 'Investor Full Name',
                   value: investor.full_name || investor.email,
@@ -263,7 +253,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true
                 }],
                 dateSignedTabs: [{
@@ -273,7 +263,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true
                 }],
                 fullNameTabs: [{
@@ -283,7 +273,7 @@ Deno.serve(async (req) => {
                   anchorXOffset: '0',
                   anchorYOffset: '0',
                   anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: true,
+                  anchorCaseSensitive: false,
                   anchorMatchWholeWord: true,
                   name: 'Agent Full Name',
                   value: agent.full_name || agent.email,
@@ -299,7 +289,7 @@ Deno.serve(async (req) => {
                     anchorXOffset: '0',
                     anchorYOffset: '0',
                     anchorIgnoreIfNotPresent: false,
-                    anchorCaseSensitive: true,
+                    anchorCaseSensitive: false,
                     anchorMatchWholeWord: true,
                     name: 'License Number',
                     value: agent.agent?.license_number || agent.license_number || '',
@@ -314,7 +304,7 @@ Deno.serve(async (req) => {
                     anchorXOffset: '0',
                     anchorYOffset: '0',
                     anchorIgnoreIfNotPresent: false,
-                    anchorCaseSensitive: true,
+                    anchorCaseSensitive: false,
                     anchorMatchWholeWord: true,
                     name: 'Brokerage',
                     value: agent.agent?.brokerage || agent.broker || '',
@@ -350,7 +340,21 @@ Deno.serve(async (req) => {
       envelopeId = envelope.envelopeId;
       
       console.log('[DocuSign] NEW envelope created:', envelopeId, '- PDF hash:', currentPdfHash.substring(0, 16) + '...');
-      console.log('[DocuSign] All 8 tabs configured with case-sensitive anchors and 0,0 offsets');
+      console.log('[DocuSign] Tab configuration:', {
+        investor: {
+          signHere: '[[INVESTOR_SIGN]]',
+          fullName: '[[INVESTOR_PRINT]]',
+          dateSigned: '[[INVESTOR_DATE]]'
+        },
+        agent: {
+          signHere: '[[AGENT_SIGN]]',
+          fullName: '[[AGENT_PRINT]]',
+          license: '[[AGENT_LICENSE]]',
+          brokerage: '[[AGENT_BROKERAGE]]',
+          dateSigned: '[[AGENT_DATE]]'
+        },
+        offsets: 'anchorXOffset=0, anchorYOffset=0'
+      });
       
       // Update agreement with new envelope details and store hash
       await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {

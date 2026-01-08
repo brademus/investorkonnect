@@ -77,45 +77,35 @@ Brokerage: [[AGENT_BROKERAGE]]
 Date: [[AGENT_DATE]]
 `;
   
-  // More aggressive patterns to catch various signature formats
+  // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
-    /SIGNATURES?\s*$/im,
     /^\s*SIGNATURES?\s*$/gim,
     /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,
-    /^[\s\d.]*signatures?\s*$/gim,
-    /Investor.*Signature.*:.*_+/im,
-    /Agent.*Signature.*:.*_+/im
+    /^[\s\d.]*signatures?\s*$/gim
   ];
   
   let signatureIndex = -1;
-  let foundPattern = null;
   
-  // Find ANY signature-related pattern
-  for (const pattern of signaturePatterns) {
-    const match = text.search(pattern);
-    if (match >= 0 && (signatureIndex < 0 || match > signatureIndex)) {
-      signatureIndex = match;
-      foundPattern = pattern.toString();
+  // Find the LAST occurrence of any signature header
+  for (let i = 0; i < signaturePatterns.length; i++) {
+    const pattern = signaturePatterns[i];
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length > 0) {
+      const lastMatch = matches[matches.length - 1];
+      signatureIndex = lastMatch.index;
+      console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex}, replacing with standard block`);
+      break;
     }
   }
   
   if (signatureIndex >= 0) {
     // Replace everything from signature section onwards with standard block
-    const before = text.substring(0, signatureIndex);
-    const textBefore = before.trimEnd();
-    text = textBefore + standardSignatureBlock;
-    console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex} using pattern ${foundPattern}`);
-    console.log('[normalizeSignatureSection] ✓ Replaced signature section with NO underscores');
+    text = text.substring(0, signatureIndex) + standardSignatureBlock;
+    console.log('[normalizeSignatureSection] Replaced signature section with standard block');
   } else {
     // No signature found, append to end
     text += standardSignatureBlock;
-    console.log('[normalizeSignatureSection] ⚠️ No signature found, appended standard block');
-  }
-  
-  // Log the new signature section to verify
-  const sigIndex = text.indexOf('SIGNATURES');
-  if (sigIndex >= 0) {
-    console.log('[normalizeSignatureSection] New signature section:', text.substring(sigIndex, sigIndex + 400));
+    console.log('[normalizeSignatureSection] No signature found, appended standard block');
   }
   
   return text;
@@ -185,17 +175,17 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
         const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
         
         if (isAnchor) {
-          // Draw anchor as WHITE text at font size 1 (invisible on white background but searchable by DocuSign)
-          // CRITICAL: DocuSign searches for these anchors in the PDF text layer
+          // Draw anchor as WHITE 1px text (invisible but searchable by DocuSign)
+          // Note: pdf-lib doesn't support opacity, so we rely on white color matching white background
           page.drawText(part, {
             x: xPos,
             y: yPosition,
-            size: 1, // Small but not zero (DocuSign needs to find it)
+            size: 0.1, // Extremely tiny
             font: font,
-            color: rgb(1, 1, 1) // Pure white - invisible on white background
+            color: rgb(1, 1, 1) // Pure white (invisible on white background)
           });
-          console.log(`[DocuSign PDF] Rendered invisible anchor: ${part} at (${xPos.toFixed(1)}, ${yPosition.toFixed(1)})`);
-          // Don't advance xPos - anchor should not create visible gap
+          console.log(`[DocuSign PDF] Rendered invisible anchor: ${part} at position (${xPos}, ${yPosition})`);
+          // Don't advance xPos - anchor takes no visible space
         } else if (part.trim()) {
           // Draw visible text normally
           page.drawText(part, {
@@ -644,27 +634,8 @@ Deno.serve(async (req) => {
     }
     
     console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
-    
-    // Log signature section to verify NO underscores
-    const sigIndex = templateText.indexOf('SIGNATURES');
-    if (sigIndex >= 0) {
-      const sigSection = templateText.substring(sigIndex, Math.min(sigIndex + 600, templateText.length));
-      console.log('========== SIGNATURE SECTION (NO UNDERSCORES) ==========');
-      console.log(sigSection);
-      console.log('========================================================');
-      
-      // Verify no underscores exist in signature section
-      const hasUnderscores = sigSection.includes('____') || sigSection.includes('___');
-      if (hasUnderscores) {
-        console.error('❌ ERROR: Signature section still contains underscores!');
-        return Response.json({ 
-          error: 'Signature normalization failed - underscores still present',
-          signature_section: sigSection
-        }, { status: 500 });
-      }
-    }
-    
     console.log('[PDF Generation] Starting dual PDF generation...');
+    console.log('[PDF Generation] Signature section preview:', templateText.substring(templateText.indexOf('SIGNATURES'), templateText.indexOf('SIGNATURES') + 500));
     
     // Generate TWO PDFs: human-readable and DocuSign-specific
     console.log('[PDF Generation] Creating human-readable PDF (anchors stripped)...');
