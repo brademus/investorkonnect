@@ -191,10 +191,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
           } else if (doc.key === 'purchase_contract') {
-            const fallback = resolvedFile || {
-              url: deal?.documents?.purchase_contract?.file_url || deal?.documents?.purchase_contract?.url || deal?.contract_document?.url || deal?.contract_url,
-              filename: deal?.documents?.purchase_contract?.filename || deal?.contract_document?.name
-            };
+            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name };
             fileToShow = hasUrl(uploaded) ? uploaded : fallback;
           } else {
             fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
@@ -205,10 +202,10 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
             (doc.key === 'purchase_contract'
               ? (
-                  documents?.purchase_contract?.file_url ||
-                  documents?.purchase_contract?.url ||
                   resolved.verifiedPurchaseContract?.url ||
                   resolved.sellerContract?.url ||
+                  deal?.documents?.purchase_contract?.file_url ||
+                  deal?.documents?.purchase_contract?.url ||
                   deal?.contract_document?.url ||
                   deal?.contract_url ||
                   room?.contract_document?.file_url ||
@@ -259,34 +256,20 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
               </div>
 
               <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                {fileUrl ? (
+                {fileToShow ? (
                   <>
                     <a
                       href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (fileUrl) window.open(fileUrl, '_blank', 'noopener,noreferrer');
-                      }}
                     >
                       View
                     </a>
                     <a
                       href={fileUrl}
-                      download={fileToShow?.filename || fileToShow?.name || `${doc.key}.pdf`}
+                      download={fileToShow.filename || fileToShow.name || `${doc.key}.pdf`}
                       className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        if (!fileUrl) return;
-                        const a = document.createElement('a');
-                        a.href = fileUrl;
-                        a.download = fileToShow?.filename || fileToShow?.name || `${doc.key}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                      }}
                     >
                       <Download className="w-3 h-3" />
                       Download
