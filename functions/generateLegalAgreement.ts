@@ -894,19 +894,27 @@ Deno.serve(async (req) => {
     const recipientsData = await recipientsResponse.json();
     const signers = recipientsData.signers || [];
     
-    let investorRecipientId = '1';
-    let agentRecipientId = '2';
+    let investorRecipientId = null;
+    let agentRecipientId = null;
     
-    // Match by email to get actual recipientIds from DocuSign
+    // Match by email to get actual recipientIds from DocuSign - convert to string
     for (const signer of signers) {
       if (signer.email?.toLowerCase() === profile.email.toLowerCase()) {
-        investorRecipientId = signer.recipientId;
-        console.log('[DocuSign] Found investor recipient ID:', investorRecipientId);
+        investorRecipientId = String(signer.recipientId);
+        console.log('[DocuSign] Found investor recipient ID:', investorRecipientId, '(type:', typeof investorRecipientId + ')');
       }
       if (signer.email?.toLowerCase() === agentProfile.email.toLowerCase()) {
-        agentRecipientId = signer.recipientId;
-        console.log('[DocuSign] Found agent recipient ID:', agentRecipientId);
+        agentRecipientId = String(signer.recipientId);
+        console.log('[DocuSign] Found agent recipient ID:', agentRecipientId, '(type:', typeof agentRecipientId + ')');
       }
+    }
+    
+    if (!investorRecipientId || !agentRecipientId) {
+      console.error('[DocuSign] Failed to find recipients in envelope:', {
+        signers: signers.map(s => ({ recipientId: s.recipientId, email: s.email })),
+        lookingFor: { investor: profile.email, agent: agentProfile.email }
+      });
+      throw new Error('Could not match investor and agent emails to envelope recipients');
     }
     
     console.log('[DocuSign] Recipients: investor (ID=' + investorRecipientId + '), agent (ID=' + agentRecipientId + ')');
