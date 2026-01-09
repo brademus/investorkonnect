@@ -399,7 +399,7 @@ Deno.serve(async (req) => {
       clientUserId,
       email: docusignRecipient.email
     });
-    
+
     const viewUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`;
     const viewResponse = await fetch(viewUrl, {
       method: 'POST',
@@ -409,29 +409,28 @@ Deno.serve(async (req) => {
       },
       body: JSON.stringify(recipientViewRequest)
     });
-    
+
     if (!viewResponse.ok) {
       const errorText = await viewResponse.text();
       let parsedError = null;
       let errorMsg = 'Failed to create signing session';
-      
+
       try {
         parsedError = JSON.parse(errorText);
         errorMsg = parsedError.message || parsedError.errorCode || errorMsg;
       } catch (e) {
         errorMsg = errorText.substring(0, 200);
       }
-      
+
       console.error('[DocuSign] Recipient view failed:', {
         status: viewResponse.status,
         error: parsedError || errorText,
         envelopeId,
-        recipientId,
+        storedRecipientId,
         clientUserId,
         role
       });
-      
-      // Distinguish between out-of-sequence and recipient mismatch
+
       let userMsg = errorMsg;
       if (errorMsg.includes('out of sequence') || errorMsg.includes('OUT_OF_SEQUENCE')) {
         userMsg = role === 'agent' 
@@ -440,30 +439,22 @@ Deno.serve(async (req) => {
       } else if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
         userMsg = 'Recipient mismatch detected. Please regenerate the agreement.';
       }
-      
+
       return Response.json({ 
         error: userMsg,
         details: errorMsg
       }, { status: 400 });
     }
-    
+
     const viewData = await viewResponse.json();
-    
-    // Log signing session
-    await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-      audit_log: [
-        ...(agreement.audit_log || []),
-        {
-          timestamp: new Date().toISOString(),
-          actor: user.email,
-          action: 'signing_session_created',
-          details: `${role} signing session created for envelope ${envelopeId}`
-        }
-      ]
-    });
-    
-    console.log('[DocuSign] Signing session created successfully - returning URL');
-    
+
+    if (!viewData.url) {
+      console.error('[DocuSign] No URL in recipient view response:', viewData);
+      return Response.json({ error: 'Failed to generate signing URL from DocuSign' }, { status: 500 });
+    }
+
+    console.log('[DocuSign] ✓ Signing session created - URL:', viewData.url.substring(0, 50) + '...');
+
     return Response.json({ 
       signing_url: viewData.url
     });
