@@ -471,7 +471,12 @@ function PipelineContent() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm text-[#FAFAFA] mb-1">{activity.message}</p>
                                   {deal && (
-                                    <p className="text-xs text-[#E3C567] mb-1 truncate">{deal.property_address || deal.title}</p>
+                                    <p className="text-xs text-[#E3C567] mb-1 truncate">
+                                      {isAgent && !(rooms.find(r => r.deal_id === deal.id)?.agreement_status === 'fully_signed' || rooms.find(r => r.deal_id === deal.id)?.request_status === 'signed')
+                                        ? `${deal.city}, ${deal.state}`
+                                        : (deal.property_address || deal.title)
+                                      }
+                                    </p>
                                   )}
                                   <p className="text-xs text-[#808080]">
                                     {new Date(activity.created_date).toLocaleString('en-US', {
