@@ -372,6 +372,21 @@ export default function Room() {
     fetchCurrentRoom();
   }, [roomId, profile?.user_role, rooms]);
 
+  // Ensure fresh deal documents when opening the Files tab (prevents stale/null URLs)
+  useEffect(() => {
+    if (activeTab !== 'files' || !currentRoom?.deal_id) return;
+    (async () => {
+      try {
+        const response = await base44.functions.invoke('getDealDetailsForUser', {
+          dealId: currentRoom.deal_id
+        });
+        if (response.data) setDeal(response.data);
+      } catch (err) {
+        console.error('Failed to refresh deal for files tab:', err);
+      }
+    })();
+  }, [activeTab, currentRoom?.deal_id]);
+
   const counterpartName = getCounterpartyDisplayName({ 
     room: currentRoom, 
     deal: deal, 
