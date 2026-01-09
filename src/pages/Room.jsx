@@ -1044,7 +1044,7 @@ ${dealContext}`;
                                             <p className="text-xs text-[#808080] uppercase tracking-wider">Investor</p>
                                             <p className="text-sm font-semibold text-[#FAFAFA]">
                                               {currentRoom?.is_fully_signed 
-                                                ? (currentRoom?.counterparty_name || deal?.investor_id ? 'Investor' : 'Hidden')
+                                                ? (currentRoom?.counterparty_name || 'Investor')
                                                 : 'Hidden until agreement signed'
                                               }
                                             </p>
