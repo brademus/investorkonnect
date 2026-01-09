@@ -37,6 +37,8 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
   const [uploading, setUploading] = useState(null);
 
   const documents = deal?.documents || {};
+  const resolved = resolveDealDocuments({ deal });
+  const isWorkingTogether = deal?.is_fully_signed === true;
 
   const handleUpload = async (docKey, e) => {
     const file = e.target.files[0];
