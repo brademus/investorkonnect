@@ -722,11 +722,11 @@ Deno.serve(async (req) => {
     const investorClientUserId = `investor-${deal_id}-${timestamp}`;
     const agentClientUserId = `agent-${deal_id}-${timestamp}`;
     
-    // Create envelope with both recipients for sequential signing
-    const docName = `InvestorKonnect Agreement - ${stateCode} - ${deal_id}.pdf`;
-
+    // Create envelope definition with both signers
+    const docName = `InvestorKonnect Internal Agreement – ${stateCode} – ${deal_id} – v2.2.pdf`;
+    
     const envelopeDefinition = {
-      emailSubject: `Please Sign: InvestorKonnect Agreement - ${stateCode} Deal`,
+      emailSubject: `Sign Agreement - ${stateCode} Deal`,
       documents: [{
         documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))),
         name: docName,
@@ -741,28 +741,41 @@ Deno.serve(async (req) => {
             recipientId: '1',
             routingOrder: '1',
             clientUserId: investorClientUserId,
-            embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
                 anchorString: '[[INVESTOR_SIGN]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
               }],
               dateSignedTabs: [{
                 documentId: '1',
                 anchorString: '[[INVESTOR_DATE]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
               }],
               fullNameTabs: [{
                 documentId: '1',
                 anchorString: '[[INVESTOR_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true,
+                name: 'Investor Full Name',
                 value: profile.full_name || profile.email,
                 locked: true,
-                required: true
+                required: true,
+                tabLabel: 'investorFullName'
               }]
             }
           },
@@ -772,43 +785,72 @@ Deno.serve(async (req) => {
             recipientId: '2',
             routingOrder: '2',
             clientUserId: agentClientUserId,
-            embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
                 anchorString: '[[AGENT_SIGN]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
               }],
               dateSignedTabs: [{
                 documentId: '1',
                 anchorString: '[[AGENT_DATE]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
               }],
               fullNameTabs: [{
                 documentId: '1',
                 anchorString: '[[AGENT_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true,
+                name: 'Agent Full Name',
                 value: agentProfile.full_name || agentProfile.email,
                 locked: true,
-                required: true
+                required: true,
+                tabLabel: 'agentFullName'
               }],
               textTabs: [
                 {
                   documentId: '1',
                   anchorString: '[[AGENT_LICENSE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'License Number',
                   value: agentProfile.agent?.license_number || agentProfile.license_number || '',
                   locked: false,
-                  required: true
+                  required: true,
+                  tabLabel: 'agentLicense'
                 },
                 {
                   documentId: '1',
                   anchorString: '[[AGENT_BROKERAGE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'Brokerage',
                   value: agentProfile.agent?.brokerage || agentProfile.broker || '',
                   locked: false,
-                  required: true
+                  required: true,
+                  tabLabel: 'agentBrokerage'
                 }
               ]
             }
@@ -838,64 +880,22 @@ Deno.serve(async (req) => {
     const envelopeId = envelope.envelopeId;
     
     console.log('[DocuSign] ✓ Envelope created:', envelopeId);
+    console.log('[DocuSign] Recipients: investor (ID=1), agent (ID=2)');
     
-    // Fetch actual recipient IDs from DocuSign (authoritative source)
-    const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
-    const recipientsResponse = await fetch(recipientsUrl, {
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-    
-    if (!recipientsResponse.ok) {
-      throw new Error('Failed to fetch recipients from envelope');
-    }
-    
-    const recipientsData = await recipientsResponse.json();
-    const signers = recipientsData.signers || [];
-    
-    let investorRecipientId = null;
-    let agentRecipientId = null;
-    
-    // Match by email to get actual recipientIds (primary) or by routing order (fallback)
-    for (const signer of signers) {
-      if (signer.email?.toLowerCase() === profile.email.toLowerCase()) {
-        investorRecipientId = String(signer.recipientId);
-      }
-      if (signer.email?.toLowerCase() === agentProfile.email.toLowerCase()) {
-        agentRecipientId = String(signer.recipientId);
-      }
-    }
-    
-    // Fallback: if no email match, use routing order
-    if (!investorRecipientId || !agentRecipientId) {
-      const routingOrder1 = signers.find(s => s.routingOrder === '1');
-      const routingOrder2 = signers.find(s => s.routingOrder === '2');
-      if (routingOrder1) investorRecipientId = String(routingOrder1.recipientId);
-      if (routingOrder2) agentRecipientId = String(routingOrder2.recipientId);
-    }
-    
-    if (!investorRecipientId || !agentRecipientId) {
-      console.error('[DocuSign] Could not match recipients:', { signers: signers.map(s => ({ id: s.recipientId, email: s.email, routing: s.routingOrder })) });
-      throw new Error('Could not identify investor and agent in envelope');
-    }
-    
-    console.log('[DocuSign] ✓ Envelope recipients: investor=' + investorRecipientId + ', agent=' + agentRecipientId);
-    
-    // Save agreement with envelope and recipient details
+    // Save agreement with envelope details
     const agreementData = {
       deal_id: deal_id,
       investor_user_id: user.id,
       agent_user_id: agentProfile.user_id,
       investor_profile_id: profile.id,
       agent_profile_id: agentProfile.id,
-      investor_email: profile.email,
-      agent_email: agentProfile.email,
       governing_state: deal.state,
       property_zip: deal.zip,
       transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.3-dual-recipient',
+      agreement_version: '2.2-dual-pdf',
       status: 'sent',
       template_url: templateUrl,
       final_pdf_url: humanUpload.file_url,
@@ -914,27 +914,27 @@ Deno.serve(async (req) => {
       missing_placeholders: [],
       docusign_envelope_id: envelopeId,
       docusign_status: 'sent',
+      docusign_envelope_pdf_hash: docusignPdfSha256,
       docusign_last_sent_sha256: docusignPdfSha256,
-      investor_recipient_id: investorRecipientId,
-      agent_recipient_id: agentRecipientId,
+      investor_recipient_id: '1',
+      agent_recipient_id: '2',
       investor_client_user_id: investorClientUserId,
       agent_client_user_id: agentClientUserId,
+      investor_signing_url: null,
+      agent_signing_url: null,
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
-        action: 'envelope_created',
-        details: `Envelope ${envelopeId}: investor recipientId=${investorRecipientId}, agent recipientId=${agentRecipientId}`
+        action: 'envelope_created_with_both_recipients',
+        details: `Created DocuSign envelope ${envelopeId} with investor (recipientId=1) and agent (recipientId=2) - PDF hash ${docusignPdfSha256.substring(0, 8)}...`
       }]
     };
     
     let agreement;
     if (existing.length > 0) {
-      // On regeneration, completely clear ALL old envelope data for a fresh start
       agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, agreementData);
-      console.log('[DocuSign] ✓ Regenerated agreement - created new fresh envelope');
     } else {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
-      console.log('[DocuSign] ✓ Created new agreement');
     }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);

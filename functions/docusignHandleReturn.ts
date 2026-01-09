@@ -144,27 +144,25 @@ Deno.serve(async (req) => {
     
     const now = new Date().toISOString();
     
-    // Check which recipients have completed (match by stored recipientId - convert both to strings)
-    const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-    const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-
+    // Check which recipients have completed
+    const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
+    const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+    
+    // DocuSign uses both "completed" and "signed" as completion statuses
     const investorCompleted = investorSigner?.status === 'completed' || investorSigner?.status === 'signed';
     const agentCompleted = agentSigner?.status === 'completed' || agentSigner?.status === 'signed';
     
-    console.log('[docusignHandleReturn] Signer completion status:', { 
-      investorId: agreement.investor_recipient_id, investorCompleted, 
-      agentId: agreement.agent_recipient_id, agentCompleted 
-    });
-
-    // Track who just signed
+    console.log('[docusignHandleReturn] Completion status:', { investorCompleted, agentCompleted });
+    
+    // Update signed timestamps
     if (investorCompleted && !agreement.investor_signed_at) {
-      updates.investor_signed_at = investorSigner?.signedDateTime || now;
-      console.log('[docusignHandleReturn] ✓ Marked investor as signed');
+      updates.investor_signed_at = investorSigner.signedDateTime || now;
+      console.log('[docusignHandleReturn] ✓ Investor signed at:', updates.investor_signed_at);
     }
-
+    
     if (agentCompleted && !agreement.agent_signed_at) {
-      updates.agent_signed_at = agentSigner?.signedDateTime || now;
-      console.log('[docusignHandleReturn] ✓ Marked agent as signed');
+      updates.agent_signed_at = agentSigner.signedDateTime || now;
+      console.log('[docusignHandleReturn] ✓ Agent signed at:', updates.agent_signed_at);
     }
     
     // Determine new status
@@ -234,24 +232,57 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.LegalAgreement.update(signingToken.agreement_id, updates);
     console.log('[docusignHandleReturn] ✓ Agreement updated');
     
-    // Sync status to Room and Deal for UI consistency
+    // CRITICAL: Sync status to Room and Deal for UI consistency
     if (signingToken.deal_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: signingToken.deal_id });
+      
       if (rooms.length > 0) {
         const room = rooms[0];
         const newStatus = updates.status || agreement.status;
-
-        const roomUpdates = { agreement_status: newStatus };
-
+        
+        const roomUpdates = {
+          agreement_status: newStatus
+        };
+        
+        // Unlock room if fully signed
         if (newStatus === 'fully_signed' || newStatus === 'attorney_review_pending') {
           roomUpdates.request_status = 'signed';
+          roomUpdates.signed_at = now;
           roomUpdates.is_fully_signed = true;
-          console.log('[docusignHandleReturn] ✓ Room unlocked (fully signed)');
+          roomUpdates.audit_log = [
+            ...(room.audit_log || []),
+            {
+              timestamp: now,
+              actor: 'system',
+              action: 'deal_unlocked',
+              details: 'Agreement fully signed - room unlocked'
+            }
+          ];
+          
+          console.log('[docusignHandleReturn] 🔓 Unlocking room - setting is_fully_signed=true');
         } else {
           roomUpdates.is_fully_signed = false;
+          console.log('[docusignHandleReturn] 🔒 Room remains locked - status:', newStatus);
         }
-
+        
         await base44.asServiceRole.entities.Room.update(room.id, roomUpdates);
+        console.log('[docusignHandleReturn] ✓ Room synced:', {
+          agreement_status: roomUpdates.agreement_status,
+          is_fully_signed: roomUpdates.is_fully_signed
+        });
+      }
+      
+      // Also update Deal entity
+      if (updates.status === 'fully_signed' || updates.status === 'attorney_review_pending') {
+        await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
+          is_fully_signed: true
+        });
+        console.log('[docusignHandleReturn] ✓ Deal marked as fully_signed');
+      } else {
+        await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
+          is_fully_signed: false
+        });
+        console.log('[docusignHandleReturn] Deal marked as NOT fully_signed (partial signature)');
       }
     }
     

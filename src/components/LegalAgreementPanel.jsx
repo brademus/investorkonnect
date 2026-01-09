@@ -232,23 +232,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       const data = response.data;
       
       if (data.error) {
-        console.error('[LegalAgreement] Error from backend:', data.error, data.debug);
-        // Show detailed error with debug info if available
-        let errorMsg = data.error;
-        if (data.debug) {
-          console.log('[LegalAgreement] Debug info:', data.debug);
-          // Append a hint for common issues
-          if (data.debug.investorRecipient?.status === 'sent') {
-            errorMsg += ' (Investor has not opened/signed the agreement yet.)';
-          } else if (data.debug.investorRecipient?.status === 'declined') {
-            errorMsg += ' (Investor declined to sign.)';
-          }
-        }
-        
-        if (errorMsg.includes('token expired')) {
+        console.error('[LegalAgreement] Error from backend:', data.error);
+        // Show more helpful error message
+        if (data.error.includes('token expired')) {
           toast.error('DocuSign connection expired. Please try again in a moment.');
         } else {
-          toast.error(errorMsg, { duration: 6000 });
+          toast.error(data.error);
         }
         setSigning(false);
         return;
@@ -280,19 +269,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   
   const getStatusDisplay = () => {
     if (!agreement) return null;
-
-    const statusConfig = {
-      draft: { icon: FileText, color: 'text-[#808080]', bg: 'bg-[#808080]/10', label: 'Draft' },
-      sent: { icon: Clock, color: 'text-[#60A5FA]', bg: 'bg-[#60A5FA]/10', label: 'Awaiting Signature' },
+    
+      const statusConfig = {
+      draft: { icon: FileText, color: 'text-gray-400', bg: 'bg-gray-400/10', label: 'Draft' },
+      sent: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Sent' },
       investor_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Investor Signed' },
       agent_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Agent Signed' },
       attorney_review_pending: { icon: Clock, color: 'text-orange-400', bg: 'bg-orange-400/10', label: 'Attorney Review' },
-      fully_signed: { icon: CheckCircle2, color: 'text-[#10B981]', bg: 'bg-[#10B981]/10', label: 'Fully Signed' }
+      fully_signed: { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-400/10', label: 'Fully Executed' }
     };
-
+    
     const config = statusConfig[agreement.status] || statusConfig.draft;
     const Icon = config.icon;
-
+    
     return (
       <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}>
         <Icon className={`w-4 h-4 ${config.color}`} />
@@ -337,24 +326,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       </div>
       
       {/* No agreement yet */}
-      {!agreement && (
+      {!agreement && isInvestor && (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
-          {isInvestor ? (
-            <>
-              <p className="text-[#808080] mb-4">No agreement generated yet</p>
-              <Button
-                onClick={handleOpenGenerateModal}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                Generate Agreement
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for Investor</p>
-              <p className="text-xs text-[#808080]">Agreement will appear once generated</p>
-            </>
-          )}
+          <p className="text-[#808080] mb-4">No agreement generated yet</p>
+          <Button
+            onClick={handleOpenGenerateModal}
+            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+            Generate Agreement
+          </Button>
+        </div>
+      )}
+      
+      
+      {!agreement && isAgent && (
+        <div className="text-center py-8">
+          <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
+          <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for Investor to Generate Agreement</p>
+          <p className="text-xs text-[#808080]">The investor will create and sign the agreement first</p>
         </div>
       )}
       
@@ -433,56 +422,76 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
 
           {/* Actions */}
           <div className="flex flex-col gap-3">
-            {/* Investor signature needed */}
+            {/* Investor hasn't signed yet */}
             {!agreement.investor_signed_at && (
-              isInvestor ? (
-                <Button
-                  onClick={() => handleSign('investor')}
-                  disabled={signing}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                  {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
-                </Button>
-              ) : (
-                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-lg p-4 text-center">
-                  <Clock className="w-5 h-5 text-[#60A5FA] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA]">Waiting for investor signature</p>
-                </div>
-              )
+              <>
+                {isInvestor ? (
+                  <Button
+                    onClick={() => handleSign('investor')}
+                    disabled={signing}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+                  </Button>
+                ) : (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4 text-center">
+                    <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
+                    <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
+                    <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* Agent signature needed */}
+            {/* Investor signed, agent hasn't */}
             {agreement.investor_signed_at && !agreement.agent_signed_at && (
-              isAgent ? (
-                <Button
-                  onClick={() => handleSign('agent')}
-                  disabled={signing}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                  {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
-                </Button>
-              ) : (
-                <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-lg p-4 text-center">
-                  <CheckCircle2 className="w-5 h-5 text-[#10B981] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA]">Investor signed! Waiting for agent</p>
-                </div>
-              )
+              <>
+                {isAgent ? (
+                  <Button
+                    onClick={() => handleSign('agent')}
+                    disabled={signing}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
+                  </Button>
+                ) : (
+                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-lg p-4 text-center">
+                    <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                    <p className="text-sm text-[#FAFAFA] font-semibold">You Signed!</p>
+                    <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
+                  </div>
+                )}
+              </>
             )}
 
             {/* Both signed */}
             {agreement.investor_signed_at && agreement.agent_signed_at && (
               <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-lg p-4 text-center">
-                <CheckCircle2 className="w-5 h-5 text-[#10B981] mx-auto mb-2" />
-                <p className="text-sm text-[#FAFAFA]">Agreement fully signed</p>
+                <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
+                <p className="text-xs text-[#808080] mt-1">Agreement complete</p>
               </div>
             )}
 
-            {/* Download signed PDF */}
-            {agreement.signed_pdf_url && (
+            {/* Download PDF */}
+            {(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
               <Button
                 variant="outline"
-                onClick={() => window.open(agreement.signed_pdf_url, '_blank')}
+                onClick={() => window.open(
+                  agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, 
+                  '_blank'
+                )}
                 className="w-full">
                 <Download className="w-4 h-4 mr-2" />
-                Download Signed PDF
+                {agreement.signed_pdf_url ? 'Download Signed PDF' : 'View Agreement PDF'}
+              </Button>
+            )}
+
+            {/* Regenerate option for investor */}
+            {isInvestor && !agreement.investor_signed_at && (
+              <Button
+                onClick={handleOpenGenerateModal}
+                variant="outline"
+                className="w-full">
+                Regenerate Agreement
               </Button>
             )}
           </div>

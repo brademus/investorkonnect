@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get active agreement using service role (most recent, excluding voided)
+    // Get agreement using service role
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
     
     console.log('[getLegalAgreement] Found agreements:', agreements.length);
@@ -40,12 +40,7 @@ Deno.serve(async (req) => {
       return Response.json({ agreement: null });
     }
     
-    // Pick the most recent active (non-voided) agreement
-    const activeAgreements = agreements.filter(a => a.status !== 'voided');
-    const sortedAgreements = activeAgreements.sort((a, b) => 
-      new Date(b.created_date) - new Date(a.created_date)
-    );
-    const agreement = sortedAgreements[0] || agreements[0];
+    const agreement = agreements[0];
     
     console.log('[getLegalAgreement] Agreement found:', {
       id: agreement.id,
