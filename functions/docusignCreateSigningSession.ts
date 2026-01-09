@@ -425,7 +425,7 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
     }
     
-    // Check envelope status and recipient order before creating signing session
+    // Check envelope status for terminal states only
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
     const statusResponse = await fetch(statusUrl, {
       method: 'GET',
@@ -434,45 +434,22 @@ Deno.serve(async (req) => {
     
     if (statusResponse.ok) {
       const envStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status check:', {
+      console.log('[DocuSign] Envelope status:', {
+        envelopeId,
         status: envStatus.status,
         recipients: envStatus.recipients?.signers?.map(s => ({
+          recipientId: s.recipientId,
           email: s.email,
           status: s.status,
           routingOrder: s.routingOrder
         }))
       });
       
-      // If in terminal state, must regenerate
+      // Only block if envelope is in terminal state
       if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
-        console.error('[DocuSign] Cannot reuse envelope in terminal state:', envStatus.status);
         return Response.json({ 
           error: `Agreement is already ${envStatus.status}. Please regenerate from the Agreement tab.`
         }, { status: 400 });
-      }
-      
-      // Check routing order - if agent is trying to sign before investor
-      if (role === 'agent' && envStatus.recipients?.signers) {
-        const investorSigner = envStatus.recipients.signers.find(s => s.recipientId === '1');
-        const investorCompleted = investorSigner && ['completed', 'signed'].includes(investorSigner.status?.toLowerCase());
-        
-        console.log('[DocuSign] Investor signer check:', {
-          found: !!investorSigner,
-          status: investorSigner?.status,
-          completed: investorCompleted,
-          allSigners: envStatus.recipients.signers.map(s => ({
-            recipientId: s.recipientId,
-            email: s.email,
-            status: s.status
-          }))
-        });
-        
-        if (investorSigner && !investorCompleted) {
-          console.error('[DocuSign] Agent cannot sign - investor has not signed yet');
-          return Response.json({ 
-            error: 'The investor must sign the agreement first before the agent can sign.'
-          }, { status: 400 });
-        }
       }
     }
     
