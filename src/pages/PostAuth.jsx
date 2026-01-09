@@ -97,7 +97,8 @@ export default function PostAuth() {
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
-          navigate(createPageUrl("Pipeline"), { replace: true });
+          // Add tiny delay to allow browser history to settle (prevents stuck spinner)
+          setTimeout(() => navigate(createPageUrl("Pipeline"), { replace: true }), 50);
         }
 
       } catch (error) {
