@@ -103,8 +103,11 @@ Return a verification result with any discrepancies found.
     switch (type) {
       case 'seller':
         // Read from Deal.documents only (canonical source)
-        return deal?.documents?.purchase_contract?.file_url ? 
-          (deal?.documents?.purchase_contract?.verified ? 'verified' : 'uploaded') : 'pending';
+        // Post-sign: show 'uploaded' instead of 'pending' when file exists
+        if (deal?.documents?.purchase_contract?.file_url) {
+          return deal.documents.purchase_contract.verified ? 'verified' : 'uploaded';
+        }
+        return isWorkingTogether ? 'uploaded' : 'pending';
       case 'internal':
         return room?.agreement_status === 'fully_signed' ? 'signed' : 
                room?.agreement_status === 'investor_signed' ? 'pending_agent' :
