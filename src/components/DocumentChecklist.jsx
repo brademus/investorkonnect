@@ -170,17 +170,17 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
         {REQUIRED_DOCUMENTS.map((doc) => {
           const uploaded = documents[doc.key];
 
-          // Post-fully-signed: check resolved docs
+          // Post-fully-signed: check resolved docs (fixed syntax)
           let resolvedFile = null;
           if (doc.key === 'purchase_contract' && (resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url)) {
             resolvedFile = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
           } else if (doc.key === 'operating_agreement') {
-           const ia = resolved.internalAgreement;
-           if (ia?.urlSignedPdf || ia?.url) {
-             resolvedFile = ia;
-           } else if (internalAgreementFile?.url) {
-             resolvedFile = internalAgreementFile;
-           }
+            const ia = resolved.internalAgreement;
+            if (ia?.urlSignedPdf || ia?.url) {
+              resolvedFile = ia;
+            } else if (internalAgreementFile?.url) {
+              resolvedFile = internalAgreementFile;
+            }
           } else if (doc.key === 'listing_agreement' && resolved.listingAgreement?.url) {
             resolvedFile = resolved.listingAgreement;
           }
