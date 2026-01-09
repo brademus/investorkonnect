@@ -261,15 +261,25 @@ Return a verification result with any discrepancies found.
 
           {deal?.documents?.listing_agreement?.file_url ? (
             <div className="space-y-2">
-              <a
-                href={deal.documents.listing_agreement.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
-              >
-                <FileText className="w-3 h-3" />
-                {deal.documents.listing_agreement.filename || 'View Listing Agreement'}
-              </a>
+              <div className="flex items-center gap-2">
+                <a
+                  href={deal.documents.listing_agreement.file_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  {deal.documents.listing_agreement.filename || 'View Listing Agreement'}
+                </a>
+                <a
+                  href={deal.documents.listing_agreement.file_url}
+                  download={deal.documents.listing_agreement.filename || 'listing-agreement.pdf'}
+                  className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Download
+                </a>
+              </div>
               {deal.documents.listing_agreement.verification_notes && (
                 <div className={`text-xs p-2 rounded border ${
                   deal.documents.listing_agreement.verified 
