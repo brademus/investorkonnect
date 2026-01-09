@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
@@ -26,16 +26,24 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 function PipelineContent() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { profile, loading } = useCurrentProfile();
+  const { profile, loading, refresh } = useCurrentProfile();
+  const triedEnsureProfileRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
 
-  // Redirect if profile not found after loading
+  // Ensure profile exists to avoid redirect loops
   useEffect(() => {
-    if (!loading && !profile) {
-      toast.error("Profile not found. Please complete setup.");
-      navigate(createPageUrl("PostAuth"), { replace: true });
-    }
-  }, [loading, profile, navigate]);
+    (async () => {
+      if (!loading && !profile && !triedEnsureProfileRef.current) {
+        triedEnsureProfileRef.current = true;
+        try {
+          await base44.functions.invoke('ensureProfile');
+          await refresh();
+        } catch (e) {
+          console.warn('ensureProfile failed', e);
+        }
+      }
+    })();
+  }, [loading, profile, refresh]);
 
   // Manual dedup handler
   const handleDedup = async () => {
@@ -336,7 +344,7 @@ function PipelineContent() {
         <div className="text-center">
           <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
           {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
-          {loading && <p className="text-sm text-[#808080]">Loading profile...</p>}
+          {(!deduplicating) && <p className="text-sm text-[#808080]">Preparing your workspace...</p>}
         </div>
       </div>
     );

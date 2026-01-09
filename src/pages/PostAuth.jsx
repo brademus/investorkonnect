@@ -18,6 +18,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 export default function PostAuth() {
   const navigate = useNavigate();
   const [status, setStatus] = useState("Signing you in...");
+  const [navigated, setNavigated] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
@@ -115,8 +116,11 @@ export default function PostAuth() {
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
-          // Use hard redirect to break any router state loops
-          window.location.href = createPageUrl("Pipeline");
+          // Use hard redirect once to break any router state loops
+          if (!navigated) {
+            setNavigated(true);
+            window.location.href = createPageUrl("Pipeline");
+          }
         }
 
       } catch (error) {
