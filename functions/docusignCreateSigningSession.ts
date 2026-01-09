@@ -423,23 +423,41 @@ Deno.serve(async (req) => {
     } else {
       console.log('[DocuSign] ✓ REUSING existing envelope:', envelopeId);
       console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
-      
-      // Check current envelope status before reusing
-      const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
-      const statusResponse = await fetch(statusUrl, {
-        method: 'GET',
-        headers: { 'Authorization': `Bearer ${accessToken}` }
+    }
+    
+    // Check envelope status and recipient order before creating signing session
+    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+    const statusResponse = await fetch(statusUrl, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (statusResponse.ok) {
+      const envStatus = await statusResponse.json();
+      console.log('[DocuSign] Envelope status check:', {
+        status: envStatus.status,
+        recipients: envStatus.recipients?.signers?.map(s => ({
+          email: s.email,
+          status: s.status,
+          routingOrder: s.routingOrder
+        }))
       });
       
-      if (statusResponse.ok) {
-        const envStatus = await statusResponse.json();
-        console.log('[DocuSign] Current envelope status check:', envStatus.status);
-        
-        // If in terminal state, must regenerate
-        if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
-          console.error('[DocuSign] Cannot reuse envelope in terminal state:', envStatus.status);
+      // If in terminal state, must regenerate
+      if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
+        console.error('[DocuSign] Cannot reuse envelope in terminal state:', envStatus.status);
+        return Response.json({ 
+          error: `Agreement is already ${envStatus.status}. Please regenerate from the Agreement tab.`
+        }, { status: 400 });
+      }
+      
+      // Check routing order - if agent is trying to sign before investor
+      if (role === 'agent' && envStatus.recipients?.signers) {
+        const investorSigner = envStatus.recipients.signers.find(s => s.recipientId === '1');
+        if (investorSigner && investorSigner.status !== 'completed') {
+          console.error('[DocuSign] Agent cannot sign - investor has not signed yet');
           return Response.json({ 
-            error: `Agreement envelope is already ${envStatus.status}. Please regenerate the agreement from the Agreement tab to create a new signing session.`
+            error: 'The investor must sign the agreement first before the agent can sign.'
           }, { status: 400 });
         }
       }
