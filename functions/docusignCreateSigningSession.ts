@@ -12,46 +12,60 @@ async function getDocuSignConnection(base44) {
   const expiresAt = new Date(connection.expires_at);
   
   // Auto-refresh if token expired and refresh_token exists
-  if (now >= expiresAt && connection.refresh_token) {
-    console.log('[DocuSign] Token expired, refreshing...');
-    
+  if (now >= expiresAt) {
+    if (!connection.refresh_token) {
+      throw new Error('DocuSign token expired and no refresh token available. Please reconnect DocuSign in Admin settings.');
+    }
+
+    console.log('[DocuSign] Token expired, attempting refresh...');
+
+    const integrationKey = Deno.env.get('DOCUSIGN_INTEGRATION_KEY');
+    const clientSecret = Deno.env.get('DOCUSIGN_CLIENT_SECRET');
+
+    if (!integrationKey || !clientSecret) {
+      throw new Error('DocuSign credentials not configured. Please check environment variables.');
+    }
+
     const tokenUrl = connection.base_uri.includes('demo') 
       ? 'https://account-d.docusign.com/oauth/token'
       : 'https://account.docusign.com/oauth/token';
-    
-    const refreshResponse = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: connection.refresh_token,
-        client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
-        client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
-      })
-    });
-    
-    if (!refreshResponse.ok) {
-      const error = await refreshResponse.text();
-      console.error('[DocuSign] Token refresh failed:', error);
-      throw new Error('DocuSign token expired and refresh failed. Admin must reconnect DocuSign.');
+
+    try {
+      const refreshResponse = await fetch(tokenUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'refresh_token',
+          refresh_token: connection.refresh_token,
+          client_id: integrationKey,
+          client_secret: clientSecret
+        })
+      });
+
+      if (!refreshResponse.ok) {
+        const errorText = await refreshResponse.text();
+        console.error('[DocuSign] Token refresh failed:', refreshResponse.status, errorText);
+        throw new Error('DocuSign refresh failed - please reconnect in Admin settings');
+      }
+
+      const tokenData = await refreshResponse.json();
+      const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
+
+      // Update connection with new tokens
+      await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
+        access_token: tokenData.access_token,
+        refresh_token: tokenData.refresh_token || connection.refresh_token,
+        expires_at: newExpiresAt
+      });
+
+      connection.access_token = tokenData.access_token;
+      connection.expires_at = newExpiresAt;
+
+      console.log('[DocuSign] ✓ Token refreshed successfully, new expiry:', newExpiresAt);
+    } catch (refreshError) {
+      console.error('[DocuSign] Refresh error:', refreshError.message);
+      throw new Error('Failed to refresh DocuSign token - please reconnect in Admin settings');
     }
-    
-    const tokenData = await refreshResponse.json();
-    const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
-    
-    // Update connection with new tokens
-    await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || connection.refresh_token,
-      expires_at: newExpiresAt
-    });
-    
-    connection.access_token = tokenData.access_token;
-    connection.expires_at = newExpiresAt;
-    
-    console.log('[DocuSign] Token refreshed successfully');
-  } else if (now >= expiresAt) {
-    throw new Error('DocuSign token expired and no refresh token available. Admin must reconnect DocuSign.');
   }
   
   return connection;
