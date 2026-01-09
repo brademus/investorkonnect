@@ -169,10 +169,6 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
       
       <div className="space-y-3">
         {REQUIRED_DOCUMENTS.map((doc) => {
-          // Normalize uploaded -> object shape (defined before first use)
-          const normalize = (obj) => obj && (obj.url || obj.file_url || obj.urlSignedPdf)
-            ? obj
-            : (typeof obj === 'string' ? { url: obj } : obj);
           const uploaded = normalize(documents[doc.key]);
 
           // Post-fully-signed: check resolved docs (fixed syntax)
@@ -192,6 +188,10 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
           // Prefer object with a usable URL; robust fallback for Seller Contract
           const hasUrl = (obj) => !!(obj && (obj.url || obj.file_url || obj.urlSignedPdf));
+          // Normalize uploaded -> object shape
+          const normalize = (obj) => obj && (obj.url || obj.file_url || obj.urlSignedPdf)
+            ? obj
+            : (typeof obj === 'string' ? { url: obj } : obj);
           let fileToShow;
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
