@@ -1545,6 +1545,13 @@ ${dealContext}`;
                         if (profile?.user_role === 'agent' && !isWorkingTogether) {
                           allFiles = allFiles.filter(file => !/seller contract/i.test((file.label || file.name || '')));
                         }
+                        // Ensure internal agreement appears using any available key
+                        allFiles = allFiles.map(f => {
+                          if (/internal agreement/i.test(f.label || f.name || '')) {
+                            return { ...f, label: 'Internal Agreement' };
+                          }
+                          return f;
+                        });
 
                         return allFiles.length === 0 ? (
                           <div className="text-center py-8">
