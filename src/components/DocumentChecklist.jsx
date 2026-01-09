@@ -45,45 +45,40 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     deal?.is_fully_signed === true
   );
 
-  // If fully signed but Deal.documents lacks the internal agreement, fetch it from the agreement service
+  // Always check the legal agreement; if fully signed, mirror the signed PDF into Deal.documents and UI
   useEffect(() => {
-    if (!isWorkingTogether || !deal?.id) return;
-    const alreadyHas =
-      documents?.operating_agreement ||
-      resolved?.internalAgreement?.urlSignedPdf ||
-      resolved?.internalAgreement?.url;
-    if (alreadyHas) return;
-
+    if (!deal?.id) return;
     let cancelled = false;
     (async () => {
       try {
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
         const ag = res?.data || res;
+        const isSigned = ag?.status === 'fully_signed' || !!(ag?.signed_pdf_url || ag?.final_pdf_url || ag?.docusign_pdf_url || ag?.pdf_file_url);
+        if (!isSigned || cancelled) return;
+
         const url = ag?.signed_pdf_url || ag?.final_pdf_url || ag?.docusign_pdf_url || ag?.pdf_file_url;
-        if (url && !cancelled) {
-          const fileObj = {
-            file_url: url,
-            filename: ag?.filename || 'internal-agreement.pdf',
-            uploaded_at: ag?.updated_at || ag?.investor_signed_at || ag?.agent_signed_at
+        const filename = ag?.filename || 'internal-agreement.pdf';
+        const uploaded_at = ag?.updated_at || ag?.completed_at || ag?.investor_signed_at || ag?.agent_signed_at || new Date().toISOString();
+
+        // Update local UI state so it shows green & downloadable immediately
+        setInternalAgreementFile({ url, filename, uploaded_at });
+
+        // Persist to Deal.documents so Shared Files and other tabs can pick it up
+        const docs = deal?.documents || {};
+        const existingUrl = docs.operating_agreement?.file_url || docs.internal_agreement?.file_url || docs.operating_agreement?.url || docs.internal_agreement?.url;
+        if (!existingUrl || existingUrl !== url) {
+          const updatedDocs = {
+            ...docs,
+            operating_agreement: docs.operating_agreement || { file_url: url, filename, uploaded_at },
+            internal_agreement: docs.internal_agreement || { file_url: url, filename, uploaded_at }
           };
-          // Update local UI state
-          setInternalAgreementFile({ url, filename: fileObj.filename, uploaded_at: fileObj.uploaded_at });
-          // Persist to Deal.documents (canonical) if missing
-          if (!documents?.operating_agreement || !documents?.internal_agreement) {
-            const updatedDocs = { 
-              ...(documents || {}), 
-              operating_agreement: documents?.operating_agreement || fileObj,
-              internal_agreement: documents?.internal_agreement || fileObj
-            };
-            await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
-            if (onUpdate) onUpdate();
-          }
+          await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
+          if (onUpdate) onUpdate();
         }
       } catch {}
     })();
-
     return () => { cancelled = true; };
-  }, [isWorkingTogether, deal?.id, documents?.operating_agreement, resolved?.internalAgreement?.urlSignedPdf, resolved?.internalAgreement?.url]);
+  }, [deal?.id]);
 
   const handleUpload = async (docKey, e) => {
     const file = e.target.files[0];
