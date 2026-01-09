@@ -7,6 +7,9 @@ import { toast } from "sonner";
 export default function ContractLayers({ room, deal, onUpdate, userRole }) {
   const [uploading, setUploading] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  
+  // Post-fully-signed state guard
+  const isWorkingTogether = room?.is_fully_signed === true;
 
   const handleListingAgreementUpload = async (event) => {
     const file = event.target.files?.[0];
