@@ -133,18 +133,11 @@ Deno.serve(async (req) => {
     }
     const agreement = agreements[0];
 
-    // GATING: Check DB immediately - if agent trying to sign, investor must have signed first
-    if (role === 'agent' && !agreement.investor_signed_at) {
-      console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
-      console.error('[DocuSign] Agreement status:', agreement.status);
-      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at);
+    // Validate envelope exists before any gating
+    if (!agreement.docusign_envelope_id) {
       return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+        error: 'No DocuSign envelope found. Please generate the agreement from the Agreement tab first.'
       }, { status: 400 });
-    }
-
-    if (role === 'agent' && agreement.investor_signed_at) {
-      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
     }
 
     // Use DocuSign-specific PDF (with invisible anchors)
@@ -215,36 +208,97 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
     console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
 
-    // Sync with DocuSign to get latest recipient statuses (don't block, just update DB)
+    // CRITICAL: Fetch recipient statuses from DocuSign (authoritative source)
+    console.log('[DocuSign] Fetching recipient statuses from DocuSign...');
+    let investorRecipient = null;
+    let agentRecipient = null;
+    let recipientIdByEmail = {};
+
     try {
       const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
       const recipientsResponse = await fetch(recipientsUrl, {
         headers: { 'Authorization': `Bearer ${accessToken}` }
       });
 
-      if (recipientsResponse.ok) {
-        const recipients = await recipientsResponse.json();
-        const signers = recipients.signers || [];
-        
-        const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
-        const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
-        
-        console.log('[DocuSign] DocuSign status sync:', {
-          investor: investorSigner?.status,
-          agent: agentSigner?.status
+      if (!recipientsResponse.ok) {
+        const errorText = await recipientsResponse.text();
+        console.error('[DocuSign] Failed to fetch recipients:', errorText);
+        return Response.json({
+          error: 'Failed to verify signing status. Please try again in a moment.'
+        }, { status: 500 });
+      }
+
+      const recipients = await recipientsResponse.json();
+      const signers = recipients.signers || [];
+
+      console.log('[DocuSign] Recipients from envelope:', signers.map(s => ({
+        recipientId: s.recipientId,
+        email: s.email,
+        status: s.status,
+        routingOrder: s.routingOrder
+      })));
+
+      // Match investor by recipientId first, then by email (fallback for mismatch)
+      investorRecipient = signers.find(s => s.recipientId === agreement.investor_recipient_id);
+      if (!investorRecipient && agreement.investor_email) {
+        investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email.toLowerCase());
+        console.log('[DocuSign] Investor matched by email (recipientId mismatch detected)');
+      }
+
+      // Match agent by recipientId first, then by email
+      agentRecipient = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+      if (!agentRecipient && agreement.agent_email) {
+        agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email.toLowerCase());
+        console.log('[DocuSign] Agent matched by email (recipientId mismatch detected)');
+      }
+
+      if (!investorRecipient || !agentRecipient) {
+        console.error('[DocuSign] Cannot find both recipients in envelope:', {
+          foundInvestor: !!investorRecipient,
+          foundAgent: !!agentRecipient
         });
-        
-        // Update DB if DocuSign shows investor signed but DB doesn't
-        if (investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed') && !agreement.investor_signed_at) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-            investor_signed_at: investorSigner.signedDateTime || new Date().toISOString(),
-            status: 'investor_signed'
-          });
-          console.log('[DocuSign] ✓ Synced investor signature from DocuSign to DB');
-        }
+        return Response.json({
+          error: 'Envelope recipients not found. Please regenerate the agreement.'
+        }, { status: 400 });
+      }
+
+      console.log('[DocuSign] Recipients found:', {
+        investor: { id: investorRecipient.recipientId, status: investorRecipient.status },
+        agent: { id: agentRecipient.recipientId, status: agentRecipient.status }
+      });
+
+      // Treat both "completed" and "signed" as completion
+      const investorCompleted = investorRecipient.status === 'completed' || investorRecipient.status === 'signed';
+
+      // AGENT GATING: Gate off DocuSign recipient status (source of truth), not DB
+      if (role === 'agent' && !investorCompleted) {
+        console.error('[DocuSign] ❌ Agent cannot sign - DocuSign shows investor has not signed yet');
+        console.error('[DocuSign] Investor recipient status:', investorRecipient.status);
+        return Response.json({
+          error: 'The investor must sign this agreement first before you can sign it.'
+        }, { status: 400 });
+      }
+
+      if (role === 'agent' && investorCompleted) {
+        console.log('[DocuSign] ✓ DocuSign confirms investor signed - agent can proceed');
+      }
+
+      // Reconcile DB: update investor_signed_at if DocuSign shows signed but DB doesn't
+      if (investorCompleted && !agreement.investor_signed_at) {
+        const syncUpdate = {
+          investor_signed_at: investorRecipient.signedDateTime || new Date().toISOString(),
+          status: 'investor_signed'
+        };
+        await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, syncUpdate);
+        console.log('[DocuSign] ✓ Synced investor signature from DocuSign to DB');
+        agreement.investor_signed_at = syncUpdate.investor_signed_at;
+        agreement.status = syncUpdate.status;
       }
     } catch (syncError) {
-      console.warn('[DocuSign] Failed to sync status (non-blocking):', syncError.message);
+      console.error('[DocuSign] Critical error fetching recipients:', syncError.message);
+      return Response.json({
+        error: 'Failed to verify signing status. Please try again in a moment.'
+      }, { status: 500 });
     }
 
     // Check for terminal envelope states
@@ -294,13 +348,15 @@ Deno.serve(async (req) => {
     const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
     
-    // Get recipient details - CRITICAL: use correct recipientId and clientUserId for this role
-    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
+    // Get the recipient from DocuSign that matches this role (use the one we just fetched above)
+    const docusignRecipient = role === 'investor' ? investorRecipient : agentRecipient;
+    const recipientId = docusignRecipient.recipientId; // Use DocuSign's recipientId (authoritative)
     const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
     
-    console.log('[DocuSign] Recipient details for', role, ':', {
-      recipientId,
+    console.log('[DocuSign] Using recipient details for', role, ':', {
+      recipientId: docusignRecipient.recipientId,
+      storedRecipientId: role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id,
       clientUserId,
       profileId
     });
@@ -314,20 +370,20 @@ Deno.serve(async (req) => {
       }, { status: 404 });
     }
     
-    // Create recipient view for embedded signing
+    // Create recipient view for embedded signing - include recipientId in the request
     const recipientViewRequest = {
       returnUrl: docusignReturnUrl,
       authenticationMethod: 'none',
-      email: profile.email,
-      userName: profile.full_name || profile.email,
-      clientUserId: clientUserId
+      email: docusignRecipient.email,
+      userName: docusignRecipient.email,
+      clientUserId: clientUserId,
+      recipientId: recipientId
     };
     
-    console.log('[DocuSign] Creating recipient view with:', {
+    console.log('[DocuSign] Creating recipient view:', {
       recipientId,
       clientUserId,
-      email: profile.email,
-      userName: profile.full_name,
+      email: docusignRecipient.email,
       role,
       envelopeId
     });
@@ -363,23 +419,20 @@ Deno.serve(async (req) => {
         role
       });
       
-      // Handle specific DocuSign errors with user-friendly messages
+      // Distinguish between out-of-sequence and recipient mismatch
+      let userMsg = errorMsg;
       if (errorMsg.includes('out of sequence') || errorMsg.includes('OUT_OF_SEQUENCE')) {
-        return Response.json({ 
-          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
-        }, { status: 400 });
-      }
-      
-      if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
-        return Response.json({ 
-          error: 'Signing session issue detected. Please regenerate the agreement from the Agreement tab.'
-        }, { status: 400 });
+        userMsg = role === 'agent' 
+          ? 'The investor must sign first. If they already signed, try regenerating the agreement.'
+          : 'Signing sequence error. Please regenerate the agreement.';
+      } else if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
+        userMsg = 'Recipient mismatch detected. Please regenerate the agreement.';
       }
       
       return Response.json({ 
-        error: errorMsg || 'Failed to create signing session',
-        hint: 'If this persists, try regenerating the agreement.'
-      }, { status: 500 });
+        error: userMsg,
+        details: errorMsg
+      }, { status: 400 });
     }
     
     const viewData = await viewResponse.json();
