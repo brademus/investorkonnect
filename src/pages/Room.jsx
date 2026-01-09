@@ -20,7 +20,7 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDisplay";
 import { 
-  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock
+  Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
