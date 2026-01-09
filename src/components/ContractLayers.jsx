@@ -224,6 +224,27 @@ Return a verification result with any discrepancies found.
               )}
             </div>
           )}
+          {internalStatus === 'signed' && deal?.documents?.internal_agreement?.file_url && (
+            <div className="flex items-center gap-2 mt-3">
+              <a
+                href={deal.documents.internal_agreement.file_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
+              >
+                <FileText className="w-3 h-3" />
+                View Agreement
+              </a>
+              <a
+                href={deal.documents.internal_agreement.file_url}
+                download={deal.documents.internal_agreement.filename || 'internal-agreement.pdf'}
+                className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
+              >
+                <Download className="w-3 h-3" />
+                Download
+              </a>
+            </div>
+          )}
         </div>
 
         {/* 3. Agent's Listing Agreement */}
