@@ -61,8 +61,8 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
         const filename = ag?.filename || 'internal-agreement.pdf';
         const uploaded_at = ag?.updated_at || ag?.completed_at || ag?.investor_signed_at || ag?.agent_signed_at || new Date().toISOString();
 
-        // Update local UI state so it shows green & downloadable immediately
-        setInternalAgreementFile({ url, filename, uploaded_at });
+        // Update local UI state so it shows green & downloadable immediately (scoped to deal)
+        setInternalAgreementFile({ dealId: deal.id, url, filename, uploaded_at });
 
         // Persist to Deal.documents so Shared Files and other tabs can pick it up
         const docs = deal?.documents || {};
@@ -91,9 +91,15 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     return () => { cancelled = true; };
   }, [deal?.id]);
 
+  // Reset per-deal transient state when switching deals to avoid stale docs from previous room
+  useEffect(() => {
+    setInternalAgreementFile(null);
+    setUploading(null);
+  }, [deal?.id]);
+
   // Fallback for legacy/current accounts: derive from deal-level fields if present
   useEffect(() => {
-    if (internalAgreementFile) return;
+    if (internalAgreementFile?.dealId === deal?.id && internalAgreementFile?.url) return;
     const legacyUrl =
       deal?.internal_agreement_signed_url ||
       deal?.final_pdf_url ||
@@ -105,6 +111,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
       room?.internal_agreement_document?.url;
     if (legacyUrl) {
       setInternalAgreementFile({
+        dealId: deal?.id,
         url: legacyUrl,
         filename: deal?.agreement_filename || 'internal-agreement.pdf',
         uploaded_at: deal?.updated_date || new Date().toISOString()
@@ -178,7 +185,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
              const ia = resolved.internalAgreement;
             if (ia?.urlSignedPdf || ia?.url) {
               resolvedFile = ia;
-            } else if (internalAgreementFile?.url) {
+            } else if (internalAgreementFile?.dealId === deal?.id && internalAgreementFile?.url) {
               resolvedFile = internalAgreementFile;
             }
           } else if (doc.key === 'listing_agreement' && resolved.listingAgreement?.url) {
