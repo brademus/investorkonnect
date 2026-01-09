@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { FileText, Upload, CheckCircle, Clock, AlertCircle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
+import { resolveDealDocuments } from "@/components/utils/dealDocuments";
 
 export default function ContractLayers({ room, deal, onUpdate, userRole }) {
   const [uploading, setUploading] = useState(false);
