@@ -37,7 +37,8 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
   const [uploading, setUploading] = useState(null);
   const [internalAgreementFile, setInternalAgreementFile] = useState(null);
 
-  const documents = deal?.documents || {};
+  // Defensive copy to prevent state glitches when navigating tabs
+  const documents = useMemo(() => ({ ...(deal?.documents || {}) }), [deal?.documents]);
   const resolved = resolveDealDocuments({ deal, room });
   const isWorkingTogether = (
     room?.agreement_status === 'fully_signed' ||
