@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 import { FileText, Upload, CheckCircle, Clock, AlertCircle, Loader2, Download } from "lucide-react";
 import { toast } from "sonner";
-import { resolveDealDocuments } from "@/components/utils/dealDocuments";
+import { resolveDealDocuments, buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 
 export default function ContractLayers({ room, deal, onUpdate, userRole }) {
   const [uploading, setUploading] = useState(false);
@@ -105,12 +105,14 @@ Return a verification result with any discrepancies found.
   };
 
   const resolved = resolveDealDocuments({ deal, room });
+  const unifiedFiles = isWorkingTogether ? buildUnifiedFilesList({ deal, room }) : [];
   
   const getContractStatus = (type) => {
     switch (type) {
       case 'seller': {
-        const hasUrl = resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url;
-        const isVerified = resolved.verifiedPurchaseContract?.verified || resolved.sellerContract?.verified;
+        const unifiedSeller = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('seller contract'));
+        const hasUrl = unifiedSeller?.url || resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url;
+        const isVerified = unifiedSeller?.verified || resolved.verifiedPurchaseContract?.verified || resolved.sellerContract?.verified;
         if (hasUrl) {
           return isVerified ? 'verified' : 'uploaded';
         }
@@ -185,8 +187,10 @@ Return a verification result with any discrepancies found.
               <span>Hidden until agreement is fully signed</span>
             </div>
           ) : (() => {
-            const doc = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
-            const url = doc?.url || doc?.file_url;
+            const unifiedSeller = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('seller contract'));
+            const primaryDoc = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
+            const doc = unifiedSeller || primaryDoc;
+            const url = doc?.url || doc?.file_url || doc?.urlSignedPdf;
             if (!url) return null;
             return (
               <div className="flex items-center gap-2">
@@ -201,7 +205,7 @@ Return a verification result with any discrepancies found.
                 </a>
                 <a
                   href={url}
-                  download={doc?.filename || 'seller-contract.pdf'}
+                  download={doc?.filename || doc?.name || 'seller-contract.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />
@@ -243,11 +247,12 @@ Return a verification result with any discrepancies found.
             </div>
           )}
           {(() => {
-            const internalUrl = resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url || resolved.internalAgreement?.urlDraft;
-            return (internalUrl || resolved.internalAgreement?.file_url) ? (
+            const unifiedIA = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('internal agreement'));
+            const internalUrl = unifiedIA?.url || resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url || resolved.internalAgreement?.urlDraft || resolved.internalAgreement?.file_url;
+            return internalUrl ? (
               <div className="flex items-center gap-2 mt-3">
                 <a
-                  href={internalUrl || resolved.internalAgreement?.file_url}
+                  href={internalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
@@ -256,8 +261,8 @@ Return a verification result with any discrepancies found.
                   View Agreement
                 </a>
                 <a
-                  href={internalUrl || resolved.internalAgreement?.file_url}
-                  download={resolved.internalAgreement.filename || 'internal-agreement.pdf'}
+                  href={internalUrl}
+                  download={unifiedIA?.filename || resolved.internalAgreement.filename || 'internal-agreement.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />
@@ -280,7 +285,7 @@ Return a verification result with any discrepancies found.
             </div>
           </div>
 
-          {resolved.listingAgreement?.url ? (
+          {(resolved.listingAgreement?.url || (unifiedFiles || []).some(f => (f.label || f.name || '').toLowerCase().includes('listing agreement'))) ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <a
@@ -294,7 +299,7 @@ Return a verification result with any discrepancies found.
                 </a>
                 <a
                   href={resolved.listingAgreement.url}
-                  download={resolved.listingAgreement.filename || resolved.listingAgreement.name || 'listing-agreement.pdf'}
+                  download={(unifiedFiles.find(f => (f.label || f.name || '').toLowerCase().includes('listing agreement'))?.filename) || resolved.listingAgreement.filename || resolved.listingAgreement.name || 'listing-agreement.pdf'
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />
