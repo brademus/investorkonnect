@@ -75,10 +75,24 @@ export default function PostAuth() {
           console.error('[PostAuth] Profile error:', e);
         }
 
-        // Step 3: Route based on state
+        // Step 3: Route based on state (align with useCurrentProfile logic)
         const role = profile?.user_role;
         const hasRole = role && role !== 'member';
-        const isOnboarded = !!profile?.onboarding_completed_at;
+
+        // Consider onboarding complete if timestamp OR step OR version OR legacy profile completeness
+        const hasLegacyProfile = !!(
+          profile?.full_name &&
+          profile?.phone &&
+          (profile?.company || profile?.investor?.company_name) &&
+          (profile?.target_state || profile?.location || (profile?.markets && profile?.markets.length > 0))
+        );
+        const isOnboarded = !!(
+          profile?.onboarding_completed_at ||
+          profile?.onboarding_step === 'basic_complete' ||
+          profile?.onboarding_step === 'deep_complete' ||
+          profile?.onboarding_version ||
+          hasLegacyProfile
+        );
 
         if (!hasRole) {
           // No role selected - go to RoleSelection

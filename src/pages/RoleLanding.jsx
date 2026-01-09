@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { Logo } from "@/components/Logo";
 import { TrendingUp, Users } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function RoleLanding() {
   const navigate = useNavigate();
@@ -106,7 +107,7 @@ export default function RoleLanding() {
           <p className="text-sm text-[#808080]">
             Already have an account?{" "}
             <button
-              onClick={() => window.location.href = createPageUrl("PostAuth")}
+              onClick={() => base44.auth.redirectToLogin(createPageUrl("PostAuth"))}
               className="text-[#E3C567] hover:underline font-medium"
             >
               Log in
