@@ -106,12 +106,27 @@ Return a verification result with any discrepancies found.
 
   const resolved = resolveDealDocuments({ deal, room });
   const unifiedFiles = isWorkingTogether ? buildUnifiedFilesList({ deal, room }) : [];
+  if (isWorkingTogether) {
+    try {
+      // Lightweight diagnostic log to help verify sources (dev only)
+      console.debug('[ContractLayers] resolved/unified', {
+        roomId: room?.id,
+        seller: {
+          url: resolved?.sellerContract?.url || deal?.contract_document?.url || deal?.contract_url,
+          filename: resolved?.sellerContract?.filename
+        },
+        internal: resolved?.internalAgreement?.urlSignedPdf || resolved?.internalAgreement?.url,
+        listing: resolved?.listingAgreement?.url,
+        unifiedCount: unifiedFiles?.length || 0
+      });
+    } catch {}
+  }
   
   const getContractStatus = (type) => {
     switch (type) {
       case 'seller': {
         const unifiedSeller = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('seller contract'));
-        const hasUrl = unifiedSeller?.url || resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url;
+        const hasUrl = unifiedSeller?.url || resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url || deal?.contract_document?.url || deal?.contract_url;
         const isVerified = unifiedSeller?.verified || resolved.verifiedPurchaseContract?.verified || resolved.sellerContract?.verified;
         if (hasUrl) {
           return isVerified ? 'verified' : 'uploaded';
@@ -190,12 +205,12 @@ Return a verification result with any discrepancies found.
             const unifiedSeller = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('seller contract'));
             const primaryDoc = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
             const doc = unifiedSeller || primaryDoc;
-            const url = doc?.url || doc?.file_url || doc?.urlSignedPdf;
-            if (!url) return null;
+            const urlBase = doc?.url || doc?.file_url || doc?.urlSignedPdf || deal?.contract_document?.url || deal?.contract_url;
+            if (!urlBase) return null;
             return (
               <div className="flex items-center gap-2">
                 <a
-                  href={url}
+                  href={urlBase}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
@@ -204,7 +219,7 @@ Return a verification result with any discrepancies found.
                   View Contract
                 </a>
                 <a
-                  href={url}
+                  href={urlBase}
                   download={doc?.filename || doc?.name || 'seller-contract.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
