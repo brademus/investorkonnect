@@ -198,7 +198,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
           } else if (doc.key === 'purchase_contract') {
-            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name };
+            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url || room?.contract_document?.url || room?.contract_url, filename: deal?.contract_document?.name || room?.contract_document?.name };
             fileToShow = hasUrl(uploaded) ? uploaded : fallback;
           } else {
             fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
