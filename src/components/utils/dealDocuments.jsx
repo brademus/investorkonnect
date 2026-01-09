@@ -11,30 +11,36 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
   const hasUrl = (url) => typeof url === 'string' && url.length > 0;
   
   return {
-    // Seller Contract - from Deal.documents.purchase_contract or deal.documents.seller_contract
+    // Seller Contract - from Deal.documents or deal fields
     sellerContract: {
       label: 'Seller Contract',
-      url: docs.purchase_contract?.file_url || docs.seller_contract?.file_url,
+      url: docs.purchase_contract?.file_url || docs.seller_contract?.file_url || deal?.contract_url || deal?.documents?.purchase_contract?.file_url,
       verified: docs.purchase_contract?.verified || docs.seller_contract?.verified,
       filename: docs.purchase_contract?.filename || docs.seller_contract?.filename,
       createdAt: docs.purchase_contract?.uploaded_at || docs.seller_contract?.uploaded_at,
       source: 'deal.documents'
     },
     
-    // Verified Purchase Contract - typically same as seller contract in this system
+    // Verified Purchase Contract - robust
     verifiedPurchaseContract: {
       label: 'Verified Purchase Contract',
-      url: docs.verified_purchase_contract?.file_url || docs.purchase_contract?.file_url,
+      url: docs.verified_purchase_contract?.file_url || docs.purchase_contract?.file_url || deal?.documents?.verified_purchase_contract?.file_url,
       verified: docs.verified_purchase_contract?.verified || docs.purchase_contract?.verified,
       filename: docs.verified_purchase_contract?.filename || docs.purchase_contract?.filename,
       createdAt: docs.verified_purchase_contract?.uploaded_at || docs.purchase_contract?.uploaded_at,
       source: 'deal.documents'
     },
     
-    // Internal Agreement - from Deal.documents.internal_agreement
+    // Internal Agreement - robust fallbacks
     internalAgreement: {
       label: 'Internal Agreement',
-      urlSignedPdf: docs.internal_agreement?.file_url || deal.internal_agreement_signed_url,
+      urlSignedPdf:
+        docs.internal_agreement?.file_url ||
+        docs.internal_agreement?.signed_pdf_url ||
+        deal?.internal_agreement_signed_url ||
+        deal?.signed_pdf_url ||
+        deal?.final_pdf_url ||
+        deal?.docusign_pdf_url,
       urlDraft: docs.internal_agreement_draft?.file_url,
       filename: docs.internal_agreement?.filename,
       createdAt: docs.internal_agreement?.uploaded_at,

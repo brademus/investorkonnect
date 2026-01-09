@@ -350,7 +350,7 @@ export default function Room() {
                 closing_date: deal.key_dates?.closing_date,
                 deal_assigned_agent_id: deal.agent_id,
                 is_fully_signed: deal.is_fully_signed,
-                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
               });
             } else {
               setCurrentRoom(rawRoom);
