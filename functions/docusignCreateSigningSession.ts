@@ -348,12 +348,22 @@ Deno.serve(async (req) => {
     }
 
     // GATING: Enforce signing order based on DocuSign truth
-    if (role === 'agent' && !investorCompleted) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not completed signing');
-      console.error('[DocuSign] Investor status in DocuSign:', investorSigner.status);
-      return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
-      }, { status: 400 });
+    if (role === 'agent') {
+      console.log('[DocuSign] Checking if agent can sign...');
+      console.log('[DocuSign] Investor signer:', {
+        recipientId: investorSigner?.recipientId,
+        email: investorSigner?.email,
+        status: investorSigner?.status,
+        signedDateTime: investorSigner?.signedDateTime
+      });
+      console.log('[DocuSign] investorCompleted:', investorCompleted);
+
+      if (!investorCompleted) {
+        console.error('[DocuSign] ❌ Agent cannot sign - investor has not completed signing');
+        return Response.json({ 
+          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+        }, { status: 400 });
+      }
     }
 
     console.log('[DocuSign] ✓ Gating check passed for role:', role);
