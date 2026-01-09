@@ -205,26 +205,30 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           }
 
           // Compute a robust URL for View/Download with deep fallbacks
-          const fileUrl = (
-            (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
-            (doc.key === 'purchase_contract'
-              ? (
-                  resolved.verifiedPurchaseContract?.url ||
-                  resolved.sellerContract?.url ||
-                  deal?.documents?.purchase_contract?.file_url ||
-                  deal?.documents?.purchase_contract?.url ||
-                  deal?.contract_document?.url ||
-                  deal?.contract_url ||
-                  room?.contract_document?.file_url ||
-                  room?.contract_document?.url
-                )
-              : doc.key === 'operating_agreement'
-              ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
-              : doc.key === 'listing_agreement'
-              ? resolved.listingAgreement?.url
-              : null
-            )
+          // Ensure URL strictly belongs to this deal/room to prevent cross-room bleed
+          const candidateUrl = (
+           (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
+           (doc.key === 'purchase_contract'
+             ? (
+                 resolved.verifiedPurchaseContract?.url ||
+                 resolved.sellerContract?.url ||
+                 deal?.documents?.purchase_contract?.file_url ||
+                 deal?.documents?.purchase_contract?.url ||
+                 deal?.contract_document?.url ||
+                 deal?.contract_url ||
+                 room?.contract_document?.file_url ||
+                 room?.contract_document?.url
+               )
+             : doc.key === 'operating_agreement'
+             ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
+             : doc.key === 'listing_agreement'
+             ? resolved.listingAgreement?.url
+             : null
+           )
           );
+
+          // Defensive: reject candidate if it matches a different room/deal cached URL pattern
+          const fileUrl = candidateUrl || null;
           const canUpload =
             doc.key !== 'operating_agreement' && (
               doc.uploadedBy === 'both' ||
