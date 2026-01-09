@@ -880,7 +880,36 @@ Deno.serve(async (req) => {
     const envelopeId = envelope.envelopeId;
     
     console.log('[DocuSign] ✓ Envelope created:', envelopeId);
-    console.log('[DocuSign] Recipients: investor (ID=1), agent (ID=2)');
+    
+    // FETCH actual recipient IDs from DocuSign (they are authoritative, not our assumptions)
+    const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+    const recipientsResponse = await fetch(recipientsUrl, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (!recipientsResponse.ok) {
+      throw new Error('Failed to fetch recipients from envelope');
+    }
+    
+    const recipientsData = await recipientsResponse.json();
+    const signers = recipientsData.signers || [];
+    
+    let investorRecipientId = '1';
+    let agentRecipientId = '2';
+    
+    // Match by email to get actual recipientIds from DocuSign
+    for (const signer of signers) {
+      if (signer.email?.toLowerCase() === profile.email.toLowerCase()) {
+        investorRecipientId = signer.recipientId;
+        console.log('[DocuSign] Found investor recipient ID:', investorRecipientId);
+      }
+      if (signer.email?.toLowerCase() === agentProfile.email.toLowerCase()) {
+        agentRecipientId = signer.recipientId;
+        console.log('[DocuSign] Found agent recipient ID:', agentRecipientId);
+      }
+    }
+    
+    console.log('[DocuSign] Recipients: investor (ID=' + investorRecipientId + '), agent (ID=' + agentRecipientId + ')');
     
     // Save agreement with envelope details
     const agreementData = {
