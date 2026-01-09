@@ -69,8 +69,12 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           // Update local UI state
           setInternalAgreementFile({ url, filename: fileObj.filename, uploaded_at: fileObj.uploaded_at });
           // Persist to Deal.documents (canonical) if missing
-          if (!documents?.internal_agreement) {
-            const updatedDocs = { ...(documents || {}), internal_agreement: fileObj };
+          if (!documents?.operating_agreement || !documents?.internal_agreement) {
+            const updatedDocs = { 
+              ...(documents || {}), 
+              operating_agreement: documents?.operating_agreement || fileObj,
+              internal_agreement: documents?.internal_agreement || fileObj
+            };
             await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
             if (onUpdate) onUpdate();
           }
