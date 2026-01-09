@@ -176,74 +176,206 @@ Deno.serve(async (req) => {
     const storedPdfHash = agreement.docusign_pdf_sha256;
     
     // Critical decision logic: create new envelope if PDF changed
-    // Envelope should exist from generateLegalAgreement
+    // Validate envelope exists
     if (!envelopeId) {
       return Response.json({ 
         error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.'
       }, { status: 400 });
     }
 
-    console.log('[DocuSign] ✓ Using existing envelope:', envelopeId);
+    // Validate recipient IDs exist
+    if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
+      return Response.json({ 
+        error: 'Missing recipient IDs. Please regenerate the agreement.'
+      }, { status: 400 });
+    }
 
-      // Sync envelope status before proceeding to ensure we have latest signature status
-      try {
-      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
-      const recipientsResponse = await fetch(recipientsUrl, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
+    // Validate client user IDs exist
+    if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
+      return Response.json({ 
+        error: 'Missing client user IDs. Please regenerate the agreement.'
+      }, { status: 400 });
+    }
 
-      if (recipientsResponse.ok) {
-        const recipients = await recipientsResponse.json();
-        const signers = recipients.signers || [];
+    console.log('[DocuSign] Using existing envelope:', envelopeId);
+    console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
+    console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
 
-        const investorSigner = signers.find(s => s.recipientId === '1');
-        const agentSigner = signers.find(s => s.recipientId === '2');
+    // CRITICAL: Query DocuSign for current recipient status (source of truth)
+    console.log('[DocuSign] Querying DocuSign for current recipient statuses...');
+    const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+    const recipientsResponse = await fetch(recipientsUrl, {
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
 
-        const now = new Date().toISOString();
-        const syncUpdates = {};
+    if (!recipientsResponse.ok) {
+      const errorText = await recipientsResponse.text();
+      console.error('[DocuSign] Failed to fetch recipients:', errorText);
+      return Response.json({ 
+        error: 'Failed to verify signing status from DocuSign'
+      }, { status: 500 });
+    }
 
-        if (investorSigner?.status === 'completed' && !agreement.investor_signed_at) {
-          syncUpdates.investor_signed_at = investorSigner.signedDateTime || now;
-        }
-        if (agentSigner?.status === 'completed' && !agreement.agent_signed_at) {
-          syncUpdates.agent_signed_at = agentSigner.signedDateTime || now;
-        }
+    const recipients = await recipientsResponse.json();
+    const signers = recipients.signers || [];
 
-        if (Object.keys(syncUpdates).length > 0) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, syncUpdates);
-          console.log('[DocuSign] Synced signature status:', syncUpdates);
-        }
+    console.log('[DocuSign] DocuSign recipients:', signers.map(s => ({
+      recipientId: s.recipientId,
+      email: s.email,
+      status: s.status,
+      routingOrder: s.routingOrder,
+      signedDateTime: s.signedDateTime
+    })));
+
+    // Find investor and agent signers
+    let investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
+    let agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+
+    // Fallback to email match if recipientId not found
+    if (!investorSigner) {
+      const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agreement.investor_profile_id });
+      if (investorProfiles.length > 0) {
+        investorSigner = signers.find(s => s.email.toLowerCase() === investorProfiles[0].email.toLowerCase());
       }
-      } catch (syncError) {
-      console.warn('[DocuSign] Failed to sync status before signing:', syncError);
-      }
+    }
 
-      // Check envelope status for terminal states only
+    if (!agentSigner) {
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agreement.agent_profile_id });
+      if (agentProfiles.length > 0) {
+        agentSigner = signers.find(s => s.email.toLowerCase() === agentProfiles[0].email.toLowerCase());
+      }
+    }
+
+    if (!investorSigner || !agentSigner) {
+      console.error('[DocuSign] Could not find both recipients in envelope');
+      return Response.json({ 
+        error: 'Envelope recipients not found. Please regenerate the agreement.'
+      }, { status: 400 });
+    }
+
+    const investorCompleted = investorSigner.status === 'completed';
+    const agentCompleted = agentSigner.status === 'completed';
+
+    console.log('[DocuSign] Current DocuSign status:', {
+      investor: {
+        recipientId: investorSigner.recipientId,
+        status: investorSigner.status,
+        completed: investorCompleted,
+        signedDateTime: investorSigner.signedDateTime
+      },
+      agent: {
+        recipientId: agentSigner.recipientId,
+        status: agentSigner.status,
+        completed: agentCompleted,
+        signedDateTime: agentSigner.signedDateTime
+      }
+    });
+
+    // RECONCILE: Update DB based on DocuSign truth
+    const now = new Date().toISOString();
+    const syncUpdates = {
+      docusign_status: recipients.envelopeStatus || 'sent'
+    };
+    let statusChanged = false;
+
+    console.log('[DocuSign] Current DB status:', {
+      status: agreement.status,
+      investor_signed_at: agreement.investor_signed_at,
+      agent_signed_at: agreement.agent_signed_at
+    });
+
+    // Update investor signature status
+    if (investorCompleted && !agreement.investor_signed_at) {
+      syncUpdates.investor_signed_at = investorSigner.signedDateTime || now;
+      statusChanged = true;
+      console.log('[DocuSign] ✓ Reconciling: Investor signed at', syncUpdates.investor_signed_at);
+    }
+
+    // Update agent signature status
+    if (agentCompleted && !agreement.agent_signed_at) {
+      syncUpdates.agent_signed_at = agentSigner.signedDateTime || now;
+      statusChanged = true;
+      console.log('[DocuSign] ✓ Reconciling: Agent signed at', syncUpdates.agent_signed_at);
+    }
+
+    // Update agreement status based on who completed
+    if (investorCompleted && agentCompleted) {
+      if (agreement.status !== 'fully_signed' && agreement.status !== 'attorney_review_pending') {
+        if (agreement.governing_state === 'NJ') {
+          syncUpdates.status = 'attorney_review_pending';
+          if (!agreement.nj_review_end_at) {
+            const reviewEnd = new Date();
+            reviewEnd.setDate(reviewEnd.getDate() + 3);
+            syncUpdates.nj_review_end_at = reviewEnd.toISOString();
+          }
+        } else {
+          syncUpdates.status = 'fully_signed';
+        }
+        statusChanged = true;
+        console.log('[DocuSign] ✓ Reconciling: Both signed, status →', syncUpdates.status);
+      }
+    } else if (investorCompleted && !agentCompleted) {
+      if (agreement.status !== 'investor_signed' && agreement.status !== 'fully_signed' && agreement.status !== 'attorney_review_pending') {
+        syncUpdates.status = 'investor_signed';
+        statusChanged = true;
+        console.log('[DocuSign] ✓ Reconciling: Investor signed, status → investor_signed');
+      }
+    } else if (agentCompleted && !investorCompleted) {
+      if (agreement.status !== 'agent_signed' && agreement.status !== 'fully_signed' && agreement.status !== 'attorney_review_pending') {
+        syncUpdates.status = 'agent_signed';
+        statusChanged = true;
+        console.log('[DocuSign] ✓ Reconciling: Agent signed, status → agent_signed');
+      }
+    }
+
+    // Persist reconciliation
+    if (statusChanged || Object.keys(syncUpdates).length > 1) {
+      await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, syncUpdates);
+      console.log('[DocuSign] ✓ DB reconciled with DocuSign:', syncUpdates);
+
+      // Reload agreement
+      const updated = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+      Object.assign(agreement, updated[0]);
+    } else {
+      console.log('[DocuSign] No reconciliation needed - DB already in sync');
+    }
+
+    // GATING: Enforce signing order based on DocuSign truth
+    if (role === 'agent' && !investorCompleted) {
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not completed signing');
+      console.error('[DocuSign] Investor status in DocuSign:', investorSigner.status);
+      return Response.json({ 
+        error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+      }, { status: 400 });
+    }
+
+    console.log('[DocuSign] ✓ Gating check passed for role:', role);
+
+    // Check for terminal envelope states
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
     const statusResponse = await fetch(statusUrl, {
       method: 'GET',
       headers: { 'Authorization': `Bearer ${accessToken}` }
     });
-    
+
     if (statusResponse.ok) {
       const envStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status:', {
-        envelopeId,
-        status: envStatus.status,
-        recipients: envStatus.recipients?.signers?.map(s => ({
-          recipientId: s.recipientId,
-          email: s.email,
-          status: s.status,
-          routingOrder: s.routingOrder
-        }))
-      });
-      
-      // Only block if envelope is in terminal state
+
       if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
         return Response.json({ 
           error: `Agreement is already ${envStatus.status}. Please regenerate from the Agreement tab.`
         }, { status: 400 });
       }
+    }
+
+    // Verify PDF hash hasn't changed (prevent signing stale document)
+    if (agreement.docusign_last_sent_sha256 && agreement.docusign_last_sent_sha256 !== currentPdfHash) {
+      console.error('[DocuSign] ❌ PDF hash mismatch - agreement was regenerated');
+      console.error('[DocuSign] Last sent hash:', agreement.docusign_last_sent_sha256.substring(0, 16));
+      console.error('[DocuSign] Current hash:', currentPdfHash.substring(0, 16));
+      return Response.json({ 
+        error: 'Agreement was updated after envelope creation. Please regenerate the agreement to create a new envelope.'
+      }, { status: 400 });
     }
     
     // Create signing token
