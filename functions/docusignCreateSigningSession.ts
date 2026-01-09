@@ -423,6 +423,26 @@ Deno.serve(async (req) => {
     } else {
       console.log('[DocuSign] ✓ REUSING existing envelope:', envelopeId);
       console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
+      
+      // Check current envelope status before reusing
+      const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+      const statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      
+      if (statusResponse.ok) {
+        const envStatus = await statusResponse.json();
+        console.log('[DocuSign] Current envelope status check:', envStatus.status);
+        
+        // If in terminal state, must regenerate
+        if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
+          console.error('[DocuSign] Cannot reuse envelope in terminal state:', envStatus.status);
+          return Response.json({ 
+            error: `Agreement envelope is already ${envStatus.status}. Please regenerate the agreement from the Agreement tab to create a new signing session.`
+          }, { status: 400 });
+        }
+      }
     }
     
     // Create signing token
