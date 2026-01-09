@@ -215,7 +215,37 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
     console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
 
-    console.log('[DocuSign] ✓ Gating check passed earlier - proceeding with envelope creation');
+    // Sync with DocuSign to get latest recipient statuses (don't block, just update DB)
+    try {
+      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+      const recipientsResponse = await fetch(recipientsUrl, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (recipientsResponse.ok) {
+        const recipients = await recipientsResponse.json();
+        const signers = recipients.signers || [];
+        
+        const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
+        const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+        
+        console.log('[DocuSign] DocuSign status sync:', {
+          investor: investorSigner?.status,
+          agent: agentSigner?.status
+        });
+        
+        // Update DB if DocuSign shows investor signed but DB doesn't
+        if (investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed') && !agreement.investor_signed_at) {
+          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
+            investor_signed_at: investorSigner.signedDateTime || new Date().toISOString(),
+            status: 'investor_signed'
+          });
+          console.log('[DocuSign] ✓ Synced investor signature from DocuSign to DB');
+        }
+      }
+    } catch (syncError) {
+      console.warn('[DocuSign] Failed to sync status (non-blocking):', syncError.message);
+    }
 
     // Check for terminal envelope states
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
@@ -359,8 +389,7 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] Signing session created successfully - returning URL');
     
     return Response.json({ 
-      signing_url: viewData.url,
-      envelope_status: needsNewEnvelope ? 'Agreement PDF changed; new envelope created' : 'DocuSign envelope reused; hash matched'
+      signing_url: viewData.url
     });
   } catch (error) {
     console.error('[docusignCreateSigningSession] Error:', error);
