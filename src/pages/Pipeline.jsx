@@ -209,7 +209,7 @@ function PipelineContent() {
       // For agents: show investor name. For investors: show agent name
       let counterpartyName = 'Not Assigned';
       if (isAgent) {
-        counterpartyName = room?.counterparty_name || 'Investor';
+        counterpartyName = isFullySigned ? (room?.counterparty_name || 'Investor') : null;
       } else {
         counterpartyName = agentName;
       }
@@ -606,7 +606,7 @@ function PipelineContent() {
                                           </div>
                                         )}
 
-                                        {!deal.is_orphan && deal.customer_name && (
+                                        {!deal.is_orphan && deal.customer_name && (!isAgent || deal.is_fully_signed) && (
                                           <div className="text-xs text-[#10B981] flex items-center gap-1">
                                             <CheckCircle className="w-3 h-3" />
                                             <span>{deal.customer_name}</span>
