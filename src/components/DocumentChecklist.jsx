@@ -256,7 +256,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
               </div>
 
               <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                {fileToShow ? (
+                {fileUrl ? (
                   <>
                     <a
                       href={fileUrl}
@@ -268,7 +268,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                     </a>
                     <a
                       href={fileUrl}
-                      download={fileToShow.filename || fileToShow.name || `${doc.key}.pdf`}
+                      download={fileToShow?.filename || fileToShow?.name || `${doc.key}.pdf`}
                       className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
                     >
                       <Download className="w-3 h-3" />
