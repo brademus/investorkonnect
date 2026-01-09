@@ -28,8 +28,11 @@ export default function PostAuth() {
           if (mounted) setError("Taking longer than expected...");
         }, 8000);
 
-        // Step 1: Get user
-        const user = await base44.auth.me();
+        // Step 1: Get user with timeout guard
+        const user = await Promise.race([
+          base44.auth.me(),
+          new Promise((resolve) => setTimeout(() => resolve(null), 6000))
+        ]);
         clearTimeout(timeoutId);
         
         if (!mounted) return;
