@@ -132,7 +132,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Agreement not found' }, { status: 404 });
     }
     const agreement = agreements[0];
-    
+
+    // GATING: Check DB immediately - if agent trying to sign, investor must have signed first
+    if (role === 'agent' && !agreement.investor_signed_at) {
+      console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
+      console.error('[DocuSign] Agreement status:', agreement.status);
+      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at);
+      return Response.json({ 
+        error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+      }, { status: 400 });
+    }
+
+    if (role === 'agent' && agreement.investor_signed_at) {
+      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
+    }
+
     // Use DocuSign-specific PDF (with invisible anchors)
     const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
     if (!pdfUrl) {
@@ -347,24 +361,7 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] No reconciliation needed - DB already in sync');
     }
 
-    // GATING: Enforce signing order - DB is source of truth
-    if (role === 'agent') {
-      console.log('[DocuSign] Checking if agent can sign...');
-      console.log('[DocuSign] DB investor_signed_at:', agreement.investor_signed_at);
-      console.log('[DocuSign] DB agreement status:', agreement.status);
-
-      // DB is the authoritative source - if investor signed and it's in DB, allow agent to proceed
-      if (!agreement.investor_signed_at) {
-        console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
-        return Response.json({ 
-          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
-        }, { status: 400 });
-      }
-
-      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
-    }
-
-    console.log('[DocuSign] ✓ Gating check passed for role:', role);
+    console.log('[DocuSign] ✓ Gating check passed earlier - proceeding with envelope creation');
 
     // Check for terminal envelope states
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
