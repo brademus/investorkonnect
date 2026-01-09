@@ -423,6 +423,28 @@ Deno.serve(async (req) => {
     } else {
       console.log('[DocuSign] ✓ REUSING existing envelope:', envelopeId);
       console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
+      
+      // Verify envelope still exists and is valid in DocuSign
+      const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+      const statusResponse = await fetch(statusUrl, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      
+      if (!statusResponse.ok) {
+        console.error('[DocuSign] Envelope verification failed - envelope may not exist in DocuSign');
+        console.error('[DocuSign] Status check response:', statusResponse.status);
+        return Response.json({ 
+          error: 'Envelope not found in DocuSign. Please regenerate the agreement.',
+          hint: 'Click "Regenerate Agreement" to create a new envelope'
+        }, { status: 404 });
+      }
+      
+      const envelopeStatus = await statusResponse.json();
+      console.log('[DocuSign] Envelope verified:', {
+        status: envelopeStatus.status,
+        envelopeId: envelopeId
+      });
     }
     
     // Create signing token
