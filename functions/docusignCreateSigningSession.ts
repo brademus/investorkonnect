@@ -238,44 +238,31 @@ Deno.serve(async (req) => {
         routingOrder: s.routingOrder
       })), null, 2));
 
-      // Match investor by email first (most reliable), fallback to recipientId
-      investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email.toLowerCase());
-      if (!investorRecipient && agreement.investor_recipient_id) {
-        investorRecipient = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+      // Match by stored recipient ID (primary) or email (fallback)
+      investorRecipient = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+      if (!investorRecipient) {
+        investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email?.toLowerCase());
       }
 
-      // Match agent by email first (most reliable), fallback to recipientId
-      agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email.toLowerCase());
-      if (!agentRecipient && agreement.agent_recipient_id) {
-        agentRecipient = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+      agentRecipient = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+      if (!agentRecipient) {
+        agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email?.toLowerCase());
       }
 
       if (!investorRecipient || !agentRecipient) {
-        const debugInfo = {
-          foundInvestor: !!investorRecipient,
-          foundAgent: !!agentRecipient,
-          allSigners: signers.map(s => ({
-            recipientId: s.recipientId,
-            email: s.email,
-            status: s.status
-          })),
-          lookingFor: {
-            investor: agreement.investor_email,
-            agent: agreement.agent_email
-          }
-        };
-        console.error('[DocuSign] Cannot find both recipients in envelope:', JSON.stringify(debugInfo, null, 2));
         return Response.json({
-          error: 'Envelope recipients not found. Please regenerate the agreement.',
-          debug: debugInfo
+          error: 'Envelope recipients not found in DocuSign. Please regenerate the agreement.',
+          debug: {
+            storedInvestorId: agreement.investor_recipient_id,
+            storedAgentId: agreement.agent_recipient_id,
+            actualSigners: signers.map(s => ({ id: s.recipientId, email: s.email, status: s.status }))
+          }
         }, { status: 400 });
       }
 
       console.log('[DocuSign] ✓ Found recipients:', {
-        investorId: investorRecipient.recipientId,
-        investorEmail: investorRecipient.email,
-        agentId: agentRecipient.recipientId,
-        agentEmail: agentRecipient.email
+        investor: { id: investorRecipient.recipientId, email: investorRecipient.email },
+        agent: { id: agentRecipient.recipientId, email: agentRecipient.email }
       });
 
       console.log('[DocuSign] Recipients found:', {
@@ -373,17 +360,17 @@ Deno.serve(async (req) => {
     const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
     
-    // Get the recipient from DocuSign that matches this role (use the one we just fetched above)
-    const docusignRecipient = role === 'investor' ? investorRecipient : agentRecipient;
-    const recipientId = docusignRecipient.recipientId; // Use DocuSign's recipientId (authoritative)
+    // Use stored IDs from agreement (these are what the envelope was created with)
+    const storedRecipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
     const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
-    
-    console.log('[DocuSign] Using recipient details for', role, ':', {
-      recipientId: docusignRecipient.recipientId,
-      storedRecipientId: role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id,
+    const docusignRecipient = role === 'investor' ? investorRecipient : agentRecipient;
+
+    console.log('[DocuSign] Signing session for', role, ':', {
+      storedRecipientId,
+      actualRecipientInEnvelope: docusignRecipient.recipientId,
       clientUserId,
-      profileId
+      email: docusignRecipient.email
     });
     
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
@@ -395,22 +382,22 @@ Deno.serve(async (req) => {
       }, { status: 404 });
     }
     
-    // Create recipient view for embedded signing - include recipientId in the request
+    // Create recipient view using STORED recipient ID (critical for matching)
     const recipientViewRequest = {
       returnUrl: docusignReturnUrl,
       authenticationMethod: 'none',
       email: docusignRecipient.email,
       userName: docusignRecipient.email,
       clientUserId: clientUserId,
-      recipientId: recipientId
+      recipientId: storedRecipientId
     };
     
-    console.log('[DocuSign] Creating recipient view:', {
-      recipientId,
-      clientUserId,
-      email: docusignRecipient.email,
+    console.log('[DocuSign] Creating embedded signing session:', {
       role,
-      envelopeId
+      envelopeId,
+      storedRecipientId,
+      clientUserId,
+      email: docusignRecipient.email
     });
     
     const viewUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`;
