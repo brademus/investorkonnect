@@ -181,7 +181,6 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
            } else if (internalAgreementFile?.url) {
              resolvedFile = internalAgreementFile;
            }
-          }
           } else if (doc.key === 'listing_agreement' && resolved.listingAgreement?.url) {
             resolvedFile = resolved.listingAgreement;
           }
