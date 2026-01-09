@@ -205,10 +205,10 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
             (doc.key === 'purchase_contract'
               ? (
+                  documents?.purchase_contract?.file_url ||
+                  documents?.purchase_contract?.url ||
                   resolved.verifiedPurchaseContract?.url ||
                   resolved.sellerContract?.url ||
-                  deal?.documents?.purchase_contract?.file_url ||
-                  deal?.documents?.purchase_contract?.url ||
                   deal?.contract_document?.url ||
                   deal?.contract_url ||
                   room?.contract_document?.file_url ||
