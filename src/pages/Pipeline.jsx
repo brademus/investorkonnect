@@ -584,8 +584,8 @@ function PipelineContent() {
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
                                           {/* Role-based privacy: agents see city/state only until fully signed */}
                                           {isAgent && !deal.is_fully_signed
-                                            ? `${deal.city}, ${deal.state}`
-                                            : deal.property_address
+                                           ? `${deal.city}, ${deal.state}`
+                                           : (deal.property_address || `${deal.city}, ${deal.state}`)
                                           }
                                         </h4>
                                         <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
