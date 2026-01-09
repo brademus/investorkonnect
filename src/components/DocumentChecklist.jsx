@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, CheckCircle, Upload, AlertCircle, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -37,9 +37,8 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
   const [uploading, setUploading] = useState(null);
   const [internalAgreementFile, setInternalAgreementFile] = useState(null);
 
-  // Defensive copy to prevent state glitches when navigating tabs
-  const documents = useMemo(() => ({ ...(deal?.documents || {}) }), [deal?.documents]);
-  const resolved = useMemo(() => resolveDealDocuments({ deal, room }), [deal?.documents, room?.files, room?.contract_document, room?.listing_agreement_document]);
+  const documents = deal?.documents || {};
+  const resolved = resolveDealDocuments({ deal, room });
   const isWorkingTogether = (
     room?.agreement_status === 'fully_signed' ||
     room?.is_fully_signed === true ||
@@ -169,7 +168,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
       
       <div className="space-y-3">
         {REQUIRED_DOCUMENTS.map((doc) => {
-          const uploaded = normalize(documents[doc.key]);
+          const uploaded = documents[doc.key];
 
           // Post-fully-signed: check resolved docs (fixed syntax)
           let resolvedFile = null;
@@ -188,10 +187,6 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
           // Prefer object with a usable URL; robust fallback for Seller Contract
           const hasUrl = (obj) => !!(obj && (obj.url || obj.file_url || obj.urlSignedPdf));
-          // Normalize uploaded -> object shape
-          const normalize = (obj) => obj && (obj.url || obj.file_url || obj.urlSignedPdf)
-            ? obj
-            : (typeof obj === 'string' ? { url: obj } : obj);
           let fileToShow;
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
