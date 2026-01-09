@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { FileText, CheckCircle, Upload, AlertCircle } from "lucide-react";
+import { FileText, CheckCircle, Upload, AlertCircle, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { validatePDF } from "@/components/utils/fileValidation";
 import { toast } from "sonner";
+import { resolveDealDocuments } from "@/components/utils/dealDocuments";
 
 const REQUIRED_DOCUMENTS = [
   { 
