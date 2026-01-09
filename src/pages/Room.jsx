@@ -1569,37 +1569,40 @@ ${dealContext}`;
                             <p className="text-sm text-[#808080]">No files uploaded yet</p>
                           </div>
                         ) : (
-                          allFiles.map((file, idx) => (
-                            <div key={idx} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
-                              <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                                <FileText className="w-5 h-5 text-[#E3C567]" />
+                          allFiles.map((file, idx) => {
+                            const fileUrl = file.url || file.urlSignedPdf;
+                            return fileUrl ? (
+                              <div key={idx} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
+                                <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                  <FileText className="w-5 h-5 text-[#E3C567]" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-[#FAFAFA] truncate">{file.name || file.label}</p>
+                                  <p className="text-xs text-[#808080]">
+                                    {file.uploaded_by_name || file.uploadedBy || 'System'} • {new Date(file.uploaded_at || file.createdAt || Date.now()).toLocaleDateString()}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                  <a
+                                    href={fileUrl}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
+                                  >
+                                    View
+                                  </a>
+                                  <a
+                                    href={fileUrl}
+                                    download={file.name || file.label || 'download.pdf'}
+                                    className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                                  >
+                                    <Download className="w-3 h-3" />
+                                    Download
+                                  </a>
+                                </div>
                               </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-[#FAFAFA] truncate">{file.name || file.label}</p>
-                                <p className="text-xs text-[#808080]">
-                                  {file.uploaded_by_name || file.uploadedBy || 'System'} • {new Date(file.uploaded_at || file.createdAt || Date.now()).toLocaleDateString()}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                <a
-                                  href={file.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
-                                >
-                                  View
-                                </a>
-                                <a
-                                  href={file.url}
-                                  download={file.name || file.label || 'download.pdf'}
-                                  className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
-                                >
-                                  <Download className="w-3 h-3" />
-                                  Download
-                                </a>
-                              </div>
-                            </div>
-                          ))
+                            ) : null;
+                          })
                         );
                       })()}
                     </div>
