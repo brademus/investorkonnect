@@ -668,7 +668,221 @@ Deno.serve(async (req) => {
     console.log('  Human PDF URL:', humanUpload.file_url);
     console.log('  DocuSign PDF URL:', docusignUpload.file_url);
     
-    // Save agreement with both PDFs and hashes - clear DocuSign envelope to force recreation
+    // Create DocuSign envelope with BOTH recipients
+    console.log('[DocuSign] Creating envelope with both investor and agent recipients...');
+    
+    async function getDocuSignConnection() {
+      const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
+      if (!connections || connections.length === 0) {
+        throw new Error('DocuSign not connected. Admin must connect DocuSign first.');
+      }
+      
+      const connection = connections[0];
+      const now = new Date();
+      const expiresAt = new Date(connection.expires_at);
+      
+      if (now >= expiresAt && connection.refresh_token) {
+        const tokenUrl = connection.base_uri.includes('demo') 
+          ? 'https://account-d.docusign.com/oauth/token'
+          : 'https://account.docusign.com/oauth/token';
+        
+        const refreshResponse = await fetch(tokenUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'refresh_token',
+            refresh_token: connection.refresh_token,
+            client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
+            client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
+          })
+        });
+        
+        if (!refreshResponse.ok) {
+          throw new Error('DocuSign token expired and refresh failed. Admin must reconnect DocuSign.');
+        }
+        
+        const tokenData = await refreshResponse.json();
+        await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
+          access_token: tokenData.access_token,
+          refresh_token: tokenData.refresh_token || connection.refresh_token,
+          expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
+        });
+        
+        connection.access_token = tokenData.access_token;
+      }
+      
+      return connection;
+    }
+    
+    const connection = await getDocuSignConnection();
+    const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
+    
+    // Generate unique clientUserIds for embedded signing
+    const timestamp = Date.now();
+    const investorClientUserId = `investor-${deal_id}-${timestamp}`;
+    const agentClientUserId = `agent-${deal_id}-${timestamp}`;
+    
+    // Create envelope definition with both signers
+    const docName = `InvestorKonnect Internal Agreement – ${stateCode} – ${deal_id} – v2.2.pdf`;
+    
+    const envelopeDefinition = {
+      emailSubject: `Sign Agreement - ${stateCode} Deal`,
+      documents: [{
+        documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))),
+        name: docName,
+        fileExtension: 'pdf',
+        documentId: '1'
+      }],
+      recipients: {
+        signers: [
+          {
+            email: profile.email,
+            name: profile.full_name || profile.email,
+            recipientId: '1',
+            routingOrder: '1',
+            clientUserId: investorClientUserId,
+            tabs: {
+              signHereTabs: [{
+                documentId: '1',
+                anchorString: '[[INVESTOR_SIGN]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
+              }],
+              dateSignedTabs: [{
+                documentId: '1',
+                anchorString: '[[INVESTOR_DATE]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
+              }],
+              fullNameTabs: [{
+                documentId: '1',
+                anchorString: '[[INVESTOR_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true,
+                name: 'Investor Full Name',
+                value: profile.full_name || profile.email,
+                locked: true,
+                required: true,
+                tabLabel: 'investorFullName'
+              }]
+            }
+          },
+          {
+            email: agentProfile.email,
+            name: agentProfile.full_name || agentProfile.email,
+            recipientId: '2',
+            routingOrder: '2',
+            clientUserId: agentClientUserId,
+            tabs: {
+              signHereTabs: [{
+                documentId: '1',
+                anchorString: '[[AGENT_SIGN]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
+              }],
+              dateSignedTabs: [{
+                documentId: '1',
+                anchorString: '[[AGENT_DATE]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true
+              }],
+              fullNameTabs: [{
+                documentId: '1',
+                anchorString: '[[AGENT_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorIgnoreIfNotPresent: false,
+                anchorCaseSensitive: false,
+                anchorMatchWholeWord: true,
+                name: 'Agent Full Name',
+                value: agentProfile.full_name || agentProfile.email,
+                locked: true,
+                required: true,
+                tabLabel: 'agentFullName'
+              }],
+              textTabs: [
+                {
+                  documentId: '1',
+                  anchorString: '[[AGENT_LICENSE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'License Number',
+                  value: agentProfile.agent?.license_number || agentProfile.license_number || '',
+                  locked: false,
+                  required: true,
+                  tabLabel: 'agentLicense'
+                },
+                {
+                  documentId: '1',
+                  anchorString: '[[AGENT_BROKERAGE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorIgnoreIfNotPresent: false,
+                  anchorCaseSensitive: false,
+                  anchorMatchWholeWord: true,
+                  name: 'Brokerage',
+                  value: agentProfile.agent?.brokerage || agentProfile.broker || '',
+                  locked: false,
+                  required: true,
+                  tabLabel: 'agentBrokerage'
+                }
+              ]
+            }
+          }
+        ]
+      },
+      status: 'sent'
+    };
+    
+    const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
+    const createResponse = await fetch(createUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${accessToken}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(envelopeDefinition)
+    });
+    
+    if (!createResponse.ok) {
+      const errorText = await createResponse.text();
+      console.error('[DocuSign] Envelope creation failed:', errorText);
+      throw new Error('Failed to create DocuSign envelope: ' + errorText);
+    }
+    
+    const envelope = await createResponse.json();
+    const envelopeId = envelope.envelopeId;
+    
+    console.log('[DocuSign] ✓ Envelope created:', envelopeId);
+    console.log('[DocuSign] Recipients: investor (ID=1), agent (ID=2)');
+    
+    // Save agreement with envelope details
     const agreementData = {
       deal_id: deal_id,
       investor_user_id: user.id,
@@ -682,7 +896,7 @@ Deno.serve(async (req) => {
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
       agreement_version: '2.2-dual-pdf',
-      status: 'draft',
+      status: 'sent',
       template_url: templateUrl,
       final_pdf_url: humanUpload.file_url,
       pdf_file_url: humanUpload.file_url,
@@ -698,21 +912,21 @@ Deno.serve(async (req) => {
       exhibit_a_terms: exhibit_a,
       rendered_markdown_full: templateText.substring(0, 10000),
       missing_placeholders: [],
-      docusign_envelope_id: null,
-      docusign_status: null,
-      docusign_envelope_pdf_hash: null,
-      docusign_last_sent_sha256: null,
-      investor_recipient_id: null,
-      agent_recipient_id: null,
-      investor_client_user_id: null,
-      agent_client_user_id: null,
+      docusign_envelope_id: envelopeId,
+      docusign_status: 'sent',
+      docusign_envelope_pdf_hash: docusignPdfSha256,
+      docusign_last_sent_sha256: docusignPdfSha256,
+      investor_recipient_id: '1',
+      agent_recipient_id: '2',
+      investor_client_user_id: investorClientUserId,
+      agent_client_user_id: agentClientUserId,
       investor_signing_url: null,
       agent_signing_url: null,
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
-        action: 'generated_dual_pdfs',
-        details: `Generated human PDF (${humanPdfSha256.substring(0, 8)}...) and DocuSign PDF (${docusignPdfSha256.substring(0, 8)}...) from ${stateCode} template - DocuSign envelope cleared for fresh signing`
+        action: 'envelope_created_with_both_recipients',
+        details: `Created DocuSign envelope ${envelopeId} with investor (recipientId=1) and agent (recipientId=2) - PDF hash ${docusignPdfSha256.substring(0, 8)}...`
       }]
     };
     
@@ -722,6 +936,8 @@ Deno.serve(async (req) => {
     } else {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
     }
+    
+    console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
     return Response.json({ success: true, agreement: agreement, regenerated: true });
   } catch (error) {
