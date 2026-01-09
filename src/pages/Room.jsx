@@ -1561,7 +1561,12 @@ ${dealContext}`;
                     <div className="space-y-2">
                       {(() => {
                         // Post-fully-signed: merge system docs + user uploads
-                        const allFiles = currentRoom?.is_fully_signed && deal 
+                        const isWorkingTogether = (
+                          currentRoom?.agreement_status === 'fully_signed' ||
+                          currentRoom?.is_fully_signed === true ||
+                          deal?.is_fully_signed === true
+                        );
+                        const allFiles = isWorkingTogether && deal 
                           ? buildUnifiedFilesList({ deal, room: currentRoom })
                           : (currentRoom?.files || []);
 

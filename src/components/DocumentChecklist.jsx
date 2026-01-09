@@ -9,7 +9,7 @@ import { resolveDealDocuments } from "@/components/utils/dealDocuments";
 const REQUIRED_DOCUMENTS = [
   { 
     key: 'purchase_contract', 
-    label: 'Verified Purchase Contract',
+    label: 'Seller Contract',
     description: 'Initial contract used for verification',
     uploadedBy: 'investor'
   },
@@ -21,7 +21,7 @@ const REQUIRED_DOCUMENTS = [
   },
   { 
     key: 'operating_agreement', 
-    label: 'Operating Agreement',
+    label: 'Internal Agreement',
     description: 'Internal investor-agent operating agreement',
     uploadedBy: 'both'
   },
@@ -38,7 +38,10 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
 
   const documents = deal?.documents || {};
   const resolved = resolveDealDocuments({ deal });
-  const isWorkingTogether = deal?.is_fully_signed === true;
+  const isWorkingTogether = (
+    deal?.agreement_status === 'fully_signed' ||
+    deal?.is_fully_signed === true
+  );
 
   const handleUpload = async (docKey, e) => {
     const file = e.target.files[0];

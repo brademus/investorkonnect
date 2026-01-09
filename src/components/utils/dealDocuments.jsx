@@ -94,9 +94,11 @@ export function buildUnifiedFilesList({ deal = {}, room = {} }) {
     }
   };
   
-  // System documents first (in order)
-  addIfNew(resolved.sellerContract);
-  addIfNew(resolved.verifiedPurchaseContract);
+  // System documents first (prefer verified seller contract)
+  const sellerPreferred = resolved.verifiedPurchaseContract?.url
+    ? { ...resolved.verifiedPurchaseContract, label: 'Seller Contract' }
+    : (resolved.sellerContract?.url ? { ...resolved.sellerContract, label: 'Seller Contract' } : null);
+  if (sellerPreferred) addIfNew(sellerPreferred);
   addIfNew(resolved.internalAgreement);
   addIfNew(resolved.listingAgreement);
   
