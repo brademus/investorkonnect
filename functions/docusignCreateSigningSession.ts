@@ -478,9 +478,30 @@ Deno.serve(async (req) => {
     
     if (!viewResponse.ok) {
       const errorText = await viewResponse.text();
-      console.error('[DocuSign] Recipient view failed:', viewResponse.status, errorText);
+      console.error('[DocuSign] Recipient view failed:', {
+        status: viewResponse.status,
+        error: errorText,
+        envelopeId,
+        recipientId,
+        clientUserId,
+        role,
+        profileEmail: profile?.email
+      });
+      
+      // Try to parse error for better message
+      let errorMsg = 'Failed to get signing URL from DocuSign';
+      try {
+        const errorData = JSON.parse(errorText);
+        if (errorData.message) {
+          errorMsg = errorData.message;
+        }
+      } catch (e) {
+        // Use raw error text if not JSON
+        errorMsg = errorText.substring(0, 200);
+      }
+      
       return Response.json({ 
-        error: 'Failed to get signing URL from DocuSign',
+        error: errorMsg,
         details: errorText,
         status: viewResponse.status
       }, { status: 500 });
