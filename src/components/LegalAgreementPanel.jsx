@@ -308,7 +308,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   if (loading) {
-    return <div className="text-center py-8 text-gray-400">Loading agreement...</div>;
+    return (
+      <Card className="ik-card p-6">
+        <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
+      </Card>
+    );
   }
   
   return (
@@ -321,7 +325,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         {agreement && getStatusDisplay()}
       </div>
       
-      {!agreement && !loading && isInvestor && (
+      {/* No agreement yet */}
+      {!agreement && isInvestor && (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
           <p className="text-[#808080] mb-4">No agreement generated yet</p>
@@ -333,7 +338,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         </div>
       )}
       
-      {!agreement && !loading && isAgent && (
+      
+      {!agreement && isAgent && (
         <div className="text-center py-8">
           <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
           <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for Investor to Generate Agreement</p>
@@ -341,6 +347,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         </div>
       )}
       
+      {/* Agreement exists */}
       {agreement && (
         <div className="space-y-4">
           {/* NJ Attorney Review Countdown */}
