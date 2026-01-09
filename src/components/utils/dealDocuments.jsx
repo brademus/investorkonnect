@@ -14,7 +14,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
     // Seller Contract - from Deal.documents or deal fields
     sellerContract: {
       label: 'Seller Contract',
-      url: docs.purchase_contract?.file_url || docs.seller_contract?.file_url || deal?.contract_url || deal?.documents?.purchase_contract?.file_url,
+      url: docs.purchase_contract?.file_url || docs.purchase_contract?.url || docs.seller_contract?.file_url || docs.seller_contract?.url || deal?.contract_document?.url || deal?.contract_url || deal?.documents?.purchase_contract?.file_url || deal?.documents?.purchase_contract?.url,
       verified: docs.purchase_contract?.verified || docs.seller_contract?.verified,
       filename: docs.purchase_contract?.filename || docs.seller_contract?.filename,
       createdAt: docs.purchase_contract?.uploaded_at || docs.seller_contract?.uploaded_at,
@@ -24,7 +24,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
     // Verified Purchase Contract - robust
     verifiedPurchaseContract: {
       label: 'Verified Purchase Contract',
-      url: docs.verified_purchase_contract?.file_url || docs.purchase_contract?.file_url || deal?.documents?.verified_purchase_contract?.file_url,
+      url: docs.verified_purchase_contract?.file_url || docs.verified_purchase_contract?.url || docs.purchase_contract?.file_url || docs.purchase_contract?.url || deal?.documents?.verified_purchase_contract?.file_url || deal?.documents?.verified_purchase_contract?.url,
       verified: docs.verified_purchase_contract?.verified || docs.purchase_contract?.verified,
       filename: docs.verified_purchase_contract?.filename || docs.purchase_contract?.filename,
       createdAt: docs.verified_purchase_contract?.uploaded_at || docs.purchase_contract?.uploaded_at,
@@ -36,12 +36,13 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
       label: 'Internal Agreement',
       urlSignedPdf:
         docs.internal_agreement?.file_url ||
+        docs.internal_agreement?.url ||
         docs.internal_agreement?.signed_pdf_url ||
         deal?.internal_agreement_signed_url ||
         deal?.signed_pdf_url ||
         deal?.final_pdf_url ||
         deal?.docusign_pdf_url,
-      urlDraft: docs.internal_agreement_draft?.file_url,
+      urlDraft: docs.internal_agreement_draft?.file_url || docs.internal_agreement_draft?.url,
       filename: docs.internal_agreement?.filename,
       createdAt: docs.internal_agreement?.uploaded_at,
       source: 'deal.documents'
@@ -50,7 +51,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
     // Listing Agreement - from Deal.documents.listing_agreement
     listingAgreement: {
       label: 'Listing Agreement',
-      url: docs.listing_agreement?.file_url,
+      url: docs.listing_agreement?.file_url || docs.listing_agreement?.url,
       verified: docs.listing_agreement?.verified,
       filename: docs.listing_agreement?.filename,
       createdAt: docs.listing_agreement?.uploaded_at,
