@@ -1495,9 +1495,10 @@ ${dealContext}`;
 
                   {/* Document Checklist */}
                   <DocumentChecklist 
-                    deal={deal}
-                    userRole={profile?.user_role}
-                    onUpdate={() => {
+                                            deal={deal}
+                                            room={currentRoom}
+                                            userRole={profile?.user_role}
+                                            onUpdate={() => {
                       const fetchDeal = async () => {
                         if (currentRoom?.deal_id) {
                           try {

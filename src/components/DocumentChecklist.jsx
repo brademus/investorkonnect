@@ -33,13 +33,14 @@ const REQUIRED_DOCUMENTS = [
   }
 ];
 
-export default function DocumentChecklist({ deal, userRole, onUpdate }) {
+export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
   const [uploading, setUploading] = useState(null);
 
   const documents = deal?.documents || {};
-  const resolved = resolveDealDocuments({ deal });
+  const resolved = resolveDealDocuments({ deal, room });
   const isWorkingTogether = (
-    deal?.agreement_status === 'fully_signed' ||
+    room?.agreement_status === 'fully_signed' ||
+    room?.is_fully_signed === true ||
     deal?.is_fully_signed === true
   );
 
