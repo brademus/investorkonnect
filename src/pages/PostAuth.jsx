@@ -28,11 +28,8 @@ export default function PostAuth() {
           if (mounted) setError("Taking longer than expected...");
         }, 8000);
 
-        // Step 1: Get user with timeout guard
-        const user = await Promise.race([
-          base44.auth.me(),
-          new Promise((resolve) => setTimeout(() => resolve(null), 6000))
-        ]);
+        // Step 1: Get user
+        const user = await base44.auth.me();
         clearTimeout(timeoutId);
         
         if (!mounted) return;
@@ -97,8 +94,7 @@ export default function PostAuth() {
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
-          // Add tiny delay to allow browser history to settle (prevents stuck spinner)
-          setTimeout(() => navigate(createPageUrl("Pipeline"), { replace: true }), 50);
+          navigate(createPageUrl("Pipeline"), { replace: true });
         }
 
       } catch (error) {

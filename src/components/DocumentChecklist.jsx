@@ -61,8 +61,8 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
         const filename = ag?.filename || 'internal-agreement.pdf';
         const uploaded_at = ag?.updated_at || ag?.completed_at || ag?.investor_signed_at || ag?.agent_signed_at || new Date().toISOString();
 
-        // Update local UI state so it shows green & downloadable immediately (scoped to deal)
-        setInternalAgreementFile({ dealId: deal.id, url, filename, uploaded_at });
+        // Update local UI state so it shows green & downloadable immediately
+        setInternalAgreementFile({ url, filename, uploaded_at });
 
         // Persist to Deal.documents so Shared Files and other tabs can pick it up
         const docs = deal?.documents || {};
@@ -91,15 +91,9 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     return () => { cancelled = true; };
   }, [deal?.id]);
 
-  // Reset per-deal/room transient state when switching to avoid stale docs from previous room
-  useEffect(() => {
-    setInternalAgreementFile(null);
-    setUploading(null);
-  }, [deal?.id, room?.id]);
-
   // Fallback for legacy/current accounts: derive from deal-level fields if present
   useEffect(() => {
-    if (internalAgreementFile?.dealId === deal?.id && internalAgreementFile?.url) return;
+    if (internalAgreementFile) return;
     const legacyUrl =
       deal?.internal_agreement_signed_url ||
       deal?.final_pdf_url ||
@@ -111,7 +105,6 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
       room?.internal_agreement_document?.url;
     if (legacyUrl) {
       setInternalAgreementFile({
-        dealId: deal?.id,
         url: legacyUrl,
         filename: deal?.agreement_filename || 'internal-agreement.pdf',
         uploaded_at: deal?.updated_date || new Date().toISOString()
@@ -185,7 +178,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
              const ia = resolved.internalAgreement;
             if (ia?.urlSignedPdf || ia?.url) {
               resolvedFile = ia;
-            } else if (internalAgreementFile?.dealId === deal?.id && internalAgreementFile?.url) {
+            } else if (internalAgreementFile?.url) {
               resolvedFile = internalAgreementFile;
             }
           } else if (doc.key === 'listing_agreement' && resolved.listingAgreement?.url) {
@@ -198,37 +191,33 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
           } else if (doc.key === 'purchase_contract') {
-            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url || room?.contract_document?.url || room?.contract_url, filename: deal?.contract_document?.name || room?.contract_document?.name };
+            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name };
             fileToShow = hasUrl(uploaded) ? uploaded : fallback;
           } else {
             fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
           }
 
           // Compute a robust URL for View/Download with deep fallbacks
-          // Ensure URL strictly belongs to this deal/room to prevent cross-room bleed
-          const candidateUrl = (
-           (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
-           (doc.key === 'purchase_contract'
-             ? (
-                 resolved.verifiedPurchaseContract?.url ||
-                 resolved.sellerContract?.url ||
-                 deal?.documents?.purchase_contract?.file_url ||
-                 deal?.documents?.purchase_contract?.url ||
-                 deal?.contract_document?.url ||
-                 deal?.contract_url ||
-                 room?.contract_document?.file_url ||
-                 room?.contract_document?.url
-               )
-             : doc.key === 'operating_agreement'
-             ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
-             : doc.key === 'listing_agreement'
-             ? resolved.listingAgreement?.url
-             : null
-           )
+          const fileUrl = (
+            (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
+            (doc.key === 'purchase_contract'
+              ? (
+                  resolved.verifiedPurchaseContract?.url ||
+                  resolved.sellerContract?.url ||
+                  deal?.documents?.purchase_contract?.file_url ||
+                  deal?.documents?.purchase_contract?.url ||
+                  deal?.contract_document?.url ||
+                  deal?.contract_url ||
+                  room?.contract_document?.file_url ||
+                  room?.contract_document?.url
+                )
+              : doc.key === 'operating_agreement'
+              ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
+              : doc.key === 'listing_agreement'
+              ? resolved.listingAgreement?.url
+              : null
+            )
           );
-
-          // Defensive: reject candidate if it matches a different room/deal cached URL pattern
-          const fileUrl = candidateUrl || null;
           const canUpload =
             doc.key !== 'operating_agreement' && (
               doc.uploadedBy === 'both' ||

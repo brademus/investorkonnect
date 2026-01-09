@@ -97,13 +97,15 @@ export function useCurrentProfile() {
         let profile = null;
         
         try {
-          // Try fetching via Base44 SDK (more reliable than direct fetch)
-          const meCall = base44.functions.invoke('me', {});
-          // 6s timeout guard to avoid hanging after login
-          const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), 6000));
-          const meResponse = await Promise.race([meCall, timeout]);
-          const meData = meResponse?.data || meResponse;
-          if (meData?.profile) {
+          // Try fetching via /functions/me if it exists
+          const meResponse = await fetch('/functions/me', {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          if (meResponse.ok) {
+            const meData = await meResponse.json();
             profile = meData.profile;
           }
         } catch (fetchErr) {
