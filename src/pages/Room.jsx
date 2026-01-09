@@ -316,49 +316,51 @@ export default function Room() {
       setRoomLoading(true);
       
       try {
-        const roomData = await base44.entities.Room.filter({ id: roomId });
-        if (roomData && roomData.length > 0) {
-          const room = roomData[0];
-          
-          // Use server-side access-controlled deal fetch
-          if (room.deal_id) {
-            try {
-              const response = await base44.functions.invoke('getDealDetailsForUser', {
-                dealId: room.deal_id
-              });
-              const deal = response.data;
+        // First, try to get enriched room data from our rooms list
+        const enrichedRoom = rooms.find(r => r.id === roomId);
+        const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
+        
+        if (!rawRoom) return;
+        
+        // Use server-side access-controlled deal fetch
+        if (rawRoom.deal_id) {
+          try {
+            const response = await base44.functions.invoke('getDealDetailsForUser', {
+              dealId: rawRoom.deal_id
+            });
+            const deal = response.data;
+            
+            if (deal) {
+              setDeal(deal);
               
-              if (deal) {
-                setDeal(deal);
-                
-                const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
-                  ? `${deal.city || 'City'}, ${deal.state || 'State'}`
-                  : deal.title;
-                
-                setCurrentRoom({
-                  ...room,
-                  title: displayTitle,
-                  property_address: deal.property_address,
-                  city: deal.city,
-                  state: deal.state,
-                  county: deal.county,
-                  zip: deal.zip,
-                  budget: deal.purchase_price,
-                  pipeline_stage: deal.pipeline_stage,
-                  closing_date: deal.key_dates?.closing_date,
-                  deal_assigned_agent_id: deal.agent_id,
-                  is_fully_signed: deal.is_fully_signed
-                });
-              } else {
-                setCurrentRoom(room);
-              }
-            } catch (error) {
-              console.error('Failed to fetch deal:', error);
-              setCurrentRoom(room);
+              const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
+                ? `${deal.city || 'City'}, ${deal.state || 'State'}`
+                : deal.title;
+              
+              setCurrentRoom({
+                ...rawRoom,
+                title: displayTitle,
+                property_address: deal.property_address,
+                city: deal.city,
+                state: deal.state,
+                county: deal.county,
+                zip: deal.zip,
+                budget: deal.purchase_price,
+                pipeline_stage: deal.pipeline_stage,
+                closing_date: deal.key_dates?.closing_date,
+                deal_assigned_agent_id: deal.agent_id,
+                is_fully_signed: deal.is_fully_signed,
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name
+              });
+            } else {
+              setCurrentRoom(rawRoom);
             }
-          } else {
-            setCurrentRoom(room);
+          } catch (error) {
+            console.error('Failed to fetch deal:', error);
+            setCurrentRoom(rawRoom);
           }
+        } else {
+          setCurrentRoom(rawRoom);
         }
       } catch (error) {
         console.error('Failed to fetch room:', error);
@@ -368,7 +370,7 @@ export default function Room() {
     };
     
     fetchCurrentRoom();
-  }, [roomId, profile?.user_role]);
+  }, [roomId, profile?.user_role, rooms]);
 
   const counterpartName = getCounterpartyDisplayName({ 
     room: currentRoom, 
