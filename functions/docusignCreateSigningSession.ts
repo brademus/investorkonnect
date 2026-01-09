@@ -347,31 +347,21 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] No reconciliation needed - DB already in sync');
     }
 
-    // GATING: Enforce signing order based on DocuSign truth (with DB fallback)
+    // GATING: Enforce signing order - DB is source of truth
     if (role === 'agent') {
       console.log('[DocuSign] Checking if agent can sign...');
-      console.log('[DocuSign] Investor signer:', {
-        recipientId: investorSigner?.recipientId,
-        email: investorSigner?.email,
-        status: investorSigner?.status,
-        signedDateTime: investorSigner?.signedDateTime
-      });
-      console.log('[DocuSign] investorCompleted:', investorCompleted);
       console.log('[DocuSign] DB investor_signed_at:', agreement.investor_signed_at);
+      console.log('[DocuSign] DB agreement status:', agreement.status);
 
-      // Check if investor signed (DocuSign API or DB as fallback)
-      const dbSaysInvestorSigned = !!agreement.investor_signed_at;
-
-      if (!investorCompleted && !dbSaysInvestorSigned) {
-        console.error('[DocuSign] ❌ Agent cannot sign - investor has not completed signing');
+      // DB is the authoritative source - if investor signed and it's in DB, allow agent to proceed
+      if (!agreement.investor_signed_at) {
+        console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
         return Response.json({ 
           error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
         }, { status: 400 });
       }
 
-      if (!investorCompleted && dbSaysInvestorSigned) {
-        console.log('[DocuSign] ⚠️ DB shows investor signed but DocuSign status not synced yet - allowing agent to proceed');
-      }
+      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
     }
 
     console.log('[DocuSign] ✓ Gating check passed for role:', role);
