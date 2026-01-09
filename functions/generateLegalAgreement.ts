@@ -932,9 +932,21 @@ Deno.serve(async (req) => {
     
     let agreement;
     if (existing.length > 0) {
-      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, agreementData);
+      // On regeneration, clear signature timestamps since new envelope won't have signatures yet
+      const clearSignatures = {
+        investor_signed_at: null,
+        agent_signed_at: null,
+        signed_pdf_url: null,
+        signed_pdf_sha256: null
+      };
+      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
+        ...agreementData,
+        ...clearSignatures
+      });
+      console.log('[DocuSign] ✓ Regenerated agreement - cleared signature timestamps');
     } else {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
+      console.log('[DocuSign] ✓ Created new agreement');
     }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
