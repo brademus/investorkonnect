@@ -209,7 +209,7 @@ function PipelineContent() {
       // For agents: show investor name. For investors: show agent name
       let counterpartyName = 'Not Assigned';
       if (isAgent) {
-        counterpartyName = isFullySigned ? (room?.counterparty_name || 'Investor') : null;
+        counterpartyName = room?.counterparty_name || 'Investor';
       } else {
         counterpartyName = agentName;
       }
@@ -249,10 +249,8 @@ function PipelineContent() {
 
   const handleDealClick = async (deal) => {
     if (deal.is_orphan) {
-      // Agents must NOT edit deals; only investors can edit
-      if (isInvestor) {
-        navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
-      }
+      // Route orphan deals to NewDeal for editing, not DealWizard
+      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
       return;
     }
     
@@ -276,10 +274,6 @@ function PipelineContent() {
   };
 
   const handleStageChange = async (dealId, newStage) => {
-    if (isAgent) {
-      toast.error('Agents cannot edit deals');
-      return;
-    }
     try {
       // Normalize stage before saving (ensure canonical ID)
       const normalizedNewStage = normalizeStage(newStage);
@@ -302,7 +296,6 @@ function PipelineContent() {
   };
 
   const handleDragEnd = async (result) => {
-    if (isAgent) return;
     if (!result.destination) return;
 
     const { draggableId, destination } = result;
@@ -478,12 +471,7 @@ function PipelineContent() {
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm text-[#FAFAFA] mb-1">{activity.message}</p>
                                   {deal && (
-                                    <p className="text-xs text-[#E3C567] mb-1 truncate">
-                                      {isAgent && !(rooms.find(r => r.deal_id === deal.id)?.agreement_status === 'fully_signed' || rooms.find(r => r.deal_id === deal.id)?.request_status === 'signed')
-                                        ? `${deal.city}, ${deal.state}`
-                                        : (deal.property_address || deal.title)
-                                      }
-                                    </p>
+                                    <p className="text-xs text-[#E3C567] mb-1 truncate">{deal.property_address || deal.title}</p>
                                   )}
                                   <p className="text-xs text-[#808080]">
                                     {new Date(activity.created_date).toLocaleString('en-US', {
@@ -504,41 +492,37 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {isInvestor && (
-                  <Button 
-                    onClick={handleDedup}
-                    variant="outline"
-                    size="sm"
-                    disabled={deduplicating}
-                    className="text-xs"
-                  >
-                    {deduplicating ? 'Checking...' : 'Fix Duplicates'}
-                  </Button>
-                )}
-                {isInvestor && (
-                  <Button 
-                    onClick={async () => {
-                      if (!confirm("⚠️ WARNING: This will permanently delete ALL your deals, rooms, and messages. This action cannot be undone!\n\nAre you absolutely sure?")) {
-                        return;
-                      }
-                      try {
-                        const result = await base44.functions.invoke('deleteAllDeals', {
-                          profileId: profile.id
-                        });
-                        toast.success("All deals deleted successfully!");
-                        window.location.reload();
-                      } catch (error) {
-                        console.error("Failed to delete deals:", error);
-                        toast.error("Failed to delete deals");
-                      }
-                    }}
-                    variant="outline"
-                    size="sm"
-                    className="text-xs border-red-500/50 text-red-400 hover:bg-red-500/10"
-                  >
-                    Delete All Deals
-                  </Button>
-                )}
+                <Button 
+                  onClick={handleDedup}
+                  variant="outline"
+                  size="sm"
+                  disabled={deduplicating}
+                  className="text-xs"
+                >
+                  {deduplicating ? 'Checking...' : 'Fix Duplicates'}
+                </Button>
+                <Button 
+                  onClick={async () => {
+                    if (!confirm("⚠️ WARNING: This will permanently delete ALL your deals, rooms, and messages. This action cannot be undone!\n\nAre you absolutely sure?")) {
+                      return;
+                    }
+                    try {
+                      const result = await base44.functions.invoke('deleteAllDeals', {
+                        profileId: profile.id
+                      });
+                      toast.success("All deals deleted successfully!");
+                      window.location.reload();
+                    } catch (error) {
+                      console.error("Failed to delete deals:", error);
+                      toast.error("Failed to delete deals");
+                    }
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs border-red-500/50 text-red-400 hover:bg-red-500/10"
+                >
+                  Delete All Deals
+                </Button>
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
@@ -586,7 +570,7 @@ function PipelineContent() {
                               </div>
                             ) : (
                               stageDeals.map((deal, index) => (
-                                <Draggable key={deal.id} draggableId={deal.id} index={index} isDragDisabled={isAgent}>
+                                <Draggable key={deal.id} draggableId={deal.id} index={index}>
                                   {(provided, snapshot) => (
                                     <div
                                       ref={provided.innerRef}
@@ -600,8 +584,8 @@ function PipelineContent() {
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
                                           {/* Role-based privacy: agents see city/state only until fully signed */}
                                           {isAgent && !deal.is_fully_signed
-                                           ? `${deal.city}, ${deal.state}`
-                                           : (deal.property_address || `${deal.city}, ${deal.state}`)
+                                            ? `${deal.city}, ${deal.state}`
+                                            : deal.property_address
                                           }
                                         </h4>
                                         <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">
@@ -622,7 +606,7 @@ function PipelineContent() {
                                           </div>
                                         )}
 
-                                        {!deal.is_orphan && deal.customer_name && (!isAgent || deal.is_fully_signed) && (
+                                        {!deal.is_orphan && deal.customer_name && (
                                           <div className="text-xs text-[#10B981] flex items-center gap-1">
                                             <CheckCircle className="w-3 h-3" />
                                             <span>{deal.customer_name}</span>
@@ -642,18 +626,16 @@ function PipelineContent() {
                                         >
                                           Open Deal Room
                                         </Button>
-                                        {isInvestor && (
-                                          <Button
-                                            onClick={(e) => {
-                                              e.stopPropagation();
-                                              navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
-                                            }}
-                                            size="sm"
-                                            className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
-                                          >
-                                            Edit Deal
-                                          </Button>
-                                        )}
+                                        <Button
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+                                          }}
+                                          size="sm"
+                                          className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
+                                        >
+                                          Edit Deal
+                                        </Button>
                                       </div>
                                       </div>
                                   )}

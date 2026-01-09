@@ -43,15 +43,7 @@ Deno.serve(async (req) => {
 
     // Verify access rights
     if (isInvestor && deal.investor_id !== profile.id) {
-      // Allow if investor has a room for this deal OR deal stored user_id instead of profile.id
-      const investorRooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        investorId: profile.id 
-      });
-      const investorMatchesByUserId = deal.investor_id === user.id;
-      if (investorRooms.length === 0 && !investorMatchesByUserId) {
-        return Response.json({ error: 'Access denied' }, { status: 403 });
-      }
+      return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
     if (isAgent && deal.agent_id !== profile.id) {

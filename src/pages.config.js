@@ -64,6 +64,7 @@ import ReviewPolicy from './pages/ReviewPolicy';
 import Reviews from './pages/Reviews';
 import RoleLanding from './pages/RoleLanding';
 import RoleSelection from './pages/RoleSelection';
+import Room from './pages/Room';
 import Security from './pages/Security';
 import Terms from './pages/Terms';
 import ThankYou from './pages/ThankYou';
@@ -71,7 +72,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import Room from './pages/Room';
 import __Layout from './Layout.jsx';
 
 
@@ -142,6 +142,7 @@ export const PAGES = {
     "Reviews": Reviews,
     "RoleLanding": RoleLanding,
     "RoleSelection": RoleSelection,
+    "Room": Room,
     "Security": Security,
     "Terms": Terms,
     "ThankYou": ThankYou,
@@ -149,7 +150,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "Room": Room,
 }
 
 export const pagesConfig = {
