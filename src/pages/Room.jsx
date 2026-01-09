@@ -1595,7 +1595,7 @@ ${dealContext}`;
                                   </a>
                                   <a
                                     href={fileUrl}
-                                    download={file.name || file.filename || file.label || 'download.pdf'
+                                    download={file.name || file.filename || file.label || 'download.pdf'}
                                     className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
                                   >
                                     <Download className="w-3 h-3" />
