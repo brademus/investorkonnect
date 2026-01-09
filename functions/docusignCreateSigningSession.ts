@@ -238,18 +238,16 @@ Deno.serve(async (req) => {
         routingOrder: s.routingOrder
       })), null, 2));
 
-      // Match investor by recipientId first (convert both to strings for comparison), then by email (fallback)
-      investorRecipient = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-      if (!investorRecipient && agreement.investor_email) {
-        investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email.toLowerCase());
-        console.log('[DocuSign] Investor matched by email (recipientId mismatch detected)');
+      // Match investor by email first (most reliable), fallback to recipientId
+      investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email.toLowerCase());
+      if (!investorRecipient && agreement.investor_recipient_id) {
+        investorRecipient = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
       }
 
-      // Match agent by recipientId first (convert both to strings for comparison), then by email
-      agentRecipient = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-      if (!agentRecipient && agreement.agent_email) {
-        agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email.toLowerCase());
-        console.log('[DocuSign] Agent matched by email (recipientId mismatch detected)');
+      // Match agent by email first (most reliable), fallback to recipientId
+      agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email.toLowerCase());
+      if (!agentRecipient && agreement.agent_recipient_id) {
+        agentRecipient = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
       }
 
       if (!investorRecipient || !agentRecipient) {
@@ -261,17 +259,24 @@ Deno.serve(async (req) => {
             email: s.email,
             status: s.status
           })),
-          storedInvestorId: agreement.investor_recipient_id,
-          storedAgentId: agreement.agent_recipient_id,
-          storedInvestorEmail: agreement.investor_email,
-          storedAgentEmail: agreement.agent_email
+          lookingFor: {
+            investor: agreement.investor_email,
+            agent: agreement.agent_email
+          }
         };
-        console.error('[DocuSign] Cannot find both recipients in envelope:', debugInfo);
+        console.error('[DocuSign] Cannot find both recipients in envelope:', JSON.stringify(debugInfo, null, 2));
         return Response.json({
           error: 'Envelope recipients not found. Please regenerate the agreement.',
           debug: debugInfo
         }, { status: 400 });
       }
+
+      console.log('[DocuSign] ✓ Found recipients:', {
+        investorId: investorRecipient.recipientId,
+        investorEmail: investorRecipient.email,
+        agentId: agentRecipient.recipientId,
+        agentEmail: agentRecipient.email
+      });
 
       console.log('[DocuSign] Recipients found:', {
         investor: { id: investorRecipient.recipientId, email: investorRecipient.email, status: investorRecipient.status },
