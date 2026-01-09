@@ -181,7 +181,7 @@ Return a verification result with any discrepancies found.
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               <span>Hidden until agreement is fully signed</span>
             </div>
-          ) : resolved.sellerContract?.url ? (
+          ) : (resolved.sellerContract?.url || resolved.sellerContract?.file_url) ? (
             <div className="flex items-center gap-2">
               <a
                 href={resolved.sellerContract.url}
@@ -236,7 +236,7 @@ Return a verification result with any discrepancies found.
           )}
           {(() => {
             const internalUrl = resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.urlDraft;
-            return internalUrl ? (
+            return (internalUrl || resolved.internalAgreement?.file_url) ? (
               <div className="flex items-center gap-2 mt-3">
                 <a
                   href={internalUrl}

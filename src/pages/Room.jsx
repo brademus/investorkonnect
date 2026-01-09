@@ -640,11 +640,12 @@ ${dealContext}`;
           {/* Name and Status */}
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">
-              {currentRoom?.is_fully_signed ? counterpartName : (profile?.user_role === 'agent' ? 'Investor' : 'Agent')}
+              {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed)
+                      ? counterpartName : (profile?.user_role === 'agent' ? 'Investor' : 'Agent')}
             </h2>
             <div className="flex items-center gap-3">
-              {currentRoom?.is_fully_signed ? (
-                <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
+              {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed) ? (
+                                    <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
                   <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -701,7 +702,7 @@ ${dealContext}`;
         {!showBoard && currentRoom && ( // ONLY SHOW WHEN NOT ON DEAL BOARD
           <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center justify-center shadow-md flex-shrink-0 z-10">
             {roomLoading ? (
-              <div className="animate-pulse flex items-center gap-2">
+                                <div className="animate-pulse flex items-center gap-2">
                 <div className="h-3 w-3 bg-[#333] rounded-full"></div>
                 <div className="h-4 w-48 bg-[#333] rounded"></div>
               </div>
