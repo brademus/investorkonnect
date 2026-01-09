@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { AlertCircle } from "lucide-react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import LoadingAnimation from "@/components/LoadingAnimation";
 
 /**
