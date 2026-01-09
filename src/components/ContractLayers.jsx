@@ -230,10 +230,10 @@ Return a verification result with any discrepancies found.
               )}
             </div>
           )}
-          {deal?.documents?.internal_agreement?.file_url && (
+          {resolved.internalAgreement?.urlSignedPdf && (
             <div className="flex items-center gap-2 mt-3">
               <a
-                href={deal.documents.internal_agreement.file_url}
+                href={resolved.internalAgreement.urlSignedPdf}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
@@ -242,8 +242,8 @@ Return a verification result with any discrepancies found.
                 View Agreement
               </a>
               <a
-                href={deal.documents.internal_agreement.file_url}
-                download={deal.documents.internal_agreement.filename || 'internal-agreement.pdf'}
+                href={resolved.internalAgreement.urlSignedPdf}
+                download={resolved.internalAgreement.filename || 'internal-agreement.pdf'}
                 className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
               >
                 <Download className="w-3 h-3" />
