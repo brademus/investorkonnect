@@ -76,10 +76,12 @@ export function buildUnifiedFilesList({ deal = {}, room = {} }) {
   
   // Helper to add file if URL exists and not already added
   const addIfNew = (item) => {
-    if (item?.url && !urlsSeen.has(item.url)) {
-      urlsSeen.add(item.url);
+    const url = item?.url || item?.urlSignedPdf;
+    if (url && !urlsSeen.has(url)) {
+      urlsSeen.add(url);
       allFiles.push({
         ...item,
+        url: url, // Ensure url is set
         type: item.type || 'application/pdf'
       });
     }
