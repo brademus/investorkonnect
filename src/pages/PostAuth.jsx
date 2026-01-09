@@ -115,7 +115,8 @@ export default function PostAuth() {
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
-          navigate(createPageUrl("Pipeline"), { replace: true });
+          // Use hard redirect to break any router state loops
+          window.location.href = createPageUrl("Pipeline");
         }
 
       } catch (error) {
