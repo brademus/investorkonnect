@@ -14,16 +14,16 @@ const REQUIRED_DOCUMENTS = [
     uploadedBy: 'investor'
   },
   { 
-    key: 'listing_agreement', 
-    label: 'Listing Agreement',
-    description: "Agent's listing agreement from brokerage",
-    uploadedBy: 'agent'
-  },
-  { 
     key: 'operating_agreement', 
     label: 'Internal Agreement',
     description: 'Internal investor-agent operating agreement',
     uploadedBy: 'both'
+  },
+  { 
+    key: 'listing_agreement', 
+    label: 'Listing Agreement',
+    description: "Agent's listing agreement from brokerage",
+    uploadedBy: 'agent'
   },
   { 
     key: 'buyer_contract', 
