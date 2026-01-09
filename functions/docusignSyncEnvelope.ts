@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
     
     console.log('[docusignSyncEnvelope] START:', { agreement_id, deal_id });
     
-    // Load agreement
+    // Load agreement - use most recent active if multiple exist
     let agreements;
     if (agreement_id) {
       agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
@@ -50,7 +50,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Agreement not found' }, { status: 404 });
     }
     
-    const agreement = agreements[0];
+    // Pick most recent active agreement
+    const activeAgreements = agreements.filter(a => a.status !== 'voided');
+    const sortedAgreements = activeAgreements.sort((a, b) => 
+      new Date(b.created_date) - new Date(a.created_date)
+    );
+    const agreement = sortedAgreements[0] || agreements[0];
     
     // Verify access
     if (agreement.investor_user_id !== user.id && agreement.agent_user_id !== user.id) {
@@ -96,9 +101,10 @@ Deno.serve(async (req) => {
     // Determine new status
     const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
     const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
-    
-    const investorCompleted = investorSigner?.status === 'completed';
-    const agentCompleted = agentSigner?.status === 'completed';
+
+    // Treat both "completed" and "signed" as completion
+    const investorCompleted = investorSigner?.status === 'completed' || investorSigner?.status === 'signed';
+    const agentCompleted = agentSigner?.status === 'completed' || agentSigner?.status === 'signed';
     
     const updates = {
       docusign_status: envelope.status
