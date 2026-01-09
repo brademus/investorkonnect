@@ -253,30 +253,35 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // DocuSign uses both "completed" and "signed" as completion statuses
-    const investorCompleted = investorSigner.status === 'completed' || investorSigner.status === 'signed';
-    const agentCompleted = agentSigner.status === 'completed' || agentSigner.status === 'signed';
+    // Check if recipient has actually signed (has signedDateTime) - most reliable indicator
+    const investorCompleted = !!(investorSigner.signedDateTime) || 
+                               investorSigner.status === 'completed' || 
+                               investorSigner.status === 'signed';
+    const agentCompleted = !!(agentSigner.signedDateTime) || 
+                          agentSigner.status === 'completed' || 
+                          agentSigner.status === 'signed';
 
-    console.log('[DocuSign] Current DocuSign status:', {
-      investor: {
-        recipientId: investorSigner.recipientId,
-        email: investorSigner.email,
-        status: investorSigner.status,
-        completed: investorCompleted,
-        signedDateTime: investorSigner.signedDateTime,
-        routingOrder: investorSigner.routingOrder
-      },
-      agent: {
-        recipientId: agentSigner.recipientId,
-        email: agentSigner.email,
-        status: agentSigner.status,
-        completed: agentCompleted,
-        signedDateTime: agentSigner.signedDateTime,
-        routingOrder: agentSigner.routingOrder
-      },
-      envelopeId: envelopeId,
-      agreementId: agreement_id
+    console.log('[DocuSign] ======== RECIPIENT STATUS CHECK ========');
+    console.log('[DocuSign] EnvelopeId:', envelopeId);
+    console.log('[DocuSign] AgreementId:', agreement_id);
+    console.log('[DocuSign] Requested role:', role);
+    console.log('[DocuSign] Investor:', {
+      recipientId: investorSigner.recipientId,
+      email: investorSigner.email,
+      status: investorSigner.status,
+      signedDateTime: investorSigner.signedDateTime,
+      completed: investorCompleted,
+      routingOrder: investorSigner.routingOrder
     });
+    console.log('[DocuSign] Agent:', {
+      recipientId: agentSigner.recipientId,
+      email: agentSigner.email,
+      status: agentSigner.status,
+      signedDateTime: agentSigner.signedDateTime,
+      completed: agentCompleted,
+      routingOrder: agentSigner.routingOrder
+    });
+    console.log('[DocuSign] ========================================');
 
     // RECONCILE: Update DB based on DocuSign truth
     const now = new Date().toISOString();
@@ -347,16 +352,20 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] No reconciliation needed - DB already in sync');
     }
 
-    // GATING: Enforce signing order based on DocuSign truth
+    // GATING: Only enforce if investor hasn't signed at all
+    // DocuSign's routingOrder will handle the rest
     if (role === 'agent' && !investorCompleted) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not completed signing');
-      console.error('[DocuSign] Investor status in DocuSign:', investorSigner.status);
+      console.error('[DocuSign] ❌ BLOCKING: Agent cannot sign - investor has not completed');
+      console.error('[DocuSign] Investor status:', investorSigner.status);
+      console.error('[DocuSign] Investor signedDateTime:', investorSigner.signedDateTime);
+      console.error('[DocuSign] All investor data:', JSON.stringify(investorSigner, null, 2));
       return Response.json({ 
         error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
       }, { status: 400 });
     }
 
-    console.log('[DocuSign] ✓ Gating check passed for role:', role);
+    console.log('[DocuSign] ✓ Gating check PASSED for role:', role);
+    console.log('[DocuSign] Investor has completed:', investorCompleted);
 
     // Check for terminal envelope states
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;

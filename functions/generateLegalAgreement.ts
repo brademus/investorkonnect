@@ -741,6 +741,7 @@ Deno.serve(async (req) => {
             recipientId: '1',
             routingOrder: '1',
             clientUserId: investorClientUserId,
+            roleName: 'Investor',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
@@ -785,6 +786,7 @@ Deno.serve(async (req) => {
             recipientId: '2',
             routingOrder: '2',
             clientUserId: agentClientUserId,
+            roleName: 'Agent',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
