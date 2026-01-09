@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
-import ContractLayers from "@/components/ContractLayers";
+
 import DocumentChecklist from "@/components/DocumentChecklist";
 import LegalAgreementPanel from "@/components/LegalAgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
@@ -1464,51 +1464,6 @@ ${dealContext}`;
 
               {activeTab === 'files' && (
                 <div className="space-y-6">
-                  {/* Contract Section */}
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                    <ContractLayers 
-                      room={currentRoom} 
-                      deal={deal}
-                      onUpdate={() => {
-                        const fetchCurrentRoom = async () => {
-                          const roomData = await base44.entities.Room.filter({ id: roomId });
-                          if (roomData && roomData.length > 0) {
-                            const room = roomData[0];
-                            if (room.deal_id) {
-                              try {
-                                const response = await base44.functions.invoke('getDealDetailsForUser', {
-                                  dealId: room.deal_id
-                                });
-                                const deal = response.data;
-                                if (deal) {
-                                  setDeal(deal);
-                                  setCurrentRoom({
-                                    ...room,
-                                    title: deal.title,
-                                    property_address: deal.property_address,
-                                    city: deal.city,
-                                    state: deal.state,
-                                    county: deal.county,
-                                    zip: deal.zip,
-                                    budget: deal.purchase_price,
-                                    pipeline_stage: deal.pipeline_stage,
-                                    closing_date: deal.key_dates?.closing_date,
-                                    deal_assigned_agent_id: deal.agent_id,
-                                    is_fully_signed: deal.is_fully_signed
-                                  });
-                                }
-                              } catch (error) {
-                                console.error('Failed to fetch deal:', error);
-                              }
-                            }
-                          }
-                        };
-                        fetchCurrentRoom();
-                      }}
-                      userRole={profile?.user_role}
-                    />
-                  </div>
-
                   {/* Document Checklist */}
                   <DocumentChecklist 
                                             deal={deal}
