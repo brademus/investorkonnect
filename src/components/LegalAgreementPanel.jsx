@@ -18,13 +18,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const isInvestor = deal?.investor_id === profile?.id;
   const isAgent = deal?.agent_id === profile?.id;
 
-  // Load agreement on mount and when deal changes
+  // Load agreement on mount and poll for updates
   useEffect(() => {
     if (deal?.id) {
       loadAgreement();
       
-      // Poll for updates every 3 seconds while on agreement tab
+      // Poll every 3 seconds to detect when investor signs
       const interval = setInterval(() => {
+        console.log('[LegalAgreementPanel] Polling for updates...');
         loadAgreement();
       }, 3000);
       
@@ -421,8 +422,57 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           </div>
 
           {/* Actions */}
-          <div className="flex gap-3">
-            {/* Show signed PDF if available, otherwise show unsigned PDF */}
+          <div className="flex flex-col gap-3">
+            {/* Investor hasn't signed yet */}
+            {!agreement.investor_signed_at && (
+              <>
+                {isInvestor ? (
+                  <Button
+                    onClick={() => handleSign('investor')}
+                    disabled={signing}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+                  </Button>
+                ) : (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4 text-center">
+                    <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
+                    <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
+                    <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Investor signed, agent hasn't */}
+            {agreement.investor_signed_at && !agreement.agent_signed_at && (
+              <>
+                {isAgent ? (
+                  <Button
+                    onClick={() => handleSign('agent')}
+                    disabled={signing}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
+                  </Button>
+                ) : (
+                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-lg p-4 text-center">
+                    <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                    <p className="text-sm text-[#FAFAFA] font-semibold">You Signed!</p>
+                    <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* Both signed */}
+            {agreement.investor_signed_at && agreement.agent_signed_at && (
+              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-lg p-4 text-center">
+                <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
+                <p className="text-xs text-[#808080] mt-1">Agreement complete</p>
+              </div>
+            )}
+
+            {/* Download PDF */}
             {(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
               <Button
                 variant="outline"
@@ -430,35 +480,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, 
                   '_blank'
                 )}
-                className="flex-1">
+                className="w-full">
                 <Download className="w-4 h-4 mr-2" />
-                {agreement.signed_pdf_url ? 'Download Signed PDF' : 'Download PDF'}
+                {agreement.signed_pdf_url ? 'Download Signed PDF' : 'View Agreement PDF'}
               </Button>
             )}
-            
+
+            {/* Regenerate option for investor */}
             {isInvestor && !agreement.investor_signed_at && (
-              <Button
-                onClick={() => handleSign('investor')}
-                disabled={signing}
-                className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                Sign as Investor
-              </Button>
-            )}
-            
-            {isAgent && agreement.investor_signed_at && !agreement.agent_signed_at && (
-              <Button
-                onClick={() => handleSign('agent')}
-                disabled={signing}
-                className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                Sign as Agent
-              </Button>
-            )}
-            
-            {isInvestor && agreement.status === 'draft' && (
               <Button
                 onClick={handleOpenGenerateModal}
                 variant="outline"
-                className="flex-1">
+                className="w-full">
                 Regenerate Agreement
               </Button>
             )}
