@@ -1440,17 +1440,23 @@ ${dealContext}`;
                     </div>
                   )}
 
-                  {/* LegalAgreement Panel - Self-Contained */}
-                  {currentRoom?.deal_id && deal && (
-                    <LegalAgreementPanel
-                      deal={deal}
-                      profile={profile}
-                      onUpdate={async () => {
-                        await refreshRoomState();
-                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                      }}
-                    />
+                  {/* LegalAgreement Panel - Always render if we have deal_id */}
+                  {currentRoom?.deal_id ? (
+                    deal ? (
+                      <LegalAgreementPanel
+                        deal={deal}
+                        profile={profile}
+                        onUpdate={async () => {
+                          await refreshRoomState();
+                          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                        }}
+                      />
+                    ) : (
+                      <div className="text-center py-8 text-[#808080]">Loading deal data...</div>
+                    )
+                  ) : (
+                    <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
                   
                   {/* Agreement Status Info - Use live agreement data if available */}
