@@ -91,11 +91,11 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     return () => { cancelled = true; };
   }, [deal?.id]);
 
-  // Reset per-deal transient state when switching deals to avoid stale docs from previous room
+  // Reset per-deal/room transient state when switching to avoid stale docs from previous room
   useEffect(() => {
     setInternalAgreementFile(null);
     setUploading(null);
-  }, [deal?.id]);
+  }, [deal?.id, room?.id]);
 
   // Fallback for legacy/current accounts: derive from deal-level fields if present
   useEffect(() => {
