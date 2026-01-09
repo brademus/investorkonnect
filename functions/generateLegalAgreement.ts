@@ -945,8 +945,19 @@ Deno.serve(async (req) => {
       });
       console.log('[DocuSign] ✓ Regenerated agreement - cleared signature timestamps');
     } else {
+      // Store investor_email and agent_email in agreement for fallback email matching
+      agreementData.investor_email = profile.email;
+      agreementData.agent_email = agentProfile.email;
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
       console.log('[DocuSign] ✓ Created new agreement');
+    }
+    
+    // Always update investor/agent emails for fallback matching (whether creating or updating)
+    if (existing.length > 0 && !agreementData.investor_email) {
+      await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
+        investor_email: profile.email,
+        agent_email: agentProfile.email
+      });
     }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
