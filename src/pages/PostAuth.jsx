@@ -146,12 +146,14 @@ export default function PostAuth() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
-      <div className="text-center">
-        <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
-        <h2 className="text-xl font-bold text-[#E3C567] mb-2">{status}</h2>
-        <p className="text-[#808080]">Please wait a moment</p>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
+        <div className="text-center">
+          <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-[#E3C567] mb-2">{status}</h2>
+          <p className="text-[#808080]">Please wait a moment</p>
+        </div>
       </div>
-    </div>
+    </ErrorBoundary>
   );
 }
