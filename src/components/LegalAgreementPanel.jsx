@@ -341,11 +341,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         </div>
       )}
       
-      {!agreement && !loading && !isInvestor && (
+      {!agreement && !loading && isAgent && (
         <div className="text-center py-8">
-          <Clock className="w-12 h-12 text-[#808080] mx-auto mb-4" />
-          <p className="text-[#808080] mb-2">Waiting for investor to generate agreement</p>
-          <p className="text-xs text-[#666]">The investor will initiate contract generation from the Agreement tab</p>
+          <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
+          <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for Investor to Generate Agreement</p>
+          <p className="text-xs text-[#808080]">The investor will create and sign the agreement first</p>
         </div>
       )}
       
