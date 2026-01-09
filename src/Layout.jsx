@@ -6,14 +6,15 @@ import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
-import HelpPanel from "@/components/HelpPanel";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+      import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
+      import HelpPanel from "@/components/HelpPanel";
+      import ErrorBoundary from "@/components/ErrorBoundary";
+      import {
+        DropdownMenu,
+        DropdownMenuContent,
+        DropdownMenuItem,
+        DropdownMenuTrigger,
+      } from "@/components/ui/dropdown-menu";
 
 // Create a QueryClient for the entire app
 const queryClient = new QueryClient({
@@ -194,11 +195,13 @@ function LayoutContent({ children }) {
       }
 
 export default function Layout({ children, currentPageName }) {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <WizardProvider>
-        <LayoutContent>{children}</LayoutContent>
-      </WizardProvider>
-    </QueryClientProvider>
-  );
-}
+        return (
+          <QueryClientProvider client={queryClient}>
+            <WizardProvider>
+              <ErrorBoundary>
+                <LayoutContent>{children}</LayoutContent>
+              </ErrorBoundary>
+            </WizardProvider>
+          </QueryClientProvider>
+        );
+      }
