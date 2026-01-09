@@ -294,31 +294,42 @@ Deno.serve(async (req) => {
     const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
     
-    // Get recipient details
+    // Get recipient details - CRITICAL: use correct recipientId and clientUserId for this role
     const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
     const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
     
+    console.log('[DocuSign] Recipient details for', role, ':', {
+      recipientId,
+      clientUserId,
+      profileId
+    });
+    
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
     const profile = profiles[0];
+    
+    if (!profile) {
+      return Response.json({ 
+        error: `Profile not found for ${role}`
+      }, { status: 404 });
+    }
     
     // Create recipient view for embedded signing
     const recipientViewRequest = {
       returnUrl: docusignReturnUrl,
       authenticationMethod: 'none',
-      email: profile?.email || user.email,
-      userName: profile?.full_name || profile?.email || user.email,
-      clientUserId: clientUserId,
-      frameAncestors: [origin],
-      messageOrigins: [origin]
+      email: profile.email,
+      userName: profile.full_name || profile.email,
+      clientUserId: clientUserId
     };
     
     console.log('[DocuSign] Creating recipient view with:', {
       recipientId,
       clientUserId,
-      email: profile?.email,
-      userName: profile?.full_name,
-      role
+      email: profile.email,
+      userName: profile.full_name,
+      role,
+      envelopeId
     });
     
     const viewUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`;
