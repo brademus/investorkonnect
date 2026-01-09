@@ -30,7 +30,7 @@ export default function Dashboard() {
         ]);
         
         if (!user) {
-          // Not logged in
+          // Not logged in or timed out — force redirect to login
           base44.auth.redirectToLogin(createPageUrl("PostAuth"));
           return;
         }
