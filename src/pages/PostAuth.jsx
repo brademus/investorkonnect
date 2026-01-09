@@ -115,8 +115,8 @@ export default function PostAuth() {
       } catch (error) {
         console.error('[PostAuth] Error:', error);
         if (mounted) {
-          // If it's a known error or we want to show it
-          navigate(createPageUrl("Home"), { replace: true });
+          // Fallback hard to main dashboard to avoid blank screens
+          navigate(createPageUrl("Pipeline"), { replace: true });
         }
       }
     };
