@@ -47,6 +47,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
         docs.operating_agreement?.signed_pdf_url ||
         deal?.internal_agreement_signed_url ||
         deal?.signed_pdf_url ||
+        deal?.signing_pdf_url ||
         deal?.final_pdf_url ||
         deal?.docusign_pdf_url ||
         room?.internal_agreement_document?.url,

@@ -80,6 +80,36 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     return () => { cancelled = true; };
   }, [deal?.id]);
 
+  // Fallback for legacy/current accounts: derive from deal-level fields if present
+  useEffect(() => {
+    if (internalAgreementFile) return;
+    const legacyUrl =
+      deal?.internal_agreement_signed_url ||
+      deal?.final_pdf_url ||
+      deal?.docusign_pdf_url ||
+      deal?.signing_pdf_url ||
+      deal?.signed_pdf_url ||
+      deal?.legal_agreement?.final_pdf_url ||
+      deal?.legal_agreement?.signed_pdf_url ||
+      room?.internal_agreement_document?.url;
+    if (legacyUrl) {
+      setInternalAgreementFile({
+        url: legacyUrl,
+        filename: deal?.agreement_filename || 'internal-agreement.pdf',
+        uploaded_at: deal?.updated_date || new Date().toISOString()
+      });
+    }
+  }, [
+    internalAgreementFile,
+    deal?.internal_agreement_signed_url,
+    deal?.final_pdf_url,
+    deal?.docusign_pdf_url,
+    deal?.signing_pdf_url,
+    deal?.signed_pdf_url,
+    deal?.legal_agreement,
+    room?.internal_agreement_document?.url
+  ]);
+
   const handleUpload = async (docKey, e) => {
     const file = e.target.files[0];
     if (!file) return;
