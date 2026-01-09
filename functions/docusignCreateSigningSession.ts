@@ -464,7 +464,37 @@ Deno.serve(async (req) => {
       messageOrigins: [origin]
     };
     
-    console.log('[DocuSign] Requesting recipient view...', { recipientId, clientUserId });
+    // Check envelope status first
+    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+    const statusResponse = await fetch(statusUrl, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+    
+    if (statusResponse.ok) {
+      const envelopeStatus = await statusResponse.json();
+      console.log('[DocuSign] Envelope status:', {
+        status: envelopeStatus.status,
+        envelopeId,
+        recipients: envelopeStatus.recipients
+      });
+      
+      // If envelope is completed/voided, force recreation
+      if (['completed', 'voided', 'declined'].includes(envelopeStatus.status)) {
+        console.error('[DocuSign] Envelope is in terminal state:', envelopeStatus.status);
+        return Response.json({ 
+          error: `Envelope already ${envelopeStatus.status}. Please regenerate the agreement.`
+        }, { status: 400 });
+      }
+    }
+    
+    console.log('[DocuSign] Creating recipient view with:', {
+      recipientId,
+      clientUserId,
+      email: profile?.email,
+      userName: profile?.full_name,
+      role
+    });
     
     const viewUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`;
     const viewResponse = await fetch(viewUrl, {
@@ -485,25 +515,33 @@ Deno.serve(async (req) => {
         recipientId,
         clientUserId,
         role,
-        profileEmail: profile?.email
+        profileEmail: profile?.email,
+        request: recipientViewRequest
       });
       
-      // Try to parse error for better message
       let errorMsg = 'Failed to get signing URL from DocuSign';
+      let parsedError = null;
       try {
-        const errorData = JSON.parse(errorText);
-        if (errorData.message) {
-          errorMsg = errorData.message;
+        parsedError = JSON.parse(errorText);
+        if (parsedError.message) {
+          errorMsg = parsedError.message;
+        } else if (parsedError.errorCode) {
+          errorMsg = `DocuSign error: ${parsedError.errorCode}`;
         }
       } catch (e) {
-        // Use raw error text if not JSON
         errorMsg = errorText.substring(0, 200);
       }
       
       return Response.json({ 
         error: errorMsg,
-        details: errorText,
-        status: viewResponse.status
+        details: parsedError || errorText,
+        status: viewResponse.status,
+        debug: {
+          envelopeId,
+          clientUserId,
+          recipientId,
+          role
+        }
       }, { status: 500 });
     }
     
