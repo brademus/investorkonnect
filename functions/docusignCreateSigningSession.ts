@@ -238,15 +238,15 @@ Deno.serve(async (req) => {
         routingOrder: s.routingOrder
       })), null, 2));
 
-      // Match investor by recipientId first, then by email (fallback for mismatch)
-      investorRecipient = signers.find(s => s.recipientId === agreement.investor_recipient_id);
+      // Match investor by recipientId first (convert both to strings for comparison), then by email (fallback)
+      investorRecipient = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
       if (!investorRecipient && agreement.investor_email) {
         investorRecipient = signers.find(s => s.email?.toLowerCase() === agreement.investor_email.toLowerCase());
         console.log('[DocuSign] Investor matched by email (recipientId mismatch detected)');
       }
 
-      // Match agent by recipientId first, then by email
-      agentRecipient = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+      // Match agent by recipientId first (convert both to strings for comparison), then by email
+      agentRecipient = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
       if (!agentRecipient && agreement.agent_email) {
         agentRecipient = signers.find(s => s.email?.toLowerCase() === agreement.agent_email.toLowerCase());
         console.log('[DocuSign] Agent matched by email (recipientId mismatch detected)');
