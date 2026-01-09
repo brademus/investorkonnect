@@ -23,7 +23,11 @@ export default function Dashboard() {
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const user = await base44.auth.me();
+        // Add timeout to prevent infinite loading if auth hangs
+        const user = await Promise.race([
+          base44.auth.me(),
+          new Promise((resolve) => setTimeout(() => resolve(null), 6000))
+        ]);
         
         if (!user) {
           // Not logged in
