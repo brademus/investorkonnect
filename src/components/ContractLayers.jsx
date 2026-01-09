@@ -230,27 +230,30 @@ Return a verification result with any discrepancies found.
               )}
             </div>
           )}
-          {resolved.internalAgreement?.urlSignedPdf && (
-            <div className="flex items-center gap-2 mt-3">
-              <a
-                href={resolved.internalAgreement.urlSignedPdf}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
-              >
-                <FileText className="w-3 h-3" />
-                View Agreement
-              </a>
-              <a
-                href={resolved.internalAgreement.urlSignedPdf}
-                download={resolved.internalAgreement.filename || 'internal-agreement.pdf'}
-                className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
-              >
-                <Download className="w-3 h-3" />
-                Download
-              </a>
-            </div>
-          )}
+          {(() => {
+            const internalUrl = resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.urlDraft;
+            return internalUrl ? (
+              <div className="flex items-center gap-2 mt-3">
+                <a
+                  href={internalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  View Agreement
+                </a>
+                <a
+                  href={internalUrl}
+                  download={resolved.internalAgreement.filename || 'internal-agreement.pdf'}
+                  className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Download
+                </a>
+              </div>
+            ) : null;
+          })()}
         </div>
 
         {/* 3. Agent's Listing Agreement */}
@@ -279,7 +282,7 @@ Return a verification result with any discrepancies found.
                 </a>
                 <a
                   href={resolved.listingAgreement.url}
-                  download={resolved.listingAgreement.filename || 'listing-agreement.pdf'}
+                  download={resolved.listingAgreement.filename || resolved.listingAgreement.name || 'listing-agreement.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />

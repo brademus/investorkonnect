@@ -82,7 +82,7 @@ export function buildUnifiedFilesList({ deal = {}, room = {} }) {
   
   // Helper to add file if URL exists and not already added
   const addIfNew = (item) => {
-    const url = item?.url || item?.urlSignedPdf;
+    const url = item?.url || item?.urlSignedPdf || item?.urlDraft || item?.file_url;
     if (url && !urlsSeen.has(url)) {
       urlsSeen.add(url);
       allFiles.push({
