@@ -15,8 +15,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [signing, setSigning] = useState(false);
   const [exhibitA, setExhibitA] = useState(null);
   
-  const isInvestor = deal?.investor_id === profile?.id;
-  const isAgent = deal?.agent_id === profile?.id;
+  // Determine viewer role reliably from profile (avoids ID mismatches)
+  const isInvestor = profile?.user_role === 'investor';
+  const isAgent = profile?.user_role === 'agent';
 
   // Load agreement on mount
   useEffect(() => {
