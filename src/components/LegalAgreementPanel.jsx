@@ -232,12 +232,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       const data = response.data;
       
       if (data.error) {
-        console.error('[LegalAgreement] Error from backend:', data.error);
-        // Show more helpful error message
-        if (data.error.includes('token expired')) {
+        console.error('[LegalAgreement] Error from backend:', data.error, data.debug);
+        // Show detailed error with debug info if available
+        let errorMsg = data.error;
+        if (data.debug) {
+          console.log('[LegalAgreement] Debug info:', data.debug);
+          // Append a hint for common issues
+          if (data.debug.investorRecipient?.status === 'sent') {
+            errorMsg += ' (Investor has not opened/signed the agreement yet.)';
+          } else if (data.debug.investorRecipient?.status === 'declined') {
+            errorMsg += ' (Investor declined to sign.)';
+          }
+        }
+        
+        if (errorMsg.includes('token expired')) {
           toast.error('DocuSign connection expired. Please try again in a moment.');
         } else {
-          toast.error(data.error);
+          toast.error(errorMsg, { duration: 6000 });
         }
         setSigning(false);
         return;
