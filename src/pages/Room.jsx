@@ -370,7 +370,11 @@ export default function Room() {
     fetchCurrentRoom();
   }, [roomId, profile?.user_role]);
 
-  const counterpartName = currentRoom?.counterparty_name || location.state?.initialCounterpartyName || "Chat";
+  const counterpartName = getCounterpartyDisplayName({ 
+    room: currentRoom, 
+    deal: deal, 
+    currentUserRole: profile?.user_role 
+  }) || location.state?.initialCounterpartyName || "Chat";
   
   // Robust agent profile ID - check multiple sources
   const roomAgentProfileId =
