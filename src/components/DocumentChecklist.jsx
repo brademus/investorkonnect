@@ -169,7 +169,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
       
       <div className="space-y-3">
         {REQUIRED_DOCUMENTS.map((doc) => {
-          const uploaded = documents[doc.key];
+          const uploaded = normalize(documents[doc.key]);
 
           // Post-fully-signed: check resolved docs (fixed syntax)
           let resolvedFile = null;
