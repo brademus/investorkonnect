@@ -51,7 +51,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
         deal?.docusign_pdf_url ||
         room?.internal_agreement_document?.url,
       urlDraft: docs.internal_agreement_draft?.file_url || docs.internal_agreement_draft?.url,
-      filename: docs.internal_agreement?.filename || docs.operating_agreement?.filename || room?.internal_agreement_document?.name,
+      filename: docs.internal_agreement?.filename || docs.operating_agreement?.filename || deal?.agreement_filename || room?.internal_agreement_document?.name,
       createdAt: docs.internal_agreement?.uploaded_at || docs.operating_agreement?.uploaded_at || room?.internal_agreement_document?.generated_at,
       source: 'deal/room.documents'
     },
