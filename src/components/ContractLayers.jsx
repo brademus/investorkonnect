@@ -177,20 +177,20 @@ Return a verification result with any discrepancies found.
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               <span>Hidden until agreement is fully signed</span>
             </div>
-          ) : deal?.documents?.purchase_contract?.file_url ? (
+          ) : resolved.sellerContract?.url ? (
             <div className="flex items-center gap-2">
               <a
-                href={deal.documents.purchase_contract.file_url}
+                href={resolved.sellerContract.url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
               >
                 <FileText className="w-3 h-3" />
-                {deal.documents.purchase_contract.filename || 'View Contract'}
+                View Contract
               </a>
               <a
-                href={deal.documents.purchase_contract.file_url}
-                download={deal.documents.purchase_contract.filename || 'seller-contract.pdf'}
+                href={resolved.sellerContract.url}
+                download={resolved.sellerContract.filename || 'seller-contract.pdf'}
                 className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
               >
                 <Download className="w-3 h-3" />
