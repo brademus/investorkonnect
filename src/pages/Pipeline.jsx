@@ -249,8 +249,10 @@ function PipelineContent() {
 
   const handleDealClick = async (deal) => {
     if (deal.is_orphan) {
-      // Route orphan deals to NewDeal for editing, not DealWizard
-      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+      // Agents must NOT edit deals; only investors can edit
+      if (isInvestor) {
+        navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+      }
       return;
     }
     
@@ -631,16 +633,18 @@ function PipelineContent() {
                                         >
                                           Open Deal Room
                                         </Button>
-                                        <Button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
-                                          }}
-                                          size="sm"
-                                          className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
-                                        >
-                                          Edit Deal
-                                        </Button>
+                                        {isInvestor && (
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+                                            }}
+                                            size="sm"
+                                            className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
+                                          >
+                                            Edit Deal
+                                          </Button>
+                                        )}
                                       </div>
                                       </div>
                                   )}
