@@ -52,7 +52,8 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     (async () => {
       try {
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
-        const ag = res?.data || res;
+        const payload = res?.data || res;
+        const ag = payload?.agreement || payload; // normalize shape
         const isSigned = ag?.status === 'fully_signed' || !!(ag?.signed_pdf_url || ag?.final_pdf_url || ag?.docusign_pdf_url || ag?.pdf_file_url);
         if (!isSigned || cancelled) return;
 
@@ -65,12 +66,22 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
         // Persist to Deal.documents so Shared Files and other tabs can pick it up
         const docs = deal?.documents || {};
-        const existingUrl = docs.operating_agreement?.file_url || docs.internal_agreement?.file_url || docs.operating_agreement?.url || docs.internal_agreement?.url;
-        if (!existingUrl || existingUrl !== url) {
+        const currentUrl = docs.operating_agreement?.file_url || docs.internal_agreement?.file_url || docs.operating_agreement?.url || docs.internal_agreement?.url;
+        if (!currentUrl || currentUrl !== url) {
           const updatedDocs = {
             ...docs,
-            operating_agreement: docs.operating_agreement || { file_url: url, filename, uploaded_at },
-            internal_agreement: docs.internal_agreement || { file_url: url, filename, uploaded_at }
+            operating_agreement: {
+              ...(docs.operating_agreement || {}),
+              file_url: url,
+              filename,
+              uploaded_at
+            },
+            internal_agreement: {
+              ...(docs.internal_agreement || {}),
+              file_url: url,
+              filename,
+              uploaded_at
+            }
           };
           await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
           if (onUpdate) onUpdate();
