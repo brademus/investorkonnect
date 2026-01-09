@@ -454,7 +454,20 @@ Deno.serve(async (req) => {
       // Check routing order - if agent is trying to sign before investor
       if (role === 'agent' && envStatus.recipients?.signers) {
         const investorSigner = envStatus.recipients.signers.find(s => s.recipientId === '1');
-        if (investorSigner && investorSigner.status !== 'completed') {
+        const investorCompleted = investorSigner && ['completed', 'signed'].includes(investorSigner.status?.toLowerCase());
+        
+        console.log('[DocuSign] Investor signer check:', {
+          found: !!investorSigner,
+          status: investorSigner?.status,
+          completed: investorCompleted,
+          allSigners: envStatus.recipients.signers.map(s => ({
+            recipientId: s.recipientId,
+            email: s.email,
+            status: s.status
+          }))
+        });
+        
+        if (investorSigner && !investorCompleted) {
           console.error('[DocuSign] Agent cannot sign - investor has not signed yet');
           return Response.json({ 
             error: 'The investor must sign the agreement first before the agent can sign.'
