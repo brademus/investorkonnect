@@ -108,7 +108,7 @@ Return a verification result with any discrepancies found.
         if (resolved.sellerContract?.url) {
           return resolved.sellerContract.verified ? 'verified' : 'uploaded';
         }
-        return isWorkingTogether ? 'uploaded' : 'pending';
+        return 'pending';
       case 'internal':
         return room?.agreement_status === 'fully_signed' ? 'signed' : 
                room?.agreement_status === 'investor_signed' ? 'pending_agent' :

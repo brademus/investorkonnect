@@ -139,7 +139,7 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
                 {fileToShow ? (
                   <>
                     <a
-                      href={fileToShow.file_url || fileToShow.urlSignedPdf}
+                      href={fileToShow.file_url || fileToShow.url || fileToShow.urlSignedPdf}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
@@ -147,8 +147,8 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
                       View
                     </a>
                     <a
-                      href={fileToShow.file_url || fileToShow.urlSignedPdf}
-                      download={fileToShow.filename || `${doc.key}.pdf`}
+                      href={fileToShow.file_url || fileToShow.url || fileToShow.urlSignedPdf}
+                      download={fileToShow.filename || fileToShow.name || `${doc.key}.pdf`}
                       className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
                     >
                       <Download className="w-3 h-3" />
