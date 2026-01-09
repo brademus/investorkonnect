@@ -17,6 +17,8 @@ import DocumentChecklist from "@/components/DocumentChecklist";
 import LegalAgreementPanel from "@/components/LegalAgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
+import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
+import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDisplay";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock
 } from "lucide-react";
