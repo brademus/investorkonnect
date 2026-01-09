@@ -249,7 +249,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       if (data.error) {
         console.error('[LegalAgreement] Error from backend:', data.error);
-        toast.error(data.error);
+        // Show more helpful error message
+        if (data.error.includes('token expired')) {
+          toast.error('DocuSign connection expired. Please try again in a moment.');
+        } else {
+          toast.error(data.error);
+        }
         setSigning(false);
         return;
       }
@@ -267,7 +272,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       window.location.assign(data.signing_url);
     } catch (error) {
       console.error('[LegalAgreement] Sign error:', error);
-      toast.error('Failed to open signing: ' + error.message);
+      // Better error handling for common issues
+      const errorMsg = error?.response?.data?.error || error?.message || 'Unknown error';
+      if (errorMsg.includes('token expired')) {
+        toast.error('DocuSign connection expired. Please try again in a moment - the system is reconnecting.');
+      } else {
+        toast.error('Failed to open signing: ' + errorMsg);
+      }
       setSigning(false);
     }
   };
