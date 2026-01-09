@@ -232,9 +232,9 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             >
               <div className="flex items-center gap-3 flex-1">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  fileToShow ? 'bg-green-500/20' : 'bg-[#1F1F1F]'
+                  fileUrl ? 'bg-green-500/20' : 'bg-[#1F1F1F]'
                 }`}>
-                  {fileToShow ? (
+                  {fileUrl ? (
                     <CheckCircle className="w-4 h-4 text-green-400" />
                   ) : (
                     <AlertCircle className="w-4 h-4 text-[#808080]" />
@@ -243,7 +243,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-[#FAFAFA]">{doc.label}</p>
                   <p className="text-xs text-[#808080]">{doc.description}</p>
-                  {fileToShow && (
+                  {fileUrl && fileToShow && (
                      <div className="mt-1 flex items-center gap-2">
                        <p className="text-xs text-[#E3C567] truncate">{fileToShow.filename || fileToShow.name || 'Document'}</p>
                        <span className="text-xs text-[#666]">•</span>
@@ -256,7 +256,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
               </div>
 
               <div className="flex-shrink-0 ml-4 flex items-center gap-2">
-                {fileToShow ? (
+                {fileUrl ? (
                   <>
                     <a
                       href={fileUrl}
@@ -268,7 +268,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                     </a>
                     <a
                       href={fileUrl}
-                      download={fileToShow.filename || fileToShow.name || `${doc.key}.pdf`}
+                      download={fileToShow?.filename || fileToShow?.name || `${doc.key}.pdf`}
                       className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
                     >
                       <Download className="w-3 h-3" />
