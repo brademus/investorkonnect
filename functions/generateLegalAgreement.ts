@@ -930,34 +930,18 @@ Deno.serve(async (req) => {
       }]
     };
     
+    // Store investor/agent emails for fallback matching
+    agreementData.investor_email = profile.email;
+    agreementData.agent_email = agentProfile.email;
+    
     let agreement;
     if (existing.length > 0) {
-      // On regeneration, clear signature timestamps since new envelope won't have signatures yet
-      const clearSignatures = {
-        investor_signed_at: null,
-        agent_signed_at: null,
-        signed_pdf_url: null,
-        signed_pdf_sha256: null
-      };
-      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
-        ...agreementData,
-        ...clearSignatures
-      });
-      console.log('[DocuSign] ✓ Regenerated agreement - cleared signature timestamps');
+      // On regeneration, completely clear ALL old envelope data for a fresh start
+      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, agreementData);
+      console.log('[DocuSign] ✓ Regenerated agreement - created new fresh envelope');
     } else {
-      // Store investor_email and agent_email in agreement for fallback email matching
-      agreementData.investor_email = profile.email;
-      agreementData.agent_email = agentProfile.email;
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
       console.log('[DocuSign] ✓ Created new agreement');
-    }
-    
-    // Always update investor/agent emails for fallback matching (whether creating or updating)
-    if (existing.length > 0 && !agreementData.investor_email) {
-      await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
-        investor_email: profile.email,
-        agent_email: agentProfile.email
-      });
     }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
