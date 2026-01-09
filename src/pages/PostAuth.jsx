@@ -44,33 +44,39 @@ export default function PostAuth() {
         if (mounted) setStatus("Loading your profile...");
         let profile = null;
         try {
-          // First try to find by email (canonical lookup)
-          const emailLower = user.email.toLowerCase().trim();
-          let profiles = await base44.entities.Profile.filter({ email: emailLower });
-          
-          // Fallback to user_id if not found by email
-          if (!profiles || profiles.length === 0) {
-            profiles = await base44.entities.Profile.filter({ user_id: user.id });
+          const emailLower = (user.email || '').toLowerCase().trim();
+
+          // Try via lightweight backend function if available (handles race conditions)
+          try {
+            const ensure = await base44.functions.invoke('ensureProfile', { email: emailLower });
+            profile = ensure.data?.profile || ensure.data || null;
+          } catch {}
+
+          // Direct entity fallback
+          if (!profile) {
+            let profiles = [];
+            if (emailLower) {
+              profiles = await base44.entities.Profile.filter({ email: emailLower });
+            }
+            if (!profiles || profiles.length === 0) {
+              profiles = await base44.entities.Profile.filter({ user_id: user.id });
+            }
+            profile = profiles[0] || null;
           }
-          
-          profile = profiles[0] || null;
-          
-          // Create profile if it doesn't exist
+
+          // Create if still missing
           if (!profile) {
             setStatus("Setting up your account...");
             profile = await base44.entities.Profile.create({
               user_id: user.id,
-              email: emailLower,
+              email: emailLower || user.email,
               full_name: user.full_name,
               role: 'member',
               user_role: 'member',
             });
-            console.log('[PostAuth] Created new profile for:', emailLower);
           } else if (!profile.user_id || profile.user_id !== user.id) {
-            // Update user_id if profile exists but user_id is different (email match)
             await base44.entities.Profile.update(profile.id, { user_id: user.id });
             profile.user_id = user.id;
-            console.log('[PostAuth] Updated user_id for existing profile:', emailLower);
           }
         } catch (e) {
           console.error('[PostAuth] Profile error:', e);
