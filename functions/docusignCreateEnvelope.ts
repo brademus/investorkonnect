@@ -80,12 +80,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Investor or agent profile not found' }, { status: 404 });
     }
     
-    // Download and encode PDF
-    const pdfUrl = agreement.final_pdf_url || agreement.pdf_file_url;
+    // Use DocuSign-specific PDF with correct anchors (not legacy final_pdf_url)
+    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
     if (!pdfUrl) {
-      return Response.json({ error: 'Agreement PDF not generated yet' }, { status: 400 });
+      return Response.json({ error: 'Agreement PDF not generated yet. Please generate from Agreement tab.' }, { status: 400 });
     }
-    
+
     const pdfBase64 = await downloadPdf(pdfUrl);
     
     // Generate unique client user IDs for embedded signing
@@ -111,16 +111,32 @@ Deno.serve(async (req) => {
             clientUserId: investorClientUserId,
             tabs: {
               signHereTabs: [{
-                anchorString: '/INVESTOR_SIGNATURE/',
+                anchorString: '[[INVESTOR_SIGN]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false
               }],
               dateSignedTabs: [{
-                anchorString: '/INVESTOR_DATE/',
+                anchorString: '[[INVESTOR_DATE]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false
+              }],
+              fullNameTabs: [{
+                anchorString: '[[INVESTOR_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false,
+                name: 'Investor Full Name',
+                value: investor.full_name || investor.email,
+                locked: true,
+                required: true
               }]
             }
           },
@@ -132,17 +148,59 @@ Deno.serve(async (req) => {
             clientUserId: agentClientUserId,
             tabs: {
               signHereTabs: [{
-                anchorString: '/AGENT_SIGNATURE/',
+                anchorString: '[[AGENT_SIGN]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false
               }],
               dateSignedTabs: [{
-                anchorString: '/AGENT_DATE/',
+                anchorString: '[[AGENT_DATE]]',
                 anchorUnits: 'pixels',
                 anchorXOffset: '0',
-                anchorYOffset: '0'
-              }]
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false
+              }],
+              fullNameTabs: [{
+                anchorString: '[[AGENT_PRINT]]',
+                anchorUnits: 'pixels',
+                anchorXOffset: '0',
+                anchorYOffset: '0',
+                anchorMatchWholeWord: true,
+                anchorCaseSensitive: false,
+                name: 'Agent Full Name',
+                value: agent.full_name || agent.email,
+                locked: true,
+                required: true
+              }],
+              textTabs: [
+                {
+                  anchorString: '[[AGENT_LICENSE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorMatchWholeWord: true,
+                  anchorCaseSensitive: false,
+                  name: 'License Number',
+                  value: agent.agent?.license_number || agent.license_number || '',
+                  locked: false,
+                  required: true
+                },
+                {
+                  anchorString: '[[AGENT_BROKERAGE]]',
+                  anchorUnits: 'pixels',
+                  anchorXOffset: '0',
+                  anchorYOffset: '0',
+                  anchorMatchWholeWord: true,
+                  anchorCaseSensitive: false,
+                  name: 'Brokerage',
+                  value: agent.agent?.brokerage || agent.broker || '',
+                  locked: false,
+                  required: true
+                }
+              ]
             }
           }
         ]
