@@ -265,34 +265,34 @@ Return a verification result with any discrepancies found.
             </div>
           </div>
 
-          {deal?.documents?.listing_agreement?.file_url ? (
+          {resolved.listingAgreement?.url ? (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <a
-                  href={deal.documents.listing_agreement.file_url}
+                  href={resolved.listingAgreement.url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
                 >
                   <FileText className="w-3 h-3" />
-                  {deal.documents.listing_agreement.filename || 'View Listing Agreement'}
+                  View Listing Agreement
                 </a>
                 <a
-                  href={deal.documents.listing_agreement.file_url}
-                  download={deal.documents.listing_agreement.filename || 'listing-agreement.pdf'}
+                  href={resolved.listingAgreement.url}
+                  download={resolved.listingAgreement.filename || 'listing-agreement.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
                   <Download className="w-3 h-3" />
                   Download
                 </a>
               </div>
-              {deal.documents.listing_agreement.verification_notes && (
+              {resolved.listingAgreement?.verification_notes && (
                 <div className={`text-xs p-2 rounded border ${
-                  deal.documents.listing_agreement.verified 
+                  resolved.listingAgreement.verified 
                     ? 'bg-[#10B981]/10 text-[#10B981] border-[#10B981]/30' 
                     : 'bg-[#F59E0B]/10 text-[#F59E0B] border-[#F59E0B]/30'
                 }`}>
-                  {deal.documents.listing_agreement.verification_notes}
+                  {resolved.listingAgreement.verification_notes}
                 </div>
               )}
             </div>
