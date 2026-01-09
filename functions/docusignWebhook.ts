@@ -114,8 +114,9 @@ Deno.serve(async (req) => {
         const investorRecipient = recipients.find(r => r.recipientId === agreement.investor_recipient_id);
         const agentRecipient = recipients.find(r => r.recipientId === agreement.agent_recipient_id);
         
-        const investorSigned = investorRecipient?.status === 'completed';
-        const agentSigned = agentRecipient?.status === 'completed';
+        // Treat both "completed" and "signed" as completion
+        const investorSigned = investorRecipient?.status === 'completed' || investorRecipient?.status === 'signed';
+        const agentSigned = agentRecipient?.status === 'completed' || agentRecipient?.status === 'signed';
         
         if (investorSigned && !agreement.investor_signed_at) {
           updates.investor_signed_at = new Date().toISOString();
