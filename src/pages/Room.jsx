@@ -377,6 +377,13 @@ export default function Room() {
     deal: deal, 
     currentUserRole: profile?.user_role 
   }) || location.state?.initialCounterpartyName || "Chat";
+
+  // Unified post-sign flag used across Files tab
+  const isWorkingTogether = (
+    currentRoom?.agreement_status === 'fully_signed' ||
+    currentRoom?.is_fully_signed === true ||
+    deal?.is_fully_signed === true
+  );
   
   // Robust agent profile ID - check multiple sources
   const roomAgentProfileId =
@@ -1562,11 +1569,6 @@ ${dealContext}`;
                     <div className="space-y-2">
                       {(() => {
                         // Post-fully-signed: merge system docs + user uploads
-                        const isWorkingTogether = (
-                          currentRoom?.agreement_status === 'fully_signed' ||
-                          currentRoom?.is_fully_signed === true ||
-                          deal?.is_fully_signed === true
-                        );
                         const allFiles = isWorkingTogether && deal 
                           ? buildUnifiedFilesList({ deal, room: currentRoom })
                           : (currentRoom?.files || []);
