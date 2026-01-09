@@ -148,8 +148,9 @@ Deno.serve(async (req) => {
     const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
     const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
     
-    const investorCompleted = investorSigner?.status === 'completed';
-    const agentCompleted = agentSigner?.status === 'completed';
+    // DocuSign uses both "completed" and "signed" as completion statuses
+    const investorCompleted = investorSigner?.status === 'completed' || investorSigner?.status === 'signed';
+    const agentCompleted = agentSigner?.status === 'completed' || agentSigner?.status === 'signed';
     
     console.log('[docusignHandleReturn] Completion status:', { investorCompleted, agentCompleted });
     

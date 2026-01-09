@@ -253,22 +253,29 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    const investorCompleted = investorSigner.status === 'completed';
-    const agentCompleted = agentSigner.status === 'completed';
+    // DocuSign uses both "completed" and "signed" as completion statuses
+    const investorCompleted = investorSigner.status === 'completed' || investorSigner.status === 'signed';
+    const agentCompleted = agentSigner.status === 'completed' || agentSigner.status === 'signed';
 
     console.log('[DocuSign] Current DocuSign status:', {
       investor: {
         recipientId: investorSigner.recipientId,
+        email: investorSigner.email,
         status: investorSigner.status,
         completed: investorCompleted,
-        signedDateTime: investorSigner.signedDateTime
+        signedDateTime: investorSigner.signedDateTime,
+        routingOrder: investorSigner.routingOrder
       },
       agent: {
         recipientId: agentSigner.recipientId,
+        email: agentSigner.email,
         status: agentSigner.status,
         completed: agentCompleted,
-        signedDateTime: agentSigner.signedDateTime
-      }
+        signedDateTime: agentSigner.signedDateTime,
+        routingOrder: agentSigner.routingOrder
+      },
+      envelopeId: envelopeId,
+      agreementId: agreement_id
     });
 
     // RECONCILE: Update DB based on DocuSign truth
