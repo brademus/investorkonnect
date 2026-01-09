@@ -61,11 +61,19 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
         const ag = res?.data || res;
         const url = ag?.signed_pdf_url || ag?.final_pdf_url || ag?.docusign_pdf_url || ag?.pdf_file_url;
         if (url && !cancelled) {
-          setInternalAgreementFile({
-            url,
+          const fileObj = {
+            file_url: url,
             filename: ag?.filename || 'internal-agreement.pdf',
             uploaded_at: ag?.updated_at || ag?.investor_signed_at || ag?.agent_signed_at
-          });
+          };
+          // Update local UI state
+          setInternalAgreementFile({ url, filename: fileObj.filename, uploaded_at: fileObj.uploaded_at });
+          // Persist to Deal.documents (canonical) if missing
+          if (!documents?.internal_agreement) {
+            const updatedDocs = { ...(documents || {}), internal_agreement: fileObj };
+            await base44.entities.Deal.update(deal.id, { documents: updatedDocs });
+            if (onUpdate) onUpdate();
+          }
         }
       } catch {}
     })();

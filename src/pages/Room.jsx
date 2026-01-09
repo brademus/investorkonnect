@@ -1540,10 +1540,11 @@ ${dealContext}`;
 
                     <div className="space-y-2">
                       {(() => {
-                        // Post-fully-signed: merge system docs + user uploads
-                        const allFiles = isWorkingTogether
-                          ? buildUnifiedFilesList({ deal, room: currentRoom })
-                          : (currentRoom?.files || []);
+                        // Merge system docs + user uploads; hide seller contract for agents until fully signed
+                        let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
+                        if (profile?.user_role === 'agent' && !isWorkingTogether) {
+                          allFiles = allFiles.filter(file => !/seller contract/i.test((file.label || file.name || '')));
+                        }
 
                         return allFiles.length === 0 ? (
                           <div className="text-center py-8">
