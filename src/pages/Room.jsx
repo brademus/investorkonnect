@@ -1570,7 +1570,7 @@ ${dealContext}`;
                     <div className="space-y-2">
                       {(() => {
                         // Post-fully-signed: merge system docs + user uploads
-                        const allFiles = isWorkingTogether && deal 
+                        const allFiles = isWorkingTogether
                           ? buildUnifiedFilesList({ deal, room: currentRoom })
                           : (currentRoom?.files || []);
 
