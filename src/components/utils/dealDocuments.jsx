@@ -14,11 +14,15 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
     // Seller Contract - from Deal.documents or deal fields
     sellerContract: {
       label: 'Seller Contract',
-      url: docs.purchase_contract?.file_url || docs.purchase_contract?.url || docs.seller_contract?.file_url || docs.seller_contract?.url || deal?.contract_document?.url || deal?.contract_url || deal?.documents?.purchase_contract?.file_url || deal?.documents?.purchase_contract?.url ,
-      verified: docs.purchase_contract?.verified || docs.seller_contract?.verified,
+      url: docs.purchase_contract?.file_url || docs.purchase_contract?.url ||
+           docs.seller_contract?.file_url || docs.seller_contract?.url ||
+           deal?.contract_document?.url || deal?.contract_url ||
+           deal?.documents?.purchase_contract?.file_url || deal?.documents?.purchase_contract?.url ||
+           room?.contract_document?.file_url || room?.contract_document?.url || room?.contract_url,
+      verified: docs.purchase_contract?.verified || docs.seller_contract?.verified || room?.contract_document?.verified,
       filename: docs.purchase_contract?.filename || docs.seller_contract?.filename || deal?.contract_document?.name || room?.contract_document?.name,
-      createdAt: docs.purchase_contract?.uploaded_at || docs.seller_contract?.uploaded_at,
-      source: 'deal.documents'
+      createdAt: docs.purchase_contract?.uploaded_at || docs.seller_contract?.uploaded_at || room?.contract_document?.uploaded_at,
+      source: 'deal/room.documents'
     },
     
     // Verified Purchase Contract - robust
@@ -41,21 +45,23 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
         deal?.internal_agreement_signed_url ||
         deal?.signed_pdf_url ||
         deal?.final_pdf_url ||
-        deal?.docusign_pdf_url ,
+        deal?.docusign_pdf_url ||
+        room?.internal_agreement_document?.url,
       urlDraft: docs.internal_agreement_draft?.file_url || docs.internal_agreement_draft?.url,
-      filename: docs.internal_agreement?.filename,
-      createdAt: docs.internal_agreement?.uploaded_at,
-      source: 'deal.documents'
+      filename: docs.internal_agreement?.filename || room?.internal_agreement_document?.name,
+      createdAt: docs.internal_agreement?.uploaded_at || room?.internal_agreement_document?.generated_at,
+      source: 'deal/room.documents'
     },
     
     // Listing Agreement - from Deal.documents.listing_agreement
     listingAgreement: {
       label: 'Listing Agreement',
-      url: docs.listing_agreement?.file_url || docs.listing_agreement?.url,
-      verified: docs.listing_agreement?.verified,
-      filename: docs.listing_agreement?.filename,
-      createdAt: docs.listing_agreement?.uploaded_at,
-      source: 'deal.documents'
+      url: docs.listing_agreement?.file_url || docs.listing_agreement?.url || room?.listing_agreement_document?.url,
+      verified: docs.listing_agreement?.verified || room?.listing_agreement_document?.verified,
+      filename: docs.listing_agreement?.filename || room?.listing_agreement_document?.name,
+      createdAt: docs.listing_agreement?.uploaded_at || room?.listing_agreement_document?.uploaded_at,
+      verification_notes: docs.listing_agreement?.verification_notes || room?.listing_agreement_document?.verification_notes,
+      source: 'deal/room.documents'
     },
     
     // All other uploaded files from Room
