@@ -484,30 +484,6 @@ Deno.serve(async (req) => {
       messageOrigins: [origin]
     };
     
-    // Check envelope status first
-    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
-    const statusResponse = await fetch(statusUrl, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-    
-    if (statusResponse.ok) {
-      const envelopeStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status:', {
-        status: envelopeStatus.status,
-        envelopeId,
-        recipients: envelopeStatus.recipients
-      });
-      
-      // If envelope is completed/voided, force recreation
-      if (['completed', 'voided', 'declined'].includes(envelopeStatus.status)) {
-        console.error('[DocuSign] Envelope is in terminal state:', envelopeStatus.status);
-        return Response.json({ 
-          error: `Envelope already ${envelopeStatus.status}. Please regenerate the agreement.`
-        }, { status: 400 });
-      }
-    }
-    
     console.log('[DocuSign] Creating recipient view with:', {
       recipientId,
       clientUserId,
