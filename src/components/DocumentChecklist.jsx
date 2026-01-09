@@ -39,7 +39,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
   // Defensive copy to prevent state glitches when navigating tabs
   const documents = useMemo(() => ({ ...(deal?.documents || {}) }), [deal?.documents]);
-  const resolved = resolveDealDocuments({ deal, room });
+  const resolved = useMemo(() => resolveDealDocuments({ deal, room }), [deal?.documents, room?.files, room?.contract_document, room?.listing_agreement_document]);
   const isWorkingTogether = (
     room?.agreement_status === 'fully_signed' ||
     room?.is_fully_signed === true ||
