@@ -196,6 +196,28 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           } else {
             fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
           }
+
+          // Compute a robust URL for View/Download with deep fallbacks
+          const fileUrl = (
+            (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
+            (doc.key === 'purchase_contract'
+              ? (
+                  resolved.verifiedPurchaseContract?.url ||
+                  resolved.sellerContract?.url ||
+                  deal?.documents?.purchase_contract?.file_url ||
+                  deal?.documents?.purchase_contract?.url ||
+                  deal?.contract_document?.url ||
+                  deal?.contract_url ||
+                  room?.contract_document?.file_url ||
+                  room?.contract_document?.url
+                )
+              : doc.key === 'operating_agreement'
+              ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
+              : doc.key === 'listing_agreement'
+              ? resolved.listingAgreement?.url
+              : null
+            )
+          );
           const canUpload =
             doc.key !== 'operating_agreement' && (
               doc.uploadedBy === 'both' ||
@@ -237,7 +259,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                 {fileToShow ? (
                   <>
                     <a
-                      href={fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf}
+                      href={fileUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"
@@ -245,7 +267,7 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                       View
                     </a>
                     <a
-                      href={fileToShow.file_url || fileToShow.url || fileToShow.urlSignedPdf}
+                      href={fileUrl}
                       download={fileToShow.filename || fileToShow.name || `${doc.key}.pdf`}
                       className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
                     >
