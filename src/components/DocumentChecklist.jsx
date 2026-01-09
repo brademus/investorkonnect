@@ -172,14 +172,14 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                   <p className="text-sm font-medium text-[#FAFAFA]">{doc.label}</p>
                   <p className="text-xs text-[#808080]">{doc.description}</p>
                   {fileToShow && (
-                    <div className="mt-1 flex items-center gap-2">
-                      <p className="text-xs text-[#E3C567] truncate">{fileToShow.filename || fileToShow.name || 'Document'}</p>
-                      <span className="text-xs text-[#666]">•</span>
-                      <p className="text-xs text-[#666]">
-                        {new Date(fileToShow.uploaded_at || fileToShow.createdAt || Date.now()).toLocaleDateString()}
-                      </p>
-                    </div>
-                  )}
+                     <div className="mt-1 flex items-center gap-2">
+                       <p className="text-xs text-[#E3C567] truncate">{fileToShow.filename || fileToShow.name || 'Document'}</p>
+                       <span className="text-xs text-[#666]">•</span>
+                       <p className="text-xs text-[#666]">
+                         {new Date(fileToShow.uploaded_at || fileToShow.createdAt || deal?.updated_date || Date.now()).toLocaleDateString()}
+                       </p>
+                     </div>
+                   )}
                 </div>
               </div>
 
