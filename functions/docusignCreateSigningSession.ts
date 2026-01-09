@@ -231,12 +231,12 @@ Deno.serve(async (req) => {
       const recipients = await recipientsResponse.json();
       const signers = recipients.signers || [];
 
-      console.log('[DocuSign] Recipients from envelope:', signers.map(s => ({
+      console.log('[DocuSign] Recipients from envelope:', JSON.stringify(signers.map(s => ({
         recipientId: s.recipientId,
         email: s.email,
         status: s.status,
         routingOrder: s.routingOrder
-      })));
+      })), null, 2));
 
       // Match investor by recipientId first, then by email (fallback for mismatch)
       investorRecipient = signers.find(s => s.recipientId === agreement.investor_recipient_id);
@@ -253,18 +253,29 @@ Deno.serve(async (req) => {
       }
 
       if (!investorRecipient || !agentRecipient) {
-        console.error('[DocuSign] Cannot find both recipients in envelope:', {
+        const debugInfo = {
           foundInvestor: !!investorRecipient,
-          foundAgent: !!agentRecipient
-        });
+          foundAgent: !!agentRecipient,
+          allSigners: signers.map(s => ({
+            recipientId: s.recipientId,
+            email: s.email,
+            status: s.status
+          })),
+          storedInvestorId: agreement.investor_recipient_id,
+          storedAgentId: agreement.agent_recipient_id,
+          storedInvestorEmail: agreement.investor_email,
+          storedAgentEmail: agreement.agent_email
+        };
+        console.error('[DocuSign] Cannot find both recipients in envelope:', debugInfo);
         return Response.json({
-          error: 'Envelope recipients not found. Please regenerate the agreement.'
+          error: 'Envelope recipients not found. Please regenerate the agreement.',
+          debug: debugInfo
         }, { status: 400 });
       }
 
       console.log('[DocuSign] Recipients found:', {
-        investor: { id: investorRecipient.recipientId, status: investorRecipient.status },
-        agent: { id: agentRecipient.recipientId, status: agentRecipient.status }
+        investor: { id: investorRecipient.recipientId, email: investorRecipient.email, status: investorRecipient.status },
+        agent: { id: agentRecipient.recipientId, email: agentRecipient.email, status: agentRecipient.status }
       });
 
       // Treat both "completed" and "signed" as completion
@@ -272,10 +283,19 @@ Deno.serve(async (req) => {
 
       // AGENT GATING: Gate off DocuSign recipient status (source of truth), not DB
       if (role === 'agent' && !investorCompleted) {
-        console.error('[DocuSign] ❌ Agent cannot sign - DocuSign shows investor has not signed yet');
-        console.error('[DocuSign] Investor recipient status:', investorRecipient.status);
+        const debugInfo = {
+          envelopeId: envelopeId,
+          investorRecipient: {
+            recipientId: investorRecipient.recipientId,
+            email: investorRecipient.email,
+            status: investorRecipient.status
+          },
+          agentTrying: role
+        };
+        console.error('[DocuSign] ❌ Agent cannot sign - investor status is:', investorRecipient.status);
         return Response.json({
-          error: 'The investor must sign this agreement first before you can sign it.'
+          error: `The investor must sign this agreement first. (Investor status in DocuSign: ${investorRecipient.status})`,
+          debug: debugInfo
         }, { status: 400 });
       }
 
