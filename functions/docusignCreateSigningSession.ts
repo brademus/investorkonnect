@@ -423,9 +423,42 @@ Deno.serve(async (req) => {
     } else {
       console.log('[DocuSign] ✓ REUSING existing envelope:', envelopeId);
       console.log('[DocuSign] Hash verification passed - PDF unchanged since last sent');
-    }
-    
-    // Check envelope status for terminal states only
+      }
+
+      // Sync envelope status before proceeding to ensure we have latest signature status
+      try {
+      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+      const recipientsResponse = await fetch(recipientsUrl, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+
+      if (recipientsResponse.ok) {
+        const recipients = await recipientsResponse.json();
+        const signers = recipients.signers || [];
+
+        const investorSigner = signers.find(s => s.recipientId === '1');
+        const agentSigner = signers.find(s => s.recipientId === '2');
+
+        const now = new Date().toISOString();
+        const syncUpdates = {};
+
+        if (investorSigner?.status === 'completed' && !agreement.investor_signed_at) {
+          syncUpdates.investor_signed_at = investorSigner.signedDateTime || now;
+        }
+        if (agentSigner?.status === 'completed' && !agreement.agent_signed_at) {
+          syncUpdates.agent_signed_at = agentSigner.signedDateTime || now;
+        }
+
+        if (Object.keys(syncUpdates).length > 0) {
+          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, syncUpdates);
+          console.log('[DocuSign] Synced signature status:', syncUpdates);
+        }
+      }
+      } catch (syncError) {
+      console.warn('[DocuSign] Failed to sync status before signing:', syncError);
+      }
+
+      // Check envelope status for terminal states only
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
     const statusResponse = await fetch(statusUrl, {
       method: 'GET',
