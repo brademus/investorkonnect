@@ -18,18 +18,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const isInvestor = deal?.investor_id === profile?.id;
   const isAgent = deal?.agent_id === profile?.id;
 
-  // Load agreement on mount and poll for updates
+  // Load agreement on mount
   useEffect(() => {
     if (deal?.id) {
       loadAgreement();
-      
-      // Poll every 3 seconds to detect when investor signs
-      const interval = setInterval(() => {
-        console.log('[LegalAgreementPanel] Polling for updates...');
-        loadAgreement();
-      }, 3000);
-      
-      return () => clearInterval(interval);
     }
   }, [deal?.id]);
   
