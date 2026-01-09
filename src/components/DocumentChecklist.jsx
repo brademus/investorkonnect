@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FileText, CheckCircle, Upload, AlertCircle, Download } from "lucide-react";
 import { base44 } from "@/api/base44Client";
@@ -35,6 +35,7 @@ const REQUIRED_DOCUMENTS = [
 
 export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
   const [uploading, setUploading] = useState(null);
+  const [internalAgreementFile, setInternalAgreementFile] = useState(null);
 
   const documents = deal?.documents || {};
   const resolved = resolveDealDocuments({ deal, room });
@@ -43,6 +44,34 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
     room?.is_fully_signed === true ||
     deal?.is_fully_signed === true
   );
+
+  // If fully signed but Deal.documents lacks the internal agreement, fetch it from the agreement service
+  useEffect(() => {
+    if (!isWorkingTogether || !deal?.id) return;
+    const alreadyHas =
+      documents?.operating_agreement ||
+      resolved?.internalAgreement?.urlSignedPdf ||
+      resolved?.internalAgreement?.url;
+    if (alreadyHas) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
+        const ag = res?.data || res;
+        const url = ag?.signed_pdf_url || ag?.final_pdf_url || ag?.docusign_pdf_url || ag?.pdf_file_url;
+        if (url && !cancelled) {
+          setInternalAgreementFile({
+            url,
+            filename: ag?.filename || 'internal-agreement.pdf',
+            uploaded_at: ag?.updated_at || ag?.investor_signed_at || ag?.agent_signed_at
+          });
+        }
+      } catch {}
+    })();
+
+    return () => { cancelled = true; };
+  }, [isWorkingTogether, deal?.id, documents?.operating_agreement, resolved?.internalAgreement?.urlSignedPdf, resolved?.internalAgreement?.url]);
 
   const handleUpload = async (docKey, e) => {
     const file = e.target.files[0];
@@ -103,7 +132,9 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             resolvedFile = resolved.listingAgreement;
           }
 
-          const fileToShow = uploaded || (isWorkingTogether ? (resolvedFile || (doc.key === 'purchase_contract' ? { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name } : null)) : null);
+          const fileToShow = uploaded || (isWorkingTogether ? (resolvedFile || (doc.key === 'purchase_contract' 
+            ? { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name }
+            : (doc.key === 'operating_agreement' ? internalAgreementFile : null))) : null);
           const canUpload = 
             doc.uploadedBy === 'both' || 
             doc.uploadedBy === userRole ||
