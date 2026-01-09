@@ -522,40 +522,41 @@ Deno.serve(async (req) => {
     
     if (!viewResponse.ok) {
       const errorText = await viewResponse.text();
-      console.error('[DocuSign] Recipient view failed:', {
-        status: viewResponse.status,
-        error: errorText,
-        envelopeId,
-        recipientId,
-        clientUserId,
-        role,
-        profileEmail: profile?.email,
-        request: recipientViewRequest
-      });
-      
-      let errorMsg = 'Failed to get signing URL from DocuSign';
       let parsedError = null;
+      let errorMsg = 'Failed to create signing session';
+      
       try {
         parsedError = JSON.parse(errorText);
-        if (parsedError.message) {
-          errorMsg = parsedError.message;
-        } else if (parsedError.errorCode) {
-          errorMsg = `DocuSign error: ${parsedError.errorCode}`;
-        }
+        errorMsg = parsedError.message || parsedError.errorCode || errorMsg;
       } catch (e) {
         errorMsg = errorText.substring(0, 200);
       }
       
-      return Response.json({ 
-        error: errorMsg,
-        details: parsedError || errorText,
+      console.error('[DocuSign] Recipient view failed:', {
         status: viewResponse.status,
-        debug: {
-          envelopeId,
-          clientUserId,
-          recipientId,
-          role
-        }
+        error: parsedError || errorText,
+        envelopeId,
+        recipientId,
+        clientUserId,
+        role
+      });
+      
+      // Handle specific DocuSign errors with user-friendly messages
+      if (errorMsg.includes('out of sequence') || errorMsg.includes('OUT_OF_SEQUENCE')) {
+        return Response.json({ 
+          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+        }, { status: 400 });
+      }
+      
+      if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
+        return Response.json({ 
+          error: 'Signing session issue detected. Please regenerate the agreement from the Agreement tab.'
+        }, { status: 400 });
+      }
+      
+      return Response.json({ 
+        error: errorMsg || 'Failed to create signing session',
+        hint: 'If this persists, try regenerating the agreement.'
       }, { status: 500 });
     }
     
