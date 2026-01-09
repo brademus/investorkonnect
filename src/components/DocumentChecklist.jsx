@@ -185,13 +185,17 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             resolvedFile = resolved.listingAgreement;
           }
 
-          const fileToShow = uploaded || (
-            doc.key === 'operating_agreement'
-              ? (resolvedFile || internalAgreementFile)
-              : (isWorkingTogether ? (resolvedFile || (doc.key === 'purchase_contract'
-                  ? { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name }
-                  : null)) : null)
-          );
+          // Prefer object with a usable URL; robust fallback for Seller Contract
+          const hasUrl = (obj) => !!(obj && (obj.url || obj.file_url || obj.urlSignedPdf));
+          let fileToShow;
+          if (doc.key === 'operating_agreement') {
+            fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
+          } else if (doc.key === 'purchase_contract') {
+            const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name };
+            fileToShow = hasUrl(uploaded) ? uploaded : fallback;
+          } else {
+            fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
+          }
           const canUpload =
             doc.key !== 'operating_agreement' && (
               doc.uploadedBy === 'both' ||

@@ -1542,9 +1542,7 @@ ${dealContext}`;
                       {(() => {
                         // Merge system docs + user uploads; hide seller contract for agents until fully signed
                         let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
-                        if (profile?.user_role === 'agent' && !isWorkingTogether) {
-                          allFiles = allFiles.filter(file => !/seller contract/i.test((file.label || file.name || '')));
-                        }
+                        // Always show Seller Contract to both roles
                         // Ensure internal agreement appears using any available key
                         allFiles = allFiles.map(f => {
                           if (/internal agreement/i.test(f.label || f.name || '')) {
