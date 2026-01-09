@@ -108,11 +108,14 @@ Return a verification result with any discrepancies found.
   
   const getContractStatus = (type) => {
     switch (type) {
-      case 'seller':
-        if (resolved.sellerContract?.url) {
-          return resolved.sellerContract.verified ? 'verified' : 'uploaded';
+      case 'seller': {
+        const hasUrl = resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url;
+        const isVerified = resolved.verifiedPurchaseContract?.verified || resolved.sellerContract?.verified;
+        if (hasUrl) {
+          return isVerified ? 'verified' : 'uploaded';
         }
         return 'pending';
+      }
       case 'internal':
         return room?.agreement_status === 'fully_signed' ? 'signed' : 
                room?.agreement_status === 'investor_signed' ? 'pending_agent' :
@@ -181,27 +184,32 @@ Return a verification result with any discrepancies found.
               <AlertCircle className="w-3 h-3 flex-shrink-0" />
               <span>Hidden until agreement is fully signed</span>
             </div>
-          ) : (resolved.sellerContract?.url || resolved.sellerContract?.file_url) ? (
-            <div className="flex items-center gap-2">
-              <a
-                href={resolved.sellerContract.url || resolved.sellerContract.file_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
-              >
-                <FileText className="w-3 h-3" />
-                View Contract
-              </a>
-              <a
-                href={resolved.sellerContract.url || resolved.sellerContract.file_url}
-                download={resolved.sellerContract.filename || 'seller-contract.pdf'}
-                className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
-              >
-                <Download className="w-3 h-3" />
-                Download
-              </a>
-            </div>
-          ) : null}
+          ) : (() => {
+            const doc = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
+            const url = doc?.url || doc?.file_url;
+            if (!url) return null;
+            return (
+              <div className="flex items-center gap-2">
+                <a
+                  href={url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
+                >
+                  <FileText className="w-3 h-3" />
+                  View Contract
+                </a>
+                <a
+                  href={url}
+                  download={doc?.filename || 'seller-contract.pdf'}
+                  className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
+                >
+                  <Download className="w-3 h-3" />
+                  Download
+                </a>
+              </div>
+            );
+          })()}
         </div>
 
         {/* 2. Internal Investor-Agent Agreement */}
