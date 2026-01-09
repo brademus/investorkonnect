@@ -741,6 +741,7 @@ Deno.serve(async (req) => {
             recipientId: '1',
             routingOrder: '1',
             clientUserId: investorClientUserId,
+            embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
@@ -771,6 +772,7 @@ Deno.serve(async (req) => {
             recipientId: '2',
             routingOrder: '2',
             clientUserId: agentClientUserId,
+            embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
             tabs: {
               signHereTabs: [{
                 documentId: '1',
