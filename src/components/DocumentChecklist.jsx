@@ -144,13 +144,19 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
             resolvedFile = resolved.listingAgreement;
           }
 
-          const fileToShow = uploaded || (isWorkingTogether ? (resolvedFile || (doc.key === 'purchase_contract' 
-            ? { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name }
-            : (doc.key === 'operating_agreement' ? internalAgreementFile : null))) : null);
-          const canUpload = 
-            doc.uploadedBy === 'both' || 
-            doc.uploadedBy === userRole ||
-            (doc.key === 'purchase_contract' && userRole === 'investor');
+          const fileToShow = uploaded || (
+            doc.key === 'operating_agreement'
+              ? (resolvedFile || internalAgreementFile)
+              : (isWorkingTogether ? (resolvedFile || (doc.key === 'purchase_contract'
+                  ? { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name }
+                  : null)) : null)
+          );
+          const canUpload =
+            doc.key !== 'operating_agreement' && (
+              doc.uploadedBy === 'both' ||
+              doc.uploadedBy === userRole ||
+              (doc.key === 'purchase_contract' && userRole === 'investor')
+            );
 
           return (
             <div 
