@@ -287,25 +287,33 @@ Return a verification result with any discrepancies found.
 
           {(resolved.listingAgreement?.url || (unifiedFiles || []).some(f => (f.label || f.name || '').toLowerCase().includes('listing agreement'))) ? (
             <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <a
-                  href={resolved.listingAgreement.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
-                >
-                  <FileText className="w-3 h-3" />
-                  View Listing Agreement
-                </a>
-                <a
-                  href={resolved.listingAgreement.url}
-                  download={(unifiedFiles.find(f => (f.label || f.name || '').toLowerCase().includes('listing agreement'))?.filename) || resolved.listingAgreement.filename || resolved.listingAgreement.name || 'listing-agreement.pdf'
-                  className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
-                >
-                  <Download className="w-3 h-3" />
-                  Download
-                </a>
-              </div>
+              {(() => {
+                const unified = (unifiedFiles || []).find(f => (f.label || f.name || '').toLowerCase().includes('listing agreement'));
+                const url = unified?.url || resolved.listingAgreement?.url;
+                const filename = unified?.filename || resolved.listingAgreement?.filename || resolved.listingAgreement?.name || 'listing-agreement.pdf';
+                if (!url) return null;
+                return (
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
+                    >
+                      <FileText className="w-3 h-3" />
+                      View Listing Agreement
+                    </a>
+                    <a
+                      href={url}
+                      download={filename}
+                      className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
+                    >
+                      <Download className="w-3 h-3" />
+                      Download
+                    </a>
+                  </div>
+                );
+              })()}
               {resolved.listingAgreement?.verification_notes && (
                 <div className={`text-xs p-2 rounded border ${
                   resolved.listingAgreement.verified 
