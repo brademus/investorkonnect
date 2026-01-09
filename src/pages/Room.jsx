@@ -226,148 +226,57 @@ export default function Room() {
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
-  const [agreement, setAgreement] = useState(undefined); // undefined = loading, null = confirmed none, object = exists
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   
-  const refreshRoomState = async (freshAgreementFromSync = null) => {
+  const refreshRoomState = async () => {
     if (!roomId) return;
     
     try {
-      console.log('[Room] 🔄 FULL STATE REFRESH STARTING...', { 
-        hasFreshAgreement: !!freshAgreementFromSync 
-      });
+      console.log('[Room] 🔄 Refreshing room state...');
       
-      // 1. Refetch room data directly from database
+      // Refetch room
       const roomData = await base44.entities.Room.filter({ id: roomId });
-      if (!roomData || roomData.length === 0) {
-        console.error('[Room] ❌ Room not found');
-        return;
-      }
+      if (!roomData || roomData.length === 0) return;
       
       const freshRoom = roomData[0];
-      console.log('[Room] 📦 Fresh room:', {
-        id: freshRoom.id,
-        request_status: freshRoom.request_status,
-        agreement_status: freshRoom.agreement_status,
-        is_fully_signed: freshRoom.is_fully_signed,
-        deal_id: freshRoom.deal_id
-      });
       
-      if (!freshRoom.deal_id) {
-        console.error('[Room] ❌ No deal_id in room');
-        setCurrentRoom(freshRoom);
-        return;
-      }
-      
-      // 2. Refetch deal data with access control
-      const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
-        dealId: freshRoom.deal_id
-      });
-      const freshDeal = dealResponse.data;
-      
-      if (!freshDeal) {
-        console.error('[Room] ❌ Deal not found or access denied');
-        setCurrentRoom(freshRoom);
-        setDeal(null);
-        setAgreement(null);
-        setAgreementPanelKey(prev => prev + 1);
-        return;
-      }
-      
-      console.log('[Room] 📄 Fresh deal:', {
-        id: freshDeal.id,
-        is_fully_signed: freshDeal.is_fully_signed,
-        title: freshDeal.title
-      });
-      
-      setDeal(freshDeal);
-      
-      // 3. CRITICAL: Use fresh agreement from sync if provided, otherwise fetch
-      let finalAgreement = null;
-      
-      if (freshAgreementFromSync) {
-        console.log('[Room] ✅ Using fresh agreement from DocuSign sync:', {
-          id: freshAgreementFromSync.id,
-          status: freshAgreementFromSync.status,
-          investor_signed_at: freshAgreementFromSync.investor_signed_at,
-          agent_signed_at: freshAgreementFromSync.agent_signed_at
+      // Refetch deal
+      if (freshRoom.deal_id) {
+        const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
+          dealId: freshRoom.deal_id
         });
-        finalAgreement = freshAgreementFromSync;
-      } else {
-        console.log('[Room] 📜 Fetching agreement for deal:', freshRoom.deal_id);
-        const cacheBuster = Date.now();
-        const agreementUrl = `/api/functions/getLegalAgreement?deal_id=${freshRoom.deal_id}&_cb=${cacheBuster}`;
-        const agreementResponse = await fetch(agreementUrl, {
-          cache: 'no-store',
-          headers: { 'Cache-Control': 'no-cache' }
-        });
+        const freshDeal = dealResponse.data;
         
-        console.log('[Room] Agreement fetch response:', {
-          ok: agreementResponse.ok,
-          status: agreementResponse.status
-        });
-        
-        if (!agreementResponse.ok) {
-          console.error('[Room] ❌ Agreement fetch failed:', agreementResponse.status);
-        } else {
-          const agreementData = await agreementResponse.json();
-          console.log('[Room] 📜 Agreement response:', agreementData);
+        if (freshDeal) {
+          setDeal(freshDeal);
           
-          if (agreementData.agreement) {
-            console.log('[Room] ✅ AGREEMENT FOUND:', {
-              id: agreementData.agreement.id,
-              status: agreementData.agreement.status,
-              investor_signed_at: agreementData.agreement.investor_signed_at,
-              agent_signed_at: agreementData.agreement.agent_signed_at
-            });
-            finalAgreement = agreementData.agreement;
-          } else {
-            console.log('[Room] ⚠️ No agreement in response (agreement is null)');
-          }
+          const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
+            ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
+            : freshDeal.title;
+          
+          setCurrentRoom({
+            ...freshRoom,
+            title: displayTitle,
+            property_address: freshDeal.property_address,
+            city: freshDeal.city,
+            state: freshDeal.state,
+            county: freshDeal.county,
+            zip: freshDeal.zip,
+            budget: freshDeal.purchase_price,
+            pipeline_stage: freshDeal.pipeline_stage,
+            closing_date: freshDeal.key_dates?.closing_date,
+            deal_assigned_agent_id: freshDeal.agent_id,
+            is_fully_signed: freshDeal.is_fully_signed
+          });
+          
+          // Force LegalAgreementPanel to reload
+          setAgreementPanelKey(prev => prev + 1);
         }
       }
       
-      setAgreement(finalAgreement);
-      setAgreementPanelKey(prev => prev + 1); // Force LegalAgreementPanel remount
-      
-      // Force update is_fully_signed based on agreement
-      if (finalAgreement && (finalAgreement.status === 'fully_signed' || finalAgreement.status === 'attorney_review_pending')) {
-        freshRoom.is_fully_signed = true;
-        freshDeal.is_fully_signed = true;
-      }
-      
-      // 4. Update currentRoom with all fresh data
-      const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
-        ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
-        : freshDeal.title;
-      
-      const updatedRoom = {
-        ...freshRoom,
-        title: displayTitle,
-        property_address: freshDeal.property_address,
-        city: freshDeal.city,
-        state: freshDeal.state,
-        county: freshDeal.county,
-        zip: freshDeal.zip,
-        budget: freshDeal.purchase_price,
-        pipeline_stage: freshDeal.pipeline_stage,
-        closing_date: freshDeal.key_dates?.closing_date,
-        deal_assigned_agent_id: freshDeal.agent_id,
-        is_fully_signed: freshDeal.is_fully_signed
-      };
-      
-      setCurrentRoom(updatedRoom);
-      
-      console.log('[Room] ✅ STATE REFRESH COMPLETE:', {
-        room_agreement_status: updatedRoom.agreement_status,
-        live_agreement_status: finalAgreement?.status || 'none',
-        is_fully_signed: updatedRoom.is_fully_signed,
-        investor_signed: finalAgreement?.investor_signed_at ? 'YES' : 'NO',
-        agent_signed: finalAgreement?.agent_signed_at ? 'YES' : 'NO'
-      });
-      
+      console.log('[Room] ✅ State refreshed');
     } catch (error) {
-      console.error('[Room] ❌ Failed to refresh room state:', error);
+      console.error('[Room] ❌ Refresh failed:', error);
     }
   };
   
@@ -377,39 +286,21 @@ export default function Room() {
     if (params.get('signed') && roomId && currentRoom?.deal_id) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
       
-      // Immediate sync with DocuSign and use returned agreement
       const doSync = async () => {
         try {
-          // First, sync with DocuSign to ensure latest status
-          console.log('[Room] 📡 Syncing with DocuSign...');
-          const syncResponse = await base44.functions.invoke('docusignSyncEnvelope', {
+          await base44.functions.invoke('docusignSyncEnvelope', {
             deal_id: currentRoom.deal_id
           });
-          console.log('[Room] ✅ DocuSign sync complete');
-          
-          // Use the fresh agreement returned by sync
-          const freshAgreement = syncResponse?.data?.agreement;
-          if (freshAgreement) {
-            console.log('[Room] 🎯 Using fresh agreement from sync:', {
-              id: freshAgreement.id,
-              status: freshAgreement.status
-            });
-          }
-          
-          // Refresh UI state with fresh agreement
-          await refreshRoomState(freshAgreement);
+          await refreshRoomState();
           queryClient.invalidateQueries({ queryKey: ['rooms'] });
           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
         } catch (error) {
-          console.error('[Room] DocuSign sync failed:', error);
-          // Still try to refresh even if sync fails
+          console.error('[Room] Sync failed:', error);
           await refreshRoomState();
         }
       };
       
       doSync();
-      
-      // Aggressive retry schedule
       setTimeout(doSync, 1000);
       setTimeout(doSync, 2500);
     }
@@ -421,19 +312,11 @@ export default function Room() {
     
     const fetchCurrentRoom = async () => {
       setRoomLoading(true);
-      setAgreement(undefined); // Set to undefined while loading so LegalAgreementPanel knows to wait
       
       try {
         const roomData = await base44.entities.Room.filter({ id: roomId });
         if (roomData && roomData.length > 0) {
           const room = roomData[0];
-          
-          console.log('[Room] Initial room load:', {
-            room_id: room.id,
-            request_status: room.request_status,
-            is_fully_signed: room.is_fully_signed,
-            agreement_status: room.agreement_status
-          });
           
           // Use server-side access-controlled deal fetch
           if (room.deal_id) {
@@ -445,12 +328,7 @@ export default function Room() {
               
               if (deal) {
                 setDeal(deal);
-                console.log('[Room] Deal loaded:', {
-                  is_fully_signed: deal.is_fully_signed,
-                  pipeline_stage: deal.pipeline_stage
-                });
                 
-                // Redact title for agents if not fully signed
                 const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
                   ? `${deal.city || 'City'}, ${deal.state || 'State'}`
                   : deal.title;
@@ -469,47 +347,19 @@ export default function Room() {
                   deal_assigned_agent_id: deal.agent_id,
                   is_fully_signed: deal.is_fully_signed
                 });
-                
-                // CRITICAL: Load agreement on initial room load with cache busting
-                console.log('[Room] 📜 Fetching agreement for deal:', room.deal_id);
-                const cacheBuster = Date.now();
-                const params = new URLSearchParams({ deal_id: room.deal_id, _cb: cacheBuster });
-                const agreementResponse = await fetch(`/api/functions/getLegalAgreement?${params}`, {
-                  cache: 'no-store',
-                  headers: { 'Cache-Control': 'no-cache' }
-                });
-
-                if (agreementResponse.ok) {
-                  const agreementData = await agreementResponse.json();
-                  console.log('[Room] ✅ Initial agreement load SUCCESS:', {
-                    has_agreement: !!agreementData.agreement,
-                    status: agreementData.agreement?.status,
-                    investor_signed: !!agreementData.agreement?.investor_signed_at,
-                    agent_signed: !!agreementData.agreement?.agent_signed_at,
-                    is_fully_signed: agreementData.agreement?.status === 'fully_signed' || agreementData.agreement?.status === 'attorney_review_pending'
-                  });
-                  setAgreement(agreementData.agreement || null);
-                } else {
-                  console.log('[Room] ❌ No agreement found or error loading');
-                  setAgreement(null);
-                }
               } else {
                 setCurrentRoom(room);
-                setAgreement(null);
               }
             } catch (error) {
-              console.error('Failed to fetch deal (access denied?):', error);
+              console.error('Failed to fetch deal:', error);
               setCurrentRoom(room);
-              setAgreement(null);
             }
           } else {
             setCurrentRoom(room);
-            setAgreement(null);
           }
         }
       } catch (error) {
         console.error('Failed to fetch room:', error);
-        setAgreement(null);
       } finally {
         setRoomLoading(false);
       }
@@ -938,55 +788,7 @@ ${dealContext}`;
               {/* Tab Content */}
               {activeTab === 'details' && (
                 <div className="space-y-6">
-                  {/* Agreement Status CTA (Investor Only) - Phase-Based Display */}
-                  {profile?.user_role === 'investor' && currentRoom?.deal_id && agreement && (
-                    <>
-                      {/* Phase: Investor Signed, Agent Pending - MUST SHOW THIS */}
-                      {agreement.status === 'investor_signed' && (
-                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-[#60A5FA]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                              <Clock className="w-6 h-6 text-[#60A5FA]" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="text-lg font-bold text-[#60A5FA] mb-2">
-                                Awaiting Agent Signature
-                              </h4>
-                              <p className="text-sm text-[#FAFAFA]/90 mb-3">
-                                You've signed the agreement on {new Date(agreement.investor_signed_at).toLocaleDateString()}. Waiting for {currentRoom.counterparty_name || 'the agent'} to complete their signature.
-                              </p>
-                              <div className="flex items-center gap-2 text-xs text-[#FAFAFA]/70">
-                                <CheckCircle className="w-4 h-4 text-[#10B981]" />
-                                <span>You signed {agreement.investor_signed_at ? new Date(agreement.investor_signed_at).toLocaleDateString() : 'recently'}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Phase: Fully Signed / Locked In */}
-                      {agreement && (agreement.status === 'fully_signed' || agreement.status === 'attorney_review_pending') && (
-                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-2xl p-6">
-                          <div className="flex items-start gap-4">
-                            <div className="w-12 h-12 bg-[#10B981]/20 rounded-full flex items-center justify-center flex-shrink-0">
-                              <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
-                            </div>
-                            <div className="flex-1">
-                              <h4 className="text-lg font-bold text-[#10B981] mb-2">
-                                {agreement.status === 'attorney_review_pending' ? 'Attorney Review Period' : 'Deal Locked In!'}
-                              </h4>
-                              <p className="text-sm text-[#FAFAFA]/90">
-                                {agreement.status === 'attorney_review_pending' 
-                                  ? 'Both parties have signed. NJ attorney review period in progress - full details unlocked.'
-                                  : 'Both parties have signed. Full property details and agent contact information are now unlocked.'
-                                }
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                    </>
-                  )}
+                  {/* Removed - LegalAgreementPanel shows all status info */}
                   
                   {/* Privacy Warning for Agents */}
                   {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed && (
@@ -1423,44 +1225,26 @@ ${dealContext}`;
 
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {/* Anti-Circumvention Notice */}
-                  {!agreement && (
-                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5">
-                      <div className="flex items-start gap-3">
-                        <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
-                        <div>
-                          <h4 className="text-md font-bold text-[#60A5FA] mb-1">
-                            Platform Protection Notice
-                          </h4>
-                          <p className="text-sm text-[#FAFAFA]/80">
-                            To protect both parties, sharing contact information (emails, phone numbers, social handles) is restricted in chat until the agreement is signed. This ensures fair compensation and platform integrity.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* LegalAgreement Panel - Always render if we have deal_id */}
-                  {currentRoom?.deal_id ? (
-                    deal ? (
-                      <LegalAgreementPanel
-                        deal={deal}
-                        profile={profile}
-                        onUpdate={async () => {
-                          await refreshRoomState();
-                          queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                        }}
-                      />
-                    ) : (
-                      <div className="text-center py-8 text-[#808080]">Loading deal data...</div>
-                    )
+                  {currentRoom?.deal_id && deal ? (
+                    <LegalAgreementPanel
+                      key={agreementPanelKey}
+                      deal={deal}
+                      profile={profile}
+                      onUpdate={async () => {
+                        await refreshRoomState();
+                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                      }}
+                    />
+                  ) : currentRoom?.deal_id ? (
+                    <div className="text-center py-8 text-[#808080]">Loading agreement panel...</div>
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
                   
-                  {/* Agreement Status Info - Use live agreement data if available */}
-                  {agreement && (
+                  {/* Removed duplicate agreement status - LegalAgreementPanel shows everything */}
+                  {false && (
                     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">

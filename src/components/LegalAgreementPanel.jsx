@@ -22,22 +22,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   useEffect(() => {
     if (deal?.id) {
       loadAgreement();
-    }
-  }, [deal?.id]);
-  
-  // Reload after DocuSign return
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') === '1' && deal?.id) {
-      const syncAndReload = async () => {
-        try {
-          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: deal.id });
-        } catch (error) {
-          console.error('[LegalAgreementPanel] Sync failed:', error);
-        }
-        await loadAgreement();
-      };
-      syncAndReload();
+      
+      // Poll for updates every 3 seconds while on agreement tab
+      const interval = setInterval(() => {
+        loadAgreement();
+      }, 3000);
+      
+      return () => clearInterval(interval);
     }
   }, [deal?.id]);
   
