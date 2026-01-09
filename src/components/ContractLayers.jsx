@@ -224,7 +224,7 @@ Return a verification result with any discrepancies found.
               )}
             </div>
           )}
-          {internalStatus === 'signed' && deal?.documents?.internal_agreement?.file_url && (
+          {deal?.documents?.internal_agreement?.file_url && (
             <div className="flex items-center gap-2 mt-3">
               <a
                 href={deal.documents.internal_agreement.file_url}
