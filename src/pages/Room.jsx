@@ -384,6 +384,22 @@ export default function Room() {
     currentRoom?.is_fully_signed === true ||
     deal?.is_fully_signed === true
   );
+
+  // Ensure full Deal document visibility after both parties are working together
+  useEffect(() => {
+    if (!isWorkingTogether || !currentRoom?.deal_id) return;
+    const missingSeller = !deal?.documents?.purchase_contract && !deal?.contract_document?.url && !deal?.contract_url;
+    const missingInternal = !deal?.documents?.internal_agreement && !deal?.final_pdf_url && !deal?.docusign_pdf_url;
+    if (missingSeller || missingInternal) {
+      base44.entities.Deal.filter({ id: currentRoom.deal_id })
+        .then((res) => {
+          if (Array.isArray(res) && res[0]) {
+            setDeal((prev) => ({ ...res[0], ...prev }));
+          }
+        })
+        .catch(() => {});
+    }
+  }, [isWorkingTogether, currentRoom?.deal_id]);
   
   // Robust agent profile ID - check multiple sources
   const roomAgentProfileId =
