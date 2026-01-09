@@ -100,13 +100,13 @@ Return a verification result with any discrepancies found.
     }
   };
 
+  const resolved = resolveDealDocuments({ deal, room });
+  
   const getContractStatus = (type) => {
     switch (type) {
       case 'seller':
-        // Read from Deal.documents only (canonical source)
-        // Post-sign: show 'uploaded' instead of 'pending' when file exists
-        if (deal?.documents?.purchase_contract?.file_url) {
-          return deal.documents.purchase_contract.verified ? 'verified' : 'uploaded';
+        if (resolved.sellerContract?.url) {
+          return resolved.sellerContract.verified ? 'verified' : 'uploaded';
         }
         return isWorkingTogether ? 'uploaded' : 'pending';
       case 'internal':
@@ -116,9 +116,8 @@ Return a verification result with any discrepancies found.
                room?.agreement_status === 'sent' ? 'sent' :
                room?.proposed_terms ? 'draft' : 'pending';
       case 'listing':
-        // Read from Deal.documents only (canonical source)
-        return deal?.documents?.listing_agreement?.file_url ? 
-          (deal?.documents?.listing_agreement?.verified ? 'verified' : 'uploaded') : 
+        return resolved.listingAgreement?.url ? 
+          (resolved.listingAgreement.verified ? 'verified' : 'uploaded') : 
           'pending_upload';
       default:
         return 'pending';
