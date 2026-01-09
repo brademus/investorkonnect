@@ -496,13 +496,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
               </Button>
             )}
 
-            {/* Regenerate option for investor */}
-            {isInvestor && !agreement.investor_signed_at && (
+            {/* Regenerate option for investor - always available */}
+            {isInvestor && (
               <Button
                 onClick={handleOpenGenerateModal}
                 variant="outline"
                 className="w-full">
-                Regenerate Agreement
+                {agreement.investor_signed_at ? 'Create New Agreement' : 'Regenerate Agreement'}
               </Button>
             )}
           </div>
