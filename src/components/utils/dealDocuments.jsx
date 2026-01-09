@@ -107,8 +107,8 @@ export function buildUnifiedFilesList({ deal = {}, room = {} }) {
   
   // Sort: system docs first by natural order, then user uploads by createdAt
   const systemCount = 4;
-  const systemDocs = allFiles.slice(0, systemCount);
-  const userDocs = allFiles.slice(systemCount).sort((a, b) => {
+  const systemDocs = allFiles.slice(0, Math.min(systemCount, allFiles.length));
+  const userDocs = allFiles.slice(systemDocs.length).sort((a, b) => {
     const aDate = new Date(a.createdAt || 0);
     const bDate = new Date(b.createdAt || 0);
     return bDate - aDate; // Newest first

@@ -142,7 +142,7 @@ export default function DocumentChecklist({ deal, userRole, onUpdate }) {
                 {fileToShow ? (
                   <>
                     <a
-                      href={fileToShow.file_url || fileToShow.url || fileToShow.urlSignedPdf}
+                      href={fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-xs bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA] px-3 py-1.5 rounded-full transition-colors"

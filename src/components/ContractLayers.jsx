@@ -184,7 +184,7 @@ Return a verification result with any discrepancies found.
           ) : (resolved.sellerContract?.url || resolved.sellerContract?.file_url) ? (
             <div className="flex items-center gap-2">
               <a
-                href={resolved.sellerContract.url}
+                href={resolved.sellerContract.url || resolved.sellerContract.file_url}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
@@ -193,7 +193,7 @@ Return a verification result with any discrepancies found.
                 View Contract
               </a>
               <a
-                href={resolved.sellerContract.url}
+                href={resolved.sellerContract.url || resolved.sellerContract.file_url}
                 download={resolved.sellerContract.filename || 'seller-contract.pdf'}
                 className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
               >
@@ -235,11 +235,11 @@ Return a verification result with any discrepancies found.
             </div>
           )}
           {(() => {
-            const internalUrl = resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.urlDraft;
+            const internalUrl = resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url || resolved.internalAgreement?.urlDraft;
             return (internalUrl || resolved.internalAgreement?.file_url) ? (
               <div className="flex items-center gap-2 mt-3">
                 <a
-                  href={internalUrl}
+                  href={internalUrl || resolved.internalAgreement?.file_url}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-xs text-[#E3C567] hover:underline flex items-center gap-1"
@@ -248,7 +248,7 @@ Return a verification result with any discrepancies found.
                   View Agreement
                 </a>
                 <a
-                  href={internalUrl}
+                  href={internalUrl || resolved.internalAgreement?.file_url}
                   download={resolved.internalAgreement.filename || 'internal-agreement.pdf'}
                   className="text-xs bg-[#E3C567] hover:bg-[#EDD89F] text-black px-2 py-1 rounded font-medium flex items-center gap-1"
                 >
