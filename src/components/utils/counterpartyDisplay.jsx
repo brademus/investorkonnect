@@ -5,30 +5,21 @@
 
 export function getCounterpartyDisplayName({ room, deal, currentUserRole }) {
   // First choice: explicit counterparty_name from room
-  if (room?.counterparty_name && room.counterparty_name !== 'Unknown' && room.counterparty_name !== 'Loading...') {
+  if (room?.counterparty_name && room.counterparty_name !== 'Unknown' && room.counterparty_name !== 'Loading...' && room.counterparty_name !== 'Investor' && room.counterparty_name !== 'Agent') {
     return room.counterparty_name;
   }
   
   // Second choice: try to derive from deal based on current user role
   if (deal && currentUserRole) {
-    if (currentUserRole === 'investor' && deal.agent_id) {
-      // Try to find agent name - check various fields
-      if (deal.counterparty_name) return deal.counterparty_name;
-      if (deal.agent_name) return deal.agent_name;
-    } else if (currentUserRole === 'agent' && deal.investor_id) {
-      // Try to find investor name
-      if (deal.counterparty_name) return deal.counterparty_name;
-      if (deal.investor_name) return deal.investor_name;
+    if (currentUserRole === 'investor') {
+      // Agent view - find investor name from deal or room
+      if (room?.counterparty_name && room.counterparty_name !== 'Unknown') return room.counterparty_name;
+    } else if (currentUserRole === 'agent') {
+      // Investor view - find investor name from deal or room
+      if (room?.counterparty_name && room.counterparty_name !== 'Unknown') return room.counterparty_name;
     }
   }
   
-  // Third choice: fallback based on user role
-  if (currentUserRole === 'investor') {
-    return 'Agent';
-  } else if (currentUserRole === 'agent') {
-    return 'Investor';
-  }
-  
-  // Last resort
-  return 'Counterparty';
+  // Last resort: return null so parent component can use a safe fallback
+  return null;
 }
