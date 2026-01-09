@@ -174,8 +174,14 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           let resolvedFile = null;
           if (doc.key === 'purchase_contract' && (resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url)) {
             resolvedFile = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
-          } else if (doc.key === 'operating_agreement' && (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)) {
-            resolvedFile = resolved.internalAgreement;
+          } else if (doc.key === 'operating_agreement') {
+           const ia = resolved.internalAgreement;
+           if (ia?.urlSignedPdf || ia?.url) {
+             resolvedFile = ia;
+           } else if (internalAgreementFile?.url) {
+             resolvedFile = internalAgreementFile;
+           }
+          }
           } else if (doc.key === 'listing_agreement' && resolved.listingAgreement?.url) {
             resolvedFile = resolved.listingAgreement;
           }
