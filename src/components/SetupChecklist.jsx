@@ -58,7 +58,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       icon: FileText,
       link: 'NDA'
     }
-  ];
+  ].filter(Boolean);
 
   // Only add subscription step for investors, not agents
   const steps = isAgent ? baseSteps : [
