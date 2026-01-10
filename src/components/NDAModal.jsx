@@ -63,8 +63,8 @@ export default function NDAModal({ open, onAccepted }) {
           onAccepted();
         }
       } else {
-        const errorMsg = response.data?.error || "Failed to accept NDA";
-        console.error('[NDAModal] ❌ Backend returned error:', errorMsg);
+        const errorMsg = "Failed to accept NDA";
+        console.error('[NDAModal] ❌ Error:', errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
         setAccepting(false);
