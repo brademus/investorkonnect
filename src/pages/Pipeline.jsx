@@ -28,6 +28,7 @@ function PipelineContent() {
   const queryClient = useQueryClient();
   const { profile, loading, refresh } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
+  const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
 
   // Ensure profile exists to avoid redirect loops
@@ -40,6 +41,21 @@ function PipelineContent() {
           await refresh();
         } catch (e) {
           console.warn('ensureProfile failed', e);
+        }
+      }
+    })();
+  }, [loading, profile, refresh]);
+
+  // One-time self-dedup to clean up any duplicates for this user
+  useEffect(() => {
+    (async () => {
+      if (!loading && profile && !dedupRef.current) {
+        dedupRef.current = true;
+        try {
+          await base44.functions.invoke('profileDedupSelf');
+          await refresh();
+        } catch (e) {
+          console.warn('profileDedupSelf failed', e);
         }
       }
     })();
