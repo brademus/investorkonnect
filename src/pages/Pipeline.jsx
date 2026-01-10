@@ -224,8 +224,8 @@ function PipelineContent() {
       let agentName = 'No Agent Selected';
       if (hasAgentAccepted) {
         const fullName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
-        // Show only first name until fully signed
-        agentName = isFullySigned ? fullName : (fullName.split(' ')[0] || 'Agent');
+        // Hide agent name until both parties have fully signed
+        agentName = isFullySigned ? fullName : 'Pending Agent Signature';
       } else if (hasAgentPending) {
         agentName = 'Pending Agent Review';
       }
