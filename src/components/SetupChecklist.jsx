@@ -4,7 +4,7 @@ import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
 import { 
   CheckCircle2, ChevronUp, ChevronDown, 
-  User, FileText, Shield, CreditCard, Sparkles
+  User, FileText, Shield, CreditCard, Sparkles, Briefcase
 } from 'lucide-react';
 
 export function SetupChecklist({ profile, onRefresh }) {
@@ -38,6 +38,7 @@ export function SetupChecklist({ profile, onRefresh }) {
   console.log('[SetupChecklist] onboardingComplete:', onboardingComplete);
   const kycComplete = true; // KYC disabled
   const ndaComplete = !!profile?.nda_accepted;
+  const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
 
   // Core steps - subscription only for investors, agents are always free
@@ -50,6 +51,14 @@ export function SetupChecklist({ profile, onRefresh }) {
       icon: User,
       link: isAgent ? 'AgentDeepOnboarding' : 'InvestorDeepOnboarding'
     },
+    ...(isAgent ? [{
+      id: 'brokerage',
+      title: 'Add Brokerage',
+      description: 'Enter your brokerage name',
+      completed: brokerageComplete,
+      icon: Briefcase,
+      link: 'AgentOnboarding'
+    }] : []),
     {
       id: 'nda',
       title: 'Sign NDA',
