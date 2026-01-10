@@ -225,20 +225,6 @@ export default function Room() {
   const [activeTab, setActiveTab] = useState('details');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
-
-  // Ensure fresh deal data when switching to Details tab
-  useEffect(() => {
-    if (activeTab === 'details' && currentRoom?.deal_id) {
-      (async () => {
-        try {
-          const response = await base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id });
-          if (response?.data) setDeal(response.data);
-        } catch (e) {
-          // silent
-        }
-      })();
-    }
-  }, [activeTab, currentRoom?.deal_id]);
   const [roomLoading, setRoomLoading] = useState(true);
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
