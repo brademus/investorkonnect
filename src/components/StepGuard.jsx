@@ -64,8 +64,6 @@ export function StepGuard({ children, requiredStep }) {
       } else {
         redirectTo = createPageUrl('RoleSelection');
       }
-    } else if (requiredStep >= WIZARD_STEPS.VERIFY && !hasVerified) {
-      redirectTo = createPageUrl('Verify');
     } else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {
       redirectTo = createPageUrl('NDA');
     }
