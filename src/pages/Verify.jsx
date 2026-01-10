@@ -212,7 +212,7 @@ export default function Verify() {
         },
         onError: (err) => {
           console.error('[Verify] Persona error:', err);
-          setError('Verification failed. Please try again.');
+          setError(err?.message || 'Verification failed. Please try again.');
         },
       });
     } catch (err) {

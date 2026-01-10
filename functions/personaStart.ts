@@ -69,8 +69,9 @@ Deno.serve(async (req) => {
 
     // Build Persona hosted flow URL
     const url = new URL(personaHostedBase);
-    url.searchParams.set('inquiry-template-id', personaTemplateId);
-    url.searchParams.set('environment-id', personaEnvId);
+    url.searchParams.set('template-id', personaTemplateId);
+    const envNorm = /prod/i.test(personaEnvId || '') ? 'production' : 'sandbox';
+    url.searchParams.set('environment-id', envNorm);
     url.searchParams.set('reference-id', user.id);
     url.searchParams.set('redirect-uri', personaRedirectUri);
     
