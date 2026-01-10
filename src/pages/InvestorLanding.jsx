@@ -17,7 +17,7 @@ export default function InvestorLanding() {
   };
 
   const handleGetStarted = () => {
-    base44.auth.redirectToLogin(createPageUrl("RoleSelection"));
+    base44.auth.redirectToLogin(createPageUrl("PostAuth") + "?selectedRole=investor");
   };
 
   return (

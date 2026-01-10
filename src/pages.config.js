@@ -25,6 +25,7 @@ import ClosedDeals from './pages/ClosedDeals';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
 import Cookies from './pages/Cookies';
+import Dashboard from './pages/Dashboard';
 import DealRequest from './pages/DealRequest';
 import DealWizard from './pages/DealWizard';
 import DemoDiagnostics from './pages/DemoDiagnostics';
@@ -53,6 +54,8 @@ import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
 import Onboarding from './pages/Onboarding';
 import PendingDeals from './pages/PendingDeals';
+import Pipeline from './pages/Pipeline';
+import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
@@ -61,6 +64,7 @@ import ReviewPolicy from './pages/ReviewPolicy';
 import Reviews from './pages/Reviews';
 import RoleLanding from './pages/RoleLanding';
 import RoleSelection from './pages/RoleSelection';
+import Room from './pages/Room';
 import Security from './pages/Security';
 import Terms from './pages/Terms';
 import ThankYou from './pages/ThankYou';
@@ -68,10 +72,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import Dashboard from './pages/Dashboard';
-import PostAuth from './pages/PostAuth';
-import Pipeline from './pages/Pipeline';
-import Room from './pages/Room';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +103,7 @@ export const PAGES = {
     "Contact": Contact,
     "ContractVerify": ContractVerify,
     "Cookies": Cookies,
+    "Dashboard": Dashboard,
     "DealRequest": DealRequest,
     "DealWizard": DealWizard,
     "DemoDiagnostics": DemoDiagnostics,
@@ -131,6 +132,8 @@ export const PAGES = {
     "NotFound": NotFound,
     "Onboarding": Onboarding,
     "PendingDeals": PendingDeals,
+    "Pipeline": Pipeline,
+    "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
     "PrivacyPolicy": PrivacyPolicy,
@@ -139,6 +142,7 @@ export const PAGES = {
     "Reviews": Reviews,
     "RoleLanding": RoleLanding,
     "RoleSelection": RoleSelection,
+    "Room": Room,
     "Security": Security,
     "Terms": Terms,
     "ThankYou": ThankYou,
@@ -146,10 +150,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "Dashboard": Dashboard,
-    "PostAuth": PostAuth,
-    "Pipeline": Pipeline,
-    "Room": Room,
 }
 
 export const pagesConfig = {

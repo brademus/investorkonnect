@@ -83,6 +83,22 @@ export default function PostAuth() {
           console.error('[PostAuth] Profile error:', e);
         }
 
+        // Parse selectedRole from URL (preselected on landing)
+        const urlParams = new URLSearchParams(window.location.search);
+        const selectedRole = urlParams.get('selectedRole')?.toLowerCase();
+
+        // If a role was preselected, set it on the profile when missing/mismatched
+        if (selectedRole === 'agent' || selectedRole === 'investor') {
+          if (!profile?.user_role || profile.user_role === 'member' || profile.user_role !== selectedRole) {
+            try {
+              await base44.entities.Profile.update(profile.id, { user_role: selectedRole });
+              profile.user_role = selectedRole;
+            } catch (e) {
+              console.warn('[PostAuth] Failed to set preselected role', e);
+            }
+          }
+        }
+
         // Step 3: Route based on state (align with useCurrentProfile logic)
         const role = profile?.user_role;
         const hasRole = role && role !== 'member';
@@ -102,7 +118,13 @@ export default function PostAuth() {
           hasLegacyProfile
         );
 
-        if (!hasRole) {
+        // If role was preselected from landing, send straight to dashboard
+        if (selectedRole === 'agent' || selectedRole === 'investor') {
+          if (!navigated) {
+            setNavigated(true);
+            window.location.href = createPageUrl("Pipeline");
+          }
+        } else if (!hasRole) {
           // No role selected - go to RoleSelection
           navigate(createPageUrl("RoleSelection"), { replace: true });
         } else if (!isOnboarded) {
