@@ -27,6 +27,7 @@ export default function AgentOnboarding() {
     full_name: '',
     phone: '',
     license_number: '',
+    brokerage: '',
     license_state: '',
     main_county: '',
     markets: [],
@@ -69,6 +70,7 @@ export default function AgentOnboarding() {
         full_name: profile.full_name || '',
         phone: profile.phone || '',
         license_number: agent.license_number || profile.license_number || '',
+        brokerage: agent.brokerage || profile.broker || '',
         license_state: agent.license_state || profile.license_state || '',
         main_county: agent.main_county || '',
         markets: agent.markets || profile.markets || [],
@@ -137,29 +139,30 @@ export default function AgentOnboarding() {
 
       // Build the complete update data
       const updateData = {
-        full_name: formData.full_name,
-        phone: formData.phone,
-        user_role: 'agent',
-        user_type: 'agent',
-        license_number: formData.license_number,
-        license_state: formData.license_state,
-        markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
-        target_state: formData.license_state || formData.markets[0] || '',
-        onboarding_step: 'basic_complete',
-        onboarding_completed_at: new Date().toISOString(),
-        onboarding_version: 'agent-v1',
-        agent: {
-          ...(profileToUpdate.agent || {}),
+          full_name: formData.full_name,
+          phone: formData.phone,
+          user_role: 'agent',
+          user_type: 'agent',
+          broker: formData.brokerage,
           license_number: formData.license_number,
           license_state: formData.license_state,
-          main_county: formData.main_county,
           markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
-          experience_years: parseInt(formData.experience_years) || 0,
-          bio: formData.bio,
-          investor_friendly: true,
-          brokerage: profileToUpdate.agent?.brokerage || ''
-        }
-      };
+          target_state: formData.license_state || formData.markets[0] || '',
+          onboarding_step: 'basic_complete',
+          onboarding_completed_at: new Date().toISOString(),
+          onboarding_version: 'agent-v1',
+          agent: {
+            ...(profileToUpdate.agent || {}),
+            license_number: formData.license_number,
+            license_state: formData.license_state,
+            main_county: formData.main_county,
+            markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
+            experience_years: parseInt(formData.experience_years) || 0,
+            bio: formData.bio,
+            investor_friendly: true,
+            brokerage: formData.brokerage
+          }
+        };
       
       console.log('[AgentOnboarding] Saving profile ID:', profileToUpdate.id);
       console.log('[AgentOnboarding] Update data:', JSON.stringify(updateData, null, 2));
@@ -243,6 +246,16 @@ export default function AgentOnboarding() {
             value={formData.license_number} 
             onChange={(e) => updateField('license_number', e.target.value)} 
             placeholder="e.g., TX-123456" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+          />
+        </div>
+        <div>
+          <Label htmlFor="brokerage" className="text-[#FAFAFA] text-[19px] font-medium">Brokerage Name *</Label>
+          <Input 
+            id="brokerage" 
+            value={formData.brokerage} 
+            onChange={(e) => updateField('brokerage', e.target.value)} 
+            placeholder="e.g., Keller Williams, eXp Realty" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
@@ -364,7 +377,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.license_state || !formData.main_county))}
+              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.brokerage || !formData.license_state || !formData.main_county))}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
