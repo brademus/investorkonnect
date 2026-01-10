@@ -103,6 +103,8 @@ Deno.serve(async (req) => {
       key_dates: deal.key_dates,
       investor_id: deal.investor_id,
       agent_id: deal.agent_id,
+      property_type: deal.property_type,
+      property_details: deal.property_details,
       is_fully_signed: isFullySigned
     };
 
@@ -120,12 +122,11 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Agents see limited info until fully signed
+    // Agents see limited info until fully signed (but show non-sensitive property details)
     return Response.json({
       ...baseDeal,
       property_address: null, // Hidden
       seller_info: null, // Hidden
-      property_details: null, // Hidden
       documents: null, // Hidden
       notes: null, // Hidden
       special_notes: null // Hidden

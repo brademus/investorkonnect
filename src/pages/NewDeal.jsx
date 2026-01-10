@@ -233,6 +233,15 @@ export default function NewDeal() {
             contract_date: contractDate
           },
           special_notes: specialNotes,
+          property_type: propertyType || null,
+          property_details: {
+            ...(beds ? { beds: Number(beds) } : {}),
+            ...(baths ? { baths: Number(baths) } : {}),
+            ...(sqft ? { sqft: Number(sqft) } : {}),
+            ...(yearBuilt ? { year_built: Number(yearBuilt) } : {}),
+            ...(numberOfStories ? { number_of_stories: numberOfStories } : {}),
+            ...(hasBasement ? { has_basement: hasBasement } : {})
+          },
           seller_info: {
             seller_name: sellerName,
             earnest_money: earnestMoney ? Number(earnestMoney) : null,
