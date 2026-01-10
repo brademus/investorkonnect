@@ -231,6 +231,25 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       const data = response.data;
       
+      // If DocuSign says investor hasn't signed yet but DB shows signed, force a quick sync then retry once
+      if (data?.error && /investor must sign/i.test(data.error) && agreement?.investor_signed_at) {
+        try {
+          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: deal?.id });
+          const refreshed = await base44.functions.invoke('getLegalAgreement', { deal_id: deal?.id });
+          if (refreshed?.data?.agreement?.investor_signed_at && !refreshed?.data?.agreement?.agent_signed_at) {
+            const retry = await base44.functions.invoke('docusignCreateSigningSession', {
+              agreement_id: refreshed.data.agreement.id,
+              role: signatureType,
+              redirect_url: returnTo
+            });
+            if (retry?.data?.signing_url) {
+              window.location.assign(retry.data.signing_url);
+              return;
+            }
+          }
+        } catch (_) {}
+      }
+
       if (data.error) {
         console.error('[LegalAgreement] Error from backend:', data.error);
         // Show more helpful error message
