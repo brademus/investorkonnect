@@ -869,7 +869,9 @@ ${dealContext}`;
                                             <div>
                                               <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
                                               <p className="text-sm font-semibold text-[#FAFAFA]">
-                                                {currentRoom?.counterparty_name || 'Agent Name'}
+                                               {currentRoom?.is_fully_signed 
+                                                 ? (currentRoom?.counterparty_name || 'Agent')
+                                                 : 'Hidden until agreement fully signed'}
                                               </p>
                                             </div>
                                           </div>
@@ -948,7 +950,12 @@ ${dealContext}`;
                                     <p className="text-sm text-[#FAFAFA] leading-relaxed">
                                       This is a single-family residential property located in {currentRoom?.city || 'your target market'}. 
                                       {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
-                                        <>Your agent {currentRoom?.counterparty_name} is currently working on the initial walkthrough and evaluation. </>
+                                        <>
+                                          {currentRoom?.is_fully_signed
+                                            ? <>Your agent {currentRoom?.counterparty_name} is currently working on the initial walkthrough and evaluation. </>
+                                            : <>Your agent is currently working on the initial walkthrough and evaluation. </>
+                                          }
+                                        </>
                                       ) : (
                                         <>You are currently exploring this deal and selecting an agent. </>
                                       )}
