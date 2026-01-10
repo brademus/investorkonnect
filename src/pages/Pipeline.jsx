@@ -233,8 +233,14 @@ function PipelineContent() {
       // For agents: show investor name. For investors: show agent name
       let counterpartyName = 'Not Assigned';
       if (isAgent) {
-        counterpartyName = room?.counterparty_name || 'Investor';
+        // Hide investor name until fully signed
+        if (isFullySigned) {
+          counterpartyName = room?.counterparty_name || 'Investor';
+        } else {
+          counterpartyName = hasAgentAccepted || hasAgentPending ? 'Pending Agreement Signatures' : 'Investor';
+        }
       } else {
+        // For investors, agentName already hides real name until fully signed
         counterpartyName = agentName;
       }
 
@@ -650,16 +656,18 @@ function PipelineContent() {
                                         >
                                           Open Deal Room
                                         </Button>
-                                        <Button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
-                                          }}
-                                          size="sm"
-                                          className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
-                                        >
-                                          Edit Deal
-                                        </Button>
+                                        {isInvestor && (
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+                                            }}
+                                            size="sm"
+                                            className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto"
+                                          >
+                                            Edit Deal
+                                          </Button>
+                                        )}
                                       </div>
                                       </div>
                                   )}
