@@ -11,7 +11,7 @@ export default function PropertyDetailsCard({ deal }) {
     { label: "Square Footage", value: pd.sqft != null ? Number(pd.sqft).toLocaleString() : null },
     { label: "Year Built", value: pd.year_built != null ? String(pd.year_built) : null },
     { label: "Stories", value: pd.number_of_stories || null },
-    { label: "Basement", value: pd.has_basement || null },
+    { label: "Basement", value: (pd.has_basement === true ? 'Yes' : (pd.has_basement === false ? 'No' : null)) },
   ].filter(r => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
 
   return (
