@@ -6,13 +6,13 @@ export default function PropertyDetailsCard({ deal }) {
 
   const rows = [
     { label: "Property Type", value: propertyType },
-    { label: "Beds", value: pd.beds != null ? String(pd.beds) : null },
-    { label: "Baths", value: pd.baths != null ? String(pd.baths) : null },
-    { label: "Square Feet", value: pd.sqft != null ? Number(pd.sqft).toLocaleString() : null },
+    { label: "Bedrooms", value: pd.beds != null ? String(pd.beds) : null },
+    { label: "Bathrooms", value: pd.baths != null ? String(pd.baths) : null },
+    { label: "Square Footage", value: pd.sqft != null ? Number(pd.sqft).toLocaleString() : null },
     { label: "Year Built", value: pd.year_built != null ? String(pd.year_built) : null },
     { label: "Stories", value: pd.number_of_stories || null },
     { label: "Basement", value: pd.has_basement || null },
-  ].filter(r => r.value && r.value !== "0");
+  ].filter(r => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
 
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
