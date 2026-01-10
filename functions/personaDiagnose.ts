@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
     });
 
     const bodyText = await resp.text();
-    let bodyJson: any = null;
+    let bodyJson = null;
     try { bodyJson = JSON.parse(bodyText); } catch {}
 
     const summary = {
