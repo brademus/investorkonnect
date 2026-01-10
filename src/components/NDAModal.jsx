@@ -36,11 +36,25 @@ export default function NDAModal({ open, onAccepted }) {
 
     try {
       console.log('[NDAModal] Calling ndaAccept function...');
-      const response = await ndaAccept();
+      // Directly update profile via SDK instead of function (KYC removed)
+      const me = await base44.auth.me();
+      const emailLower = me.email.toLowerCase().trim();
+      let profiles = await base44.entities.Profile.filter({ email: emailLower });
+      if (!profiles || profiles.length === 0) {
+        profiles = await base44.entities.Profile.filter({ user_id: me.id });
+      }
+      const profile = profiles[0];
+      if (!profile) throw new Error('Profile not found');
+
+      await base44.entities.Profile.update(profile.id, {
+        nda_accepted: true,
+        nda_accepted_at: new Date().toISOString(),
+        nda_version: 'v1.0'
+      });
+
+      console.log('[NDAModal] ✅ NDA accepted successfully');
       
-      console.log('[NDAModal] Response:', response.data);
-      
-      if (response.data?.ok) {
+      if (true) {
         console.log('[NDAModal] ✅ NDA accepted successfully');
         toast.success("NDA accepted successfully!");
         
