@@ -36,7 +36,7 @@ export function SetupChecklist({ profile, onRefresh }) {
   );
   
   console.log('[SetupChecklist] onboardingComplete:', onboardingComplete);
-  const kycComplete = profile?.kyc_status === 'approved';
+  const kycComplete = true; // KYC disabled
   const ndaComplete = !!profile?.nda_accepted;
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
 
