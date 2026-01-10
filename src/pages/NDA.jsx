@@ -71,14 +71,6 @@ function NDAContent() {
     }
   }, [loading, hasNDA, navigate]);
 
-  // Block access if KYC not verified - redirect to Verify page
-  useEffect(() => {
-    if (!loading && profile && !kycVerified) {
-      devLog('[NDA] KYC not verified, redirecting to Verify...');
-      toast.info('Please complete identity verification first');
-      navigate(createPageUrl("Verify"), { replace: true });
-    }
-  }, [loading, profile, kycVerified, navigate]);
 
   const handleAccept = async () => {
     if (!agreed) {
