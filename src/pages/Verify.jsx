@@ -11,6 +11,12 @@ import { toast } from "sonner";
  * Uses Persona embedded SDK with config from backend secrets
  */
 export default function Verify() {
+  // Verification disabled - redirect away
+  const navigate = useNavigate();
+  useEffect(() => {
+    navigate(createPageUrl("Dashboard"), { replace: true });
+  }, [navigate]);
+  return null;
   const navigate = useNavigate();
   
   const [user, setUser] = useState(null);
