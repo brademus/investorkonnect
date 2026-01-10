@@ -19,6 +19,7 @@ import { validateImage, validateSafeDocument } from "@/components/utils/fileVali
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDisplay";
+import PropertyDetailsCard from "@/components/PropertyDetailsCard";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
@@ -1008,7 +1009,8 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 5. DEAL DETAILS */}
+                                  <PropertyDetailsCard deal={deal} />
+                  {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                                       <Info className="w-5 h-5 text-[#E3C567]" />
@@ -1095,6 +1097,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
+                                  <PropertyDetailsCard deal={deal} />
                                   {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
