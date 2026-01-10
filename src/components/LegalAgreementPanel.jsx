@@ -15,8 +15,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [signing, setSigning] = useState(false);
   const [exhibitA, setExhibitA] = useState(null);
   
-  const isInvestor = deal?.investor_id === profile?.id;
-  const isAgent = deal?.agent_id === profile?.id;
+  const isInvestor = (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
+  const isAgent = (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
 
   // Load agreement on mount
   useEffect(() => {
