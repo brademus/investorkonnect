@@ -51,14 +51,6 @@ export function SetupChecklist({ profile, onRefresh }) {
       link: isAgent ? 'AgentDeepOnboarding' : 'InvestorDeepOnboarding'
     },
     {
-      id: 'verify',
-      title: 'Verify Identity',
-      description: 'Complete KYC verification',
-      completed: kycComplete,
-      icon: Shield,
-      link: 'Verify'
-    },
-    {
       id: 'nda',
       title: 'Sign NDA',
       description: 'Review and accept confidentiality agreement',

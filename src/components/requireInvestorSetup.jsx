@@ -52,14 +52,6 @@ export async function requireInvestorSetup({ profile }) {
     };
   }
 
-  // 2. KYC verification (SECOND PRIORITY)
-  if (profile.kyc_status !== 'approved') {
-    return {
-      ok: false,
-      redirectTo: 'Verify',
-      message: 'Complete identity verification before uploading a deal.'
-    };
-  }
 
   // 3. NDA acceptance (THIRD PRIORITY)
   if (!profile.nda_accepted) {
