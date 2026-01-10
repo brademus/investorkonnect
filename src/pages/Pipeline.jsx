@@ -52,7 +52,7 @@ function PipelineContent() {
       if (!loading && profile && !dedupRef.current) {
         dedupRef.current = true;
         try {
-          await base44.functions.invoke('profileDedupSelf');
+          await base44.functions.invoke('dedupeProfileByEmail');
           await refresh();
         } catch (e) {
           console.warn('profileDedupSelf failed', e);
