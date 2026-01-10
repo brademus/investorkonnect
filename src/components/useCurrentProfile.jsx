@@ -182,14 +182,14 @@ export function useCurrentProfile() {
         const kycStatus = isAdmin ? 'approved' : (profile?.kyc_status || 'unverified');
         const kycVerified = isAdmin || kycStatus === 'approved';
         
-        // needsKyc = onboarding complete but KYC not verified (EXCEPT admins)
-        const needsKyc = !isAdmin && onboarded && !kycVerified;
+        // KYC is no longer required
+        const needsKyc = false;
 
         // STEP 6: NDA status (admins auto-accepted)
         const hasNDA = isAdmin || profile?.nda_accepted || false;
         
-        // needsNda = onboarding + KYC complete but NDA not accepted (EXCEPT admins)
-        const needsNda = !isAdmin && onboarded && kycVerified && !hasNDA;
+        // NDA now depends only on onboarding (not KYC)
+        const needsNda = !isAdmin && onboarded && !hasNDA;
 
         // STEP 7: Target state
         const targetState = profile?.target_state || profile?.markets?.[0] || null;
