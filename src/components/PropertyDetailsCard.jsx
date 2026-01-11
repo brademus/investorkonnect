@@ -3,6 +3,23 @@ import React from "react";
 export default function PropertyDetailsCard({ deal }) {
   const pd = deal?.property_details || {};
 
+  // Helpers
+  const pick = (...vals) => vals.find(v => v !== undefined && v !== null);
+  const toNumber = (v) => {
+    if (v === undefined || v === null) return null;
+    if (typeof v === 'number') return v;
+    const m = String(v).match(/[0-9]+(?:\.[0-9]+)?/);
+    return m ? parseFloat(m[0]) : null;
+  };
+  const toBoolean = (v) => {
+    if (v === undefined || v === null) return null;
+    if (typeof v === 'boolean') return v;
+    const s = String(v).trim().toLowerCase();
+    if (["y","yes","true","t","1"].includes(s)) return true;
+    if (["n","no","false","f","0"].includes(s)) return false;
+    return null;
+  };
+
   // Normalize possible field names from different sources
   const propertyType = deal?.property_type || pd.property_type || pd.type || deal?.propertyType || null;
   const beds = pd.beds ?? pd.bedrooms ?? pd.bdrms ?? pd.bed ?? deal?.beds ?? deal?.bedrooms ?? null;
