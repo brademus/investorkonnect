@@ -125,12 +125,13 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Agents see limited info until fully signed (but show non-sensitive property details)
+    // Agents see limited info until fully signed (but show non-sensitive property details and seller contract link)
     return Response.json({
       ...baseDeal,
       property_address: null, // Hidden
       seller_info: null, // Hidden
-      documents: null, // Hidden
+      // Expose ONLY the seller purchase contract so Files tab can render it
+      documents: deal?.documents?.purchase_contract ? { purchase_contract: deal.documents.purchase_contract } : null,
       notes: null, // Hidden
       special_notes: null // Hidden
     });
