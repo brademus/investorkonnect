@@ -2,16 +2,30 @@ import React from "react";
 
 export default function PropertyDetailsCard({ deal }) {
   const pd = deal?.property_details || {};
-  const propertyType = deal?.property_type;
+
+  // Normalize possible field names from different sources
+  const propertyType = deal?.property_type || pd.property_type || pd.type || null;
+  const beds = pd.beds ?? pd.bedrooms ?? pd.bdrms ?? pd.bed ?? null;
+  const baths = pd.baths ?? pd.bathrooms ?? pd.ba ?? pd.bath ?? null;
+  const sqftRaw = pd.sqft ?? pd.square_feet ?? pd.squareFeet ?? pd.living_area ?? null;
+  const yearBuilt = pd.year_built ?? pd.yearBuilt ?? pd.built_year ?? null;
+  const stories = pd.number_of_stories ?? pd.stories ?? pd.floors ?? null;
+
+  let hasBasement = pd.has_basement ?? pd.basement ?? pd.hasBasement ?? null;
+  if (typeof hasBasement === 'string') {
+    const s = hasBasement.toLowerCase();
+    if (['yes', 'true', 'y'].includes(s)) hasBasement = true;
+    else if (['no', 'false', 'n'].includes(s)) hasBasement = false;
+  }
 
   const rows = [
     { label: "Property Type", value: propertyType },
-    { label: "Bedrooms", value: pd.beds != null ? String(pd.beds) : null },
-    { label: "Bathrooms", value: pd.baths != null ? String(pd.baths) : null },
-    { label: "Square Footage", value: pd.sqft != null ? Number(pd.sqft).toLocaleString() : null },
-    { label: "Year Built", value: pd.year_built != null ? String(pd.year_built) : null },
-    { label: "Stories", value: pd.number_of_stories || null },
-    { label: "Basement", value: (pd.has_basement === true ? 'Yes' : (pd.has_basement === false ? 'No' : null)) },
+    { label: "Bedrooms", value: beds != null ? String(beds) : null },
+    { label: "Bathrooms", value: baths != null ? String(baths) : null },
+    { label: "Square Footage", value: sqftRaw != null ? Number(sqftRaw).toLocaleString() : null },
+    { label: "Year Built", value: yearBuilt != null ? String(yearBuilt) : null },
+    { label: "Stories", value: stories || null },
+    { label: "Basement", value: (hasBasement === true ? 'Yes' : (hasBasement === false ? 'No' : null)) },
   ].filter(r => r.value !== null && r.value !== undefined && String(r.value).trim() !== "");
 
   return (
