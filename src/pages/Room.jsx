@@ -1089,13 +1089,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={{
-  ...deal,
-  property_type: deal?.property_type || currentRoom?.property_type,
-  property_details: (deal?.property_details && Object.keys(deal?.property_details || {}).length > 0)
-    ? deal.property_details
-    : currentRoom?.property_details
-}} />
+                                  <PropertyDetailsCard deal={deal || {}} />
                   {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
@@ -1183,13 +1177,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={{
-  ...deal,
-  property_type: deal?.property_type || currentRoom?.property_type,
-  property_details: (deal?.property_details && Object.keys(deal?.property_details || {}).length > 0)
-    ? deal.property_details
-    : currentRoom?.property_details
-}} />
+                                  <PropertyDetailsCard deal={deal || {}} />
                                   {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
