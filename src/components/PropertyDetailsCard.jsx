@@ -11,6 +11,9 @@ export default function PropertyDetailsCard({ deal }) {
   const yearBuilt = pd.year_built ?? pd.yearBuilt ?? pd.built_year ?? deal?.year_built ?? deal?.yearBuilt ?? null;
   const stories = pd.number_of_stories ?? pd.stories ?? pd.floors ?? deal?.number_of_stories ?? deal?.stories ?? null;
 
+  // Sanitize sqft to a number if it's a formatted string
+  const sqftVal = typeof sqftRaw === 'string' ? parseInt(sqftRaw.replace(/[^0-9]/g, ''), 10) : sqftRaw;
+
   let hasBasement = pd.has_basement ?? pd.basement ?? pd.hasBasement ?? deal?.has_basement ?? deal?.basement ?? null;
   if (typeof hasBasement === 'string') {
     const s = hasBasement.toLowerCase();
@@ -22,7 +25,7 @@ export default function PropertyDetailsCard({ deal }) {
     { label: "Property Type", value: propertyType },
     { label: "Bedrooms", value: beds != null ? String(beds) : null },
     { label: "Bathrooms", value: baths != null ? String(baths) : null },
-    { label: "Square Footage", value: sqftRaw != null ? Number(sqftRaw).toLocaleString() : null },
+    { label: "Square Footage", value: (typeof sqftVal === 'number' && !isNaN(sqftVal)) ? sqftVal.toLocaleString() : null },
     { label: "Year Built", value: yearBuilt != null ? String(yearBuilt) : null },
     { label: "Stories", value: stories || null },
     { label: "Basement", value: (hasBasement === true ? 'Yes' : (hasBasement === false ? 'No' : null)) },

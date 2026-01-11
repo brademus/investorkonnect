@@ -269,7 +269,10 @@ export default function Room() {
             pipeline_stage: freshDeal.pipeline_stage,
             closing_date: freshDeal.key_dates?.closing_date,
             deal_assigned_agent_id: freshDeal.agent_id,
-            is_fully_signed: freshDeal.is_fully_signed
+            is_fully_signed: freshDeal.is_fully_signed,
+            // Include property details so UI can render even if deal object not yet refreshed elsewhere
+            property_type: freshDeal.property_type,
+            property_details: freshDeal.property_details
           });
           
           // Force LegalAgreementPanel to reload
@@ -351,6 +354,8 @@ export default function Room() {
                 closing_date: deal.key_dates?.closing_date,
                 deal_assigned_agent_id: deal.agent_id,
                 is_fully_signed: deal.is_fully_signed,
+                property_type: deal.property_type,
+                property_details: deal.property_details,
                 counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
               });
             } else {
