@@ -1089,7 +1089,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={deal || currentRoom || {}} />
+                                  <PropertyDetailsCard deal={{ ...(currentRoom || {}), ...(deal || {}) }} />
                   {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
@@ -1177,7 +1177,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={deal || currentRoom || {}} />
+                                  <PropertyDetailsCard deal={{ ...(currentRoom || {}), ...(deal || {}) }} />
                                   {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
