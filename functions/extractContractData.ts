@@ -53,7 +53,16 @@ Deno.serve(async (req) => {
         16. Earnest Money Due Date
         
         Return exact values as they appear in the document.
-      `,
+
+        Additionally, extract these property characteristics when available:
+        - Property type (e.g., Single Family, Condo, Townhome, Duplex)
+        - Bedrooms (number)
+        - Bathrooms (number)
+        - Square footage (number)
+        - Year built (number)
+        - Number of stories (string as written)
+        - Basement (true/false if stated)
+        `,
       file_urls: [fileUrl],
       response_json_schema: {
         type: "object",
@@ -64,6 +73,18 @@ Deno.serve(async (req) => {
           county: { type: "string" },
           zip: { type: "string" },
           purchase_price: { type: "number" },
+          property_type: { type: "string" },
+          property_details: {
+            type: "object",
+            properties: {
+              beds: { type: "number" },
+              baths: { type: "number" },
+              sqft: { type: "number" },
+              year_built: { type: "number" },
+              number_of_stories: { type: "string" },
+              has_basement: { type: "boolean" }
+            }
+          },
           seller_info: {
             type: "object",
             properties: {
