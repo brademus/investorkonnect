@@ -4,14 +4,14 @@ export default function PropertyDetailsCard({ deal }) {
   const pd = deal?.property_details || {};
 
   // Normalize possible field names from different sources
-  const propertyType = deal?.property_type || pd.property_type || pd.type || null;
-  const beds = pd.beds ?? pd.bedrooms ?? pd.bdrms ?? pd.bed ?? null;
-  const baths = pd.baths ?? pd.bathrooms ?? pd.ba ?? pd.bath ?? null;
-  const sqftRaw = pd.sqft ?? pd.square_feet ?? pd.squareFeet ?? pd.living_area ?? null;
-  const yearBuilt = pd.year_built ?? pd.yearBuilt ?? pd.built_year ?? null;
-  const stories = pd.number_of_stories ?? pd.stories ?? pd.floors ?? null;
+  const propertyType = deal?.property_type || pd.property_type || pd.type || deal?.propertyType || null;
+  const beds = pd.beds ?? pd.bedrooms ?? pd.bdrms ?? pd.bed ?? deal?.beds ?? deal?.bedrooms ?? null;
+  const baths = pd.baths ?? pd.bathrooms ?? pd.ba ?? pd.bath ?? deal?.baths ?? deal?.bathrooms ?? null;
+  const sqftRaw = pd.sqft ?? pd.square_feet ?? pd.squareFeet ?? pd.living_area ?? deal?.sqft ?? deal?.square_feet ?? null;
+  const yearBuilt = pd.year_built ?? pd.yearBuilt ?? pd.built_year ?? deal?.year_built ?? deal?.yearBuilt ?? null;
+  const stories = pd.number_of_stories ?? pd.stories ?? pd.floors ?? deal?.number_of_stories ?? deal?.stories ?? null;
 
-  let hasBasement = pd.has_basement ?? pd.basement ?? pd.hasBasement ?? null;
+  let hasBasement = pd.has_basement ?? pd.basement ?? pd.hasBasement ?? deal?.has_basement ?? deal?.basement ?? null;
   if (typeof hasBasement === 'string') {
     const s = hasBasement.toLowerCase();
     if (['yes', 'true', 'y'].includes(s)) hasBasement = true;
