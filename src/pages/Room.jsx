@@ -395,7 +395,7 @@ export default function Room() {
       base44.entities.Deal.filter({ id: currentRoom.deal_id })
         .then((res) => {
           if (Array.isArray(res) && res[0]) {
-            setDeal((prev) => ({ ...res[0], ...prev }));
+            setDeal((prev) => ({ ...prev, ...res[0] }));
           }
         })
         .catch(() => {});
