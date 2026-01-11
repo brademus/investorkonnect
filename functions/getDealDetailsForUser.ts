@@ -105,6 +105,9 @@ Deno.serve(async (req) => {
       agent_id: deal.agent_id,
       property_type: deal.property_type,
       property_details: deal.property_details,
+      // Expose seller contract metadata so Files tab can show it even before full signing
+      contract_document: deal.contract_document,
+      contract_url: deal.contract_url,
       is_fully_signed: isFullySigned
     };
 
