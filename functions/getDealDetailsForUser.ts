@@ -111,13 +111,19 @@ Deno.serve(async (req) => {
       is_fully_signed: isFullySigned
     };
 
+    // Fallback: if Deal lacks property_details/property_type, use Room's values for display
+    const hasPD = baseDeal.property_details && Object.keys(baseDeal.property_details || {}).length > 0;
+    const property_details_fallback = hasPD ? baseDeal.property_details : (room?.property_details || null);
+    const property_type_fallback = baseDeal.property_type || room?.property_type || null;
+
     // Sensitive fields - only visible to investors OR fully signed agents
     if (isInvestor || isFullySigned) {
       return Response.json({
         ...baseDeal,
+        property_type: property_type_fallback,
         property_address: deal.property_address,
         seller_info: deal.seller_info,
-        property_details: deal.property_details,
+        property_details: property_details_fallback,
         documents: deal.documents,
         notes: deal.notes,
         special_notes: deal.special_notes,
@@ -128,6 +134,8 @@ Deno.serve(async (req) => {
     // Agents see limited info until fully signed (but show non-sensitive property details and seller contract link)
     return Response.json({
       ...baseDeal,
+      property_type: property_type_fallback,
+      property_details: property_details_fallback,
       property_address: null, // Hidden
       seller_info: null, // Hidden
       // Expose ONLY the seller purchase contract so Files tab can render it
