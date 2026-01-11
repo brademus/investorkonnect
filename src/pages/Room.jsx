@@ -682,6 +682,17 @@ ${dealContext}`;
     });
   }, [rooms, searchConversations]);
 
+  // Build a robust deal object for details card: prefer Deal entity, fallback to Room fields
+  const dealForDetails = useMemo(() => {
+    if (!deal && !currentRoom) return {};
+    const hasPD = !!(deal?.property_details && Object.keys(deal.property_details || {}).length > 0);
+    return {
+      ...(deal || {}),
+      property_type: deal?.property_type || currentRoom?.property_type || null,
+      property_details: hasPD ? deal.property_details : (currentRoom?.property_details || {})
+    };
+  }, [deal, currentRoom]);
+
 
   return (
     <div className="fixed inset-0 bg-transparent flex overflow-hidden">
@@ -1090,7 +1101,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={deal || {}} />
+                                  <PropertyDetailsCard deal={dealForDetails} />
                   {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
@@ -1178,7 +1189,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={deal || {}} />
+                                  <PropertyDetailsCard deal={dealForDetails} />
                                   {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
