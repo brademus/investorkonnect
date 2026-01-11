@@ -682,33 +682,6 @@ ${dealContext}`;
     });
   }, [rooms, searchConversations]);
 
-  // Prefer Deal entity as source of truth for property details; fallback to draft if missing
-  const detailsDeal = useMemo(() => {
-    if (!deal) return null;
-    try {
-      const raw = sessionStorage.getItem('newDealDraft');
-      const draft = raw ? JSON.parse(raw) : null;
-      const hasPD = !!(deal.property_details && Object.keys(deal.property_details || {}).length > 0);
-      if (hasPD) return deal;
-      if (draft) {
-        const toNum = (v) => v == null || v === '' ? undefined : Number(String(v).replace(/[^0-9.]/g, ''));
-        return {
-          ...deal,
-          property_type: deal.property_type || draft.propertyType || null,
-          property_details: {
-            ...(deal.property_details || {}),
-            ...(draft.beds ? { beds: toNum(draft.beds) } : {}),
-            ...(draft.baths ? { baths: toNum(draft.baths) } : {}),
-            ...(draft.sqft ? { sqft: toNum(draft.sqft) } : {}),
-            ...(draft.yearBuilt ? { year_built: toNum(draft.yearBuilt) } : {}),
-            ...(draft.numberOfStories ? { number_of_stories: draft.numberOfStories } : {}),
-            ...(draft.hasBasement !== undefined && draft.hasBasement !== '' ? { has_basement: draft.hasBasement } : {}),
-          }
-        };
-      }
-    } catch {}
-    return deal;
-  }, [deal]);
 
   return (
     <div className="fixed inset-0 bg-transparent flex overflow-hidden">
@@ -1117,7 +1090,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={detailsDeal || deal || {}} />
+                                  <PropertyDetailsCard deal={deal || {}} />
                   {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
@@ -1205,7 +1178,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  <PropertyDetailsCard deal={detailsDeal || deal || {}} />
+                                  <PropertyDetailsCard deal={deal || {}} />
                                   {/* 2. Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
