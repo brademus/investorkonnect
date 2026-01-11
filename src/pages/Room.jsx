@@ -1552,7 +1552,16 @@ ${dealContext}`;
                       {(() => {
                         // Merge system docs + user uploads; hide seller contract for agents until fully signed
                         let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
-                        // Always show Seller Contract to both roles
+                        // If unified list is empty but deal has legacy contract fields, surface them
+                        if (allFiles.length === 0 && (deal?.contract_document?.url || deal?.contract_url)) {
+                          allFiles = [{
+                            label: 'Seller Contract',
+                            url: deal?.contract_document?.url || deal?.contract_url,
+                            filename: deal?.contract_document?.name || 'seller-contract.pdf',
+                            uploadedBy: 'System',
+                            createdAt: deal?.contract_document?.uploaded_at || deal?.updated_date
+                          }];
+                        }
                         // Ensure internal agreement appears using any available key
                         allFiles = allFiles.map(f => {
                           if (/internal agreement/i.test(f.label || f.name || '')) {
