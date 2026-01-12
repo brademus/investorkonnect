@@ -1929,6 +1929,7 @@ ${dealContext}`;
 
                               // Refresh room
                               const roomData = await base44.entities.Room.filter({ id: roomId });
+                              if (isStale()) return;
                               if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
                               toast.success('File uploaded');
                             } catch (error) {
