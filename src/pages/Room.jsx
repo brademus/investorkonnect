@@ -393,7 +393,12 @@ export default function Room() {
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
           if (cached) {
-            setDeal(cached);
+            // For agents, ensure we don't flash the address before signed
+            if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
+              setDeal({ ...cached, property_address: null });
+            } else {
+              setDeal(cached);
+            }
           }
 
           // Use server-side access-controlled deal fetch
