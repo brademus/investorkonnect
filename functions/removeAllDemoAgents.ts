@@ -69,6 +69,7 @@ Deno.serve(async (req) => {
       try {
         await base44.asServiceRole.entities.Profile.delete(p.id);
         profilesDeleted += 1;
+        await sleep(120);
       } catch (err) {
         console.error('[removeAllDemoAgents] Failed to delete profile', p.id, p.email, err?.message);
       }
