@@ -10,6 +10,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
 
@@ -252,6 +253,15 @@ export default function Room() {
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
+  // Property Details editor state
+  const [editingPD, setEditingPD] = useState(false);
+  const [pdPropertyType, setPdPropertyType] = useState("");
+  const [pdBeds, setPdBeds] = useState("");
+  const [pdBaths, setPdBaths] = useState("");
+  const [pdSqft, setPdSqft] = useState("");
+  const [pdYearBuilt, setPdYearBuilt] = useState("");
+  const [pdStories, setPdStories] = useState("");
+  const [pdBasement, setPdBasement] = useState("");
   
   const refreshRoomState = async () => {
     if (!roomId) return;
@@ -542,6 +552,46 @@ export default function Room() {
       }
     })();
   }, [deal?.id, deal?.documents, currentRoom?.contract_document, currentRoom?.contract_url]);
+
+  // Prefill editor when deal details load
+  useEffect(() => {
+    const d = dealForDetails || {};
+    const pd = d.property_details || {};
+    setPdPropertyType(d.property_type || "");
+    setPdBeds(pd.beds != null ? String(pd.beds) : "");
+    setPdBaths(pd.baths != null ? String(pd.baths) : "");
+    setPdSqft(pd.sqft != null ? String(pd.sqft) : "");
+    setPdYearBuilt(pd.year_built != null ? String(pd.year_built) : "");
+    setPdStories(pd.number_of_stories || "");
+    setPdBasement(
+      typeof pd.has_basement === 'boolean'
+        ? (pd.has_basement ? 'yes' : 'no')
+        : (pd.has_basement || '')
+    );
+  }, [dealForDetails?.property_type, dealForDetails?.property_details]);
+
+  const savePropertyDetails = async () => {
+    if (!currentRoom?.deal_id) return;
+    try {
+      const updates = {
+        property_type: pdPropertyType || null,
+        property_details: {
+          ...(pdBeds ? { beds: Number(pdBeds) } : {}),
+          ...(pdBaths ? { baths: Number(pdBaths) } : {}),
+          ...(pdSqft ? { sqft: Number(pdSqft) } : {}),
+          ...(pdYearBuilt ? { year_built: Number(pdYearBuilt) } : {}),
+          ...(pdStories ? { number_of_stories: pdStories } : {}),
+          ...(pdBasement ? { has_basement: pdBasement === 'yes' } : {})
+        }
+      };
+      await base44.entities.Deal.update(currentRoom.deal_id, updates);
+      toast.success('Property details saved');
+      setEditingPD(false);
+      await refreshRoomState();
+    } catch (e) {
+      toast.error('Failed to save details');
+    }
+  };
 
   const counterpartName = getCounterpartyDisplayName({ 
     room: currentRoom, 
