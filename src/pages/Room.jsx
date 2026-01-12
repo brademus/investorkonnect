@@ -966,7 +966,7 @@ ${dealContext}`;
                           if (snap) setDeal(snap);
                         }
                       } else if (currentRoom && !deal) {
-                        const snap = buildDealFromRoom(currentRoom);
+                        const snap = buildDealFromRoom(currentRoom, maskAddr);
                         if (snap) setDeal(snap);
                       }
                       // Fetch fresh in background
