@@ -34,16 +34,25 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
 
     try {
       // Fetch fresh deal data to ensure we have latest proposed_terms
-      const freshDeal = await base44.entities.Deal.filter({ id: deal.id });
-      if (!freshDeal || freshDeal.length === 0) {
+      let currentDeal = deal || null;
+      try {
+        const freshDeal = await base44.entities.Deal.filter({ id: deal.id });
+        if (freshDeal && freshDeal.length > 0) {
+          currentDeal = freshDeal[0];
+        }
+      } catch (e) {
+        console.warn('[LegalAgreementPanel] Falling back to passed deal due to fetch error:', e);
+      }
+
+      if (!currentDeal) {
         console.error('[LegalAgreementPanel] Deal not found');
+        toast.error('Failed to load deal data');
         return;
       }
 
-      const currentDeal = freshDeal[0];
       const terms = currentDeal.proposed_terms || {};
       
-      console.log('[LegalAgreementPanel] 📋 Fresh deal data loaded:', {
+      console.log('[LegalAgreementPanel] 📋 Deal data used for generation:', {
         deal_id: currentDeal.id,
         seller_commission_type: terms.seller_commission_type,
         seller_commission_percentage: terms.seller_commission_percentage,
