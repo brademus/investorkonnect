@@ -16,6 +16,7 @@ export default function NewDeal() {
   const { profile, loading } = useCurrentProfile();
   
   const dealId = searchParams.get("dealId");
+  const draftKey = dealId ? `dealDraft_${dealId}` : "newDealDraft";
 
   // Section 1: Property + Deal Info
   const [propertyAddress, setPropertyAddress] = useState("");
@@ -55,7 +56,7 @@ export default function NewDeal() {
 
   // Load draft from sessionStorage (preserve user input when returning from verification)
   useEffect(() => {
-    const raw = sessionStorage.getItem("newDealDraft");
+    const raw = sessionStorage.getItem(draftKey);
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
@@ -124,13 +125,13 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement
     };
-    sessionStorage.setItem("newDealDraft", JSON.stringify(draft));
+    sessionStorage.setItem(draftKey, JSON.stringify(draft));
   }, [dealId, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
     if (dealId && profile?.id) {
-      const hasDraft = !!sessionStorage.getItem("newDealDraft");
+      const hasDraft = !!sessionStorage.getItem(draftKey);
       if (hasDraft) return;
       const loadDealData = async () => {
         try {
@@ -360,7 +361,7 @@ export default function NewDeal() {
     }
 
     // Save to sessionStorage - include dealId if editing
-    sessionStorage.setItem("newDealDraft", JSON.stringify({
+    sessionStorage.setItem(draftKey, JSON.stringify({)
       dealId: dealId || null,
       propertyAddress,
       city,
