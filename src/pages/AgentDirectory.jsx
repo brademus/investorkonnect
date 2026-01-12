@@ -146,37 +146,40 @@ export default function AgentDirectory() {
         nda_accepted: true
       });
       
-      // Filter to only agents in the deal's state
-      let filteredAgents = allAgents;
+      // Filter to ONLY agents LICENSED in the deal's state
+      let filteredAgents = [];
       if (deal?.state) {
-        const stateUpper = deal.state.trim().toUpperCase();
-        const countyUpper = deal.county?.trim().toUpperCase();
-        
+        const normalizeState = (s) => (s ? s.toString().trim().toUpperCase() : '');
+        const stateTarget = normalizeState(deal.state);
+        const countyUpper = normalizeState(deal.county);
+
         filteredAgents = allAgents
-          .filter(agent => {
-            const markets = agent.agent?.markets || [];
-            const targetState = agent.target_state || '';
-            
-            // Agent must serve this state
-            return markets.some(m => m.toUpperCase().includes(stateUpper)) || 
-                   targetState.toUpperCase() === stateUpper;
+          .filter((agent) => {
+            const a = agent.agent || {};
+            const roots = [agent.license_state, agent.target_state].map(normalizeState);
+            const lic = [a.license_state, ...(a.licensed_states || [])].map(normalizeState);
+            return [...roots, ...lic].some((v) => v === stateTarget);
           })
-          .map(agent => {
-            const markets = agent.agent?.markets || [];
-            const countyMatch = countyUpper && markets.some(m => m.toUpperCase().includes(countyUpper));
-            
+          .map((agent) => {
+            const marketsBlob = [
+              ...(agent.agent?.markets || []),
+              ...(agent.markets || []),
+            ]
+              .map((m) => m.toString().toUpperCase())
+              .join(' ');
+            const countyMatch = countyUpper && marketsBlob.includes(countyUpper);
             return {
               profile: agent,
-              reason: countyMatch ? `Serves ${deal.county}, ${deal.state}` : `Serves ${deal.state}`,
-              score: countyMatch ? 2 : 1
+              reason: countyMatch ? `Licensed in ${deal.state} • Serves ${deal.county}` : `Licensed in ${deal.state}`,
+              score: countyMatch ? 2 : 1,
             };
           })
           .sort((a, b) => b.score - a.score);
       } else {
-        // No deal location - show all agents
-        filteredAgents = allAgents.map(profile => ({ profile, reason: undefined, score: 0 }));
+        // No deal location - show none (must come from a deal)
+        filteredAgents = [];
       }
-      
+
       setAgents(filteredAgents);
     } catch (error) {
       console.error("Failed to load agents:", error);

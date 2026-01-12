@@ -66,53 +66,55 @@ export default function AgentMatching() {
         const matchRes = await base44.functions.invoke('matchAgentsForInvestor', {
           investorId: profile.id,
           state: loadedDeal.state,
-          limit: 3 // ENFORCED: Request only top 3 agents
+          limit: 3
         });
 
-        if (matchRes.data?.matches && matchRes.data.matches.length > 0) {
-          console.log('[AgentMatching] AI matched agents:', matchRes.data.matches.length);
-          // ENFORCED: Limit to top 3
-          matchedAgents = matchRes.data.matches.slice(0, 3);
+        const raw = matchRes.data?.results || [];
+        // Map backend shape -> UI shape and STRICTLY filter to licensed in deal state
+        const normalizeState = (s) => (s ? s.toString().trim().toUpperCase() : '');
+        const target = normalizeState(loadedDeal.state);
+
+        const isLicensedInState = (agent) => {
+          const a = agent.agent || {};
+          const roots = [agent.license_state, agent.target_state].map(normalizeState);
+          const lic = [a.license_state, ...(a.licensed_states || [])].map(normalizeState);
+          return [...roots, ...lic].some((v) => v === target);
+        };
+
+        const mapped = raw
+          .map((r) => ({ agent: r.profile || r.agent || r, score: r.score, explanation: r.reason }))
+          .filter((m) => isLicensedInState(m.agent));
+
+        if (mapped.length > 0) {
+          console.log('[AgentMatching] AI matched licensed agents:', mapped.length);
+          matchedAgents = mapped.slice(0, 3);
         }
       } catch (matchError) {
         console.log('[AgentMatching] AI matching failed, using fallback:', matchError.message);
       }
 
-      // Fallback: get all verified agents in the state
+      // Fallback: strictly licensed in deal state (uses simple in-frontend filter)
       if (matchedAgents.length === 0) {
-        console.log('[AgentMatching] Using fallback - fetching all agents in state:', loadedDeal.state);
-        
-        const allAgents = await base44.entities.Profile.filter({ 
-          user_role: 'agent'
+        console.log('[AgentMatching] Using fallback - fetching licensed agents in state:', loadedDeal.state);
+
+        const allAgents = await base44.entities.Profile.filter({ user_role: 'agent' });
+        const normalizeState = (s) => (s ? s.toString().trim().toUpperCase() : '');
+        const target = normalizeState(loadedDeal.state);
+
+        const licensedAgents = allAgents.filter((agent) => {
+          const a = agent.agent || {};
+          const roots = [agent.license_state, agent.target_state].map(normalizeState);
+          const lic = [a.license_state, ...(a.licensed_states || [])].map(normalizeState);
+          return [...roots, ...lic].some((v) => v === target);
         });
-        
-        console.log('[AgentMatching] Total agents found:', allAgents.length);
-        
-        // Filter by state
-        const stateAgents = allAgents.filter(agent => {
-          const markets = agent.agent?.markets || [];
-          return markets.includes(loadedDeal.state) || 
-                 markets.some(m => m.toLowerCase() === loadedDeal.state.toLowerCase());
-        });
-        
-        console.log('[AgentMatching] Agents in state:', stateAgents.length);
-        
-        // ENFORCED: Format and limit to top 3 only
-        matchedAgents = stateAgents.slice(0, 3).map(agent => ({
-          agent: agent,
-          score: 50,
-          explanation: `Licensed agent in ${loadedDeal.state}`
+
+        console.log('[AgentMatching] Licensed agents in state:', licensedAgents.length);
+
+        matchedAgents = licensedAgents.slice(0, 3).map((agent) => ({
+          agent,
+          score: 1.0,
+          explanation: `Licensed in ${loadedDeal.state}`,
         }));
-        
-        // If no agents in state, show top 3 from all agents
-        if (matchedAgents.length === 0) {
-          console.log('[AgentMatching] No agents in state, showing top 3 available');
-          matchedAgents = allAgents.slice(0, 3).map(agent => ({
-            agent: agent,
-            score: 40,
-            explanation: `Available agent`
-          }));
-        }
       }
 
       console.log('[AgentMatching] Final agent count (max 3):', matchedAgents.length);
