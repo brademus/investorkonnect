@@ -269,6 +269,9 @@ export default function Room() {
   const [pdStories, setPdStories] = useState("");
   const [pdBasement, setPdBasement] = useState("");
   
+  // Mask address for agents until fully signed
+  const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
+  
   const refreshRoomState = async () => {
     if (!roomId) return;
     
