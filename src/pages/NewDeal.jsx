@@ -361,7 +361,7 @@ export default function NewDeal() {
     }
 
     // Save to sessionStorage - include dealId if editing
-    sessionStorage.setItem(draftKey, JSON.stringify({)
+    sessionStorage.setItem(draftKey, JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
       city,
