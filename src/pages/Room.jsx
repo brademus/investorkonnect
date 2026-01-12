@@ -28,13 +28,19 @@ import {
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
 
+// Privacy helper: should we mask address for the current viewer?
+const shouldMaskAddress = (profile, room, deal) => {
+  return profile?.user_role === 'agent' && !(room?.is_fully_signed || deal?.is_fully_signed);
+};
+
 // Helper to build a minimal deal snapshot from room for instant render
-function buildDealFromRoom(room) {
+function buildDealFromRoom(room, maskAddress = false) {
   if (!room) return null;
+  const addr = maskAddress ? null : room.property_address;
   return {
     id: room.deal_id || `room-${room.id}`,
     title: room.title || room.deal_title,
-    property_address: room.property_address,
+    property_address: addr,
     city: room.city,
     state: room.state,
     county: room.county,
