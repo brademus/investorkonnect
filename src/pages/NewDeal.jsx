@@ -53,6 +53,80 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
 
+  // Load draft from sessionStorage (preserve user input when returning from verification)
+  useEffect(() => {
+    const raw = sessionStorage.getItem("newDealDraft");
+    if (!raw) return;
+    try {
+      const d = JSON.parse(raw);
+      if (dealId && d.dealId && d.dealId !== dealId) return; // don't mix drafts between different deals
+      setPropertyAddress(d.propertyAddress || "");
+      setCity(d.city || "");
+      setState(d.state || "");
+      setZip(d.zip || "");
+      setCounty(d.county || "");
+      setPurchasePrice(d.purchasePrice || "");
+      setClosingDate(d.closingDate || "");
+      setContractDate(d.contractDate || "");
+      setSpecialNotes(d.specialNotes || "");
+      setSellerName(d.sellerName || "");
+      setEarnestMoney(d.earnestMoney || "");
+      setNumberOfSigners(d.numberOfSigners || "1");
+      setSecondSignerName(d.secondSignerName || "");
+      setSellerCommissionType(d.sellerCommissionType || "percentage");
+      setSellerCommissionPercentage(d.sellerCommissionPercentage || "");
+      setSellerFlatFee(d.sellerFlatFee || "");
+      setBuyerCommissionType(d.buyerCommissionType || "percentage");
+      setBuyerCommissionPercentage(d.buyerCommissionPercentage || "");
+      setBuyerFlatFee(d.buyerFlatFee || "");
+      setAgreementLength(d.agreementLength || "");
+      setBeds(d.beds || "");
+      setBaths(d.baths || "");
+      setSqft(d.sqft || "");
+      setPropertyType(d.propertyType || "");
+      setNotes(d.notes || "");
+      setYearBuilt(d.yearBuilt || "");
+      setNumberOfStories(d.numberOfStories || "");
+      setHasBasement(d.hasBasement || "");
+    } catch (_) {}
+  }, [dealId]);
+
+  // Auto-save draft on every change so nothing is lost
+  useEffect(() => {
+    const draft = {
+      dealId: dealId || null,
+      propertyAddress,
+      city,
+      state,
+      zip,
+      county,
+      purchasePrice,
+      closingDate,
+      contractDate,
+      specialNotes,
+      sellerName,
+      earnestMoney,
+      numberOfSigners,
+      secondSignerName,
+      sellerCommissionType,
+      sellerCommissionPercentage,
+      sellerFlatFee,
+      buyerCommissionType,
+      buyerCommissionPercentage,
+      buyerFlatFee,
+      agreementLength,
+      beds,
+      baths,
+      sqft,
+      propertyType,
+      notes,
+      yearBuilt,
+      numberOfStories,
+      hasBasement
+    };
+    sessionStorage.setItem("newDealDraft", JSON.stringify(draft));
+  }, [dealId, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
+
   // Load existing deal data if editing
   useEffect(() => {
     if (dealId && profile?.id) {
