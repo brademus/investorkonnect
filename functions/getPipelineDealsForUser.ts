@@ -70,10 +70,16 @@ Deno.serve(async (req) => {
         rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status }))
       });
       
-      // Merge deals from both sources
+      // Merge deals from both sources + fallback by created_by
+      let byCreator = [];
+      try {
+        byCreator = await base44.asServiceRole.entities.Deal.filter({ created_by: user.email });
+      } catch (_) {}
+
       const allDealIds = new Set([
         ...agentDeals.map(d => d.id),
-        ...roomDealIds
+        ...roomDealIds,
+        ...byCreator.map(d => d.id)
       ]);
       
       console.log('[getPipelineDealsForUser] All deal IDs to fetch:', Array.from(allDealIds));
