@@ -174,6 +174,20 @@ function PipelineContent() {
     refetchOnMount: true
   });
 
+  // 4b. Load Deal Appointments for visible deals
+  const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
+    queryKey: ['dealAppointments', dealsData.map(d => d.id)],
+    queryFn: async () => {
+      if (!dealsData || dealsData.length === 0) return [];
+      const items = await base44.entities.DealAppointments.list('-updated_date', 500);
+      const idSet = new Set(dealsData.map(d => d.id));
+      return items.filter(a => idSet.has(a.dealId));
+    },
+    enabled: dealsData.length > 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15000
+  });
+
   // Force refresh on mount
   useEffect(() => {
     if (profile?.id) {
@@ -192,8 +206,13 @@ function PipelineContent() {
       }
     });
 
+    // Index appointments by dealId
+    const apptMap = new Map();
+    (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
+
     const mappedDeals = dealsData.map(deal => {
       const room = roomMap.get(deal.id);
+      const appt = apptMap.get(deal.id);
       
       // Agent is accepted/signed if room status is accepted or signed
       const hasAgentAccepted = room?.request_status === 'accepted' || room?.request_status === 'signed';
@@ -246,9 +265,11 @@ function PipelineContent() {
         agent_request_status: room?.request_status || null,
 
          // Dates
-        created_date: deal.created_date,
-        updated_date: deal.updated_date,
-        closing_date: deal.key_dates?.closing_date,
+         created_date: deal.created_date,
+         updated_date: deal.updated_date,
+         closing_date: deal.key_dates?.closing_date,
+         walkthrough_date: appt?.walkthrough?.datetime || null,
+         walkthrough_status: appt?.walkthrough?.status || null,
 
         // Privacy flags
         is_fully_signed: room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed',
@@ -259,7 +280,7 @@ function PipelineContent() {
 
     // Hide declined deals entirely for agents
     return mappedDeals.filter(d => !(isAgent && d.agent_request_status === 'rejected'));
-  }, [dealsData, rooms]);
+  }, [dealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {
     // Prefetch deal details and agreement for instant hydration
@@ -680,6 +701,13 @@ function PipelineContent() {
                                           <Home className="w-3 h-3" />
                                           <span>{deal.city}, {deal.state}</span>
                                         </div>
+
+                                        {deal.walkthrough_date && (
+                                          <div className="flex items-center gap-1 text-xs text-[#60A5FA]">
+                                            <Calendar className="w-3 h-3" />
+                                            <span>Walkthrough: {new Date(deal.walkthrough_date).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}{deal.walkthrough_status === 'PROPOSED' ? ' (Proposed)' : ''}</span>
+                                          </div>
+                                        )}
 
                                         {/* Show seller name only for investors OR fully signed deals */}
                                         {(isInvestor || deal.is_fully_signed) && deal.seller_name && (
