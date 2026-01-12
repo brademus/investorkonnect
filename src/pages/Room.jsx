@@ -532,7 +532,10 @@ export default function Room() {
     if (roomId) {
       const unsubRoom = base44.entities.Room.subscribe((event) => {
         if (event.id === roomId) {
-          setCurrentRoom((prev) => ({ ...(prev || {}), ...event.data }));
+          setCurrentRoom((prev) => {
+            if (!prev || prev.id !== roomId) return { ...(event.data || {}), id: roomId };
+            return { ...prev, ...event.data };
+          });
         }
       });
       unsubscribers.push(unsubRoom);
