@@ -243,8 +243,9 @@ function PipelineContent() {
         raw_pipeline_stage: deal.pipeline_stage,
         customer_name: counterpartyName,
         agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
+        agent_request_status: room?.request_status || null,
 
-        // Dates
+         // Dates
         created_date: deal.created_date,
         updated_date: deal.updated_date,
         closing_date: deal.key_dates?.closing_date,
@@ -616,7 +617,7 @@ function PipelineContent() {
             <DragDropContext onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {pipelineStages.map(stage => {
-                  const stageDeals = deals.filter(d => d.pipeline_stage === stage.id);
+                  const stageDeals = deals.filter(d => d.pipeline_stage === stage.id && !(isAgent && d.agent_request_status === 'rejected'));
                   const Icon = stage.icon;
 
                   return (
