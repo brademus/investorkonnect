@@ -44,6 +44,7 @@ function EventCard({ label, data, role, onPrimary, onSecondary, onInvestorReques
           <p className="text-sm font-semibold text-[#FAFAFA]">{label}</p>
           <div className="flex items-center gap-2 text-xs text-[#808080]">
             <CalendarIcon className="w-3.5 h-3.5" /> <span>{dateStr}</span>
+            {data?.timezone && (<span className="ml-1">({data.timezone})</span>)}
             <span className="text-[#333]">|</span>
             <Clock className="w-3.5 h-3.5" /> <span>{hasDate ? new Date(data.datetime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '—'}</span>
             <span className="text-[#333]">|</span>
@@ -174,7 +175,7 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
                         <span className="text-[#333]">|</span>
                         <span>{new Date(r.createdAt).toLocaleString()}</span>
                       </div>
-                      <span className="text-[10px] bg-[#1F1F1F] text-[#808080] px-2 py-0.5 rounded-full border border-[#333]">Requester</span>
+                      <span className="text-[10px] bg-[#1F1F1F] text-[#808080] px-2 py-0.5 rounded-full border border-[#333]">by {r.requestedByUserId}</span>
                     </div>
                     <p className="text-xs text-[#FAFAFA] mt-1 line-clamp-2">{r.message}</p>
                   </div>
