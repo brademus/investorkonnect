@@ -567,6 +567,23 @@ export default function Room() {
     })();
   }, [deal?.id, deal?.documents, currentRoom?.contract_document, currentRoom?.contract_url]);
 
+  // Build a robust deal object for details card: prefer Deal entity, fallback to Room fields
+  const dealForDetails = useMemo(() => {
+    // Prefer cached deal to avoid flicker while server loads
+    const cached = currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null;
+    const d = cached || deal;
+    if (!d && !currentRoom) return {};
+    const hasPD = !!(d?.property_details && Object.keys(d.property_details || {}).length > 0);
+    // Ensure address masking for agents until fully signed, even in fallback
+    const maskedAddress = maskAddr ? null : (d?.property_address || currentRoom?.property_address);
+    return {
+      ...(d || {}),
+      property_address: maskedAddress,
+      property_type: d?.property_type || currentRoom?.property_type || null,
+      property_details: hasPD ? d.property_details : (currentRoom?.property_details || {})
+    };
+  }, [deal, currentRoom]);
+
   // Prefill editor when deal details load
   useEffect(() => {
     const d = dealForDetails || {};
