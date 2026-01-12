@@ -269,9 +269,16 @@ export default function Room() {
   const [pdYearBuilt, setPdYearBuilt] = useState("");
   const [pdStories, setPdStories] = useState("");
   const [pdBasement, setPdBasement] = useState("");
-  
-  // Mask address for agents until fully signed
-  const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
+
+        // Unified post-sign flag used across Files tab and privacy checks
+        const isWorkingTogether = (
+          currentRoom?.agreement_status === 'fully_signed' ||
+          currentRoom?.is_fully_signed === true ||
+          deal?.is_fully_signed === true
+        );
+
+        // Mask address for agents until fully signed
+        const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
   
   const refreshRoomState = async () => {
     if (!roomId) return;
@@ -299,7 +306,7 @@ export default function Room() {
         });
         const freshDeal = dealResponse.data;
 
-        if (isStale()) return;
+        
 
         if (freshDeal) {
           setCachedDeal(freshRoom.deal_id, freshDeal);
@@ -395,7 +402,7 @@ export default function Room() {
           setCurrentRoom(enrichedRoom);
         }
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
-        if (isStale()) return;
+        
 
         if (!rawRoom) return;
 
@@ -417,7 +424,7 @@ export default function Room() {
               dealId: rawRoom.deal_id
             });
             const deal = response.data;
-            if (isStale()) return;
+            
             
             if (deal) {
               setDeal(deal);
@@ -644,12 +651,7 @@ export default function Room() {
     currentUserRole: profile?.user_role 
   }) || location.state?.initialCounterpartyName || "Chat";
 
-  // Unified post-sign flag used across Files tab
-  const isWorkingTogether = (
-    currentRoom?.agreement_status === 'fully_signed' ||
-    currentRoom?.is_fully_signed === true ||
-    deal?.is_fully_signed === true
-  );
+
 
   // Ensure full Deal document visibility after both parties are working together
   useEffect(() => {
@@ -1932,7 +1934,7 @@ ${dealContext}`;
 
                               // Refresh room
                               const roomData = await base44.entities.Room.filter({ id: roomId });
-                              if (isStale()) return;
+                              
                               if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
                               toast.success('File uploaded');
                             } catch (error) {
@@ -2075,7 +2077,7 @@ ${dealContext}`;
                               
                               // Refresh room
                               const roomData = await base44.entities.Room.filter({ id: roomId });
-                              if (isStale()) return;
+                              
                               if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
                               toast.success(`${files.length} photo(s) uploaded`);
                             } catch (error) {
@@ -2431,7 +2433,7 @@ ${dealContext}`;
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
-                      if (isStale()) return;
+                      
                       if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
                       toast.success(`${files.length} photo(s) uploaded to deal`);
                     } catch (error) {
@@ -2504,7 +2506,7 @@ ${dealContext}`;
                       }
                       
                       const roomData = await base44.entities.Room.filter({ id: roomId });
-                      if (isStale()) return;
+                      
                       if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
                       toast.success('File uploaded to deal');
                     } catch (error) {
