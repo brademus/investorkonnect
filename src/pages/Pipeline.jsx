@@ -258,11 +258,13 @@ function PipelineContent() {
   }, [dealsData, rooms]);
 
   const handleDealClick = async (deal) => {
-    // Prefetch deal details for instant hydration
+    // Prefetch deal details and agreement for instant hydration
     if (deal?.deal_id) {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
         .then((res) => { if (res?.data) setCachedDeal(deal.deal_id, res.data); })
         .catch(() => {});
+      // Warm agreement cache so Agreement tab shows instantly
+      base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id }).catch(() => {});
     }
 
     // If a room ID is already on the card, open it

@@ -342,9 +342,41 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   };
   
   if (loading) {
+    const terms = deal?.proposed_terms || null;
     return (
       <Card className="ik-card p-6">
-        <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
+        {terms ? (
+          <div className="space-y-3">
+            <div className="mb-2">
+              <h3 className="text-lg font-semibold text-[#FAFAFA]">Key Terms</h3>
+              <p className="text-xs text-[#808080]">Showing deal terms while the agreement loads…</p>
+            </div>
+            <div className="bg-[#0D0D0D] rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+              <div>
+                <div className="text-[#808080]">Commission Type</div>
+                <div className="text-[#FAFAFA] capitalize">{terms.seller_commission_type || '—'}</div>
+              </div>
+              <div>
+                <div className="text-[#808080]">Commission Amount</div>
+                <div className="text-[#FAFAFA]">
+                  {terms.seller_commission_type === 'percentage'
+                    ? `${terms.seller_commission_percentage || 0}%`
+                    : terms.seller_commission_type === 'flat'
+                      ? `$${(terms.seller_flat_fee || 0).toLocaleString()}`
+                      : terms.net_target
+                        ? `$${(terms.net_target || 0).toLocaleString()}`
+                        : '—'}
+                </div>
+              </div>
+              <div>
+                <div className="text-[#808080]">Agreement Length</div>
+                <div className="text-[#FAFAFA]">{terms.agreement_length || 0} days</div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
+        )}
       </Card>
     );
   }
