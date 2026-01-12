@@ -111,16 +111,28 @@ Deno.serve(async (req) => {
       is_fully_signed: isFullySigned
     };
 
-    // Fallback: if Deal lacks property_details/property_type, use Room's values for display
-    const hasPD = baseDeal.property_details && Object.keys(baseDeal.property_details || {}).length > 0;
-    const property_details_fallback = hasPD ? baseDeal.property_details : (room?.property_details || null);
+    // Fallback: prefer investor-entered Deal.details; if empty/blank, use Room; else try contract
+    const isMeaningfulPD = (pd) => {
+      if (!pd || typeof pd !== 'object') return false;
+      const n = (v) => (v !== undefined && v !== null && !Number.isNaN(Number(v)));
+      const s = (v) => (typeof v === 'string' ? v.trim().length > 0 : false);
+      const b = (v) => (typeof v === 'boolean');
+      return (
+        n(pd.beds) || n(pd.baths) || n(pd.sqft) || n(pd.year_built) || s(pd.number_of_stories) || b(pd.has_basement)
+      );
+    };
+
+    const property_details_fallback = isMeaningfulPD(baseDeal.property_details)
+      ? baseDeal.property_details
+      : (isMeaningfulPD(room?.property_details) ? room.property_details : null);
+
     const property_type_fallback = baseDeal.property_type || room?.property_type || null;
 
     // If still missing, derive from seller contract for display (no DB writes)
     let display_property_details = property_details_fallback;
     let display_property_type = property_type_fallback;
     try {
-      const needsPD = !display_property_details || Object.keys(display_property_details || {}).length === 0;
+      const needsPD = !isMeaningfulPD(display_property_details);
       const needsType = !display_property_type;
       if (needsPD || needsType) {
         const sellerUrl = deal?.documents?.purchase_contract?.file_url ||
