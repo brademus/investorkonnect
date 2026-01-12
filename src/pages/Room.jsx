@@ -398,8 +398,15 @@ export default function Room() {
         // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
         if (enrichedRoom) {
-          // Show cached data instantly while fetching fresh details
-          setCurrentRoom(enrichedRoom);
+          // Show cached data instantly while fetching fresh details (mask address for agents until fully signed)
+          const maskedTitle = (profile?.user_role === 'agent' && !enrichedRoom?.is_fully_signed)
+            ? `${enrichedRoom?.city || 'City'}, ${enrichedRoom?.state || 'State'}`
+            : (enrichedRoom?.title || enrichedRoom?.deal_title);
+          setCurrentRoom({
+            ...enrichedRoom,
+            title: maskedTitle,
+            property_address: shouldMaskAddress(profile, enrichedRoom, null) ? null : enrichedRoom?.property_address,
+          });
         }
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
@@ -1107,7 +1114,7 @@ ${dealContext}`;
                             if (cached) {
                               setDeal(cached);
                             } else {
-                              const snap = buildDealFromRoom(currentRoom);
+                              const snap = buildDealFromRoom(currentRoom, maskAddr);
                               if (snap) setDeal(snap);
                             }
                           } else if (currentRoom && !deal) {
@@ -1672,7 +1679,7 @@ ${dealContext}`;
                   {currentRoom?.deal_id && (deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom)) ? (
                     <LegalAgreementPanel
                       key={agreementPanelKey}
-                      deal={deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom)}
+                      deal={deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom, maskAddr)}
                       profile={profile}
                       onUpdate={async () => {
                         await refreshRoomState();
@@ -1877,7 +1884,7 @@ ${dealContext}`;
                 <div className="space-y-6">
                   {/* Document Checklist */}
                   <DocumentChecklist 
-                                            deal={deal || (currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null) || buildDealFromRoom(currentRoom)}
+                                            deal={deal || (currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null) || buildDealFromRoom(currentRoom, maskAddr)}
                                             room={currentRoom}
                                             userRole={profile?.user_role}
                                             onUpdate={() => {
