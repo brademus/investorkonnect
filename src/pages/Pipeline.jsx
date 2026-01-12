@@ -14,6 +14,7 @@ import {
   Clock, CheckSquare, XCircle, MessageSquare, Circle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { setCachedDeal } from "@/components/utils/dealCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
@@ -278,6 +279,14 @@ function PipelineContent() {
   }, [dealsData, rooms]);
 
   const handleDealClick = async (deal) => {
+    // Fire-and-forget prefetch of secure deal details for instant hydration
+    if (deal?.deal_id) {
+      base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
+        .then((res) => {
+          if (res?.data) setCachedDeal(deal.deal_id, res.data);
+        })
+        .catch(() => {});
+    }
     if (deal.is_orphan) {
       // Route orphan deals to NewDeal for editing, not DealWizard
       navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);

@@ -20,6 +20,7 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDisplay";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
+import { getCachedDeal, setCachedDeal } from "@/components/utils/dealCache";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
@@ -243,14 +244,19 @@ export default function Room() {
       
       const freshRoom = roomData[0];
       
-      // Refetch deal
+      // Refetch deal (hydrate from cache first)
       if (freshRoom.deal_id) {
+        const cached = getCachedDeal(freshRoom.deal_id);
+        if (cached) {
+          setDeal(cached);
+        }
         const dealResponse = await base44.functions.invoke('getDealDetailsForUser', {
           dealId: freshRoom.deal_id
         });
         const freshDeal = dealResponse.data;
-        
+
         if (freshDeal) {
+          setCachedDeal(freshRoom.deal_id, freshDeal);
           setDeal(freshDeal);
           
           const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
@@ -330,8 +336,14 @@ export default function Room() {
 
         if (!rawRoom) return;
 
-        // Use server-side access-controlled deal fetch
+        // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
+          const cached = getCachedDeal(rawRoom.deal_id);
+          if (cached) {
+            setDeal(cached);
+          }
+
+          // Use server-side access-controlled deal fetch
           try {
             const response = await base44.functions.invoke('getDealDetailsForUser', {
               dealId: rawRoom.deal_id
@@ -340,6 +352,7 @@ export default function Room() {
             
             if (deal) {
               setDeal(deal);
+              setCachedDeal(deal.id, deal);
               
               const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
                 ? `${deal.city || 'City'}, ${deal.state || 'State'}`
@@ -412,6 +425,14 @@ export default function Room() {
       });
     };
   }, [roomId, currentRoom?.deal_id]);
+
+  // Also warm cache on mount if we already navigated with cached deal
+  useEffect(() => {
+    if (currentRoom?.deal_id && !deal) {
+      const cached = getCachedDeal(currentRoom.deal_id);
+      if (cached) setDeal(cached);
+    }
+  }, [currentRoom?.deal_id]);
 
    // Auto-extract property details from Seller Contract if missing
   useEffect(() => {
@@ -719,12 +740,15 @@ ${dealContext}`;
 
   // Build a robust deal object for details card: prefer Deal entity, fallback to Room fields
   const dealForDetails = useMemo(() => {
-    if (!deal && !currentRoom) return {};
-    const hasPD = !!(deal?.property_details && Object.keys(deal.property_details || {}).length > 0);
+    // Prefer cached deal to avoid flicker while server loads
+    const cached = currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null;
+    const d = cached || deal;
+    if (!d && !currentRoom) return {};
+    const hasPD = !!(d?.property_details && Object.keys(d.property_details || {}).length > 0);
     return {
-      ...(deal || {}),
-      property_type: deal?.property_type || currentRoom?.property_type || null,
-      property_details: hasPD ? deal.property_details : (currentRoom?.property_details || {})
+      ...(d || {}),
+      property_type: d?.property_type || currentRoom?.property_type || null,
+      property_details: hasPD ? d.property_details : (currentRoom?.property_details || {})
     };
   }, [deal, currentRoom]);
 
