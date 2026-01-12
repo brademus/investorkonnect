@@ -240,7 +240,7 @@ export default function NewDeal() {
             ...(sqft ? { sqft: Number(sqft) } : {}),
             ...(yearBuilt ? { year_built: Number(yearBuilt) } : {}),
             ...(numberOfStories ? { number_of_stories: numberOfStories } : {}),
-            ...(hasBasement ? { has_basement: hasBasement } : {})
+            ...(hasBasement ? { has_basement: hasBasement === 'yes' } : {})
           },
           seller_info: {
             seller_name: sellerName,
