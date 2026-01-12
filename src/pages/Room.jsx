@@ -259,6 +259,7 @@ export default function Room() {
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
+  const requestSeqRef = useRef(0);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
   const [pdPropertyType, setPdPropertyType] = useState("");
@@ -274,6 +275,9 @@ export default function Room() {
   
   const refreshRoomState = async () => {
     if (!roomId) return;
+    const rid = roomId;
+    const thisReq = ++requestSeqRef.current;
+    const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
     
     try {
       console.log('[Room] 🔄 Refreshing room state...');
@@ -294,6 +298,8 @@ export default function Room() {
           dealId: freshRoom.deal_id
         });
         const freshDeal = dealResponse.data;
+
+        if (isStale()) return;
 
         if (freshDeal) {
           setCachedDeal(freshRoom.deal_id, freshDeal);
@@ -376,6 +382,9 @@ export default function Room() {
     if (!roomId) return;
     
     const fetchCurrentRoom = async () => {
+      const rid = roomId;
+      const thisReq = ++requestSeqRef.current;
+      const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
       setRoomLoading(true);
       
       try {
@@ -386,6 +395,7 @@ export default function Room() {
           setCurrentRoom(enrichedRoom);
         }
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
+        if (isStale()) return;
 
         if (!rawRoom) return;
 
@@ -407,6 +417,7 @@ export default function Room() {
               dealId: rawRoom.deal_id
             });
             const deal = response.data;
+            if (isStale()) return;
             
             if (deal) {
               setDeal(deal);
@@ -873,6 +884,9 @@ ${dealContext}`;
         <div className="flex-1 overflow-y-auto">
           {filteredRooms.map(r => {
             const handleClick = () => {
+              // Optimistically set room to avoid momentary mismatch
+              setCurrentRoom(r);
+              setDeal(null);
               navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
               setDrawer(false);
             };
