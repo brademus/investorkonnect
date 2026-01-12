@@ -90,7 +90,11 @@ export default function NewDeal() {
               setSqft(deal.property_details.sqft?.toString() || "");
               setYearBuilt(deal.property_details.year_built?.toString() || "");
               setNumberOfStories(deal.property_details.number_of_stories || "");
-              setHasBasement(deal.property_details.has_basement || "");
+              setHasBasement(
+                typeof deal.property_details.has_basement === 'boolean'
+                  ? (deal.property_details.has_basement ? 'yes' : 'no')
+                  : (deal.property_details.has_basement || '')
+              );
             }
             
             // Load terms from Deal entity first, fallback to Room for backward compatibility
