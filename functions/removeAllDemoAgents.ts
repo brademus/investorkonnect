@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const batchLimit = 2000;
+    const { maxCount = 50 } = await req.json().catch(() => ({ }));
+    const batchLimit = 500;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // Fetch all agent profiles; filter in-code for demo domain
@@ -27,6 +28,7 @@ Deno.serve(async (req) => {
     const isDemoExample = (email) => typeof email === 'string' && /\.wi\d+@example\.com$/i.test(email); // legacy WI demo pattern
 
     const demoAgents = (agents || []).filter((p) => isDemoEmail(p?.email) || isDemoExample(p?.email));
+    const targets = demoAgents.slice(0, maxCount);
 
     let roomsDeleted = 0;
     let dealsDeleted = 0;
@@ -34,7 +36,7 @@ Deno.serve(async (req) => {
 
     const deletedDealIds = new Set();
 
-    for (const p of demoAgents) {
+    for (const p of targets) {
       // Delete ACTIVE deals where this demo agent is assigned or (edge) appears as investor
       const agentDeals = await base44.asServiceRole.entities.Deal.filter({ agent_id: p.id, status: 'active' }, undefined, batchLimit);
       const investorDeals = await base44.asServiceRole.entities.Deal.filter({ investor_id: p.id, status: 'active' }, undefined, batchLimit);
@@ -79,6 +81,7 @@ Deno.serve(async (req) => {
       success: true,
       scanned_agents: agents?.length || 0,
       demo_agents_found: demoAgents.length,
+      processed_this_run: targets.length,
       deleted: {
         profiles: profilesDeleted,
         deals_active: dealsDeleted,
