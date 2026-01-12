@@ -545,7 +545,10 @@ export default function Room() {
       const dealId = currentRoom.deal_id;
       const unsubDeal = base44.entities.Deal.subscribe((event) => {
         if (event.id === dealId) {
-          setDeal((prev) => ({ ...(prev || {}), ...event.data }));
+          setDeal((prev) => {
+            if (!prev || prev.id !== dealId) return { ...(event.data || {}), id: dealId };
+            return { ...prev, ...event.data };
+          });
         }
       });
       unsubscribers.push(unsubDeal);
