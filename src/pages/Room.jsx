@@ -1285,6 +1285,95 @@ ${dealContext}`;
                                   </div>
 
                                   <PropertyDetailsCard deal={dealForDetails} />
+
+                                  {profile?.user_role === 'investor' && (
+                                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                      <div className="flex items-center justify-between mb-4">
+                                        <h4 className="text-lg font-semibold text-[#FAFAFA]">Edit Property Details</h4>
+                                        {!editingPD ? (
+                                          <Button
+                                            size="sm"
+                                            variant="outline"
+                                            className="rounded-full border-[#1F1F1F] text-[#FAFAFA] hover:border-[#E3C567]"
+                                            onClick={() => setEditingPD(true)}
+                                          >
+                                            Edit
+                                          </Button>
+                                        ) : null}
+                                      </div>
+
+                                      {editingPD ? (
+                                        <div className="space-y-4">
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Property Type</label>
+                                              <Select value={pdPropertyType} onValueChange={setPdPropertyType}>
+                                                <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="Select type" /></SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="single_family">Single Family</SelectItem>
+                                                  <SelectItem value="multi_family">Multi-Family</SelectItem>
+                                                  <SelectItem value="condo">Condo</SelectItem>
+                                                  <SelectItem value="townhouse">Townhouse</SelectItem>
+                                                  <SelectItem value="manufactured">Manufactured</SelectItem>
+                                                  <SelectItem value="land">Land</SelectItem>
+                                                  <SelectItem value="other">Other</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Bedrooms</label>
+                                              <Input type="number" value={pdBeds} onChange={(e) => setPdBeds(e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]" />
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Bathrooms</label>
+                                              <Input type="number" step="0.5" value={pdBaths} onChange={(e) => setPdBaths(e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]" />
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Square Footage</label>
+                                              <Input type="number" value={pdSqft} onChange={(e) => setPdSqft(e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]" />
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Year Built</label>
+                                              <Input type="number" value={pdYearBuilt} onChange={(e) => setPdYearBuilt(e.target.value)} className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]" />
+                                            </div>
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Stories</label>
+                                              <Select value={pdStories} onValueChange={setPdStories}>
+                                                <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="1">1</SelectItem>
+                                                  <SelectItem value="2">2</SelectItem>
+                                                  <SelectItem value="3+">3+</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+
+                                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div>
+                                              <label className="block text-sm text-[#FAFAFA] mb-2">Basement</label>
+                                              <Select value={pdBasement} onValueChange={setPdBasement}>
+                                                <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="Select" /></SelectTrigger>
+                                                <SelectContent>
+                                                  <SelectItem value="yes">Yes</SelectItem>
+                                                  <SelectItem value="no">No</SelectItem>
+                                                </SelectContent>
+                                              </Select>
+                                            </div>
+                                          </div>
+
+                                          <div className="flex justify-end gap-2 pt-2">
+                                            <Button variant="outline" className="rounded-full" onClick={() => setEditingPD(false)}>Cancel</Button>
+                                            <Button className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={savePropertyDetails}>Save</Button>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  )}
+
                   {/* 5. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
