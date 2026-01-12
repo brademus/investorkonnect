@@ -295,6 +295,9 @@ export default function Room() {
           deal?.is_fully_signed === true
         );
 
+        // Treat unknown role as agent for privacy until profile loads
+        const isAgentView = (profile?.user_role === 'agent') || !profile;
+
         // Mask address for agents until fully signed
         const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
 
@@ -347,7 +350,7 @@ export default function Room() {
           setCachedDeal(freshRoom.deal_id, freshDeal);
           setDeal(freshDeal);
           
-          const displayTitle = profile?.user_role === 'agent' && !freshDeal.is_fully_signed
+          const displayTitle = (isAgentView && !freshDeal.is_fully_signed)
             ? `${freshDeal.city || 'City'}, ${freshDeal.state || 'State'}`
             : freshDeal.title;
           
@@ -436,7 +439,7 @@ export default function Room() {
           // Ensure we never render stale room: verify ID matches current selection
           const safeRoom = enrichedRoom.id === roomId ? enrichedRoom : null;
           if (safeRoom) {
-            const maskedTitle = (profile?.user_role === 'agent' && !safeRoom?.is_fully_signed)
+            const maskedTitle = (isAgentView && !safeRoom?.is_fully_signed)
               ? `${safeRoom?.city || 'City'}, ${safeRoom?.state || 'State'}`
               : (safeRoom?.title || safeRoom?.deal_title);
             setCurrentRoom({
@@ -1095,10 +1098,10 @@ ${dealContext}`;
                   }`}></span>
                   <span className="font-bold text-[#FAFAFA] text-sm">
                     {/* Privacy: Hide full address from agents until agreement is fully signed */}
-                    {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
-                      ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
-                      : (currentRoom.title || `Chat with ${counterpartName}`)
-                    }
+                    {isAgentView && !currentRoom?.is_fully_signed
+                              ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                              : (currentRoom.title || `Chat with ${counterpartName}`)
+                            }
                   </span>
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
@@ -1119,7 +1122,7 @@ ${dealContext}`;
                    <div className="flex items-center gap-1.5 text-[#CCC]">
                      <span>
                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                       {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
+                       {isAgentView && !currentRoom?.is_fully_signed
                         ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                         : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
@@ -1518,7 +1521,7 @@ ${dealContext}`;
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
                                           {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                                          {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
+                                          {isAgentView && !currentRoom?.is_fully_signed
                                             ? `Deal in ${currentRoom?.city || 'City'}, ${currentRoom?.state || 'State'}`
                                             : (currentRoom?.property_address || 'Property Address')
                                           }
@@ -2016,7 +2019,7 @@ ${dealContext}`;
                         let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
 
                         // Enforce privacy: hide Seller/Purchase Contract for agents until fully signed
-                        const hideSeller = profile?.user_role === 'agent' && !isWorkingTogether;
+                        const hideSeller = isAgentView && !isWorkingTogether;
                         if (hideSeller) {
                           allFiles = allFiles.filter(f => {
                             const label = (f.label || f.name || '').toLowerCase();
@@ -2308,7 +2311,7 @@ ${dealContext}`;
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
                         {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                        {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
+                        {isAgentView && !currentRoom?.is_fully_signed
                           ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
                           : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
                         }
