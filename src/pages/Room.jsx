@@ -419,7 +419,7 @@ export default function Room() {
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
-                property_address: deal.property_address,
+                property_address: shouldMaskAddress(profile, rawRoom, deal) ? null : deal.property_address,
                 city: deal.city,
                 state: deal.state,
                 county: deal.county,
