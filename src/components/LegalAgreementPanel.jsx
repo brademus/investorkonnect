@@ -98,7 +98,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       console.log('[LegalAgreementPanel] 📜 Loading agreement for deal:', deal.id);
       
       const response = await base44.functions.invoke('getLegalAgreement', { 
-        deal_id: deal.id 
+        deal_id: deal?.id || currentDeal?.id || deal?.deal_id 
       });
       
       const data = response.data;
