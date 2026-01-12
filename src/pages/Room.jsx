@@ -29,8 +29,11 @@ import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
 
 // Privacy helper: should we mask address for the current viewer?
+// IMPORTANT: Default to masking until profile loads to prevent any brief exposure
 const shouldMaskAddress = (profile, room, deal) => {
-  return profile?.user_role === 'agent' && !(room?.is_fully_signed || deal?.is_fully_signed);
+  const isAgentView = (profile?.user_role === 'agent') || !profile; // mask by default when role unknown
+  const isFullySigned = !!(room?.is_fully_signed || deal?.is_fully_signed);
+  return isAgentView && !isFullySigned;
 };
 
 // Helper to build a minimal deal snapshot from room for instant render
