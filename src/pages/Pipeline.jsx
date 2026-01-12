@@ -242,7 +242,7 @@ function PipelineContent() {
         pipeline_stage: normalizeStage(deal.pipeline_stage || 'new_listings'),
         raw_pipeline_stage: deal.pipeline_stage,
         customer_name: counterpartyName,
-        agent_id: deal.agent_id,
+        agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
 
         // Dates
         created_date: deal.created_date,
