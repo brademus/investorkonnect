@@ -258,27 +258,33 @@ function PipelineContent() {
   }, [dealsData, rooms]);
 
   const handleDealClick = async (deal) => {
-    // Fire-and-forget prefetch of secure deal details for instant hydration
+    // Prefetch deal details for instant hydration
     if (deal?.deal_id) {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
         .then((res) => { if (res?.data) setCachedDeal(deal.deal_id, res.data); })
         .catch(() => {});
     }
 
-    // If a room already exists, open it
+    // If a room ID is already on the card, open it
     if (deal?.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
       return;
     }
 
-    // If no agent assigned yet, guide user to add one
-    if (!deal?.agent_id) {
-      toast.info('Please select an agent for this deal to open a room');
-      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+    // Check if we already have a room for this deal in the fetched rooms list
+    const existing = rooms.find(r => r.deal_id === deal.deal_id && !r.is_orphan);
+    if (existing?.id) {
+      navigate(`${createPageUrl("Room")}?roomId=${existing.id}`);
       return;
     }
 
-    // Otherwise, get or create the room for this deal + agent
+    // If no agent assigned yet, keep user here with guidance instead of redirecting away
+    if (!deal?.agent_id) {
+      toast.info('Select an agent for this deal to open a room (use the deal card menu).');
+      return;
+    }
+
+    // Otherwise, create or get the room for this deal + agent
     try {
       const roomId = await getOrCreateDealRoom({
         dealId: deal.deal_id,
