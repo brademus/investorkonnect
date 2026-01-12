@@ -219,7 +219,7 @@ export default function NewDeal() {
               }
               
               if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
-                setAgreementLength(terms.agreement_length.toString());
+                setAgreementLength((terms.agreement_length ?? "").toString());
               }
             }
           }
