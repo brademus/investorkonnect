@@ -568,7 +568,10 @@ export default function Room() {
   useEffect(() => {
     if (currentRoom?.deal_id && !deal) {
       const cached = getCachedDeal(currentRoom.deal_id);
-      if (cached) setDeal(cached);
+      if (cached) {
+        const mask = shouldMaskAddress(profile, currentRoom, cached) || isAgentView;
+        setDeal(mask ? { ...cached, property_address: null } : cached);
+      }
     }
   }, [currentRoom?.deal_id]);
 
