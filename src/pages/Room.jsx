@@ -586,7 +586,7 @@ export default function Room() {
 
   // Prefill editor when deal details load
   useEffect(() => {
-    const d = dealForDetails || {};
+    const d = (deal || {})
     const pd = d.property_details || {};
     setPdPropertyType(d.property_type || "");
     setPdBeds(pd.beds != null ? String(pd.beds) : "");
@@ -599,7 +599,7 @@ export default function Room() {
         ? (pd.has_basement ? 'yes' : 'no')
         : (pd.has_basement || '')
     );
-  }, [dealForDetails?.property_type, dealForDetails?.property_details]);
+  }, [deal?.property_type, deal?.property_details]);
 
   const savePropertyDetails = async () => {
     if (!currentRoom?.deal_id) return;
