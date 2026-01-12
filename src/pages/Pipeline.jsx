@@ -607,6 +607,7 @@ function PipelineContent() {
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
+                      try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
                       navigate(createPageUrl("NewDeal"));
                     }}
                     className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
