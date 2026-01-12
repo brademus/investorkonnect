@@ -54,9 +54,14 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
 
-  // Load draft from sessionStorage (preserve user input when returning from verification)
+  // Load draft from sessionStorage ONLY when editing or when explicit newDealDraft exists
   useEffect(() => {
+    const isEditing = !!dealId;
     const raw = sessionStorage.getItem(draftKey);
+    if (!isEditing) {
+      // For brand-new deals, never auto-load previous draft
+      return;
+    }
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
@@ -92,7 +97,7 @@ export default function NewDeal() {
     } catch (_) {}
   }, [dealId]);
 
-  // Auto-save draft on every change so nothing is lost
+  // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
   useEffect(() => {
     const draft = {
       dealId: dealId || null,
@@ -125,7 +130,12 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement
     };
-    sessionStorage.setItem(draftKey, JSON.stringify(draft));
+    // For brand new deals (no dealId), only persist if the user actually typed something meaningful
+    const isEditing = !!dealId;
+    const hasUserInput = [propertyAddress, city, state, zip, county, purchasePrice, closingDate, sellerName, earnestMoney, sellerCommissionPercentage, sellerFlatFee, buyerCommissionPercentage, buyerFlatFee, agreementLength].some(v => (v ?? '').toString().trim().length > 0);
+    if (isEditing || hasUserInput) {
+      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+    }
   }, [draftKey, dealId, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
 
   // Load existing deal data if editing (only if no draft present)
