@@ -322,10 +322,14 @@ export default function Room() {
       try {
         // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
+        if (enrichedRoom) {
+          // Show cached data instantly while fetching fresh details
+          setCurrentRoom(enrichedRoom);
+        }
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
-        
+
         if (!rawRoom) return;
-        
+
         // Use server-side access-controlled deal fetch
         if (rawRoom.deal_id) {
           try {
@@ -378,7 +382,38 @@ export default function Room() {
     fetchCurrentRoom();
   }, [roomId, profile?.user_role, rooms]);
 
-  // Auto-extract property details from Seller Contract if missing
+  // Realtime updates for Room and Deal to keep board instantly fresh
+  useEffect(() => {
+    if (!roomId && !currentRoom?.deal_id) return;
+    const unsubscribers = [];
+
+    if (roomId) {
+      const unsubRoom = base44.entities.Room.subscribe((event) => {
+        if (event.id === roomId) {
+          setCurrentRoom((prev) => ({ ...(prev || {}), ...event.data }));
+        }
+      });
+      unsubscribers.push(unsubRoom);
+    }
+
+    if (currentRoom?.deal_id) {
+      const dealId = currentRoom.deal_id;
+      const unsubDeal = base44.entities.Deal.subscribe((event) => {
+        if (event.id === dealId) {
+          setDeal((prev) => ({ ...(prev || {}), ...event.data }));
+        }
+      });
+      unsubscribers.push(unsubDeal);
+    }
+
+    return () => {
+      unsubscribers.forEach((u) => {
+        try { u(); } catch (_) {}
+      });
+    };
+  }, [roomId, currentRoom?.deal_id]);
+
+   // Auto-extract property details from Seller Contract if missing
   useEffect(() => {
     if (!deal?.id) return;
 
@@ -800,13 +835,20 @@ ${dealContext}`;
             
             {roomId && (
               <Button
-                onClick={() => setShowBoard(!showBoard)}
-                className={`rounded-full font-semibold transition-all ${
-                  showBoard 
-                    ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                    : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                }`}
-              >
+                  onClick={() => {
+                    const next = !showBoard;
+                    setShowBoard(next);
+                    if (next) {
+                      // Ensure freshest data when opening the Deal Board
+                      refreshRoomState();
+                    }
+                  }}
+                  className={`rounded-full font-semibold transition-all ${
+                       showBoard 
+                         ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                         : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                     }`}
+                >
                 <FileText className="w-4 h-4 mr-2" />
                 Deal Board
               </Button>
