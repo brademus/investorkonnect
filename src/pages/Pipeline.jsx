@@ -117,28 +117,7 @@ function PipelineContent() {
       
       // Filter out archived and deals with invalid addresses
       return deals
-        .filter(d => {
-          if (d.status === 'archived') return false;
-          
-          // Strict validation - must have real city and state
-          const cityStr = String(d.city || '').trim().toLowerCase();
-          const stateStr = String(d.state || '').trim().toUpperCase();
-          
-          const hasValidCity = 
-            d.city && 
-            cityStr.length > 0 && 
-            cityStr !== 'null' &&
-            cityStr !== 'undefined' &&
-            cityStr !== 'none' &&
-            cityStr !== 'n/a';
-            
-          const hasValidState = 
-            d.state && 
-            stateStr.length >= 2 && 
-            validUSStates.has(stateStr);
-          
-          return hasValidCity && hasValidState;
-        })
+        .filter(d => d.status !== 'archived')
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
