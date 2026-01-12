@@ -838,8 +838,11 @@ ${dealContext}`;
     const d = cached || deal;
     if (!d && !currentRoom) return {};
     const hasPD = !!(d?.property_details && Object.keys(d.property_details || {}).length > 0);
+    // Ensure address masking for agents until fully signed, even in fallback
+    const maskedAddress = maskAddr ? null : (d?.property_address || currentRoom?.property_address);
     return {
       ...(d || {}),
+      property_address: maskedAddress,
       property_type: d?.property_type || currentRoom?.property_type || null,
       property_details: hasPD ? d.property_details : (currentRoom?.property_details || {})
     };
