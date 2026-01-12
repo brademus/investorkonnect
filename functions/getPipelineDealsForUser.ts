@@ -40,9 +40,23 @@ Deno.serve(async (req) => {
     let agentRooms = [];
     
     if (isInvestor) {
-      // Investors see their own deals
-      deals = await base44.entities.Deal.filter({ investor_id: profile.id });
-      console.log('[getPipelineDealsForUser] Investor deals found:', deals.length);
+      // Investors: include deals by investor_id, plus deals tied via Rooms, plus fallback by created_by
+      const byInvestorId = await base44.entities.Deal.filter({ investor_id: profile.id });
+      let investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
+      const roomDealIds = Array.from(new Set(investorRooms.map(r => r.deal_id).filter(Boolean)));
+      const byRooms = roomDealIds.length
+        ? await Promise.all(roomDealIds.map(id => base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)))
+        : [];
+      // Fallback: include deals created by this user (in case of profile dedup migrations)
+      let byCreator = [];
+      try {
+        byCreator = await base44.asServiceRole.entities.Deal.filter({ created_by: user.email });
+      } catch (_) {}
+      const merged = [...byInvestorId, ...byRooms.filter(Boolean), ...byCreator];
+      // de-dupe by id
+      const seen = new Set();
+      deals = merged.filter(d => d && !seen.has(d.id) && seen.add(d.id));
+      console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
