@@ -1040,8 +1040,8 @@ ${dealContext}`;
                      <span>
                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
                        {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
-                         ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
-                         : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
+                        ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                        : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
                      </span>
                    </div>
