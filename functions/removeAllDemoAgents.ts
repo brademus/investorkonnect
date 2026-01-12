@@ -18,7 +18,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
-    const batchLimit = 5000;
+    const batchLimit = 2000;
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     // Fetch all agent profiles; filter in-code for demo domain
     const agents = await base44.asServiceRole.entities.Profile.filter({ user_role: 'agent' }, undefined, batchLimit);
@@ -48,6 +49,7 @@ Deno.serve(async (req) => {
           try {
             await base44.asServiceRole.entities.Room.delete(r.id);
             roomsDeleted += 1;
+            await sleep(80);
           } catch (err) {
             console.error('[removeAllDemoAgents] Failed to delete room', r.id, err?.message);
           }
