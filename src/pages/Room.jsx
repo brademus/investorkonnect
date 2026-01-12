@@ -1390,6 +1390,8 @@ ${dealContext}`;
 
                                   <PropertyDetailsCard deal={dealForDetails} />
 
+                                  <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
+
                                   {profile?.user_role === 'investor' && (
                                     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                       <div className="flex items-center justify-between mb-4">
