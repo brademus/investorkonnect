@@ -504,7 +504,7 @@ function PipelineContent() {
                     ) : (
                       <div className="divide-y divide-[#1F1F1F]">
                         {activities.map((activity) => {
-                          const deal = dealsData.find(d => d.id === activity.deal_id);
+                           const dealDisplay = deals.find(d => d.id === activity.deal_id);
                           const getIcon = () => {
                             switch (activity.type) {
                               case 'agent_locked_in':
@@ -540,8 +540,12 @@ function PipelineContent() {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="text-sm text-[#FAFAFA] mb-1">{activity.message}</p>
-                                  {deal && (
-                                    <p className="text-xs text-[#E3C567] mb-1 truncate">{deal.property_address || deal.title}</p>
+                                  {dealDisplay && (
+                                    <p className="text-xs text-[#E3C567] mb-1 truncate">
+                                      {isAgent && !dealDisplay.is_fully_signed
+                                        ? `${dealDisplay.city || 'City'}, ${dealDisplay.state || 'State'}`
+                                        : (dealDisplay.property_address || dealDisplay.title)}
+                                    </p>
                                   )}
                                   <p className="text-xs text-[#808080]">
                                     {new Date(activity.created_date).toLocaleString('en-US', {

@@ -282,6 +282,23 @@ export default function Room() {
 
         // Mask address for agents until fully signed
         const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
+
+        // Hard sanitizer: if anything slips through, null it out for agents until fully signed
+        useEffect(() => {
+          if (profile?.user_role !== 'agent') return;
+          // Sanitize currentRoom
+          if (currentRoom && !currentRoom.is_fully_signed && currentRoom.property_address) {
+            setCurrentRoom(prev => prev ? {
+              ...prev,
+              property_address: null,
+              title: (prev.title && /,/.test(prev.title)) ? prev.title : `${prev.city || 'City'}, ${prev.state || 'State'}`
+            } : prev);
+          }
+          // Sanitize deal snapshot
+          if (deal && !deal.is_fully_signed && deal.property_address) {
+            setDeal(prev => prev ? { ...prev, property_address: null } : prev);
+          }
+        }, [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed, currentRoom?.property_address, deal?.property_address]);
   
   const refreshRoomState = async () => {
     if (!roomId) return;
