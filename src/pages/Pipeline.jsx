@@ -267,6 +267,22 @@ function PipelineContent() {
 
     // If a room ID is already on the card, open it
     if (deal?.room_id) {
+      // Mask address immediately by priming cache with a masked snapshot when agent opens
+      if (isAgent) {
+        const masked = {
+          id: deal.deal_id,
+          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
+          property_address: null,
+          city: deal.city,
+          state: deal.state,
+          purchase_price: deal.budget,
+          pipeline_stage: deal.pipeline_stage,
+          key_dates: { closing_date: deal.closing_date },
+          agent_id: deal.agent_id,
+          is_fully_signed: false,
+        };
+        setCachedDeal(deal.deal_id, masked);
+      }
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
       return;
     }
@@ -274,6 +290,21 @@ function PipelineContent() {
     // Check if we already have a room for this deal in the fetched rooms list
     const existing = rooms.find(r => r.deal_id === deal.deal_id && !r.is_orphan);
     if (existing?.id) {
+      if (isAgent) {
+        const masked = {
+          id: deal.deal_id,
+          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
+          property_address: null,
+          city: deal.city,
+          state: deal.state,
+          purchase_price: deal.budget,
+          pipeline_stage: deal.pipeline_stage,
+          key_dates: { closing_date: deal.closing_date },
+          agent_id: deal.agent_id,
+          is_fully_signed: false,
+        };
+        setCachedDeal(deal.deal_id, masked);
+      }
       navigate(`${createPageUrl("Room")}?roomId=${existing.id}`);
       return;
     }
@@ -290,6 +321,21 @@ function PipelineContent() {
         dealId: deal.deal_id,
         agentProfileId: deal.agent_id
       });
+      if (isAgent) {
+        const masked = {
+          id: deal.deal_id,
+          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
+          property_address: null,
+          city: deal.city,
+          state: deal.state,
+          purchase_price: deal.budget,
+          pipeline_stage: deal.pipeline_stage,
+          key_dates: { closing_date: deal.closing_date },
+          agent_id: deal.agent_id,
+          is_fully_signed: false,
+        };
+        setCachedDeal(deal.deal_id, masked);
+      }
       navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
     } catch (error) {
       console.error("Failed to create/find room:", error);
