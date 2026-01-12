@@ -201,7 +201,8 @@ export default function AgentMatching() {
         });
       }
 
-      toast.success(`Deal request sent to ${agentProfile.full_name || 'agent'}`);
+      const _first = (agentProfile.full_name || 'agent').split(' ')[0];
+      toast.success(`Deal request sent to ${_first}`);
       setTimeout(() => {
         navigate(createPageUrl("Pipeline"));
       }, 500);
