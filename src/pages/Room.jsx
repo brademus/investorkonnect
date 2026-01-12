@@ -27,6 +27,27 @@ import {
 import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
 
+// Helper to build a minimal deal snapshot from room for instant render
+function buildDealFromRoom(room) {
+  if (!room) return null;
+  return {
+    id: room.deal_id || `room-${room.id}`,
+    title: room.title || room.deal_title,
+    property_address: room.property_address,
+    city: room.city,
+    state: room.state,
+    county: room.county,
+    zip: room.zip,
+    purchase_price: room.budget,
+    pipeline_stage: room.pipeline_stage,
+    key_dates: { closing_date: room.closing_date },
+    agent_id: room.deal_assigned_agent_id,
+    is_fully_signed: !!room.is_fully_signed,
+    property_type: room.property_type,
+    property_details: room.property_details || {}
+  };
+}
+
 // Use shared rooms hook with aggressive caching
 function useMyRooms() {
   const { data: rooms, isLoading: loading } = useRooms();
@@ -290,6 +311,19 @@ export default function Room() {
     } catch (error) {
       console.error('[Room] ❌ Refresh failed:', error);
     }
+  };
+
+  // Prefetch secure deal details without blocking UI
+  const prefetchDeal = () => {
+    try {
+      const did = currentRoom?.deal_id;
+      if (!did) return;
+      const cached = getCachedDeal(did);
+      if (cached) return;
+      base44.functions.invoke('getDealDetailsForUser', { dealId: did })
+        .then((res) => { if (res?.data) setCachedDeal(did, res.data); })
+        .catch(() => {});
+    } catch (_) {}
   };
   
   // CRITICAL: Reload after DocuSign return with signed=1
@@ -859,13 +893,28 @@ ${dealContext}`;
             
             {roomId && (
               <Button
+                  onMouseEnter={prefetchDeal}
                   onClick={() => {
                     const next = !showBoard;
-                    setShowBoard(next);
                     if (next) {
-                      // Ensure freshest data when opening the Deal Board
+                      // Hydrate instantly from cache or room snapshot
+                      if (currentRoom?.deal_id) {
+                        const cached = getCachedDeal(currentRoom.deal_id);
+                        if (cached) {
+                          setDeal(cached);
+                        } else {
+                          const snap = buildDealFromRoom(currentRoom);
+                          if (snap) setDeal(snap);
+                        }
+                      } else if (currentRoom && !deal) {
+                        const snap = buildDealFromRoom(currentRoom);
+                        if (snap) setDeal(snap);
+                      }
+                      // Fetch fresh in background
+                      prefetchDeal();
                       refreshRoomState();
                     }
+                    setShowBoard(next);
                   }}
                   className={`rounded-full font-semibold transition-all ${
                        showBoard 
@@ -1426,10 +1475,10 @@ ${dealContext}`;
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id */}
-                  {currentRoom?.deal_id && deal ? (
+                  {currentRoom?.deal_id && (deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom)) ? (
                     <LegalAgreementPanel
                       key={agreementPanelKey}
-                      deal={deal}
+                      deal={deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom)}
                       profile={profile}
                       onUpdate={async () => {
                         await refreshRoomState();
@@ -1634,7 +1683,7 @@ ${dealContext}`;
                 <div className="space-y-6">
                   {/* Document Checklist */}
                   <DocumentChecklist 
-                                            deal={deal}
+                                            deal={deal || (currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null) || buildDealFromRoom(currentRoom)}
                                             room={currentRoom}
                                             userRole={profile?.user_role}
                                             onUpdate={() => {
