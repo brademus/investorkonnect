@@ -693,16 +693,29 @@ function PipelineContent() {
 
                                       {/* Action Buttons */}
                                       <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
-                                        <Button
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDealClick(deal);
-                                          }}
-                                          size="sm"
-                                          className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
-                                        >
-                                          Open Deal Room
-                                        </Button>
+                                        {(!isAgent && deal.agent_request_status === 'rejected') ? (
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              navigate(createPageUrl("AgentMatching") + `?dealId=${deal.deal_id}`);
+                                            }}
+                                            size="sm"
+                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
+                                          >
+                                            Match With New Agent
+                                          </Button>
+                                        ) : (
+                                          <Button
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handleDealClick(deal);
+                                            }}
+                                            size="sm"
+                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
+                                          >
+                                            Open Deal Room
+                                          </Button>
+                                        )}
                                         {isInvestor && (
                                           <Button
                                             onClick={(e) => {
