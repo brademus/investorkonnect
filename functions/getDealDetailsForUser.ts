@@ -116,14 +116,46 @@ Deno.serve(async (req) => {
     const property_details_fallback = hasPD ? baseDeal.property_details : (room?.property_details || null);
     const property_type_fallback = baseDeal.property_type || room?.property_type || null;
 
+    // If still missing, derive from seller contract for display (no DB writes)
+    let display_property_details = property_details_fallback;
+    let display_property_type = property_type_fallback;
+    try {
+      const needsPD = !display_property_details || Object.keys(display_property_details || {}).length === 0;
+      const needsType = !display_property_type;
+      if (needsPD || needsType) {
+        const sellerUrl = deal?.documents?.purchase_contract?.file_url ||
+                          deal?.documents?.purchase_contract?.url ||
+                          deal?.contract_document?.url ||
+                          deal?.contract_url;
+        if (sellerUrl) {
+          const { data: extraction } = await base44.functions.invoke('extractContractData', { fileUrl: sellerUrl });
+          const d = extraction?.data || extraction;
+          if (d) {
+            if (needsType && d.property_type) display_property_type = d.property_type;
+            if (needsPD && d.property_details) {
+              const pd = {};
+              if (d.property_details?.beds != null) pd.beds = d.property_details.beds;
+              if (d.property_details?.baths != null) pd.baths = d.property_details.baths;
+              if (d.property_details?.sqft != null) pd.sqft = d.property_details.sqft;
+              if (d.property_details?.year_built != null) pd.year_built = d.property_details.year_built;
+              if (d.property_details?.number_of_stories) pd.number_of_stories = d.property_details.number_of_stories;
+              if (typeof d.property_details?.has_basement === 'boolean') pd.has_basement = d.property_details.has_basement;
+              if (Object.keys(pd).length) display_property_details = pd;
+            }
+          }
+        }
+      }
+    } catch (_) {}
+
+
     // Sensitive fields - only visible to investors OR fully signed agents
     if (isInvestor || isFullySigned) {
       return Response.json({
         ...baseDeal,
-        property_type: property_type_fallback,
+        property_type: display_property_type,
         property_address: deal.property_address,
         seller_info: deal.seller_info,
-        property_details: property_details_fallback,
+        property_details: display_property_details,
         documents: deal.documents,
         notes: deal.notes,
         special_notes: deal.special_notes,
@@ -134,8 +166,8 @@ Deno.serve(async (req) => {
     // Agents see limited info until fully signed (but show non-sensitive property details and seller contract link)
     return Response.json({
       ...baseDeal,
-      property_type: property_type_fallback,
-      property_details: property_details_fallback,
+      property_type: display_property_type,
+      property_details: display_property_details,
       property_address: null, // Hidden
       seller_info: null, // Hidden
       // Expose ONLY the seller purchase contract so Files tab can render it
