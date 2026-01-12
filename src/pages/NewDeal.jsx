@@ -215,7 +215,7 @@ export default function NewDeal() {
                 setBuyerCommissionPercentage((terms.buyer_commission_percentage ?? "").toString());
               }
               if (terms.buyer_flat_fee !== null && terms.buyer_flat_fee !== undefined) {
-                setBuyerFlatFee(terms.buyer_flat_fee.toString());
+                setBuyerFlatFee((terms.buyer_flat_fee ?? "").toString());
               }
               
               if (terms.agreement_length !== null && terms.agreement_length !== undefined) {
