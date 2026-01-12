@@ -202,7 +202,7 @@ export default function NewDeal() {
                 setSellerCommissionType(terms.seller_commission_type);
               }
               if (terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined) {
-                setSellerCommissionPercentage(terms.seller_commission_percentage.toString());
+                setSellerCommissionPercentage((terms.seller_commission_percentage ?? "").toString());
               }
               if (terms.seller_flat_fee !== null && terms.seller_flat_fee !== undefined) {
                 setSellerFlatFee(terms.seller_flat_fee.toString());
