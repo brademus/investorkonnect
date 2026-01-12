@@ -130,6 +130,8 @@ export default function NewDeal() {
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
     if (dealId && profile?.id) {
+      const hasDraft = !!sessionStorage.getItem("newDealDraft");
+      if (hasDraft) return;
       const loadDealData = async () => {
         try {
           const deals = await base44.entities.Deal.filter({ id: dealId });
