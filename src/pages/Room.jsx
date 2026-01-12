@@ -949,7 +949,8 @@ ${dealContext}`;
           {filteredRooms.map(r => {
             const handleClick = () => {
               // Optimistically set room to avoid momentary mismatch
-              setCurrentRoom(r);
+              // Reset state immediately to avoid cross-room flicker
+              setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
               setDeal(null);
               navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
               setDrawer(false);
