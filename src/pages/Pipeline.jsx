@@ -282,23 +282,23 @@ function PipelineContent() {
     // Fire-and-forget prefetch of secure deal details for instant hydration
     if (deal?.deal_id) {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
-        .then((res) => {
-          if (res?.data) setCachedDeal(deal.deal_id, res.data);
-        })
+        .then((res) => { if (res?.data) setCachedDeal(deal.deal_id, res.data); })
         .catch(() => {});
     }
-    if (deal.is_orphan) {
-      // Route orphan deals to NewDeal for editing, not DealWizard
-      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
-      return;
-    }
-    
-    // If room_id exists, navigate to it
-    if (deal.room_id) {
+
+    // If a room already exists, open it
+    if (deal?.room_id) {
       navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
       return;
     }
-    
+
+    // If no agent assigned yet, guide user to add one
+    if (!deal?.agent_id) {
+      toast.info('Please select an agent for this deal to open a room');
+      navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`);
+      return;
+    }
+
     // Otherwise, get or create the room for this deal + agent
     try {
       const roomId = await getOrCreateDealRoom({
