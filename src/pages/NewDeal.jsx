@@ -153,7 +153,7 @@ export default function NewDeal() {
             if (deal.seller_info) {
               setSellerName(deal.seller_info.seller_name || "");
               setEarnestMoney(deal.seller_info.earnest_money?.toString() || "");
-              setNumberOfSigners(deal.seller_info.number_of_signers || "1");
+              setNumberOfSigners((deal.seller_info.number_of_signers ?? "1").toString());
               setSecondSignerName(deal.seller_info.second_signer_name || "");
             }
             
