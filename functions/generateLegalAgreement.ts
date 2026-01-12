@@ -111,6 +111,15 @@ Date: [[AGENT_DATE]]
   return text;
 }
 
+function normalizeWinAnsi(text) {
+  const map = {
+    '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '“': '"', '”': '"', '‘': "'", '’': "'",
+    '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≤': '<=', '≥': '>=', '©': '(c)', '®': '(r)', '™': 'TM',
+    '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' '
+  };
+  return text.replace(/[\u2013\u2014\u2212\u2022\u00B7\u2026\u201C\u201D\u2018\u2019\u2192\u2190\u2194\u21D2\u2264\u2265\u00A9\u00AE\u2122\u00AD\u00A0\u2002\u2003]/g, ch => map[ch] ?? '');
+}
+
 async function sha256(data) {
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
@@ -592,6 +601,8 @@ Deno.serve(async (req) => {
     
     console.log('All placeholders replaced successfully');
     
+    // Sanitize text to WinAnsi-safe characters
+    templateText = normalizeWinAnsi(templateText);
     // Normalize signature section BEFORE generating PDF
     templateText = normalizeSignatureSection(templateText);
     
