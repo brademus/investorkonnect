@@ -191,14 +191,16 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           if (doc.key === 'operating_agreement') {
             fileToShow = hasUrl(uploaded) ? uploaded : (resolvedFile || internalAgreementFile);
           } else if (doc.key === 'purchase_contract') {
+            const hideSeller = userRole === 'agent' && !isWorkingTogether;
             const fallback = resolvedFile || { url: deal?.contract_document?.url || deal?.contract_url, filename: deal?.contract_document?.name };
-            fileToShow = hasUrl(uploaded) ? uploaded : fallback;
+            fileToShow = hideSeller ? null : (hasUrl(uploaded) ? uploaded : fallback);
           } else {
             fileToShow = hasUrl(uploaded) ? uploaded : (isWorkingTogether ? resolvedFile : null);
           }
 
           // Compute a robust URL for View/Download with deep fallbacks
-          const fileUrl = (
+          const hideSeller = userRole === 'agent' && !isWorkingTogether;
+          const fileUrl = hideSeller && doc.key === 'purchase_contract' ? null : (
             (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
             (doc.key === 'purchase_contract'
               ? (
