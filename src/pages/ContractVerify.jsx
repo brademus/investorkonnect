@@ -531,7 +531,14 @@ export default function ContractVerify() {
               ))}
             </ul>
             <Button
-              onClick={() => navigate(createPageUrl("NewDeal"))}
+              onClick={() => {
+                const editDealId = dealIdFromUrl || dealData?.dealId;
+                if (editDealId) {
+                  navigate(`${createPageUrl("NewDeal")}?dealId=${editDealId}&fromVerify=1`);
+                } else {
+                  navigate(`${createPageUrl("NewDeal")}?fromVerify=1`);
+                }
+              }}
               variant="outline"
               className="border-red-500/50 text-red-400 hover:bg-red-500/10 rounded-full"
             >

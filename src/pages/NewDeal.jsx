@@ -17,6 +17,7 @@ export default function NewDeal() {
   
   const dealId = searchParams.get("dealId");
   const draftKey = dealId ? `dealDraft_${dealId}` : "newDealDraft";
+  const fromVerify = searchParams.get("fromVerify") === "1";
 
   // Section 1: Property + Deal Info
   const [propertyAddress, setPropertyAddress] = useState("");
@@ -54,14 +55,12 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
 
-  // Load draft from sessionStorage ONLY when editing or when explicit newDealDraft exists
+  // Load draft from sessionStorage when editing or returning from verification error
   useEffect(() => {
     const isEditing = !!dealId;
+    const shouldLoad = isEditing || fromVerify;
+    if (!shouldLoad) return;
     const raw = sessionStorage.getItem(draftKey);
-    if (!isEditing) {
-      // For brand-new deals, never auto-load previous draft
-      return;
-    }
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
@@ -95,7 +94,7 @@ export default function NewDeal() {
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
     } catch (_) {}
-  }, [dealId]);
+  }, [dealId, fromVerify]);
 
   // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
   useEffect(() => {
