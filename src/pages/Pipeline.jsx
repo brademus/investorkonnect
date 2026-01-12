@@ -232,10 +232,10 @@ function PipelineContent() {
 
         // Content - Prefer Deal Entity (User Uploaded Data)
         title: deal.title || 'Untitled Deal',
-        property_address: deal.property_address || 'Address Pending',
+        property_address: deal.property_address || deal.deal_title || 'Address Pending',
         city: deal.city,
         state: deal.state,
-        budget: deal.purchase_price,
+        budget: deal.purchase_price, 
         seller_name: deal.seller_info?.seller_name,
 
         // Status & Agent  
