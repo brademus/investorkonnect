@@ -59,6 +59,7 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.Deal.delete(d.id);
           dealsDeleted += 1;
           deletedDealIds.add(d.id);
+          await sleep(120);
         } catch (err) {
           console.error('[removeAllDemoAgents] Failed to delete deal', d.id, err?.message);
         }
