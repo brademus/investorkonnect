@@ -21,6 +21,7 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDisplay";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
+import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard";
 import { getCachedDeal, setCachedDeal } from "@/components/utils/dealCache";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
@@ -1670,39 +1671,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 4. Appointments & Walkthroughs */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Appointments & Walkthroughs</h4>
-                                      <Button
-                                        size="sm"
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs"
-                                        onClick={() => toast.info('Add appointment feature coming soon')}
-                                      >
-                                        <Plus className="w-3 h-3 mr-1" />
-                                        Add
-                                      </Button>
-                                    </div>
-                                    <div className="space-y-3">
-                                      {[
-                                        { date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), time: '10:00 AM', type: 'Walkthrough', note: 'Initial property tour with investor' },
-                                        { date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }), time: '2:00 PM', type: 'Inspection', note: 'Home inspection scheduled' }
-                                      ].map((appt, idx) => (
-                                        <div key={idx} className="p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                          <div className="flex items-start justify-between mb-2">
-                                            <div>
-                                              <p className="text-sm font-semibold text-[#FAFAFA]">{appt.type}</p>
-                                              <p className="text-xs text-[#808080]">{appt.date} at {appt.time}</p>
-                                            </div>
-                                            <span className="text-xs bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded border border-[#E3C567]/30">
-                                              Upcoming
-                                            </span>
-                                          </div>
-                                          <p className="text-xs text-[#FAFAFA]">{appt.note}</p>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  </div>
+                                  <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
 
                                   {/* 5. Agent Notes (Private) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
