@@ -78,6 +78,12 @@ function useMessages(roomId) {
 
   useEffect(() => { scrollToBottom(); }, [items]);
 
+  // Reset messages immediately on room switch to prevent showing previous room content
+  useEffect(() => {
+    setItems([]);
+    setLoading(true);
+  }, [roomId]);
+
   useEffect(() => {
     if (!roomId) return;
     let cancelled = false;
@@ -263,6 +269,15 @@ export default function Room() {
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   const requestSeqRef = useRef(0);
+
+  // On room switch, reset board/tab and transient data to avoid cross-room flicker
+  useEffect(() => {
+    setShowBoard(false);
+    setActiveTab('details');
+    setInvestorTasks([]);
+    setAgentTasks([]);
+    setDeal(null);
+  }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
   const [pdPropertyType, setPdPropertyType] = useState("");
