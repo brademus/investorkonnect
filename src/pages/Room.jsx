@@ -1303,7 +1303,7 @@ ${dealContext}`;
                                       </div>
 
                                       {editingPD ? (
-                                        <div className="space-y-4">
+                                                              <div className="space-y-4">
                                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <div>
                                               <label className="block text-sm text-[#FAFAFA] mb-2">Property Type</label>
