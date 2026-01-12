@@ -1011,7 +1011,25 @@ ${dealContext}`;
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        if (tab.id === 'agreement') {
+                          if (currentRoom?.deal_id) {
+                            const cached = getCachedDeal(currentRoom.deal_id);
+                            if (cached) {
+                              setDeal(cached);
+                            } else {
+                              const snap = buildDealFromRoom(currentRoom);
+                              if (snap) setDeal(snap);
+                            }
+                          } else if (currentRoom && !deal) {
+                            const snap = buildDealFromRoom(currentRoom);
+                            if (snap) setDeal(snap);
+                          }
+                          prefetchDeal();
+                        }
+                      }}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'bg-[#E3C567] text-black shadow-lg'
@@ -1578,13 +1596,13 @@ ${dealContext}`;
                       </div>
 
                       {/* Earnest Money */}
-                      {deal?.seller_info?.earnest_money && (
+                      {dealForDetails?.seller_info?.earnest_money && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Earnest Money</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              ${deal.seller_info.earnest_money.toLocaleString()}
+                              ${dealForDetails.seller_info.earnest_money.toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -1634,20 +1652,20 @@ ${dealContext}`;
                       )}
 
                       {/* Signers - Privacy Protected */}
-                      {deal?.seller_info?.seller_name && (
+                      {dealForDetails?.seller_info?.seller_name && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">
-                              Seller ({deal.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
+                              Seller ({dealForDetails.seller_info.number_of_signers === '2' ? '2 Signers' : '1 Signer'})
                             </p>
                             {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed ? (
                               <p className="text-sm text-[#F59E0B] mt-1">Hidden until agreement fully signed</p>
                             ) : (
                               <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                                {deal.seller_info.seller_name}
-                                {deal.seller_info.number_of_signers === '2' && deal.seller_info.second_signer_name && (
-                                  <span className="text-[#808080]"> & {deal.seller_info.second_signer_name}</span>
+                                {dealForDetails.seller_info.seller_name}
+                                {dealForDetails.seller_info.number_of_signers === '2' && dealForDetails.seller_info.second_signer_name && (
+                                  <span className="text-[#808080]"> & {dealForDetails.seller_info.second_signer_name}</span>
                                 )}
                               </p>
                             )}
