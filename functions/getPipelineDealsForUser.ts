@@ -94,6 +94,23 @@ Deno.serve(async (req) => {
       console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
     }
 
+    // If no deals found, try a broad fallback: any rooms for this profile, then load those deals
+    if (!deals || deals.length === 0) {
+      try {
+        const myRooms = isInvestor
+          ? await base44.entities.Room.filter({ investorId: profile.id })
+          : await base44.entities.Room.filter({ agentId: profile.id });
+        const rIds = Array.from(new Set(myRooms.map(r => r.deal_id).filter(Boolean)));
+        if (rIds.length) {
+          const fromRooms = await Promise.all(rIds.map(id => base44.entities.Deal.filter({ id }).then(a => a[0]).catch(() => null)));
+          deals = (fromRooms || []).filter(Boolean);
+          console.log('[getPipelineDealsForUser] Fallback via rooms produced deals:', deals.length);
+        }
+      } catch (e) {
+        console.warn('[getPipelineDealsForUser] Room fallback failed:', e);
+      }
+    }
+
     // Fetch all LegalAgreements for these deals (BEFORE mapping)
     const dealIds = deals.map(d => d.id);
     let agreementsMap = new Map();
