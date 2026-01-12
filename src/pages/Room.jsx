@@ -504,8 +504,11 @@ export default function Room() {
   }, [currentRoom?.deal_id]);
 
    // Auto-extract property details from Seller Contract if missing
-  useEffect(() => {
-    if (!deal?.id) return;
+   useEffect(() => {
+     if (!deal?.id) return;
+
+     // Block agents from touching seller contract before agreement is fully signed
+     if (profile?.user_role === 'agent' && !isWorkingTogether) return;
 
     const hasDetails =
       !!(deal.property_type) ||
@@ -1947,10 +1950,20 @@ ${dealContext}`;
 
                     <div className="space-y-2">
                       {(() => {
-                        // Merge system docs + user uploads; hide seller contract for agents until fully signed
+                        // Merge system docs + user uploads
                         let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
-                        // If unified list is empty but deal has legacy contract fields, surface them
-                        if (allFiles.length === 0 && (deal?.contract_document?.url || deal?.contract_url)) {
+
+                        // Enforce privacy: hide Seller/Purchase Contract for agents until fully signed
+                        const hideSeller = profile?.user_role === 'agent' && !isWorkingTogether;
+                        if (hideSeller) {
+                          allFiles = allFiles.filter(f => {
+                            const label = (f.label || f.name || '').toLowerCase();
+                            return !label.includes('seller contract') && !label.includes('purchase contract');
+                          });
+                        }
+
+                        // If unified list is empty but deal has legacy contract fields, surface them (INVESTOR or after fully signed only)
+                        if (!hideSeller && allFiles.length === 0 && (deal?.contract_document?.url || deal?.contract_url)) {
                           allFiles = [{
                             label: 'Seller Contract',
                             url: deal?.contract_document?.url || deal?.contract_url,
