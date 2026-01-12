@@ -192,7 +192,7 @@ function PipelineContent() {
       }
     });
 
-    return dealsData.map(deal => {
+    const mappedDeals = dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       
       // Agent is accepted/signed if room status is accepted or signed
@@ -256,6 +256,9 @@ function PipelineContent() {
         is_orphan: !hasAgentAccepted && !hasAgentPending
       };
     });
+
+    // Hide declined deals entirely for agents
+    return mappedDeals.filter(d => !(isAgent && d.agent_request_status === 'rejected'));
   }, [dealsData, rooms]);
 
   const handleDealClick = async (deal) => {
@@ -508,6 +511,7 @@ function PipelineContent() {
                       <div className="divide-y divide-[#1F1F1F]">
                         {activities.map((activity) => {
                            const dealDisplay = deals.find(d => d.id === activity.deal_id);
+                           if (!dealDisplay) return null;
                           const getIcon = () => {
                             switch (activity.type) {
                               case 'agent_locked_in':
