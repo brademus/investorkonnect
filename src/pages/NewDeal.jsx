@@ -443,6 +443,118 @@ export default function NewDeal() {
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] min-h-[80px]"
               />
             </div>
+
+            {/* Property Details */}
+            <div className="pt-4 border-t border-[#1F1F1F]">
+              <h3 className="text-sm font-semibold text-[#FAFAFA] mb-3">Property Details</h3>
+
+              {/* Row 1: Property Type, Beds, Baths */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Property Type</label>
+                  <Select value={propertyType} onValueChange={setPropertyType}>
+                    <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="single_family">Single Family</SelectItem>
+                      <SelectItem value="multi_family">Multi-Family</SelectItem>
+                      <SelectItem value="condo">Condo</SelectItem>
+                      <SelectItem value="townhouse">Townhouse</SelectItem>
+                      <SelectItem value="manufactured">Manufactured</SelectItem>
+                      <SelectItem value="land">Land</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Bedrooms</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={beds}
+                    onChange={(e) => setBeds(e.target.value)}
+                    placeholder="3"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Bathrooms</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={baths}
+                    onChange={(e) => setBaths(e.target.value)}
+                    placeholder="2"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+              </div>
+
+              {/* Row 2: Sq Ft, Year Built, Stories */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Square Footage</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="1"
+                    value={sqft}
+                    onChange={(e) => setSqft(e.target.value)}
+                    placeholder="1800"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Year Built</label>
+                  <Input
+                    type="number"
+                    min="1800"
+                    max={new Date().getFullYear()}
+                    step="1"
+                    value={yearBuilt}
+                    onChange={(e) => setYearBuilt(e.target.value)}
+                    placeholder="1998"
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Stories</label>
+                  <Select value={numberOfStories} onValueChange={setNumberOfStories}>
+                    <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1</SelectItem>
+                      <SelectItem value="2">2</SelectItem>
+                      <SelectItem value="3+">3+</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 3: Basement */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Basement</label>
+                  <Select value={hasBasement} onValueChange={setHasBasement}>
+                    <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                      <SelectValue placeholder="Select" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Yes</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
