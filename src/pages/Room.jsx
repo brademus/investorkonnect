@@ -433,15 +433,22 @@ export default function Room() {
         // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
         if (enrichedRoom) {
-          // Show cached data instantly while fetching fresh details (mask address for agents until fully signed)
-          const maskedTitle = (profile?.user_role === 'agent' && !enrichedRoom?.is_fully_signed)
-            ? `${enrichedRoom?.city || 'City'}, ${enrichedRoom?.state || 'State'}`
-            : (enrichedRoom?.title || enrichedRoom?.deal_title);
-          setCurrentRoom({
-            ...enrichedRoom,
-            title: maskedTitle,
-            property_address: shouldMaskAddress(profile, enrichedRoom, null) ? null : enrichedRoom?.property_address,
-          });
+          // Ensure we never render stale room: verify ID matches current selection
+          const safeRoom = enrichedRoom.id === roomId ? enrichedRoom : null;
+          if (safeRoom) {
+            const maskedTitle = (profile?.user_role === 'agent' && !safeRoom?.is_fully_signed)
+              ? `${safeRoom?.city || 'City'}, ${safeRoom?.state || 'State'}`
+              : (safeRoom?.title || safeRoom?.deal_title);
+            setCurrentRoom({
+              ...safeRoom,
+              title: maskedTitle,
+              property_address: shouldMaskAddress(profile, safeRoom, null) ? null : safeRoom?.property_address,
+            });
+          } else {
+            setCurrentRoom(null);
+          }
+        } else {
+          setCurrentRoom(null);
         }
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
