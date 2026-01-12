@@ -14,6 +14,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
   const [exhibitA, setExhibitA] = useState(null);
+  const [resolvedDealId, setResolvedDealId] = useState(null);
   
   const isInvestor = (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
   const isAgent = (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
@@ -36,9 +37,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       // Fetch fresh deal data to ensure we have latest proposed_terms
       let currentDeal = deal || null;
       try {
-        const freshDeal = await base44.entities.Deal.filter({ id: deal.id });
-        if (freshDeal && freshDeal.length > 0) {
-          currentDeal = freshDeal[0];
+        const { data } = await base44.functions.invoke('getDealDetailsForUser', {
+          dealId: deal?.id || deal?.deal_id
+        });
+        if (data) {
+          currentDeal = data;
         }
       } catch (e) {
         console.warn('[LegalAgreementPanel] Falling back to passed deal due to fetch error:', e);
@@ -49,6 +52,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         toast.error('Failed to load deal data');
         return;
       }
+
+      setResolvedDealId(currentDeal.id);
 
       const terms = currentDeal.proposed_terms || {};
       
@@ -98,7 +103,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       console.log('[LegalAgreementPanel] 📜 Loading agreement for deal:', deal.id);
       
       const response = await base44.functions.invoke('getLegalAgreement', { 
-        deal_id: deal?.id || currentDeal?.id || deal?.deal_id 
+        deal_id: deal?.id || deal?.deal_id 
       });
       
       const data = response.data;
@@ -120,7 +125,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   
   const handleGenerate = async () => {
     // Validate required params
-    if (!deal?.id) {
+    const effectiveDealId = resolvedDealId || deal?.id || deal?.deal_id;
+    if (!effectiveDealId) {
       toast.error('Missing deal ID — cannot generate agreement.');
       return;
     }
@@ -163,7 +169,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       };
       
       const response = await base44.functions.invoke('generateLegalAgreement', {
-        deal_id: deal.id,
+        deal_id: effectiveDealId,
         exhibit_a: derivedExhibitA
       });
       
