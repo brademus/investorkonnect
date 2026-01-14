@@ -232,17 +232,26 @@ Deno.serve(async (req) => {
     
     // CRITICAL: Sync status to Room and Deal for UI consistency
     if (signingToken.deal_id) {
-      const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: signingToken.deal_id });
-      
-      if (rooms.length > 0) {
-        const room = rooms[0];
+      const allRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: signingToken.deal_id });
+
+      // Select the active room: accepted or signed; fallback to most recent
+      let room = allRooms.find(r => r.request_status === 'accepted' || r.request_status === 'signed');
+      if (!room && allRooms.length > 0) {
+        room = allRooms.reduce((latest, r) => {
+          const a = new Date(r.updated_date || r.created_date || 0).getTime();
+          const b = new Date(latest.updated_date || latest.created_date || 0).getTime();
+          return a > b ? r : latest;
+        }, allRooms[0]);
+      }
+
+      if (room) {
         const newStatus = updates.status || agreement.status;
-        
+
         const roomUpdates = {
           agreement_status: newStatus
         };
-        
-        // Unlock room if fully signed
+
+        // Unlock only the active room if fully signed
         if (newStatus === 'fully_signed' || newStatus === 'attorney_review_pending') {
           roomUpdates.request_status = 'signed';
           roomUpdates.signed_at = now;
@@ -256,15 +265,15 @@ Deno.serve(async (req) => {
               details: 'Agreement fully signed - room unlocked'
             }
           ];
-          
-          console.log('[docusignHandleReturn] 🔓 Unlocking room - setting is_fully_signed=true');
+          console.log('[docusignHandleReturn] 🔓 Unlocking active room - setting is_fully_signed=true');
         } else {
           roomUpdates.is_fully_signed = false;
-          console.log('[docusignHandleReturn] 🔒 Room remains locked - status:', newStatus);
+          console.log('[docusignHandleReturn] 🔒 Active room remains locked - status:', newStatus);
         }
-        
+
         await base44.asServiceRole.entities.Room.update(room.id, roomUpdates);
-        console.log('[docusignHandleReturn] ✓ Room synced:', {
+        console.log('[docusignHandleReturn] ✓ Active room synced:', {
+          room_id: room.id,
           agreement_status: roomUpdates.agreement_status,
           is_fully_signed: roomUpdates.is_fully_signed
         });
