@@ -268,7 +268,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
 
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms (Deal Data Only)</Label>
-                <p className="text-xs text-slate-500 mb-2">These values are loaded exclusively from the deal data you entered. No chat extraction.</p>
+                <p className="text-xs text-slate-500 mb-2">Review investor-entered deal terms and generate a contract.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-blue-200 rounded-lg p-4 bg-blue-50">
                   {FIELDS.map(({ key, label }) => {
                     const isMissing = missing.includes(key);
