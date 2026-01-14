@@ -642,7 +642,7 @@ function PipelineContent() {
                   const Icon = stage.icon;
 
                   return (
-                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col h-[400px]">
+                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col h-[400px] will-change-transform">
                       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
                         <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
                           <Icon className="w-4 h-4" />
