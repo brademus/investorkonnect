@@ -175,9 +175,25 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
           if (doc.key === 'purchase_contract' && (resolved.verifiedPurchaseContract?.url || resolved.sellerContract?.url)) {
             resolvedFile = resolved.verifiedPurchaseContract?.url ? resolved.verifiedPurchaseContract : resolved.sellerContract;
           } else if (doc.key === 'operating_agreement') {
-             const ia = resolved.internalAgreement;
-            if (ia?.urlSignedPdf || ia?.url) {
-              resolvedFile = ia;
+            const iaFinal =
+              documents.internal_agreement?.file_url ||
+              documents.internal_agreement?.url;
+            const iaDraft =
+              documents.internal_agreement_draft?.file_url ||
+              documents.internal_agreement_draft?.url ||
+              room?.internal_agreement_document?.url;
+            if (iaFinal) {
+              resolvedFile = {
+                url: iaFinal,
+                filename: documents.internal_agreement?.filename,
+                uploaded_at: documents.internal_agreement?.uploaded_at
+              };
+            } else if (iaDraft) {
+              resolvedFile = {
+                url: iaDraft,
+                filename: documents.internal_agreement_draft?.filename || room?.internal_agreement_document?.name,
+                uploaded_at: documents.internal_agreement_draft?.uploaded_at || room?.internal_agreement_document?.generated_at
+              };
             } else if (internalAgreementFile?.url) {
               resolvedFile = internalAgreementFile;
             }
@@ -200,26 +216,42 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
           // Compute a robust URL for View/Download with deep fallbacks
           const hideSeller = userRole === 'agent' && !isWorkingTogether;
-          const fileUrl = hideSeller && doc.key === 'purchase_contract' ? null : (
-            (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
-            (doc.key === 'purchase_contract'
-              ? (
-                  resolved.verifiedPurchaseContract?.url ||
-                  resolved.sellerContract?.url ||
-                  deal?.documents?.purchase_contract?.file_url ||
-                  deal?.documents?.purchase_contract?.url ||
-                  deal?.contract_document?.url ||
-                  deal?.contract_url ||
-                  room?.contract_document?.file_url ||
-                  room?.contract_document?.url
-                )
-              : doc.key === 'operating_agreement'
-              ? (resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url)
-              : doc.key === 'listing_agreement'
-              ? resolved.listingAgreement?.url
-              : null
-            )
-          );
+          const iaFinalUrl =
+            documents.internal_agreement?.file_url ||
+            documents.internal_agreement?.url;
+          const iaDraftUrl =
+            documents.internal_agreement_draft?.file_url ||
+            documents.internal_agreement_draft?.url ||
+            room?.internal_agreement_document?.url;
+
+          const fileUrl = (doc.key === 'purchase_contract' && hideSeller)
+            ? null
+            : (
+                doc.key === 'operating_agreement'
+                  ? (
+                      userRole === 'agent'
+                        ? (isWorkingTogether ? (iaFinalUrl || null) : null)
+                        : (iaFinalUrl || iaDraftUrl || resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url || internalAgreementFile?.url || null)
+                    )
+                  : doc.key === 'listing_agreement'
+                  ? resolved.listingAgreement?.url
+                  : (
+                      (fileToShow && (fileToShow.url || fileToShow.file_url || fileToShow.urlSignedPdf)) ||
+                      (doc.key === 'purchase_contract'
+                        ? (
+                            resolved.verifiedPurchaseContract?.url ||
+                            resolved.sellerContract?.url ||
+                            deal?.documents?.purchase_contract?.file_url ||
+                            deal?.documents?.purchase_contract?.url ||
+                            deal?.contract_document?.url ||
+                            deal?.contract_url ||
+                            room?.contract_document?.file_url ||
+                            room?.contract_document?.url
+                          )
+                        : null
+                      )
+                    )
+              );
           const canUpload =
             doc.key !== 'operating_agreement' && (
               doc.uploadedBy === 'both' ||
