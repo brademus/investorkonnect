@@ -440,16 +440,17 @@ Date: _______________
           {step === 3 && aiFlowResult && (
             <div className="space-y-6">
               {/* Parties */}
-              {aiFlowResult.parties && (
-                <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
-                  <span className="text-sm text-slate-600">
-                    <strong>Investor:</strong> {aiFlowResult.parties.investor}
-                  </span>
-                  <span className="text-slate-300">|</span>
-                  <span className="text-sm text-slate-600">
-                    <strong>Agent:</strong> {aiFlowResult.parties.agent}
-                  </span>
-                </div>
+              {/* Parties sourced from agreement (buyer’s agent focus) */}
+              {agreementData && (
+               <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
+                 <span className="text-sm text-slate-600">
+                   <strong>Investor:</strong> {terms["Investor Name"] || '—'}
+                 </span>
+                 <span className="text-slate-300">|</span>
+                 <span className="text-sm text-slate-600">
+                   <strong>Agent:</strong> {terms["Agent Name"] || '—'}
+                 </span>
+               </div>
               )}
 
               {/* Risk Summary */}
