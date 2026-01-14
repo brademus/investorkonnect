@@ -404,16 +404,21 @@ export default function Room() {
   // Prefetch Pipeline data to make back navigation instant
   const prefetchPipeline = () => {
     try {
-      // Warm pipeline deals cache
-      queryClient.prefetchQuery({
-        queryKey: ['pipelineDeals'],
-        queryFn: async () => {
-          const res = await base44.functions.invoke('getPipelineDealsForUser');
-          return res.data;
-        },
-        staleTime: 60_000
-      });
-      // Warm rooms cache
+      if (profile?.id) {
+        // Warm pipeline deals cache with the SAME key and shape as Pipeline page
+        queryClient.prefetchQuery({
+          queryKey: ['pipelineDeals', profile.id, profile.user_role],
+          queryFn: async () => {
+            const res = await base44.functions.invoke('getPipelineDealsForUser');
+            const deals = res.data?.deals || [];
+            return deals
+              .filter(d => d.status !== 'archived')
+              .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+          },
+          staleTime: 60_000
+        });
+      }
+      // Warm rooms cache (key matches Pipeline)
       queryClient.prefetchQuery({
         queryKey: ['rooms'],
         queryFn: async () => {

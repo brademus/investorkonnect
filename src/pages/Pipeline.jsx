@@ -446,7 +446,7 @@ function PipelineContent() {
     return m;
   }, [deals, isAgent]);
 
-  if (loading || !profile || loadingDeals || loadingRooms || loadingRequests || loadingActivities || loadingAppointments || deduplicating) {
+  if (loading || !profile || loadingDeals || deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
