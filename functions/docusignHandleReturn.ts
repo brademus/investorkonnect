@@ -62,8 +62,7 @@ Deno.serve(async (req) => {
     
     // Only process signing_complete event
     if (event !== 'signing_complete') {
-      console.log('[docusignHandleReturn] Non-signing event:', event, '- redirecting');
-      await base44.asServiceRole.entities.SigningToken.update(signingToken.id, { used: true });
+      console.log('[docusignHandleReturn] Non-signing event:', event, '- keeping token valid');
       return Response.json({ 
         success: true,
         returnTo: signingToken.return_to,
@@ -71,8 +70,7 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Mark token as used
-    await base44.asServiceRole.entities.SigningToken.update(signingToken.id, { used: true });
+    // Defer consuming token until envelope is confirmed completed
     
     // Load agreement
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: signingToken.agreement_id });
@@ -309,6 +307,14 @@ Deno.serve(async (req) => {
       }
     }
     
+    // Consume token only when the envelope is fully completed
+    if (envelope?.status === 'completed') {
+      await base44.asServiceRole.entities.SigningToken.update(signingToken.id, { used: true });
+      console.log('[docusignHandleReturn] ✓ Token consumed after confirmed completion');
+    } else {
+      console.log('[docusignHandleReturn] Token kept valid (status:', envelope?.status, ')');
+    }
+
     return Response.json({ 
       success: true,
       returnTo: signingToken.return_to,
