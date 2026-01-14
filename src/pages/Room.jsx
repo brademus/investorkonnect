@@ -2033,6 +2033,23 @@ ${dealContext}`;
                         ) : (
                           allFiles.map((file, idx) => {
                             const fileUrl = file.url || file.file_url || file.urlSignedPdf;
+                            const isInternalAgreement = /internal agreement/i.test((file.label || file.name || ''));
+
+                            // For investors, show a status row for Internal Agreement until fully signed (no view/download)
+                            if (isInternalAgreement && !isWorkingTogether && profile?.user_role === 'investor') {
+                              return (
+                                <div key={idx} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
+                                  <div className="w-10 h-10 bg-[#F59E0B]/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                                    <Shield className="w-5 h-5 text-[#F59E0B]" />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-[#FAFAFA] truncate">Internal Agreement</p>
+                                    <p className="text-xs text-[#F59E0B]">Pending signatures</p>
+                                  </div>
+                                </div>
+                              );
+                            }
+
                             return fileUrl ? (
                               <div key={idx} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
                                 <div className="w-10 h-10 bg-[#E3C567]/20 rounded-lg flex items-center justify-center flex-shrink-0">
