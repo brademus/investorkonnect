@@ -596,25 +596,26 @@ Date: _______________
 
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms</Label>
+                <p className="text-xs text-slate-500 mb-2">Prefilled from Agreement; chat only fills blanks.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-blue-200 rounded-lg p-4 bg-blue-50">
-                  {Object.entries(terms).map(([k, v]) => (
-                    <div key={k} className="flex flex-col">
-                      <Label className="text-xs text-slate-600 mb-1">{k}</Label>
-                      <Input 
-                        value={v ?? ""} 
-                        onChange={(e) => updateTerm(k, e.target.value)}
+                  {FIELDS.map(({ key, label }) => (
+                    <div key={key} className="flex flex-col">
+                      <Label className="text-xs text-slate-600 mb-1">{label}</Label>
+                      <Input
+                        value={terms[key] ?? ""}
+                        onChange={(e) => updateTerm(key, e.target.value)}
                         className="text-sm"
                       />
                     </div>
                   ))}
-                  {missing.map(k => (
+                  {missing.filter((k) => !FIELDS.find(f => f.key === k)).map(k => (
                     <div key={k} className="flex flex-col">
                       <Label className="text-xs text-rose-600 mb-1 flex items-center gap-1">
                         <AlertCircle className="w-3 h-3" />
                         {k} (required)
                       </Label>
-                      <Input 
-                        value={terms[k] ?? ""} 
+                      <Input
+                        value={terms[k] ?? ""}
                         onChange={(e) => updateTerm(k, e.target.value)}
                         className="text-sm border-rose-300 focus:ring-rose-500"
                       />
