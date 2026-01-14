@@ -209,11 +209,14 @@ Deno.serve(async (req) => {
         documents: deal.documents,
         notes: deal.notes,
         special_notes: deal.special_notes,
-        audit_log: deal.audit_log
+        audit_log: deal.audit_log,
+        // Include investor-entered terms explicitly so UI can render accurate key terms
+        proposed_terms: deal.proposed_terms || null,
+        room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
       });
     }
 
-    // Agents see limited info until fully signed (but show non-sensitive property details and seller contract link)
+    // Agents see limited info until fully signed (but include non-sensitive proposed terms)
     return Response.json({
       ...baseDeal,
       property_type: display_property_type,
@@ -223,7 +226,9 @@ Deno.serve(async (req) => {
       // Expose ONLY the seller purchase contract so Files tab can render it
       documents: deal?.documents?.purchase_contract ? { purchase_contract: deal.documents.purchase_contract } : null,
       notes: null, // Hidden
-      special_notes: null // Hidden
+      special_notes: null, // Hidden
+      proposed_terms: deal.proposed_terms || null,
+      room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
     });
   } catch (error) {
     console.error('getDealDetailsForUser error:', error);
