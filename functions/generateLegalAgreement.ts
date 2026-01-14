@@ -986,9 +986,34 @@ Deno.serve(async (req) => {
     
     let agreement;
     if (existing.length > 0) {
-      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, agreementData);
+      // Regeneration: force re-sign by clearing all signing state and resetting status
+      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
+        ...agreementData,
+        investor_signed_at: null,
+        agent_signed_at: null,
+        investor_signed: false,
+        agent_signed: false,
+        is_fully_signed: false,
+        signed_pdf_url: null,
+        signed_pdf_sha256: null,
+        investor_ip: null,
+        agent_ip: null,
+        status: 'sent',
+        docusign_status: 'sent'
+      });
     } else {
-      agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
+      agreement = await base44.asServiceRole.entities.LegalAgreement.create({
+        ...agreementData,
+        investor_signed_at: null,
+        agent_signed_at: null,
+        investor_signed: false,
+        agent_signed: false,
+        is_fully_signed: false,
+        signed_pdf_url: null,
+        signed_pdf_sha256: null,
+        investor_ip: null,
+        agent_ip: null
+      });
     }
     
     // Ensure new envelope and recipient IDs are saved and old ones cannot be used
