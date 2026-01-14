@@ -182,7 +182,7 @@ Deno.serve(async (req) => {
           
           // Download signed PDF
           try {
-            const pdfBuffer = await downloadSignedPdf(envelopeId, env);
+            const pdfBuffer = await downloadSignedPdf(base44, envelopeId);
             const pdfHash = await sha256(pdfBuffer);
             
             // Upload to storage
