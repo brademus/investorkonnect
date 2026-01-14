@@ -638,7 +638,7 @@ function PipelineContent() {
             <DragDropContext onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {pipelineStages.map(stage => {
-                  const stageDeals = deals.filter(d => d.pipeline_stage === stage.id && !(isAgent && d.agent_request_status === 'rejected'));
+                  const stageDeals = useMemo(() => deals.filter(d => d.pipeline_stage === stage.id && !(isAgent && d.agent_request_status === 'rejected')), [deals, stage.id, isAgent]);
                   const Icon = stage.icon;
 
                   return (
