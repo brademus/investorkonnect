@@ -25,6 +25,18 @@ export default function ContractWizard({ roomId, open, onClose }) {
   const [saving, setSaving] = useState(false);
   const [mode, setMode] = useState("ai"); // "ai" or "template"
   const [aiFlowResult, setAiFlowResult] = useState(null);
+  const [agreementData, setAgreementData] = useState(null);
+
+  const mergeMissing = (base, extra) => {
+    const out = { ...(base || {}) };
+    if (extra && typeof extra === 'object') {
+      Object.entries(extra).forEach(([k, v]) => {
+        const isEmpty = out[k] === undefined || out[k] === null || String(out[k]).trim() === '';
+        if (isEmpty && v !== undefined && v !== null && String(v).trim() !== '') out[k] = v;
+      });
+    }
+    return out;
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -37,6 +49,71 @@ export default function ContractWizard({ roomId, open, onClose }) {
     setMode("ai");
     setAiFlowResult(null);
   }, [open]);
+
+  // Load buyer's agent agreement terms when modal opens
+  useEffect(() => {
+    if (!open || !roomId) return;
+    (async () => {
+      try {
+        setLoading(true);
+        // 1) Load room to get deal_id
+        const rooms = await base44.entities.Room.filter({ id: roomId });
+        const room = rooms?.[0];
+        const dealId = room?.deal_id;
+        if (!dealId) { setLoading(false); return; }
+
+        // 2) Load deal + agreement in parallel
+        const [dealList, agreementRes] = await Promise.all([
+          base44.entities.Deal.filter({ id: dealId }),
+          base44.functions.invoke('getLegalAgreement', { deal_id: dealId })
+        ]);
+        const deal = dealList?.[0] || null;
+        const agreement = agreementRes?.data?.agreement || null;
+        setAgreementData(agreement);
+
+        // 3) Load profiles (for names/brokerage/license)
+        let investorProfile = null, agentProfile = null;
+        if (agreement?.investor_profile_id || agreement?.agent_profile_id) {
+          const [inv, ag] = await Promise.all([
+            agreement?.investor_profile_id ? base44.entities.Profile.filter({ id: agreement.investor_profile_id }) : Promise.resolve([]),
+            agreement?.agent_profile_id ? base44.entities.Profile.filter({ id: agreement.agent_profile_id }) : Promise.resolve([])
+          ]);
+          investorProfile = inv?.[0] || null;
+          agentProfile = ag?.[0] || null;
+        }
+
+        // 4) Build buyer's agent terms from agreement exhibit A, falling back to deal.proposed_terms
+        const ex = agreement?.exhibit_a_terms || {};
+        const pt = deal?.proposed_terms || {};
+
+        const buyerType = ex.buyer_commission_type || pt.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined);
+        const buyerPct = ex.commission_percentage ?? pt.buyer_commission_percentage ?? '';
+        const buyerFlat = ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '';
+        const lengthDays = ex.agreement_length_days ?? pt.agreement_length ?? '';
+
+        const initialTerms = {
+          "Investor Name": investorProfile?.full_name || '',
+          "Agent Name": agentProfile?.full_name || '',
+          "Agent Brokerage": agentProfile?.agent?.brokerage || agentProfile?.broker || '',
+          "Agent License Number": agentProfile?.agent?.license_number || '',
+          "Agent License State": agentProfile?.agent?.license_state || '',
+          "Buyer’s Agent Commission Type": buyerType || '',
+          "Buyer’s Agent Commission %": buyerType === 'percentage' ? buyerPct : '',
+          "Buyer’s Agent Flat Fee": buyerType === 'flat' ? buyerFlat : '',
+          "Agreement Length (days)": lengthDays || ''
+        };
+
+        setTerms(initialTerms);
+        // Suggest default template for buyer rep
+        if (!templateId) setTemplateId('buyer_rep_v1');
+      } catch (e) {
+        // Silent fail - user can still proceed
+        console.warn('[ContractWizard] Failed to preload agreement terms', e);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [open, roomId]);
 
   // AI Flow: Generate + Analyze in one step
   const runAiFlow = async () => {
@@ -148,32 +225,32 @@ Date: _______________
   // Template flow: Analyze first
   const analyze = async () => {
     setLoading(true);
-    // Simulate loading delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Use placeholder data for demo
-    const placeholderAnalysis = {
-      suggested_template_id: "buyer_rep_v1",
-      plain_summary: "Based on your conversation, this appears to be a buyer representation agreement for investment property acquisition. The investor is looking for multifamily properties with a focus on cash flow.",
-      terms: {
-        "Investor Name": "Demo Investor",
-        "Agent Name": "Demo Agent",
-        "Brokerage": "Premier Realty Group",
-        "Target Markets": "Texas, Florida",
-        "Property Types": "Multifamily, Single Family",
-        "Price Range": "$200,000 - $800,000",
-        "Commission Rate": "3%",
-        "Agreement Term": "12 months"
-      },
-      missing_fields: ["Investor Address", "Agent License Number"]
-    };
-    
-    setAnalysis(placeholderAnalysis);
-    setTemplateId(placeholderAnalysis.suggested_template_id);
-    setTerms(placeholderAnalysis.terms);
-    setMissing(placeholderAnalysis.missing_fields);
-    setStep(2);
-    setLoading(false);
+    try {
+      // Use chat analysis ONLY to fill gaps
+      const resp = await contractAnalyzeChat({ room_id: roomId });
+      const suggested = resp?.data || resp || {};
+      const suggestedTerms = suggested.terms || suggested.suggested_terms || {};
+      const suggestedTemplate = suggested.suggested_template_id || 'buyer_rep_v1';
+      const missingFields = suggested.missing_fields || [];
+      const summary = suggested.plain_summary || suggested.summary;
+
+      setAnalysis({
+        suggested_template_id: suggestedTemplate,
+        plain_summary: summary,
+        terms: suggestedTerms,
+        missing_fields: missingFields
+      });
+      setTemplateId(prev => prev || suggestedTemplate);
+      setTerms(prev => mergeMissing(prev, suggestedTerms));
+      setMissing(missingFields);
+      setStep(2);
+    } catch (e) {
+      // Fallback: just advance to edit with whatever we preloaded
+      console.warn('[ContractWizard] contractAnalyzeChat failed; proceeding with preloaded terms', e);
+      setStep(2);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const updateTerm = (k, v) => {
@@ -332,7 +409,7 @@ Date: _______________
                     <h4 className="font-bold text-slate-900">Template-Based</h4>
                   </div>
                   <p className="text-sm text-slate-600">
-                    Extract terms from chat and fill in a standard contract template manually.
+                    We’ll prefill from the agreement and only use chat to fill any blanks.
                   </p>
                 </button>
               </div>
