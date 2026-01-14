@@ -57,7 +57,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
 
       setResolvedDealId(currentDeal.id);
 
-      const terms = currentDeal.proposed_terms || {};
+      const terms = currentDeal.proposed_terms || currentDeal.room?.proposed_terms || {};
       
       console.log('[LegalAgreementPanel] 📋 Deal data used for generation (buyer focus):', {
       deal_id: currentDeal.id,
