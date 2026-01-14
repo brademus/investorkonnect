@@ -585,7 +585,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                  exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
               </div>
               <p className="text-xs text-[#808080] mt-1">
-                From deal: buyer_commission_type = "{exhibitA.commission_type}"
+                From deal: buyer_commission_type = "{terms.buyer_commission_type || exhibitA.commission_type}"
               </p>
             </div>
             
