@@ -433,6 +433,19 @@ function PipelineContent() {
           XCircle
   })), []);
 
+  // Precompute deals by stage to avoid per-render filtering and flicker
+  const dealsByStage = useMemo(() => {
+    const m = new Map();
+    PIPELINE_STAGES.forEach(s => m.set(s.id, []));
+    deals.forEach(d => {
+      if (isAgent && d.agent_request_status === 'rejected') return;
+      const arr = m.get(d.pipeline_stage) || [];
+      arr.push(d);
+      m.set(d.pipeline_stage, arr);
+    });
+    return m;
+  }, [deals, isAgent]);
+
   if (loading || !profile || loadingDeals || loadingRooms || loadingRequests || loadingActivities || loadingAppointments || deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
@@ -649,7 +662,7 @@ function PipelineContent() {
             <DragDropContext onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-3 gap-6 mb-8">
                 {pipelineStages.map(stage => {
-                  const stageDeals = useMemo(() => deals.filter(d => d.pipeline_stage === stage.id && !(isAgent && d.agent_request_status === 'rejected')), [deals, stage.id, isAgent]);
+                  const stageDeals = dealsByStage.get(stage.id) || [];
                   const Icon = stage.icon;
 
                   return (
@@ -669,7 +682,7 @@ function PipelineContent() {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar ${
+                            className={`flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors ${
                               snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''
                             }`}
                           >
