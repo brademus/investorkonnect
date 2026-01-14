@@ -571,7 +571,7 @@ Date: _______________
 
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms</Label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-slate-200 rounded-lg p-4 bg-slate-50">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-blue-200 rounded-lg p-4 bg-blue-50">
                   {Object.entries(terms).map(([k, v]) => (
                     <div key={k} className="flex flex-col">
                       <Label className="text-xs text-slate-600 mb-1">{k}</Label>
