@@ -55,7 +55,8 @@ function buildDealFromRoom(room, maskAddress = false) {
     agent_id: room.deal_assigned_agent_id,
     is_fully_signed: !!room.is_fully_signed,
     property_type: room.property_type,
-    property_details: room.property_details || {}
+    property_details: room.property_details || {},
+    proposed_terms: room.proposed_terms || undefined
   };
 }
 
@@ -373,7 +374,8 @@ export default function Room() {
             is_fully_signed: freshDeal.is_fully_signed,
             // Include property details so UI can render even if deal object not yet refreshed elsewhere
             property_type: freshDeal.property_type,
-            property_details: freshDeal.property_details
+            property_details: freshDeal.property_details,
+            proposed_terms: freshDeal.proposed_terms
           });
           
 
@@ -508,6 +510,7 @@ export default function Room() {
                 is_fully_signed: deal.is_fully_signed,
                 property_type: deal.property_type,
                 property_details: deal.property_details,
+                proposed_terms: deal.proposed_terms,
                 counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
               });
             } else {
@@ -1739,7 +1742,6 @@ ${dealContext}`;
                   {/* LegalAgreement Panel - Always render if we have deal_id */}
                   {currentRoom?.deal_id && (deal || buildDealFromRoom(currentRoom)) ? (
                     <LegalAgreementPanel
-                      key={agreementPanelKey}
                       deal={deal || buildDealFromRoom(currentRoom, maskAddr)}
                       profile={profile}
                       onUpdate={async () => {
@@ -1834,7 +1836,7 @@ ${dealContext}`;
                         <div className="flex-1">
                           <p className="text-sm font-medium text-[#808080]">Purchase Price</p>
                           <p className="text-lg font-bold text-[#34D399] mt-1">
-                            {currentRoom?.budget ? `$${currentRoom.budget.toLocaleString()}` : '—'}
+                            {(deal?.purchase_price ?? currentRoom?.budget) ? `$${(deal?.purchase_price ?? currentRoom?.budget).toLocaleString()}` : '—'}
                           </p>
                         </div>
                       </div>
@@ -1864,32 +1866,30 @@ ${dealContext}`;
                       </div>
 
                       {/* Seller's Agent Commission */}
-                      {currentRoom?.proposed_terms?.seller_commission_type && (
+                      {(deal?.proposed_terms?.seller_commission_type || currentRoom?.proposed_terms?.seller_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Seller's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {currentRoom.proposed_terms.seller_commission_type === 'percentage' 
-                                ? `${currentRoom.proposed_terms.seller_commission_percentage}% of purchase price`
-                                : `$${currentRoom.proposed_terms.seller_flat_fee?.toLocaleString()} flat fee`
-                              }
+                              {((deal?.proposed_terms?.seller_commission_type ?? currentRoom?.proposed_terms?.seller_commission_type) === 'percentage')
+                                ? `${(deal?.proposed_terms?.seller_commission_percentage ?? currentRoom?.proposed_terms?.seller_commission_percentage)}% of purchase price`
+                                : `$${(deal?.proposed_terms?.seller_flat_fee ?? currentRoom?.proposed_terms?.seller_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
                       )}
 
                       {/* Buyer's Agent Commission */}
-                      {currentRoom?.proposed_terms?.buyer_commission_type && (
+                      {(deal?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {currentRoom.proposed_terms.buyer_commission_type === 'percentage' 
-                                ? `${currentRoom.proposed_terms.buyer_commission_percentage}% of purchase price`
-                                : `$${currentRoom.proposed_terms.buyer_flat_fee?.toLocaleString()} flat fee`
-                              }
+                              {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
+                                ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
+                                : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
