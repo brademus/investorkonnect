@@ -57,20 +57,20 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
 
       const terms = currentDeal.proposed_terms || {};
       
-      console.log('[LegalAgreementPanel] 📋 Deal data used for generation:', {
-        deal_id: currentDeal.id,
-        seller_commission_type: terms.seller_commission_type,
-        seller_commission_percentage: terms.seller_commission_percentage,
-        seller_flat_fee: terms.seller_flat_fee,
-        agreement_length: terms.agreement_length,
-        full_proposed_terms: terms
+      console.log('[LegalAgreementPanel] 📋 Deal data used for generation (buyer focus):', {
+      deal_id: currentDeal.id,
+      buyer_commission_type: terms.buyer_commission_type,
+      buyer_commission_percentage: terms.buyer_commission_percentage,
+      buyer_flat_fee: terms.buyer_flat_fee,
+      agreement_length: terms.agreement_length,
+      full_proposed_terms: terms
       });
 
       // Use the same commission type format as NewDeal page: "percentage" or "flat"
       const newExhibitAState = {
-        commission_type: terms.seller_commission_type || 'flat',
-        flat_fee_amount: terms.seller_flat_fee || 0, 
-        commission_percentage: terms.seller_commission_percentage || 0,
+        commission_type: terms.buyer_commission_type || 'flat',
+        flat_fee_amount: terms.buyer_flat_fee || 0,
+        commission_percentage: terms.buyer_commission_percentage || 0,
         net_target: terms.net_target || 0,
         transaction_type: currentDeal.transaction_type || deal?.transaction_type || 'ASSIGNMENT',
         agreement_length_days: terms.agreement_length || 180,
@@ -354,15 +354,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             <div className="bg-[#0D0D0D] rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-[#808080]">Commission Type</div>
-                <div className="text-[#FAFAFA] capitalize">{terms.seller_commission_type || '—'}</div>
+                <div className="text-[#FAFAFA] capitalize">{terms.buyer_commission_type || '—'}</div>
               </div>
               <div>
                 <div className="text-[#808080]">Commission Amount</div>
                 <div className="text-[#FAFAFA]">
-                  {terms.seller_commission_type === 'percentage'
-                    ? `${terms.seller_commission_percentage || 0}%`
-                    : terms.seller_commission_type === 'flat'
-                      ? `$${(terms.seller_flat_fee || 0).toLocaleString()}`
+                  {terms.buyer_commission_type === 'percentage'
+                    ? `${terms.buyer_commission_percentage || 0}%`
+                    : terms.buyer_commission_type === 'flat'
+                      ? `$${(terms.buyer_flat_fee || 0).toLocaleString()}`
                       : terms.net_target
                         ? `$${(terms.net_target || 0).toLocaleString()}`
                         : '—'}
@@ -576,37 +576,37 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           ) : (
           <div className="space-y-4 py-4">
             <div>
-              <Label className="text-[#FAFAFA]">Seller's Agent Commission Type</Label>
+              <Label className="text-[#FAFAFA]">Buyer's Agent Commission Type</Label>
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                 {exhibitA.commission_type === 'percentage' ? 'Percentage of Purchase Price' : 
                  exhibitA.commission_type === 'flat' ? 'Flat Fee' : 
                  exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
               </div>
               <p className="text-xs text-[#808080] mt-1">
-                From deal: seller_commission_type = "{exhibitA.commission_type}"
+                From deal: buyer_commission_type = "{exhibitA.commission_type}"
               </p>
             </div>
             
             {exhibitA.commission_type === 'flat' && (
               <div>
-                <Label className="text-[#FAFAFA]">Seller's Agent Flat Fee</Label>
+                <Label className="text-[#FAFAFA]">Buyer's Agent Flat Fee</Label>
                 <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                   ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: seller_flat_fee = {exhibitA.flat_fee_amount}
+                  From deal: buyer_flat_fee = {exhibitA.flat_fee_amount}
                 </p>
               </div>
             )}
             
             {exhibitA.commission_type === 'percentage' && (
               <div>
-                <Label className="text-[#FAFAFA]">Seller's Agent Commission %</Label>
+                <Label className="text-[#FAFAFA]">Buyer's Agent Commission %</Label>
                 <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
                   {exhibitA.commission_percentage || 0}%
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: seller_commission_percentage = {exhibitA.commission_percentage}
+                  From deal: buyer_commission_percentage = {exhibitA.commission_percentage}
                 </p>
               </div>
             )}
