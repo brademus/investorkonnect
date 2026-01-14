@@ -46,8 +46,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
   const [missing, setMissing] = useState([]);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState("ai"); // "ai" or "template"
-  const [aiFlowResult, setAiFlowResult] = useState(null);
+  const [mode, setMode] = useState("template");
   const [agreementData, setAgreementData] = useState(null);
 
   const mergeMissing = (base, extra) => {
@@ -69,8 +68,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
     setTerms({});
     setMissing([]);
     setDraft("");
-    setMode("ai");
-    setAiFlowResult(null);
+    setMode("template");
   }, [open]);
 
   // Load buyer's agent agreement terms when modal opens
@@ -155,8 +153,8 @@ export default function ContractWizard({ roomId, open, onClose }) {
     })();
   }, [open, roomId]);
 
-  // AI Flow: Generate + Analyze in one step
-  const runAiFlow = async () => {
+  /* Removed AI flow per requirements */
+  const runAiFlow = async () => { /* no-op */ };
     setLoading(true);
     // Simulate loading delay
     await new Promise(resolve => setTimeout(resolve, 1500));
