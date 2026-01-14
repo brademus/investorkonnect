@@ -70,7 +70,7 @@ function PipelineContent() {
       const response = await base44.functions.invoke('deduplicateDeals');
       if (response.data?.deletedCount > 0) {
         toast.success(`Removed ${response.data.deletedCount} duplicate deals`);
-        refetchDeals();
+        // refetchDeals(); // avoid immediate reshuffle to reduce flicker
       } else {
         toast.success('No duplicates found');
       }
@@ -378,8 +378,8 @@ function PipelineContent() {
       queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id] });
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
 
-      // Refetch local data
-      refetchDeals();
+      // Refetch local data (disabled to reduce flicker)
+      // refetchDeals();
     } catch (error) {
       console.error('Failed to update stage:', error);
       toast.error('Failed to update stage');
