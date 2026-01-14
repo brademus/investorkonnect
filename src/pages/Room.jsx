@@ -1372,6 +1372,74 @@ ${dealContext}`;
 
                                   <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
 
+                                  {/* Suggested details from Seller Contract (requires confirmation) */}
+                                  {profile?.user_role === 'investor' && extractedDraft && (
+                                    <div className="bg-[#0D0D0D] border border-[#F59E0B]/30 rounded-2xl p-6">
+                                      <h4 className="text-lg font-semibold text-[#FAFAFA] mb-1 flex items-center gap-2">
+                                        <Shield className="w-5 h-5 text-[#F59E0B]" />
+                                        Apply Extracted Property Details
+                                      </h4>
+                                      <p className="text-xs text-[#808080] mb-4">We found details in your seller contract. Review and confirm before saving.</p>
+                                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+                                        {extractedDraft.property_details?.beds != null && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Bedrooms</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.beds}</span></div>
+                                        )}
+                                        {extractedDraft.property_details?.baths != null && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Bathrooms</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.baths}</span></div>
+                                        )}
+                                        {extractedDraft.property_details?.sqft != null && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Square Feet</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.sqft}</span></div>
+                                        )}
+                                        {extractedDraft.property_details?.year_built != null && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Year Built</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.year_built}</span></div>
+                                        )}
+                                        {extractedDraft.property_details?.number_of_stories && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Stories</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.number_of_stories}</span></div>
+                                        )}
+                                        {typeof extractedDraft.property_details?.has_basement === 'boolean' && (
+                                          <div className="flex justify-between"><span className="text-[#808080]">Basement</span><span className="text-[#FAFAFA] font-medium">{extractedDraft.property_details.has_basement ? 'Yes' : 'No'}</span></div>
+                                        )}
+                                      </div>
+                                      <div className="flex gap-2 mt-4">
+                                        <Button
+                                          className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                                          onClick={async () => {
+                                            if (!currentRoom?.deal_id) { setExtractedDraft(null); return; }
+                                            const existing = deal?.property_details || {};
+                                            const src = extractedDraft.property_details || {};
+                                            const patch = { property_details: {} };
+                                            if (src.beds != null && existing.beds == null) patch.property_details.beds = src.beds;
+                                            if (src.baths != null && existing.baths == null) patch.property_details.baths = src.baths;
+                                            if (src.sqft != null && existing.sqft == null) patch.property_details.sqft = src.sqft;
+                                            if (src.year_built != null && existing.year_built == null) patch.property_details.year_built = src.year_built;
+                                            if (src.number_of_stories && !existing.number_of_stories) patch.property_details.number_of_stories = src.number_of_stories;
+                                            if (typeof src.has_basement === 'boolean' && typeof existing.has_basement !== 'boolean') patch.property_details.has_basement = src.has_basement;
+
+                                            if (Object.keys(patch.property_details).length === 0) {
+                                              toast.info('No new fields to apply');
+                                              setExtractedDraft(null);
+                                              return;
+                                            }
+
+                                            try {
+                                              await base44.entities.Deal.update(currentRoom.deal_id, patch);
+                                              toast.success('Extracted details applied');
+                                              setExtractedDraft(null);
+                                              await refreshRoomState();
+                                            } catch (e) {
+                                              toast.error('Failed to apply details');
+                                            }
+                                          }}
+                                        >
+                                          Apply to Deal
+                                        </Button>
+                                        <Button variant="outline" className="rounded-full" onClick={() => setExtractedDraft(null)}>
+                                          Dismiss
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  )}
+
                                   {profile?.user_role === 'investor' && (
                                     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                       <div className="flex items-center justify-between mb-4">
