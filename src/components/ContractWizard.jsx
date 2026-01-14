@@ -93,13 +93,25 @@ export default function ContractWizard({ roomId, open, onClose }) {
         }
 
         // 4) Build terms solely from deal data (no chat/agreement)
-        const pt = deal?.proposed_terms || {};
+        const roomTerms = room?.proposed_terms || {};
+        const pt = { ...roomTerms, ...(deal?.proposed_terms || {}) };
 
         const buyerType = pt.buyer_commission_type || '';
         const buyerPct = (pt.buyer_commission_percentage ?? '');
         const buyerFlat = (pt.buyer_flat_fee ?? '');
         const lengthDays = (pt.agreement_length ?? '');
         const txnType = '';
+
+        // derive term dates from agreement length if provided
+        let term_start = '';
+        let term_end = '';
+        const daysNum = Number(lengthDays);
+        if (!isNaN(daysNum) && daysNum > 0) {
+          const start = new Date();
+          const end = new Date(start.getTime() + daysNum * 24 * 60 * 60 * 1000);
+          term_start = start.toISOString().split('T')[0];
+          term_end = end.toISOString().split('T')[0];
+        }
 
         const feeStr = (() => {
           if (buyerType === 'percentage' && buyerPct) return `${buyerPct}% of purchase price, paid at closing`;
@@ -119,6 +131,8 @@ export default function ContractWizard({ roomId, open, onClose }) {
           flat_fee_amount: buyerType === 'flat' ? String(buyerFlat) : '',
           agreement_length_days: String(lengthDays || ''),
           agreement_length: String(lengthDays || ''),
+          term_start,
+          term_end,
           transaction_type: txnType || '',
           fee_structure: feeStr,
           exclusivity: pt.exclusivity || '',
