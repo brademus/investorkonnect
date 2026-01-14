@@ -386,7 +386,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">Legal Agreement</h3>
-          <p className="text-sm text-[#808080]">Internal Operating Agreement v1.0.1</p>
+          <p className="text-sm text-[#808080]">Internal Agreement v1.0.1</p>
         </div>
         {agreement && getStatusDisplay()}
       </div>
