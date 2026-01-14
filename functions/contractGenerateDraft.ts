@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     const { room_id, template_id, terms, mode } = body || {};
 
     // MODE: AI_FLOW - Full two-step AI contract flow
-    if (mode === "ai_flow" && room_id) {
+    if (false && mode === "ai_flow" && room_id) {
       const user = await base44.auth.me();
       if (!user) {
         return Response.json({ error: "Unauthorized" }, { status: 401 });
