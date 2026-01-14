@@ -532,6 +532,13 @@ Deno.serve(async (req) => {
     const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
     if (existing.length > 0) {
       const existingAgreement = existing[0];
+      // Server-side guard: block regeneration once agent has signed
+      if (existingAgreement.agent_signed_at) {
+        return Response.json({ 
+          error: 'Agreement is locked: the agent has already signed. Regeneration is not allowed.',
+          code: 'AGENT_ALREADY_SIGNED'
+        }, { status: 400 });
+      }
       // Force regeneration if version changed (signature normalization update)
       if (existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 

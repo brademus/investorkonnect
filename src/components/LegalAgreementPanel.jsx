@@ -552,7 +552,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
             )}
 
             {/* Regenerate option for investor */}
-            {isInvestor && !agreement.investor_signed_at && (
+            {isInvestor && !agreement.agent_signed_at && (
               <Button
                 onClick={handleOpenGenerateModal}
                 variant="outline"
