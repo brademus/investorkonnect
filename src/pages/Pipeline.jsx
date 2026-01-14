@@ -148,6 +148,8 @@ function PipelineContent() {
   // 3. Load Rooms (to link agents/status)
   const { data: rooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms'],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
