@@ -122,9 +122,47 @@ Deno.serve(async (req) => {
       );
     };
 
+    // Legacy top-level fields -> normalized property_details
+    const legacyPD = (() => {
+      const d = deal || {};
+      const pickFirst = (...vals) => {
+        for (const v of vals) {
+          if (v === undefined || v === null) continue;
+          if (typeof v === 'string') {
+            const t = v.trim();
+            if (t.length === 0) continue;
+            return t;
+          }
+          return v;
+        }
+        return undefined;
+      };
+      const pd = {};
+      const beds = pickFirst(d.beds, d.bedrooms, d.bedrooms_total, d.bdrms);
+      if (beds !== undefined) pd.beds = Number(beds);
+      const baths = pickFirst(d.baths, d.bathrooms, d.bathrooms_total, d.bathrooms_total_integer);
+      if (baths !== undefined) pd.baths = Number(baths);
+      const sqft = pickFirst(d.sqft, d.square_feet, d.squareFeet, d.square_footage, d.living_area, d.gross_living_area);
+      if (sqft !== undefined) pd.sqft = Number(String(sqft).replace(/[^0-9.]/g, ''));
+      const yearBuilt = pickFirst(d.year_built, d.yearBuilt, d.built_year);
+      if (yearBuilt !== undefined) pd.year_built = Number(yearBuilt);
+      const stories = pickFirst(d.number_of_stories, d.stories, d.levels, d.floors);
+      if (stories !== undefined) {
+        const s = String(stories).trim();
+        pd.number_of_stories = (Number(s) >= 3 || s === '3+' ? '3+' : (s === '2' || s.toLowerCase() === 'two' ? '2' : (s === '1' || s.toLowerCase() === 'one' ? '1' : s)));
+      }
+      const basement = pickFirst(d.has_basement, d.basement, d.basement_yn);
+      if (basement !== undefined) {
+        const sv = String(basement).toLowerCase();
+        pd.has_basement = (basement === true || ['yes','y','true','t','1'].includes(sv));
+      }
+      return Object.keys(pd).length ? pd : null;
+    })();
+
     const property_details_fallback = isMeaningfulPD(baseDeal.property_details)
       ? baseDeal.property_details
-      : (isMeaningfulPD(room?.property_details) ? room.property_details : null);
+      : (isMeaningfulPD(legacyPD) ? legacyPD
+         : (isMeaningfulPD(room?.property_details) ? room.property_details : null));
 
     const property_type_fallback = baseDeal.property_type || room?.property_type || null;
 
