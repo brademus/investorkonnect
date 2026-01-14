@@ -429,19 +429,7 @@ Date: _______________
                       />
                     </div>
                   ))}
-                  {missing.filter((k) => !FIELDS.find(f => f.key === k)).map(k => (
-                    <div key={k} className="flex flex-col">
-                      <Label className="text-xs text-rose-600 mb-1 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" />
-                        {k} (required)
-                      </Label>
-                      <Input
-                        value={terms[k] ?? ""}
-                        onChange={(e) => updateTerm(k, e.target.value)}
-                        className="text-sm border-rose-300 focus:ring-rose-500"
-                      />
-                    </div>
-                  ))}
+
                 </div>
               </div>
 
