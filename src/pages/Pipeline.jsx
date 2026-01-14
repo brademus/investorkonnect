@@ -163,6 +163,8 @@ function PipelineContent() {
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
