@@ -40,7 +40,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         const { data } = await base44.functions.invoke('getDealDetailsForUser', {
           dealId: deal?.id || deal?.deal_id
         });
-        if (data) {
+        if (data?.deal) {
+          currentDeal = data.deal;
+        } else if (data) {
           currentDeal = data;
         }
       } catch (e) {
