@@ -40,7 +40,7 @@ const FIELDS = [
 export default function ContractWizard({ roomId, open, onClose }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [analysis, setAnalysis] = useState(null);
+  // analysis removed
   const [templateId, setTemplateId] = useState("");
   const [terms, setTerms] = useState({});
   const [missing, setMissing] = useState([]);
