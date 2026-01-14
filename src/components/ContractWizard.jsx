@@ -32,7 +32,8 @@ const FIELDS = [
   { key: 'governing_law', label: 'Governing Law (Agreement)' },
   { key: 'termination_rights', label: 'Termination (Agreement)' },
   { key: 'property_region', label: 'Property Region (Agreement)' },
-  { key: 'retainer_amount', label: 'Retainer Amount (Agreement)' }
+  { key: 'retainer_amount', label: 'Retainer Amount (Agreement)' },
+  { key: 'retainer_currency', label: 'Retainer Currency (Agreement)' }
 ];
 
 export default function ContractWizard({ roomId, open, onClose }) {
@@ -107,10 +108,10 @@ export default function ContractWizard({ roomId, open, onClose }) {
         const ex = agreement?.exhibit_a_terms || {};
         const pt = deal?.proposed_terms || {};
 
-        const buyerType = pt.buyer_commission_type || ex.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined);
-        const buyerPct = pt.buyer_commission_percentage ?? ex.commission_percentage ?? '';
-        const buyerFlat = pt.buyer_flat_fee ?? ex.flat_fee_amount ?? '';
-        const lengthDays = pt.agreement_length ?? ex.agreement_length_days ?? '';
+        const buyerType = ex.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined) || pt.buyer_commission_type;
+        const buyerPct = ex.commission_percentage ?? pt.buyer_commission_percentage ?? '';
+        const buyerFlat = ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '';
+        const lengthDays = ex.agreement_length_days ?? pt.agreement_length ?? '';
         const txnType = agreement?.transaction_type || ex.transaction_type || '';
 
         const feeStr = (() => {
@@ -135,14 +136,11 @@ export default function ContractWizard({ roomId, open, onClose }) {
           governing_law: agreement?.governing_state || '',
           property_region: deal?.state || agreement?.property_zip || '',
           termination_rights: ex.termination_rights || '',
-          retainer_amount: ex.retainer_amount || ''
+          retainer_amount: ex.retainer_amount || '',
+          retainer_currency: ex.retainer_currency || 'USD'
         };
 
         setTerms(initialTerms);
-        setStep(2);
-        setStep(2);
-        setStep(2);
-        setStep(2);
         setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
