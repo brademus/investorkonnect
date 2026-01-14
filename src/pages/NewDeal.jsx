@@ -54,6 +54,7 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when editing or returning from verification error
   useEffect(() => {
@@ -93,6 +94,7 @@ export default function NewDeal() {
       setYearBuilt(d.yearBuilt || "");
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
+      setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
 
