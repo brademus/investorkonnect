@@ -376,8 +376,7 @@ export default function Room() {
             property_details: freshDeal.property_details
           });
           
-          // Force LegalAgreementPanel to reload
-          setAgreementPanelKey(prev => prev + 1);
+
         }
       }
       
@@ -535,11 +534,13 @@ export default function Room() {
   useEffect(() => {
     if (!roomId && !currentRoom?.deal_id) return;
     const unsubscribers = [];
+    const freeze = showBoard && (activeTab === 'details' || activeTab === 'agreement');
 
     if (roomId) {
       const unsubRoom = base44.entities.Room.subscribe((event) => {
         if (event.id === roomId) {
           setCurrentRoom((prev) => {
+            if (freeze) return prev || { ...(event.data || {}), id: roomId };
             if (!prev || prev.id !== roomId) return { ...(event.data || {}), id: roomId };
             return { ...prev, ...event.data };
           });
@@ -553,6 +554,7 @@ export default function Room() {
       const unsubDeal = base44.entities.Deal.subscribe((event) => {
         if (event.id === dealId) {
           setDeal((prev) => {
+            if (freeze) return prev || { ...(event.data || {}), id: dealId };
             if (!prev || prev.id !== dealId) return { ...(event.data || {}), id: dealId };
             return { ...prev, ...event.data };
           });
@@ -566,7 +568,7 @@ export default function Room() {
         try { u(); } catch (_) {}
       });
     };
-  }, [roomId, currentRoom?.deal_id]);
+  }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
 
   // Also warm cache on mount if we already navigated with cached deal
   useEffect(() => {
@@ -636,12 +638,10 @@ export default function Room() {
 
   // Build a robust deal object for details card: prefer Deal entity, fallback to Room fields
   const dealForDetails = useMemo(() => {
-    // Prefer cached deal to avoid flicker while server loads
-    const cached = currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null;
-    const d = cached || deal;
+    // Use a stable snapshot to avoid flicker while viewing tabs
+    const d = deal || currentRoom;
     if (!d && !currentRoom) return {};
     const hasPD = !!(d?.property_details && Object.keys(d.property_details || {}).length > 0);
-    // Ensure address masking for agents until fully signed, even in fallback
     const maskedAddress = maskAddr ? null : (d?.property_address || currentRoom?.property_address);
     return {
       ...(d || {}),
@@ -649,7 +649,7 @@ export default function Room() {
       property_type: d?.property_type || currentRoom?.property_type || null,
       property_details: hasPD ? d.property_details : (currentRoom?.property_details || {})
     };
-  }, [deal, currentRoom]);
+  }, [deal, currentRoom, maskAddr]);
 
   // Prefill editor when deal details load
   useEffect(() => {
@@ -1046,7 +1046,6 @@ ${dealContext}`;
                       }
                       // Fetch fresh in background
                       prefetchDeal();
-                      refreshRoomState();
                     }
                     setShowBoard(next);
                   }}
@@ -1149,15 +1148,7 @@ ${dealContext}`;
                       onClick={() => {
                         setActiveTab(tab.id);
                         if (tab.id === 'agreement') {
-                          if (currentRoom?.deal_id) {
-                            const cached = getCachedDeal(currentRoom.deal_id);
-                            if (cached) {
-                              setDeal(cached);
-                            } else {
-                              const snap = buildDealFromRoom(currentRoom, maskAddr);
-                              if (snap) setDeal(snap);
-                            }
-                          } else if (currentRoom && !deal) {
+                          if (currentRoom) {
                             const snap = buildDealFromRoom(currentRoom, maskAddr);
                             if (snap) setDeal(snap);
                           }
@@ -1754,10 +1745,10 @@ ${dealContext}`;
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id */}
-                  {currentRoom?.deal_id && (deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom)) ? (
+                  {currentRoom?.deal_id && (deal || buildDealFromRoom(currentRoom)) ? (
                     <LegalAgreementPanel
                       key={agreementPanelKey}
-                      deal={deal || getCachedDeal(currentRoom.deal_id) || buildDealFromRoom(currentRoom, maskAddr)}
+                      deal={deal || buildDealFromRoom(currentRoom, maskAddr)}
                       profile={profile}
                       onUpdate={async () => {
                         await refreshRoomState();
