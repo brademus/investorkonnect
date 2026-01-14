@@ -281,7 +281,7 @@ function PipelineContent() {
 
         is_orphan: !hasAgentAccepted && !hasAgentPending
       };
-    }), [dealsData, rooms, appointments]);
+    });
 
     // Hide declined deals entirely for agents
     return mappedDeals.filter(d => !(isAgent && d.agent_request_status === 'rejected'));
