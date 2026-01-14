@@ -76,8 +76,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         flat_fee_amount: terms.buyer_flat_fee || 0,
         commission_percentage: terms.buyer_commission_percentage || 0,
         net_target: terms.net_target || 0,
-        transaction_type: currentDeal.transaction_type || deal?.transaction_type || 'ASSIGNMENT',
-        agreement_length_days: terms.agreement_length || 180,
+        transaction_type: terms.transaction_type || currentDeal.transaction_type || deal?.transaction_type || 'ASSIGNMENT',
+        agreement_length_days: (typeof terms.agreement_length === 'number' ? terms.agreement_length : parseInt(terms.agreement_length, 10)) || 180,
         termination_notice_days: 30
       };
       
