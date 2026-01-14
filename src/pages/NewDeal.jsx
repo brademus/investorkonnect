@@ -163,6 +163,48 @@ export default function NewDeal() {
           if (deals.length > 0) {
             const deal = deals[0];
             
+            // Normalizers for mapping DB values to form select options
+            const normalizePropertyType = (val) => {
+              if (!val) return "";
+              const s = String(val).trim().toLowerCase();
+              const map = {
+                "single family": "single_family",
+                "single-family": "single_family",
+                "sfh": "single_family",
+                "single_family": "single_family",
+                "multifamily": "multi_family",
+                "multi family": "multi_family",
+                "multi-family": "multi_family",
+                "multi_family": "multi_family",
+                "condo": "condo",
+                "townhouse": "townhouse",
+                "manufactured": "manufactured",
+                "mobile": "manufactured",
+                "mobile home": "manufactured",
+                "land": "land",
+                "lot": "land",
+                "other": "other"
+              };
+              return map[s] || (['single_family','multi_family','condo','townhouse','manufactured','land','other'].includes(s) ? s : 'other');
+            };
+            const normalizeStories = (v) => {
+              const s = String(v ?? '').trim();
+              if (!s) return "";
+              if (s === '3' || s === '3+' || (!isNaN(Number(s)) && Number(s) >= 3)) return '3+';
+              if (s === '1' || s.toLowerCase() === 'one') return '1';
+              if (s === '2' || s.toLowerCase() === 'two') return '2';
+              return s;
+            };
+            const normalizeBasement = (v) => {
+              if (v === null || v === undefined) return "";
+              if (typeof v === 'boolean') return v ? 'yes' : 'no';
+              const s = String(v).trim().toLowerCase();
+              if (["yes","y","true","t","1"].includes(s)) return 'yes';
+              if (["no","n","false","f","0"].includes(s)) return 'no';
+              return '';
+            };
+
+            
             setPropertyAddress(deal.property_address || "");
             setCity(deal.city || "");
             setState(deal.state || "");
@@ -183,19 +225,15 @@ export default function NewDeal() {
             
             setNotes(deal.notes || "");
             setSpecialNotes(deal.special_notes || "");
-            setPropertyType(deal.property_type || "");
+            setPropertyType(normalizePropertyType(deal.property_type || deal.property_details?.property_type || deal.property_details?.type || ""));
             
             if (deal.property_details) {
               setBeds(deal.property_details.beds?.toString() || "");
               setBaths(deal.property_details.baths?.toString() || "");
               setSqft(deal.property_details.sqft?.toString() || "");
               setYearBuilt(deal.property_details.year_built?.toString() || "");
-              setNumberOfStories(deal.property_details.number_of_stories || "");
-              setHasBasement(
-                typeof deal.property_details.has_basement === 'boolean'
-                  ? (deal.property_details.has_basement ? 'yes' : 'no')
-                  : (deal.property_details.has_basement || '')
-              );
+              setNumberOfStories(normalizeStories(deal.property_details.number_of_stories));
+              setHasBasement(normalizeBasement(deal.property_details.has_basement));
             }
             
             // Load terms from Deal entity first, fallback to Room for backward compatibility
