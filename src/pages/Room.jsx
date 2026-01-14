@@ -400,6 +400,30 @@ export default function Room() {
         .catch(() => {});
     } catch (_) {}
   };
+
+  // Prefetch Pipeline data to make back navigation instant
+  const prefetchPipeline = () => {
+    try {
+      // Warm pipeline deals cache
+      queryClient.prefetchQuery({
+        queryKey: ['pipelineDeals'],
+        queryFn: async () => {
+          const res = await base44.functions.invoke('getPipelineDealsForUser');
+          return res.data;
+        },
+        staleTime: 60_000
+      });
+      // Warm rooms cache
+      queryClient.prefetchQuery({
+        queryKey: ['rooms'],
+        queryFn: async () => {
+          const res = await base44.functions.invoke('listMyRooms');
+          return res.data;
+        },
+        staleTime: 60_000
+      });
+    } catch (_) {}
+  };
   
   // CRITICAL: Reload after DocuSign return with signed=1
   useEffect(() => {
@@ -970,7 +994,8 @@ ${dealContext}`;
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            onClick={() => navigate(createPageUrl("Pipeline"))}
+            onMouseEnter={prefetchPipeline}
+            onClick={() => { prefetchPipeline(); navigate(createPageUrl("Pipeline")); }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
