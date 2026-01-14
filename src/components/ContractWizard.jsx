@@ -130,6 +130,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
           commission_percentage: buyerType === 'percentage' ? String(buyerPct) : '',
           flat_fee_amount: buyerType === 'flat' ? String(buyerFlat) : '',
           agreement_length_days: String(lengthDays || ''),
+          agreement_length: String(lengthDays || ''),
           transaction_type: agreement?.transaction_type || '',
           fee_structure: feeStr,
           exclusivity: ex.exclusivity || ex.exclusive || '',
