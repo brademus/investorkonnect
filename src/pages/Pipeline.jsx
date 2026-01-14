@@ -420,7 +420,7 @@ function PipelineContent() {
           stage.id === 'active_listings' ? TrendingUp :
           stage.id === 'ready_to_close' ? CheckCircle :
           XCircle
-  }));
+  })), []);
 
   if (loading || !profile || loadingDeals || loadingRooms || loadingRequests || loadingActivities || loadingAppointments || deduplicating) {
     return (
