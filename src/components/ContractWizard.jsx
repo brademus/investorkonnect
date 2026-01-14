@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { contractGenerateDraft } from "@/components/functions";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+
 import { FileText, AlertCircle } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation"; // kept for generate step loading only
 
