@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { FileText, AlertCircle } from "lucide-react";
+import { FileText } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation"; // kept for generate step loading only
 
 const CONTRACT_TEMPLATES = [
@@ -50,19 +50,9 @@ export default function ContractWizard({ roomId, open, onClose }) {
   const [missing, setMissing] = useState([]);
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
-  const [mode, setMode] = useState("template");
-  const [agreementData, setAgreementData] = useState(null);
 
-  const mergeMissing = (base, extra) => {
-    const out = { ...(base || {}) };
-    if (extra && typeof extra === 'object') {
-      Object.entries(extra).forEach(([k, v]) => {
-        const isEmpty = out[k] === undefined || out[k] === null || String(out[k]).trim() === '';
-        if (isEmpty && v !== undefined && v !== null && String(v).trim() !== '') out[k] = v;
-      });
-    }
-    return out;
-  };
+
+
 
   useEffect(() => {
     if (!open) return;
@@ -71,7 +61,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
     setTerms({});
     setMissing([]);
     setDraft("");
-    setMode("template");
+
   }, [open]);
 
   // Load buyer's agent agreement terms when modal opens
@@ -116,6 +106,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
           return '';
         })();
 
+        const region = [deal?.city, deal?.state].filter(Boolean).join(', ') || deal?.state || '';
         const initialTerms = {
           investor_name: investorProfile?.full_name || '',
           agent_name: agentProfile?.full_name || '',
@@ -131,7 +122,8 @@ export default function ContractWizard({ roomId, open, onClose }) {
           fee_structure: feeStr,
           exclusivity: pt.exclusivity || '',
           governing_law: deal?.state || '',
-          property_region: deal?.state || '',
+          property_region: region,
+          strategy_summary: deal?.notes || deal?.description || '',
           termination_rights: pt.termination_rights || '',
           retainer_amount: pt.retainer_amount ?? '',
           retainer_currency: pt.retainer_currency ?? 'USD'
@@ -158,9 +150,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
     })();
   }, [open, roomId]);
 
-  const analyze = async () => {
-    setStep(2);
-  };
+
 
   const updateTerm = (k, v) => {
     setTerms(prev => {
@@ -299,7 +289,7 @@ Date: _______________
                 The wizard uses only the deal data you entered. No chat extraction or AI.
               </div>
               <Button 
-                onClick={analyze} 
+                onClick={() => setStep(2)} 
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12"
               >
                 Continue
