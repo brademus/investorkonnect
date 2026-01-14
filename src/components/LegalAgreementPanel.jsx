@@ -608,7 +608,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   {exhibitA.commission_percentage || 0}%
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: buyer_commission_percentage = {exhibitA.commission_percentage}
+                  From deal: buyer_commission_percentage = {terms.buyer_commission_percentage ?? exhibitA.commission_percentage}
                 </p>
               </div>
             )}
