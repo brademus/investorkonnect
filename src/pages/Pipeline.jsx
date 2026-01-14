@@ -185,7 +185,7 @@ function PipelineContent() {
     },
     enabled: dealsData.length > 0,
     refetchOnWindowFocus: false,
-    refetchInterval: 15000
+    refetchInterval: 0
   });
 
   
