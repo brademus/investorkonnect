@@ -1992,12 +1992,18 @@ ${dealContext}`;
                         // Merge system docs + user uploads
                         let allFiles = buildUnifiedFilesList({ deal, room: currentRoom });
 
-                        // Enforce privacy: hide Seller/Purchase Contract for agents until fully signed
+                        // Enforce privacy: hide Seller/Purchase Contract and Internal Agreement for agents until fully signed
+                        // Policy: Agents cannot see Internal Agreement in Shared Files before both parties sign; after full signing, all docs are visible.
                         const hideSeller = isAgentView && !isWorkingTogether;
                         if (hideSeller) {
                           allFiles = allFiles.filter(f => {
                             const label = (f.label || f.name || '').toLowerCase();
-                            return !label.includes('seller contract') && !label.includes('purchase contract');
+                            return !(
+                              label.includes('seller contract') ||
+                              label.includes('purchase contract') ||
+                              label.includes('internal agreement') ||
+                              label.includes('operating agreement')
+                            );
                           });
                         }
 
