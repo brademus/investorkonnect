@@ -15,7 +15,8 @@ const CONTRACT_TEMPLATES = [
 ];
 
 const REQUIRED_KEYS = [
-  'investor_name', 'agent_name', 'commission_type', 'agreement_length_days', 'property_region', 'governing_law'
+  'investor_name', 'agent_name', 'commission_type', 'agreement_length_days', 'property_region', 'governing_law',
+  'property_address', 'city', 'state', 'property_type', 'purchase_price'
 ];
 
 const FIELDS = [
@@ -24,6 +25,13 @@ const FIELDS = [
   { key: 'agent_brokerage', label: 'Agent Brokerage (Agreement)' },
   { key: 'agent_license_number', label: 'Agent License Number (Agreement)' },
   { key: 'agent_license_state', label: 'Agent License State (Agreement)' },
+  // Deal property context
+  { key: 'property_address', label: 'Property Address' },
+  { key: 'city', label: 'City' },
+  { key: 'state', label: 'State' },
+  { key: 'property_type', label: 'Property Type' },
+  { key: 'purchase_price', label: 'Purchase Price (USD)' },
+  // Compensation / terming
   { key: 'commission_type', label: 'Commission Type (Agreement)' },
   { key: 'commission_percentage', label: 'Commission % (Agreement)' },
   { key: 'flat_fee_amount', label: 'Flat Fee (Agreement)' },
@@ -126,6 +134,13 @@ export default function ContractWizard({ roomId, open, onClose }) {
           agent_brokerage: agentProfile?.agent?.brokerage || agentProfile?.broker || '',
           agent_license_number: agentProfile?.agent?.license_number || agentProfile?.license_number || '',
           agent_license_state: agentProfile?.agent?.license_state || agentProfile?.license_state || '',
+          // Deal property context
+          property_address: deal?.property_address || '',
+          city: deal?.city || '',
+          state: deal?.state || '',
+          property_type: deal?.property_type || '',
+          purchase_price: (deal?.purchase_price != null ? String(deal.purchase_price) : ''),
+          // Compensation / terms
           commission_type: buyerType || '',
           commission_percentage: buyerType === 'percentage' ? String(buyerPct) : '',
           flat_fee_amount: buyerType === 'flat' ? String(buyerFlat) : '',
