@@ -140,7 +140,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id && dealsData.length > 0,
     refetchOnWindowFocus: false,
-    refetchInterval: 10000 // Poll every 10 seconds
+    refetchInterval: 0 // Disable polling to avoid UI reshuffles
   });
 
   // 3. Load Rooms (to link agents/status)
