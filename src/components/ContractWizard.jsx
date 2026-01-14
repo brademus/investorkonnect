@@ -14,6 +14,22 @@ const CONTRACT_TEMPLATES = [
   { id: "services_v1", name: "Real Estate Services Agreement" }
 ];
 
+const FIELDS = [
+  { key: 'investor_name', label: 'Investor Name (Agreement)' },
+  { key: 'agent_name', label: 'Agent Name (Agreement)' },
+  { key: 'agent_brokerage', label: 'Agent Brokerage (Agreement)' },
+  { key: 'agent_license_number', label: 'Agent License Number (Agreement)' },
+  { key: 'agent_license_state', label: 'Agent License State (Agreement)' },
+  { key: 'fee_structure', label: 'Commission / Fee Structure (Agreement)' },
+  { key: 'exclusivity', label: 'Exclusivity (Agreement)' },
+  { key: 'term_start', label: 'Term Start' },
+  { key: 'term_end', label: 'Term End' },
+  { key: 'governing_law', label: 'Governing Law (Agreement)' },
+  { key: 'termination_rights', label: 'Termination (Agreement)' },
+  { key: 'property_region', label: 'Property Region (Agreement)' },
+  { key: 'retainer_amount', label: 'Retainer Amount (Agreement)' }
+];
+
 export default function ContractWizard({ roomId, open, onClose }) {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -91,19 +107,29 @@ export default function ContractWizard({ roomId, open, onClose }) {
         const buyerFlat = ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '';
         const lengthDays = ex.agreement_length_days ?? pt.agreement_length ?? '';
 
+        const feeStr = (() => {
+          if (buyerType === 'percentage' && buyerPct) return `${buyerPct}% of purchase price, paid at closing`;
+          if (buyerType === 'flat' && buyerFlat) return `Flat fee $${buyerFlat}, paid at closing`;
+          return '';
+        })();
+
         const initialTerms = {
-          "Investor Name": investorProfile?.full_name || '',
-          "Agent Name": agentProfile?.full_name || '',
-          "Agent Brokerage": agentProfile?.agent?.brokerage || agentProfile?.broker || '',
-          "Agent License Number": agentProfile?.agent?.license_number || '',
-          "Agent License State": agentProfile?.agent?.license_state || '',
-          "Buyer’s Agent Commission Type": buyerType || '',
-          "Buyer’s Agent Commission %": buyerType === 'percentage' ? buyerPct : '',
-          "Buyer’s Agent Flat Fee": buyerType === 'flat' ? buyerFlat : '',
-          "Agreement Length (days)": lengthDays || ''
+          investor_name: investorProfile?.full_name || '',
+          agent_name: agentProfile?.full_name || '',
+          agent_brokerage: agentProfile?.agent?.brokerage || agentProfile?.broker || '',
+          agent_license_number: agentProfile?.agent?.license_number || '',
+          agent_license_state: agentProfile?.agent?.license_state || '',
+          fee_structure: feeStr,
+          exclusivity: ex.exclusivity || ex.exclusive || '',
+          governing_law: agreement?.governing_state || '',
+          property_region: deal?.state || agreement?.property_zip || '',
+          termination_rights: ex.termination_rights || '',
+          agreement_length_days: lengthDays || '',
+          retainer_amount: ex.retainer_amount || ''
         };
 
         setTerms(initialTerms);
+        setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
       } catch (e) {
