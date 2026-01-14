@@ -129,7 +129,6 @@ export default function ContractWizard({ roomId, open, onClose }) {
         };
 
         setTerms(initialTerms);
-        setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
       } catch (e) {
@@ -468,15 +467,15 @@ Date: _______________
               {/* Parties */}
               {/* Parties sourced from agreement (buyer’s agent focus) */}
               {agreementData && (
-               <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
-                 <span className="text-sm text-slate-600">
-                   <strong>Investor:</strong> {terms["Investor Name"] || '—'}
-                 </span>
-                 <span className="text-slate-300">|</span>
-                 <span className="text-sm text-slate-600">
-                   <strong>Agent:</strong> {terms["Agent Name"] || '—'}
-                 </span>
-               </div>
+                <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
+                  <span className="text-sm text-slate-600">
+                    <strong>Investor:</strong> {terms["investor_name"] || '—'}
+                  </span>
+                  <span className="text-slate-300">|</span>
+                  <span className="text-sm text-slate-600">
+                    <strong>Agent:</strong> {terms["agent_name"] || '—'}
+                  </span>
+                </div>
               )}
 
               {/* Risk Summary */}
