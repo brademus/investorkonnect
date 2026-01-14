@@ -242,7 +242,8 @@ Deno.serve(async (req) => {
     return Response.json({ received: true });
   } catch (error) {
     console.error('[DocuSign Webhook] Error:', error);
-    // Return 200 to prevent DocuSign retries for processing errors
-    return Response.json({ received: true, error: error.message });
+    // Return 200 to prevent DocuSign retries for processing errors AFTER signature verification.
+    // Note: Signature failures are handled earlier with a 401, so reaching here implies verified request.
+    return Response.json({ received: true, error: error?.message || String(error) });
   }
 });
