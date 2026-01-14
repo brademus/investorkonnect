@@ -20,11 +20,15 @@ const FIELDS = [
   { key: 'agent_brokerage', label: 'Agent Brokerage (Agreement)' },
   { key: 'agent_license_number', label: 'Agent License Number (Agreement)' },
   { key: 'agent_license_state', label: 'Agent License State (Agreement)' },
-  { key: 'fee_structure', label: 'Commission / Fee Structure (Agreement)' },
+  { key: 'commission_type', label: 'Commission Type (Agreement)' },
+  { key: 'commission_percentage', label: 'Commission % (Agreement)' },
+  { key: 'flat_fee_amount', label: 'Flat Fee (Agreement)' },
+  { key: 'agreement_length_days', label: 'Agreement Length (days) (Agreement)' },
+  { key: 'transaction_type', label: 'Transaction Type (Agreement)' },
+  { key: 'fee_structure', label: 'Commission / Fee Structure (Derived)' },
   { key: 'exclusivity', label: 'Exclusivity (Agreement)' },
   { key: 'term_start', label: 'Term Start' },
   { key: 'term_end', label: 'Term End' },
-  { key: 'agreement_length_days', label: 'Agreement Length (days) (Agreement)' },
   { key: 'governing_law', label: 'Governing Law (Agreement)' },
   { key: 'termination_rights', label: 'Termination (Agreement)' },
   { key: 'property_region', label: 'Property Region (Agreement)' },
@@ -120,16 +124,21 @@ export default function ContractWizard({ roomId, open, onClose }) {
           agent_brokerage: agentProfile?.agent?.brokerage || agentProfile?.broker || '',
           agent_license_number: agentProfile?.agent?.license_number || '',
           agent_license_state: agentProfile?.agent?.license_state || '',
+          commission_type: buyerType || '',
+          commission_percentage: buyerType === 'percentage' ? String(buyerPct) : '',
+          flat_fee_amount: buyerType === 'flat' ? String(buyerFlat) : '',
+          agreement_length_days: String(lengthDays || ''),
+          transaction_type: agreement?.transaction_type || '',
           fee_structure: feeStr,
           exclusivity: ex.exclusivity || ex.exclusive || '',
           governing_law: agreement?.governing_state || '',
           property_region: deal?.state || agreement?.property_zip || '',
           termination_rights: ex.termination_rights || '',
-          agreement_length_days: lengthDays || '',
           retainer_amount: ex.retainer_amount || ''
         };
 
         setTerms(initialTerms);
+        setStep(2);
         setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
@@ -598,7 +607,7 @@ Date: _______________
               )}
 
               <div>
-                <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms</Label>
+                <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms (from Deal/Agreement)</Label>
                 <p className="text-xs text-slate-500 mb-2">Prefilled from Agreement; chat only fills blanks.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-blue-200 rounded-lg p-4 bg-blue-50">
                   {FIELDS.map(({ key, label }) => (
