@@ -15,6 +15,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [signing, setSigning] = useState(false);
   const [exhibitA, setExhibitA] = useState(null);
   const [resolvedDealId, setResolvedDealId] = useState(null);
+  const [modalTerms, setModalTerms] = useState(null);
   
   const isInvestor = (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
   const isAgent = (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
@@ -58,6 +59,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       setResolvedDealId(currentDeal.id);
 
       const terms = currentDeal.proposed_terms || currentDeal.room?.proposed_terms || {};
+      setModalTerms(terms);
       
       console.log('[LegalAgreementPanel] 📋 Deal data used for generation (buyer focus):', {
       deal_id: currentDeal.id,
@@ -585,7 +587,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                  exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
               </div>
               <p className="text-xs text-[#808080] mt-1">
-                From deal: buyer_commission_type = "{terms.buyer_commission_type || exhibitA.commission_type}"
+                From deal: buyer_commission_type = "{modalTerms?.buyer_commission_type ?? exhibitA.commission_type}"
               </p>
             </div>
             
@@ -596,7 +598,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: buyer_flat_fee = {terms.buyer_flat_fee ?? exhibitA.flat_fee_amount}
+                  From deal: buyer_flat_fee = {modalTerms?.buyer_flat_fee ?? exhibitA.flat_fee_amount}
                 </p>
               </div>
             )}
@@ -608,7 +610,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   {exhibitA.commission_percentage || 0}%
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: buyer_commission_percentage = {terms.buyer_commission_percentage ?? exhibitA.commission_percentage}
+                  From deal: buyer_commission_percentage = {modalTerms?.buyer_commission_percentage ?? exhibitA.commission_percentage}
                 </p>
               </div>
             )}
