@@ -32,6 +32,7 @@ const FIELDS = [
   { key: 'transaction_type', label: 'Transaction Type (Agreement)' },
   { key: 'fee_structure', label: 'Commission / Fee Structure (Derived)' },
   { key: 'strategy_summary', label: 'Strategy Summary' },
+  { key: 'strategy_summary', label: 'Strategy Summary' },
   { key: 'exclusivity', label: 'Exclusivity (Agreement)' },
   { key: 'term_start', label: 'Term Start' },
   { key: 'term_end', label: 'Term End' },
@@ -185,7 +186,11 @@ export default function ContractWizard({ roomId, open, onClose }) {
       terms
     });
     const content = resp?.data?.content || resp?.data?.draft || '';
-    const generatedDraft = content || `# CONTRACT DRAFT\n\nContent unavailable.`
+    const generatedDraft = content || '# CONTRACT DRAFT\n\nContent unavailable.';
+    setDraft(generatedDraft);
+    setStep(4);
+    setSaving(false);
+  };    const generatedDraft = content || `# CONTRACT DRAFT\n\nContent unavailable.`
     
 
 **Generated from Template: ${templateId}**
