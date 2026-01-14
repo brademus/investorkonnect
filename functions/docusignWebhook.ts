@@ -175,6 +175,34 @@ Deno.serve(async (req) => {
     // Update agreement
     await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
     console.log('[DocuSign Webhook] Agreement updated:', agreement.id);
+
+    // Persist signed agreement into Deal.documents so Shared Files can show it immediately
+    try {
+      const finalStatus = updates.status || agreement.status;
+      if ((finalStatus === 'fully_signed' || finalStatus === 'attorney_review_pending') && (updates.signed_pdf_url || agreement.signed_pdf_url)) {
+        const nowIso = new Date().toISOString();
+        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+        const existingDeal = dealArr[0] || {};
+        const existingDocs = existingDeal.documents || {};
+        const signedUrl = updates.signed_pdf_url || agreement.signed_pdf_url;
+        const docMeta = {
+          url: signedUrl,
+          name: 'Internal Agreement (Signed).pdf',
+          type: 'application/pdf',
+          uploaded_at: nowIso,
+          verified: true
+        };
+        const newDocs = {
+          ...existingDocs,
+          operating_agreement: docMeta,
+          internal_agreement: docMeta
+        };
+        await base44.asServiceRole.entities.Deal.update(agreement.deal_id, { documents: newDocs, is_fully_signed: true });
+        console.log('[DocuSign Webhook] ✓ Deal.documents updated with signed agreement');
+      }
+    } catch (e) {
+      console.warn('[DocuSign Webhook] Warning: failed to persist signed agreement to Deal.documents', e?.message || e);
+    }
     
     return Response.json({ received: true });
   } catch (error) {

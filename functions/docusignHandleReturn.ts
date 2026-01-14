@@ -274,10 +274,33 @@ Deno.serve(async (req) => {
       
       // Also update Deal entity
       if (updates.status === 'fully_signed' || updates.status === 'attorney_review_pending') {
-        await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
-          is_fully_signed: true
-        });
-        console.log('[docusignHandleReturn] ✓ Deal marked as fully_signed');
+        // Mark deal as fully signed and persist signed agreement into Deal.documents
+        try {
+          const signedUrl = updates.signed_pdf_url || agreement.signed_pdf_url;
+          const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: signingToken.deal_id });
+          const existingDeal = dealArr[0] || {};
+          const existingDocs = existingDeal.documents || {};
+          const docMeta = {
+            url: signedUrl || existingDocs?.operating_agreement?.url || null,
+            name: 'Internal Agreement (Signed).pdf',
+            type: 'application/pdf',
+            uploaded_at: now,
+            verified: true
+          };
+          const newDocs = {
+            ...existingDocs,
+            operating_agreement: docMeta,
+            internal_agreement: docMeta
+          };
+          await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
+            is_fully_signed: true,
+            documents: newDocs
+          });
+          console.log('[docusignHandleReturn] ✓ Deal marked as fully_signed and documents updated');
+        } catch (e) {
+          console.warn('[docusignHandleReturn] Warning: failed to persist signed agreement to Deal.documents', e?.message || e);
+          await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, { is_fully_signed: true });
+        }
       } else {
         await base44.asServiceRole.entities.Deal.update(signingToken.deal_id, {
           is_fully_signed: false
