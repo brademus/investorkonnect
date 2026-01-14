@@ -226,30 +226,30 @@ export default function NewDeal() {
             
             if (!notes) setNotes(deal.notes || "");
             if (!specialNotes) setSpecialNotes(deal.special_notes || "");
-            if (!propertyType) setPropertyType(normalizePropertyType(deal.property_type || deal.property_type_name || deal.type || deal.property_details?.property_type || deal.property_details?.type || ""));
+            setPropertyType(normalizePropertyType(deal.property_type || deal.property_type_name || deal.type || deal.property_details?.property_type || deal.property_details?.type || ""));
             
             if (deal.property_details) {
-              if (!beds) setBeds((deal.property_details.beds ?? deal.property_details.bedrooms ?? deal.property_details.bedrooms_total ?? deal.property_details.bdrms)?.toString() || "");
-              if (!baths) setBaths((deal.property_details.baths ?? deal.property_details.bathrooms ?? deal.property_details.bathrooms_total ?? deal.property_details.bathrooms_total_integer)?.toString() || "");
-              if (!sqft) {
+              setBeds((deal.property_details.beds ?? deal.property_details.bedrooms ?? deal.property_details.bedrooms_total ?? deal.property_details.bdrms)?.toString() || "");
+              setBaths((deal.property_details.baths ?? deal.property_details.bathrooms ?? deal.property_details.bathrooms_total ?? deal.property_details.bathrooms_total_integer)?.toString() || "");
+              {
                 const sqftRaw = deal.property_details.sqft ?? deal.property_details.square_feet ?? deal.property_details.squareFeet ?? deal.property_details.square_footage ?? deal.property_details.living_area ?? deal.property_details.gross_living_area;
                 const sqftVal = typeof sqftRaw === 'string' ? sqftRaw.replace(/[^0-9]/g, '') : sqftRaw;
                 setSqft((sqftVal ?? '').toString());
               }
-              if (!yearBuilt) setYearBuilt((deal.property_details.year_built ?? deal.property_details.yearBuilt ?? deal.property_details.built_year)?.toString() || "");
-              if (!numberOfStories) setNumberOfStories(normalizeStories(deal.property_details.number_of_stories ?? deal.property_details.stories ?? deal.property_details.floors));
-              if (!hasBasement) setHasBasement(normalizeBasement(deal.property_details.has_basement ?? deal.property_details.basement ?? deal.property_details.hasBasement ?? deal.property_details.basement_yn));
+              setYearBuilt((deal.property_details.year_built ?? deal.property_details.yearBuilt ?? deal.property_details.built_year)?.toString() || "");
+              setNumberOfStories(normalizeStories(deal.property_details.number_of_stories ?? deal.property_details.stories ?? deal.property_details.floors));
+              setHasBasement(normalizeBasement(deal.property_details.has_basement ?? deal.property_details.basement ?? deal.property_details.hasBasement ?? deal.property_details.basement_yn));
             } else {
-              if (!beds) setBeds((deal.beds ?? deal.bedrooms ?? deal.bedrooms_total)?.toString() || "");
-              if (!baths) setBaths((deal.baths ?? deal.bathrooms ?? deal.bathrooms_total ?? deal.bathrooms_total_integer)?.toString() || "");
-              if (!sqft) {
+              setBeds((deal.beds ?? deal.bedrooms ?? deal.bedrooms_total)?.toString() || "");
+              setBaths((deal.baths ?? deal.bathrooms ?? deal.bathrooms_total ?? deal.bathrooms_total_integer)?.toString() || "");
+              {
                 const sqftRaw = deal.sqft ?? deal.square_feet ?? deal.squareFeet ?? deal.square_footage ?? deal.living_area ?? deal.gross_living_area;
                 const sqftVal = typeof sqftRaw === 'string' ? sqftRaw.replace(/[^0-9]/g, '') : sqftRaw;
                 setSqft((sqftVal ?? '').toString());
               }
-              if (!yearBuilt) setYearBuilt((deal.year_built ?? deal.yearBuilt)?.toString() || "");
-              if (!numberOfStories) setNumberOfStories(normalizeStories(deal.number_of_stories ?? deal.stories ?? deal.levels ?? deal.floors));
-              if (!hasBasement) setHasBasement(normalizeBasement(deal.has_basement ?? deal.basement ?? deal.basement_yn));
+              setYearBuilt((deal.year_built ?? deal.yearBuilt)?.toString() || "");
+              setNumberOfStories(normalizeStories(deal.number_of_stories ?? deal.stories ?? deal.levels ?? deal.floors));
+              setHasBasement(normalizeBasement(deal.has_basement ?? deal.basement ?? deal.basement_yn));
             }
             
             // Load terms from Deal entity first, fallback to Room for backward compatibility
