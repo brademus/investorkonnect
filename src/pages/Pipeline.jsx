@@ -130,6 +130,8 @@ function PipelineContent() {
   // Load recent activity/notifications
   const { data: activities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['activities', profile?.id],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       if (!profile?.id) return [];
       // Get all deals for this user
