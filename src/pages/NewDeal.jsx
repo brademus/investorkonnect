@@ -54,6 +54,7 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
+  const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when editing or returning from verification error
   useEffect(() => {
@@ -677,7 +678,7 @@ export default function NewDeal() {
 
           <div className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name *</label>
+              <label className="block text.sm font-medium text-[#FAFAFA] mb-2">Seller / Owner Name *</label>
               <Input
                 value={sellerName}
                 onChange={(e) => setSellerName(e.target.value)}
