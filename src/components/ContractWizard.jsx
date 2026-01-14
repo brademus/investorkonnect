@@ -260,36 +260,9 @@ Date: _______________
     setLoading(false);
   };
 
-  // Template flow: Analyze first
+  // Removed chat analysis; proceed directly to edit with preloaded deal/agreement terms
   const analyze = async () => {
-    setLoading(true);
-    try {
-      // Use chat analysis ONLY to fill gaps
-      const resp = await contractAnalyzeChat({ room_id: roomId });
-      const suggested = resp?.data || resp || {};
-      const suggestedTerms = suggested.terms || suggested.suggested_terms || {};
-      const suggestedTemplate = suggested.suggested_template_id || 'buyer_rep_v1';
-      const missingFields = suggested.missing_fields || [];
-      const summary = suggested.plain_summary || suggested.summary;
-
-      setAnalysis({
-       suggested_template_id: suggestedTemplate,
-       plain_summary: summary,
-       terms: suggestedTerms,
-       missing_fields: missingFields
-      });
-      setTemplateId(prev => prev || suggestedTemplate);
-      // Merge order: keep agreement-derived terms; only fill blanks from chat
-      setTerms(prev => mergeMissing(prev, suggestedTerms));
-      setMissing(missingFields);
-      setStep(2);
-    } catch (e) {
-      // Fallback: just advance to edit with whatever we preloaded
-      console.warn('[ContractWizard] contractAnalyzeChat failed; proceeding with preloaded terms', e);
-      setStep(2);
-    } finally {
-      setLoading(false);
-    }
+    setStep(2);
   };
 
   const updateTerm = (k, v) => {
