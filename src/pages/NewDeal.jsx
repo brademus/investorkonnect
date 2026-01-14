@@ -156,7 +156,7 @@ export default function NewDeal() {
           hasMeaningfulDraft = hasUserInput;
         } catch(_) {}
       }
-      if (hasMeaningfulDraft) return;
+
       const loadDealData = async () => {
         try {
           const deals = await base44.entities.Deal.filter({ id: dealId });
@@ -225,15 +225,15 @@ export default function NewDeal() {
             
             setNotes(deal.notes || "");
             setSpecialNotes(deal.special_notes || "");
-            setPropertyType(normalizePropertyType(deal.property_type || deal.property_details?.property_type || deal.property_details?.type || ""));
+            if (!propertyType) setPropertyType(normalizePropertyType(deal.property_type || deal.property_details?.property_type || deal.property_details?.type || ""));
             
             if (deal.property_details) {
-              setBeds(deal.property_details.beds?.toString() || "");
-              setBaths(deal.property_details.baths?.toString() || "");
-              setSqft(deal.property_details.sqft?.toString() || "");
-              setYearBuilt(deal.property_details.year_built?.toString() || "");
-              setNumberOfStories(normalizeStories(deal.property_details.number_of_stories));
-              setHasBasement(normalizeBasement(deal.property_details.has_basement));
+              if (!beds) setBeds(deal.property_details.beds?.toString() || "");
+              if (!baths) setBaths(deal.property_details.baths?.toString() || "");
+              if (!sqft) setSqft(deal.property_details.sqft?.toString() || "");
+              if (!yearBuilt) setYearBuilt(deal.property_details.year_built?.toString() || "");
+              if (!numberOfStories) setNumberOfStories(normalizeStories(deal.property_details.number_of_stories));
+              if (!hasBasement) setHasBasement(normalizeBasement(deal.property_details.has_basement));
             }
             
             // Load terms from Deal entity first, fallback to Room for backward compatibility
