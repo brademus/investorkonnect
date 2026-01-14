@@ -14,6 +14,10 @@ const CONTRACT_TEMPLATES = [
   { id: "services_v1", name: "Real Estate Services Agreement" }
 ];
 
+const REQUIRED_KEYS = [
+  'investor_name', 'agent_name', 'commission_type', 'agreement_length_days', 'property_region', 'governing_law'
+];
+
 const FIELDS = [
   { key: 'investor_name', label: 'Investor Name (Agreement)' },
   { key: 'agent_name', label: 'Agent Name (Agreement)' },
