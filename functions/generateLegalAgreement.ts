@@ -529,9 +529,11 @@ Deno.serve(async (req) => {
     const renderInputHash = await sha256(inputData);
     
     // Check for existing agreement with same hash
+    let toVoidEnvelopeId = null;
     const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
     if (existing.length > 0) {
       const existingAgreement = existing[0];
+      toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
       // Server-side guard: block regeneration once agent has signed
       if (existingAgreement.agent_signed_at) {
         return Response.json({ 
@@ -734,6 +736,40 @@ Deno.serve(async (req) => {
     
     const connection = await getDocuSignConnection();
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
+    
+    // Attempt to void prior envelope (if any) before creating a new one
+    if (toVoidEnvelopeId) {
+      try {
+        const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
+        const voidResp = await fetch(voidUrl, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated on ${new Date().toISOString()}` })
+        });
+        if (!voidResp.ok) {
+          const txt = await voidResp.text();
+          console.warn('[DocuSign] Warning: failed to void prior envelope', txt);
+        } else {
+          console.log('[DocuSign] Prior envelope voided:', toVoidEnvelopeId);
+          try {
+            await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
+              docusign_envelope_id: null,
+              investor_recipient_id: null,
+              agent_recipient_id: null,
+              investor_signing_url: null,
+              agent_signing_url: null
+            });
+          } catch (e) {
+            console.warn('[DocuSign] Warning: failed to clear prior envelope fields', e?.message || e);
+          }
+        }
+      } catch (e) {
+        console.warn('[DocuSign] Warning: void attempt threw error', e?.message || e);
+      }
+    }
     
     // Generate unique clientUserIds for embedded signing
     const timestamp = Date.now();
