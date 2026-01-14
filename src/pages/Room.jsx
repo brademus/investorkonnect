@@ -288,6 +288,9 @@ export default function Room() {
   const [pdYearBuilt, setPdYearBuilt] = useState("");
   const [pdStories, setPdStories] = useState("");
   const [pdBasement, setPdBasement] = useState("");
+  
+  // Extracted details (temporary, require confirmation before applying)
+  const [extractedDraft, setExtractedDraft] = useState(null);
 
         // Unified post-sign flag used across Files tab and privacy checks
         const isWorkingTogether = (
@@ -610,43 +613,20 @@ export default function Room() {
 
         if (!d) return;
 
-        const updates = {};
-        // Map basic fields
-        if (d.address) updates.property_address = d.address;
-        if (d.city) updates.city = d.city;
-        if (d.state) updates.state = d.state;
-        if (d.county) updates.county = d.county;
-        if (d.zip) updates.zip = d.zip;
-        if (typeof d.purchase_price === 'number') updates.purchase_price = d.purchase_price;
+        // Build extracted draft in UI state (do not write to Deal automatically)
+        const draft = {
+          property_type: d.property_type || null,
+          property_details: {}
+        };
+        if (d.property_details?.beds != null) draft.property_details.beds = d.property_details.beds;
+        if (d.property_details?.baths != null) draft.property_details.baths = d.property_details.baths;
+        if (d.property_details?.sqft != null) draft.property_details.sqft = d.property_details.sqft;
+        if (d.property_details?.year_built != null) draft.property_details.year_built = d.property_details.year_built;
+        if (d.property_details?.number_of_stories) draft.property_details.number_of_stories = d.property_details.number_of_stories;
+        if (typeof d.property_details?.has_basement === 'boolean') draft.property_details.has_basement = d.property_details.has_basement;
 
-        const key_dates = { ...(deal.key_dates || {}) };
-        if (d.key_dates?.closing_date) key_dates.closing_date = d.key_dates.closing_date;
-        if (d.key_dates?.contract_date) key_dates.contract_date = d.key_dates.contract_date;
-        if (d.key_dates?.inspection_period_end) key_dates.inspection_period_end = d.key_dates.inspection_period_end;
-        if (d.key_dates?.earnest_money_due) key_dates.earnest_money_due = d.key_dates.earnest_money_due;
-        if (Object.keys(key_dates).length) updates.key_dates = key_dates;
-
-        const seller_info = { ...(deal.seller_info || {}) };
-        if (d.seller_info?.seller_name) seller_info.seller_name = d.seller_info.seller_name;
-        if (d.seller_info?.earnest_money != null) seller_info.earnest_money = d.seller_info.earnest_money;
-        if (d.seller_info?.number_of_signers) seller_info.number_of_signers = d.seller_info.number_of_signers;
-        if (d.seller_info?.second_signer_name) seller_info.second_signer_name = d.seller_info.second_signer_name;
-        if (Object.keys(seller_info).length) updates.seller_info = seller_info;
-
-        if (d.property_type) updates.property_type = d.property_type;
-        const pd = {};
-        if (d.property_details?.beds != null) pd.beds = d.property_details.beds;
-        if (d.property_details?.baths != null) pd.baths = d.property_details.baths;
-        if (d.property_details?.sqft != null) pd.sqft = d.property_details.sqft;
-        if (d.property_details?.year_built != null) pd.year_built = d.property_details.year_built;
-        if (d.property_details?.number_of_stories) pd.number_of_stories = d.property_details.number_of_stories;
-        if (typeof d.property_details?.has_basement === 'boolean') pd.has_basement = d.property_details.has_basement;
-        if (Object.keys(pd).length) updates.property_details = pd;
-
-        if (Object.keys(updates).length) {
-          await base44.entities.Deal.update(deal.id, updates);
-          const refetch = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
-          if (refetch?.data) setDeal(refetch.data);
+        if ((draft.property_type) || Object.keys(draft.property_details).length > 0) {
+          setExtractedDraft(draft);
         }
       } catch (e) {
         console.error('[Room] auto-extract failed:', e);
