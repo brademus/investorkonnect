@@ -1,11 +1,22 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { createClient } from 'npm:@base44/sdk@0.8.6';
 
-async function downloadSignedPdf(envelopeId, env) {
-  const accessToken = Deno.env.get(`DOCUSIGN_ACCESS_TOKEN_${env.toUpperCase()}`);
-  const accountId = Deno.env.get(`DOCUSIGN_ACCOUNT_ID_${env.toUpperCase()}`);
-  const baseUri = Deno.env.get(`DOCUSIGN_BASE_URI_${env.toUpperCase()}`);
-  
+async function getDocuSignConnection(base44) {
+  const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
+  if (!connections || connections.length === 0) {
+    throw new Error('DocuSign not connected');
+  }
+  const connection = connections[0];
+  const now = new Date();
+  const expiresAt = connection.expires_at ? new Date(connection.expires_at) : null;
+  if (expiresAt && now >= expiresAt) {
+    throw new Error('DocuSign token expired');
+  }
+  return connection;
+}
+
+async function downloadSignedPdf(base44, envelopeId) {
+  const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = await getDocuSignConnection(base44);
   const pdfUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/documents/combined`;
   const response = await fetch(pdfUrl, {
     headers: {
@@ -13,11 +24,9 @@ async function downloadSignedPdf(envelopeId, env) {
       'Accept': 'application/pdf'
     }
   });
-  
   if (!response.ok) {
     throw new Error('Failed to download signed PDF');
   }
-  
   return await response.arrayBuffer();
 }
 
