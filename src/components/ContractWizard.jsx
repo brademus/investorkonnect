@@ -379,72 +379,17 @@ Date: _______________
         </div>
 
         <div className="p-6">
-          {/* Step 1: Choose Mode */}
+          {/* Step 1: Start – no AI, no chat */}
           {step === 1 && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* AI Flow Option */}
-                <button
-                  onClick={() => setMode("ai")}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
-                    mode === "ai" 
-                      ? "border-blue-500 bg-blue-50" 
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                      <Sparkles className="w-5 h-5 text-white" />
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-slate-900">AI Contract Flow</h4>
-                      <Badge className="text-xs bg-emerald-100 text-emerald-700">GPT-4o</Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    Automatically generate a contract from your conversation and get instant risk analysis.
-                  </p>
-                </button>
-
-                {/* Template Option */}
-                <button
-                  onClick={() => setMode("template")}
-                  className={`p-6 rounded-xl border-2 text-left transition-all ${
-                    mode === "template" 
-                      ? "border-blue-500 bg-blue-50" 
-                      : "border-slate-200 hover:border-slate-300"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="w-10 h-10 bg-slate-600 rounded-lg flex items-center justify-center">
-                      <FileText className="w-5 h-5 text-white" />
-                    </div>
-                    <h4 className="font-bold text-slate-900">Template-Based</h4>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    We’ll prefill from the agreement and only use chat to fill any blanks.
-                  </p>
-                </button>
+              <div className="p-4 rounded-xl border-2 border-slate-200 bg-slate-50 text-slate-700 text-sm">
+                The wizard uses only the deal data you entered. No chat extraction or AI.
               </div>
-
               <Button 
-                onClick={mode === "ai" ? runAiFlow : analyze} 
-                disabled={loading}
+                onClick={analyze} 
                 className="w-full bg-blue-600 hover:bg-blue-700 h-12"
               >
-                {loading ? (
-                  <>
-                    <LoadingAnimation className="w-5 h-5 mr-2" />
-                    {mode === "ai" ? "Generating Contract & Analyzing..." : "Analyzing Chat..."}
-                  </>
-                ) : mode === "ai" ? (
-                  <>
-                    <Sparkles className="w-5 h-5 mr-2" />
-                    Generate AI Contract
-                  </>
-                ) : (
-                  "Extract Terms from Chat"
-                )}
+                Continue
               </Button>
             </div>
           )}
