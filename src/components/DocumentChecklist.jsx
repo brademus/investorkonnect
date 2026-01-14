@@ -16,7 +16,7 @@ const REQUIRED_DOCUMENTS = [
   { 
     key: 'operating_agreement', 
     label: 'Internal Agreement',
-    description: 'Internal investor-agent operating agreement',
+    description: 'Internal investor-agent agreement',
     uploadedBy: 'both'
   },
   { 
