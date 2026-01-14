@@ -170,98 +170,12 @@ export default function ContractWizard({ roomId, open, onClose }) {
   };
 
   const generate = async () => {
-    if (!templateId) {
-      alert("Please select a template");
-      return;
-    }
-    if (missing.length > 0) {
-      alert("Please fill required fields: " + missing.join(", "));
-      return;
-    }
-
+    if (!templateId) { alert("Please select a template"); return; }
+    if (missing.length > 0) { alert("Please fill required fields: " + missing.join(", ")); return; }
     setSaving(true);
-    const resp = await base44.functions.invoke('contractGenerateDraft', {
-      room_id: roomId,
-      template_id: templateId,
-      terms
-    });
+    const resp = await base44.functions.invoke('contractGenerateDraft', { room_id: roomId, template_id: templateId, terms });
     const content = resp?.data?.content || resp?.data?.draft || '';
     const generatedDraft = content || '# CONTRACT DRAFT\n\nContent unavailable.';
-    setDraft(generatedDraft);
-    setStep(4);
-    setSaving(false);
-  };    const generatedDraft = content || `# CONTRACT DRAFT\n\nContent unavailable.`
-    
-
-**Generated from Template: ${templateId}**
-
----
-
-## PARTIES
-
-**BUYER/INVESTOR:** ${terms["investor_name"] || "[Investor Name]"}  
-**AGENT:** ${terms["agent_name"] || "[Agent Name]"}, ${terms["agent_brokerage"] || "[Brokerage]"}
-
----
-
-## 1. PURPOSE
-
-This ${templateName} is entered into for the purpose of establishing a professional relationship between the parties for real estate investment services.
-
-## 2. SCOPE
-
-**Target Markets:** ${terms["Target Markets"] || "[Markets]"}  
-**Property Types:** ${terms["Property Types"] || "[Property Types]"}  
-**Price Range:** ${terms["Price Range"] || "[Price Range]"}
-
-## 3. COMPENSATION
-
-Compensation: ${terms["fee_structure"] || "[fee structure]"}
-
-## 4. TERM
-
-This Agreement shall be effective from ${terms["term_start"] || "[start]"} to ${terms["term_end"] || "[end]"}.
-If applicable, Agreement Length: ${terms["agreement_length_days"] || "[days]"} days.
-
-## 5. DUTIES AND OBLIGATIONS
-
-### Agent Responsibilities:
-- Identify suitable investment properties
-- Provide market analysis and due diligence support
-- Negotiate on behalf of the investor
-- Coordinate inspections and closing
-
-### Investor Responsibilities:
-- Provide clear investment criteria
-- Respond to opportunities in a timely manner
-- Provide proof of funds when required
-
-## 6. CONFIDENTIALITY
-
-Both parties agree to maintain strict confidentiality regarding all proprietary information, deal terms, and financial details shared during this engagement.
-
-## 7. TERMINATION
-
-Either party may terminate this Agreement with 30 days written notice.
-
----
-
-**SIGNATURES:**
-
-_________________________  
-${terms["investor_name"] || "Investor"}  
-Date: _______________
-
-_________________________  
-${terms["agent_name"] || "Agent"}  
-License #: ${terms["agent_license_number"] || "_______________"}  
-Date: _______________
-
----
-
-*This is a placeholder contract generated from template for demonstration purposes.*
-`;
-    
     setDraft(generatedDraft);
     setStep(4);
     setSaving(false);
