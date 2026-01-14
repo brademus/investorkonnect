@@ -413,7 +413,8 @@ function PipelineContent() {
   };
 
   // Pipeline stages with icons
-  const pipelineStages = PIPELINE_STAGES.map(stage => ({
+  // Memoize to keep column identity stable
+  const pipelineStages = useMemo(() => PIPELINE_STAGES.map(stage => ({
     ...stage,
     icon: stage.id === 'new_listings' ? FileText :
           stage.id === 'active_listings' ? TrendingUp :
