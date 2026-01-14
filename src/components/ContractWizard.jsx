@@ -413,12 +413,7 @@ Date: _______________
                 </select>
               </div>
 
-              {analysis?.plain_summary && (
-                <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                 <div className="text-xs font-semibold text-slate-500 mb-1">Summary (supplemental)</div>
-                 <p className="text-sm text-slate-700">{analysis.plain_summary}</p>
-                </div>
-              )}
+
 
               <div>
                 <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms (Deal/Agreement First)</Label>
