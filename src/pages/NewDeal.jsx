@@ -142,8 +142,21 @@ export default function NewDeal() {
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
     if (dealId && profile?.id) {
-      const hasDraft = !!sessionStorage.getItem(draftKey);
-      if (hasDraft) return;
+      // Only skip server load if a meaningful draft exists (not an empty placeholder)
+      let hasMeaningfulDraft = false;
+      const raw = sessionStorage.getItem(draftKey);
+      if (raw) {
+        try {
+          const d = JSON.parse(raw);
+          const hasUserInput = [
+            d.propertyAddress, d.city, d.state, d.zip, d.county, d.purchasePrice, d.closingDate,
+            d.sellerName, d.earnestMoney, d.sellerCommissionPercentage, d.sellerFlatFee,
+            d.buyerCommissionPercentage, d.buyerFlatFee, d.agreementLength
+          ].some(v => (v ?? '').toString().trim().length > 0);
+          hasMeaningfulDraft = hasUserInput;
+        } catch(_) {}
+      }
+      if (hasMeaningfulDraft) return;
       const loadDealData = async () => {
         try {
           const deals = await base44.entities.Deal.filter({ id: dealId });
@@ -233,6 +246,7 @@ export default function NewDeal() {
                 setAgreementLength((terms.agreement_length ?? "").toString());
               }
             }
+            setHydrated(true);
           }
         } catch (error) {
           console.error("Failed to load deal:", error);
