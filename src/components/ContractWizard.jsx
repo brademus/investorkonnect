@@ -107,10 +107,11 @@ export default function ContractWizard({ roomId, open, onClose }) {
         const ex = agreement?.exhibit_a_terms || {};
         const pt = deal?.proposed_terms || {};
 
-        const buyerType = ex.buyer_commission_type || pt.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined);
-        const buyerPct = ex.commission_percentage ?? pt.buyer_commission_percentage ?? '';
-        const buyerFlat = ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '';
-        const lengthDays = ex.agreement_length_days ?? pt.agreement_length ?? '';
+        const buyerType = pt.buyer_commission_type || ex.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined);
+        const buyerPct = pt.buyer_commission_percentage ?? ex.commission_percentage ?? '';
+        const buyerFlat = pt.buyer_flat_fee ?? ex.flat_fee_amount ?? '';
+        const lengthDays = pt.agreement_length ?? ex.agreement_length_days ?? '';
+        const txnType = agreement?.transaction_type || ex.transaction_type || '';
 
         const feeStr = (() => {
           if (buyerType === 'percentage' && buyerPct) return `${buyerPct}% of purchase price, paid at closing`;
