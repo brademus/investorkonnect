@@ -108,6 +108,8 @@ function PipelineContent() {
   // 2. Load Active Deals via Server-Side Access Control
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       if (!profile?.id) return [];
       
