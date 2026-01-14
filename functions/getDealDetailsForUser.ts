@@ -168,7 +168,7 @@ Deno.serve(async (req) => {
 
     // If still missing, derive from seller contract for display (no DB writes)
     let display_property_details = property_details_fallback;
-    let display_property_type = property_type_fallback;
+    let display_property_type = property_type_fallback || deal.property_type || deal.property_type_name || null;
     try {
       const needsPD = !isMeaningfulPD(display_property_details);
       const needsType = !display_property_type;
