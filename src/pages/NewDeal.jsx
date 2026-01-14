@@ -55,7 +55,6 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
   const [hydrated, setHydrated] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when editing or returning from verification error
   useEffect(() => {
@@ -138,7 +137,7 @@ export default function NewDeal() {
     if ((isEditing && hydrated) || hasUserInput) {
       sessionStorage.setItem(draftKey, JSON.stringify(draft));
     }
-  }, [draftKey, dealId, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
+  }, [draftKey, dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
@@ -247,7 +246,6 @@ export default function NewDeal() {
                 setAgreementLength((terms.agreement_length ?? "").toString());
               }
             }
-            setHydrated(true);
             setHydrated(true);
           }
         } catch (error) {
