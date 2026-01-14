@@ -32,7 +32,6 @@ const FIELDS = [
   { key: 'transaction_type', label: 'Transaction Type (Agreement)' },
   { key: 'fee_structure', label: 'Commission / Fee Structure (Derived)' },
   { key: 'strategy_summary', label: 'Strategy Summary' },
-  { key: 'strategy_summary', label: 'Strategy Summary' },
   { key: 'exclusivity', label: 'Exclusivity (Agreement)' },
   { key: 'term_start', label: 'Term Start' },
   { key: 'term_end', label: 'Term End' },
