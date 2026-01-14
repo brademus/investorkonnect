@@ -1,5 +1,5 @@
 import React from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
@@ -32,6 +32,7 @@ const queryClient = new QueryClient({
  * LAYOUT - Airbnb-style shell with conditional navigation
  */
 function LayoutContent({ children }) {
+  const navigate = useNavigate();
   const location = useLocation();
   const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
 
@@ -98,7 +99,7 @@ function LayoutContent({ children }) {
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
               alt="Investor Konnect"
               className="h-8 w-8 object-contain cursor-pointer"
-              onClick={() => window.location.href = createPageUrl("Pipeline")}
+                                  onClick={() => navigate(createPageUrl("Pipeline"))}
             />
             <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
               Investor Konnect
@@ -151,16 +152,16 @@ function LayoutContent({ children }) {
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-[#0D0D0D] border-[#1F1F1F]">
                     {isAdmin && (
-                      <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Admin")} className="text-[#E3C567] cursor-pointer">
+                      <DropdownMenuItem onClick={() => navigate(createPageUrl("Admin"))} className="text-[#E3C567] cursor-pointer">
                         <ShieldCheck className="w-4 h-4 mr-2" />
                         Admin Panel
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => window.location.href = createPageUrl("AccountProfile")} className="text-[#FAFAFA] cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate(createPageUrl("AccountProfile"))} className="text-[#FAFAFA] cursor-pointer">
                       <User className="w-4 h-4 mr-2" />
                       Account
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = createPageUrl("Logout")} className="text-[#FAFAFA] cursor-pointer">
+                    <DropdownMenuItem onClick={() => navigate(createPageUrl("Logout"))} className="text-[#FAFAFA] cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
                     </DropdownMenuItem>
