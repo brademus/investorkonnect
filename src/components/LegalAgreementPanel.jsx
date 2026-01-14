@@ -174,7 +174,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       
       const response = await base44.functions.invoke('generateLegalAgreement', {
         deal_id: effectiveDealId,
-        exhibit_a: derivedExhibitA
+        exhibit_a: derivedExhibitA,
+        use_buyer_terms: true
       });
       
       if (response.data?.error) {
