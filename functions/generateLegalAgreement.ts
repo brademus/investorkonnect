@@ -991,6 +991,19 @@ Deno.serve(async (req) => {
       agreement = await base44.asServiceRole.entities.LegalAgreement.create(agreementData);
     }
     
+    // Ensure new envelope and recipient IDs are saved and old ones cannot be used
+    try {
+      await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
+        docusign_envelope_id: envelopeId,
+        investor_recipient_id: '1',
+        agent_recipient_id: '2',
+        investor_signing_url: null,
+        agent_signing_url: null
+      });
+    } catch (e) {
+      console.warn('[DocuSign] Warning: failed to persist new envelope metadata', e?.message || e);
+    }
+    
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
     return Response.json({ success: true, agreement: agreement, regenerated: true });
