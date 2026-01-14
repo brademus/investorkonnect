@@ -24,6 +24,7 @@ const FIELDS = [
   { key: 'exclusivity', label: 'Exclusivity (Agreement)' },
   { key: 'term_start', label: 'Term Start' },
   { key: 'term_end', label: 'Term End' },
+  { key: 'agreement_length_days', label: 'Agreement Length (days) (Agreement)' },
   { key: 'governing_law', label: 'Governing Law (Agreement)' },
   { key: 'termination_rights', label: 'Termination (Agreement)' },
   { key: 'property_region', label: 'Property Region (Agreement)' },
@@ -129,6 +130,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
         };
 
         setTerms(initialTerms);
+        setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
       } catch (e) {
@@ -303,8 +305,8 @@ Date: _______________
 
 ## PARTIES
 
-**BUYER/INVESTOR:** ${terms["Investor Name"] || "[Investor Name]"}  
-**AGENT:** ${terms["Agent Name"] || "[Agent Name]"}, ${terms["Brokerage"] || "[Brokerage]"}
+**BUYER/INVESTOR:** ${terms["investor_name"] || "[Investor Name]"}  
+**AGENT:** ${terms["agent_name"] || "[Agent Name]"}, ${terms["agent_brokerage"] || "[Brokerage]"}
 
 ---
 
@@ -320,11 +322,12 @@ This ${templateName} is entered into for the purpose of establishing a professio
 
 ## 3. COMPENSATION
 
-**Commission Rate:** ${terms["Commission Rate"] || "3%"} of purchase price, payable at closing.
+Compensation: ${terms["fee_structure"] || "[fee structure]"}
 
 ## 4. TERM
 
-This Agreement shall be effective for ${terms["Agreement Term"] || "12 months"} from the date of execution.
+This Agreement shall be effective from ${terms["term_start"] || "[start]"} to ${terms["term_end"] || "[end]"}.
+If applicable, Agreement Length: ${terms["agreement_length_days"] || "[days]"} days.
 
 ## 5. DUTIES AND OBLIGATIONS
 
@@ -352,12 +355,12 @@ Either party may terminate this Agreement with 30 days written notice.
 **SIGNATURES:**
 
 _________________________  
-${terms["Investor Name"] || "Investor"}  
+${terms["investor_name"] || "Investor"}  
 Date: _______________
 
 _________________________  
-${terms["Agent Name"] || "Agent"}  
-License #: ${terms["Agent License Number"] || "_______________"}  
+${terms["agent_name"] || "Agent"}  
+License #: ${terms["agent_license_number"] || "_______________"}  
 Date: _______________
 
 ---
