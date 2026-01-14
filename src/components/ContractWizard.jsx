@@ -142,6 +142,7 @@ export default function ContractWizard({ roomId, open, onClose }) {
         setStep(2);
         setStep(2);
         setStep(2);
+        setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
       } catch (e) {
