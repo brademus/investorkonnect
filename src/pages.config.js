@@ -1,4 +1,3 @@
-import AIAssistant from './pages/AIAssistant';
 import About from './pages/About';
 import AccountBilling from './pages/AccountBilling';
 import AccountProfile from './pages/AccountProfile';
@@ -76,7 +75,6 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "AIAssistant": AIAssistant,
     "About": About,
     "AccountBilling": AccountBilling,
     "AccountProfile": AccountProfile,
