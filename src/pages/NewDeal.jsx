@@ -54,7 +54,6 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
-  const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when editing or returning from verification error
   useEffect(() => {
