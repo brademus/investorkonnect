@@ -204,7 +204,8 @@ function PipelineContent() {
     const apptMap = new Map();
     (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
 
-    const mappedDeals = dealsData.map(deal => {
+    // Stable map to avoid reshuffles
+    const mappedDeals = useMemo(() => dealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const appt = apptMap.get(deal.id);
       
