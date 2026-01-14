@@ -185,6 +185,8 @@ function PipelineContent() {
   // 4b. Load Deal Appointments for visible deals
   const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
     queryKey: ['dealAppointments', dealsData.map(d => d.id)],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     queryFn: async () => {
       if (!dealsData || dealsData.length === 0) return [];
       const items = await base44.entities.DealAppointments.list('-updated_date', 500);
