@@ -300,6 +300,31 @@ export default function NewDeal() {
                 setAgreementLength((terms.agreement_length ?? "").toString());
               }
             }
+
+            // Fallback: if property details are still empty, try server-normalized details
+            const detailsEmpty = !propertyType && !beds && !baths && !sqft && !yearBuilt && !numberOfStories && !hasBasement;
+            if (detailsEmpty) {
+              try {
+                const resp = await base44.functions.invoke('getDealDetailsForUser', { dealId });
+                const d = resp?.data?.deal || resp?.data;
+                const pd = d?.property_details || d?.propertyDetails;
+                const pt = d?.property_type || d?.propertyType || pd?.property_type || pd?.type;
+                setPropertyType(normalizePropertyType(pt || ""));
+                if (pd) {
+                  setBeds((pd.beds ?? pd.bedrooms ?? pd.bedrooms_total ?? pd.bdrms)?.toString() || "");
+                  setBaths((pd.baths ?? pd.bathrooms ?? pd.bathrooms_total ?? pd.bathrooms_total_integer)?.toString() || "");
+                  const sqftRaw2 = pd.sqft ?? pd.square_feet ?? pd.squareFeet ?? pd.square_footage ?? pd.living_area ?? pd.gross_living_area;
+                  const sqftVal2 = typeof sqftRaw2 === 'string' ? sqftRaw2.replace(/[^0-9]/g, '') : sqftRaw2;
+                  setSqft((sqftVal2 ?? '').toString());
+                  setYearBuilt((pd.year_built ?? pd.yearBuilt ?? pd.built_year)?.toString() || "");
+                  setNumberOfStories(normalizeStories(pd.number_of_stories ?? pd.stories ?? pd.floors));
+                  setHasBasement(normalizeBasement(pd.has_basement ?? pd.basement ?? pd.hasBasement ?? pd.basement_yn));
+                }
+              } catch (e) {
+                console.warn('[NewDeal] Fallback details load failed', e);
+              }
+            }
+
             setHydrated(true);
           }
         } catch (error) {
