@@ -109,10 +109,10 @@ export default function ContractWizard({ roomId, open, onClose }) {
         const ex = agreement?.exhibit_a_terms || {};
         const pt = deal?.proposed_terms || {};
 
-        const buyerType = ex.buyer_commission_type || (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined) || pt.buyer_commission_type;
-        const buyerPct = ex.commission_percentage ?? pt.buyer_commission_percentage ?? '';
-        const buyerFlat = ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '';
-        const lengthDays = ex.agreement_length_days ?? pt.agreement_length ?? '';
+        const buyerType = ex.buyer_commission_type ?? (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined) ?? pt.buyer_commission_type;
+        const buyerPct = (ex.buyer_commission_percentage ?? ex.commission_percentage ?? pt.buyer_commission_percentage ?? '');
+        const buyerFlat = (ex.buyer_flat_fee ?? ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '');
+        const lengthDays = (ex.agreement_length_days ?? ex.agreement_length ?? pt.agreement_length ?? '');
         const txnType = agreement?.transaction_type || ex.transaction_type || '';
 
         const feeStr = (() => {
@@ -134,12 +134,12 @@ export default function ContractWizard({ roomId, open, onClose }) {
           agreement_length: String(lengthDays || ''),
           transaction_type: txnType || '',
           fee_structure: feeStr,
-          exclusivity: ex.exclusivity || ex.exclusive || '',
+          exclusivity: ex.exclusivity || ex.exclusive || pt.exclusivity || '',
           governing_law: agreement?.governing_state || '',
           property_region: deal?.state || agreement?.property_zip || '',
           termination_rights: ex.termination_rights || '',
-          retainer_amount: ex.retainer_amount || '',
-          retainer_currency: ex.retainer_currency || 'USD'
+          retainer_amount: (ex.retainer_amount ?? ex.retainer?.amount ?? ''),
+          retainer_currency: (ex.retainer_currency ?? ex.retainer?.currency ?? 'USD')
         };
 
         setTerms(initialTerms);
