@@ -122,7 +122,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: true,
-    refetchOnMount: true
+    refetchOnMount: false
   });
 
   // Load recent activity/notifications
@@ -153,7 +153,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: true,
-    refetchOnMount: true
+    refetchOnMount: false
   });
 
   // 4. Load Pending Requests (for agents)
@@ -171,7 +171,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: true,
-    refetchOnMount: true
+    refetchOnMount: false
   });
 
   // 4b. Load Deal Appointments for visible deals
@@ -188,13 +188,7 @@ function PipelineContent() {
     refetchInterval: 15000
   });
 
-  // Force refresh on mount
-  useEffect(() => {
-    if (profile?.id) {
-      refetchDeals();
-      refetchRooms();
-    }
-  }, [profile?.id]);
+  
 
   // 5. Merge Data (no automatic dedup - user clicks button if needed)
   const deals = useMemo(() => {
@@ -427,7 +421,7 @@ function PipelineContent() {
           XCircle
   }));
 
-  if (loading || !profile || loadingDeals || deduplicating) {
+  if (loading || !profile || loadingDeals || loadingRooms || loadingRequests || loadingActivities || loadingAppointments || deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
