@@ -51,13 +51,48 @@ function calculateNJReviewEnd() {
  */
 Deno.serve(async (req) => {
   try {
-    // Verify webhook signature
-    const signature = req.headers.get('X-DocuSign-Signature-1');
-    const webhookSecret = Deno.env.get('DOCUSIGN_WEBHOOK_SECRET');
-    
-    // TODO: Implement proper HMAC verification if webhookSecret is set
-    
-    const event = await req.json();
+    // Verify webhook signature (HMAC SHA-256 over raw body)
+    const sigHeader = req.headers.get('X-DocuSign-Signature-1')?.trim() || '';
+    const webhookSecret = Deno.env.get('DOCUSIGN_WEBHOOK_SECRET')?.trim() || '';
+
+    // Read raw body first (single-use stream)
+    const rawBody = await req.arrayBuffer();
+
+    // Require secret + header; reject if missing or invalid
+    if (!webhookSecret || !sigHeader) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    const encoder = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+      'raw',
+      encoder.encode(webhookSecret),
+      { name: 'HMAC', hash: 'SHA-256' },
+      false,
+      ['sign']
+    );
+    const sigBytes = await crypto.subtle.sign('HMAC', key, rawBody);
+
+    // Compare against common encodings (hex or base64)
+    const toHex = (buf) => Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const toBase64 = (buf) => {
+      const bin = String.fromCharCode(...new Uint8Array(buf));
+      return btoa(bin);
+    };
+    const computedHex = toHex(sigBytes);
+    const computedB64 = toBase64(sigBytes);
+
+    const provided = sigHeader.replace(/=/g, '').toLowerCase();
+    const matches =
+      provided === computedHex.toLowerCase() ||
+      provided === computedB64.replace(/=+$/, '');
+
+    if (!matches) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+
+    // Parse JSON after verification
+    const event = JSON.parse(new TextDecoder().decode(rawBody));
     console.log('[DocuSign Webhook] Event received:', event.event);
     
     const envelopeId = event.data?.envelopeId || event.envelopeId;
