@@ -63,7 +63,6 @@ export default function ContractWizard({ roomId, open, onClose }) {
   useEffect(() => {
     if (!open) return;
     setStep(1);
-    setAnalysis(null);
     setTemplateId("");
     setTerms({});
     setMissing([]);
@@ -83,35 +82,29 @@ export default function ContractWizard({ roomId, open, onClose }) {
         const dealId = room?.deal_id;
         if (!dealId) { setLoading(false); return; }
 
-        // 2) Load deal + agreement in parallel
-        const [dealList, agreementRes] = await Promise.all([
-          base44.entities.Deal.filter({ id: dealId }),
-          base44.functions.invoke('getLegalAgreement', { deal_id: dealId })
-        ]);
+        // 2) Load deal only (no chat or agreement lookups)
+        const dealList = await base44.entities.Deal.filter({ id: dealId });
         const deal = dealList?.[0] || null;
-        const agreement = agreementRes?.data?.agreement || null;
-        setAgreementData(agreement);
 
-        // 3) Load profiles (for names/brokerage/license)
+        // 3) Load profiles from room participants
         let investorProfile = null, agentProfile = null;
-        if (agreement?.investor_profile_id || agreement?.agent_profile_id) {
+        if (room?.investorId || room?.agentId) {
           const [inv, ag] = await Promise.all([
-            agreement?.investor_profile_id ? base44.entities.Profile.filter({ id: agreement.investor_profile_id }) : Promise.resolve([]),
-            agreement?.agent_profile_id ? base44.entities.Profile.filter({ id: agreement.agent_profile_id }) : Promise.resolve([])
+            room?.investorId ? base44.entities.Profile.filter({ id: room.investorId }) : Promise.resolve([]),
+            room?.agentId ? base44.entities.Profile.filter({ id: room.agentId }) : Promise.resolve([])
           ]);
           investorProfile = inv?.[0] || null;
           agentProfile = ag?.[0] || null;
         }
 
-        // 4) Build buyer's agent terms from agreement exhibit A, falling back to deal.proposed_terms
-        const ex = agreement?.exhibit_a_terms || {};
+        // 4) Build terms solely from deal data (no chat/agreement)
         const pt = deal?.proposed_terms || {};
 
-        const buyerType = ex.buyer_commission_type ?? (ex.compensation_model === 'COMMISSION_PCT' ? 'percentage' : ex.compensation_model === 'FLAT_FEE' ? 'flat' : undefined) ?? pt.buyer_commission_type;
-        const buyerPct = (ex.buyer_commission_percentage ?? ex.commission_percentage ?? pt.buyer_commission_percentage ?? '');
-        const buyerFlat = (ex.buyer_flat_fee ?? ex.flat_fee_amount ?? pt.buyer_flat_fee ?? '');
-        const lengthDays = (ex.agreement_length_days ?? ex.agreement_length ?? pt.agreement_length ?? '');
-        const txnType = agreement?.transaction_type || ex.transaction_type || '';
+        const buyerType = pt.buyer_commission_type || '';
+        const buyerPct = (pt.buyer_commission_percentage ?? '');
+        const buyerFlat = (pt.buyer_flat_fee ?? '');
+        const lengthDays = (pt.agreement_length ?? '');
+        const txnType = '';
 
         const feeStr = (() => {
           if (buyerType === 'percentage' && buyerPct) return `${buyerPct}% of purchase price, paid at closing`;
@@ -123,8 +116,8 @@ export default function ContractWizard({ roomId, open, onClose }) {
           investor_name: investorProfile?.full_name || '',
           agent_name: agentProfile?.full_name || '',
           agent_brokerage: agentProfile?.agent?.brokerage || agentProfile?.broker || '',
-          agent_license_number: agentProfile?.agent?.license_number || '',
-          agent_license_state: agentProfile?.agent?.license_state || '',
+          agent_license_number: agentProfile?.agent?.license_number || agentProfile?.license_number || '',
+          agent_license_state: agentProfile?.agent?.license_state || agentProfile?.license_state || '',
           commission_type: buyerType || '',
           commission_percentage: buyerType === 'percentage' ? String(buyerPct) : '',
           flat_fee_amount: buyerType === 'flat' ? String(buyerFlat) : '',
@@ -132,15 +125,23 @@ export default function ContractWizard({ roomId, open, onClose }) {
           agreement_length: String(lengthDays || ''),
           transaction_type: txnType || '',
           fee_structure: feeStr,
-          exclusivity: ex.exclusivity || ex.exclusive || pt.exclusivity || '',
-          governing_law: agreement?.governing_state || '',
-          property_region: deal?.state || agreement?.property_zip || '',
-          termination_rights: ex.termination_rights || '',
-          retainer_amount: (ex.retainer_amount ?? ex.retainer?.amount ?? ''),
-          retainer_currency: (ex.retainer_currency ?? ex.retainer?.currency ?? 'USD')
+          exclusivity: pt.exclusivity || '',
+          governing_law: deal?.state || '',
+          property_region: deal?.state || '',
+          termination_rights: pt.termination_rights || '',
+          retainer_amount: pt.retainer_amount ?? '',
+          retainer_currency: pt.retainer_currency ?? 'USD'
         };
 
         setTerms(initialTerms);
+        const req = [...REQUIRED_KEYS];
+        if (initialTerms.commission_type === 'percentage') {
+          if (!initialTerms.commission_percentage) req.push('commission_percentage');
+        } else if (initialTerms.commission_type === 'flat') {
+          if (!initialTerms.flat_fee_amount) req.push('flat_fee_amount');
+        }
+        const missingKeys = req.filter(k => !initialTerms[k] || String(initialTerms[k]).trim() === '');
+        setMissing(missingKeys);
         setStep(2);
         // Suggest default template for buyer rep
         if (!templateId) setTemplateId('buyer_rep_v1');
