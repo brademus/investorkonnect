@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Shield, AlertTriangle, CheckCircle, Loader2, Sparkles, FileWarning, Scale } from "lucide-react";
 import { base44 } from "@/api/base44Client";
-import { contractAnalyzeChat } from "@/components/functions";
+
 
 /**
  * CONTRACT GUARDIAN - AI Risk Analysis using OpenAI Prompt ID
@@ -18,35 +18,8 @@ export function ContractGuardian({ contractText, userProfile, onSuggestionApply 
   const [error, setError] = useState(null);
 
   const analyzeContract = async () => {
-    if (!contractText?.trim()) {
-      setError("Please provide contract text to analyze");
-      return;
-    }
-    
-    setAnalyzing(true);
-    setError(null);
-    
-    try {
-      // Use the backend function which calls OpenAI with Prompt ID
-      const response = await contractAnalyzeChat({
-        mode: "guardian",
-        contract_text: contractText,
-        risk_tolerance: userProfile?.metadata?.risk_tolerance || 'moderate',
-        experience: userProfile?.metadata?.experience_level || 'intermediate',
-        strategies: userProfile?.metadata?.strategies || [],
-        concerns: userProfile?.metadata?.deal_breakers || []
-      });
-
-      if (response.data?.ok && response.data?.analysis) {
-        setAnalysis(response.data.analysis);
-      } else {
-        throw new Error(response.data?.error || "Analysis failed");
-      }
-    } catch (err) {
-      setError(err.message || "Failed to analyze contract");
-    } finally {
-      setAnalyzing(false);
-    }
+    setError("AI analysis has been removed. This feature is disabled.");
+    setAnalyzing(false);
   };
 
   const getRiskColor = (risk) => {
@@ -73,7 +46,7 @@ export function ContractGuardian({ contractText, userProfile, onSuggestionApply 
           </div>
           <div>
             <h3 className="font-bold text-slate-900">Contract Guardian</h3>
-            <p className="text-sm text-slate-600">GPT-4o powered legal analysis</p>
+            <p className="text-sm text-slate-600">Legal analysis disabled (AI removed)</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

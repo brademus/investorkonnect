@@ -1,4 +1,3 @@
-
 import { base44 } from '@/api/base44Client';
 
 // Typed wrappers for all Base44 functions used by the frontend.
@@ -7,7 +6,7 @@ export const adminSetup = base44.functions.adminSetup;
 export const billingPortal = base44.functions.billingPortal;
 export const checkoutLite = base44.functions.checkoutLite;
 export const checkoutSession = base44.functions.checkoutSession;
-export const contractAnalyzeChat = base44.functions.contractAnalyzeChat;
+
 export const contractGenerateDraft = base44.functions.contractGenerateDraft;
 export const createCheckoutSession = base44.functions.createCheckoutSession;
 export const createDealRoom = base44.functions.createDealRoom;
