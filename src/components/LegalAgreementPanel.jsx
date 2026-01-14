@@ -596,7 +596,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
                   ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
-                  From deal: buyer_flat_fee = {exhibitA.flat_fee_amount}
+                  From deal: buyer_flat_fee = {terms.buyer_flat_fee ?? exhibitA.flat_fee_amount}
                 </p>
               </div>
             )}
