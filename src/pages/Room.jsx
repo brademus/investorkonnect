@@ -1031,16 +1031,8 @@ ${dealContext}`;
                   onClick={() => {
                     const next = !showBoard;
                     if (next) {
-                      // Hydrate instantly from cache or room snapshot
-                      if (currentRoom?.deal_id) {
-                        const cached = getCachedDeal(currentRoom.deal_id);
-                        if (cached) {
-                          setDeal(cached);
-                        } else {
-                          const snap = buildDealFromRoom(currentRoom, maskAddr);
-                          if (snap) setDeal(snap);
-                        }
-                      } else if (currentRoom && !deal) {
+                      // Hydrate instantly from a stable room snapshot (avoid cache to prevent flicker)
+                      if (currentRoom) {
                         const snap = buildDealFromRoom(currentRoom, maskAddr);
                         if (snap) setDeal(snap);
                       }
