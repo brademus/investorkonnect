@@ -16,8 +16,18 @@ export default function AgentLanding() {
     base44.auth.redirectToLogin(createPageUrl("PostAuth"));
   };
 
-  const handleGetStarted = () => {
-    base44.auth.redirectToLogin(createPageUrl("PostAuth") + "?selectedRole=agent");
+  const handleGetStarted = async () => {
+    const target = createPageUrl("PostAuth") + "?selectedRole=agent";
+    try {
+      const loggedIn = await base44.auth.isAuthenticated();
+      if (loggedIn) {
+        window.location.href = target;
+      } else {
+        base44.auth.redirectToLogin(target);
+      }
+    } catch (_) {
+      base44.auth.redirectToLogin(target);
+    }
   };
 
   return (
