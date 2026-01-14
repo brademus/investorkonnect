@@ -610,8 +610,8 @@ Date: _______________
               )}
 
               <div>
-                <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms (from Deal/Agreement)</Label>
-                <p className="text-xs text-slate-500 mb-2">Prefilled from Agreement; chat only fills blanks.</p>
+                <Label className="text-sm font-semibold mb-2 block">Buyer’s Agent Agreement Terms (Deal/Agreement First)</Label>
+                <p className="text-xs text-slate-500 mb-2">These values come from your deal’s agreement. Chat extraction only fills missing blanks — it never overwrites.</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-h-96 overflow-y-auto border border-blue-200 rounded-lg p-4 bg-blue-50">
                   {FIELDS.map(({ key, label }) => (
                     <div key={key} className="flex flex-col">
