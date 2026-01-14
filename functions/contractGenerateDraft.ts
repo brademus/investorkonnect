@@ -247,25 +247,13 @@ ${conversationText}`;
     // Render template with terms
     const enrichedTerms = {
       room_ref: room_id,
-      retainer_currency: terms.retainer_currency || "USD",
-      governing_law: terms.governing_law || "Delaware",
-      termination_rights: terms.termination_rights || "Either party may terminate on 7 days' written notice.",
-      dispute_resolution: terms.dispute_resolution || "Good-faith negotiation; then binding arbitration.",
-      strategy_summary: terms.strategy_summary || terms.strategy || "Investment strategy per profile.",
       ...terms
     };
 
     const baseDoc = renderTemplate(template.body, enrichedTerms);
 
-    // Generate polished contract using GPT-4o
-    const dealContext = {
-      room_id,
-      investor_name: enrichedTerms.investor_name,
-      agent_name: enrichedTerms.agent_name,
-      property_region: enrichedTerms.property_region
-    };
-    
-    const polished = await generateContractDraft(baseDoc, enrichedTerms, dealContext);
+    // Return the rendered template directly (no AI polishing)
+    const content = baseDoc;
 
     // Create contract record
     const contract = await base44.entities.Contract.create({
@@ -282,7 +270,7 @@ ${conversationText}`;
     return Response.json({
       ok: true,
       contract,
-      content: polished,
+      content,
       draft_url: null
     });
   } catch (error) {
