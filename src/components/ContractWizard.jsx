@@ -274,12 +274,13 @@ Date: _______________
       const summary = suggested.plain_summary || suggested.summary;
 
       setAnalysis({
-        suggested_template_id: suggestedTemplate,
-        plain_summary: summary,
-        terms: suggestedTerms,
-        missing_fields: missingFields
+       suggested_template_id: suggestedTemplate,
+       plain_summary: summary,
+       terms: suggestedTerms,
+       missing_fields: missingFields
       });
       setTemplateId(prev => prev || suggestedTemplate);
+      // Merge order: keep agreement-derived terms; only fill blanks from chat
       setTerms(prev => mergeMissing(prev, suggestedTerms));
       setMissing(missingFields);
       setStep(2);
