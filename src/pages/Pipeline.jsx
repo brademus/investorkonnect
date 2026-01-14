@@ -121,7 +121,7 @@ function PipelineContent() {
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false
   });
 
@@ -139,7 +139,7 @@ function PipelineContent() {
       return allActivities.filter(a => dealIds.includes(a.deal_id));
     },
     enabled: !!profile?.id && dealsData.length > 0,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchInterval: 10000 // Poll every 10 seconds
   });
 
@@ -152,7 +152,7 @@ function PipelineContent() {
       return getRoomsFromListMyRoomsResponse(res);
     },
     enabled: !!profile?.id,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false
   });
 
@@ -170,7 +170,7 @@ function PipelineContent() {
       );
     },
     enabled: !!profile?.id && isAgent,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchOnMount: false
   });
 
@@ -184,7 +184,7 @@ function PipelineContent() {
       return items.filter(a => idSet.has(a.dealId));
     },
     enabled: dealsData.length > 0,
-    refetchOnWindowFocus: true,
+    refetchOnWindowFocus: false,
     refetchInterval: 15000
   });
 
