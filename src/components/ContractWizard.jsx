@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { FileText, AlertCircle } from "lucide-react";
-import LoadingAnimation from "@/components/LoadingAnimation";
+import LoadingAnimation from "@/components/LoadingAnimation"; // kept for generate step loading only
 
 const CONTRACT_TEMPLATES = [
   { id: "buyer_rep_v1", name: "Buyer Representation Agreement" },
