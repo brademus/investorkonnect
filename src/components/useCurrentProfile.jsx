@@ -140,7 +140,8 @@ export function useCurrentProfile() {
         if (!mounted) return;
 
         // STEP 3: Derive role
-        let role = profile?.user_role || profile?.user_type || user.role || 'member';
+        // Canonical precedence: explicit user_role if set by onboarding; otherwise infer from onboarding_version; fallback to user.user.role/admin; else 'member'
+        let role = profile?.user_role || profile?.user_type || (profile?.onboarding_version?.startsWith('agent') ? 'agent' : (profile?.onboarding_version ? 'investor' : null)) || user.role || 'member';
         
         // ADMIN BYPASS: Check if user is admin (from user.role or profile.role)
         const isAdmin = user.role === 'admin' || profile?.role === 'admin';
