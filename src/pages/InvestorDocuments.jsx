@@ -6,6 +6,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Input } from "@/components/ui/input";
@@ -32,8 +33,8 @@ function InvestorDocumentsContent() {
     queryKey: ['investorRooms', profile?.id],
     queryFn: async () => {
         if (!profile?.id) return [];
-        const myRooms = await base44.entities.Room.filter({ investorId: profile.id });
-        return myRooms;
+        const resp = await base44.functions.invoke('listMyRooms');
+        return getRoomsFromListMyRoomsResponse(resp);
     },
     enabled: !!profile?.id,
     staleTime: 0,
