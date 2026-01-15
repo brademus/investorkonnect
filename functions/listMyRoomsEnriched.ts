@@ -51,6 +51,75 @@ Deno.serve(async (req) => {
     
     const profileMap = new Map(counterpartyProfiles.map(p => [p.id, p]));
 
+    // Collect all room IDs to fetch message-based attachments (mirrors Files tab)
+    const roomIds = rooms.map(r => r.id).filter(Boolean);
+
+    // Fetch Message entity attachments (new schema)
+    const messages = roomIds.length > 0
+      ? await base44.asServiceRole.entities.Message.filter({ room_id: { $in: roomIds } })
+      : [];
+
+    // Fetch RoomMessage entity attachments as legacy fallback
+    const roomMessages = roomIds.length > 0
+      ? await base44.asServiceRole.entities.RoomMessage.filter({ roomId: { $in: roomIds } })
+      : [];
+
+    // Build sender profile map for message attachments
+    const senderProfileIds = [
+      ...new Set([
+        ...messages.map(m => m.sender_profile_id).filter(Boolean),
+        ...roomMessages.map(m => m.senderUserId || m.sender_profile_id).filter(Boolean)
+      ])
+    ];
+
+    if (senderProfileIds.length) {
+      const senderProfiles = await base44.asServiceRole.entities.Profile.filter({ id: { $in: senderProfileIds } });
+      senderProfiles.forEach(p => profileMap.set(p.id, p));
+    }
+
+    // Normalize attachments from Message and RoomMessage
+    const messageAttachmentsByRoom = new Map();
+    const legacyAttachmentsByRoom = new Map();
+
+    const pushByRoom = (map, roomId, item) => {
+      if (!roomId) return;
+      if (!map.has(roomId)) map.set(roomId, []);
+      map.get(roomId).push(item);
+    };
+
+    // From Message (metadata.file_url)
+    messages.forEach(m => {
+      const meta = m.metadata || {};
+      if (!meta.file_url) return;
+      const uploader = profileMap.get(m.sender_profile_id);
+      const name = meta.file_name || (typeof meta.file_url === 'string' ? meta.file_url.split('?')[0].split('/').pop() : 'Document');
+      pushByRoom(messageAttachmentsByRoom, m.room_id, {
+        name,
+        url: meta.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_by_name: uploader?.full_name || 'Shared',
+        uploaded_at: m.created_date,
+        size: meta.file_size,
+        type: meta.file_type
+      });
+    });
+
+    // From RoomMessage (legacy kind="file")
+    roomMessages.forEach(m => {
+      if (m.kind !== 'file' || !m.fileUrl) return;
+      const uploader = profileMap.get(m.senderUserId || m.sender_profile_id);
+      const name = (m.text && typeof m.text === 'string' ? m.text : null) || m.fileUrl.split('?')[0].split('/').pop() || 'Document';
+      pushByRoom(legacyAttachmentsByRoom, m.roomId, {
+        name,
+        url: m.fileUrl,
+        uploaded_by: m.senderUserId || m.sender_profile_id,
+        uploaded_by_name: uploader?.full_name || 'Shared',
+        uploaded_at: m.created_date,
+        size: undefined,
+        type: undefined
+      });
+    });
+
     // Enrich rooms
     const enrichedRooms = rooms.map(room => {
       const deal = dealMap.get(room.deal_id);
@@ -69,9 +138,27 @@ Deno.serve(async (req) => {
         created_date: room.created_date,
         updated_date: room.updated_date,
 
-        // Mirror Files tab: include shared files and photos exactly as stored on the room
-        files: Array.isArray(room.files) ? room.files : [],
-        photos: Array.isArray(room.photos) ? room.photos : [],
+        // Mirror Files tab: combine room uploads with message attachments (exactly like Files tab)
+        ...(function() {
+          const baseFiles = Array.isArray(room.files) ? room.files : [];
+          const basePhotos = Array.isArray(room.photos) ? room.photos : [];
+          const msgFiles = messageAttachmentsByRoom.get(room.id) || [];
+          const legacyFiles = legacyAttachmentsByRoom.get(room.id) || [];
+          const all = [...baseFiles, ...msgFiles, ...legacyFiles];
+          const isPhoto = (f) => {
+            const t = (f?.type || '').toString().toLowerCase();
+            if (t.startsWith('image/')) return true;
+            const n = (f?.name || '').toString().toLowerCase();
+            return /(\.png|\.jpg|\.jpeg|\.webp|\.gif)$/.test(n);
+          };
+          const files = all.filter(f => !isPhoto(f));
+          const photos = [...basePhotos, ...all.filter(isPhoto)];
+          // Sort newest first
+          const byDateDesc = (a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0);
+          files.sort(byDateDesc);
+          photos.sort(byDateDesc);
+          return { files, photos };
+        })(),
         
         // Counterparty info
         counterparty_id: counterpartyId,
