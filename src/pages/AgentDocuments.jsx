@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, ArrowLeft, Download, Search } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 
 
 function AgentDocumentsContent() {
@@ -82,16 +83,20 @@ function AgentDocumentsContent() {
       if (!g.openRoomId && r.id && !String(r.id).startsWith('virtual_')) {
         g.openRoomId = r.id;
       }
-      // Merge just the shared files from the room (exactly like Files tab)
+      // Build the exact same list as the Files tab
       const existingUrls = new Set(g.files.map(f => f.url));
-      const roomFiles = Array.isArray(r.files) ? [...r.files] : [];
-      const roomPhotos = Array.isArray(r.photos) ? [...r.photos] : [];
-      // If files not on room (older data), derive from messages payload attached by function
-      const inferredFiles = Array.isArray(r.inferred_files) ? r.inferred_files : [];
-      const combined = [...roomFiles, ...roomPhotos, ...inferredFiles];
+      const unified = buildUnifiedFilesList({ room: r }) || [];
+      const normalized = unified.map(x => ({
+        name: x.name || x.filename || x.label || 'Document',
+        url: x.url || x.urlSignedPdf || x.file_url,
+        uploaded_by_name: x.uploaded_by_name || x.uploadedBy || 'Shared',
+        uploaded_at: x.uploaded_at || x.createdAt || r.updated_date || r.created_date,
+        size: x.size,
+        type: x.type
+      }));
       // Sort newest first
-      combined.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
-      combined.forEach(f => {
+      normalized.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+      normalized.forEach(f => {
         if (f?.url && !existingUrls.has(f.url)) {
           g.files.push(f);
           existingUrls.add(f.url);

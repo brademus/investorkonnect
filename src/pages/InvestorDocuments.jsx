@@ -9,6 +9,7 @@ import { base44 } from "@/api/base44Client";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -146,10 +147,18 @@ function InvestorDocumentsContent() {
                             
                             <div className="space-y-2">
                               {(() => {
-                                const combined = [
-                                  ...(Array.isArray(room.files) ? room.files : []),
-                                  ...(Array.isArray(room.photos) ? room.photos : [])
-                                ].sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+                                const unified = buildUnifiedFilesList({ room }) || [];
+                                const combined = unified
+                                  .map(x => ({
+                                    name: x.name || x.filename || x.label || 'Document',
+                                    url: x.url || x.urlSignedPdf || x.file_url,
+                                    uploaded_by_name: x.uploaded_by_name || x.uploadedBy || 'Shared',
+                                    uploaded_at: x.uploaded_at || x.createdAt || room.updated_date || room.created_date,
+                                    size: x.size,
+                                    type: x.type
+                                  }))
+                                  .filter(x => !!x.url)
+                                  .sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
                                 return combined.length > 0 ? (
                                   combined.map((f, idx) => (
                                     <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
