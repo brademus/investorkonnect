@@ -31,12 +31,59 @@ function AgentDocumentsContent() {
     enabled: !!profile?.id
   });
 
-  const filteredRooms = rooms.filter(room => {
-    const searchLower = searchTerm.toLowerCase();
-    const address = (room.property_address || '').toLowerCase();
-    const city = (room.city || '').toLowerCase();
-    const state = (room.state || '').toLowerCase();
-    return address.includes(searchLower) || city.includes(searchLower) || state.includes(searchLower);
+  const groups = React.useMemo(() => {
+    const map = new Map();
+    const norm = (s) => (s || '').toString().trim().toLowerCase();
+
+    rooms.forEach((r) => {
+      const key = r.deal_id || `${norm(r.property_address)}|${norm(r.city)}|${norm(r.state)}`;
+      if (!map.has(key)) {
+        map.set(key, {
+          key,
+          deal_id: r.deal_id,
+          addressLabel: r.property_address || [r.city, r.state].filter(Boolean).join(', ') || 'Deal',
+          city: r.city,
+          state: r.state,
+          roomIds: [],
+          openRoomId: null,
+          files: [],
+          updated: r.updated_date || r.created_date,
+        });
+      }
+      const g = map.get(key);
+      g.roomIds.push(r.id);
+      if (!g.openRoomId && r.id && !String(r.id).startsWith('virtual_')) {
+        g.openRoomId = r.id;
+      }
+      // merge files
+      const existingUrls = new Set(g.files.map(f => f.url));
+      (Array.isArray(r.files) ? r.files : []).forEach(f => {
+        if (f?.url && !existingUrls.has(f.url)) {
+          g.files.push(f);
+          existingUrls.add(f.url);
+        }
+      });
+      // keep freshest updated
+      if (new Date(r.updated_date || 0) > new Date(g.updated || 0)) {
+        g.updated = r.updated_date;
+      }
+      // Prefer non-empty address label
+      if (!g.addressLabel || g.addressLabel === 'Deal') {
+        g.addressLabel = r.property_address || g.addressLabel;
+      }
+    });
+
+    // Return array sorted by recent activity
+    return Array.from(map.values()).sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0));
+  }, [rooms]);
+
+  const filteredGroups = groups.filter(g => {
+    const q = searchTerm.toLowerCase();
+    return (
+      (g.addressLabel || '').toLowerCase().includes(q) ||
+      (g.city || '').toLowerCase().includes(q) ||
+      (g.state || '').toLowerCase().includes(q)
+    );
   });
 
   if (profileLoading || roomsLoading) {
