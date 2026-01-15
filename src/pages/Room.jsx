@@ -2148,7 +2148,7 @@ ${dealContext}`;
 
               {activeTab === 'photos' && (
                 <div className="space-y-6">
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 transition-opacity duration-150" style={{ opacity: tabLoading ? 0.6 : 1 }}>
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-lg font-semibold text-[#FAFAFA]">Property Photos</h4>
                       <Button
