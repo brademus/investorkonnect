@@ -1828,93 +1828,26 @@ ${dealContext}`;
 
               {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {/* LegalAgreement Panel - Always render if we have deal_id */}
-                  {currentRoom?.deal_id && (deal || buildDealFromRoom(currentRoom)) ? (
-                    <LegalAgreementPanel
-                      deal={deal || buildDealFromRoom(currentRoom, maskAddr)}
-                      profile={profile}
-                      onUpdate={async () => {
-                        await refreshRoomState();
-                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                      }}
-                    />
-                  ) : currentRoom?.deal_id ? (
-                    <div className="text-center py-8 text-[#808080]">Loading agreement panel...</div>
+                  {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
+                  {currentRoom?.deal_id ? (
+                    deal ? (
+                      <LegalAgreementPanel
+                        deal={deal}
+                        profile={profile}
+                        onUpdate={async () => {
+                          await refreshRoomState();
+                          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                        }}
+                      />
+                    ) : (
+                      <div className="text-center py-8 text-[#808080]">Loading agreement panel...</div>
+                    )
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
-                  
-                  {/* Removed duplicate agreement status - LegalAgreementPanel shows everything */}
-                  {false && (
-                    <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                          <Shield className="w-5 h-5 text-[#E3C567]" />
-                          Agreement Status
-                        </h4>
-                        {agreement.status === 'fully_signed' ? (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30">
-                            ✓ Fully Signed
-                          </span>
-                        ) : agreement.status === 'sent' ? (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#60A5FA]/20 text-[#60A5FA] border border-[#60A5FA]/30">
-                            Pending Signatures
-                          </span>
-                        ) : agreement.status === 'investor_signed' ? (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
-                            Awaiting Agent
-                          </span>
-                        ) : agreement.status === 'agent_signed' ? (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
-                            Awaiting Investor
-                          </span>
-                        ) : agreement.status === 'attorney_review_pending' ? (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30">
-                            Attorney Review
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-[#808080]/20 text-[#808080] border border-[#808080]/30">
-                            Draft
-                          </span>
-                        )}
-                      </div>
-                      
-                      {/* Status-specific messaging */}
-                      {agreement.status === 'investor_signed' && (
-                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 mb-4">
-                          <p className="text-sm font-semibold text-[#60A5FA]">
-                            {profile?.user_role === 'investor' 
-                              ? 'You signed! Waiting for agent signature.'
-                              : 'Investor signed - your turn to sign!'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {agreement.status === 'agent_signed' && (
-                        <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 mb-4">
-                          <p className="text-sm font-semibold text-[#60A5FA]">
-                            {profile?.user_role === 'agent'
-                              ? 'You signed! Waiting for investor signature.'
-                              : 'Agent signed - your turn to sign!'}
-                          </p>
-                        </div>
-                      )}
-                      
-                      {agreement.status === 'fully_signed' && (
-                        <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 mb-4">
-                          <CheckCircle className="w-6 h-6 text-[#10B981] mx-auto mb-2" />
-                          <p className="text-sm font-semibold text-[#10B981] text-center">Agreement Fully Signed</p>
-                          <p className="text-xs text-[#808080] mt-1 text-center">Both parties have signed. Full details are now available.</p>
-                        </div>
-                      )}
-                      
-                      <p className="text-sm text-[#808080]">
-                        See full agreement details in the Agreement tab above.
-                      </p>
-                    </div>
-                  )}
-
+                </div>
+              )}
                   {/* Key Terms */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <h5 className="text-md font-semibold text-[#FAFAFA] mb-4">Key Terms</h5>
