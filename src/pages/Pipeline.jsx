@@ -127,6 +127,17 @@ function PipelineContent() {
     refetchOnMount: false
   });
 
+  const uniqueDealsData = useMemo(() => {
+    const seen = new Set();
+    return dealsData.filter(d => {
+      const id = d?.id || d?.deal_id;
+      if (!id) return false;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+  }, [dealsData]);
+
   // Load recent activity/notifications
   const { data: activities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['activities', profile?.id],
@@ -135,7 +146,7 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id) return [];
       // Get all deals for this user
-      const dealIds = dealsData.map(d => d.id);
+      const dealIds = uniqueDealsData.map(d => d.id);
       if (dealIds.length === 0) return [];
       
       // Get activities for these deals
@@ -184,13 +195,13 @@ function PipelineContent() {
 
   // 4b. Load Deal Appointments for visible deals
   const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
-    queryKey: ['dealAppointments', dealsData.map(d => d.id)],
+    queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     queryFn: async () => {
-      if (!dealsData || dealsData.length === 0) return [];
+      if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
       const items = await base44.entities.DealAppointments.list('-updated_date', 500);
-      const idSet = new Set(dealsData.map(d => d.id));
+      const idSet = new Set(uniqueDealsData.map(d => d.id));
       return items.filter(a => idSet.has(a.dealId));
     },
     enabled: dealsData.length > 0,
@@ -215,7 +226,7 @@ function PipelineContent() {
     (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
 
     // Stable map to avoid reshuffles
-    const mappedDeals = dealsData.map(deal => {
+    const mappedDeals = uniqueDealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const appt = apptMap.get(deal.id);
       
