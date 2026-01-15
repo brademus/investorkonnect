@@ -77,9 +77,12 @@ function AgentDocumentsContent() {
       // Merge just the shared files from the room (exactly like Files tab)
       const existingUrls = new Set(g.files.map(f => f.url));
       const roomFiles = Array.isArray(r.files) ? [...r.files] : [];
+      // If files not on room (older data), derive from messages payload attached by function
+      const inferredFiles = Array.isArray(r.inferred_files) ? r.inferred_files : [];
+      const combined = [...roomFiles, ...inferredFiles];
       // Sort newest first
-      roomFiles.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
-      roomFiles.forEach(f => {
+      combined.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+      combined.forEach(f => {
         if (f?.url && !existingUrls.has(f.url)) {
           g.files.push(f);
           existingUrls.add(f.url);

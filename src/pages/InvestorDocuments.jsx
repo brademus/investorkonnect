@@ -145,8 +145,8 @@ function InvestorDocumentsContent() {
                             </div>
                             
                             <div className="space-y-2">
-                              {room.files && room.files.length > 0 ? (
-                                room.files.map((f, idx) => (
+                              {Array.isArray(room.files) && room.files.length > 0 ? (
+                               room.files.map((f, idx) => (
                                   <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
                                     <div className="min-w-0">
                                       <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
