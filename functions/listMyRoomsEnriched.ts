@@ -68,6 +68,10 @@ Deno.serve(async (req) => {
         agreement_status: room.agreement_status,
         created_date: room.created_date,
         updated_date: room.updated_date,
+
+        // Mirror Files tab: include shared files and photos exactly as stored on the room
+        files: Array.isArray(room.files) ? room.files : [],
+        photos: Array.isArray(room.photos) ? room.photos : [],
         
         // Counterparty info
         counterparty_id: counterpartyId,
