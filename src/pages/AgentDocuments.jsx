@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, ArrowLeft, Download, Search } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 
 function AgentDocumentsContent() {
   const { profile, loading: profileLoading } = useCurrentProfile();
@@ -30,6 +31,24 @@ function AgentDocumentsContent() {
     },
     enabled: !!profile?.id
   });
+
+  // Fetch deals for rooms to build unified file lists (contracts + uploads)
+  const { data: deals = [] } = useQuery({
+    queryKey: ['agentDocDeals', rooms.map(r => r.deal_id).filter(Boolean).sort().join(',')],
+    queryFn: async () => {
+      const ids = Array.from(new Set(rooms.map(r => r.deal_id).filter(Boolean)));
+      if (ids.length === 0) return [];
+      const res = await base44.entities.Deal.filter({ id: { $in: ids } });
+      return res;
+    },
+    enabled: rooms.length > 0
+  });
+
+  const dealsMap = React.useMemo(() => {
+    const m = new Map();
+    (deals || []).forEach(d => m.set(d.id, d));
+    return m;
+  }, [deals]);
 
   const groups = React.useMemo(() => {
     const map = new Map();
@@ -55,14 +74,36 @@ function AgentDocumentsContent() {
       if (!g.openRoomId && r.id && !String(r.id).startsWith('virtual_')) {
         g.openRoomId = r.id;
       }
-      // merge files
+      // merge files from room + unified files (deal docs + uploads)
       const existingUrls = new Set(g.files.map(f => f.url));
+
+      // Raw room files
       (Array.isArray(r.files) ? r.files : []).forEach(f => {
         if (f?.url && !existingUrls.has(f.url)) {
           g.files.push(f);
           existingUrls.add(f.url);
         }
       });
+
+      // Unified files list from deal + room (replicates Files tab logic)
+      try {
+        const deal = r.deal_id ? dealsMap.get(r.deal_id) : null;
+        const unified = buildUnifiedFilesList({ deal: deal || {}, room: r }) || [];
+        unified.forEach(u => {
+          const url = u?.url;
+          if (url && !existingUrls.has(url)) {
+            g.files.push({
+              name: u.filename || u.label || 'Document',
+              url: url,
+              uploaded_by_name: u.uploadedBy || 'Shared',
+              uploaded_at: u.createdAt || r.updated_date || r.created_date,
+              size: u.size,
+              type: u.type || 'application/octet-stream'
+            });
+            existingUrls.add(url);
+          }
+        });
+      } catch (_) {}
       // keep freshest updated
       if (new Date(r.updated_date || 0) > new Date(g.updated || 0)) {
         g.updated = r.updated_date;
