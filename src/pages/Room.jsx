@@ -272,6 +272,8 @@ export default function Room() {
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   const requestSeqRef = useRef(0);
   const [dealAppts, setDealAppts] = useState(null);
+  const [boardLoading, setBoardLoading] = useState(false);
+  const [tabLoading, setTabLoading] = useState(false);
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
@@ -412,16 +414,16 @@ export default function Room() {
   };
 
   // Prefetch secure deal details without blocking UI
-  const prefetchDeal = () => {
+  const prefetchDeal = async () => {
     try {
       const did = currentRoom?.deal_id;
-      if (!did) return;
+      if (!did) return null;
       const cached = getCachedDeal(did);
-      if (cached) return;
-      base44.functions.invoke('getDealDetailsForUser', { dealId: did })
-        .then((res) => { if (res?.data) setCachedDeal(did, res.data); })
-        .catch(() => {});
-    } catch (_) {}
+      if (cached) return cached;
+      const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: did });
+      if (res?.data) setCachedDeal(did, res.data);
+      return res?.data || null;
+    } catch (_) { return null; }
   };
 
   // Prefetch Pipeline data to make back navigation instant
