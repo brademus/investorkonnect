@@ -1645,28 +1645,67 @@ ${dealContext}`;
 
                                   <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
 
-                                  {/* 5. Agent Notes (Private) */}
+                                  {/* LAST: Deal Progress (agent controls) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-3">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA] flex items-center gap-2">
-                                        Agent Notes
-                                        <span className="text-xs bg-[#EF4444]/20 text-[#EF4444] px-2 py-0.5 rounded border border-[#EF4444]/30">
-                                          PRIVATE
-                                        </span>
-                                      </h4>
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Progress</h4>
+                                    <p className="text-xs text-[#808080] mb-4">Click to change stage</p>
+                                    <div className="space-y-3">
+                                      {PIPELINE_STAGES.map((stage, idx) => {
+                                        const normalizedCurrent = normalizeStage(currentRoom?.pipeline_stage);
+                                        const isActive = normalizedCurrent === stage.id;
+                                        const currentOrder = stageOrder(normalizedCurrent);
+                                        const isPast = stage.order < currentOrder;
+                                        const stageColor = stage.id === 'new_listings' ? '#E3C567' :
+                                                         stage.id === 'active_listings' ? '#60A5FA' :
+                                                         stage.id === 'ready_to_close' ? '#34D399' :
+                                                         '#EF4444';
+                                        return (
+                                          <button
+                                            key={stage.id}
+                                            onClick={async () => {
+                                              if (currentRoom?.deal_id) {
+                                                try {
+                                                  await base44.entities.Deal.update(currentRoom.deal_id, {
+                                                    pipeline_stage: stage.id
+                                                  });
+                                                  setCurrentRoom({ ...currentRoom, pipeline_stage: stage.id });
+                                                  toast.success(`Deal moved to ${stage.label}`);
+                                                  queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                                } catch (error) {
+                                                  toast.error('Failed to update stage');
+                                                }
+                                              }
+                                            }}
+                                            className="flex items-center gap-3 w-full text-left hover:bg-[#141414] p-2 rounded-lg transition-colors"
+                                          >
+                                            <div 
+                                              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                                                isActive 
+                                                  ? 'ring-2 ring-offset-2 ring-offset-black' 
+                                                  : isPast 
+                                                  ? 'bg-[#34D399]' 
+                                                  : 'bg-[#1F1F1F]'
+                                              }`}
+                                              style={isActive ? { backgroundColor: stageColor, ringColor: stageColor } : {}}
+                                            >
+                                              <span className="text-sm font-bold text-white">
+                                                {isPast ? '✓' : stage.order}
+                                              </span>
+                                            </div>
+                                            <div className="flex-1">
+                                              <p className={`text-sm font-medium ${
+                                                isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
+                                              }`}>
+                                                {stage.label}
+                                              </p>
+                                              {isActive && (
+                                                <p className="text-xs text-[#E3C567]">Current Stage</p>
+                                              )}
+                                            </div>
+                                          </button>
+                                        );
+                                      })}
                                     </div>
-                                    <textarea
-                                      placeholder="Add private notes about this deal (only visible to you)..."
-                                      className="w-full h-32 p-3 bg-[#141414] border border-[#1F1F1F] rounded-lg text-[#FAFAFA] text-sm focus:border-[#E3C567] focus:ring-1 focus:ring-[#E3C567] resize-none"
-                                      defaultValue=""
-                                    />
-                                    <Button
-                                      size="sm"
-                                      className="mt-3 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                                      onClick={() => toast.success('Notes saved (demo)')}
-                                    >
-                                      Save Notes
-                                    </Button>
                                   </div>
                                 </>
                               )}
