@@ -2523,9 +2523,8 @@ ${dealContext}`;
                       const existing = currentRoom?.photos || [];
                       const merged = [...existing, ...uploads];
                       const unique = merged.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
-                      await base44.entities.Room.update(roomId, {
-                        photos: unique
-                      });
+                      // Optimistic local update; server will sync via chat auto-sync effect
+                      setCurrentRoom(prev => prev ? { ...prev, photos: unique } : prev);
                       
                       // Create chat messages for each photo
                       for (const upload of uploads) {
@@ -2553,9 +2552,6 @@ ${dealContext}`;
                         }).catch(() => {});
                       }
                       
-                      const roomData = await base44.entities.Room.filter({ id: roomId });
-                      
-                      if (roomData?.[0]) setCurrentRoom({ ...currentRoom, photos: roomData[0].photos });
                       toast.success(`${files.length} photo(s) uploaded to deal`);
                     } catch (error) {
                       toast.error('Upload failed');
