@@ -796,8 +796,9 @@ export default function Room() {
     };
   }, [deal, currentRoom, maskAddr]);
 
-  // Prefill editor when deal details load
+  // Prefill editor when deal details load (only when board is open to avoid flicker)
   useEffect(() => {
+    if (!showBoard) return;
     const d = (deal || {})
     const pd = d.property_details || {};
     setPdPropertyType(d.property_type || "");
@@ -811,7 +812,7 @@ export default function Room() {
         ? (pd.has_basement ? 'yes' : 'no')
         : (pd.has_basement || '')
     );
-  }, [deal?.property_type, deal?.property_details]);
+  }, [showBoard, deal?.property_type, deal?.property_details]);
 
   const savePropertyDetails = async () => {
     if (!currentRoom?.deal_id) return;
