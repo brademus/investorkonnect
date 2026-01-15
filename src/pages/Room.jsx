@@ -1322,46 +1322,6 @@ ${dealContext}`;
 
                                   {/* Deal Summary removed per request */}
 
-                                  {/* 4. NEXT STEPS FOR YOU */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Next Steps For You</h4>
-                                      <Button
-                                        size="sm"
-                                        disabled={generatingTasks}
-                                        onClick={generateTasks}
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs"
-                                      >
-                                        {generatingTasks ? (
-                                          <>
-                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                            Updating...
-                                          </>
-                                        ) : (
-                                          'Refresh Tasks'
-                                        )}
-                                      </Button>
-                                    </div>
-                                    <div className="space-y-3">
-                                      {investorTasks.length > 0 ? investorTasks.map((item, idx) => (
-                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
-                                          <input 
-                                            type="checkbox" 
-                                            className="mt-0.5 w-4 h-4 rounded border-[#1F1F1F] bg-[#0D0D0D] text-[#E3C567] focus:ring-[#E3C567] focus:ring-offset-0"
-                                          />
-                                          <div className="flex-1">
-                                            <p className="text-sm font-medium text-[#FAFAFA]">{item.label}</p>
-                                            <p className="text-xs text-[#808080] mt-0.5">{item.due}</p>
-                                          </div>
-                                        </div>
-                                      )) : (
-                                        <p className="text-sm text-[#808080] text-center py-4">
-                                          {generatingTasks ? 'Generating tasks...' : 'Click "Refresh Tasks" to generate action items'}
-                                        </p>
-                                      )}
-                                    </div>
-                                  </div>
-
                                   <PropertyDetailsCard deal={dealForDetails} />
 
                                   <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
@@ -1672,46 +1632,6 @@ ${dealContext}`;
                                           </button>
                                         );
                                       })}
-                                    </div>
-                                  </div>
-
-                                  {/* 3. Today for This Deal */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <div className="flex items-center justify-between mb-4">
-                                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Today for This Deal</h4>
-                                      <Button
-                                        size="sm"
-                                        disabled={generatingTasks}
-                                        onClick={generateTasks}
-                                        className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs"
-                                      >
-                                        {generatingTasks ? (
-                                          <>
-                                            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-                                            Updating...
-                                          </>
-                                        ) : (
-                                          'Refresh Tasks'
-                                        )}
-                                      </Button>
-                                    </div>
-                                    <div className="space-y-2">
-                                      {agentTasks.length > 0 ? agentTasks.map((task, idx) => (
-                                        <div key={idx} className="flex items-start gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F]">
-                                          <input 
-                                            type="checkbox"
-                                            className="mt-0.5 w-4 h-4 rounded border-[#1F1F1F] bg-[#0D0D0D] text-[#E3C567] focus:ring-[#E3C567] focus:ring-offset-0"
-                                          />
-                                          <div className="flex-1">
-                                            <p className="text-sm text-[#FAFAFA]">{task.label}</p>
-                                            <p className="text-xs text-[#808080] mt-0.5">{task.due}</p>
-                                          </div>
-                                        </div>
-                                      )) : (
-                                        <p className="text-sm text-[#808080] text-center py-4">
-                                          {generatingTasks ? 'Generating tasks...' : 'Click "Refresh Tasks" to generate action items'}
-                                        </p>
-                                      )}
                                     </div>
                                   </div>
 
