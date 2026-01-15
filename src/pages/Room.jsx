@@ -661,7 +661,8 @@ export default function Room() {
     const photoMsgs = messages.filter(m => {
       const t = m?.metadata?.type;
       const ft = m?.metadata?.file_type || '';
-      return !!m?.metadata?.file_url && (t === 'photo' || t === 'image' || ft.startsWith('image/'));
+      // Accept only explicit chat photo messages to avoid double-adding after manual uploads
+      return !!m?.metadata?.file_url && t === 'photo';
     });
 
     // Detect non-image files: explicit type=file and not image mime
