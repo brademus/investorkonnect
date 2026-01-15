@@ -254,57 +254,6 @@ export default function Room() {
   const { profile } = useCurrentProfile();
   const { rooms } = useMyRooms();
   const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
-
-  // Auto-sync chat attachments into Room.photos and Room.files
-  useEffect(() => {
-    if (!roomId || !currentRoom) return;
-
-    const photoMsgs = messages.filter(m => m.metadata?.type === 'photo' && m.metadata?.file_url);
-    const fileMsgs = messages.filter(m => m.metadata?.type === 'file' && m.metadata?.file_url);
-
-    if (photoMsgs.length === 0 && fileMsgs.length === 0) return;
-
-    const existingPhotoUrls = new Set((currentRoom.photos || []).map(p => p.url));
-    const existingFileUrls = new Set((currentRoom.files || []).map(f => f.url));
-
-    const newPhotos = photoMsgs
-      .filter(m => !existingPhotoUrls.has(m.metadata.file_url))
-      .map(m => ({
-        name: m.metadata.file_name || 'photo.jpg',
-        url: m.metadata.file_url,
-        uploaded_by: m.sender_profile_id,
-        uploaded_by_name: (profile?.full_name || profile?.email || 'User'),
-        uploaded_at: m.created_date || new Date().toISOString(),
-        size: m.metadata.file_size || 0,
-        type: 'image'
-      }));
-
-    const newFiles = fileMsgs
-      .filter(m => !existingFileUrls.has(m.metadata.file_url))
-      .map(m => ({
-        name: m.metadata.file_name || 'document',
-        url: m.metadata.file_url,
-        uploaded_by: m.sender_profile_id,
-        uploaded_by_name: (profile?.full_name || profile?.email || 'User'),
-        uploaded_at: m.created_date || new Date().toISOString(),
-        size: m.metadata.file_size || 0,
-        type: m.metadata.file_type || 'application/octet-stream'
-      }));
-
-    if (newPhotos.length === 0 && newFiles.length === 0) return;
-
-    (async () => {
-      try {
-        await base44.entities.Room.update(roomId, {
-          photos: [...(currentRoom.photos || []), ...newPhotos],
-          files: [...(currentRoom.files || []), ...newFiles]
-        });
-        const roomData = await base44.entities.Room.filter({ id: roomId });
-        if (roomData?.[0]) setCurrentRoom(prev => ({ ...(prev || {}), ...roomData[0] }));
-      } catch (_) {}
-    })();
-  }, [messages, roomId, currentRoom?.id]);
-
   const queryClient = useQueryClient();
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
@@ -712,6 +661,56 @@ export default function Room() {
       }
     }
   }, [currentRoom?.deal_id]);
+
+  // Auto-sync chat attachments into Room.photos and Room.files
+  useEffect(() => {
+    if (!roomId || !currentRoom) return;
+
+    const photoMsgs = messages.filter(m => m.metadata?.type === 'photo' && m.metadata?.file_url);
+    const fileMsgs = messages.filter(m => m.metadata?.type === 'file' && m.metadata?.file_url);
+
+    if (photoMsgs.length === 0 && fileMsgs.length === 0) return;
+
+    const existingPhotoUrls = new Set((currentRoom.photos || []).map(p => p.url));
+    const existingFileUrls = new Set((currentRoom.files || []).map(f => f.url));
+
+    const newPhotos = photoMsgs
+      .filter(m => !existingPhotoUrls.has(m.metadata.file_url))
+      .map(m => ({
+        name: m.metadata.file_name || 'photo.jpg',
+        url: m.metadata.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_by_name: (profile?.full_name || profile?.email || 'User'),
+        uploaded_at: m.created_date || new Date().toISOString(),
+        size: m.metadata.file_size || 0,
+        type: 'image'
+      }));
+
+    const newFiles = fileMsgs
+      .filter(m => !existingFileUrls.has(m.metadata.file_url))
+      .map(m => ({
+        name: m.metadata.file_name || 'document',
+        url: m.metadata.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_by_name: (profile?.full_name || profile?.email || 'User'),
+        uploaded_at: m.created_date || new Date().toISOString(),
+        size: m.metadata.file_size || 0,
+        type: m.metadata.file_type || 'application/octet-stream'
+      }));
+
+    if (newPhotos.length === 0 && newFiles.length === 0) return;
+
+    (async () => {
+      try {
+        await base44.entities.Room.update(roomId, {
+          photos: [...(currentRoom.photos || []), ...newPhotos],
+          files: [...(currentRoom.files || []), ...newFiles]
+        });
+        const roomData = await base44.entities.Room.filter({ id: roomId });
+        if (roomData?.[0]) setCurrentRoom(prev => ({ ...(prev || {}), ...roomData[0] }));
+      } catch (_) {}
+    })();
+  }, [messages, roomId, currentRoom?.id]);
 
    // Auto-extract property details from Seller Contract if missing
    useEffect(() => {
