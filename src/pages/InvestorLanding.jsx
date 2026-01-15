@@ -17,6 +17,7 @@ export default function InvestorLanding() {
   };
 
   const handleGetStarted = () => {
+    // Do not force role for existing users; just go to PostAuth
     base44.auth.redirectToLogin(createPageUrl("PostAuth") + "?selectedRole=investor");
   };
 
