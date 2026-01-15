@@ -1269,7 +1269,7 @@ ${dealContext}`;
         )}
 
         {/* Message Thread or Deal Board - SCROLLABLE MIDDLE */}
-        <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
+        <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0 will-change-transform">
           {showBoard ? (
             /* Deal Board View with Tabs */
             <div className="space-y-6 max-w-6xl mx-auto relative">
