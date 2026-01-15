@@ -1481,51 +1481,52 @@ ${dealContext}`;
                                         </div>
                                         )}
 
-                  {/* 5. DEAL DETAILS */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
-                                      <Info className="w-5 h-5 text-[#E3C567]" />
-                                      Deal Details
-                                    </h4>
-                                    <div className="space-y-3">
-                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                        <span className="text-sm text-[#808080]">Property</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom?.property_address || '—'}</span>
-                                      </div>
-                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                        <span className="text-sm text-[#808080]">Price / Budget</span>
-                                        <span className="text-sm text-[#34D399] font-semibold">${(currentRoom?.budget || 0).toLocaleString()}</span>
-                                      </div>
-                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                        <span className="text-sm text-[#808080]">Agent</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">
-                                          {currentRoom?.counterparty_name
-                                            ? (currentRoom?.is_fully_signed
-                                                ? currentRoom.counterparty_name
-                                                : currentRoom.counterparty_name.split(' ')[0])
-                                            : '—'}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                        <span className="text-sm text-[#808080]">Walkthrough</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">TBD</span>
-                                      </div>
-                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
-                                        <span className="text-sm text-[#808080]">Closing Date</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">
-                                          {(deal?.key_dates?.closing_date || currentRoom?.closing_date)
-                                            ? new Date(deal?.key_dates?.closing_date || currentRoom?.closing_date).toLocaleDateString()
-                                            : 'TBD'}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between py-2">
-                                        <span className="text-sm text-[#808080]">Deal Started</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">
-                                          {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
+                  {/* LAST: DEAL PROGRESS */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
+                    <div className="space-y-3">
+                      {PIPELINE_STAGES.map((stage, idx) => {
+                        const normalizedCurrent = normalizeStage(currentRoom?.pipeline_stage);
+                        const isActive = normalizedCurrent === stage.id;
+                        const currentOrder = stageOrder(normalizedCurrent);
+                        const isPast = stage.order < currentOrder;
+
+                        const stageColor = stage.id === 'new_listings' ? '#E3C567' :
+                                         stage.id === 'active_listings' ? '#60A5FA' :
+                                         stage.id === 'ready_to_close' ? '#34D399' :
+                                         '#EF4444';
+
+                        return (
+                          <div key={stage.id} className="flex items-center gap-3">
+                            <div 
+                              className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 transition-all ${
+                                isActive 
+                                  ? 'ring-2 ring-offset-2 ring-offset-black' 
+                                  : isPast 
+                                  ? 'bg-[#34D399]' 
+                                  : 'bg-[#1F1F1F]'
+                              }`}
+                              style={isActive ? { backgroundColor: stageColor, ringColor: stageColor } : {}}
+                            >
+                              <span className="text-sm font-bold text-white">
+                                {isPast ? '✓' : stage.order}
+                              </span>
+                            </div>
+                            <div className="flex-1">
+                              <p className={`text-sm font-medium ${
+                                isActive ? 'text-[#FAFAFA]' : isPast ? 'text-[#808080]' : 'text-[#666666]'
+                              }`}>
+                                {stage.label}
+                              </p>
+                              {isActive && (
+                                <p className="text-xs text-[#E3C567]">Current Stage</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                                 </>
                               ) : (
                                 /* AGENT DEAL BOARD */
