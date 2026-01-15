@@ -1273,7 +1273,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 2. DEAL PROGRESS */}
+                                  {/* 2. DEAL DETAILS */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
                                       <Info className="w-5 h-5 text-[#E3C567]" />
