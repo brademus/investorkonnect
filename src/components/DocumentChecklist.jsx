@@ -39,10 +39,22 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
 
   const documents = deal?.documents || {};
   const resolved = resolveDealDocuments({ deal, room });
+  const agreementSigned = Boolean(
+    internalAgreementFile?.url ||
+    documents?.internal_agreement?.file_url ||
+    documents?.internal_agreement?.url ||
+    documents?.operating_agreement?.file_url ||
+    documents?.operating_agreement?.url ||
+    deal?.legal_agreement?.signed_pdf_url ||
+    deal?.signed_pdf_url ||
+    deal?.final_pdf_url ||
+    deal?.docusign_pdf_url
+  );
   const isWorkingTogether = (
     room?.agreement_status === 'fully_signed' ||
     room?.is_fully_signed === true ||
-    deal?.is_fully_signed === true
+    deal?.is_fully_signed === true ||
+    agreementSigned
   );
 
   // Always check the legal agreement; if fully signed, mirror the signed PDF into Deal.documents and UI

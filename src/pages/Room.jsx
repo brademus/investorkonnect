@@ -294,11 +294,33 @@ export default function Room() {
   const [extractedDraft, setExtractedDraft] = useState(null);
 
         // Unified post-sign flag used across Files tab and privacy checks
-        const isWorkingTogether = (
-          currentRoom?.agreement_status === 'fully_signed' ||
-          currentRoom?.is_fully_signed === true ||
-          deal?.is_fully_signed === true
-        );
+        const isWorkingTogether = useMemo(() => {
+          const agreementSigned = !!(
+            deal?.documents?.internal_agreement?.file_url ||
+            deal?.documents?.internal_agreement?.url ||
+            deal?.documents?.operating_agreement?.file_url ||
+            deal?.documents?.operating_agreement?.url ||
+            deal?.legal_agreement?.signed_pdf_url ||
+            deal?.signed_pdf_url ||
+            deal?.final_pdf_url ||
+            deal?.docusign_pdf_url
+          );
+          return (
+            currentRoom?.agreement_status === 'fully_signed' ||
+            currentRoom?.is_fully_signed === true ||
+            deal?.is_fully_signed === true ||
+            agreementSigned
+          );
+        }, [
+          currentRoom?.agreement_status,
+          currentRoom?.is_fully_signed,
+          deal?.is_fully_signed,
+          deal?.documents,
+          deal?.legal_agreement,
+          deal?.signed_pdf_url,
+          deal?.final_pdf_url,
+          deal?.docusign_pdf_url
+        ]);
 
         // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
