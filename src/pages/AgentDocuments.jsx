@@ -5,6 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,13 +16,13 @@ function AgentDocumentsContent() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch my rooms to show shared files per address
+  // Fetch my rooms to show shared files per address (use function to ensure access rules)
   const { data: rooms = [], isLoading: roomsLoading } = useQuery({
     queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const res = await base44.entities.Room.filter({ agentId: profile.id });
-      return res;
+      const resp = await base44.functions.invoke('listMyRooms');
+      return getRoomsFromListMyRoomsResponse(resp);
     },
     enabled: !!profile?.id
   });
@@ -99,7 +100,7 @@ function AgentDocumentsContent() {
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    {room.files && room.files.length > 0 ? (
+                    {Array.isArray(room.files) && room.files.length > 0 ? (
                       room.files.map((f, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
                           <div className="flex items-center gap-3 min-w-0">
@@ -122,7 +123,7 @@ function AgentDocumentsContent() {
                         </div>
                       ))
                     ) : (
-                      <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet</div>
+                      <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet for this address</div>
                     )}
                   </div>
                 </div>
