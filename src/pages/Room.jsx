@@ -704,11 +704,13 @@ export default function Room() {
 
     (async () => {
       try {
-        const nextPhotos = [...(currentRoom.photos || []), ...newPhotos];
-        const nextFiles = [...(currentRoom.files || []), ...newFiles];
-        await base44.entities.Room.update(roomId, { photos: nextPhotos, files: nextFiles });
+        const mergedPhotos = [...(currentRoom.photos || []), ...newPhotos];
+        const mergedFiles = [...(currentRoom.files || []), ...newFiles];
+        const uniquePhotos = mergedPhotos.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+        const uniqueFiles = mergedFiles.filter((f, i, arr) => f?.url && arr.findIndex(x => x?.url === f.url) === i);
+        await base44.entities.Room.update(roomId, { photos: uniquePhotos, files: uniqueFiles });
         // Optimistic local update for immediate UI feedback
-        setCurrentRoom(prev => prev ? { ...prev, photos: nextPhotos, files: nextFiles } : prev);
+        setCurrentRoom(prev => prev ? { ...prev, photos: uniquePhotos, files: uniqueFiles } : prev);
       } catch (_) {}
     })();
   }, [messages, roomId, currentRoom?.id]);
@@ -2185,9 +2187,11 @@ ${dealContext}`;
                                 })
                               );
                               
-                              const photos = currentRoom?.photos || [];
+                              const existing = currentRoom?.photos || [];
+                              const merged = [...existing, ...uploads];
+                              const unique = merged.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
                               await base44.entities.Room.update(roomId, {
-                                photos: [...photos, ...uploads]
+                                photos: unique
                               });
                               
                               // Refresh room
@@ -2516,9 +2520,11 @@ ${dealContext}`;
                         })
                       );
                       
-                      const photos = currentRoom?.photos || [];
+                      const existing = currentRoom?.photos || [];
+                      const merged = [...existing, ...uploads];
+                      const unique = merged.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
                       await base44.entities.Room.update(roomId, {
-                        photos: [...photos, ...uploads]
+                        photos: unique
                       });
                       
                       // Create chat messages for each photo
