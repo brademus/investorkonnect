@@ -81,7 +81,8 @@ export default function RoleSelection() {
         await base44.entities.Profile.update(profile.id, {
           user_id: user.id,
           user_role: chosenRole,
-          user_type: chosenRole
+          user_type: chosenRole,
+          onboarding_version: chosenRole === 'agent' ? 'agent-v1' : 'v2'
         });
       } else {
         // Create new profile
@@ -90,6 +91,7 @@ export default function RoleSelection() {
           email: emailLower,
           user_role: chosenRole,
           user_type: chosenRole,
+          onboarding_version: chosenRole === 'agent' ? 'agent-v1' : 'v2',
           role: 'member'
         });
       }
