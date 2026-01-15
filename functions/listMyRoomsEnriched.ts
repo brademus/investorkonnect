@@ -138,25 +138,69 @@ Deno.serve(async (req) => {
         created_date: room.created_date,
         updated_date: room.updated_date,
 
-        // Mirror Files tab: combine room uploads with message attachments (exactly like Files tab)
+        // Mirror Files tab: combine room uploads with message attachments and system documents
         ...(function() {
           const baseFiles = Array.isArray(room.files) ? room.files : [];
           const basePhotos = Array.isArray(room.photos) ? room.photos : [];
           const msgFiles = messageAttachmentsByRoom.get(room.id) || [];
           const legacyFiles = legacyAttachmentsByRoom.get(room.id) || [];
-          const all = [...baseFiles, ...msgFiles, ...legacyFiles];
+
+          // Helper to normalize a document object to file item
+          const normalizeDoc = (doc, fallbackName, uploadedAtKey = 'uploaded_at') => {
+            if (!doc || !doc.url) return null;
+            return {
+              name: doc.name || fallbackName || 'Document',
+              url: doc.url,
+              uploaded_by: doc.uploaded_by,
+              uploaded_by_name: doc.uploaded_by_name || 'System',
+              uploaded_at: doc[uploadedAtKey] || doc.generated_at || room.updated_date || room.created_date,
+              size: doc.size,
+              type: doc.type || 'application/pdf'
+            };
+          };
+
+          // System docs on Room
+          const systemRoomDocs = [
+            normalizeDoc(room.contract_document, 'Purchase Contract'),
+            normalizeDoc(room.listing_agreement_document, 'Listing Agreement'),
+            normalizeDoc(room.internal_agreement_document, 'Internal Agreement', 'generated_at')
+          ].filter(Boolean);
+
+          // System docs on Deal (if available)
+          const deal = dealMap.get(room.deal_id);
+          const systemDealDocs = [];
+          if (deal) {
+            if (deal.contract_document) systemDealDocs.push(normalizeDoc(deal.contract_document, 'Purchase Contract'));
+            const docs = deal.documents || {};
+            if (docs.purchase_contract && docs.purchase_contract.url) systemDealDocs.push(normalizeDoc(docs.purchase_contract, 'Purchase Contract'));
+            if (docs.listing_agreement && docs.listing_agreement.url) systemDealDocs.push(normalizeDoc(docs.listing_agreement, 'Listing Agreement'));
+            if (docs.operating_agreement && docs.operating_agreement.url) systemDealDocs.push(normalizeDoc(docs.operating_agreement, 'Operating Agreement'));
+            if (docs.buyer_contract && docs.buyer_contract.url) systemDealDocs.push(normalizeDoc(docs.buyer_contract, 'Buyer Contract'));
+          }
+
+          const all = [
+            ...baseFiles,
+            ...msgFiles,
+            ...legacyFiles,
+            ...systemRoomDocs,
+            ...systemDealDocs,
+          ];
+
           const isPhoto = (f) => {
             const t = (f?.type || '').toString().toLowerCase();
             if (t.startsWith('image/')) return true;
             const n = (f?.name || '').toString().toLowerCase();
             return /(\.png|\.jpg|\.jpeg|\.webp|\.gif)$/.test(n);
           };
+
           const files = all.filter(f => !isPhoto(f));
           const photos = [...basePhotos, ...all.filter(isPhoto)];
+
           // Sort newest first
           const byDateDesc = (a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0);
           files.sort(byDateDesc);
           photos.sort(byDateDesc);
+
           return { files, photos };
         })(),
         
