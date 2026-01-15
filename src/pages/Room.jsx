@@ -205,7 +205,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
           <p className="text-sm text-[#E3C567] truncate font-medium">
             {canSeeFullAddress 
               ? (room.property_address || room.deal_title || room.title)
-              : `${room.city || 'City'}, ${room.state || 'State'}`
+              : [room.city, room.state].filter(Boolean).join(', ')
             }
           </p>
         )}
