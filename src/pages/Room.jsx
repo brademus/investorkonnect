@@ -1544,7 +1544,7 @@ ${dealContext}`;
                                         </h3>
                                         <p className="text-sm text-[#808080] mb-3">
                                           {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
-                                            ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${currentRoom?.city}, ${currentRoom?.state} ${currentRoom?.zip || ''}`
+                                            ? `${currentRoom?.county ? currentRoom.county + ' County, ' : ''}${[currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ')}${currentRoom?.zip ? ' ' + currentRoom.zip : ''}`
                                             : ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || 'Location')
                                           }
                                         </p>
