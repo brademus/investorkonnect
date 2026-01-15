@@ -27,20 +27,13 @@ function InvestorDocumentsContent() {
     }
   }, [profileLoading, profile, navigate]);
 
-  // Fetch Deals (Dependent on Profile)
-  const { data: deals = [], isLoading: dealsLoading, refetch } = useQuery({
-    queryKey: ['investorDeals', profile?.id],
+  // Fetch Rooms (Dependent on Profile) - to show shared files per deal
+  const { data: rooms = [], isLoading: roomsLoading, refetch } = useQuery({
+    queryKey: ['investorRooms', profile?.id],
     queryFn: async () => {
         if (!profile?.id) return [];
-        console.log("Fetching documents for investor:", profile.id);
-        const myDeals = await base44.entities.Deal.filter(
-            { investor_id: profile.id }
-        );
-        console.log("All deals fetched:", myDeals.length, myDeals);
-        // Show only deals with contracts
-        const withContracts = myDeals.filter(d => d.contract_url || d.contract_document?.url);
-        console.log("Deals with contracts:", withContracts.length, withContracts);
-        return withContracts;
+        const myRooms = await base44.entities.Room.filter({ investorId: profile.id });
+        return myRooms;
     },
     enabled: !!profile?.id,
     staleTime: 0,
@@ -55,11 +48,11 @@ function InvestorDocumentsContent() {
     }
   }, [profile?.id, refetch]);
 
-  const loading = profileLoading || dealsLoading;
+  const loading = profileLoading || roomsLoading;
 
-  const filteredDeals = deals.filter(deal => 
-    deal.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    deal.property_address?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRooms = rooms.filter(room => 
+    (room.property_address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (room.city || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -103,76 +96,60 @@ function InvestorDocumentsContent() {
             </div>
           </div>
 
-          {deals.length === 0 ? (
+          {rooms.length === 0 ? (
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
                 <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
                     <FileText className="w-8 h-8 text-[#808080]" />
                 </div>
-                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">No Documents Yet</h3>
+                <h3 className="text-xl font-bold text-[#FAFAFA] mb-2">No Shared Files Yet</h3>
                 <p className="text-[#808080] mb-6 max-w-md mx-auto">
-                    Contracts uploaded via the Deal Wizard will appear here automatically.
+                    Files shared in your deal rooms will appear here automatically.
                 </p>
-                <Link to={createPageUrl("DealWizard")}>
-                    <Button className="bg-[#E3C567] hover:bg-[#D4AF37] text-black rounded-full font-semibold">
-                        Start New Deal
-                    </Button>
-                </Link>
             </div>
-          ) : filteredDeals.length === 0 ? (
+          ) : filteredRooms.length === 0 ? (
             <div className="text-center py-12 text-[#808080]">
-                No documents matching "{searchTerm}"
+                No results matching "{searchTerm}"
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredDeals.map((deal) => (
-                    <div key={deal.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl overflow-hidden hover:border-[#E3C567] transition-all group">
+                {filteredRooms.map((room) => (
+                    <div key={room.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl overflow-hidden hover:border-[#E3C567] transition-all group">
                         <div className="p-5">
                             <div className="flex items-start justify-between mb-4">
                                 <div className="w-10 h-10 bg-[#E3C567]/10 rounded-lg flex items-center justify-center group-hover:bg-[#E3C567]/20 transition-colors">
                                     <FileText className="w-5 h-5 text-[#E3C567]" />
                                 </div>
-                                <span className="text-xs font-medium px-2 py-1 rounded bg-[#1F1F1F] text-[#808080] border border-[#333]">
-                                    Purchase Agreement
-                                </span>
+                                <Link to={`${createPageUrl("Room")}?roomId=${room.id}`} className="text-xs text-[#E3C567] hover:underline ml-2">Open Room</Link>
                             </div>
                             
-                            <h3 className="font-bold text-[#FAFAFA] truncate mb-1" title={deal.property_address}>
-                                {deal.contract_document?.name || deal.property_address || deal.title}
+                            <h3 className="font-bold text-[#FAFAFA] truncate mb-1" title={room.property_address}>
+                                {room.property_address || [room.city, room.state].filter(Boolean).join(', ') || 'Deal'}
                             </h3>
                             <div className="text-xs text-[#808080] flex items-center gap-1 mb-4">
                                 <MapPin className="w-3 h-3" />
-                                {deal.city}, {deal.state} {deal.zip}
+                                {[room.city, room.state].filter(Boolean).join(', ')}
                             </div>
                             
-                            <div className="space-y-2 mb-5">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-[#666]">Price</span>
-                                    <span className="text-[#FAFAFA] font-medium">${(deal.purchase_price || 0).toLocaleString()}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-[#666]">Uploaded</span>
-                                    <span className="text-[#FAFAFA]">
-                                      {deal.contract_document?.uploaded_at 
-                                        ? format(new Date(deal.contract_document.uploaded_at), 'MMM d, yyyy')
-                                        : deal.created_date 
-                                        ? format(new Date(deal.created_date), 'MMM d, yyyy') 
-                                        : '-'
-                                      }
-                                    </span>
-                                </div>
+                            <div className="space-y-2">
+                              {room.files && room.files.length > 0 ? (
+                                room.files.map((f, idx) => (
+                                  <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
+                                    <div className="min-w-0">
+                                      <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
+                                      <p className="text-xs text-[#808080] truncate">{f.uploaded_by_name || 'Shared'} • {new Date(f.uploaded_at || room.updated_date || room.created_date).toLocaleDateString()}</p>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0 ml-3">
+                                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#1F1F1F] text-[#FAFAFA] px-3 py-1.5 rounded-full hover:bg-[#333]">View</a>
+                                      <a href={f.url} download={f.name || 'download'} className="text-xs bg-[#E3C567] text-black px-3 py-1.5 rounded-full hover:bg-[#EDD89F] flex items-center gap-1">
+                                        <Download className="w-3 h-3" /> Download
+                                      </a>
+                                    </div>
+                                  </div>
+                                ))
+                              ) : (
+                                <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet</div>
+                              )}
                             </div>
-                            
-                            <a 
-                                href={deal.contract_url || deal.contract_document?.url} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="block w-full"
-                            >
-                                <Button className="w-full bg-[#0D0D0D] border border-[#1F1F1F] text-[#E3C567] hover:bg-[#141414] hover:border-[#E3C567]">
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Download PDF
-                                </Button>
-                            </a>
                         </div>
                     </div>
                 ))}

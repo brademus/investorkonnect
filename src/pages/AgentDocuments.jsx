@@ -15,29 +15,26 @@ function AgentDocumentsContent() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch deals with contracts
-  const { data: deals = [], isLoading: dealsLoading } = useQuery({
-    queryKey: ['agentDeals', profile?.id],
+  // Fetch my rooms to show shared files per address
+  const { data: rooms = [], isLoading: roomsLoading } = useQuery({
+    queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const res = await base44.entities.Deal.filter({ 
-        agent_id: profile.id 
-      });
-      return res.filter(d => d.contract_document?.url || d.contract_url);
+      const res = await base44.entities.Room.filter({ agentId: profile.id });
+      return res;
     },
     enabled: !!profile?.id
   });
 
-  const filteredDeals = deals.filter(deal => {
+  const filteredRooms = rooms.filter(room => {
     const searchLower = searchTerm.toLowerCase();
-    return (
-      deal.property_address?.toLowerCase().includes(searchLower) ||
-      deal.city?.toLowerCase().includes(searchLower) ||
-      deal.state?.toLowerCase().includes(searchLower)
-    );
+    const address = (room.property_address || '').toLowerCase();
+    const city = (room.city || '').toLowerCase();
+    const state = (room.state || '').toLowerCase();
+    return address.includes(searchLower) || city.includes(searchLower) || state.includes(searchLower);
   });
 
-  if (profileLoading || dealsLoading) {
+  if (profileLoading || roomsLoading) {
     return (
       <>
         <Header profile={profile} />
@@ -78,41 +75,55 @@ function AgentDocumentsContent() {
             </div>
           </div>
 
-          {/* Documents List */}
+          {/* Documents List: one card per address with shared files */}
           <div className="space-y-4">
-            {filteredDeals.length === 0 ? (
+            {filteredRooms.length === 0 ? (
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
                 <FileText className="w-16 h-16 text-[#333] mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-[#808080] mb-2">No Documents</h3>
-                <p className="text-[#666]">Deal contracts will appear here once uploaded by investors.</p>
+                <h3 className="text-xl font-bold text-[#808080] mb-2">No Shared Files</h3>
+                <p className="text-[#666]">Shared files from your deal rooms will appear here.</p>
               </div>
             ) : (
-              filteredDeals.map(deal => (
-                <div key={deal.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hover:border-[#E3C567] transition-all">
+              filteredRooms.map((room) => (
+                <div key={room.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hover:border-[#E3C567] transition-all">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-[#FAFAFA] mb-2">{deal.property_address}</h3>
-                      <div className="flex items-center gap-4 text-sm text-[#808080] mb-3">
-                        <span>{deal.city}, {deal.state}</span>
-                        {deal.purchase_price && (
-                          <span className="text-[#E3C567]">
-                            ${new Intl.NumberFormat('en-US').format(deal.purchase_price)}
-                          </span>
-                        )}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-bold text-[#FAFAFA] mb-1 truncate">
+                        {room.property_address || [room.city, room.state].filter(Boolean).join(', ') || 'Deal'}
+                      </h3>
+                      <div className="text-sm text-[#808080]">
+                        {[room.city, room.state].filter(Boolean).join(', ')}
                       </div>
-                      <p className="text-xs text-[#666]">
-                        Uploaded {new Date(deal.contract_document?.uploaded_at || deal.created_date).toLocaleDateString()}
-                      </p>
                     </div>
-                    <a
-                      href={deal.contract_document?.url || deal.contract_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 px-4 py-2 bg-[#E3C567] text-black rounded-lg hover:bg-[#EDD89F] transition-colors"
-                    >
-                      <Download className="w-4 h-4" />
-                      Download
-                    </a>
+                    <Link to={`${createPageUrl("Room")}?roomId=${room.id}`} className="text-xs text-[#E3C567] hover:underline ml-3 flex-shrink-0">Open Room</Link>
+                  </div>
+
+                  <div className="mt-4 space-y-2">
+                    {room.files && room.files.length > 0 ? (
+                      room.files.map((f, idx) => (
+                        <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-9 h-9 bg-[#E3C567]/15 rounded flex items-center justify-center flex-shrink-0">
+                              <FileText className="w-4 h-4 text-[#E3C567]" />
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
+                              <p className="text-xs text-[#808080] truncate">
+                                {(f.uploaded_by_name || 'Shared')} • {new Date(f.uploaded_at || room.updated_date || room.created_date).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2 flex-shrink-0">
+                            <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#1F1F1F] text-[#FAFAFA] px-3 py-1.5 rounded-full hover:bg-[#333]">View</a>
+                            <a href={f.url} download={f.name || 'download'} className="text-xs bg-[#E3C567] text-black px-3 py-1.5 rounded-full hover:bg-[#EDD89F] flex items-center gap-1">
+                              <Download className="w-3 h-3" /> Download
+                            </a>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet</div>
+                    )}
                   </div>
                 </div>
               ))
