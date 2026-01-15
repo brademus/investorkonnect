@@ -783,18 +783,17 @@ export default function Room() {
 
   // Build a robust deal object for details card: prefer Deal entity, fallback to Room fields
   const dealForDetails = useMemo(() => {
-    // Use a stable snapshot to avoid flicker while viewing tabs
-    const d = deal || currentRoom;
-    if (!d && !currentRoom) return {};
-    const hasPD = !!(d?.property_details && Object.keys(d.property_details || {}).length > 0);
-    const maskedAddress = maskAddr ? null : (d?.property_address || currentRoom?.property_address);
+    // Stable snapshot: prefer deal when available, but never fall back to undefined mid-transition
+    const base = deal || currentRoom || {};
+    const hasPD = !!(base?.property_details && Object.keys(base.property_details || {}).length > 0);
+    const maskedAddress = maskAddr ? null : (base?.property_address || currentRoom?.property_address);
     return {
-      ...(d || {}),
+      ...(base || {}),
       property_address: maskedAddress,
-      property_type: d?.property_type || currentRoom?.property_type || null,
-      property_details: hasPD ? d.property_details : (currentRoom?.property_details || {})
+      property_type: base?.property_type || currentRoom?.property_type || null,
+      property_details: hasPD ? base.property_details : (currentRoom?.property_details || {})
     };
-  }, [deal, currentRoom, maskAddr]);
+  }, [showBoard, activeTab, deal, currentRoom, maskAddr]);
 
   // Prefill editor when deal details load (only when board is open to avoid flicker)
   useEffect(() => {
