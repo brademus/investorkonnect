@@ -16,13 +16,17 @@ function AgentDocumentsContent() {
   const { profile, loading: profileLoading } = useCurrentProfile();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch my rooms to show shared files per address (use function to ensure access rules)
+  // Fetch my rooms to show shared files per address (function + fallback to entity filter)
   const { data: rooms = [], isLoading: roomsLoading } = useQuery({
     queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
       const resp = await base44.functions.invoke('listMyRooms');
-      return getRoomsFromListMyRoomsResponse(resp);
+      const fromFn = getRoomsFromListMyRoomsResponse(resp);
+      if (Array.isArray(fromFn) && fromFn.length > 0) return fromFn;
+      // Fallback in case function returns nothing for this user
+      const fallback = await base44.entities.Room.filter({ agentId: profile.id });
+      return fallback || [];
     },
     enabled: !!profile?.id
   });
