@@ -1577,6 +1577,54 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
+                                  {/* 2. DEAL DETAILS (agent view) */}
+                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                      <Info className="w-5 h-5 text-[#E3C567]" />
+                                      Deal Details
+                                    </h4>
+                                    <div className="space-y-3">
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Property</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {isAgentView && !currentRoom?.is_fully_signed
+                                            ? ([currentRoom?.city, currentRoom?.state].filter(Boolean).join(', ') || '—')
+                                            : (currentRoom?.property_address || '—')}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Price / Budget</span>
+                                        <span className="text-sm text-[#34D399] font-semibold">${(currentRoom?.budget || 0).toLocaleString()}</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Investor</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {currentRoom?.is_fully_signed 
+                                            ? (currentRoom?.counterparty_name || 'Investor')
+                                            : 'Hidden until agreement signed'}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Walkthrough</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">TBD</span>
+                                      </div>
+                                      <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
+                                        <span className="text-sm text-[#808080]">Closing Date</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {(deal?.key_dates?.closing_date || currentRoom?.closing_date)
+                                            ? new Date(deal?.key_dates?.closing_date || currentRoom?.closing_date).toLocaleDateString()
+                                            : 'TBD'}
+                                        </span>
+                                      </div>
+                                      <div className="flex justify-between py-2">
+                                        <span className="text-sm text-[#808080]">Deal Started</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {new Date(currentRoom?.created_date || Date.now()).toLocaleDateString()}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+
                                   <PropertyDetailsCard deal={dealForDetails} />
 
 
