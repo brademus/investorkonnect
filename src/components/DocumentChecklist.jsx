@@ -242,7 +242,13 @@ export default function DocumentChecklist({ deal, room, userRole, onUpdate }) {
                 doc.key === 'operating_agreement'
                   ? (
                       userRole === 'agent'
-                        ? (isWorkingTogether ? (iaFinalUrl || null) : null)
+                        ? (isWorkingTogether 
+                            ? (iaFinalUrl 
+                                || resolved.internalAgreement?.urlSignedPdf 
+                                || resolved.internalAgreement?.url 
+                                || internalAgreementFile?.url 
+                                || null)
+                            : null)
                         : (iaFinalUrl || iaDraftUrl || resolved.internalAgreement?.urlSignedPdf || resolved.internalAgreement?.url || internalAgreementFile?.url || null)
                     )
                   : doc.key === 'listing_agreement'
