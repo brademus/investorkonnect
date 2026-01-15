@@ -651,6 +651,67 @@ export default function Room() {
     };
   }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
 
+  // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
+  useEffect(() => {
+    if (!roomId || !currentRoom) return;
+    if (!messages || messages.length === 0) return;
+
+    // Detect photos: explicit type=photo OR file_type starts with image/
+    const photoMsgs = messages.filter(m => {
+      const t = m?.metadata?.type;
+      const ft = m?.metadata?.file_type || '';
+      return !!m?.metadata?.file_url && (t === 'photo' || t === 'image' || ft.startsWith('image/'));
+    });
+
+    // Detect non-image files: explicit type=file and not image mime
+    const fileMsgs = messages.filter(m => {
+      const t = m?.metadata?.type;
+      const ft = m?.metadata?.file_type || '';
+      return !!m?.metadata?.file_url && (t === 'file' || (!!t && t !== 'photo')) && !ft.startsWith('image/');
+    });
+
+    if (photoMsgs.length === 0 && fileMsgs.length === 0) return;
+
+    const existingPhotoUrls = new Set((currentRoom.photos || []).map(p => p.url));
+    const existingFileUrls = new Set((currentRoom.files || []).map(f => f.url));
+
+    const newPhotos = photoMsgs
+      .filter(m => !existingPhotoUrls.has(m.metadata.file_url))
+      .map(m => ({
+        name: m.metadata.file_name || 'photo.jpg',
+        url: m.metadata.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_at: m.created_date || new Date().toISOString(),
+        size: m.metadata.file_size || 0,
+        type: 'image'
+      }));
+
+    const newFiles = fileMsgs
+      .filter(m => !existingFileUrls.has(m.metadata.file_url))
+      .map(m => ({
+        name: m.metadata.file_name || 'document',
+        url: m.metadata.file_url,
+        uploaded_by: m.sender_profile_id,
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_at: m.created_date || new Date().toISOString(),
+        size: m.metadata.file_size || 0,
+        type: m.metadata.file_type || 'application/octet-stream'
+      }));
+
+    if (newPhotos.length === 0 && newFiles.length === 0) return;
+
+    (async () => {
+      try {
+        const nextPhotos = [...(currentRoom.photos || []), ...newPhotos];
+        const nextFiles = [...(currentRoom.files || []), ...newFiles];
+        await base44.entities.Room.update(roomId, { photos: nextPhotos, files: nextFiles });
+        // Optimistic local update for immediate UI feedback
+        setCurrentRoom(prev => prev ? { ...prev, photos: nextPhotos, files: nextFiles } : prev);
+      } catch (_) {}
+    })();
+  }, [messages, roomId, currentRoom?.id]);
+
   // Also warm cache on mount if we already navigated with cached deal
   useEffect(() => {
     if (currentRoom?.deal_id && !deal) {
