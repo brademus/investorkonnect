@@ -1131,7 +1131,7 @@ ${dealContext}`;
                      <span>
                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
                        {isAgentView && !currentRoom?.is_fully_signed
-                        ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                        ? [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
                         : (currentRoom.property_address || currentRoom.deal_title || currentRoom.title || "No Deal Selected")
                        }
                      </span>
