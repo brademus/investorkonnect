@@ -74,6 +74,17 @@ export default function InvestorOnboarding() {
     }
   }, [profile, selectedState]);
 
+  // Enforce role consistency: investors only
+  useEffect(() => {
+    if (!profile) return;
+    const current = profile.user_role;
+    if (!current || current === 'member') {
+      base44.entities.Profile.update(profile.id, { user_role: 'investor', user_type: 'investor' }).catch(() => {});
+    } else if (current === 'agent') {
+      navigate(createPageUrl("AgentOnboarding"), { replace: true });
+    }
+  }, [profile, navigate]);
+
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
