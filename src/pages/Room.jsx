@@ -2221,7 +2221,7 @@ ${dealContext}`;
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {(currentRoom?.photos || []).map((photo, idx) => (
+                        {((currentRoom?.photos || []).filter((p, i, arr) => !p?.url || arr.findIndex(x => x?.url === p.url) === i)).map((photo, idx) => (
                           <div key={idx} className="group relative aspect-square rounded-lg overflow-hidden bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567]/30 transition-all">
                             <img
                               src={photo.url}
