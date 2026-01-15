@@ -1499,7 +1499,13 @@ ${dealContext}`;
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Agent</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">{currentRoom?.counterparty_name || '—'}</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {currentRoom?.counterparty_name
+                                            ? (currentRoom?.is_fully_signed
+                                                ? currentRoom.counterparty_name
+                                                : currentRoom.counterparty_name.split(' ')[0])
+                                            : '—'}
+                                        </span>
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Walkthrough</span>
@@ -1508,7 +1514,9 @@ ${dealContext}`;
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Closing Date</span>
                                         <span className="text-sm text-[#FAFAFA] font-medium">
-                                          {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : 'TBD'}
+                                          {(deal?.key_dates?.closing_date || currentRoom?.closing_date)
+                                            ? new Date(deal?.key_dates?.closing_date || currentRoom?.closing_date).toLocaleDateString()
+                                            : 'TBD'}
                                         </span>
                                       </div>
                                       <div className="flex justify-between py-2">
