@@ -2300,7 +2300,7 @@ ${dealContext}`;
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
                         {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
                         {isAgentView && !currentRoom?.is_fully_signed
-                          ? `Deal in ${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}`
+                          ? `Deal in ${[currentRoom.city, currentRoom.state].filter(Boolean).join(', ') || 'Location'}`
                           : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
                         }
                       </h3>
