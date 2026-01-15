@@ -28,13 +28,19 @@ function InvestorDocumentsContent() {
     }
   }, [profileLoading, profile, navigate]);
 
-  // Fetch Rooms (Dependent on Profile) - to show shared files per deal
+  // Fetch Rooms (Dependent on Profile) - prefer enriched to mirror Files tab exactly
   const { data: rooms = [], isLoading: roomsLoading, refetch } = useQuery({
     queryKey: ['investorRooms', profile?.id],
     queryFn: async () => {
         if (!profile?.id) return [];
-        const resp = await base44.functions.invoke('listMyRooms');
-        return getRoomsFromListMyRoomsResponse(resp);
+        // Try enriched first (includes room.files as used by Files tab)
+        const respEnriched = await base44.functions.invoke('listMyRoomsEnriched');
+        let fromFn = getRoomsFromListMyRoomsResponse(respEnriched);
+        if (!Array.isArray(fromFn) || fromFn.length === 0) {
+          const resp = await base44.functions.invoke('listMyRooms');
+          fromFn = getRoomsFromListMyRoomsResponse(resp);
+        }
+        return Array.isArray(fromFn) ? fromFn : [];
     },
     enabled: !!profile?.id,
     staleTime: 0,
@@ -51,7 +57,14 @@ function InvestorDocumentsContent() {
 
   const loading = profileLoading || roomsLoading;
 
-  const filteredRooms = rooms.filter(room => 
+  // Only show rooms where both sides have signed
+  const isFullySigned = (r) => {
+    const a = (r?.agreement_status || '').toLowerCase();
+    const req = (r?.request_status || '').toLowerCase();
+    return a === 'fully_signed' || req === 'signed' || !!r?.signed_at;
+  };
+  const signedRooms = rooms.filter(isFullySigned);
+  const filteredRooms = signedRooms.filter(room => 
     (room.property_address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (room.city || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
