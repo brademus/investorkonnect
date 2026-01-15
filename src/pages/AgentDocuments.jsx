@@ -86,6 +86,7 @@ function AgentDocumentsContent() {
     );
   });
 
+  // If rooms are still loading OR we have zero rooms and still waiting on function fallback, show loader briefly
   if (profileLoading || roomsLoading) {
     return (
       <>
