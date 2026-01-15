@@ -1965,27 +1965,31 @@ ${dealContext}`;
 
               {activeTab === 'files' && (
                 <div className="space-y-6">
-                  {/* Document Checklist */}
-                  <DocumentChecklist 
-                                            deal={deal || (currentRoom?.deal_id ? getCachedDeal(currentRoom.deal_id) : null) || buildDealFromRoom(currentRoom, maskAddr)}
-                                            room={currentRoom}
-                                            userRole={profile?.user_role}
-                                            onUpdate={() => {
-                      const fetchDeal = async () => {
-                        if (currentRoom?.deal_id) {
-                          try {
-                            const response = await base44.functions.invoke('getDealDetailsForUser', {
-                              dealId: currentRoom.deal_id
-                            });
-                            if (response.data) setDeal(response.data);
-                          } catch (error) {
-                            console.error('Failed to fetch deal:', error);
+                  {/* Document Checklist: render only when we have stable deal */}
+                  {deal ? (
+                    <DocumentChecklist 
+                      deal={deal}
+                      room={currentRoom}
+                      userRole={profile?.user_role}
+                      onUpdate={() => {
+                        const fetchDeal = async () => {
+                          if (currentRoom?.deal_id) {
+                            try {
+                              const response = await base44.functions.invoke('getDealDetailsForUser', {
+                                dealId: currentRoom.deal_id
+                              });
+                              if (response.data) setDeal(response.data);
+                            } catch (error) {
+                              console.error('Failed to fetch deal:', error);
+                            }
                           }
-                        }
-                      };
-                      fetchDeal();
-                    }}
-                  />
+                        };
+                        fetchDeal();
+                      }}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-[#808080]">Loading documents...</div>
+                  )}
 
                   {/* Shared Files Section */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
