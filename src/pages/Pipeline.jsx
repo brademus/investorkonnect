@@ -128,14 +128,42 @@ function PipelineContent() {
   });
 
   const uniqueDealsData = useMemo(() => {
-    const seen = new Set();
-    return dealsData.filter(d => {
+    if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
+
+    const normalize = (v) => (v ?? '').toString().trim().toLowerCase();
+    const toDate = (d) => new Date(d || 0).getTime();
+
+    // Step 1: dedupe by exact id first (keep the most recently updated)
+    const byId = new Map();
+    for (const d of dealsData) {
       const id = d?.id || d?.deal_id;
-      if (!id) return false;
-      if (seen.has(id)) return false;
-      seen.add(id);
-      return true;
-    });
+      if (!id) continue;
+      const prev = byId.get(id);
+      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
+        byId.set(id, d);
+      }
+    }
+
+    // Step 2: dedupe by natural signature (address/title + city + state + price + day)
+    const makeSig = (d) => {
+      const addr = normalize(d.property_address || d.deal_title || d.title);
+      const city = normalize(d.city);
+      const state = normalize(d.state);
+      const price = d.purchase_price ?? d.budget ?? '';
+      const day = (d.created_date || '').slice(0, 10);
+      return `${addr}|${city}|${state}|${price}|${day}`;
+    };
+
+    const bySig = new Map();
+    for (const d of byId.values()) {
+      const sig = makeSig(d);
+      const prev = bySig.get(sig);
+      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
+        bySig.set(sig, d);
+      }
+    }
+
+    return Array.from(bySig.values());
   }, [dealsData]);
 
   // Load recent activity/notifications
