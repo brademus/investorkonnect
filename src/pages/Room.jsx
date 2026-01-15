@@ -1320,29 +1320,7 @@ ${dealContext}`;
                                     </div>
                                   </div>
 
-                                  {/* 3. AI DEAL SUMMARY */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-                                    <h4 className="text-lg font-semibold text-[#FAFAFA] mb-3">Deal Summary</h4>
-                                    <p className="text-sm text-[#FAFAFA] leading-relaxed">
-                                      This is a single-family residential property located in {currentRoom?.city || 'your target market'}. 
-                                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
-                                        <>
-                                          {currentRoom?.is_fully_signed
-                                            ? <>Your agent {currentRoom?.counterparty_name} is currently working on the initial walkthrough and evaluation. </>
-                                            : <>Your agent is currently working on the initial walkthrough and evaluation. </>
-                                          }
-                                        </>
-                                      ) : (
-                                        <>You are currently exploring this deal and selecting an agent. </>
-                                      )}
-                                      The property is under contract at ${(currentRoom?.budget || 0).toLocaleString()} with an estimated closing date of {currentRoom?.closing_date ? new Date(currentRoom.closing_date).toLocaleDateString() : 'TBD'}. 
-                                      {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
-                                        <>Next steps include completing the property inspection and finalizing financing details.</>
-                                      ) : (
-                                        <>Review the deal details and lock in an agent to proceed with the transaction.</>
-                                      )}
-                                    </p>
-                                  </div>
+                                  {/* Deal Summary removed per request */}
 
                                   {/* 4. NEXT STEPS FOR YOU */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
