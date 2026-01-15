@@ -110,7 +110,7 @@ function InvestorDocumentsContent() {
             </div>
           </div>
 
-          {rooms.length === 0 ? (
+          {signedRooms.length === 0 ? (
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
                 <div className="w-16 h-16 bg-[#1F1F1F] rounded-full flex items-center justify-center mx-auto mb-4">
                     <FileText className="w-8 h-8 text-[#808080]" />

@@ -32,7 +32,8 @@ function AgentDocumentsContent() {
       if (Array.isArray(fromFn) && fromFn.length > 0) return fromFn;
       // Fallback in case function returns nothing for this user
       const fallback = await base44.entities.Room.filter({ agentId: profile.id });
-      return fallback || [];
+      // Attach files/photos from fallback rooms explicitly if present
+      return (fallback || []).map(r => ({ ...r, files: Array.isArray(r.files) ? r.files : [], photos: Array.isArray(r.photos) ? r.photos : [] }));
     },
     enabled: !!profile?.id
   });
