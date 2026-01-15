@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FileText, ArrowLeft, Download, Search } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
-import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
+
 
 function AgentDocumentsContent() {
   const { profile, loading: profileLoading } = useCurrentProfile();
@@ -22,8 +22,13 @@ function AgentDocumentsContent() {
     queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      const resp = await base44.functions.invoke('listMyRooms');
-      const fromFn = getRoomsFromListMyRoomsResponse(resp);
+      // Prefer enriched rooms (includes files like the Files tab)
+      const respEnriched = await base44.functions.invoke('listMyRoomsEnriched');
+      let fromFn = getRoomsFromListMyRoomsResponse(respEnriched);
+      if (!Array.isArray(fromFn) || fromFn.length === 0) {
+        const resp = await base44.functions.invoke('listMyRooms');
+        fromFn = getRoomsFromListMyRoomsResponse(resp);
+      }
       if (Array.isArray(fromFn) && fromFn.length > 0) return fromFn;
       // Fallback in case function returns nothing for this user
       const fallback = await base44.entities.Room.filter({ agentId: profile.id });
@@ -32,29 +37,23 @@ function AgentDocumentsContent() {
     enabled: !!profile?.id
   });
 
-  // Fetch deals for rooms to build unified file lists (contracts + uploads)
-  const { data: deals = [] } = useQuery({
-    queryKey: ['agentDocDeals', rooms.map(r => r.deal_id).filter(Boolean).sort().join(',')],
-    queryFn: async () => {
-      const ids = Array.from(new Set(rooms.map(r => r.deal_id).filter(Boolean)));
-      if (ids.length === 0) return [];
-      const res = await base44.entities.Deal.filter({ id: { $in: ids } });
-      return res;
-    },
-    enabled: rooms.length > 0
-  });
+  // We do not need deals here; we mirror the Files tab by using the room.files directly.
 
-  const dealsMap = React.useMemo(() => {
-    const m = new Map();
-    (deals || []).forEach(d => m.set(d.id, d));
-    return m;
-  }, [deals]);
+
+
+  // Only show rooms where both investor and agent have signed the agreement
+  const isFullySigned = (r) => {
+    const a = (r?.agreement_status || '').toLowerCase();
+    const req = (r?.request_status || '').toLowerCase();
+    return a === 'fully_signed' || req === 'signed' || !!r?.signed_at;
+  };
 
   const groups = React.useMemo(() => {
     const map = new Map();
     const norm = (s) => (s || '').toString().trim().toLowerCase();
 
-    rooms.forEach((r) => {
+    const onlySigned = rooms.filter(isFullySigned);
+    onlySigned.forEach((r) => {
       const key = r.deal_id || `${norm(r.property_address)}|${norm(r.city)}|${norm(r.state)}`;
       if (!map.has(key)) {
         map.set(key, {
@@ -74,36 +73,17 @@ function AgentDocumentsContent() {
       if (!g.openRoomId && r.id && !String(r.id).startsWith('virtual_')) {
         g.openRoomId = r.id;
       }
-      // merge files from room + unified files (deal docs + uploads)
+      // Merge just the shared files from the room (exactly like Files tab)
       const existingUrls = new Set(g.files.map(f => f.url));
-
-      // Raw room files
-      (Array.isArray(r.files) ? r.files : []).forEach(f => {
+      const roomFiles = Array.isArray(r.files) ? [...r.files] : [];
+      // Sort newest first
+      roomFiles.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+      roomFiles.forEach(f => {
         if (f?.url && !existingUrls.has(f.url)) {
           g.files.push(f);
           existingUrls.add(f.url);
         }
       });
-
-      // Unified files list from deal + room (replicates Files tab logic)
-      try {
-        const deal = r.deal_id ? dealsMap.get(r.deal_id) : null;
-        const unified = buildUnifiedFilesList({ deal: deal || {}, room: r }) || [];
-        unified.forEach(u => {
-          const url = u?.url;
-          if (url && !existingUrls.has(url)) {
-            g.files.push({
-              name: u.filename || u.label || 'Document',
-              url: url,
-              uploaded_by_name: u.uploadedBy || 'Shared',
-              uploaded_at: u.createdAt || r.updated_date || r.created_date,
-              size: u.size,
-              type: u.type || 'application/octet-stream'
-            });
-            existingUrls.add(url);
-          }
-        });
-      } catch (_) {}
       // keep freshest updated
       if (new Date(r.updated_date || 0) > new Date(g.updated || 0)) {
         g.updated = r.updated_date;
@@ -114,6 +94,10 @@ function AgentDocumentsContent() {
       }
     });
 
+    // Sort files within each group (newest first)
+    for (const g of map.values()) {
+      g.files.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+    }
     // Return array sorted by recent activity
     return Array.from(map.values()).sort((a, b) => new Date(b.updated || 0) - new Date(a.updated || 0));
   }, [rooms]);
@@ -187,6 +171,9 @@ function AgentDocumentsContent() {
                       </h3>
                       <div className="text-sm text-[#808080]">
                         {[group.city, group.state].filter(Boolean).join(', ')}
+                        {group.roomIds?.length ? (
+                          <span className="ml-2 text-[#666]">• {group.roomIds.length} room{group.roomIds.length > 1 ? 's' : ''}</span>
+                        ) : null}
                       </div>
                     </div>
                     {group.openRoomId && (
