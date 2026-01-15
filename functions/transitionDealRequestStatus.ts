@@ -50,10 +50,24 @@ Deno.serve(async (req) => {
     // Verify user has access to this room
     const isInvestor = room.investorId === profile.id;
     const isAgent = room.agentId === profile.id;
-    
-    if (!isInvestor && !isAgent) {
+
+    // Fallback: some rooms may not have agentId set yet; check RoomParticipant linkage
+    let isParticipant = false;
+    let participantRole = null; // 'investor' | 'agent'
+    try {
+      const parts = await base44.entities.RoomParticipant.filter({ room_id: roomId, profile_id: profile.id });
+      if (Array.isArray(parts) && parts[0]) {
+        isParticipant = true;
+        participantRole = parts[0].role || null;
+      }
+    } catch (_) {}
+
+    if (!isInvestor && !isAgent && !isParticipant) {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
+
+    // Effective permission helpers
+    const agentAccess = isAgent || participantRole === 'agent' || profile.user_role === 'agent';
 
     // Handle state transitions
     let updates = {};
@@ -62,7 +76,7 @@ Deno.serve(async (req) => {
     switch (action) {
       case 'accept':
         // Agent accepts deal request
-        if (!isAgent) {
+        if (!agentAccess) {
           return Response.json({ 
             error: 'Only agents can accept requests' 
           }, { status: 403 });
@@ -76,14 +90,15 @@ Deno.serve(async (req) => {
         
         updates = {
           request_status: 'accepted',
-          accepted_at: new Date().toISOString()
+          accepted_at: new Date().toISOString(),
+          ...(room.agentId ? {} : { agentId: profile.id })
         };
         activityMessage = `${profile.full_name} accepted the deal request`;
         break;
 
       case 'reject':
         // Agent rejects deal request
-        if (!isAgent) {
+        if (!agentAccess) {
           return Response.json({ 
             error: 'Only agents can reject requests' 
           }, { status: 403 });
