@@ -271,6 +271,7 @@ export default function Room() {
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   const requestSeqRef = useRef(0);
+  const [dealAppts, setDealAppts] = useState(null);
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
@@ -583,6 +584,32 @@ export default function Room() {
     
     fetchCurrentRoom();
   }, [roomId, profile?.user_role, rooms]);
+  
+  // Load and subscribe to DealAppointments for walkthrough display
+  useEffect(() => {
+    const did = currentRoom?.deal_id;
+    if (!did) { setDealAppts(null); return; }
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const rows = await base44.entities.DealAppointments.filter({ dealId: did });
+        if (!cancelled) setDealAppts(rows?.[0] || null);
+      } catch (_) {}
+    };
+
+    load();
+    const unsubscribe = base44.entities.DealAppointments.subscribe((event) => {
+      if (event?.data?.dealId === did) {
+        setDealAppts(event.data);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      try { unsubscribe && unsubscribe(); } catch (_) {}
+    };
+  }, [currentRoom?.deal_id]);
 
   // Realtime updates for Room and Deal to keep board instantly fresh
   useEffect(() => {
@@ -1322,7 +1349,11 @@ ${dealContext}`;
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Walkthrough</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">TBD</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {dealAppts?.walkthrough?.datetime
+                                            ? `${(dealAppts.walkthrough.status || 'SCHEDULED').replace(/_/g, ' ').toUpperCase()} • ${new Date(dealAppts.walkthrough.datetime).toLocaleString()}`
+                                            : 'TBD'}
+                                        </span>
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Closing Date</span>
@@ -1628,7 +1659,11 @@ ${dealContext}`;
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Walkthrough</span>
-                                        <span className="text-sm text-[#FAFAFA] font-medium">TBD</span>
+                                        <span className="text-sm text-[#FAFAFA] font-medium">
+                                          {dealAppts?.walkthrough?.datetime
+                                            ? `${(dealAppts.walkthrough.status || 'SCHEDULED').replace(/_/g, ' ').toUpperCase()} • ${new Date(dealAppts.walkthrough.datetime).toLocaleString()}`
+                                            : 'TBD'}
+                                        </span>
                                       </div>
                                       <div className="flex justify-between py-2 border-b border-[#1F1F1F]">
                                         <span className="text-sm text-[#808080]">Closing Date</span>
