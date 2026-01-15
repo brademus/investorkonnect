@@ -80,9 +80,8 @@ function useMessages(roomId) {
 
   useEffect(() => { scrollToBottom(); }, [items]);
 
-  // Reset messages immediately on room switch to prevent showing previous room content
+  // Start loading on room switch but keep previous messages until new ones arrive
   useEffect(() => {
-    setItems([]);
     setLoading(true);
   }, [roomId]);
 
@@ -1175,18 +1174,22 @@ ${dealContext}`;
             {roomId && (
               <Button
                   onMouseEnter={prefetchDeal}
-                  onClick={() => {
+                  onClick={async () => {
                     const next = !showBoard;
                     if (next) {
-                      // Hydrate instantly from a stable room snapshot (avoid cache to prevent flicker)
-                      if (currentRoom) {
+                      setBoardLoading(true);
+                      const data = await prefetchDeal();
+                      if (data) {
+                        setDeal(data);
+                      } else if (currentRoom) {
                         const snap = buildDealFromRoom(currentRoom, maskAddr);
                         if (snap) setDeal(snap);
                       }
-                      // Fetch fresh in background
-                      prefetchDeal();
+                      setShowBoard(true);
+                      setBoardLoading(false);
+                    } else {
+                      setShowBoard(false);
                     }
-                    setShowBoard(next);
                   }}
                   className={`rounded-full font-semibold transition-all ${
                        showBoard 
@@ -1269,7 +1272,12 @@ ${dealContext}`;
         <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
           {showBoard ? (
             /* Deal Board View with Tabs */
-            <div className="space-y-6 max-w-6xl mx-auto">
+            <div className="space-y-6 max-w-6xl mx-auto relative">
+              {(boardLoading || tabLoading) && (
+                <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0D0D0D]/80 backdrop-blur-sm">
+                  <LoadingAnimation className="w-24 h-24" />
+                </div>
+              )}
               {/* Tab Navigation */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
                 {[
@@ -1284,14 +1292,13 @@ ${dealContext}`;
                     <button
                       key={tab.id}
                       onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
-                      onClick={() => {
+                      onClick={async () => {
                         setActiveTab(tab.id);
-                        if (tab.id === 'agreement') {
-                          if (currentRoom) {
-                            const snap = buildDealFromRoom(currentRoom, maskAddr);
-                            if (snap) setDeal(snap);
-                          }
-                          prefetchDeal();
+                        if (['agreement','files'].includes(tab.id)) {
+                          setTabLoading(true);
+                          const data = await prefetchDeal();
+                          if (data) setDeal(data);
+                          setTabLoading(false);
                         }
                       }}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
