@@ -145,24 +145,30 @@ function InvestorDocumentsContent() {
                             </div>
                             
                             <div className="space-y-2">
-                              {Array.isArray(room.files) && room.files.length > 0 ? (
-                               room.files.map((f, idx) => (
-                                  <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
-                                    <div className="min-w-0">
-                                      <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
-                                      <p className="text-xs text-[#808080] truncate">{f.uploaded_by_name || 'Shared'} • {new Date(f.uploaded_at || room.updated_date || room.created_date).toLocaleDateString()}</p>
+                              {(() => {
+                                const combined = [
+                                  ...(Array.isArray(room.files) ? room.files : []),
+                                  ...(Array.isArray(room.photos) ? room.photos : [])
+                                ].sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
+                                return combined.length > 0 ? (
+                                  combined.map((f, idx) => (
+                                    <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
+                                      <div className="min-w-0">
+                                        <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
+                                        <p className="text-xs text-[#808080] truncate">{f.uploaded_by_name || 'Shared'} • {new Date(f.uploaded_at || room.updated_date || room.created_date).toLocaleDateString()}</p>
+                                      </div>
+                                      <div className="flex gap-2 flex-shrink-0 ml-3">
+                                        <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#1F1F1F] text-[#FAFAFA] px-3 py-1.5 rounded-full hover:bg-[#333]">View</a>
+                                        <a href={f.url} download={f.name || 'download'} className="text-xs bg-[#E3C567] text-black px-3 py-1.5 rounded-full hover:bg-[#EDD89F] flex items-center gap-1">
+                                          <Download className="w-3 h-3" /> Download
+                                        </a>
+                                      </div>
                                     </div>
-                                    <div className="flex gap-2 flex-shrink-0 ml-3">
-                                      <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#1F1F1F] text-[#FAFAFA] px-3 py-1.5 rounded-full hover:bg-[#333]">View</a>
-                                      <a href={f.url} download={f.name || 'download'} className="text-xs bg-[#E3C567] text-black px-3 py-1.5 rounded-full hover:bg-[#EDD89F] flex items-center gap-1">
-                                        <Download className="w-3 h-3" /> Download
-                                      </a>
-                                    </div>
-                                  </div>
-                                ))
-                              ) : (
-                                <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet</div>
-                              )}
+                                  ))
+                                ) : (
+                                  <div className="text-sm text-[#808080] bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">No shared files yet</div>
+                                );
+                              })()}
                             </div>
                         </div>
                     </div>

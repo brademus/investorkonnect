@@ -18,7 +18,7 @@ function AgentDocumentsContent() {
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch my rooms to show shared files per address (function + fallback to entity filter)
-  const { data: rooms = [], isLoading: roomsLoading } = useQuery({
+  const { data: rooms = [], isLoading: roomsLoading, refetch } = useQuery({
     queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -35,11 +35,19 @@ function AgentDocumentsContent() {
       // Attach files/photos from fallback rooms explicitly if present
       return (fallback || []).map(r => ({ ...r, files: Array.isArray(r.files) ? r.files : [], photos: Array.isArray(r.photos) ? r.photos : [] }));
     },
-    enabled: !!profile?.id
+    enabled: !!profile?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   });
 
-  // We do not need deals here; we mirror the Files tab by using the room.files directly.
+  // We do not need deals here; we mirror the Files tab by using the room.files/photos directly.
 
+  useEffect(() => {
+    if (profile?.id) {
+      refetch();
+    }
+  }, [profile?.id, refetch]);
 
 
   // Only show rooms where both investor and agent have signed the agreement
@@ -77,9 +85,10 @@ function AgentDocumentsContent() {
       // Merge just the shared files from the room (exactly like Files tab)
       const existingUrls = new Set(g.files.map(f => f.url));
       const roomFiles = Array.isArray(r.files) ? [...r.files] : [];
+      const roomPhotos = Array.isArray(r.photos) ? [...r.photos] : [];
       // If files not on room (older data), derive from messages payload attached by function
       const inferredFiles = Array.isArray(r.inferred_files) ? r.inferred_files : [];
-      const combined = [...roomFiles, ...inferredFiles];
+      const combined = [...roomFiles, ...roomPhotos, ...inferredFiles];
       // Sort newest first
       combined.sort((a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0));
       combined.forEach(f => {
