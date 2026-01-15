@@ -30,6 +30,20 @@ Deno.serve(async (req) => {
     try {
       profile = await ensureProfile(base44, user);
       console.log('📋 Profile ensured:', profile.id);
+      
+      // If caller specifies a target role, enforce it here to avoid mismatches
+      const requestedRole = body.user_role || body.user_type || body.role;
+      if (requestedRole && (requestedRole === 'investor' || requestedRole === 'agent')) {
+        if (profile.user_role !== requestedRole) {
+          await base44.asServiceRole.entities.Profile.update(profile.id, {
+            user_role: requestedRole,
+            user_type: requestedRole,
+            onboarding_version: requestedRole === 'agent' ? (profile.onboarding_version || 'agent-v1') : (profile.onboarding_version || 'v2')
+          });
+          profile.user_role = requestedRole;
+          profile.user_type = requestedRole;
+        }
+      }
     } catch (ensureError) {
       console.error('❌ ProfileUpsert: ensureProfile failed', ensureError);
       return Response.json({ 
