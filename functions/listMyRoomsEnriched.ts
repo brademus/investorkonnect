@@ -51,6 +51,12 @@ Deno.serve(async (req) => {
     
     const profileMap = new Map(counterpartyProfiles.map(p => [p.id, p]));
 
+    // Fetch legal agreements for these deals (to surface Internal Agreement PDFs)
+    const legalAgreements = dealIds.length > 0
+      ? await base44.asServiceRole.entities.LegalAgreement.filter({ id: { $ne: null }, deal_id: { $in: dealIds } })
+      : [];
+    const legalMap = new Map(legalAgreements.map(a => [a.deal_id, a]));
+
     // Collect all room IDs to fetch message-based attachments (mirrors Files tab)
     const roomIds = rooms.map(r => r.id).filter(Boolean);
 
@@ -178,12 +184,28 @@ Deno.serve(async (req) => {
             if (docs.buyer_contract && docs.buyer_contract.url) systemDealDocs.push(normalizeDoc(docs.buyer_contract, 'Buyer Contract'));
           }
 
+          const la = legalMap.get(room.deal_id);
+          const legalDocs = [];
+          if (la) {
+            const laUrl = la.signed_pdf_url || la.final_pdf_url || la.docusign_pdf_url || la.pdf_file_url || la.signing_pdf_url || la.docusign_pdf_url;
+            if (laUrl) {
+              legalDocs.push({
+                name: 'Internal Agreement',
+                url: laUrl,
+                uploaded_by_name: 'System',
+                uploaded_at: la.agent_signed_at || la.investor_signed_at || la.updated_date || la.created_date,
+                type: 'application/pdf'
+              });
+            }
+          }
+
           const all = [
             ...baseFiles,
             ...msgFiles,
             ...legacyFiles,
             ...systemRoomDocs,
             ...systemDealDocs,
+            ...legalDocs,
           ];
 
           const isPhoto = (f) => {
