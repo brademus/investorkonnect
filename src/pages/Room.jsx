@@ -188,8 +188,8 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
         {/* Show price and city for agents, or full name for investors ONLY AFTER FULLY SIGNED */}
         <div className="flex items-center justify-between mb-1">
           <p className="text-[15px] font-semibold text-[#FAFAFA] truncate">
-            {userRole === 'agent' && room.budget > 0 && room.city 
-              ? `$${room.budget.toLocaleString()} • ${room.city}`
+            {userRole === 'agent' && room.budget > 0 && (room.city || room.state)
+              ? `$${room.budget.toLocaleString()} • ${[room.city, room.state].filter(Boolean).join(', ')}`
               : room.is_fully_signed 
               ? (room.counterparty_name || `Room ${room.id.slice(0, 6)}`)
               : (userRole === 'investor' ? 'Agent' : 'Investor')
