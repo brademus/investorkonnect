@@ -129,30 +129,32 @@ function AgentDocumentsContent() {
 
           {/* Documents List: one card per address with shared files */}
           <div className="space-y-4">
-            {filteredRooms.length === 0 ? (
+            {filteredGroups.length === 0 ? (
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
                 <FileText className="w-16 h-16 text-[#333] mx-auto mb-4" />
                 <h3 className="text-xl font-bold text-[#808080] mb-2">No Shared Files</h3>
                 <p className="text-[#666]">Shared files from your deal rooms will appear here.</p>
               </div>
             ) : (
-              filteredRooms.map((room) => (
-                <div key={room.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hover:border-[#E3C567] transition-all">
+              filteredGroups.map((group) => (
+                <div key={group.key} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hover:border-[#E3C567] transition-all">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <h3 className="text-lg font-bold text-[#FAFAFA] mb-1 truncate">
-                        {room.property_address || [room.city, room.state].filter(Boolean).join(', ') || 'Deal'}
+                        {group.addressLabel}
                       </h3>
                       <div className="text-sm text-[#808080]">
-                        {[room.city, room.state].filter(Boolean).join(', ')}
+                        {[group.city, group.state].filter(Boolean).join(', ')}
                       </div>
                     </div>
-                    <Link to={`${createPageUrl("Room")}?roomId=${room.id}`} className="text-xs text-[#E3C567] hover:underline ml-3 flex-shrink-0">Open Room</Link>
+                    {group.openRoomId && (
+                      <Link to={`${createPageUrl("Room")}?roomId=${group.openRoomId}`} className="text-xs text-[#E3C567] hover:underline ml-3 flex-shrink-0">Open Room</Link>
+                    )}
                   </div>
 
                   <div className="mt-4 space-y-2">
-                    {Array.isArray(room.files) && room.files.length > 0 ? (
-                      room.files.map((f, idx) => (
+                    {group.files.length > 0 ? (
+                      group.files.map((f, idx) => (
                         <div key={idx} className="flex items-center justify-between bg-[#141414] border border-[#1F1F1F] rounded-lg p-3">
                           <div className="flex items-center gap-3 min-w-0">
                             <div className="w-9 h-9 bg-[#E3C567]/15 rounded flex items-center justify-center flex-shrink-0">
@@ -161,7 +163,7 @@ function AgentDocumentsContent() {
                             <div className="min-w-0">
                               <p className="text-sm text-[#FAFAFA] truncate">{f.name || 'Document'}</p>
                               <p className="text-xs text-[#808080] truncate">
-                                {(f.uploaded_by_name || 'Shared')} • {new Date(f.uploaded_at || room.updated_date || room.created_date).toLocaleDateString()}
+                                {(f.uploaded_by_name || 'Shared')} • {new Date(f.uploaded_at || group.updated).toLocaleDateString()}
                               </p>
                             </div>
                           </div>
