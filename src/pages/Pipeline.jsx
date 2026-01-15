@@ -380,8 +380,9 @@ function PipelineContent() {
       return;
     }
 
-    // If no agent assigned yet, keep user here with guidance instead of redirecting away
-    if (!deal?.agent_id) {
+    // Resolve agent for room creation: agents default to themselves
+    const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
+    if (!agentProfileId) {
       toast.info('Select an agent for this deal to open a room (use the deal card menu).');
       return;
     }
@@ -390,7 +391,7 @@ function PipelineContent() {
     try {
       const roomId = await getOrCreateDealRoom({
         dealId: deal.deal_id,
-        agentProfileId: deal.agent_id
+        agentProfileId
       });
       if (isAgent) {
         const masked = {
