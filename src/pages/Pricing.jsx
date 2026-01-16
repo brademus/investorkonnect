@@ -71,13 +71,8 @@ export default function Pricing() {
       return;
     }
 
-    // Check if user has completed onboarding (for both investor and agent)
-    if ((role === 'investor' || role === 'agent') && !onboarded) {
-      const onboardingPage = role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding';
-      toast.error(`Please complete your ${role} profile first`);
-      navigate(createPageUrl(onboardingPage));
-      return;
-    }
+    // Proceed directly to checkout; backend will enforce any gating as needed
+    // (Removed client-side onboarding gate to ensure immediate Stripe redirect)
 
     setCheckoutLoading(true);
     const toastId = 'checkout-' + Date.now();
@@ -111,22 +106,9 @@ export default function Pricing() {
         return;
       }
 
-      // Show redirecting message
+      // Redirect to Stripe immediately
       toast.dismiss(toastId);
-      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
-
-      // Add small delay to ensure toast is visible
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Redirect to Stripe
-      window.location.href = response.data.url;
-
-      // Fallback: If redirect doesn't happen in 3 seconds, show error
-      setTimeout(() => {
-        toast.dismiss(toastId + '-redirect');
-        toast.error("Redirect failed. Please try again or contact support.");
-        setCheckoutLoading(false);
-      }, 3000);
+      window.location.assign(response.data.url);
 
     } catch (error) {
       toast.dismiss(toastId);
