@@ -71,8 +71,13 @@ export default function Pricing() {
       return;
     }
 
-    // Proceed directly to checkout; backend will enforce any gating as needed
-    // (Removed client-side onboarding gate to ensure immediate Stripe redirect)
+    // Check if user has completed onboarding (for both investor and agent)
+    if ((role === 'investor' || role === 'agent') && !onboarded) {
+      const onboardingPage = role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding';
+      toast.error(`Please complete your ${role} profile first`);
+      navigate(createPageUrl(onboardingPage));
+      return;
+    }
 
     setCheckoutLoading(true);
     const toastId = 'checkout-' + Date.now();
@@ -106,23 +111,27 @@ export default function Pricing() {
         return;
       }
 
-      // Redirect to Stripe immediately
+      // Show redirecting message
       toast.dismiss(toastId);
-      window.location.assign(response.data.url);
+      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
+
+      // Add small delay to ensure toast is visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirect to Stripe
+      window.location.href = response.data.url;
+
+      // Fallback: If redirect doesn't happen in 3 seconds, show error
+      setTimeout(() => {
+        toast.dismiss(toastId + '-redirect');
+        toast.error("Redirect failed. Please try again or contact support.");
+        setCheckoutLoading(false);
+      }, 3000);
 
     } catch (error) {
       toast.dismiss(toastId);
       console.error('[Pricing] Checkout error:', error);
-      const serverMsg = error?.response?.data?.message;
-      const redirect = error?.response?.data?.redirect;
-      if (serverMsg) {
-        toast.error(serverMsg);
-      } else {
-        toast.error("Failed to start checkout. Please try again.");
-      }
-      if (redirect) {
-        navigate(redirect);
-      }
+      toast.error("Failed to start checkout. Please try again.");
       setCheckoutLoading(false);
     }
   };

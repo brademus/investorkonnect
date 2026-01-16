@@ -29,11 +29,12 @@ Deno.serve(async (req) => {
       console.log('📦 Received plan from URL:', plan);
     }
     
-    // Map plan to price ID from environment
+    // Map plan to price ID
+    // Prioritize IDs from recent product catalog, fallback to env vars
     const priceMap = {
-      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
     const price = plan ? priceMap[plan] : null;
@@ -58,11 +59,10 @@ Deno.serve(async (req) => {
     }
 
     // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
-    // Only enforce gating if explicitly enabled
-    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') === 'true';
+    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
-    let userId = undefined;
-    let userEmail = undefined;
+    let userId = null;
+    let userEmail = null;
     
     if (enableGating) {
       try {
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     // All checks passed - create Stripe session
     // FIXED: Use /BillingSuccess (matches page filename) instead of /billing/success
     const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel = `${base}/Pricing?cancelled=true`;
+    const cancel = `${base}/pricing?cancelled=true`;
     
     console.log('Success URL:', success);
     console.log('Cancel URL:', cancel);
@@ -173,9 +173,10 @@ Deno.serve(async (req) => {
       }
     }
     
-    const sessionParams = {
+    const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
       customer: customerId || undefined,
+      customer_email: !customerId ? userEmail : undefined,
       line_items: [{
         price: price,
         quantity: 1
@@ -194,13 +195,7 @@ Deno.serve(async (req) => {
         user_id: userId || 'unknown',
         plan: plan
       }
-    };
-
-    if (!customerId && userEmail && typeof userEmail === 'string' && userEmail.includes('@')) {
-      sessionParams.customer_email = userEmail;
-    }
-
-    const session = await stripe.checkout.sessions.create(sessionParams);
+    });
 
     console.log('✅ Stripe session created:', session.id);
     console.log('✅ Stripe URL:', session.url);
