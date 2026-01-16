@@ -355,6 +355,7 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   }
   
   return {
+    PLATFORM_NAME: 'Investor Konnect',
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
