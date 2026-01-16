@@ -28,8 +28,9 @@ Deno.serve(async (req) => {
     }
     
     // Get room to check agreement status
-    const room = await base44.asServiceRole.entities.Room.get(room_id);
-    
+    const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+    const room = rooms?.[0];
+
     if (!room) {
       return Response.json({ error: 'Room not found' }, { status: 404 });
     }

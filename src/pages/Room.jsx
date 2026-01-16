@@ -948,7 +948,8 @@ export default function Room() {
       setItems(prev => prev.filter(m => m.id !== tempId));
     } catch (error) {
       console.error('Failed to send message:', error);
-      toast.error(`Failed to send: ${error.message}`);
+      const serverMsg = (error && error.response && error.response.data && error.response.data.error) || (error && error.data && error.data.error);
+      toast.error(`Failed to send: ${serverMsg || error.message}`);
       setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
