@@ -654,7 +654,7 @@ function PipelineContent() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 ml-4 sm:ml-6">
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
@@ -666,11 +666,9 @@ function PipelineContent() {
                     <Plus className="w-4 h-4 mr-2" /> New Deal
                   </Button>
                 )}
-                <Button 
+                <Button
                   onClick={() => setHelpOpen(true)}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs"
+                  className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full"
                 >
                   Tutorials
                 </Button>
