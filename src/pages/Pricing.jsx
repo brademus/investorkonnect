@@ -131,7 +131,16 @@ export default function Pricing() {
     } catch (error) {
       toast.dismiss(toastId);
       console.error('[Pricing] Checkout error:', error);
-      toast.error("Failed to start checkout. Please try again.");
+      const serverMsg = error?.response?.data?.message;
+      const redirect = error?.response?.data?.redirect;
+      if (serverMsg) {
+        toast.error(serverMsg);
+      } else {
+        toast.error("Failed to start checkout. Please try again.");
+      }
+      if (redirect) {
+        navigate(redirect);
+      }
       setCheckoutLoading(false);
     }
   };
