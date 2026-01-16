@@ -61,8 +61,8 @@ Deno.serve(async (req) => {
     // Only enforce gating if explicitly enabled
     const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') === 'true';
     
-    let userId = null;
-    let userEmail = null;
+    let userId = undefined;
+    let userEmail = undefined;
     
     if (enableGating) {
       try {
@@ -173,10 +173,9 @@ Deno.serve(async (req) => {
       }
     }
     
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'subscription',
       customer: customerId || undefined,
-      customer_email: !customerId ? userEmail : undefined,
       line_items: [{
         price: price,
         quantity: 1
@@ -195,7 +194,13 @@ Deno.serve(async (req) => {
         user_id: userId || 'unknown',
         plan: plan
       }
-    });
+    };
+
+    if (!customerId && userEmail && typeof userEmail === 'string' && userEmail.includes('@')) {
+      sessionParams.customer_email = userEmail;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     console.log('✅ Stripe session created:', session.id);
     console.log('✅ Stripe URL:', session.url);
