@@ -55,6 +55,7 @@ import Onboarding from './pages/Onboarding';
 import PendingDeals from './pages/PendingDeals';
 import Pipeline from './pages/Pipeline';
 import PostAuth from './pages/PostAuth';
+import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Resources from './pages/Resources';
@@ -70,7 +71,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import Pricing from './pages/Pricing';
 import __Layout from './Layout.jsx';
 
 
@@ -132,6 +132,7 @@ export const PAGES = {
     "PendingDeals": PendingDeals,
     "Pipeline": Pipeline,
     "PostAuth": PostAuth,
+    "Pricing": Pricing,
     "Privacy": Privacy,
     "PrivacyPolicy": PrivacyPolicy,
     "Resources": Resources,
@@ -147,7 +148,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "Pricing": Pricing,
 }
 
 export const pagesConfig = {

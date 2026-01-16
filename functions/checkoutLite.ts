@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
     // Map plan to price ID
     // Prioritize IDs from recent product catalog, fallback to env vars
     const priceMap = {
-      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": Deno.env.get('STRIPE_PRICE_STARTER') || "price_1SP89V1Nw95Lp8qMNv6ZlA6q",
+      "pro": Deno.env.get('STRIPE_PRICE_PRO') || "price_1SP8AB1Nw95Lp8qMSu9CdqJk",
+      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE') || "price_1SP8B01Nw95Lp8qMsNzWobkZ"
     };
     
     const price = plan ? priceMap[plan] : null;
@@ -104,8 +104,13 @@ Deno.serve(async (req) => {
         });
         
         // Check onboarding for both investors and agents
-        if (!profile.onboarding_completed_at) {
-          console.log('❌ Onboarding not completed for user_role:', profile.user_role);
+        let isOnboarded = !!profile.onboarding_completed_at;
+        // Allow basic investor onboarding to start free trial
+        if (!isOnboarded && profile.user_role === 'investor' && profile.onboarding_step === 'basic_complete') {
+          isOnboarded = true;
+        }
+        if (!isOnboarded) {
+          console.log('❌ Onboarding not completed for user_role:', profile.user_role, 'step:', profile.onboarding_step);
           const redirectPath = profile.user_role === 'agent' 
             ? `${base}/AgentOnboarding` 
             : `${base}/InvestorOnboarding`;
