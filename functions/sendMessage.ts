@@ -103,8 +103,8 @@ Deno.serve(async (req) => {
  * Detect contact information in message text
  * Returns array of violation types
  */
-function detectContactInfo(text: string): string[] {
-  const violations: string[] = [];
+function detectContactInfo(text) {
+  const violations = [];
   
   // Email pattern
   const emailPattern = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
