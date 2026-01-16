@@ -43,7 +43,17 @@ Deno.serve(async (req) => {
     if (room.investorId !== profile.id && room.agentId !== profile.id) {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
-    
+
+    // Basic per-user rate limit: 1.5s between messages in the same room
+    const lastMsgs = await base44.asServiceRole.entities.Message.filter({ room_id, sender_profile_id: profile.id }, '-created_date', 1);
+    const lastMsg = lastMsgs?.[0];
+    if (lastMsg) {
+      const lastTs = new Date(lastMsg.created_date).getTime();
+      if (!Number.isNaN(lastTs) && (Date.now() - lastTs) < 1500) {
+        return Response.json({ error: 'Rate limit exceeded: please wait a moment before sending another message.' }, { status: 429 });
+      }
+    }
+
     // Check if agreement is fully signed (anti-circumvention enforcement)
     let isFullySigned = false;
     if (room.deal_id) {
@@ -59,7 +69,7 @@ Deno.serve(async (req) => {
     
     // Pre-signature: block contact info exchange
     if (!isFullySigned) {
-      const violations = detectContactInfo(body);
+      const violations = detectContactInfo(bodyTrimmed);
       
       if (violations.length > 0) {
         // Log blocked attempt

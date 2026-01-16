@@ -273,6 +273,7 @@ export default function Room() {
   const [dealAppts, setDealAppts] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
+  const lastSentRef = useRef(0);
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
@@ -899,6 +900,13 @@ export default function Room() {
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
+    // Client-side throttle: 1.5s between sends
+    const now = Date.now();
+    if (now - (lastSentRef.current || 0) < 1500) {
+      toast.error('Please wait a moment before sending another message.');
+      return;
+    }
+    lastSentRef.current = now;
     setText("");
     setSending(true);
     
@@ -948,8 +956,13 @@ export default function Room() {
       setItems(prev => prev.filter(m => m.id !== tempId));
     } catch (error) {
       console.error('Failed to send message:', error);
+      const status = (error && error.response && error.response.status) || error?.status;
       const serverMsg = (error && error.response && error.response.data && error.response.data.error) || (error && error.data && error.data.error);
-      toast.error(`Failed to send: ${serverMsg || error.message}`);
+      if (status === 429 || /rate limit/i.test(serverMsg || '')) {
+        toast.error('You are sending messages too quickly. Please wait a moment and try again.');
+      } else {
+        toast.error(`Failed to send: ${serverMsg || error.message}`);
+      }
       setItems(prev => prev.filter(m => m.id !== tempId));
     } finally { 
       setSending(false);
