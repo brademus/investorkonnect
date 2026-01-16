@@ -2,19 +2,13 @@ import React, { useState } from 'react';
 import { X, Play, BookOpen, Video, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function HelpPanel() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function HelpPanel({ open, onOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = typeof open === 'boolean' ? open : internalOpen;
+  const setOpen = onOpenChange || setInternalOpen;
 
   return (
     <>
-      {/* Floating Help Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-[#60A5FA] hover:bg-[#3B82F6] rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110"
-        title="Help & Tutorials"
-      >
-        <HelpCircle className="w-6 h-6 text-white" />
-      </button>
 
       {/* Slide-out Panel */}
       {isOpen && (
@@ -22,7 +16,7 @@ export default function HelpPanel() {
           {/* Backdrop */}
           <div
             className="fixed inset-0 bg-black/50 z-50 backdrop-blur-sm"
-            onClick={() => setIsOpen(false)}
+            onClick={() => setOpen(false)}
           />
 
           {/* Panel */}
@@ -34,7 +28,7 @@ export default function HelpPanel() {
                 <p className="text-sm text-[#808080] mt-1">Learn how to use the platform</p>
               </div>
               <button
-                onClick={() => setIsOpen(false)}
+                onClick={() => setOpen(false)}
                 className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-[#1F1F1F] transition-colors"
               >
                 <X className="w-5 h-5 text-[#808080]" />

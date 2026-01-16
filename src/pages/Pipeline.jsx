@@ -22,6 +22,7 @@ import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
+import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 
 function PipelineContent() {
@@ -31,6 +32,7 @@ function PipelineContent() {
   const triedEnsureProfileRef = useRef(false);
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
@@ -653,37 +655,6 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button 
-                  onClick={handleDedup}
-                  variant="outline"
-                  size="sm"
-                  disabled={deduplicating}
-                  className="text-xs"
-                >
-                  {deduplicating ? 'Checking...' : 'Fix Duplicates'}
-                </Button>
-                <Button 
-                  onClick={async () => {
-                    if (!confirm("⚠️ WARNING: This will permanently delete ALL your deals, rooms, and messages. This action cannot be undone!\n\nAre you absolutely sure?")) {
-                      return;
-                    }
-                    try {
-                      const result = await base44.functions.invoke('deleteAllDeals', {
-                        profileId: profile.id
-                      });
-                      toast.success("All deals deleted successfully!");
-                      window.location.reload();
-                    } catch (error) {
-                      console.error("Failed to delete deals:", error);
-                      toast.error("Failed to delete deals");
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs border-red-500/50 text-red-400 hover:bg-red-500/10"
-                >
-                  Delete All Deals
-                </Button>
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
@@ -695,6 +666,14 @@ function PipelineContent() {
                     <Plus className="w-4 h-4 mr-2" /> New Deal
                   </Button>
                 )}
+                <Button 
+                  onClick={() => setHelpOpen(true)}
+                  variant="outline"
+                  size="sm"
+                  className="text-xs"
+                >
+                  Tutorials
+                </Button>
               </div>
             </div>
 
@@ -842,6 +821,7 @@ function PipelineContent() {
           </div>
         </div>
       </div>
+      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} />
     </>
   );
 }
