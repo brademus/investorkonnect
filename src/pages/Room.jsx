@@ -1175,7 +1175,7 @@ ${dealContext}`;
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {profile?.user_role === 'investor' && (roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id) && (
+            {false && (
               <Button
                 onClick={() => {
                   const agentId = roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
