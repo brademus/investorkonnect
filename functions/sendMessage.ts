@@ -14,8 +14,9 @@ Deno.serve(async (req) => {
     }
     
     const { room_id, body } = await req.json();
+    const bodyTrimmed = (typeof body === 'string' ? body.trim() : '');
     
-    if (!room_id || !body) {
+    if (!room_id || !bodyTrimmed) {
       return Response.json({ error: 'room_id and body required' }, { status: 400 });
     }
     
@@ -27,10 +28,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     
-    // Get room to check agreement status
-    const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-    const room = rooms?.[0];
-
+    // Get room to check agreement status (robust - catch invalid id formats)
+    let room = null;
+    try {
+      room = await base44.asServiceRole.entities.Room.get(room_id);
+    } catch (_) {
+      return Response.json({ error: 'Room not found' }, { status: 404 });
+    }
     if (!room) {
       return Response.json({ error: 'Room not found' }, { status: 404 });
     }
@@ -85,7 +89,7 @@ Deno.serve(async (req) => {
     const message = await base44.asServiceRole.entities.Message.create({
       room_id,
       sender_profile_id: profile.id,
-      body
+      body: bodyTrimmed
     });
     
     return Response.json({ ok: true, message });
