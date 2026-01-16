@@ -58,7 +58,8 @@ Deno.serve(async (req) => {
     }
 
     // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
-    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
+    // Only enforce gating if explicitly enabled
+    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') === 'true';
     
     let userId = null;
     let userEmail = null;
@@ -131,7 +132,7 @@ Deno.serve(async (req) => {
     // All checks passed - create Stripe session
     // FIXED: Use /BillingSuccess (matches page filename) instead of /billing/success
     const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
-    const cancel = `${base}/pricing?cancelled=true`;
+    const cancel = `${base}/Pricing?cancelled=true`;
     
     console.log('Success URL:', success);
     console.log('Cancel URL:', cancel);
