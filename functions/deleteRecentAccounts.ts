@@ -37,19 +37,19 @@ Deno.serve(async (req) => {
       const deals = Array.from(dealsMap.values());
 
       for (const deal of deals) {
-        // Delete payments (schedules + milestones)
-        try {
-          const schedules = await base44.asServiceRole.entities.PaymentSchedule.filter({ deal_id: deal.id });
-          for (const s of schedules) {
-            try { await base44.asServiceRole.entities.PaymentSchedule.delete(s.id); report.deleted.payments.schedules++; } catch (e) { report.errors.push(`PaymentSchedule ${s.id} delete failed: ${e?.message || e}`); }
-          }
-        } catch (e) { report.errors.push(`List PaymentSchedule failed for deal ${deal.id}: ${e?.message || e}`); }
+        // Delete payments (milestones first, then schedules)
         try {
           const milestones = await base44.asServiceRole.entities.PaymentMilestone.filter({ deal_id: deal.id });
           for (const m of milestones) {
             try { await base44.asServiceRole.entities.PaymentMilestone.delete(m.id); report.deleted.payments.milestones++; } catch (e) { report.errors.push(`PaymentMilestone ${m.id} delete failed: ${e?.message || e}`); }
           }
         } catch (e) { report.errors.push(`List PaymentMilestone failed for deal ${deal.id}: ${e?.message || e}`); }
+        try {
+          const schedules = await base44.asServiceRole.entities.PaymentSchedule.filter({ deal_id: deal.id });
+          for (const s of schedules) {
+            try { await base44.asServiceRole.entities.PaymentSchedule.delete(s.id); report.deleted.payments.schedules++; } catch (e) { report.errors.push(`PaymentSchedule ${s.id} delete failed: ${e?.message || e}`); }
+          }
+        } catch (e) { report.errors.push(`List PaymentSchedule failed for deal ${deal.id}: ${e?.message || e}`); }
 
         // Delete appointments
         try {
