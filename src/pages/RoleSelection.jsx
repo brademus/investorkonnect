@@ -135,10 +135,10 @@ export default function RoleSelection() {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-[#E3C567] mb-4">
-            How will you use Investor Konnect?
+            WELCOME TO INVESTOR KONNECT
           </h1>
           <p className="text-lg text-[#808080]">
-            Choose your role to get started
+            Pick how you want to get started.
           </p>
         </div>
 
@@ -155,24 +155,24 @@ export default function RoleSelection() {
           >
             <div className="w-14 h-14 rounded-full bg-[#E3C567]/20 flex items-center justify-center mb-6 text-2xl">📈</div>
             
-            <h2 className="text-2xl font-bold text-[#E3C567] mb-3">I'm an Investor</h2>
+            <h2 className="text-2xl font-bold text-[#E3C567] mb-3">I’M AN INVESTOR</h2>
             
             <p className="text-[#808080] mb-6">
-              Looking to find verified, investor-friendly agents to help me identify and close deals
+              Create deals, upload and verify contracts, and lock in with investor-focused agents.
             </p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
-                <span>Browse verified agent profiles</span>
+                <span>Create and manage deals</span>
               </li>
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
-                <span>Get matched with top agents</span>
+                <span>Verify seller contracts</span>
               </li>
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#E3C567] flex-shrink-0 mt-0.5" />
-                <span>Secure deal rooms with NDA</span>
+                <span>Sign & lock in with DocuSign</span>
               </li>
             </ul>
 
@@ -183,7 +183,7 @@ export default function RoleSelection() {
                   Setting up...
                 </>
               ) : (
-                'Select Investor →'
+                'Get Started as Investor →'
               )}
             </div>
           </button>
@@ -198,24 +198,24 @@ export default function RoleSelection() {
           >
             <div className="w-14 h-14 rounded-full bg-[#34D399]/20 flex items-center justify-center mb-6 text-2xl">👥</div>
             
-            <h2 className="text-2xl font-bold text-[#34D399] mb-3">I'm an Agent</h2>
+            <h2 className="text-2xl font-bold text-[#34D399] mb-3">I’M AN AGENT</h2>
             
             <p className="text-[#808080] mb-6">
-              Join a selective network of investor-focused agents and connect with serious buyers
+              Work with serious investors, sign internal agreements, and manage deal milestones in one place.
             </p>
 
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
-                <span>Access pre-qualified investors</span>
+                <span>Qualified investor deal rooms</span>
               </li>
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
-                <span>Build verified reputation</span>
+                <span>Clear deal board + documents</span>
               </li>
               <li className="flex items-start gap-3 text-[#FAFAFA]">
                 <CheckCircle className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
-                <span>Free membership always</span>
+                <span>Secure lock-in before access</span>
               </li>
             </ul>
 
@@ -226,7 +226,7 @@ export default function RoleSelection() {
                   Setting up...
                 </>
               ) : (
-                'Select Agent →'
+                'Get Started as Agent →'
               )}
             </div>
           </button>

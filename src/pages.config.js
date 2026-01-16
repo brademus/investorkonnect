@@ -27,6 +27,7 @@ import Cookies from './pages/Cookies';
 import Dashboard from './pages/Dashboard';
 import DealRequest from './pages/DealRequest';
 import DealWizard from './pages/DealWizard';
+import DeleteRecentAccounts from './pages/DeleteRecentAccounts';
 import DemoDiagnostics from './pages/DemoDiagnostics';
 import DocuSignReturn from './pages/DocuSignReturn';
 import FAQ from './pages/FAQ';
@@ -71,7 +72,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import DeleteRecentAccounts from './pages/DeleteRecentAccounts';
 import __Layout from './Layout.jsx';
 
 
@@ -105,6 +105,7 @@ export const PAGES = {
     "Dashboard": Dashboard,
     "DealRequest": DealRequest,
     "DealWizard": DealWizard,
+    "DeleteRecentAccounts": DeleteRecentAccounts,
     "DemoDiagnostics": DemoDiagnostics,
     "DocuSignReturn": DocuSignReturn,
     "FAQ": FAQ,
@@ -149,7 +150,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "DeleteRecentAccounts": DeleteRecentAccounts,
 }
 
 export const pagesConfig = {

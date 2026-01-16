@@ -59,16 +59,12 @@ export default function InvestorLanding() {
 
           {/* Headline */}
           <h1 className="text-5xl md:text-6xl font-light text-[#FAFAFA] mb-6 leading-tight tracking-wide">
-            Connect with agents who{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-[#E3C567]">speak your language</span>
-            </span>
+            Work with investor-ready agents in your market.
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg text-[#808080] mb-10 max-w-2xl mx-auto">
-            Stop wasting time explaining cap rates and BRRRR to residential agents. 
-            Find vetted investor-friendly agents in your target market instantly.
+            Stop re-explaining your strategy. Upload a contract, verify key terms, and lock in with the right agent—fast.
           </p>
 
           {/* CTA Button */}
@@ -85,15 +81,15 @@ export default function InvestorLanding() {
           <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>Vetted Agents</span>
+              <span>Verified contracts & clean deal rooms</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>Deal Pipeline Management</span>
+              <span>DocuSign lock-in with gated info</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle className="w-5 h-5 text-[#E3C567]" />
-              <span>Off-Market Access</span>
+              <span>Deal board for documents + milestones</span>
             </div>
           </div>
 
@@ -114,34 +110,34 @@ export default function InvestorLanding() {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-[#FAFAFA] text-center mb-12">
-            Everything you need to scale your portfolio
+            Everything you need to run deals end-to-end.
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Shield className="w-6 h-6 text-[#E3C567]" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Vetted Agents</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Investor-Ready Agents</h3>
               <p className="text-[#808080]">
-                Work with agents who understand investor metrics, have proven track records, and specialize in your market.
+                Match with agents who understand investment deals and can move quickly in your target market.
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <TrendingUp className="w-6 h-6 text-[#E3C567]" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Management</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Board + File Hub</h3>
               <p className="text-[#808080]">
-                Track all your deals in one place with our visual pipeline, secure document storage, and built-in chat.
+                Keep contracts, signed agreements, and deal updates organized in one place—no messy email threads.
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <MapPin className="w-6 h-6 text-[#E3C567]" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Market Intelligence</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Protected Until Lock-In</h3>
               <p className="text-[#808080]">
-                Get access to off-market deals, local market insights, and exclusive opportunities from connected agents.
+                Sensitive details stay gated until both parties sign the internal agreement—then everything unlocks.
               </p>
             </div>
           </div>

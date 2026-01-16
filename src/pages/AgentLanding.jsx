@@ -70,17 +70,12 @@ export default function AgentLanding() {
 
           {/* Headline */}
           <h1 className="text-5xl md:text-6xl font-light text-[#FAFAFA] mb-6 leading-tight tracking-wide">
-            Build your{" "}
-            <span className="relative inline-block">
-              <span className="relative z-10 text-[#E3C567]">investment property</span>
-            </span>
-            {" "}practice
+            Win more investor clients—and manage every deal in one place.
           </h1>
 
           {/* Subheadline */}
           <p className="text-lg text-[#808080] mb-10 max-w-2xl mx-auto">
-            Get matched with serious investors looking for agents who understand their business. 
-            Showcase your expertise and grow your book of investment clients.
+            Get connected to serious investors, keep contracts organized, and use a clean deal board to move deals forward.
           </p>
 
           {/* CTA Button */}
@@ -97,15 +92,15 @@ export default function AgentLanding() {
           <div className="flex flex-wrap justify-center gap-6 text-sm text-[#808080]">
             <div className="flex items-center gap-2">
               <CheckCircle size={20} color="#E3C567" />
-              <span>Qualified Investor Leads</span>
+              <span>Investor deal rooms</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle size={20} color="#E3C567" />
-              <span>Deal Management Tools</span>
+              <span>Documents + milestones in the deal board</span>
             </div>
             <div className="flex items-center gap-2">
               <CheckCircle size={20} color="#E3C567" />
-              <span>Smart Matching</span>
+              <span>Secure lock-in before full access</span>
             </div>
           </div>
         </div>
@@ -115,14 +110,14 @@ export default function AgentLanding() {
       <section className="py-16 px-4">
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-[#FAFAFA] text-center mb-12">
-            Why investor-focused agents choose us
+            Why agents use Investor Konnect
           </h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Users size={24} color="#E3C567" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Qualified Investors</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Serious Investors</h3>
               <p className="text-[#808080]">
                 Connect with serious investors who understand the game. No more explaining basic metrics—work with clients who respect your expertise.
               </p>
@@ -131,18 +126,18 @@ export default function AgentLanding() {
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Briefcase size={24} color="#E3C567" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Deal Management</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Clean Deal Management</h3>
               <p className="text-[#808080]">
-                Manage multiple investment deals in one place. Track pipeline stages, share documents securely, and communicate efficiently.
+                Everything tied to the deal—contracts, signatures, updates, walkthrough/inspection scheduling—stays organized.
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
               <div className="w-12 h-12 bg-[#E3C567]/10 rounded-full flex items-center justify-center mb-4">
                 <Award size={24} color="#E3C567" />
               </div>
-              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Showcase Your Track Record</h3>
+              <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Lock-In Clarity</h3>
               <p className="text-[#808080]">
-                Build your profile with investor-specific credentials, past deals, and specialties. Get matched with investors looking for your exact expertise.
+                Internal agreement signing creates clear commitment—then the deal board unlocks what both sides need.
               </p>
             </div>
           </div>
