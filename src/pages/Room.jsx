@@ -1079,14 +1079,12 @@ ${dealContext}`;
        if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
 
 
-        // Agent account: show investor-signed requests as soon as investor signs (requested/accepted/signed)
+        // Agent account: show all own deal rooms (requested/accepted/signed)
         if (isAgent) {
           if (!r.deal_id) return; // must be attached to a deal
           if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
-          const status = r.agreement_status;
-          const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-          const validStatus = r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed';
-          if (!investorSigned || !validStatus) return;
+          const validStatus = !r.request_status || r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed';
+          if (!validStatus) return;
         }
 
         // Investor account: show own pipeline orphans and any agent-selected rooms (requested/accepted/signed)
