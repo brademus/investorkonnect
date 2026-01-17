@@ -1938,11 +1938,22 @@ ${dealContext}`;
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
-                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
-                                ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
-                                : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
-                            </p>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-md font-semibold text-[#FAFAFA]">
+                                {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
+                                  ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
+                                  : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
+                              </p>
+                              {profile?.user_role === 'agent' && (
+                                <Button size="sm" variant="outline" className="rounded-full text-xs" onClick={() => {
+                                  const t = (deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) || 'percentage';
+                                  const amt = t === 'percentage' ? (deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage) : (deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee);
+                                  setCounterType(t);
+                                  setCounterAmount(String(amt || ''));
+                                  setCounterOpen(true);
+                                }}>Counter</Button>
+                              )}
+                            </div>
                           </div>
                         </div>
                       )}
