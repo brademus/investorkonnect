@@ -448,17 +448,20 @@ export default function Room() {
     } catch (_) {}
   };
   
-  // CRITICAL: Reload after DocuSign return with signed=1
+  // CRITICAL: Reload after DocuSign return with signed=1 and flip room flags
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') && roomId && currentRoom?.deal_id) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
-      
+
       const doSync = async () => {
         try {
-          await base44.functions.invoke('docusignSyncEnvelope', {
-            deal_id: currentRoom.deal_id
-          });
+          const syncRes = await base44.functions.invoke('docusignSyncEnvelope', { deal_id: currentRoom.deal_id });
+          // If fully signed, mark room accordingly to unlock UI immediately
+          const ag = (await base44.functions.invoke('getLegalAgreement', { deal_id: currentRoom.deal_id })).data?.agreement;
+          if (ag?.status === 'fully_signed') {
+            try { await base44.entities.Room.update(roomId, { agreement_status: 'fully_signed', request_status: 'signed', signed_at: new Date().toISOString(), is_fully_signed: true }); } catch (_) {}
+          }
           await refreshRoomState();
           queryClient.invalidateQueries({ queryKey: ['rooms'] });
           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
@@ -467,7 +470,7 @@ export default function Room() {
           await refreshRoomState();
         }
       };
-      
+
       doSync();
       setTimeout(doSync, 1000);
       setTimeout(doSync, 2500);
