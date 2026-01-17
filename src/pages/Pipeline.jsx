@@ -603,10 +603,10 @@ function PipelineContent() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pendingRequests.map((room) => (
-                    <div 
-                      key={room.id}
-                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
-                    >
+                   <div 
+                     key={`${room.deal_id}-${room.id}`}
+                     className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
+                   >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
