@@ -165,7 +165,7 @@ export default function AgentMatching() {
       }
 
       // Check for existing room with this specific agent
-      const existingRoomWithAgent = allRoomsForDeal.find(r => r.agentId === agentProfile.id);
+      const existingRoomWithAgent = allRoomsForDeal.find(r => r.agentId === agentProfile.id && r.request_status !== 'rejected');
 
       let room;
       if (existingRoomWithAgent) {
@@ -258,10 +258,10 @@ export default function AgentMatching() {
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-12 text-center">
             <p className="text-[#808080] mb-4">No agents available in {deal?.state} yet</p>
             <Button
-              onClick={() => navigate(createPageUrl("Pipeline"))}
+              onClick={() => navigate(`${createPageUrl("ContractVerify")}?dealId=${deal?.id || dealId}`)}
               className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
             >
-              Return to Pipeline
+              Back to Verification
             </Button>
           </div>
         ) : (
