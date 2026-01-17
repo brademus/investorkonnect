@@ -64,13 +64,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid agent' }, { status: 400 });
     }
 
-    // Create room with status=requested
+    // Determine agreement status based on LegalAgreement (investor must have signed)
+    let agreement_status = 'draft';
+    try {
+      const agList = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+      const ag = agList?.[0];
+      const investorSigned = !!(ag?.investor_signed_at || ag?.status === 'investor_signed' || ag?.status === 'attorney_review_pending' || ag?.status === 'fully_signed');
+      if (investorSigned) agreement_status = 'investor_signed';
+    } catch (_) {}
+
+    // Create room with status=requested and propagate agreement_status for sidebar visibility
     const room = await base44.asServiceRole.entities.Room.create({
       deal_id,
       investorId: investorProfile.id,
       agentId: agent_profile_id,
       request_status: 'requested',
       requested_at: new Date().toISOString(),
+      agreement_status,
       title: deal.title,
       city: deal.city,
       state: deal.state,

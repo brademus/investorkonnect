@@ -1089,7 +1089,7 @@ ${dealContext}`;
           if (!investorSigned || !validStatus) return;
         }
 
-        // Investor account: include pipeline-only deals (orphans) OR signed+agent-selected rooms
+        // Investor account: include pipeline-only deals (orphans) OR signed + agent-selected rooms (requested/accepted/signed)
         if (!isAgent && myId) {
           if (!r.deal_id) return; // must be attached to a deal
           // Must be this investor's deal/room when IDs are present
@@ -1099,7 +1099,7 @@ ${dealContext}`;
           } else {
             const status = r.agreement_status;
             const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-            const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
+            const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed');
             if (!investorSigned || !agentSelected) return;
           }
         }

@@ -94,7 +94,7 @@ export function useRooms() {
         // Filter invalid/legacy rooms defensively (must have a deal). Allow pipeline-only "orphan" entries for investors.
         const safeRooms = rooms.filter(r => r && r.deal_id && (r.is_orphan || (r.agentId && r.investorId)));
         
-        console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
+        // console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
         
         try {
           // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
