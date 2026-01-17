@@ -250,7 +250,7 @@ function PipelineContent() {
       const lockedDeals = new Set();
       roomsByDeal.forEach(rows => {
         (rows || []).forEach(rr => {
-          if (rr?.request_status === 'accepted' || rr?.request_status === 'signed') {
+          if (rr?.request_status === 'accepted' || rr?.request_status === 'signed' || rr?.agreement_status === 'fully_signed') {
             lockedDeals.add(rr.deal_id);
           }
         });
