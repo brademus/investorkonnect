@@ -211,22 +211,12 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      // Only show rooms where investor has already signed the agreement (agent review/sign stage)
-      const requested = allRooms.filter(r => (
-        r.request_status === 'requested' ||
+      // Show rooms with requested status OR old pending_agent_review status (migration fallback)
+      return allRooms.filter(r => 
+        r.request_status === 'requested' || 
         r.deal_status === 'pending_agent_review' ||
-        (!r.request_status && !r.deal_status)
-      ));
-      const visible = await Promise.all(requested.map(async (r) => {
-        try {
-          if (!r?.deal_id) return null;
-          const res = await base44.functions.invoke('getLegalAgreement', { deal_id: r.deal_id });
-          const ag = res?.data?.agreement;
-          if (ag && ag.investor_signed_at && !ag.agent_signed_at) return r;
-          return null;
-        } catch { return null; }
-      }));
-      return visible.filter(Boolean);
+        (!r.request_status && !r.deal_status) // New rooms without status
+      );
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
@@ -551,7 +541,7 @@ function PipelineContent() {
                         </span>
                       </div>
                       <Button
-                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&open=agreement`)}
+                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}`)}
                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
                       >
                         Review Request

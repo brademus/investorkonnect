@@ -204,7 +204,7 @@ export default function AgentMatching() {
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Deal request sent to ${_first}`);
       setTimeout(() => {
-        navigate(`${createPageUrl("Room")}?roomId=${room.id}&open=agreement`);
+        navigate(createPageUrl("Pipeline"));
       }, 500);
 
     } catch (error) {

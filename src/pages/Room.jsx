@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ContractWizard from "@/components/ContractWizard";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LoadingAnimation from "@/components/LoadingAnimation";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
@@ -28,7 +27,6 @@ import {
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
-import DealCompCounterPanel from "@/components/DealCompCounterPanel";
 import { toast } from "sonner";
 
 // Privacy helper: should we mask address for the current viewer?
@@ -248,14 +246,10 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
 });
 
 export default function Room() {
-  const [counterOpen, setCounterOpen] = useState(false);
-  const [counterType, setCounterType] = useState('percentage');
-  const [counterAmount, setCounterAmount] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
-  const dealIdParam = params.get("dealId");
   const { profile } = useCurrentProfile();
   const { rooms } = useMyRooms();
   const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
@@ -266,8 +260,8 @@ export default function Room() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showEscrow, setShowEscrow] = useState(false);
   const [searchConversations, setSearchConversations] = useState("");
-  const [showBoard, setShowBoard] = useState(true);
-  const [activeTab, setActiveTab] = useState((new URLSearchParams(window.location.search).get('open') === 'agreement') ? 'agreement' : 'details');
+  const [showBoard, setShowBoard] = useState(false);
+  const [activeTab, setActiveTab] = useState('details');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -331,15 +325,7 @@ export default function Room() {
           deal?.docusign_pdf_url
         ]);
 
-        // Auto-route to Agreement and gate chat until fully signed
-  useEffect(() => {
-    if (!isWorkingTogether) {
-      setShowBoard(true);
-      setActiveTab('agreement');
-    }
-  }, [isWorkingTogether]);
-
-  // Treat unknown role as agent for privacy until profile loads
+        // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
 
         // Mask address for agents until fully signed
@@ -1219,11 +1205,6 @@ ${dealContext}`;
                       setShowBoard(true);
                       setBoardLoading(false);
                     } else {
-                      if (!isWorkingTogether) {
-                        toast.info('Chat unlocks after both parties sign the agreement.');
-                        setShowBoard(true);
-                        return;
-                      }
                       setShowBoard(false);
                     }
                   }}
@@ -1943,22 +1924,11 @@ ${dealContext}`;
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-md font-semibold text-[#FAFAFA]">
-                                {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
-                                  ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
-                                  : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
-                              </p>
-                              {profile?.user_role === 'agent' && (
-                                <Button size="sm" variant="outline" className="rounded-full text-xs" onClick={() => {
-                                  const t = (deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) || 'percentage';
-                                  const amt = t === 'percentage' ? (deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage) : (deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee);
-                                  setCounterType(t);
-                                  setCounterAmount(String(amt || ''));
-                                  setCounterOpen(true);
-                                }}>Counter</Button>
-                              )}
-                            </div>
+                            <p className="text-md font-semibold text-[#FAFAFA] mt-1">
+                              {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
+                                ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
+                                : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
+                            </p>
                           </div>
                         </div>
                       )}
@@ -2323,15 +2293,63 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              {/* Pre-lock note: chat hidden until both parties sign */}
-              {!isWorkingTogether && (
+              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
+              {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-3 mb-4">
                     <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-md font-bold text-[#F59E0B] mb-1">Chat unlocks after both parties sign the agreement.</h3>
-                      <Button size="sm" className="mt-2 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full" onClick={() => setActiveTab('agreement')}>Go to My Agreement</Button>
+                    <div className="flex-1">
+                      <h3 className="text-md font-bold text-[#F59E0B] mb-1">
+                        New Deal Request - Review & Discuss
+                      </h3>
+                      <p className="text-sm text-[#FAFAFA]/80">
+                        Chat with the investor to discuss this deal. You're viewing limited info (city/state/price). Accept to unlock more details, or decline if not interested.
+                      </p>
                     </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={async () => {
+                        try {
+                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                            roomId: roomId,
+                            action: 'accept'
+                          });
+                          if (response.data?.success) {
+                            toast.success("Deal accepted! More details now visible.");
+                            queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                            queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                            window.location.reload();
+                          }
+                        } catch (error) {
+                          toast.error("Failed to accept deal");
+                        }
+                      }}
+                      className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full font-semibold"
+                    >
+                      Accept Deal
+                    </Button>
+                    <Button
+                      onClick={async () => {
+                        if (!confirm("Are you sure you want to decline this deal request?")) return;
+                        try {
+                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
+                            roomId: roomId,
+                            action: 'reject'
+                          });
+                          if (response.data?.success) {
+                            toast.success("Deal declined");
+                            navigate(createPageUrl("Pipeline"));
+                          }
+                        } catch (error) {
+                          toast.error("Failed to decline deal");
+                        }
+                      }}
+                      variant="outline"
+                      className="flex-1 border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444]/10 rounded-full font-semibold"
+                    >
+                      Decline
+                    </Button>
                   </div>
                 </div>
               )}
@@ -2487,7 +2505,6 @@ ${dealContext}`;
         </div>
 
         {/* Message Input Area - STAYS AT BOTTOM */}
-        {isWorkingTogether && (
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
           <div className="flex items-center gap-2">
               {/* Upload Photo Button */}
@@ -2665,7 +2682,6 @@ ${dealContext}`;
               </div>
               </div>
       </div>
-        )}
 
       <ContractWizard 
         roomId={roomId} 
