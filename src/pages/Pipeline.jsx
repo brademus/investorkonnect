@@ -224,11 +224,25 @@ function PipelineContent() {
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      // Show rooms with requested status OR old pending_agent_review status (migration fallback)
-      return allRooms.filter(r => 
-        r.request_status === 'requested' || 
-        r.deal_status === 'pending_agent_review' ||
-        (!r.request_status && !r.deal_status) // New rooms without status
+      // Only VALID, non-orphan, request-status rooms for this agent; dedupe by deal_id
+      const candidates = (allRooms || []).filter(r =>
+        r &&
+        r.agentId === profile.id &&
+        r.deal_id &&
+        r.investorId &&
+        !r.is_orphan &&
+        r.request_status === 'requested' &&
+        r.request_status !== 'rejected'
+      );
+      const byDeal = new Map();
+      for (const r of candidates) {
+        const prev = byDeal.get(r.deal_id);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) byDeal.set(r.deal_id, r);
+      }
+      return Array.from(byDeal.values()).sort((a, b) =>
+        new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
       );
     },
     enabled: !!profile?.id && isAgent,
