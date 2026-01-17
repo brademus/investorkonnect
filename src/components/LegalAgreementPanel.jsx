@@ -761,6 +761,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       )}
       
       </CardContent>
+      </CardContent>
       {/* Generate Modal */}
       <Dialog open={showGenerateModal} onOpenChange={handleCloseGenerateModal}>
         <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F]">
