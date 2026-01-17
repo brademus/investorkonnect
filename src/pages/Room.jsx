@@ -261,8 +261,8 @@ export default function Room() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [showEscrow, setShowEscrow] = useState(false);
   const [searchConversations, setSearchConversations] = useState("");
-  const [showBoard, setShowBoard] = useState(false);
-  const [activeTab, setActiveTab] = useState('details');
+  const [showBoard, setShowBoard] = useState(true);
+  const [activeTab, setActiveTab] = useState((new URLSearchParams(window.location.search).get('open') === 'agreement') ? 'agreement' : 'details');
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
