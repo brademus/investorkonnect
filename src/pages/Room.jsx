@@ -1078,7 +1078,6 @@ ${dealContext}`;
        if (!r) return;
        if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
 
-
         // Agent account: show all own deal rooms (requested/accepted/signed)
         if (isAgent) {
           if (!r.deal_id) return; // must be attached to a deal
