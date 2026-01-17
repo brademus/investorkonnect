@@ -551,7 +551,7 @@ function PipelineContent() {
                         </span>
                       </div>
                       <Button
-                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}`)}
+                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&open=agreement`)}
                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
                       >
                         Review Request
