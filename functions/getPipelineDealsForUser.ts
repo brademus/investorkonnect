@@ -137,6 +137,12 @@ Deno.serve(async (req) => {
       // Get LegalAgreement status (source of truth for gating)
       const agreement = agreementsMap.get(deal.id);
       const investorSigned = !!agreement?.investor_signed_at;
+      const agentSigned = !!agreement?.agent_signed_at ||
+                          agreement?.status === 'agent_signed' ||
+                          agreement?.status === 'fully_signed' ||
+                          agreement?.status === 'attorney_review_pending' ||
+                          room?.agreement_status === 'fully_signed' ||
+                          room?.request_status === 'signed';
       const isFullySigned = agreement?.status === 'fully_signed' || 
                            agreement?.status === 'attorney_review_pending' ||
                            room?.agreement_status === 'fully_signed' || 
@@ -144,8 +150,8 @@ Deno.serve(async (req) => {
 
       // VISIBILITY GATING
       // - Investors: only see deals after THEY have signed (investorSigned)
-      // - Agents: only see deals after investor has signed (investorSigned)
-      if ((isInvestor && !investorSigned) || (isAgent && !investorSigned)) {
+      // - Agents: only see deals after THE AGENT has signed (agentSigned)
+      if ((isInvestor && !investorSigned) || (isAgent && !agentSigned)) {
         return null; // filtered out later
       }
 
