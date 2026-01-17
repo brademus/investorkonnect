@@ -29,7 +29,7 @@ export default function About() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2]">
+    <div className="min-h-screen">
       {/* Hero */}
       <section className="bg-gradient-to-br from-[#111827] via-[#1F2937] to-[#D3A029]/80 text-white py-20">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
@@ -43,31 +43,31 @@ export default function About() {
       {/* Mission */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-[#111827] mb-6 text-center">Our Mission</h2>
-          <p className="text-lg text-[#4B5563] leading-relaxed mb-6">
+          <h2 className="text-3xl font-bold text-[#FAFAFA] mb-6 text-center">Our Mission</h2>
+          <p className="text-lg text-[#D1D5DB] leading-relaxed mb-6">
             Real estate investing shouldn't require blind trust. Yet too often, investors work with agents who prioritize commissions over client interests, share confidential deal information, or provide misleading market analysis.
           </p>
-          <p className="text-lg text-[#4B5563] leading-relaxed mb-6">
+          <p className="text-lg text-[#D1D5DB] leading-relaxed mb-6">
             Investor Konnect was founded to solve this problem. We combine rigorous agent vetting, platform-verified reviews, and NDA-protected deal rooms to create a network where trust isn't assumed — it's engineered.
           </p>
-          <p className="text-lg text-[#4B5563] leading-relaxed">
+          <p className="text-lg text-[#D1D5DB] leading-relaxed">
             Our goal is simple: make it easy for investors to find agents who will protect their interests, and help those agents build reputations based on real performance, not fake reviews.
           </p>
         </div>
       </section>
 
       {/* Values */}
-      <section className="py-20 bg-[#FAF7F2]">
+      <section className="py-20 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-[#111827] mb-12 text-center">Our Values</h2>
+          <h2 className="text-3xl font-bold text-[#FAFAFA] mb-12 text-center">Our Values</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {values.map((value) => (
-              <div key={value.title} className="rounded-3xl border border-[#E5E7EB] bg-white p-6 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-200">
-                <div className="w-12 h-12 bg-[#FEF3C7] rounded-xl flex items-center justify-center mb-4">
-                  <value.icon className="w-6 h-6 text-[#D3A029]" />
+              <div key={value.title} className="rounded-3xl border border-[#1F1F1F] bg-[#0D0D0D] p-6 shadow-[0_18px_45px_rgba(0,0,0,0.5)] hover:shadow-[0_24px_55px_rgba(227,197,103,0.3)] hover:border-[#E3C567] hover:bg-[#141414] hover:-translate-y-1 transition-all duration-200">
+                <div className="w-12 h-12 bg-[#E3C567]/20 rounded-xl flex items-center justify-center mb-4">
+                  <value.icon className="w-6 h-6 text-[#E3C567]" />
                 </div>
-                <h3 className="text-lg font-bold text-[#111827] mb-3">{value.title}</h3>
-                <p className="text-[#6B7280]">{value.description}</p>
+                <h3 className="text-lg font-bold text-[#FAFAFA] mb-3">{value.title}</h3>
+                <p className="text-[#808080]">{value.description}</p>
               </div>
             ))}
           </div>
@@ -77,8 +77,8 @@ export default function About() {
       {/* Team (Placeholder) */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-[#111827] mb-6">Built by Investors, For Investors</h2>
-          <p className="text-lg text-[#6B7280] max-w-2xl mx-auto mb-12">
+          <h2 className="text-3xl font-bold text-[#FAFAFA] mb-6">Built by Investors, For Investors</h2>
+          <p className="text-lg text-[#808080] max-w-2xl mx-auto mb-12">
             Our team has decades of combined experience in real estate investing, software engineering, and security. We've felt the pain of unreliable agents and built the solution we wish existed.
           </p>
         </div>
