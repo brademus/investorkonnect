@@ -481,7 +481,7 @@ export default function ContractVerify() {
         agreementLength: dealData.agreementLength
       }));
 
-      navigate(createPageUrl("Room") + `?roomId=${(await base44.entities.Room.filter({ deal_id: finalDealId })).find(r => r.investorId === profile.id)?.id || ''}&open=agreement`);
+      navigate(createPageUrl("AgentMatching") + `?dealId=${finalDealId}`);
 
     } catch (error) {
       console.error("Failed to save deal:", error);
