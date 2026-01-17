@@ -262,6 +262,15 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  
+  // Open Agreement tab automatically when tab=agreement is in URL
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('tab') === 'agreement') {
+      setShowBoard(true);
+      setActiveTab('agreement');
+    }
+  }, [roomId, location.search]);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
