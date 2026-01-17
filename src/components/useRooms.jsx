@@ -91,7 +91,10 @@ export function useRooms() {
         const response = await base44.functions.invoke('listMyRoomsEnriched');
         const rooms = response.data?.rooms || [];
         
-        console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side, no N+1)`);
+        // Filter invalid/legacy rooms defensively (must belong to both parties, have a deal, and not be orphaned)
+        const safeRooms = rooms.filter(r => r && r.deal_id && r.agentId && r.investorId && !r.is_orphan);
+        
+        console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
         
         try {
           // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
