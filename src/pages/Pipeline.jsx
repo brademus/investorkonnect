@@ -255,7 +255,18 @@ function PipelineContent() {
           }
         });
       });
-      const finalList = list.filter(r => !lockedDeals.has(r.deal_id));
+      // Validate that the underlying deal exists and is not archived
+      const dealRows = await Promise.all(
+        dealIds.map(id => base44.entities.Deal.filter({ id }))
+      );
+      const validDeals = new Set();
+      dealRows.forEach(rows => {
+        const d = rows && rows[0];
+        if (d && d.status !== 'archived') validDeals.add(d.id);
+      });
+      const finalList = list
+        .filter(r => !lockedDeals.has(r.deal_id))
+        .filter(r => validDeals.has(r.deal_id));
       return finalList.sort((a, b) =>
         new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
       );
