@@ -92,7 +92,7 @@ export function useRooms() {
         const rooms = response.data?.rooms || [];
         
         // Filter invalid/legacy rooms defensively (must have a deal). Allow pipeline-only "orphan" entries for investors.
-        const safeRooms = rooms.filter(r => r && r.deal_id && (r.is_orphan || (r.agentId && r.investorId)));
+        const safeRooms = rooms.filter(r => r && r.deal_id);
         
         // console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
         

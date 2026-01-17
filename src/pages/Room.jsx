@@ -1070,8 +1070,8 @@ ${dealContext}`;
     try {
       const isAgent = profile?.user_role === 'agent';
       const myId = profile?.id;
-      // Dedupe rooms by deal_id for sidebar: show only the most relevant room per deal
-      const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+      // Dedupe rooms by deal_id for sidebar: prioritize signed > accepted > requested, fallback to updated_date
+      const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
       const byDeal = new Map();
       (rooms || []).forEach(r => {
        // Base requirements
@@ -1079,7 +1079,7 @@ ${dealContext}`;
        if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
        if (!isAgent && (!r.counterparty_name || r.counterparty_name === 'Unknown')) return; // Require a valid counterparty label for investors
 
-        // Agent account: show investor-signed requests, including pending acceptance
+        // Agent account: show investor-signed requests as soon as investor signs (requested/accepted/signed)
         if (isAgent) {
           if (!r.deal_id) return; // must be attached to a deal
           if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
