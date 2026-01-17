@@ -241,7 +241,22 @@ function PipelineContent() {
         const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
         if (!prev || tA > tB) byDeal.set(r.deal_id, r);
       }
-      return Array.from(byDeal.values()).sort((a, b) =>
+      // Hide requests for deals that already have an accepted/signed room (by any agent)
+      const list = Array.from(byDeal.values());
+      const dealIds = Array.from(new Set(list.map(r => r.deal_id)));
+      const roomsByDeal = await Promise.all(
+        dealIds.map(id => base44.entities.Room.filter({ deal_id: id }))
+      );
+      const lockedDeals = new Set();
+      roomsByDeal.forEach(rows => {
+        (rows || []).forEach(rr => {
+          if (rr?.request_status === 'accepted' || rr?.request_status === 'signed') {
+            lockedDeals.add(rr.deal_id);
+          }
+        });
+      });
+      const finalList = list.filter(r => !lockedDeals.has(r.deal_id));
+      return finalList.sort((a, b) =>
         new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
       );
     },
