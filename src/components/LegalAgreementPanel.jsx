@@ -409,11 +409,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               Generate Agreement
             </Button>
           ) : (
-            <Button
-              onClick={() => (window.location.href = `${createPageUrl('MyAgreement')}?dealId=${deal?.id || deal?.deal_id}`)}
-              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-              Open My Agreement Page
-            </Button>
+            <p className="text-xs text-[#808080]">Agreement can only be generated during agent selection; this tab is view-only.</p>
           )}
         </div>
       )}
