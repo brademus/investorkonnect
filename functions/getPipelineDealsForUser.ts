@@ -126,7 +126,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Apply role-based redaction
+    // Apply role-based redaction AND visibility gating
     const redactedDeals = deals.map(deal => {
       // Get room for this deal to check signature status
       const rooms = isAgent 
@@ -136,10 +136,18 @@ Deno.serve(async (req) => {
       
       // Get LegalAgreement status (source of truth for gating)
       const agreement = agreementsMap.get(deal.id);
+      const investorSigned = !!agreement?.investor_signed_at;
       const isFullySigned = agreement?.status === 'fully_signed' || 
                            agreement?.status === 'attorney_review_pending' ||
                            room?.agreement_status === 'fully_signed' || 
                            room?.request_status === 'signed';
+
+      // VISIBILITY GATING
+      // - Investors: only see deals after THEY have signed (investorSigned)
+      // - Agents: only see deals after investor has signed (investorSigned)
+      if ((isInvestor && !investorSigned) || (isAgent && !investorSigned)) {
+        return null; // filtered out later
+      }
 
       // Base fields everyone can see
       const baseDeal = {
@@ -184,7 +192,7 @@ Deno.serve(async (req) => {
         notes: null, // Hidden
         special_notes: null // Hidden
       };
-    });
+    }).filter(Boolean);
 
     return Response.json({ 
       deals: redactedDeals,

@@ -203,7 +203,7 @@ export default function AgentMatching() {
 
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Deal request sent to ${_first}`);
-      navigate(`${createPageUrl("Room")}?roomId=${room.id}&tab=agreement`);
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${room.deal_id || deal.id}`);
 
     } catch (error) {
       console.error("Failed to send deal:", error);
