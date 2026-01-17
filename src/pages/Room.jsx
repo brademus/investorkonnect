@@ -247,6 +247,9 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
 });
 
 export default function Room() {
+  const [counterOpen, setCounterOpen] = useState(false);
+  const [counterType, setCounterType] = useState('percentage');
+  const [counterAmount, setCounterAmount] = useState('');
   const navigate = useNavigate();
   const location = useLocation();
   const [params] = useSearchParams();
