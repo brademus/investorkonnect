@@ -1112,14 +1112,14 @@ ${dealContext}`;
       let list = Array.from(byDeal.values());
       if (searchConversations) {
         const q = String(searchConversations || '').toLowerCase();
-        list = list.filter(r => (r?.counterparty_name || '').toLowerCase().includes(q));
+        list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || '')).toLowerCase().includes(q));
       }
       // Sort by updated date desc for stable ordering
       return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
     } catch (e) {
       console.error('[Room] filteredRooms error:', e);
       // Fallback: minimal safe list
-      return Array.isArray(rooms) ? rooms.filter(r => r && r.counterparty_name) : [];
+      return Array.isArray(rooms) ? rooms.filter(r => r && r.deal_id) : [];
     }
   }, [rooms, searchConversations, profile?.user_role, profile?.id]);
 
