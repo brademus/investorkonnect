@@ -739,7 +739,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 value={counterAmount}
                 onChange={(e) => setCounterAmount(e.target.value)}
                 placeholder={counterType === 'percentage' ? 'Enter %' : 'Enter $ amount'}
-                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#999999]"
               />
               <p className="text-xs text-[#808080] mt-1">{counterType === 'percentage' ? 'Example: 3 for 3%' : 'Example: 5000 for $5,000'}</p>
             </div>
