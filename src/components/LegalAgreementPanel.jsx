@@ -445,7 +445,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ) : (
           <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
         )}
-        </Card>
+        </CardContent>
+      </Card>
     );
   }
   
@@ -759,10 +760,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         </div>
       )}
       
-      </CardContent>
-      </CardContent>
-      </CardContent>
-      </CardContent>
       </CardContent>
       {/* Generate Modal */}
       <Dialog open={showGenerateModal} onOpenChange={handleCloseGenerateModal}>
