@@ -255,6 +255,7 @@ export default function Room() {
   const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
+  const dealIdParam = params.get("dealId");
   const { profile } = useCurrentProfile();
   const { rooms } = useMyRooms();
   const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
