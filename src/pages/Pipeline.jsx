@@ -356,7 +356,7 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}&tab=agreement`);
       return;
     }
 
@@ -378,7 +378,7 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${existing.id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${existing.id}&tab=agreement`);
       return;
     }
 
@@ -410,7 +410,7 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
+      navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
     } catch (error) {
       console.error("Failed to create/find room:", error);
       toast.error("Failed to open conversation");

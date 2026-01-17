@@ -296,33 +296,17 @@ export default function Room() {
   // Extracted details (temporary, require confirmation before applying)
   const [extractedDraft, setExtractedDraft] = useState(null);
 
-        // Unified post-sign flag used across Files tab and privacy checks
+        // Unified post-sign flag: chat unlocks ONLY when both parties have fully signed
         const isWorkingTogether = useMemo(() => {
-          const agreementSigned = !!(
-            deal?.documents?.internal_agreement?.file_url ||
-            deal?.documents?.internal_agreement?.url ||
-            deal?.documents?.operating_agreement?.file_url ||
-            deal?.documents?.operating_agreement?.url ||
-            deal?.legal_agreement?.signed_pdf_url ||
-            deal?.signed_pdf_url ||
-            deal?.final_pdf_url ||
-            deal?.docusign_pdf_url
-          );
           return (
             currentRoom?.agreement_status === 'fully_signed' ||
             currentRoom?.is_fully_signed === true ||
-            deal?.is_fully_signed === true ||
-            agreementSigned
+            deal?.is_fully_signed === true
           );
         }, [
           currentRoom?.agreement_status,
           currentRoom?.is_fully_signed,
-          deal?.is_fully_signed,
-          deal?.documents,
-          deal?.legal_agreement,
-          deal?.signed_pdf_url,
-          deal?.final_pdf_url,
-          deal?.docusign_pdf_url
+          deal?.is_fully_signed
         ]);
 
         // Treat unknown role as agent for privacy until profile loads
@@ -900,6 +884,10 @@ export default function Room() {
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
+    if (!isWorkingTogether) {
+      toast.error('Chat unlocks after both parties sign the agreement.');
+      return;
+    }
     // Client-side throttle: 1.5s between sends
     const now = Date.now();
     if (now - (lastSentRef.current || 0) < 1500) {

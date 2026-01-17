@@ -152,7 +152,7 @@ export default function AgentMatching() {
         toast.error("You already have an active agent request for this deal. Open the existing Deal Room to continue.");
         setSendingToAgent(null);
         setTimeout(() => {
-          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}`);
+          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}&tab=agreement`);
         }, 1500);
         return;
       }
@@ -203,9 +203,7 @@ export default function AgentMatching() {
 
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Deal request sent to ${_first}`);
-      setTimeout(() => {
-        navigate(createPageUrl("Pipeline"));
-      }, 500);
+      navigate(`${createPageUrl("Room")}?roomId=${room.id}&tab=agreement`);
 
     } catch (error) {
       console.error("Failed to send deal:", error);
