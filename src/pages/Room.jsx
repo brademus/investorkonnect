@@ -1064,53 +1064,59 @@ ${dealContext}`;
 
   // Memoize filtered rooms to prevent unnecessary recalculations
   const filteredRooms = useMemo(() => {
-    const isAgent = profile?.user_role === 'agent';
-    const myId = profile?.id;
-    // Dedupe rooms by deal_id for sidebar: show only the most relevant room per deal
-    const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
-    const byDeal = new Map();
-    (rooms || []).forEach(r => {
-      // Base requirements
-      if (r.is_orphan) return; // Only show active conversations
-      if (!r.counterparty_name || r.counterparty_name === 'Unknown') return; // Require a valid counterparty
+    try {
+      const isAgent = profile?.user_role === 'agent';
+      const myId = profile?.id;
+      // Dedupe rooms by deal_id for sidebar: show only the most relevant room per deal
+      const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+      const byDeal = new Map();
+      (rooms || []).forEach(r => {
+        // Base requirements
+        if (!r || r.is_orphan) return; // Only show active conversations
+        if (!r.counterparty_name || r.counterparty_name === 'Unknown') return; // Require a valid counterparty
 
-      // Agent account: only show valid deals with investor-signed agreement and agent selected
-      if (isAgent) {
-        if (!r.deal_id) return; // must be attached to a deal
-        if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
-        const status = r.agreement_status;
-        const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-        const agentSelected = r.request_status === 'accepted' || r.request_status === 'signed';
-        if (!investorSigned || !agentSelected) return;
-      }
+        // Agent account: only show valid deals with investor-signed agreement and agent selected
+        if (isAgent) {
+          if (!r.deal_id) return; // must be attached to a deal
+          if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
+          const status = r.agreement_status;
+          const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+          const agentSelected = r.request_status === 'accepted' || r.request_status === 'signed';
+          if (!investorSigned || !agentSelected) return;
+        }
 
-      // Investor account: only show deals where THIS investor has signed and an agent is selected
-      if (!isAgent && myId) {
-        if (!r.deal_id) return; // must be attached to a deal
-        if (r.investorId && r.investorId !== myId) return; // must be this investor's room
-        const status = r.agreement_status;
-        const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-        const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
-        if (!investorSigned || !agentSelected) return;
-      }
+        // Investor account: only show deals where THIS investor has signed and an agent is selected
+        if (!isAgent && myId) {
+          if (!r.deal_id) return; // must be attached to a deal
+          if (r.investorId && r.investorId !== myId) return; // must be this investor's room
+          const status = r.agreement_status;
+          const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+          const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
+          if (!investorSigned || !agentSelected) return;
+        }
 
-      const key = r.deal_id || `room-${r.id}`; // Group by deal when available
-      const prev = byDeal.get(key);
-      if (!prev) { byDeal.set(key, r); return; }
-      const sA = score(r), sB = score(prev);
-      const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-      const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-      if (sA > sB || (sA === sB && tA > tB)) {
-        byDeal.set(key, r);
+        const key = r.deal_id || `room-${r.id}`; // Group by deal when available
+        const prev = byDeal.get(key);
+        if (!prev) { byDeal.set(key, r); return; }
+        const sA = score(r), sB = score(prev);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        if (sA > sB || (sA === sB && tA > tB)) {
+          byDeal.set(key, r);
+        }
+      });
+      let list = Array.from(byDeal.values());
+      if (searchConversations) {
+        const q = String(searchConversations || '').toLowerCase();
+        list = list.filter(r => (r?.counterparty_name || '').toLowerCase().includes(q));
       }
-    });
-    let list = Array.from(byDeal.values());
-    if (searchConversations) {
-      const q = searchConversations.toLowerCase();
-      list = list.filter(r => r.counterparty_name?.toLowerCase().includes(q));
+      // Sort by updated date desc for stable ordering
+      return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+    } catch (e) {
+      console.error('[Room] filteredRooms error:', e);
+      // Fallback: minimal safe list
+      return Array.isArray(rooms) ? rooms.filter(r => r && r.counterparty_name) : [];
     }
-    // Sort by updated date desc for stable ordering
-    return list.sort((a, b) => new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
   }, [rooms, searchConversations, profile?.user_role, profile?.id]);
 
 
