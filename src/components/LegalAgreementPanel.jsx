@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -17,6 +19,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [exhibitA, setExhibitA] = useState(null);
   const [resolvedDealId, setResolvedDealId] = useState(null);
   const [modalTerms, setModalTerms] = useState(null);
+  // Counter-offer state
+  const [showCounterModal, setShowCounterModal] = useState(false);
+  const [counterType, setCounterType] = useState('flat');
+  const [counterAmount, setCounterAmount] = useState('');
+  const [pendingOffer, setPendingOffer] = useState(null);
+  const [loadingOffer, setLoadingOffer] = useState(false);
   
   const isInvestor = (profile?.user_role === 'investor') || (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
   const isAgent = (profile?.user_role === 'agent') || (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
@@ -128,6 +136,52 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   };
   
+  // Load latest pending counter offer
+  const loadLatestOffer = async () => {
+    if (!deal?.id) return;
+    try {
+      setLoadingOffer(true);
+      const offers = await base44.entities.CounterOffer.filter({ deal_id: deal.id, status: 'pending' }, '-created_date', 1);
+      setPendingOffer(offers?.[0] || null);
+    } finally {
+      setLoadingOffer(false);
+    }
+  };
+
+  useEffect(() => { loadLatestOffer(); }, [deal?.id]);
+
+  const submitCounterOffer = async (fromRole) => {
+    if (!deal?.id) return;
+    const terms = counterType === 'flat'
+      ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
+      : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
+
+    await base44.entities.CounterOffer.create({ deal_id: deal.id, from_role: fromRole, terms, status: 'pending' });
+    setShowCounterModal(false);
+    setCounterAmount('');
+    await loadLatestOffer();
+    toast.success('Counter offer sent');
+  };
+
+  const acceptOffer = async () => {
+    if (!pendingOffer) return;
+    const newTerms = { ...(deal?.proposed_terms || {}), ...(pendingOffer.terms || {}) };
+    await base44.entities.Deal.update(deal.id, { proposed_terms: newTerms });
+    await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
+    await loadLatestOffer();
+    if (onUpdate) onUpdate();
+    toast.success('Terms updated');
+  };
+
+  const denyOffer = async () => {
+    if (!pendingOffer) return;
+    await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'declined', responded_by_role: isInvestor ? 'investor' : 'agent' });
+    // Void the deal entirely
+    await base44.functions.invoke('voidDeal', { deal_id: deal.id });
+    toast.success('Deal voided');
+    if (onUpdate) onUpdate();
+  };
+
   const handleGenerate = async () => {
     // Validate required params
     const effectiveDealId = resolvedDealId || deal?.id || deal?.deal_id;
@@ -455,6 +509,85 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             </div>
           )}
 
+          {/* Key Terms (from deal) */}
+          {deal?.proposed_terms && (
+            <div className="bg-[#0D0D0D] rounded-lg p-4 space-y-3 text-sm">
+              <div className="flex items-center justify-between">
+                <div className="text-[#808080]">Buyer Agent Compensation</div>
+                {isAgent && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Prefill from current deal terms
+                      const t = deal.proposed_terms || {};
+                      const tType = t.buyer_commission_type || 'flat';
+                      setCounterType(tType);
+                      setCounterAmount(String(tType === 'percentage' ? (t.buyer_commission_percentage || 0) : (t.buyer_flat_fee || 0)));
+                      setShowCounterModal(true);
+                    }}
+                  >
+                    Counter
+                  </Button>
+                )}
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#808080]">Type</span>
+                <span className="text-[#FAFAFA] capitalize">{deal.proposed_terms.buyer_commission_type || '—'}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#808080]">Amount</span>
+                <span className="text-[#FAFAFA]">
+                  {deal.proposed_terms.buyer_commission_type === 'percentage'
+                    ? `${deal.proposed_terms.buyer_commission_percentage || 0}%`
+                    : `$${(deal.proposed_terms.buyer_flat_fee || 0).toLocaleString()}`}
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Pending Counter Offer panel (visible to opposite party) */}
+          {pendingOffer && (
+            <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg p-4 text-sm">
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
+                <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <div className="text-[#808080]">Type</div>
+                  <div className="text-[#FAFAFA] capitalize">{pendingOffer.terms?.buyer_commission_type}</div>
+                </div>
+                <div>
+                  <div className="text-[#808080]">Amount</div>
+                  <div className="text-[#FAFAFA]">
+                    {pendingOffer.terms?.buyer_commission_type === 'percentage'
+                      ? `${pendingOffer.terms?.buyer_commission_percentage || 0}%`
+                      : `$${(pendingOffer.terms?.buyer_flat_fee || 0).toLocaleString()}`}
+                  </div>
+                </div>
+                <div className="flex items-end justify-end gap-2">
+                  {((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
+                    <>
+                      <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
+                      <Button size="sm" variant="destructive" onClick={denyOffer}>Deny</Button>
+                      <Button size="sm" variant="outline" onClick={() => {
+                        setCounterType(pendingOffer.terms?.buyer_commission_type || 'flat');
+                        const amt = pendingOffer.terms?.buyer_commission_type === 'percentage'
+                          ? pendingOffer.terms?.buyer_commission_percentage || 0
+                          : pendingOffer.terms?.buyer_flat_fee || 0;
+                        setCounterAmount(String(amt));
+                        setShowCounterModal(true);
+                      }}>Counter</Button>
+                    </>
+                  ) : (
+                    <div className="text-xs text-[#808080]">Waiting for the other party</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Agreement Details */}
           <div className="bg-[#0D0D0D] rounded-lg p-4 space-y-2 text-sm">
             <div className="flex justify-between">
@@ -690,6 +823,48 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             </Button>
           </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Counter Modal */}
+      <Dialog open={showCounterModal} onOpenChange={(v) => setShowCounterModal(Boolean(v))}>
+        <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F]">
+          <DialogHeader>
+            <DialogTitle className="text-[#FAFAFA]">Propose Counter Offer</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div>
+              <Label className="text-[#FAFAFA] mb-1">Compensation Type</Label>
+              <Select value={counterType} onValueChange={setCounterType}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="flat">Flat Fee</SelectItem>
+                  <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-[#FAFAFA] mb-1">Amount</Label>
+              <Input
+                type="number"
+                value={counterAmount}
+                onChange={(e) => setCounterAmount(e.target.value)}
+                placeholder={counterType === 'percentage' ? 'Enter %' : 'Enter $ amount'}
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+              />
+              <p className="text-xs text-[#808080] mt-1">
+                {counterType === 'percentage' ? 'Example: 3 for 3%' : 'Example: 5000 for $5,000'}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => setShowCounterModal(false)}>Cancel</Button>
+            <Button className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={() => submitCounterOffer(isAgent ? 'agent' : 'investor')}>
+              Submit Counter
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </Card>
