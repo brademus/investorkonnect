@@ -140,77 +140,54 @@ export default function AgentMatching() {
     setSendingToAgent(agentProfile.id);
     
     try {
-      // ENFORCED: Only one concurrent agent request per deal
-      const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
-      const activeRoom = allRoomsForDeal.find(r => 
-        r.request_status === 'requested' || 
-        r.request_status === 'accepted' || 
-        r.request_status === 'signed'
-      );
-
-      if (activeRoom) {
-        if (activeRoom.request_status === 'signed') {
-          toast.error("This deal already has a signed agent relationship. Open the existing Deal Room to continue.");
-          setSendingToAgent(null);
-          setTimeout(() => {
-            navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}&tab=agreement`);
-          }, 1500);
-          return;
-        }
-        // Close existing pending/accepted request so you can choose a different agent
-        const now = new Date().toISOString();
-        try {
-          await base44.entities.Room.update(activeRoom.id, { request_status: 'rejected', rejected_at: now, closedAt: now });
-        } catch (_) {}
-      }
-
-      // Check for existing room with this specific agent
-      const existingRoomWithAgent = allRoomsForDeal.find(r => r.agentId === agentProfile.id && r.request_status !== 'rejected');
-
-      let room;
-      if (existingRoomWithAgent) {
-        room = existingRoomWithAgent;
-        console.log('[AgentMatching] Reusing existing room:', room.id);
-      } else {
-        // Create new room
-        console.log('[AgentMatching] Creating new room for deal:', deal.id);
-        room = await base44.entities.Room.create({
+      // Use backend function to create/request room with proper checks and activity logging
+      let roomIdToUse = null;
+      try {
+        const resp = await base44.functions.invoke('sendDealRequest', {
           deal_id: deal.id,
-          investorId: profile.id,
-          agentId: agentProfile.id,
-          title: deal.title,
-          property_address: deal.property_address,
-          city: deal.city,
-          state: deal.state,
-          county: deal.county,
-          zip: deal.zip,
-          budget: deal.purchase_price || deal.budget,
-          request_status: 'requested',
-          requested_at: new Date().toISOString()
+          agent_profile_id: agentProfile.id
         });
-        console.log('[AgentMatching] Room created:', room.id);
+        if (resp.status === 200 && resp.data?.room_id) {
+          roomIdToUse = resp.data.room_id;
+        } else {
+          throw new Error(resp?.data?.error || 'Failed to send request');
+        }
+      } catch (err) {
+        const status = err?.response?.status || err?.status;
+        const data = err?.response?.data || err?.data || {};
+        if (status === 409 || data?.room_id) {
+          // Already has an active request — use that room
+          roomIdToUse = data.room_id;
+          toast.error('This deal already has an active agent request');
+        } else {
+          throw err;
+        }
       }
 
-      // Store proposed terms using CORRECT seller/buyer keys
-      const storedData = sessionStorage.getItem("newDealData");
-      if (storedData) {
-        const parsed = JSON.parse(storedData);
-        await base44.entities.Room.update(room.id, {
-          proposed_terms: {
-            seller_commission_type: parsed.sellerCommissionType,
-            seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
-            seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
-            buyer_commission_type: parsed.buyerCommissionType,
-            buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
-            buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
-            agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
-          }
-        });
+      // Store proposed terms on the room after creation (if we have them)
+      if (roomIdToUse) {
+        const storedData = sessionStorage.getItem('newDealData');
+        if (storedData) {
+          const parsed = JSON.parse(storedData);
+          await base44.entities.Room.update(roomIdToUse, {
+            proposed_terms: {
+              seller_commission_type: parsed.sellerCommissionType,
+              seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
+              seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
+              buyer_commission_type: parsed.buyerCommissionType,
+              buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
+              buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
+              agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
+            }
+          });
+        }
       }
 
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Deal request sent to ${_first}`);
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${room.deal_id || deal.id}`);
+      // Go straight to the room Agreement tab for clarity
+      navigate(`${createPageUrl('Room')}?roomId=${roomIdToUse || ''}&tab=agreement`);
+
 
     } catch (error) {
       console.error("Failed to send deal:", error);
