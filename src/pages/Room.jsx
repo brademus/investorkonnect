@@ -2307,63 +2307,15 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
-              {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
+              {/* Pre-lock note: chat hidden until both parties sign */}
+              {!isWorkingTogether && (
                 <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-5 flex-shrink-0">
-                  <div className="flex items-start gap-3 mb-4">
+                  <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#F59E0B] mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="text-md font-bold text-[#F59E0B] mb-1">
-                        New Deal Request - Review & Discuss
-                      </h3>
-                      <p className="text-sm text-[#FAFAFA]/80">
-                        Chat with the investor to discuss this deal. You're viewing limited info (city/state/price). Accept to unlock more details, or decline if not interested.
-                      </p>
+                    <div>
+                      <h3 className="text-md font-bold text-[#F59E0B] mb-1">Chat unlocks after both parties sign the agreement.</h3>
+                      <Button size="sm" className="mt-2 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full" onClick={() => setActiveTab('agreement')}>Go to My Agreement</Button>
                     </div>
-                  </div>
-                  <div className="flex gap-3">
-                    <Button
-                      onClick={async () => {
-                        try {
-                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                            roomId: roomId,
-                            action: 'accept'
-                          });
-                          if (response.data?.success) {
-                            toast.success("Deal accepted! More details now visible.");
-                            queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                            queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                            window.location.reload();
-                          }
-                        } catch (error) {
-                          toast.error("Failed to accept deal");
-                        }
-                      }}
-                      className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white rounded-full font-semibold"
-                    >
-                      Accept Deal
-                    </Button>
-                    <Button
-                      onClick={async () => {
-                        if (!confirm("Are you sure you want to decline this deal request?")) return;
-                        try {
-                          const response = await base44.functions.invoke('transitionDealRequestStatus', {
-                            roomId: roomId,
-                            action: 'reject'
-                          });
-                          if (response.data?.success) {
-                            toast.success("Deal declined");
-                            navigate(createPageUrl("Pipeline"));
-                          }
-                        } catch (error) {
-                          toast.error("Failed to decline deal");
-                        }
-                      }}
-                      variant="outline"
-                      className="flex-1 border-[#EF4444] text-[#EF4444] hover:bg-[#EF4444]/10 rounded-full font-semibold"
-                    >
-                      Decline
-                    </Button>
                   </div>
                 </div>
               )}
