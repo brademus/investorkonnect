@@ -100,7 +100,7 @@ export function useRooms() {
           // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
           const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
           const byDeal = new Map();
-          for (const r of rooms) {
+          for (const r of safeRooms) {
             if (!r?.deal_id) continue;
             const prev = byDeal.get(r.deal_id);
             if (!prev) { byDeal.set(r.deal_id, r); continue; }
@@ -112,8 +112,7 @@ export function useRooms() {
             }
           }
           const uniqueWithDeal = Array.from(byDeal.values());
-          const others = rooms.filter(r => !r?.deal_id);
-          const deduped = [...uniqueWithDeal, ...others].sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+          const deduped = uniqueWithDeal.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
           return deduped;
         } catch (e) {
           console.error('[useRooms] dedupe error:', e);
