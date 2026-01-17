@@ -474,7 +474,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   }
   
   return (
-    <Card className="ik-card p-6">
+    <Card className="ik-card p-0 overflow-hidden">
       <CardHeader className="border-b border-[#1F1F1F] py-4">
         <div className="flex items-start justify-between">
           <div>
@@ -485,12 +485,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         </div>
       </CardHeader>
       <CardContent className="p-6">
-        <div>
-          <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">Legal Agreement</h3>
-          <p className="text-sm text-[#808080]">Internal Agreement v1.0.1</p>
-        </div>
-        {agreement && getStatusDisplay()}
-      </div>
       
       {/* No agreement yet */}
       {!agreement && isInvestor && (
