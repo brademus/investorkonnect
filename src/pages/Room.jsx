@@ -326,7 +326,15 @@ export default function Room() {
           deal?.docusign_pdf_url
         ]);
 
-        // Treat unknown role as agent for privacy until profile loads
+        // Auto-route to Agreement and gate chat until fully signed
+  useEffect(() => {
+    if (!isWorkingTogether) {
+      setShowBoard(true);
+      setActiveTab('agreement');
+    }
+  }, [isWorkingTogether]);
+
+  // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
 
         // Mask address for agents until fully signed
