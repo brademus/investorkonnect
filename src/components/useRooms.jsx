@@ -91,8 +91,8 @@ export function useRooms() {
         const response = await base44.functions.invoke('listMyRoomsEnriched');
         const rooms = response.data?.rooms || [];
         
-        // Filter invalid/legacy rooms defensively (must belong to both parties, have a deal, and not be orphaned)
-        const safeRooms = rooms.filter(r => r && r.deal_id && r.agentId && r.investorId && !r.is_orphan);
+        // Filter invalid/legacy rooms defensively (must have a deal). Allow pipeline-only "orphan" entries for investors.
+        const safeRooms = rooms.filter(r => r && r.deal_id && (r.is_orphan || (r.agentId && r.investorId)));
         
         console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
         

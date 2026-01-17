@@ -264,10 +264,44 @@ Deno.serve(async (req) => {
       return enriched;
     });
 
-    // Filter out orphaned rooms (no valid counterparty)
-    const validRooms = enrichedRooms.filter(r => 
-      r.counterparty_name && r.counterparty_name !== 'Unknown'
-    );
+    // Append pipeline-only deals (no room yet) for INVESTORS so they appear in Messages
+    let finalRooms = [...enrichedRooms];
+
+    try {
+      if (userRole === 'investor') {
+        const myDeals = await base44.asServiceRole.entities.Deal.filter({ investor_id: profile.id });
+        const usedDealIds = new Set(finalRooms.map(r => r.deal_id).filter(Boolean));
+        const orphanDeals = (myDeals || [])
+          .filter(d => d && d.id && !usedDealIds.has(d.id) && d.status !== 'archived' && d.status !== 'closed')
+          .map(d => ({
+            id: `virtual_${d.id}`,
+            deal_id: d.id,
+            request_status: null,
+            agreement_status: null,
+            created_date: d.created_date,
+            updated_date: d.updated_date,
+            // Counterparty placeholders
+            counterparty_id: null,
+            counterparty_name: 'No Agent Selected',
+            counterparty_role: 'none',
+            counterparty_avatar: null,
+            // Deal summary fields
+            title: d.title,
+            property_address: d.property_address,
+            city: d.city,
+            state: d.state,
+            budget: d.purchase_price || 0,
+            pipeline_stage: d.pipeline_stage,
+            closing_date: d.key_dates?.closing_date,
+            is_fully_signed: false,
+            is_orphan: true,
+          }));
+        finalRooms = [...finalRooms, ...orphanDeals];
+      }
+    } catch (_) {}
+
+    // Filter out truly invalid rooms (missing label)
+    const validRooms = finalRooms.filter(r => r && r.counterparty_name && r.counterparty_name !== 'Unknown');
 
     return Response.json({ 
       rooms: validRooms,

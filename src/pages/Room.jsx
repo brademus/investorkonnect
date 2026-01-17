@@ -1074,10 +1074,10 @@ ${dealContext}`;
       const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
       const byDeal = new Map();
       (rooms || []).forEach(r => {
-        // Base requirements
-        if (!r || r.is_orphan) return; // Only show active conversations
-        if (!r.deal_id || !r.agentId || !r.investorId) return; // Must belong to both parties and be attached to a deal
-        if (!isAgent && (!r.counterparty_name || r.counterparty_name === 'Unknown')) return; // Require a valid counterparty (investor only)
+       // Base requirements
+       if (!r) return;
+       if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
+       if (!isAgent && (!r.counterparty_name || r.counterparty_name === 'Unknown')) return; // Require a valid counterparty label for investors
 
         // Agent account: show investor-signed requests, including pending acceptance
         if (isAgent) {
@@ -1089,14 +1089,19 @@ ${dealContext}`;
           if (!investorSigned || !validStatus) return;
         }
 
-        // Investor account: only show deals where THIS investor has signed and an agent is selected
+        // Investor account: include pipeline-only deals (orphans) OR signed+agent-selected rooms
         if (!isAgent && myId) {
           if (!r.deal_id) return; // must be attached to a deal
-          if (r.investorId && r.investorId !== myId) return; // must be this investor's room
-          const status = r.agreement_status;
-          const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-          const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
-          if (!investorSigned || !agentSelected) return;
+          // Must be this investor's deal/room when IDs are present
+          if (r.investorId && r.investorId !== myId) return;
+          if (r.is_orphan) {
+            // Include pipeline deal without a room
+          } else {
+            const status = r.agreement_status;
+            const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+            const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
+            if (!investorSigned || !agentSelected) return;
+          }
         }
 
         const key = r.deal_id || `room-${r.id}`; // Group by deal when available
@@ -1143,6 +1148,12 @@ ${dealContext}`;
         <div className="flex-1 overflow-y-auto">
           {filteredRooms.map(r => {
             const handleClick = () => {
+              if (r.is_orphan) {
+                // Pipeline-only deal: route to Pipeline to continue
+                navigate(createPageUrl("Pipeline"));
+                setDrawer(false);
+                return;
+              }
               // Optimistically set room to avoid momentary mismatch
               // Reset state immediately to avoid cross-room flicker
               setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
