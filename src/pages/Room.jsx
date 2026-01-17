@@ -28,6 +28,7 @@ import {
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
 import EscrowPanel from "@/components/EscrowPanel";
+import DealCompCounterPanel from "@/components/DealCompCounterPanel";
 import { toast } from "sonner";
 
 // Privacy helper: should we mask address for the current viewer?
