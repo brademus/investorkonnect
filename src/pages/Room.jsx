@@ -1087,14 +1087,10 @@ ${dealContext}`;
           if (!validStatus) return;
         }
 
-        // Investor account: show own pipeline orphans and any agent-selected rooms (requested/accepted/signed)
+        // Investor account: show all own rooms and pipeline-only orphans
         if (!isAgent && myId) {
           if (!r.deal_id) return; // must be attached to a deal
           if (r.investorId && r.investorId !== myId) return; // only my deals
-          if (!r.is_orphan) {
-            const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed');
-            if (!agentSelected) return;
-          }
         }
 
         const key = r.deal_id || `room-${r.id}`; // Group by deal when available
