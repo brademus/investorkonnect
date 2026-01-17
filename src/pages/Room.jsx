@@ -1077,7 +1077,7 @@ ${dealContext}`;
        // Base requirements
        if (!r) return;
        if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
-       if (!isAgent && (!r.counterparty_name || r.counterparty_name === 'Unknown')) return; // Require a valid counterparty label for investors
+
 
         // Agent account: show investor-signed requests as soon as investor signs (requested/accepted/signed)
         if (isAgent) {
@@ -1089,18 +1089,13 @@ ${dealContext}`;
           if (!investorSigned || !validStatus) return;
         }
 
-        // Investor account: include pipeline-only deals (orphans) OR signed + agent-selected rooms (requested/accepted/signed)
+        // Investor account: show own pipeline orphans and any agent-selected rooms (requested/accepted/signed)
         if (!isAgent && myId) {
           if (!r.deal_id) return; // must be attached to a deal
-          // Must be this investor's deal/room when IDs are present
-          if (r.investorId && r.investorId !== myId) return;
-          if (r.is_orphan) {
-            // Include pipeline deal without a room
-          } else {
-            const status = r.agreement_status;
-            const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+          if (r.investorId && r.investorId !== myId) return; // only my deals
+          if (!r.is_orphan) {
             const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed');
-            if (!investorSigned || !agentSelected) return;
+            if (!agentSelected) return;
           }
         }
 
