@@ -41,7 +41,7 @@ export default function About() {
       </section>
 
       {/* Mission */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="text-3xl font-bold text-[#FAFAFA] mb-6 text-center">Our Mission</h2>
           <p className="text-lg text-[#D1D5DB] leading-relaxed mb-6">
@@ -75,7 +75,7 @@ export default function About() {
       </section>
 
       {/* Team (Placeholder) */}
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-[#0D0D0D]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold text-[#FAFAFA] mb-6">Built by Investors, For Investors</h2>
           <p className="text-lg text-[#808080] max-w-2xl mx-auto mb-12">
