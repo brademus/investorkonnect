@@ -57,6 +57,20 @@ export default function MyAgreement() {
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
         const ag = res?.data?.agreement;
         if (ag?.investor_signed_at) {
+          // After investor signs, create/send room to the selected agent
+          try {
+            // Prefer agent on deal; fallback to session
+            const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
+            const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
+            if (agentProfileId) {
+              try {
+                await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId });
+              } catch (e) {
+                // Ignore 409/conflicts if already exists
+              }
+            }
+          } catch (_) {}
+
           toast.success('Agreement signed. Redirecting to your pipeline...');
           setTimeout(() => navigate(createPageUrl('Pipeline')), 800);
         }
@@ -106,6 +120,18 @@ export default function MyAgreement() {
               const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
               const ag = agRes?.data?.agreement;
               if (ag?.investor_signed_at && isInvestor) {
+                // After investor signs, create/send room to the selected agent
+                try {
+                  const agentProfileId = (res?.data?.agent_id) || deal.agent_id || sessionStorage.getItem('selectedAgentId');
+                  if (agentProfileId) {
+                    try {
+                      await base44.functions.invoke('sendDealRequest', { deal_id: deal.id, agent_profile_id: agentProfileId });
+                    } catch (e) {
+                      // Ignore conflict if already created
+                    }
+                  }
+                } catch (_) {}
+
                 toast.success('Agreement signed. Redirecting to your pipeline...');
                 setTimeout(() => navigate(createPageUrl('Pipeline')), 800);
               }

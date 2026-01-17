@@ -140,53 +140,13 @@ export default function AgentMatching() {
     setSendingToAgent(agentProfile.id);
     
     try {
-      // Use backend function to create/request room with proper checks and activity logging
-      let roomIdToUse = null;
-      try {
-        const resp = await base44.functions.invoke('sendDealRequest', {
-          deal_id: deal.id,
-          agent_profile_id: agentProfile.id
-        });
-        if (resp.status === 200 && resp.data?.room_id) {
-          roomIdToUse = resp.data.room_id;
-        } else {
-          throw new Error(resp?.data?.error || 'Failed to send request');
-        }
-      } catch (err) {
-        const status = err?.response?.status || err?.status;
-        const data = err?.response?.data || err?.data || {};
-        if (status === 409 || data?.room_id) {
-          // Already has an active request — use that room
-          roomIdToUse = data.room_id;
-          toast.error('This deal already has an active agent request');
-        } else {
-          throw err;
-        }
-      }
-
-      // Store proposed terms on the room after creation (if we have them)
-      if (roomIdToUse) {
-        const storedData = sessionStorage.getItem('newDealData');
-        if (storedData) {
-          const parsed = JSON.parse(storedData);
-          await base44.entities.Room.update(roomIdToUse, {
-            proposed_terms: {
-              seller_commission_type: parsed.sellerCommissionType,
-              seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
-              seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
-              buyer_commission_type: parsed.buyerCommissionType,
-              buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
-              buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
-              agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
-            }
-          });
-        }
-      }
+      // Do NOT contact agent yet; set agent on deal and go to agreement generation
+      await base44.entities.Deal.update(deal.id, { agent_id: agentProfile.id });
+      sessionStorage.setItem('selectedAgentId', agentProfile.id);
 
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
-      toast.success(`Deal request sent to ${_first}`);
-      // Go straight to the room Agreement tab for clarity
-      navigate(`${createPageUrl('Room')}?roomId=${roomIdToUse || ''}&tab=agreement`);
+      toast.success(`Agent ${_first} selected. Generate and sign your agreement next.`);
+      navigate(`${createPageUrl('MyAgreement')}?dealId=${deal.id}`);
 
 
     } catch (error) {
