@@ -71,8 +71,9 @@ export default function MyAgreement() {
             }
           } catch (_) {}
 
+          // If agent already countersigned or NJ auto-approves later, Room UI will unlock via subscriptions
           toast.success('Agreement signed. Redirecting to your pipeline...');
-          setTimeout(() => navigate(createPageUrl('Pipeline')), 800);
+          setTimeout(() => navigate(createPageUrl('Pipeline') + '?signed=1'), 800);
         }
       } catch (_) {}
     })();
