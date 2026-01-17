@@ -1084,6 +1084,16 @@ ${dealContext}`;
         if (!investorSigned || !agentSelected) return;
       }
 
+      // Investor account: only show deals where THIS investor has signed and an agent is selected
+      if (!isAgent && myId) {
+        if (!r.deal_id) return; // must be attached to a deal
+        if (r.investorId && r.investorId !== myId) return; // must be this investor's room
+        const status = r.agreement_status;
+        const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+        const agentSelected = (r.agentId || r.agent_id) && (r.request_status === 'accepted' || r.request_status === 'signed');
+        if (!investorSigned || !agentSelected) return;
+      }
+
       const key = r.deal_id || `room-${r.id}`; // Group by deal when available
       const prev = byDeal.get(key);
       if (!prev) { byDeal.set(key, r); return; }
