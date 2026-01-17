@@ -25,6 +25,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
+  // Derived gating flags
+  const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
+  const termsMismatch = (() => {
+    try {
+      const t = deal?.proposed_terms;
+      const a = agreement?.exhibit_a_terms;
+      if (!t || !a) return false;
+      if (t.buyer_commission_type === 'percentage') {
+        return !(a.compensation_model === 'COMMISSION_PCT' && Number(a.commission_percentage || 0) === Number(t.buyer_commission_percentage || 0));
+      }
+      if (t.buyer_commission_type === 'flat') {
+        return !(a.compensation_model === 'FLAT_FEE' && Number(a.flat_fee_amount || 0) === Number(t.buyer_flat_fee || 0));
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  })();
   
   const isInvestor = (profile?.user_role === 'investor') || (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
   const isAgent = (profile?.user_role === 'agent') || (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
@@ -281,6 +299,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   
   const handleSign = async (signatureType) => {
     try {
+      // Pre-sign gating
+      if (signatureType === 'agent') {
+        if (hasPendingOffer || termsMismatch || !agreement?.investor_signed_at) {
+          toast.error(hasPendingOffer ? 'Counter offer pending. Wait for investor to confirm and regenerate.' : (termsMismatch ? 'Agreement out of date. Wait for investor to regenerate and sign.' : 'Investor must sign first.'));
+          return;
+        }
+      } else if (signatureType === 'investor') {
+        if (hasPendingOffer || termsMismatch) {
+          toast.error(hasPendingOffer ? 'Respond to the counter offer first.' : 'Regenerate the agreement to reflect current terms before signing.');
+          return;
+        }
+      }
       setSigning(true);
       
       // Capture current page URL including pathname + search for accurate return
@@ -470,15 +500,28 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
       {/* If agreement exists but investor hasn't signed yet, show Sign button prominently for investor */}
       {agreement && !agreement.investor_signed_at && isInvestor && (
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg p-4 mb-4">
-          <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
-          <Button
-            onClick={() => handleSign('investor')}
-            disabled={signing}
-            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-            {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
-          </Button>
-        </div>
+        hasPendingOffer || termsMismatch ? (
+          <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4">
+            <p className="text-sm text-[#FAFAFA] mb-1">
+              {hasPendingOffer ? 'An agent counter offer is pending. Review below and confirm or counter.' : 'Terms changed. Please regenerate the agreement before signing.'}
+            </p>
+            <div className="flex gap-2">
+              {termsMismatch && (
+                <Button onClick={handleOpenGenerateModal} variant="outline" className="flex-1">Regenerate Agreement</Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg p-4 mb-4">
+            <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
+            <Button
+              onClick={() => handleSign('investor')}
+              disabled={signing}
+              className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+              {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+            </Button>
+          </div>
+        )
       )}
       
       
@@ -493,6 +536,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       {/* Agreement exists */}
       {agreement && (
         <div className="space-y-4">
+          {termsMismatch && (
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+              <div className="text-sm text-[#FAFAFA] font-semibold">Agreement out of date</div>
+              <div className="text-xs text-[#808080]">Terms changed. Investor must regenerate and sign before agent can sign.</div>
+            </div>
+          )}
           {/* NJ Attorney Review Countdown */}
           {agreement.status === 'attorney_review_pending' && (
             <div className="bg-orange-400/10 border border-orange-400/30 rounded-lg p-4">
@@ -668,12 +717,21 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             {agreement.investor_signed_at && !agreement.agent_signed_at && (
               <>
                 {isAgent ? (
-                  <Button
-                    onClick={() => handleSign('agent')}
-                    disabled={signing}
-                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                    {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
-                  </Button>
+                  hasPendingOffer || termsMismatch ? (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA] font-semibold">
+                        {hasPendingOffer ? 'Counter offer pending' : 'Agreement needs regeneration'}
+                      </p>
+                      <p className="text-xs text-[#808080] mt-1">Agent cannot sign until investor confirms and regenerates, then signs.</p>
+                    </div>
+                  ) : (
+                    <Button
+                      onClick={() => handleSign('agent')}
+                      disabled={signing}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                      {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
+                    </Button>
+                  )
                 ) : (
                   <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-lg p-4 text-center">
                     <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
