@@ -132,15 +132,16 @@ Deno.serve(async (req) => {
       const counterpartyId = userRole === 'investor' ? room.agentId : room.investorId;
       const counterpartyProfile = profileMap.get(counterpartyId);
       
-      const isFullySigned = room.agreement_status === 'fully_signed' || 
-                           room.request_status === 'signed';
+      const la = legalMap.get(room.deal_id);
+      const isInvestorSigned = !!(la?.investor_signed_at || la?.status === 'investor_signed' || la?.status === 'attorney_review_pending' || la?.status === 'fully_signed');
+      const isFullySigned = room.agreement_status === 'fully_signed' || room.request_status === 'signed' || la?.status === 'fully_signed';
 
       // Base room data
       const enriched = {
         id: room.id,
         deal_id: room.deal_id,
         request_status: room.request_status,
-        agreement_status: room.agreement_status,
+        agreement_status: room.agreement_status || (isInvestorSigned ? 'investor_signed' : undefined),
         created_date: room.created_date,
         updated_date: room.updated_date,
 
@@ -228,7 +229,7 @@ Deno.serve(async (req) => {
         
         // Counterparty info
         counterparty_id: counterpartyId,
-        counterparty_name: counterpartyProfile?.full_name || 'Unknown',
+        counterparty_name: (counterpartyProfile?.full_name) || (userRole === 'investor' ? 'Agent' : 'Investor'),
         counterparty_role: userRole === 'investor' ? 'agent' : 'investor',
         counterparty_avatar: counterpartyProfile?.headshotUrl,
         
@@ -300,8 +301,8 @@ Deno.serve(async (req) => {
       }
     } catch (_) {}
 
-    // Filter out truly invalid rooms (missing label)
-    const validRooms = finalRooms.filter(r => r && r.counterparty_name && r.counterparty_name !== 'Unknown');
+    // Filter out truly invalid rooms (must have a deal id)
+    const validRooms = finalRooms.filter(r => r && r.deal_id);
 
     return Response.json({ 
       rooms: validRooms,
