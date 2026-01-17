@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Admin-only utility to delete the two most recently created accounts
+// Admin-only utility to delete the eight most recently created accounts
 // - Identifies last two Profiles by created_date DESC
 // - Deletes all Deals where investor_id or agent_id matches those profiles
 // - Cascades deletion to deal-linked records (rooms, messages, payments, appointments, activities, legal agreements, contracts)
@@ -23,8 +23,8 @@ Deno.serve(async (req) => {
 
     const report = { targets: [], deleted: { profiles: 0, users: 0, deals: 0, rooms: 0, messages: 0, roomMessages: 0, roomParticipants: 0, contracts: 0, payments: { schedules: 0, milestones: 0 }, appointments: 0, activities: 0, legalAgreements: 0, matches: 0, introRequests: 0, profileVectors: 0 }, errors: [] };
 
-    // Get two most recently created profiles
-    const profiles = await base44.asServiceRole.entities.Profile.list('-created_date', 2);
+    // Get eight most recently created profiles
+    const profiles = await base44.asServiceRole.entities.Profile.list('-created_date', 8);
 
     for (const profile of profiles) {
       report.targets.push({ profile_id: profile.id, email: profile.email, role: profile.user_role, created_date: profile.created_date });

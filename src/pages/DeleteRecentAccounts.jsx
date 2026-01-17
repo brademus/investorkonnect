@@ -34,7 +34,7 @@ export default function DeleteRecentAccounts() {
   const handleDelete = async () => {
     if (!isAdmin) return;
     const sure = window.confirm(
-      "This will permanently delete the last two most recently created accounts and ALL related data (deals, rooms, messages, payments, activities, etc.). Are you absolutely sure?"
+    "This will permanently delete the last eight most recently created accounts and ALL related data (deals, rooms, messages, payments, activities, etc.). Are you absolutely sure?"
     );
     if (!sure) return;
 
@@ -86,7 +86,7 @@ export default function DeleteRecentAccounts() {
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold text-[#E3C567]">Delete Last Two Accounts</h1>
+        <h1 className="text-2xl font-semibold text-[#E3C567]">Delete Last Eight Accounts</h1>
         <Link to={createPageUrl("Admin")} className="ik-btn-outline inline-flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" /> Admin
         </Link>
@@ -97,7 +97,7 @@ export default function DeleteRecentAccounts() {
           This tool will:
         </p>
         <ul className="mt-2 list-disc list-inside text-sm text-[#9CA3AF] space-y-1">
-          <li>Identify the two most recently created profiles</li>
+          <li>Identify the eight most recently created profiles</li>
           <li>Delete all deals associated with those profiles (as investor or agent)</li>
           <li>Delete related rooms, messages, contracts, activities, appointments, payment schedules and milestones, matches, intro requests, and vectors</li>
           <li>Delete the profiles and attempt to delete the underlying auth users</li>
@@ -113,7 +113,7 @@ export default function DeleteRecentAccounts() {
             ) : (
               <>
                 <Trash2 className="h-4 w-4" />
-                Delete last two accounts
+                Delete last eight accounts
               </>
             )}
           </Button>
