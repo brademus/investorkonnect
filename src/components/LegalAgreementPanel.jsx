@@ -449,6 +449,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     <Button
                       size="sm"
                       variant="outline"
+                      className="rounded-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
                       onClick={() => {
                         const t = deal.proposed_terms || {};
                         const tType = t.buyer_commission_type || 'flat';
@@ -501,7 +502,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                       <>
                         <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
                         <Button size="sm" variant="destructive" onClick={denyOffer}>Deny</Button>
-                        <Button size="sm" variant="outline" onClick={() => {
+                        <Button size="sm" variant="outline" className="rounded-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10" onClick={() => {
                           setCounterType(pendingOffer.terms?.buyer_commission_type || 'flat');
                           const amt = pendingOffer.terms?.buyer_commission_type === 'percentage'
                             ? pendingOffer.terms?.buyer_commission_percentage || 0
