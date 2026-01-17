@@ -1074,7 +1074,7 @@ ${dealContext}`;
         // Base requirements
         if (!r || r.is_orphan) return; // Only show active conversations
         if (!r.deal_id || !r.agentId || !r.investorId) return; // Must belong to both parties and be attached to a deal
-        if (!r.counterparty_name || r.counterparty_name === 'Unknown') return; // Require a valid counterparty
+        if (!isAgent && (!r.counterparty_name || r.counterparty_name === 'Unknown')) return; // Require a valid counterparty (investor only)
 
         // Agent account: show investor-signed requests, including pending acceptance
         if (isAgent) {
