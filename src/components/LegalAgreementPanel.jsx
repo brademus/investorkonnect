@@ -393,7 +393,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </p>
               <div className="flex gap-2">
                 {termsMismatch && (
-                  <Button onClick={handleOpenGenerateModal} variant="outline" className="flex-1">Regenerate Agreement</Button>
+                  <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Regenerate Agreement</Button>
                 )}
               </div>
             </div>
@@ -629,7 +629,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               )}
 
               {isInvestor && !agreement.agent_signed_at && (
-                <Button onClick={handleOpenGenerateModal} variant="outline" className="w-full">Regenerate Agreement</Button>
+                <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Regenerate Agreement</Button>
               )}
             </div>
           </div>
