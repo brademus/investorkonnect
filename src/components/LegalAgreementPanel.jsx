@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -7,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
+export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false }) {
   const [agreement, setAgreement] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -401,11 +402,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
           <p className="text-[#808080] mb-4">No agreement generated yet</p>
-          <Button
-            onClick={handleOpenGenerateModal}
-            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-            Generate Agreement
-          </Button>
+          {allowGenerate ? (
+            <Button
+              onClick={handleOpenGenerateModal}
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+              Generate Agreement
+            </Button>
+          ) : (
+            <Button
+              onClick={() => (window.location.href = `${createPageUrl('MyAgreement')}?dealId=${deal?.id || deal?.deal_id}`)}
+              className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+              Open My Agreement Page
+            </Button>
+          )}
         </div>
       )}
 
