@@ -1214,6 +1214,11 @@ ${dealContext}`;
                 <FileText className="w-4 h-4 mr-2" />
                 Deal Board
               </Button>
+              {!isWorkingTogether && (
+                <span className="ml-3 text-xs bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full">
+                  Files, Photos, and Activity unlock after both signatures
+                </span>
+              )}
             )}
           </div>
         </div>
