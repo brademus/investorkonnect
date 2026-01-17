@@ -126,6 +126,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Agent pipeline gating: only show after investor has signed current agreement
+    if (isAgent && deals?.length) {
+      const gated = [];
+      for (const d of deals) {
+        const a = agreementsMap.get(d.id);
+        if (a && a.investor_signed_at) gated.push(d);
+      }
+      deals = gated;
+    }
+
     // Apply role-based redaction
     const redactedDeals = deals.map(deal => {
       // Get room for this deal to check signature status
