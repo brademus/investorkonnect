@@ -1186,40 +1186,41 @@ ${dealContext}`;
             )}
             
             {roomId && (
-              <Button
-                  onMouseEnter={prefetchDeal}
-                  onClick={async () => {
-                    const next = !showBoard;
-                    if (next) {
-                      setBoardLoading(true);
-                      const data = await prefetchDeal();
-                      if (data) {
-                        setDeal(data);
-                      } else if (currentRoom) {
-                        const snap = buildDealFromRoom(currentRoom, maskAddr);
-                        if (snap) setDeal(snap);
+              <>
+                <Button
+                    onMouseEnter={prefetchDeal}
+                    onClick={async () => {
+                      const next = !showBoard;
+                      if (next) {
+                        setBoardLoading(true);
+                        const data = await prefetchDeal();
+                        if (data) {
+                          setDeal(data);
+                        } else if (currentRoom) {
+                          const snap = buildDealFromRoom(currentRoom, maskAddr);
+                          if (snap) setDeal(snap);
+                        }
+                        setShowBoard(true);
+                        setBoardLoading(false);
+                      } else {
+                        setShowBoard(false);
                       }
-                      setShowBoard(true);
-                      setBoardLoading(false);
-                    } else {
-                      setShowBoard(false);
-                    }
-                  }}
-                  className={`rounded-full font-semibold transition-all ${
-                       showBoard 
-                         ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                         : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                     }`}
-                >
-                <FileText className="w-4 h-4 mr-2" />
-                Deal Board
-              </Button>
-              )}
-              {!isWorkingTogether && (
-                <span className="ml-3 text-xs bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full">
-                  Files, Photos, and Activity unlock after both signatures
-                </span>
-              )}
+                    }}
+                    className={`rounded-full font-semibold transition-all ${
+                         showBoard 
+                           ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                           : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                       }`}
+                  >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Deal Board
+                </Button>
+                {!isWorkingTogether && (
+                  <span className="ml-3 text-xs bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full">
+                    Files, Photos, and Activity unlock after both signatures
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
