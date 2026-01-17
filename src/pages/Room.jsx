@@ -1076,14 +1076,14 @@ ${dealContext}`;
         if (!r.deal_id || !r.agentId || !r.investorId) return; // Must belong to both parties and be attached to a deal
         if (!r.counterparty_name || r.counterparty_name === 'Unknown') return; // Require a valid counterparty
 
-        // Agent account: only show valid deals with investor-signed agreement and agent selected
+        // Agent account: show investor-signed requests, including pending acceptance
         if (isAgent) {
           if (!r.deal_id) return; // must be attached to a deal
           if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
           const status = r.agreement_status;
           const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
-          const agentSelected = r.request_status === 'accepted' || r.request_status === 'signed';
-          if (!investorSigned || !agentSelected) return;
+          const validStatus = r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed';
+          if (!investorSigned || !validStatus) return;
         }
 
         // Investor account: only show deals where THIS investor has signed and an agent is selected
