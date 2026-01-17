@@ -121,8 +121,8 @@ export default function PostAuth() {
 
         // Route strictly by existing role state (ignore selectedRole for existing users)
         if (!hasRole) {
-          // No role selected - go to RoleSelection
-          navigate(createPageUrl("RoleSelection"), { replace: true });
+          // No role selected - go to RoleLanding to choose path; Get Started sets role
+          navigate(createPageUrl("RoleLanding"), { replace: true });
         } else if (!isOnboarded) {
           // Has role but not onboarded
           if (role === 'investor') {
@@ -130,7 +130,7 @@ export default function PostAuth() {
           } else if (role === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            navigate(createPageUrl("RoleSelection"), { replace: true });
+            navigate(createPageUrl("RoleLanding"), { replace: true });
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)

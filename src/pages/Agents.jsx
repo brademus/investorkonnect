@@ -76,7 +76,7 @@ export default function Agents() {
               </p>
               <button 
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#34D399] to-[#10B981] px-8 py-4 text-base font-semibold text-[#0F0F0F] shadow-lg shadow-[#34D399]/30 transition-all hover:from-[#6EE7B7] hover:to-[#34D399] hover:shadow-xl hover:-translate-y-0.5"
-                onClick={() => navigate(createPageUrl("RoleSelection"))}
+                onClick={() => navigate(createPageUrl("AgentLanding"))}
               >
                 Apply Now
                 <ArrowRight className="w-5 h-5" />
@@ -208,7 +208,7 @@ export default function Agents() {
           </p>
           <button 
             className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#34D399] to-[#10B981] px-8 py-4 text-lg font-semibold text-[#0F0F0F] shadow-lg shadow-[#34D399]/30 transition-all hover:from-[#6EE7B7] hover:to-[#34D399] hover:shadow-xl hover:-translate-y-0.5"
-            onClick={() => navigate(createPageUrl("RoleSelection"))}
+            onClick={() => navigate(createPageUrl("AgentLanding"))}
           >
             Start Your Application
             <ArrowRight className="w-5 h-5" />

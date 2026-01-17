@@ -64,7 +64,6 @@ import Resources from './pages/Resources';
 import ReviewPolicy from './pages/ReviewPolicy';
 import Reviews from './pages/Reviews';
 import RoleLanding from './pages/RoleLanding';
-import RoleSelection from './pages/RoleSelection';
 import Room from './pages/Room';
 import Security from './pages/Security';
 import Terms from './pages/Terms';
@@ -143,7 +142,6 @@ export const PAGES = {
     "ReviewPolicy": ReviewPolicy,
     "Reviews": Reviews,
     "RoleLanding": RoleLanding,
-    "RoleSelection": RoleSelection,
     "Room": Room,
     "Security": Security,
     "Terms": Terms,
