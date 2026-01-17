@@ -316,7 +316,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   if (loading) {
     const terms = deal?.proposed_terms || null;
     return (
-      <Card className="ik-card p-0 overflow-hidden">
+      <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
         <CardHeader className="border-b border-[#1F1F1F] py-4">
           <CardTitle className="text-lg text-[#FAFAFA]">Legal Agreement</CardTitle>
         </CardHeader>
@@ -359,7 +359,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   }
 
   return (
-    <Card className="ik-card p-0 overflow-hidden">
+    <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
       <CardHeader className="border-b border-[#1F1F1F] py-4">
         <div className="flex items-start justify-between">
           <div>
