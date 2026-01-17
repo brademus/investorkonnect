@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -393,24 +394,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   
   const getStatusDisplay = () => {
     if (!agreement) return null;
-    
-      const statusConfig = {
-      draft: { icon: FileText, color: 'text-gray-400', bg: 'bg-gray-400/10', label: 'Draft' },
-      sent: { icon: Clock, color: 'text-blue-400', bg: 'bg-blue-400/10', label: 'Sent' },
-      investor_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Investor Signed' },
-      agent_signed: { icon: CheckCircle2, color: 'text-yellow-400', bg: 'bg-yellow-400/10', label: 'Agent Signed' },
-      attorney_review_pending: { icon: Clock, color: 'text-orange-400', bg: 'bg-orange-400/10', label: 'Attorney Review' },
-      fully_signed: { icon: CheckCircle2, color: 'text-green-400', bg: 'bg-green-400/10', label: 'Fully Executed' }
+
+    const statusConfig = {
+      draft: { icon: FileText, color: 'text-[#808080]', ring: 'border-[#1F1F1F]', label: 'Draft' },
+      sent: { icon: Clock, color: 'text-blue-400', ring: 'border-blue-400/30', label: 'Sent' },
+      investor_signed: { icon: CheckCircle2, color: 'text-yellow-400', ring: 'border-yellow-400/30', label: 'Investor Signed' },
+      agent_signed: { icon: CheckCircle2, color: 'text-yellow-400', ring: 'border-yellow-400/30', label: 'Agent Signed' },
+      attorney_review_pending: { icon: Clock, color: 'text-orange-400', ring: 'border-orange-400/30', label: 'Attorney Review' },
+      fully_signed: { icon: CheckCircle2, color: 'text-green-400', ring: 'border-green-400/30', label: 'Fully Executed' },
     };
-    
+
     const config = statusConfig[agreement.status] || statusConfig.draft;
     const Icon = config.icon;
-    
+
     return (
-      <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full ${config.bg}`}>
+      <Badge variant="outline" className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-transparent ${config.ring}`}>
         <Icon className={`w-4 h-4 ${config.color}`} />
         <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
-      </div>
+      </Badge>
     );
   };
   
@@ -441,7 +442,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               <h3 className="text-lg font-semibold text-[#FAFAFA]">Key Terms</h3>
               <p className="text-xs text-[#808080]">Showing deal terms while the agreement loads…</p>
             </div>
-            <div className="bg-[#0D0D0D] rounded-lg p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div className="bg-[#0D0D0D] rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-[#808080]">Commission Type</div>
                 <div className="text-[#FAFAFA] capitalize">{terms.buyer_commission_type || '—'}</div>
@@ -501,7 +502,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       {/* If agreement exists but investor hasn't signed yet, show Sign button prominently for investor */}
       {agreement && !agreement.investor_signed_at && isInvestor && (
         hasPendingOffer || termsMismatch ? (
-          <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4">
+          <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
             <p className="text-sm text-[#FAFAFA] mb-1">
               {hasPendingOffer ? 'An agent counter offer is pending. Review below and confirm or counter.' : 'Terms changed. Please regenerate the agreement before signing.'}
             </p>
@@ -512,7 +513,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             </div>
           </div>
         ) : (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg p-4 mb-4">
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 mb-4">
             <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
             <Button
               onClick={() => handleSign('investor')}
@@ -537,14 +538,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       {agreement && (
         <div className="space-y-4">
           {termsMismatch && (
-            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
+            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
               <div className="text-sm text-[#FAFAFA] font-semibold">Agreement out of date</div>
               <div className="text-xs text-[#808080]">Terms changed. Investor must regenerate and sign before agent can sign.</div>
             </div>
           )}
           {/* NJ Attorney Review Countdown */}
           {agreement.status === 'attorney_review_pending' && (
-            <div className="bg-orange-400/10 border border-orange-400/30 rounded-lg p-4">
+            <div className="bg-orange-400/10 border border-orange-400/30 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
                 <div>
@@ -560,7 +561,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
           {/* Key Terms (from deal) */}
           {deal?.proposed_terms && (
-            <div className="bg-[#0D0D0D] rounded-lg p-4 space-y-3 text-sm">
+            <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
               <div className="flex items-center justify-between">
                 <div className="text-[#808080]">Buyer Agent Compensation</div>
                 {isAgent && (
@@ -597,7 +598,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
           {/* Pending Counter Offer panel (visible to opposite party) */}
           {pendingOffer && (
-            <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg p-4 text-sm">
+            <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
               <div className="flex items-center justify-between mb-2">
                 <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
                 <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
@@ -638,7 +639,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           )}
 
           {/* Agreement Details */}
-          <div className="bg-[#0D0D0D] rounded-lg p-4 space-y-2 text-sm">
+          <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-[#808080]">Governing State:</span>
               <span className="text-[#FAFAFA]">{agreement.governing_state}</span>
@@ -660,7 +661,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
           {/* Signature Status */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-[#0D0D0D] rounded-lg p-4">
+            <div className="bg-[#0D0D0D] rounded-xl p-4">
               <div className="text-xs text-[#808080] mb-2">Investor</div>
               {agreement.investor_signed_at ? (
                 <div className="flex items-center gap-2 text-green-400">
@@ -675,7 +676,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               )}
             </div>
 
-            <div className="bg-[#0D0D0D] rounded-lg p-4">
+            <div className="bg-[#0D0D0D] rounded-xl p-4">
               <div className="text-xs text-[#808080] mb-2">Agent</div>
               {agreement.agent_signed_at ? (
                 <div className="flex items-center gap-2 text-green-400">
@@ -704,7 +705,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
                   </Button>
                 ) : (
-                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4 text-center">
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                     <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
                     <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
                     <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
@@ -718,7 +719,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               <>
                 {isAgent ? (
                   hasPendingOffer || termsMismatch ? (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-lg p-4 text-center">
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA] font-semibold">
                         {hasPendingOffer ? 'Counter offer pending' : 'Agreement needs regeneration'}
                       </p>
@@ -733,7 +734,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     </Button>
                   )
                 ) : (
-                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-lg p-4 text-center">
+                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                     <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
                     <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
                     <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
@@ -744,7 +745,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
             {/* Both signed */}
             {agreement.investor_signed_at && agreement.agent_signed_at && (
-              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-lg p-4 text-center">
+              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
                 <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
                 <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
                 <p className="text-xs text-[#808080] mt-1">Agreement complete</p>
@@ -791,7 +792,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           <div className="space-y-4 py-4">
             <div>
               <Label className="text-[#FAFAFA]">Buyer's Agent Commission Type</Label>
-              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                 {exhibitA.commission_type === 'percentage' ? 'Percentage of Purchase Price' : 
                  exhibitA.commission_type === 'flat' ? 'Flat Fee' : 
                  exhibitA.commission_type === 'net' ? 'Net/Spread' : 'Not Set'}
@@ -804,7 +805,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             {exhibitA.commission_type === 'flat' && (
               <div>
                 <Label className="text-[#FAFAFA]">Buyer's Agent Flat Fee</Label>
-                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                   ${(exhibitA.flat_fee_amount || 0).toLocaleString()}
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
@@ -816,7 +817,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             {exhibitA.commission_type === 'percentage' && (
               <div>
                 <Label className="text-[#FAFAFA]">Buyer's Agent Commission %</Label>
-                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                   {exhibitA.commission_percentage || 0}%
                 </div>
                 <p className="text-xs text-[#808080] mt-1">
@@ -828,7 +829,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             {exhibitA.commission_type === 'net' && (
               <div>
                 <Label className="text-[#FAFAFA]">Net Target Amount</Label>
-                <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+                <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                   ${(exhibitA.net_target || 0).toLocaleString()}
                 </div>
               </div>
@@ -836,14 +837,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             
             <div>
               <Label className="text-[#FAFAFA]">Transaction Type</Label>
-              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                 {exhibitA.transaction_type === 'ASSIGNMENT' ? 'Assignment' : 'Double Close'}
               </div>
             </div>
             
             <div>
               <Label className="text-[#FAFAFA]">Agreement Length</Label>
-              <div className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-3 text-[#FAFAFA]">
+              <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl px-4 py-3 text-[#FAFAFA]">
                 {exhibitA.agreement_length_days || 180} Days
               </div>
             </div>
