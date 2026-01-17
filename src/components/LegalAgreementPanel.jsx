@@ -448,8 +448,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                   {isAgent && (
                     <Button
                       size="sm"
-                      variant="outline"
-                      className="rounded-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                      className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                       onClick={() => {
                         const t = deal.proposed_terms || {};
                         const tType = t.buyer_commission_type || 'flat';
@@ -502,7 +501,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                       <>
                         <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
                         <Button size="sm" variant="destructive" onClick={denyOffer}>Deny</Button>
-                        <Button size="sm" variant="outline" className="rounded-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10" onClick={() => {
+                        <Button size="sm" className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={() => {
                           setCounterType(pendingOffer.terms?.buyer_commission_type || 'flat');
                           const amt = pendingOffer.terms?.buyer_commission_type === 'percentage'
                             ? pendingOffer.terms?.buyer_commission_percentage || 0
@@ -621,9 +620,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
               {(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
                 <Button
-                  variant="outline"
                   onClick={() => window.open(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
-                  className="w-full"
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
                 >
                   <Download className="w-4 h-4 mr-2" />
                   {agreement.signed_pdf_url ? 'Download Signed PDF' : 'View Agreement PDF'}
