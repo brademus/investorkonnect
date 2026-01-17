@@ -723,12 +723,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             <div>
               <Label className="text-[#FAFAFA] mb-1">Compensation Type</Label>
               <Select value={counterType} onValueChange={setCounterType}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="flat">Flat Fee</SelectItem>
-                  <SelectItem value="percentage">Percentage of Purchase Price</SelectItem>
+                <SelectContent className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                  <SelectItem value="flat" className="text-[#FAFAFA]">Flat Fee</SelectItem>
+                  <SelectItem value="percentage" className="text-[#FAFAFA]">Percentage of Purchase Price</SelectItem>
                 </SelectContent>
               </Select>
             </div>
