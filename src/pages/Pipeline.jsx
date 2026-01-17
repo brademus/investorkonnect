@@ -475,6 +475,12 @@ function PipelineContent() {
       return;
     }
 
+    // If investor: do NOT create a room before signing. Route to agreement first
+    if (!isAgent) {
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
+      return;
+    }
+
     // Otherwise, create or get the room for this deal + agent
     try {
       const roomId = await getOrCreateDealRoom({
