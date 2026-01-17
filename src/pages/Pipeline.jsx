@@ -260,16 +260,39 @@ function PipelineContent() {
         dealIds.map(id => base44.entities.Deal.filter({ id }))
       );
       const validDeals = new Set();
+      const dealsById = new Map();
       dealRows.forEach(rows => {
         const d = rows && rows[0];
-        if (d && d.status !== 'archived') validDeals.add(d.id);
+        if (d) {
+          dealsById.set(d.id, d);
+          if (d.status !== 'archived') validDeals.add(d.id);
+        }
       });
-      const finalList = list
+      // Preliminary: remove locked/archived/mismatched investor rooms
+      const prelim = list
         .filter(r => !lockedDeals.has(r.deal_id))
-        .filter(r => validDeals.has(r.deal_id));
-      return finalList.sort((a, b) =>
+        .filter(r => validDeals.has(r.deal_id))
+        .filter(r => {
+          const d = dealsById.get(r.deal_id);
+          return d && d.investor_id && r.investorId === d.investor_id;
+        });
+      // Dedupe by natural signature (address/city/state/price), keep most recent
+      const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+      const bySig = new Map();
+      for (const r of prelim) {
+        const d = dealsById.get(r.deal_id);
+        const addr = d?.property_address || r.property_address || r.deal_title || r.title || '';
+        const price = (d?.purchase_price ?? r.budget ?? 0);
+        const sig = `${norm(addr)}|${norm(r.city)}|${norm(r.state)}|${Number(price)}`;
+        const prev = bySig.get(sig);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) bySig.set(sig, r);
+      }
+      const deduped = Array.from(bySig.values()).sort((a, b) =>
         new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
       );
+      return deduped;
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
