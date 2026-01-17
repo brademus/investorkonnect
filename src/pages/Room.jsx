@@ -1214,6 +1214,11 @@ ${dealContext}`;
                       setShowBoard(true);
                       setBoardLoading(false);
                     } else {
+                      if (!isWorkingTogether) {
+                        toast.info('Chat unlocks after both parties sign the agreement.');
+                        setShowBoard(true);
+                        return;
+                      }
                       setShowBoard(false);
                     }
                   }}
