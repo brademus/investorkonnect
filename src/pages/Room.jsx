@@ -1064,12 +1064,26 @@ ${dealContext}`;
 
   // Memoize filtered rooms to prevent unnecessary recalculations
   const filteredRooms = useMemo(() => {
+    const isAgent = profile?.user_role === 'agent';
+    const myId = profile?.id;
     // Dedupe rooms by deal_id for sidebar: show only the most relevant room per deal
     const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
     const byDeal = new Map();
     (rooms || []).forEach(r => {
+      // Base requirements
       if (r.is_orphan) return; // Only show active conversations
       if (!r.counterparty_name || r.counterparty_name === 'Unknown') return; // Require a valid counterparty
+
+      // Agent account: only show valid deals with investor-signed agreement and agent selected
+      if (isAgent) {
+        if (!r.deal_id) return; // must be attached to a deal
+        if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
+        const status = r.agreement_status;
+        const investorSigned = status === 'investor_signed' || status === 'fully_signed' || status === 'attorney_review_pending' || r.is_fully_signed === true;
+        const agentSelected = r.request_status === 'accepted' || r.request_status === 'signed';
+        if (!investorSigned || !agentSelected) return;
+      }
+
       const key = r.deal_id || `room-${r.id}`; // Group by deal when available
       const prev = byDeal.get(key);
       if (!prev) { byDeal.set(key, r); return; }
@@ -1087,7 +1101,7 @@ ${dealContext}`;
     }
     // Sort by updated date desc for stable ordering
     return list.sort((a, b) => new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
-  }, [rooms, searchConversations]);
+  }, [rooms, searchConversations, profile?.user_role, profile?.id]);
 
 
 
