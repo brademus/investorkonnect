@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
@@ -27,6 +27,7 @@ import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/co
 
 function PipelineContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { profile, loading, refresh } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
@@ -203,6 +204,18 @@ function PipelineContent() {
     refetchOnMount: false
   });
 
+  // Force refresh after DocuSign return
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('signed') === '1') {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+      queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
+      refetchDeals();
+      refetchRooms();
+    }
+  }, [location.search, profile?.id, profile?.user_role]);
+
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
@@ -245,8 +258,11 @@ function PipelineContent() {
   const deals = useMemo(() => {
     // Index rooms by deal_id
     const roomMap = new Map();
+    const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
     rooms.forEach(r => {
-      if (r.deal_id && !r.is_orphan) {
+      if (!r?.deal_id) return;
+      const current = roomMap.get(r.deal_id);
+      if (!current || rank(r) > rank(current)) {
         roomMap.set(r.deal_id, r);
       }
     });
@@ -309,6 +325,7 @@ function PipelineContent() {
         customer_name: counterpartyName,
         agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
         agent_request_status: room?.request_status || null,
+        agreement_status: room?.agreement_status || null,
 
          // Dates
          created_date: deal.created_date,
@@ -762,7 +779,7 @@ function PipelineContent() {
 
                                       {/* Action Buttons */}
                                       <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
-                                        {(!isAgent && deal.agent_request_status === 'rejected') ? (
+                                        {(!isAgent && deal.agent_request_status === 'rejected' && deal.agreement_status !== 'investor_signed' && deal.agreement_status !== 'fully_signed' && deal.agreement_status !== 'attorney_review_pending') ? (
                                           <Button
                                             onClick={(e) => {
                                               e.stopPropagation();
