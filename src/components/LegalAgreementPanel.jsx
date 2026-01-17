@@ -408,6 +408,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
           </Button>
         </div>
       )}
+
+      {/* If agreement exists but investor hasn't signed yet, show Sign button prominently for investor */}
+      {agreement && !agreement.investor_signed_at && isInvestor && (
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg p-4 mb-4">
+          <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
+          <Button
+            onClick={() => handleSign('investor')}
+            disabled={signing}
+            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+            {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+          </Button>
+        </div>
+      )}
       
       
       {!agreement && isAgent && (
