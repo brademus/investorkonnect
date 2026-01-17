@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle, MapPin, Briefcase, Star, ArrowRight } from "lucide-react";
+import { CheckCircle, MapPin, Briefcase, Star, ArrowRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 export default function AgentMatching() {
@@ -24,8 +24,8 @@ export default function AgentMatching() {
     console.log('[AgentMatching] useEffect triggered:', { dealId, profileId: profile?.id });
     
     if (!dealId) {
-      console.log('[AgentMatching] No dealId, redirecting to Pipeline');
-      navigate(createPageUrl("Pipeline"));
+      console.log('[AgentMatching] No dealId, redirecting to ContractVerify');
+      navigate(createPageUrl("ContractVerify"));
       return;
     }
     
@@ -51,7 +51,7 @@ export default function AgentMatching() {
       if (!deals || deals.length === 0) {
         console.log('[AgentMatching] Deal not found');
         toast.error("Deal not found");
-        navigate(createPageUrl("Pipeline"));
+        navigate(createPageUrl("ContractVerify"));
         return;
       }
 
@@ -149,12 +149,19 @@ export default function AgentMatching() {
       );
 
       if (activeRoom) {
-        toast.error("You already have an active agent request for this deal. Open the existing Deal Room to continue.");
-        setSendingToAgent(null);
-        setTimeout(() => {
-          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}&tab=agreement`);
-        }, 1500);
-        return;
+        if (activeRoom.request_status === 'signed') {
+          toast.error("This deal already has a signed agent relationship. Open the existing Deal Room to continue.");
+          setSendingToAgent(null);
+          setTimeout(() => {
+            navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}&tab=agreement`);
+          }, 1500);
+          return;
+        }
+        // Close existing pending/accepted request so you can choose a different agent
+        const now = new Date().toISOString();
+        try {
+          await base44.entities.Room.update(activeRoom.id, { request_status: 'rejected', rejected_at: now, closedAt: now });
+        } catch (_) {}
       }
 
       // Check for existing room with this specific agent
@@ -228,7 +235,14 @@ export default function AgentMatching() {
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
-        <div className="mb-8 text-center">
+        <div className="mb-8">
+          <button
+            onClick={() => navigate(`${createPageUrl("ContractVerify")}?dealId=${deal?.id || dealId}`)}
+            className="text-[#808080] hover:text-[#E3C567] text-sm flex items-center gap-2 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Verification
+          </button>
+          <div className="text-center">
           <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-[#E3C567]" />
           </div>
@@ -236,6 +250,7 @@ export default function AgentMatching() {
           <p className="text-[#808080]">
             Best agents for {deal?.city}, {deal?.state} • Select one to send your deal
           </p>
+        </div>
         </div>
 
         {/* Agent Cards */}

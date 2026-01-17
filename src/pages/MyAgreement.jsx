@@ -80,6 +80,14 @@ export default function MyAgreement() {
   return (
     <div className="min-h-screen bg-transparent px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={() => navigate(`${createPageUrl("AgentMatching")}?dealId=${deal?.id || dealId}`)}
+            className="text-[#808080] hover:text-[#E3C567] text-sm"
+          >
+            Back to Matched Agents
+          </button>
+        </div>
         <div className="text-center">
           <h1 className="text-3xl font-bold text-[#E3C567]">My Agreement</h1>
           <p className="text-sm text-[#808080] mt-1">Generate and sign to unlock your pipeline</p>
