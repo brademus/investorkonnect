@@ -292,7 +292,14 @@ function PipelineContent() {
       const deduped = Array.from(bySig.values()).sort((a, b) =>
         new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
       );
-      return deduped;
+      // Final legitimacy filter: require basic location + budget + named counterparty, and not fully signed
+      const legit = deduped.filter(r =>
+        (Boolean(r.city) || Boolean(r.state)) &&
+        Number(r.budget || 0) > 0 &&
+        r.counterparty_name && r.counterparty_name !== 'Unknown' &&
+        !r.is_fully_signed
+      );
+      return legit;
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
