@@ -66,7 +66,7 @@ export default function Identity() {
 
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto">
+      <div className="max-w-xl mx-auto flex items-center justify-center min-h-[60vh]">
         <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
           <CardHeader className="border-b border-[#1F1F1F] py-4">
             <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
@@ -82,11 +82,11 @@ export default function Identity() {
   return (
     <div className="max-w-xl mx-auto">
       <div className="mb-4">
-        <Link to={createPageUrl('Pipeline')}>
-          <Button variant="outline" className="gap-2">
+        <Button asChild variant="outline" className="gap-2 rounded-full">
+          <Link to={createPageUrl('Pipeline')}>
             <ArrowLeft className="w-4 h-4" /> Back to Pipeline
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </div>
       <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
         <CardHeader className="border-b border-[#1F1F1F] py-4">
@@ -143,6 +143,7 @@ export default function Identity() {
           )}
         </CardContent>
       </Card>
+      </div>
 
       <IdentityMismatchModal
         open={mismatchOpen}
