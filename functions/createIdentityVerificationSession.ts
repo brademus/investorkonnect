@@ -48,6 +48,14 @@ Deno.serve(async (req) => {
       nameMatchStatus: 'UNKNOWN',
       lastError: null
     };
+
+    // if previously VERIFIED, keep verified fields and only update sessionId/status
+    if (existing?.length && existing[0].verificationStatus === 'VERIFIED') {
+      payload.verifiedAt = existing[0].verifiedAt;
+      payload.verifiedFirstName = existing[0].verifiedFirstName;
+      payload.verifiedLastName = existing[0].verifiedLastName;
+      payload.nameMatchStatus = existing[0].nameMatchStatus || 'MATCH';
+    }
     if (existing?.length) {
       await base44.entities.UserIdentity.update(existing[0].id, payload);
     } else {
