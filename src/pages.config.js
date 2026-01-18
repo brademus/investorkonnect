@@ -34,6 +34,7 @@ import FAQ from './pages/FAQ';
 import GetStarted from './pages/GetStarted';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
+import Identity from './pages/Identity';
 import Inbox from './pages/Inbox';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
@@ -72,7 +73,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import Identity from './pages/Identity';
 import __Layout from './Layout.jsx';
 
 
@@ -113,6 +113,7 @@ export const PAGES = {
     "GetStarted": GetStarted,
     "Home": Home,
     "HowItWorks": HowItWorks,
+    "Identity": Identity,
     "Inbox": Inbox,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
@@ -151,7 +152,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "Identity": Identity,
 }
 
 export const pagesConfig = {

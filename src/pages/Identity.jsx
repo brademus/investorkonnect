@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Shield } from 'lucide-react';
+import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 import IdentityMismatchModal from '@/components/identity/IdentityMismatchModal';
 
 export default function Identity() {
