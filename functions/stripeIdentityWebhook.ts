@@ -24,6 +24,37 @@ Deno.serve(async (req) => {
 
     const base44 = createClientFromRequest(req);
 
+    const isStripeTestMode = () => {
+      const key = Deno.env.get('STRIPE_SECRET_KEY') || '';
+      const mode = (Deno.env.get('STRIPE_MODE') || '').toLowerCase();
+      return key.startsWith('sk_test_') || mode === 'test';
+    };
+
+    const upsertProfileIdentity = async (userId, sessionId, verified, names) => {
+      if (!userId) return;
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+      if (!profiles?.length) return;
+      const profile = profiles[0];
+      const update = {
+        identity_provider: 'stripe_identity',
+        identity_session_id: sessionId,
+        identity_mode: isStripeTestMode() ? 'test' : 'live',
+      };
+      if (verified) {
+        update.identity_status = 'verified';
+        update.identity_verified_at = new Date().toISOString();
+        if (names?.first && names?.last) {
+          update.verified_first_name = names.first;
+          update.verified_last_name = names.last;
+        }
+      } else if (verified === false) {
+        update.identity_status = 'failed';
+      } else {
+        update.identity_status = 'pending';
+      }
+      await base44.asServiceRole.entities.Profile.update(profile.id, update);
+    };
+
     switch (event.type) {
       case 'identity.verification_session.verified': {
         const vs = event.data.object;
