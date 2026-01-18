@@ -66,15 +66,24 @@ export default function Identity() {
 
   if (loading) {
     return (
-      <div className="max-w-xl mx-auto flex items-center justify-center min-h-[60vh]">
-        <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
-          <CardHeader className="border-b border-[#1F1F1F] py-4">
-            <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
-          </CardHeader>
-          <CardContent className="p-6 text-center">
-            <Loader2 className="w-5 h-5 mx-auto animate-spin text-[#E3C567]" />
-          </CardContent>
-        </Card>
+      <div className="max-w-xl mx-auto">
+        <div className="mb-4">
+          <Button asChild variant="outline" className="gap-2 rounded-full">
+            <Link to={createPageUrl('Pipeline')}>
+              <ArrowLeft className="w-4 h-4" /> Back to Pipeline
+            </Link>
+          </Button>
+        </div>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
+            <CardHeader className="border-b border-[#1F1F1F] py-4">
+              <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 text-center">
+              <Loader2 className="w-5 h-5 mx-auto animate-spin text-[#E3C567]" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
