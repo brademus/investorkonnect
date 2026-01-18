@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
           },
           {
             email: agent.email,
-            name: agent.full_name || agent.email,
+            name: agentName,
             recipientId: '2',
             routingOrder: '2',
             clientUserId: agentClientUserId,
