@@ -25,13 +25,30 @@ Deno.serve(async (req) => {
     if (!STRIPE_SECRET_KEY) return Response.json({ error: 'Missing Stripe secret key' }, { status: 500 });
     const stripe = new Stripe(STRIPE_SECRET_KEY);
 
-    const session = await stripe.identity.verificationSessions.retrieve(identity.verificationSessionId);
+    const session = await stripe.identity.verificationSessions.retrieve(identity.verificationSessionId, { expand: ['last_verification_report'] });
     const status = mapStripeStatus(session.status);
 
-    await base44.entities.UserIdentity.update(identity.id, {
+    const update = {
       verificationStatus: status,
       lastError: session.last_error?.reason || null
-    });
+    };
+
+    if (status === 'VERIFIED') {
+      const vf = session.last_verification_report?.document?.first_name || null;
+      const vl = session.last_verification_report?.document?.last_name || null;
+      update.verifiedFirstName = vf;
+      update.verifiedLastName = vl;
+      update.verifiedAt = new Date().toISOString();
+      // Attempt local name match when possible
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const profile = profiles?.[0] || null;
+      const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+      const profileName = norm(profile?.full_name || '');
+      const verifiedName = norm([vf, vl].filter(Boolean).join(' '));
+      update.nameMatchStatus = verifiedName && profileName && verifiedName === profileName ? 'MATCH' : 'MISMATCH';
+    }
+
+    await base44.entities.UserIdentity.update(identity.id, update);
 
     return Response.json({ verificationStatus: status });
   } catch (error) {
