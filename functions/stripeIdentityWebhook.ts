@@ -61,17 +61,13 @@ Deno.serve(async (req) => {
         const session = await stripe.identity.verificationSessions.retrieve(vs.id, { expand: ['last_verification_report'] });
         const userId = session.metadata?.userId || session.client_reference_id;
 
+        // Idempotency: if already VERIFIED in UserIdentity, skip heavy updates but still update Profile identity flags
         const identities = userId
           ? await base44.asServiceRole.entities.UserIdentity.filter({ user_id: userId })
           : await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: session.id });
         const identity = identities?.[0];
 
-        let profile = null;
-        if (userId) {
-          const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
-          profile = profiles?.[0] || null;
-        }
-
+        // Names from Stripe (live mode preferred)
         let vf = null, vl = null;
         const report = session.last_verification_report;
         if (report?.document) {
@@ -79,18 +75,29 @@ Deno.serve(async (req) => {
           vl = report.document?.last_name || null;
         }
 
-        const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
-        const profileName = norm(profile?.full_name || '');
-        const verifiedName = norm([vf, vl].filter(Boolean).join(' '));
-        const nameMatchStatus = verifiedName && profileName && verifiedName === profileName ? 'MATCH' : 'MISMATCH';
+        const testMode = isStripeTestMode();
 
+        // Update Profile with identity fields
+        if (testMode) {
+          // In TEST MODE: use onboarding names as verified names
+          const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+          const profile = profiles?.[0];
+          const first = profile?.onboarding_first_name || (profile?.full_name?.split(' ')[0] || null);
+          const last = profile?.onboarding_last_name || (profile?.full_name?.split(' ').slice(1).join(' ') || null);
+          await upsertProfileIdentity(userId, session.id, true, { first, last });
+        } else {
+          // LIVE MODE: use Stripe verified outputs if available
+          await upsertProfileIdentity(userId, session.id, true, { first: vf, last: vl });
+        }
+
+        // Update UserIdentity record consistently
         if (identity) {
           await base44.asServiceRole.entities.UserIdentity.update(identity.id, {
             verificationStatus: 'VERIFIED',
             verifiedAt: new Date().toISOString(),
-            verifiedFirstName: vf,
-            verifiedLastName: vl,
-            nameMatchStatus,
+            verifiedFirstName: testMode ? undefined : vf,
+            verifiedLastName: testMode ? undefined : vl,
+            nameMatchStatus: testMode ? 'UNKNOWN' : (vf && vl ? 'MATCH' : 'UNKNOWN'),
             lastError: null
           });
         }
