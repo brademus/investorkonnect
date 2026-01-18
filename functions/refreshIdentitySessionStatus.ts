@@ -13,6 +13,11 @@ function mapStripeStatus(s) {
 
 Deno.serve(async (req) => {
   try {
+    const isStripeTestMode = () => {
+      const key = Deno.env.get('STRIPE_SECRET_KEY') || '';
+      const mode = (Deno.env.get('STRIPE_MODE') || '').toLowerCase();
+      return key.startsWith('sk_test_') || mode === 'test';
+    };
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
