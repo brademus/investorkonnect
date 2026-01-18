@@ -11,6 +11,7 @@ export default function Identity() {
   const [profile, setProfile] = useState(null);
   const [mismatchOpen, setMismatchOpen] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRefreshed, setAutoRefreshed] = useState(false);
 
   const load = async () => {
     setLoading(true);
