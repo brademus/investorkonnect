@@ -129,6 +129,11 @@ Deno.serve(async (req) => {
 
       case 'identity.verification_session.canceled': {
         const vs = event.data.object;
+        const session = await stripe.identity.verificationSessions.retrieve(vs.id);
+        const userId = session.metadata?.userId || session.client_reference_id;
+        await upsertProfileIdentity(userId, vs.id, false);
+
+        const vs = event.data.object;
         const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
         if (identities?.length) {
           await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'CANCELED' });
