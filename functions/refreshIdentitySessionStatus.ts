@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       if (testMode) {
         // Use onboarding names as verified and mark MATCH in test mode
         const first = profile?.onboarding_first_name || (profile?.full_name?.split(' ')[0] || null);
-        const last = profile?.onboarding_last_name || (profile?.full_name?.split(1).length ? profile?.full_name?.split(' ').slice(1).join(' ') : null);
+        const last = profile?.onboarding_last_name || (profile?.full_name ? profile.full_name.split(' ').slice(1).join(' ') || null : null);
         update.verifiedFirstName = first;
         update.verifiedLastName = last;
         update.verifiedAt = new Date().toISOString();
