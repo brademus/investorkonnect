@@ -39,18 +39,49 @@ Deno.serve(async (req) => {
     };
 
     if (status === 'VERIFIED') {
-      const vf = session.last_verification_report?.document?.first_name || null;
-      const vl = session.last_verification_report?.document?.last_name || null;
-      update.verifiedFirstName = vf;
-      update.verifiedLastName = vl;
-      update.verifiedAt = new Date().toISOString();
-      // Attempt local name match when possible
+      const testMode = isStripeTestMode();
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       const profile = profiles?.[0] || null;
-      const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
-      const profileName = norm(profile?.full_name || '');
-      const verifiedName = norm([vf, vl].filter(Boolean).join(' '));
-      update.nameMatchStatus = verifiedName && profileName && verifiedName === profileName ? 'MATCH' : 'MISMATCH';
+
+      if (testMode) {
+        // Use onboarding names as verified
+        const first = profile?.onboarding_first_name || (profile?.full_name?.split(' ')[0] || null);
+        const last = profile?.onboarding_last_name || (profile?.full_name?.split(' ').slice(1).join(' ') || null);
+        update.verifiedFirstName = undefined; // keep identity table minimal in test
+        update.verifiedLastName = undefined;
+        update.verifiedAt = new Date().toISOString();
+        update.nameMatchStatus = 'UNKNOWN';
+        // mirror into Profile so UI uses verified_* and identity_status
+        await base44.entities.Profile.update(profile.id, {
+          verified_first_name: first,
+          verified_last_name: last,
+          identity_status: 'verified',
+          identity_provider: 'stripe_identity',
+          identity_session_id: identity.verificationSessionId,
+          identity_verified_at: new Date().toISOString(),
+          identity_mode: 'test'
+        });
+      } else {
+        // Live: use Stripe outputs when present
+        const vf = session.last_verification_report?.document?.first_name || null;
+        const vl = session.last_verification_report?.document?.last_name || null;
+        update.verifiedFirstName = vf;
+        update.verifiedLastName = vl;
+        update.verifiedAt = new Date().toISOString();
+        const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+        const profileName = norm(profile?.full_name || '');
+        const verifiedName = norm([vf, vl].filter(Boolean).join(' '));
+        update.nameMatchStatus = vf && vl && profileName ? (verifiedName === profileName ? 'MATCH' : 'MISMATCH') : 'UNKNOWN';
+        await base44.entities.Profile.update(profile.id, {
+          verified_first_name: vf || profile?.verified_first_name || null,
+          verified_last_name: vl || profile?.verified_last_name || null,
+          identity_status: 'verified',
+          identity_provider: 'stripe_identity',
+          identity_session_id: identity.verificationSessionId,
+          identity_verified_at: new Date().toISOString(),
+          identity_mode: 'live'
+        });
+      }
     }
 
     await base44.entities.UserIdentity.update(identity.id, update);
