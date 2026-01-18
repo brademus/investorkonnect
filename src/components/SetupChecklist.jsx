@@ -43,6 +43,12 @@ export function SetupChecklist({ profile, onRefresh }) {
       try {
         const { data } = await base44.functions.invoke('getIdentityStatus');
         setIdentity(data?.identity || null);
+        // If webhook is lagging but we have a session, try a one-shot refresh
+        if (data?.identity?.verificationSessionId && data?.identity?.verificationStatus !== 'VERIFIED') {
+          await base44.functions.invoke('refreshIdentitySessionStatus');
+          const { data: data2 } = await base44.functions.invoke('getIdentityStatus');
+          setIdentity(data2?.identity || data?.identity);
+        }
       } catch (_) { /* noop */ }
     })();
   }, [profile?.id]);
