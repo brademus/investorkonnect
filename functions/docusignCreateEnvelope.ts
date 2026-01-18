@@ -75,6 +75,13 @@ Deno.serve(async (req) => {
     
     const investor = investorProfiles[0];
     const agent = agentProfiles[0];
+
+    const investorName = (investor?.identity_status === 'verified' && (investor?.verified_first_name || investor?.verified_last_name))
+      ? `${investor.verified_first_name || ''} ${investor.verified_last_name || ''}`.trim()
+      : (investor?.full_name || investor?.email);
+    const agentName = (agent?.identity_status === 'verified' && (agent?.verified_first_name || agent?.verified_last_name))
+      ? `${agent.verified_first_name || ''} ${agent.verified_last_name || ''}`.trim()
+      : (agent?.full_name || agent?.email);
     
     if (!investor || !agent) {
       return Response.json({ error: 'Investor or agent profile not found' }, { status: 404 });
