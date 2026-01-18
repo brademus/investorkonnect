@@ -211,7 +211,6 @@ export function SetupChecklist({ profile, onRefresh }) {
             
             const handleClick = () => {
               if (isLocked) {
-                // Navigate to the first incomplete step (which is visibleSteps[0])
                 navigate(createPageUrl(visibleSteps[0].link));
               } else {
                 navigate(createPageUrl(step.link));
