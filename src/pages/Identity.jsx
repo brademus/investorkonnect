@@ -98,16 +98,16 @@ export default function Identity() {
         </Button>
       </div>
       <div className="flex items-center justify-center min-h-[60vh]">
-        <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
+        <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA] w-full">
           <CardHeader className="border-b border-[#1F1F1F] py-4">
             <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-[#E3C567]" />
-              <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
+              <div className="flex items-center gap-2">
+                <Shield className="w-5 h-5 text-[#E3C567]" />
+                <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
+              </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="p-6 space-y-3">
+          </CardHeader>
+          <CardContent className="p-6 space-y-3">
           {identity?.verificationStatus === 'NOT_STARTED' || identity?.verificationStatus === 'REQUIRES_INPUT' ? (
            <>
              <p className="text-sm text-[#808080]">Verify your identity so your legal name matches your contracts.</p>
