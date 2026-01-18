@@ -155,6 +155,7 @@ export default function Identity() {
       </Card>
       </div>
 
+      {/* Modal: keep outside the centered wrapper */}
       <IdentityMismatchModal
         open={mismatchOpen}
         onClose={() => setMismatchOpen(false)}
