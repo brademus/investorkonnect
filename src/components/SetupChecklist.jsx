@@ -246,7 +246,11 @@ export function SetupChecklist({ profile, onRefresh }) {
                     {step.title}
                   </p>
                   <p className="text-[10px] text-[#808080] truncate">
-                    {isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'}
+                    {step.id === 'identity' && !identityComplete ? (
+                     identity?.verificationStatus === 'PROCESSING' ? 'Processing…' : (identity?.verificationStatus === 'REQUIRES_INPUT' || identity?.verificationStatus === 'NOT_STARTED') ? 'Click to verify' : identity?.verificationStatus === 'VERIFIED' && identity?.nameMatchStatus === 'MISMATCH' ? 'Resolve mismatch' : 'Click to start'
+                    ) : (
+                     isNext ? 'Up next' : isLocked ? 'Complete previous' : 'Click to start'
+                    )}
                   </p>
                 </div>
               </button>
