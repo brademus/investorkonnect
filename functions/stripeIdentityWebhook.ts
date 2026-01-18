@@ -92,12 +92,16 @@ Deno.serve(async (req) => {
 
         // Update UserIdentity record consistently
         if (identity) {
+          const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+          const profile = profiles?.[0];
+          const first = testMode ? (profile?.onboarding_first_name || (profile?.full_name?.split(' ')[0] || null)) : vf;
+          const last = testMode ? (profile?.onboarding_last_name || (profile?.full_name?.split(' ').slice(1).join(' ') || null)) : vl;
           await base44.asServiceRole.entities.UserIdentity.update(identity.id, {
             verificationStatus: 'VERIFIED',
             verifiedAt: new Date().toISOString(),
-            verifiedFirstName: testMode ? undefined : vf,
-            verifiedLastName: testMode ? undefined : vl,
-            nameMatchStatus: testMode ? 'UNKNOWN' : (vf && vl ? 'MATCH' : 'UNKNOWN'),
+            verifiedFirstName: first,
+            verifiedLastName: last,
+            nameMatchStatus: testMode ? 'MATCH' : (vf && vl ? 'MATCH' : 'UNKNOWN'),
             lastError: null
           });
         }
@@ -119,7 +123,6 @@ Deno.serve(async (req) => {
         const userId = session.metadata?.userId || session.client_reference_id;
         await upsertProfileIdentity(userId, vs.id, null);
 
-        const vs = event.data.object;
         const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
         if (identities?.length) {
           await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'REQUIRES_INPUT', lastError: vs.last_error?.reason || null });
@@ -133,7 +136,6 @@ Deno.serve(async (req) => {
         const userId = session.metadata?.userId || session.client_reference_id;
         await upsertProfileIdentity(userId, vs.id, false);
 
-        const vs = event.data.object;
         const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
         if (identities?.length) {
           await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'CANCELED' });

@@ -44,13 +44,13 @@ Deno.serve(async (req) => {
       const profile = profiles?.[0] || null;
 
       if (testMode) {
-        // Use onboarding names as verified
+        // Use onboarding names as verified and mark MATCH in test mode
         const first = profile?.onboarding_first_name || (profile?.full_name?.split(' ')[0] || null);
-        const last = profile?.onboarding_last_name || (profile?.full_name?.split(' ').slice(1).join(' ') || null);
-        update.verifiedFirstName = undefined; // keep identity table minimal in test
-        update.verifiedLastName = undefined;
+        const last = profile?.onboarding_last_name || (profile?.full_name?.split(1).length ? profile?.full_name?.split(' ').slice(1).join(' ') : null);
+        update.verifiedFirstName = first;
+        update.verifiedLastName = last;
         update.verifiedAt = new Date().toISOString();
-        update.nameMatchStatus = 'UNKNOWN';
+        update.nameMatchStatus = 'MATCH';
         // mirror into Profile so UI uses verified_* and identity_status
         await base44.entities.Profile.update(profile.id, {
           verified_first_name: first,
