@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
         signers: [
           {
             email: investor.email,
-            name: investor.full_name || investor.email,
+            name: investorName,
             recipientId: '1',
             routingOrder: '1',
             clientUserId: investorClientUserId,
