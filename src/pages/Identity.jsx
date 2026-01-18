@@ -26,6 +26,18 @@ export default function Identity() {
 
   useEffect(() => { load(); }, []);
 
+  // If user returns from Stripe, poll once to ensure status updates (covers webhook delays)
+  useEffect(() => {
+    const hasStripeReturn = /identity|verification|return/i.test(window.location.href);
+    if (!autoRefreshed && hasStripeReturn) {
+      (async () => {
+        setAutoRefreshed(true);
+        await base44.functions.invoke('refreshIdentitySessionStatus');
+        await load();
+      })();
+    }
+  }, [autoRefreshed]);
+
   const startVerification = async () => {
     const { data } = await base44.functions.invoke('createIdentityVerificationSession');
     if (data?.url) window.location.assign(data.url);
