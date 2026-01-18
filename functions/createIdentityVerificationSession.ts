@@ -62,6 +62,19 @@ Deno.serve(async (req) => {
       await base44.entities.UserIdentity.create(payload);
     }
 
+    // Mark profile identity as pending and record session id/mode for UI
+    const isStripeTestMode = () => {
+      const key = Deno.env.get('STRIPE_SECRET_KEY') || '';
+      const mode = (Deno.env.get('STRIPE_MODE') || '').toLowerCase();
+      return key.startsWith('sk_test_') || mode === 'test';
+    };
+    await base44.entities.Profile.update(profile.id, {
+      identity_status: 'pending',
+      identity_provider: 'stripe_identity',
+      identity_session_id: session.id,
+      identity_mode: isStripeTestMode() ? 'test' : 'live'
+    });
+
     return Response.json({ url: session.url });
   } catch (error) {
     return Response.json({ error: error.message || String(error) }, { status: 500 });
