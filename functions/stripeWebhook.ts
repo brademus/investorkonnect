@@ -152,6 +152,82 @@ Deno.serve(async (req) => {
       }
       
       // ========================================
+      // IDENTITY EVENTS (Stripe Identity)
+      // ========================================
+      case 'identity.verification_session.verified': {
+        const vs = event.data.object;
+        const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'));
+        const session = await stripe.identity.verificationSessions.retrieve(vs.id, { expand: ['last_verification_report'] });
+        const userId = session.metadata?.userId || session.client_reference_id;
+
+        // Find identity record
+        const identities = userId
+          ? await base44.asServiceRole.entities.UserIdentity.filter({ user_id: userId })
+          : await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: session.id });
+        const identity = identities?.[0];
+
+        // Fetch profile for name comparison
+        let profile = null;
+        if (userId) {
+          const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+          profile = profiles?.[0] || null;
+        }
+
+        // Extract verified name from report
+        let vf = null, vl = null;
+        const report = session.last_verification_report;
+        if (report?.document) {
+          vf = report.document?.first_name || null;
+          vl = report.document?.last_name || null;
+        }
+
+        // Normalize compare with profile.full_name
+        const norm = (s) => (s || '').toString().trim().toLowerCase().replace(/\s+/g, ' ');
+        const profileName = norm(profile?.full_name || '');
+        const verifiedName = norm([vf, vl].filter(Boolean).join(' '));
+        const nameMatchStatus = verifiedName && profileName && verifiedName === profileName ? 'MATCH' : 'MISMATCH';
+
+        if (identity) {
+          await base44.asServiceRole.entities.UserIdentity.update(identity.id, {
+            verificationStatus: 'VERIFIED',
+            verifiedAt: new Date().toISOString(),
+            verifiedFirstName: vf,
+            verifiedLastName: vl,
+            nameMatchStatus,
+            lastError: null
+          });
+        }
+        break;
+      }
+
+      case 'identity.verification_session.processing': {
+        const vs = event.data.object;
+        const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
+        if (identities?.length) {
+          await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'PROCESSING' });
+        }
+        break;
+      }
+
+      case 'identity.verification_session.requires_input': {
+        const vs = event.data.object;
+        const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
+        if (identities?.length) {
+          await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'REQUIRES_INPUT', lastError: vs.last_error?.reason || null });
+        }
+        break;
+      }
+
+      case 'identity.verification_session.canceled': {
+        const vs = event.data.object;
+        const identities = await base44.asServiceRole.entities.UserIdentity.filter({ verificationSessionId: vs.id });
+        if (identities?.length) {
+          await base44.asServiceRole.entities.UserIdentity.update(identities[0].id, { verificationStatus: 'CANCELED' });
+        }
+        break;
+      }
+
+      // ========================================
       // SUBSCRIPTION EVENTS (EXISTING)
       // ========================================
       

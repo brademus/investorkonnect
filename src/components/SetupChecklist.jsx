@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import {
   CheckCircle2, ChevronUp, ChevronDown, 
   User, FileText, Shield, CreditCard, Sparkles, Briefcase
 } from 'lucide-react';
+import { base44 } from '@/api/base44Client';
 
 export function SetupChecklist({ profile, onRefresh }) {
   const navigate = useNavigate();
@@ -36,7 +37,17 @@ export function SetupChecklist({ profile, onRefresh }) {
   );
   
   console.log('[SetupChecklist] onboardingComplete:', onboardingComplete);
-  const kycComplete = true; // KYC disabled
+  const [identity, setIdentity] = useState(null);
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        setIdentity(data?.identity || null);
+      } catch (_) { /* noop */ }
+    })();
+  }, [profile?.id]);
+
+  const kycComplete = true; // legacy KYC disabled; use Identity step below
   const ndaComplete = !!profile?.nda_accepted;
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
@@ -69,8 +80,11 @@ export function SetupChecklist({ profile, onRefresh }) {
     }
   ].filter(Boolean);
 
+  // Identity step status
+  const identityComplete = Boolean(identity && identity.verificationStatus === 'VERIFIED' && identity.nameMatchStatus === 'MATCH');
+
   // Only add subscription step for investors, not agents
-  const steps = isAgent ? baseSteps : [
+  const investorSteps = [
     ...baseSteps,
     {
       id: 'subscription',
@@ -79,8 +93,30 @@ export function SetupChecklist({ profile, onRefresh }) {
       completed: subscriptionComplete,
       icon: CreditCard,
       link: 'Pricing'
+    },
+    {
+      id: 'identity',
+      title: 'Verify Identity',
+      description: 'Verify your identity so your legal name matches your contracts',
+      completed: identityComplete,
+      icon: Shield,
+      link: 'Identity'
     }
   ];
+
+  const agentSteps = [
+    ...baseSteps,
+    {
+      id: 'identity',
+      title: 'Verify Identity',
+      description: 'Verify your identity so your legal name matches your contracts',
+      completed: identityComplete,
+      icon: Shield,
+      link: 'Identity'
+    }
+  ];
+
+  const steps = isAgent ? agentSteps : investorSteps;
 
   const completedCount = steps.filter(s => s.completed).length;
   const totalSteps = steps.length;
@@ -170,7 +206,8 @@ export function SetupChecklist({ profile, onRefresh }) {
             // Let's check original logic: `prevStepsComplete = steps.slice(0, idx).every(s => s.completed)`
             // Here we iterate visibleSteps.
             // The step is locked if it's NOT the first visible step.
-            const isLocked = idx > 0; 
+            // Lock all but first incomplete; additionally, for investors lock Identity until subscription is complete
+            const isLocked = idx > 0 || (step.id === 'identity' && !subscriptionComplete && !isAgent); 
             
             const handleClick = () => {
               if (isLocked) {
