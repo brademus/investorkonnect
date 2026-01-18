@@ -4,6 +4,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 import IdentityMismatchModal from '@/components/identity/IdentityMismatchModal';
+import { Link } from 'react-router-dom';
+import { createPageUrl } from '@/components/utils';
 
 export default function Identity() {
   const [loading, setLoading] = useState(true);
@@ -79,10 +81,21 @@ export default function Identity() {
 
   return (
     <div className="max-w-xl mx-auto">
+      <div className="mb-4">
+        <Link to={createPageUrl('Pipeline')}>
+          <Button variant="outline" className="gap-2">
+            <ArrowLeft className="w-4 h-4" /> Back to Pipeline
+          </Button>
+        </Link>
+      </div>
       <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
-        <CardHeader className="border-b border-[#1F1F1F] py-4 flex items-center gap-2">
-          <Shield className="w-5 h-5 text-[#E3C567]" />
-          <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
+        <CardHeader className="border-b border-[#1F1F1F] py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-[#E3C567]" />
+              <CardTitle className="text-lg text-[#FAFAFA]">Verify Identity</CardTitle>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="p-6 space-y-3">
           {identity?.verificationStatus === 'NOT_STARTED' || identity?.verificationStatus === 'REQUIRES_INPUT' ? (
