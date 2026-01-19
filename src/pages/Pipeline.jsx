@@ -11,7 +11,7 @@ import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
-  Clock, CheckSquare, XCircle, MessageSquare, Circle
+  Clock, CheckSquare, XCircle, MessageSquare, Circle, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { setCachedDeal } from "@/components/utils/dealCache";
