@@ -148,12 +148,9 @@ Deno.serve(async (req) => {
                            room?.agreement_status === 'fully_signed' || 
                            room?.request_status === 'signed';
 
-      // VISIBILITY GATING
-      // - Investors: only see deals after THEY have signed (investorSigned)
-      // - Agents: only see deals after THE AGENT has signed (agentSigned)
-      if ((isInvestor && !investorSigned) || (isAgent && !agentSigned)) {
-        return null; // filtered out later
-      }
+      // VISIBILITY: Do not hide deals; we only redact sensitive fields for agents until fully signed
+      // Investors can always see their deals regardless of signing state
+      // Agents see deal shell regardless of signing; PII remains redacted until fully signed
 
       // Base fields everyone can see
       const baseDeal = {
