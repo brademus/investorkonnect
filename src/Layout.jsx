@@ -101,17 +101,17 @@ function LayoutContent({ children }) {
               src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
               alt="Investor Konnect"
               className="h-8 w-8 object-contain cursor-pointer"
-                                  onClick={() => navigate(createPageUrl("Pipeline"))}
+                                  onClick={() => navigate(createPageUrl("Dashboard"))}
             />
-            <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors" onClick={(e) => e.stopPropagation()}>
+            <Link to={createPageUrl("Dashboard")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors" onClick={(e) => e.stopPropagation()}>
               Investor Konnect
             </Link>
 
 
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
-              {location.pathname !== createPageUrl("Pipeline") && (
-                <Link to={createPageUrl("Pipeline")} className="hover:text-[#E3C567]" onClick={(e) => e.stopPropagation()}>Pipeline</Link>
+              {location.pathname !== createPageUrl("Dashboard") && (
+                <Link to={createPageUrl("Dashboard")} className="hover:text-[#E3C567]" onClick={(e) => e.stopPropagation()}>Pipeline</Link>
               )}
               <Link to={createPageUrl("HowItWorks")} className="hover:text-[#E3C567]">How it works</Link>
               <Link to={createPageUrl("Pricing")} className="hover:text-[#E3C567]">Pricing</Link>
