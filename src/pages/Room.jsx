@@ -1170,6 +1170,7 @@ ${dealContext}`;
         list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || '')).toLowerCase().includes(q));
       }
       // Sort by updated date desc for stable ordering
+      // Final sort: most recent activity on top
       return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
     } catch (e) {
       console.error('[Room] filteredRooms error:', e);
