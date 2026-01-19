@@ -270,6 +270,7 @@ function PipelineContent() {
     queryKey: ['pendingRequests', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
