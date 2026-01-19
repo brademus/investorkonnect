@@ -161,8 +161,12 @@ function PipelineContent() {
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     initialData: () => {
-      try { return JSON.parse(sessionStorage.getItem('pipelineDealsCache') || '[]'); } catch { return []; }
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('pipelineDealsCache') || '[]');
+        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+      } catch { return undefined; }
     },
+    initialDataUpdatedAt: 0,
     queryFn: async () => {
       if (!profile?.id) return [];
       
@@ -255,8 +259,12 @@ function PipelineContent() {
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     initialData: () => {
-      try { return JSON.parse(sessionStorage.getItem('roomsCache') || '[]'); } catch { return []; }
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('roomsCache') || '[]');
+        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+      } catch { return undefined; }
     },
+    initialDataUpdatedAt: 0,
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
