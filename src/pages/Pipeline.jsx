@@ -85,14 +85,16 @@ function PipelineContent() {
   // Auto-refresh identity while under review so the banner updates and hides when done
   useEffect(() => {
     if (!profile?.id) return;
-    const isUnderReview = identity?.verificationStatus === 'PROCESSING';
+    const isUnderReview = String(identity?.verificationStatus || '').toUpperCase() === 'PROCESSING';
     if (!isUnderReview) return;
 
     const interval = setInterval(async () => {
       try {
         const { data } = await base44.functions.invoke('getIdentityStatus');
+        const status = String(data?.identity?.verificationStatus || '').toUpperCase();
         setIdentity(data?.identity || null);
-        if (data?.identity?.verificationStatus === 'VERIFIED') {
+        if (status === 'VERIFIED') {
+          try { if (profile?.id) { await base44.entities.Profile.update(profile.id, { identity_status: 'verified', identity_verified_at: new Date().toISOString() }); } } catch (_) {}
           await refresh();
           clearInterval(interval);
         }
@@ -151,7 +153,7 @@ function PipelineContent() {
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
   const identityComplete = Boolean(
-    (identity && identity.verificationStatus === 'VERIFIED') ||
+    (identity && String(identity.verificationStatus || '').toUpperCase() === 'VERIFIED') ||
     (profile?.identity_status === 'verified')
   );
   const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete) : true;
@@ -684,7 +686,7 @@ function PipelineContent() {
           <div className="max-w-[1800px] mx-auto">
             
             {/* Identity Reviewing Banner */}
-            {identityLoaded && identity?.verificationStatus === 'PROCESSING' && (
+            {identityLoaded && String(identity?.verificationStatus || '').toUpperCase() === 'PROCESSING' && (
               <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-4 h-4 text-[#60A5FA]" />
@@ -697,7 +699,7 @@ function PipelineContent() {
             )}
 
             {/* Setup Checklist (hide if identity verified to prevent stale banner) */}
-            {identityLoaded && !((identity && identity.verificationStatus === 'VERIFIED') || profile?.identity_status === 'verified') && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
+            {identityLoaded && !( (identity && String(identity.verificationStatus || '').toUpperCase() === 'VERIFIED') || profile?.identity_status === 'verified') && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
               <div className="mb-6">
                 <SetupChecklist profile={profile} />
               </div>
