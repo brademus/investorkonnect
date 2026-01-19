@@ -620,6 +620,19 @@ function PipelineContent() {
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="max-w-[1800px] mx-auto">
             
+            {/* Identity Reviewing Banner */}
+            {identity?.verificationStatus === 'PROCESSING' && (
+              <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-4 h-4 text-[#60A5FA] animate-spin" />
+                  <div>
+                    <h2 className="text-sm font-semibold text-[#FAFAFA]">Reviewing your identity</h2>
+                    <p className="text-xs text-[#808080]">Stripe is reviewing your verification. This usually takes a few minutes.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Setup Checklist */}
             <div className="mb-6">
               <SetupChecklist profile={profile} />
