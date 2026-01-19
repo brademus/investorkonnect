@@ -139,6 +139,7 @@ function LayoutContent({ children }) {
               {isAdmin && (
                 <Link
                   to={createPageUrl("Admin")}
+                  onMouseDown={(e) => e.preventDefault()}
                   className="ik-chip flex items-center gap-2 h-9 border-[#E3C567]/50 text-[#E3C567]"
                 >
                   <ShieldCheck className="w-4 h-4" />
