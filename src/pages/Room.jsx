@@ -1261,14 +1261,19 @@ ${dealContext}`;
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            asChild
+            onClick={(e) => {
+              e.stopPropagation();
+              if (window.history.length > 1) {
+                navigate(-1);
+              } else {
+                navigate(createPageUrl("Pipeline"));
+              }
+            }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
-            <Link to={createPageUrl("Pipeline")} onClick={(e) => e.stopPropagation()}>
-              <ArrowLeft className="w-4 h-4" />
-              <span className="hidden md:inline">Pipeline</span>
-            </Link>
+            <ArrowLeft className="w-4 h-4" />
+            <span className="hidden md:inline">Pipeline</span>
           </Button>
           
           {/* Avatar */}
