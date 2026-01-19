@@ -88,6 +88,7 @@ export function SetupChecklist({ profile, onRefresh }) {
 
   // Identity step status
   const identityComplete = Boolean(identity && identity.verificationStatus === 'VERIFIED' && identity.nameMatchStatus === 'MATCH');
+  const identityTitle = identity?.verificationStatus === 'PROCESSING' ? 'Reviewing Your Identity' : 'Verify Identity';
 
   // Only add subscription step for investors, not agents
   const investorSteps = [
@@ -102,7 +103,7 @@ export function SetupChecklist({ profile, onRefresh }) {
     },
     {
       id: 'identity',
-      title: 'Verify Identity',
+      title: identityTitle,
       description: 'Verify your identity so your legal name matches your contracts',
       completed: identityComplete,
       icon: Shield,
@@ -114,7 +115,7 @@ export function SetupChecklist({ profile, onRefresh }) {
     ...baseSteps,
     {
       id: 'identity',
-      title: 'Verify Identity',
+      title: identityTitle,
       description: 'Verify your identity so your legal name matches your contracts',
       completed: identityComplete,
       icon: Shield,

@@ -34,6 +34,7 @@ function PipelineContent() {
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [identity, setIdentity] = useState(null);
 
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
@@ -64,6 +65,17 @@ function PipelineContent() {
       }
     })();
   }, [loading, profile, refresh]);
+
+  // Load identity status once for setup gating
+  useEffect(() => {
+    if (!profile?.id) return;
+    (async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        setIdentity(data?.identity || null);
+      } catch (_) {}
+    })();
+  }, [profile?.id]);
 
   // Manual dedup handler
   const handleDedup = async () => {
@@ -107,6 +119,15 @@ function PipelineContent() {
   // Detect user role
   const isAgent = profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor';
+
+  // Setup completion gating (must be 4/4)
+  const onboardingComplete = Boolean(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version);
+  const ndaComplete = !!profile?.nda_accepted;
+  const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
+  const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
+  const identityComplete = Boolean(identity && identity.verificationStatus === 'VERIFIED' && identity.nameMatchStatus === 'MATCH');
+  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete && identityComplete) : true;
+  const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
   // 2. Load Active Deals via Server-Side Access Control
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
@@ -634,7 +655,8 @@ function PipelineContent() {
                       </div>
                       <Button
                          onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&tab=agreement`)}
-                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
+                         disabled={!agentSetupComplete}
+                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2 disabled:opacity-60 disabled:cursor-not-allowed"
                        >
                          Review Deal
                        </Button>
@@ -750,10 +772,21 @@ function PipelineContent() {
                 {isInvestor && (
                   <Button 
                     onClick={async () => {
+                      if (!investorSetupComplete) {
+                        toast.info('Complete your setup (4/4) to create a deal');
+                        const next = !onboardingComplete ? (isInvestor ? 'InvestorDeepOnboarding' : 'AgentDeepOnboarding')
+                          : !ndaComplete ? 'NDA'
+                          : !subscriptionComplete ? 'Pricing'
+                          : !identityComplete ? 'Identity'
+                          : 'Pipeline';
+                        navigate(createPageUrl(next));
+                        return;
+                      }
                       try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
                       navigate(createPageUrl("NewDeal"));
                     }}
-                    className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
+                    disabled={!investorSetupComplete}
+                    className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full disabled:opacity-60 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4 mr-2" /> New Deal
                   </Button>
@@ -872,7 +905,8 @@ function PipelineContent() {
                                               handleDealClick(deal);
                                             }}
                                             size="sm"
-                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
+                                            disabled={isAgent && !agentSetupComplete}
+                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto disabled:opacity-60 disabled:cursor-not-allowed"
                                           >
                                             Open Deal Room
                                           </Button>
