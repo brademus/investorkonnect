@@ -55,6 +55,8 @@ function LayoutContent({ children }) {
   const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
   const showNav = !loading && user && onboarded && (hasRoom || location.pathname.startsWith('/room/'));
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
+  // Reserve header offset even while loading to prevent layout shift
+  const shouldOffset = !isNoNavPage && !isFullBleedPage;
 
   const investorNav = [
     { name: "Account", href: createPageUrl("AccountProfile"), icon: Settings },
@@ -173,8 +175,10 @@ function LayoutContent({ children }) {
       )}
 
       {/* Page content – centered, offset for fixed header */}
-      <main className={showNav && !isNoNavPage && !isFullBleedPage ? "mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
-        {children}
+      <main className={shouldOffset ? "mx-auto max-w-6xl px-4 pb-12 pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
+        <div className={loading ? "opacity-0 transition-opacity duration-300" : "opacity-100 transition-opacity duration-300 animate-fade-in"}>
+          {children}
+        </div>
       </main>
 
       {/* Sonner toast notifications */}
