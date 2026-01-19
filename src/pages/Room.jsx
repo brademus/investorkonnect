@@ -263,6 +263,26 @@ export default function Room() {
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
   
+  // Ensure latest photos/files are fetched when opening their tabs so content shows immediately
+  useEffect(() => {
+    if (!showBoard || !roomId) return;
+    const needPhotos = activeTab === 'photos';
+    const needFiles = activeTab === 'files';
+    if (!needPhotos && !needFiles) return;
+    (async () => {
+      try {
+        const rows = await base44.entities.Room.filter({ id: roomId });
+        const r = rows?.[0];
+        if (!r) return;
+        setCurrentRoom(prev => prev ? {
+          ...prev,
+          ...(needPhotos ? { photos: r.photos || [] } : {}),
+          ...(needFiles ? { files: r.files || [] } : {})
+        } : r);
+      } catch (_) {}
+    })();
+  }, [showBoard, activeTab, roomId]);
+  
   // Open Agreement tab automatically when tab=agreement is in URL
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
