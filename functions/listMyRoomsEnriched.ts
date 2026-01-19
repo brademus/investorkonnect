@@ -304,9 +304,33 @@ Deno.serve(async (req) => {
     // Filter out truly invalid rooms (must have a deal id)
     const validRooms = finalRooms.filter(r => r && r.deal_id);
 
+    // Dedupe by deal_id: prefer signed > accepted > requested > others, then newest by updated/created
+    const score = (r) => {
+      if (r?.agreement_status === 'fully_signed' || r?.request_status === 'signed') return 3;
+      if (r?.request_status === 'accepted') return 2;
+      if (r?.request_status === 'requested') return 1;
+      return 0; // Orphans/others
+    };
+
+    const byDeal = new Map();
+    for (const r of validRooms) {
+      const key = r.deal_id;
+      const prev = byDeal.get(key);
+      if (!prev) { byDeal.set(key, r); continue; }
+      const sA = score(r), sB = score(prev);
+      const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+      const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+      if (sA > sB || (sA === sB && tA > tB)) {
+        byDeal.set(key, r);
+      }
+    }
+
+    const uniqueRooms = Array.from(byDeal.values())
+      .sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+
     return Response.json({ 
-      rooms: validRooms,
-      count: validRooms.length 
+      rooms: uniqueRooms,
+      count: uniqueRooms.length 
     });
 
   } catch (error) {
