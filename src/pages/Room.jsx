@@ -2074,41 +2074,74 @@ ${dealContext}`;
                           const input = document.createElement('input');
                           input.type = 'file';
                           input.onchange = async (e) => {
-                            const file = e.target.files[0];
-                            if (!file) return;
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
 
-                            // Validate file before upload
-                            const validation = validateSafeDocument(file);
-                            if (!validation.valid) {
-                              toast.error(validation.error);
-                              return;
-                            }
+                                                        // Validate file before upload
+                                                        const validation = validateSafeDocument(file);
+                                                        if (!validation.valid) {
+                                                          toast.error(validation.error);
+                                                          return;
+                                                        }
 
-                            toast.info('Uploading file...');
-                            try {
-                              const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                              const files = currentRoom?.files || [];
-                              await base44.entities.Room.update(roomId, {
-                                files: [...files, {
-                                  name: file.name,
-                                  url: file_url,
-                                  uploaded_by: profile?.id,
-                                  uploaded_by_name: profile?.full_name || profile?.email,
-                                  uploaded_at: new Date().toISOString(),
-                                  size: file.size,
-                                  type: file.type
-                                }]
-                              });
+                                                        toast.info('Uploading file...');
+                                                        try {
+                                                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                          const isImage = (file.type || '').startsWith('image/');
 
-                              // Refresh room
-                              const roomData = await base44.entities.Room.filter({ id: roomId });
-                              
-                              if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
-                              toast.success('File uploaded');
-                            } catch (error) {
-                              toast.error('Upload failed');
-                            }
-                          };
+                                                          if (isImage) {
+                                                            // Save to photos and announce in chat
+                                                            const existing = currentRoom?.photos || [];
+                                                            const next = [...existing, {
+                                                              name: file.name,
+                                                              url: file_url,
+                                                              uploaded_by: profile?.id,
+                                                              uploaded_by_name: profile?.full_name || profile?.email,
+                                                              uploaded_at: new Date().toISOString(),
+                                                              size: file.size,
+                                                              type: 'image'
+                                                            }].filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+
+                                                            await base44.entities.Room.update(roomId, { photos: next });
+                                                            setCurrentRoom(prev => prev ? { ...prev, photos: next } : prev);
+
+                                                            await base44.entities.Message.create({
+                                                              room_id: roomId,
+                                                              sender_profile_id: profile?.id,
+                                                              body: `📷 Uploaded photo: ${file.name}`,
+                                                              metadata: { type: 'photo', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                                                            });
+
+                                                            toast.success('Photo uploaded');
+                                                          } else {
+                                                            // Save to files (non-image)
+                                                            const files = currentRoom?.files || [];
+                                                            const nextFiles = [...files, {
+                                                              name: file.name,
+                                                              url: file_url,
+                                                              uploaded_by: profile?.id,
+                                                              uploaded_by_name: profile?.full_name || profile?.email,
+                                                              uploaded_at: new Date().toISOString(),
+                                                              size: file.size,
+                                                              type: file.type
+                                                            }];
+
+                                                            await base44.entities.Room.update(roomId, { files: nextFiles });
+                                                            setCurrentRoom(prev => prev ? { ...prev, files: nextFiles } : prev);
+
+                                                            await base44.entities.Message.create({
+                                                              room_id: roomId,
+                                                              sender_profile_id: profile?.id,
+                                                              body: `📎 Uploaded file: ${file.name}`,
+                                                              metadata: { type: 'file', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                                                            });
+
+                                                            toast.success('File uploaded');
+                                                          }
+                                                        } catch (error) {
+                                                          toast.error('Upload failed');
+                                                        }
+                                                      };
                           input.click();
                         }}
                         className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
@@ -2479,7 +2512,10 @@ ${dealContext}`;
                                 : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
                             }`}
                           >
-                            {isFileMessage && m.metadata?.type === 'photo' ? (
+                            {(
+                              m.metadata?.type === 'photo' ||
+                              (m.metadata?.type === 'file' && (m.metadata?.file_type || '').startsWith('image/'))
+                            ) ? (
                               <div>
                                 <img 
                                   src={m.metadata.file_url} 
@@ -2618,9 +2654,45 @@ ${dealContext}`;
                       toast.info('Uploading file...');
                       try {
                         const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                        const files = currentRoom?.files || [];
-                        await base44.entities.Room.update(roomId, {
-                          files: [...files, {
+                        const isImage = (file.type || '').startsWith('image/');
+
+                        if (isImage) {
+                          const existing = currentRoom?.photos || [];
+                          const nextPhotos = [...existing, {
+                            name: file.name,
+                            url: file_url,
+                            uploaded_by: profile?.id,
+                            uploaded_by_name: profile?.full_name || profile?.email,
+                            uploaded_at: new Date().toISOString(),
+                            size: file.size,
+                            type: 'image'
+                          }].filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+
+                          await base44.entities.Room.update(roomId, { photos: nextPhotos });
+                          setCurrentRoom(prev => prev ? { ...prev, photos: nextPhotos } : prev);
+
+                          await base44.entities.Message.create({
+                            room_id: roomId,
+                            sender_profile_id: profile?.id,
+                            body: `📷 Uploaded photo: ${file.name}`,
+                            metadata: { type: 'photo', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                          });
+
+                          if (currentRoom?.deal_id) {
+                            base44.entities.Activity.create({
+                              type: 'photo_uploaded',
+                              deal_id: currentRoom.deal_id,
+                              room_id: roomId,
+                              actor_id: profile?.id,
+                              actor_name: profile?.full_name || profile?.email,
+                              message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
+                            }).catch(() => {});
+                          }
+                          
+                          toast.success('Photo uploaded to deal');
+                        } else {
+                          const files = currentRoom?.files || [];
+                          const nextFiles = [...files, {
                             name: file.name,
                             url: file_url,
                             uploaded_by: profile?.id,
@@ -2628,39 +2700,37 @@ ${dealContext}`;
                             uploaded_at: new Date().toISOString(),
                             size: file.size,
                             type: file.type
-                          }]
-                        });
-                        
-                        // Create chat message for file
-                        await base44.entities.Message.create({
-                          room_id: roomId,
-                          sender_profile_id: profile?.id,
-                          body: `📎 Uploaded file: ${file.name}`,
-                          metadata: {
-                            type: 'file',
-                            file_url: file_url,
-                            file_name: file.name,
-                            file_size: file.size,
-                            file_type: file.type
-                          }
-                        });
-                        
-                        // Log activity
-                        if (currentRoom?.deal_id) {
-                          base44.entities.Activity.create({
-                            type: 'file_uploaded',
-                            deal_id: currentRoom.deal_id,
+                          }];
+                          await base44.entities.Room.update(roomId, { files: nextFiles });
+                          
+                          await base44.entities.Message.create({
                             room_id: roomId,
-                            actor_id: profile?.id,
-                            actor_name: profile?.full_name || profile?.email,
-                            message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
-                          }).catch(() => {});
+                            sender_profile_id: profile?.id,
+                            body: `📎 Uploaded file: ${file.name}`,
+                            metadata: {
+                              type: 'file',
+                              file_url: file_url,
+                              file_name: file.name,
+                              file_size: file.size,
+                              file_type: file.type
+                            }
+                          });
+                          
+                          if (currentRoom?.deal_id) {
+                            base44.entities.Activity.create({
+                              type: 'file_uploaded',
+                              deal_id: currentRoom.deal_id,
+                              room_id: roomId,
+                              actor_id: profile?.id,
+                              actor_name: profile?.full_name || profile?.email,
+                              message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
+                            }).catch(() => {});
+                          }
+                          
+                          const roomData = await base44.entities.Room.filter({ id: roomId });
+                          if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
+                          toast.success('File uploaded to deal');
                         }
-                        
-                        const roomData = await base44.entities.Room.filter({ id: roomId });
-                        
-                        if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
-                        toast.success('File uploaded to deal');
                       } catch (error) {
                         toast.error('Upload failed');
                       }
