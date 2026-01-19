@@ -1154,7 +1154,7 @@ ${dealContext}`;
           if (r.investorId && r.investorId !== myId) return; // only my deals
         }
 
-        const key = r.deal_id || `room-${r.id}`; // Group by deal when available
+        const key = r.deal_id; // Always group strictly by deal_id to prevent duplicates
         const prev = byDeal.get(key);
         if (!prev) { byDeal.set(key, r); return; }
         const sA = score(r), sB = score(prev);
