@@ -1261,12 +1261,14 @@ ${dealContext}`;
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            onClick={() => { navigate(createPageUrl("Pipeline")); }}
+            asChild
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden md:inline">Pipeline</span>
+            <Link to={createPageUrl("Pipeline")} onClick={(e) => e.stopPropagation()}>
+              <ArrowLeft className="w-4 h-4" />
+              <span className="hidden md:inline">Pipeline</span>
+            </Link>
           </Button>
           
           {/* Avatar */}
