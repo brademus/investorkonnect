@@ -137,7 +137,7 @@ function useMessages(roomId, currentProfile) {
             });
 
             // Stabilize who-is-me mapping to prevent bubble side flicker
-            const stabilized = messages.map(m => ({ ...m, _isMe: isMessageFromMe(m, currentProfile) }));
+            const stabilized = messages.map(m => ({ ...m, _isMe: currentProfile ? isMessageFromMe(m, currentProfile) : undefined }));
 
             // Combine real messages + active optimistic, remove duplicates by ID
             const combined = [...stabilized, ...activeOptimistic];
@@ -164,7 +164,7 @@ function useMessages(roomId, currentProfile) {
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
     return () => { cancelled = true; clearInterval(interval); };
-  }, [roomId]);
+  }, [roomId, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
   return { items, loading, setItems, messagesEndRef };
 }
@@ -2613,8 +2613,8 @@ ${dealContext}`;
               ) : (
                 <>
                   {messages.map((m) => {
-                    const isMe = m._isMe != null ? m._isMe : isMessageFromMe(m, profile);
-                    const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
+                   const isMe = isMessageFromMe(m, profile);
+                   const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
                     return (
                       <div
