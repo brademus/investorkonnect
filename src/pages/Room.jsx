@@ -271,6 +271,18 @@ export default function Room() {
       setActiveTab('agreement');
     }
   }, [roomId, location.search]);
+
+  // When opening the Deal Board (including via URL), preload everything once
+  useEffect(() => {
+    if (!showBoard || !currentRoom?.deal_id) return;
+    setBoardLoading(true);
+    (async () => {
+      const data = await prefetchDeal();
+      if (data) setDeal(data);
+      setBoardLoading(false);
+    })();
+  }, [showBoard, currentRoom?.deal_id]);
+
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -406,17 +418,38 @@ export default function Room() {
     }
   };
 
-  // Prefetch secure deal details without blocking UI
+  // Prefetch board data: deal, latest room photos/files, and appointments
   const prefetchDeal = async () => {
     try {
       const did = currentRoom?.deal_id;
       if (!did) return null;
+
       const cached = getCachedDeal(did);
-      if (cached) return cached;
-      const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: did });
-      if (res?.data) setCachedDeal(did, res.data);
-      return res?.data || null;
-    } catch (_) { return null; }
+      // Kick off all fetches in parallel
+      const [res, roomRows, apptRows] = await Promise.all([
+        base44.functions.invoke('getDealDetailsForUser', { dealId: did }),
+        base44.entities.Room.filter({ id: roomId }),
+        base44.entities.DealAppointments.filter({ dealId: did }).catch(() => [])
+      ]);
+
+      const freshDeal = res?.data || cached || null;
+      if (freshDeal) setCachedDeal(did, freshDeal);
+
+      // Ensure we have the latest shared files/photos for instant Files/Photos tabs
+      if (Array.isArray(roomRows) && roomRows[0]) {
+        const r = roomRows[0];
+        setCurrentRoom(prev => prev ? { ...prev, photos: r.photos || [], files: r.files || [] } : r);
+      }
+
+      // Seed appointments so Details tab renders instantly
+      if (Array.isArray(apptRows) && apptRows[0]) {
+        setDealAppts(apptRows[0]);
+      }
+
+      return freshDeal;
+    } catch (_) {
+      return null;
+    }
   };
 
   // Prefetch Pipeline data to make back navigation instant
@@ -1366,15 +1399,9 @@ ${dealContext}`;
                   return (
                     <button
                       key={tab.id}
-                      onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
-                      onClick={async () => {
+                      onMouseEnter={() => {}}
+                      onClick={() => {
                         setActiveTab(tab.id);
-                        if (['agreement','files'].includes(tab.id)) {
-                          setTabLoading(true);
-                          const data = await prefetchDeal();
-                          if (data) setDeal(data);
-                          setTabLoading(false);
-                        }
                       }}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
                         activeTab === tab.id
