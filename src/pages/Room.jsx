@@ -272,16 +272,7 @@ export default function Room() {
     }
   }, [roomId, location.search]);
 
-  // When opening the Deal Board (including via URL), preload everything once
-  useEffect(() => {
-    if (!showBoard || !currentRoom?.deal_id) return;
-    setBoardLoading(true);
-    (async () => {
-      const data = await prefetchDeal();
-      if (data) setDeal(data);
-      setBoardLoading(false);
-    })();
-  }, [showBoard, currentRoom?.deal_id]);
+
 
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
@@ -295,6 +286,17 @@ export default function Room() {
   const [boardLoading, setBoardLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
   const lastSentRef = useRef(0);
+
+  // When opening the Deal Board (including via URL), preload everything once
+  useEffect(() => {
+    if (!showBoard || !currentRoom?.deal_id) return;
+    setBoardLoading(true);
+    (async () => {
+      const data = await prefetchDeal();
+      if (data) setDeal(data);
+      setBoardLoading(false);
+    })();
+  }, [showBoard, currentRoom?.deal_id]);
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
