@@ -23,6 +23,14 @@ import { AuthGuard } from "@/components/AuthGuard";
 function AccountProfileContent() {
   const navigate = useNavigate();
   const { loading: profileLoading, user, profile, role, onboarded, kycVerified } = useCurrentProfile();
+  const isNameLocked = Boolean(
+    profile?.verified_first_name ||
+    profile?.verified_last_name ||
+    profile?.identity_verified_at ||
+    profile?.kyc_status === 'approved' ||
+    profile?.identity_status === 'verified' ||
+    kycVerified
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,7 +70,7 @@ function AccountProfileContent() {
     console.log('[AccountProfile] 🚀 Saving profile changes...');
 
     // Validation
-    if (!kycVerified && (!formData.full_name || !formData.full_name.trim())) {
+    if (!isNameLocked && (!formData.full_name || !formData.full_name.trim())) {
       toast.error("Please enter your full name");
       return;
     }
@@ -77,7 +85,7 @@ function AccountProfileContent() {
         accreditation: formData.accreditation.trim(),
         goals: formData.goals.trim()
       };
-      if (!kycVerified) {
+      if (!isNameLocked) {
         updateData.full_name = formData.full_name.trim();
       }
       
@@ -144,21 +152,31 @@ function AccountProfileContent() {
         <div className="ik-card p-8 bg-[#0D0D0D] border border-[#1F1F1F]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Full Name */}
-            <div>
-              <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
-              <Input
-                id="full_name"
-                value={formData.full_name}
-                onChange={(e) => setFormData({...formData, full_name: e.target.value})}
-                placeholder="John Doe"
-                required
-                disabled={saving || kycVerified}
-                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
-              />
-              {kycVerified && (
-                <p className="text-xs text-[#808080] mt-1">Verified identity: legal name cannot be changed.</p>
-              )}
-            </div>
+            {isNameLocked ? (
+              <div>
+                <Label htmlFor="full_name" className="text-[#FAFAFA]">Legal Name (Verified)</Label>
+                <Input
+                  id="full_name"
+                  value={[profile?.verified_first_name, profile?.verified_last_name].filter(Boolean).join(' ') || profile?.full_name || formData.full_name}
+                  disabled
+                  className="bg-[#141414] text-[#808080] border-[#333] opacity-50"
+                />
+                <p className="text-xs text-[#808080] mt-1">Identity verified: legal name is locked. Contact support for changes.</p>
+              </div>
+            ) : (
+              <div>
+                <Label htmlFor="full_name" className="text-[#FAFAFA]">Full Name *</Label>
+                <Input
+                  id="full_name"
+                  value={formData.full_name}
+                  onChange={(e) => setFormData({...formData, full_name: e.target.value})}
+                  placeholder="John Doe"
+                  required
+                  disabled={saving}
+                  className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+                />
+              </div>
+            )}
 
             {/* Email (read-only) */}
             <div>
