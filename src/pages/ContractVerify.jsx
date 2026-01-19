@@ -184,6 +184,43 @@ export default function ContractVerify() {
       const extracted = extractRes.data.data;
       const validationErrors = [];
 
+      // New: Buyer name verification (additive only)
+      const expectedBuyerRaw = (profile?.verified_full_name || profile?.identity?.verified_full_name || profile?.full_name || '').trim();
+      const expectedBuyerCompany = (profile?.company || profile?.investor?.company_name || '').trim();
+
+      const normalizeForCompare = (s) => {
+        if (!s) return '';
+        return s.toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+          .replace(/\b(llc|inc|ltd|co|corp|corporation|company|jr|sr|ii|iii|iv)\b/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      const expectedBuyerNorm = normalizeForCompare(expectedBuyerRaw);
+      const expectedCompanyNorm = normalizeForCompare(expectedBuyerCompany);
+      const contractBuyerRaw = extracted?.buyer_name_raw || extracted?.buyer_name || null;
+      const contractBuyerNorm = extracted?.buyer_name_normalized || normalizeForCompare(contractBuyerRaw || '');
+
+      let buyerNameStatus = 'UNKNOWN';
+      let buyerNameReason = '';
+
+      if (!contractBuyerNorm) {
+        buyerNameStatus = 'UNKNOWN';
+        buyerNameReason = "We couldn’t confidently find the buyer name in this contract.";
+        validationErrors.push(`Buyer Name: ${buyerNameReason}`);
+      } else {
+        const nameMatch = expectedBuyerNorm && (expectedBuyerNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedBuyerNorm) || expectedBuyerNorm.includes(contractBuyerNorm));
+        const companyMatch = expectedCompanyNorm && (expectedCompanyNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedCompanyNorm) || expectedCompanyNorm.includes(contractBuyerNorm));
+
+        if (nameMatch || companyMatch) {
+          buyerNameStatus = 'PASS';
+        } else {
+          buyerNameStatus = 'FAIL';
+          buyerNameReason = "The buyer name on the uploaded contract doesn’t match the name on your account.";
+          validationErrors.push(`Buyer name doesn’t match: Account="${expectedBuyerRaw || 'Unknown'}" vs Contract="${contractBuyerRaw || 'Unknown'}"`);
+        }
+      }
       console.log('[Verification] Comparing entered data vs extracted:', {
         entered: dealData,
         extracted: extracted
