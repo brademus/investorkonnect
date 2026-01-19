@@ -1991,9 +1991,8 @@ ${dealContext}`;
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
                   {currentRoom?.deal_id ? (
-                   // Always render the panel with a stable deal snapshot to avoid tab flicker
-                   <>
-                     <LegalAgreementPanel
+                    <div>
+                      <LegalAgreementPanel
                         deal={deal}
                         profile={profile}
                         allowGenerate={false}
@@ -2009,7 +2008,7 @@ ${dealContext}`;
                           Loading agreement panel...
                         </div>
                       )}
-                    </>
+                    </div>
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
