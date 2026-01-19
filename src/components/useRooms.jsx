@@ -132,7 +132,9 @@ export function useRooms() {
             if (sA > sB || (sA === sB && tA > tB)) bySignature.set(k, r);
           }
           const deduped = Array.from(bySignature.values())
-            .filter(r => r?.pipeline_stage !== 'canceled');
+           .filter(r => r?.pipeline_stage !== 'canceled')
+           // Extra guard: ensure uniqueness by normalized deal_id
+           .filter((r, idx, arr) => arr.findIndex(x => String(x.deal_id||'').trim() === String(r.deal_id||'').trim()) === idx);
           return deduped.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
         } catch (e) {
           console.error('[useRooms] dedupe error:', e);
