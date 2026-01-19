@@ -1263,11 +1263,7 @@ ${dealContext}`;
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
-                navigate(createPageUrl("Pipeline"));
-              }
+              navigate(createPageUrl("Dashboard"));
             }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
