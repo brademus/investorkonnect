@@ -1134,49 +1134,68 @@ ${dealContext}`;
     try {
       const isAgent = profile?.user_role === 'agent';
       const myId = profile?.id;
-      // Dedupe rooms by deal_id for sidebar: prioritize signed > accepted > requested, fallback to updated_date
-      const score = (r) => r?.agreement_status === 'fully_signed' || r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
+      const normId = (v) => String(v || '').trim();
+      const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed || r?.request_status === 'signed') ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
+
+      // 1) Filter and group by normalized deal_id
       const byDeal = new Map();
-      (rooms || []).forEach(r => {
-       // Base requirements
-       if (!r) return;
-       if (!r.deal_id) return; // Must be attached to a deal (virtual or real)
+      (rooms || []).forEach((r) => {
+        if (!r) return;
+        const did = normId(r.deal_id);
+        if (!did) return;
 
-        // Agent account: show all own deal rooms (requested/accepted/signed)
+        // Role-specific visibility
         if (isAgent) {
-          if (!r.deal_id) return; // must be attached to a deal
-          if (myId && r.agentId && r.agentId !== myId) return; // must be this agent's room
-          const validStatus = !r.request_status || r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed';
-          if (!validStatus) return;
+          if (myId && r.agentId && r.agentId !== myId) return;
+          const ok = !r.request_status || ['requested', 'accepted', 'signed'].includes(r.request_status);
+          if (!ok) return;
+        } else if (myId) {
+          if (r.investorId && r.investorId !== myId) return;
         }
 
-        // Investor account: show all own rooms and pipeline-only orphans
-        if (!isAgent && myId) {
-          if (!r.deal_id) return; // must be attached to a deal
-          if (r.investorId && r.investorId !== myId) return; // only my deals
-        }
-
-        const key = r.deal_id; // Always group strictly by deal_id to prevent duplicates
-        const prev = byDeal.get(key);
-        if (!prev) { byDeal.set(key, r); return; }
+        const prev = byDeal.get(did);
+        if (!prev) { byDeal.set(did, r); return; }
         const sA = score(r), sB = score(prev);
         const tA = new Date(r.updated_date || r.created_date || 0).getTime();
         const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-        if (sA > sB || (sA === sB && tA > tB)) {
-          byDeal.set(key, r);
-        }
+        if (sA > sB || (sA === sB && tA > tB)) byDeal.set(did, r);
       });
-      let list = Array.from(byDeal.values());
+
+      // 2) Secondary collapse by signature to catch any deal duplicates with different IDs
+      const makeSig = (r) => [
+        String(r?.property_address || '').toLowerCase().replace(/\s+/g, ' ').trim(),
+        String(r?.city || '').toLowerCase(),
+        String(r?.state || '').toLowerCase(),
+        String(String(r?.zip || '').trim().slice(0, 10)),
+        Number(Math.round(Number(r?.budget || 0)))
+      ].join('|');
+
+      const bySig = new Map();
+      for (const r of byDeal.values()) {
+        const k = makeSig(r);
+        const prev = bySig.get(k);
+        if (!prev) { bySig.set(k, r); continue; }
+        const sA = score(r), sB = score(prev);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        if (sA > sB || (sA === sB && tA > tB)) bySig.set(k, r);
+      }
+
+      let list = Array.from(bySig.values());
+
+      // 3) Text filter
       if (searchConversations) {
         const q = String(searchConversations || '').toLowerCase();
         list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || '')).toLowerCase().includes(q));
       }
-      // Sort by updated date desc for stable ordering
-      // Final sort: most recent activity on top
+
+      // 4) Final guard: ensure unique by normalized deal_id
+      list = list.filter((r, i, arr) => arr.findIndex(x => normId(x.deal_id) === normId(r.deal_id)) === i);
+
+      // 5) Sort newest first
       return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
     } catch (e) {
       console.error('[Room] filteredRooms error:', e);
-      // Fallback: minimal safe list
       return Array.isArray(rooms) ? rooms.filter(r => r && r.deal_id) : [];
     }
   }, [rooms, searchConversations, profile?.user_role, profile?.id]);
