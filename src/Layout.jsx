@@ -111,7 +111,7 @@ function LayoutContent({ children }) {
             {/* Center nav – simple, small text links */}
             <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
               {location.pathname !== createPageUrl("Pipeline") && (
-                <Link to={createPageUrl("Pipeline")} className="hover:text-[#E3C567]">Pipeline</Link>
+                <Link to={createPageUrl("Pipeline")} className="hover:text-[#E3C567]" onClick={(e) => e.stopPropagation()}>Pipeline</Link>
               )}
               <Link to={createPageUrl("HowItWorks")} className="hover:text-[#E3C567]">How it works</Link>
               <Link to={createPageUrl("Pricing")} className="hover:text-[#E3C567]">Pricing</Link>
