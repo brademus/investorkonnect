@@ -684,7 +684,7 @@ function PipelineContent() {
           <div className="max-w-[1800px] mx-auto">
             
             {/* Identity Reviewing Banner */}
-            {(identity?.verificationStatus === 'PROCESSING' || profile?.identity_status === 'pending') && (
+            {identityLoaded && identity?.verificationStatus === 'PROCESSING' && (
               <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-4 h-4 text-[#60A5FA]" />
