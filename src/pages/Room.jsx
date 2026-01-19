@@ -983,7 +983,8 @@ export default function Room() {
       sender_profile_id: profile?.id,
       body: t,
       created_date: new Date().toISOString(),
-      _isOptimistic: true
+      _isOptimistic: true,
+      _isMe: true
     };
     setItems(prev => [...prev, optimisticMessage]);
     
