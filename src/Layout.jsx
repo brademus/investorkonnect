@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 function LayoutContent({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
+  const { loading, user, role, hasRoom, onboarded, profile, hasNDA, kycVerified, isPaidSubscriber } = useCurrentProfile();
 
   const noNavPages = [
     '/',
