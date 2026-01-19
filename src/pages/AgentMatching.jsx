@@ -40,6 +40,19 @@ export default function AgentMatching() {
   }, [dealId, profile?.id]);
 
   const loadDealAndAgents = async () => {
+    const isAgentFullyOnboarded = (agent) => {
+      const a = agent?.agent || {};
+      const onboardingComplete = Boolean(
+        agent?.onboarding_completed_at ||
+        agent?.onboarding_step === 'basic_complete' ||
+        agent?.onboarding_step === 'deep_complete' ||
+        agent?.onboarding_version
+      );
+      const brokerageComplete = Boolean(agent?.broker || a?.brokerage);
+      const ndaComplete = !!agent?.nda_accepted;
+      const kycComplete = (agent?.kyc_status === 'approved') || (agent?.identity_status === 'verified');
+      return onboardingComplete && brokerageComplete && ndaComplete && kycComplete;
+    };
     try {
       setLoading(true);
       setMatching(true);
@@ -83,19 +96,7 @@ export default function AgentMatching() {
           return [...roots, ...lic].some((v) => v === target);
         };
 
-        const isAgentFullyOnboarded = (agent) => {
-          const a = agent?.agent || {};
-          const onboardingComplete = Boolean(
-            agent?.onboarding_completed_at ||
-            agent?.onboarding_step === 'basic_complete' ||
-            agent?.onboarding_step === 'deep_complete' ||
-            agent?.onboarding_version
-          );
-          const brokerageComplete = Boolean(agent?.broker || a?.brokerage);
-          const ndaComplete = !!agent?.nda_accepted;
-          const kycComplete = (agent?.kyc_status === 'approved') || (agent?.identity_status === 'verified');
-          return onboardingComplete && brokerageComplete && ndaComplete && kycComplete;
-        };
+
 
         const mapped = raw
           .map((r) => ({ agent: r.profile || r.agent || r, score: r.score, explanation: r.reason }))
