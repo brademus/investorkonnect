@@ -98,7 +98,7 @@ export function useRooms() {
         
         try {
           // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
-          const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+          const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed) ? 4 : r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
           const byDeal = new Map();
           for (const r of safeRooms) {
             if (!r?.deal_id) continue;
