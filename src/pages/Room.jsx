@@ -2587,7 +2587,7 @@ ${dealContext}`;
               ) : (
                 <>
                   {messages.map((m) => {
-                    const isMe = m.sender_profile_id === profile?.id;
+                    const isMe = m._isMe != null ? m._isMe : (m.sender_profile_id === profile?.id);
                     const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
                     return (
