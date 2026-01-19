@@ -17,20 +17,21 @@ import LoadingAnimation from '@/components/LoadingAnimation';
  */
 
 const WIZARD_STEPS = {
-MAP: 0,           // /
-ROLE: 1,          // /role
-AUTH: 2,          // handled by Base44
-ONBOARDING: 3,    // /onboarding/investor or /onboarding/agent
-// VERIFY removed
-NDA: 4,           // /nda
-MATCHING: 5,      // /matches (investor only)
-ROOM: 6           // /room/:id
+  MAP: 0,            // /
+  ROLE: 1,           // /role
+  AUTH: 2,           // handled by Base44
+  ONBOARDING: 3,     // /onboarding/investor or /onboarding/agent
+  VERIFY: 4,         // /Identity (KYC) - agents only
+  SUBSCRIPTION: 5,   // /Pricing (investors only)
+  NDA: 6,            // /NDA (must be last before access)
+  MATCHING: 7,       // /matches (investor only)
+  ROOM: 8            // /room/:id
 };
 
 export function StepGuard({ children, requiredStep }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, user, profile, role, onboarded, kycVerified, hasNDA } = useCurrentProfile();
+  const { loading, user, profile, role, onboarded, kycVerified, hasNDA, subscriptionStatus, isPaidSubscriber } = useCurrentProfile();
   const { selectedState, selectedRole } = useWizard();
 
   useEffect(() => {

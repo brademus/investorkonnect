@@ -279,6 +279,9 @@ function NDAContent() {
 }
 
 export default function NDA() {
-  // DEMO MODE: Remove StepGuard to allow direct access (not that users would be sent here anyway)
-  return <NDAContent />;
+  return (
+    <StepGuard requiredStep={6}>
+      <NDAContent />
+    </StepGuard>
+  );
 }

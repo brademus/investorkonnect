@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
+import { StepGuard } from "@/components/StepGuard";
 
 export default function AgentDirectory() {
   const navigate = useNavigate();
@@ -248,6 +249,7 @@ export default function AgentDirectory() {
   };
 
   return (
+    <StepGuard requiredStep={6}>
     <div className="min-h-screen bg-transparent py-6 sm:py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Header */}
@@ -455,5 +457,6 @@ export default function AgentDirectory() {
         </section>
       </div>
     </div>
+    </StepGuard>
   );
 }
