@@ -1197,7 +1197,7 @@ ${dealContext}`;
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredRooms.map(r => {
+          {filteredRooms.filter(r => !!r.deal_id).map(r => {
             const handleClick = () => {
               if (r.is_orphan) {
                 // Pipeline-only deal: route to Pipeline to continue
