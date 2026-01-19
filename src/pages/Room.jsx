@@ -427,7 +427,9 @@ export default function Room() {
             // Include property details so UI can render even if deal object not yet refreshed elsewhere
             property_type: freshDeal.property_type,
             property_details: freshDeal.property_details,
-            proposed_terms: freshDeal.proposed_terms
+            proposed_terms: freshDeal.proposed_terms,
+            photos: freshRoom?.photos || [],
+            files: freshRoom?.files || []
           });
           
 
@@ -556,6 +558,8 @@ export default function Room() {
               ...safeRoom,
               title: maskedTitle,
               property_address: shouldMaskAddress(profile, safeRoom, null) ? null : safeRoom?.property_address,
+              photos: safeRoom?.photos || [],
+              files: safeRoom?.files || []
             });
           } else {
             setCurrentRoom(null);
@@ -616,6 +620,8 @@ export default function Room() {
                 property_type: deal.property_type,
                 property_details: deal.property_details,
                 proposed_terms: deal.proposed_terms,
+                photos: rawRoom?.photos || [],
+                files: rawRoom?.files || [],
                 counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
               });
             } else {
