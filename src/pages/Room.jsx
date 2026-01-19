@@ -2004,14 +2004,12 @@ ${dealContext}`;
                           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                         }}
                       />
-                    ) : (
-                      <LegalAgreementPanel
-                        deal={buildDealFromRoom(currentRoom, maskAddr) || { id: currentRoom?.deal_id }}
-                        profile={profile}
-                        allowGenerate={false}
-                        initialAgreement={currentRoom?.agreement || null}
-                      />
-                    )
+                      {!deal && (
+                        <div className="hidden" aria-hidden>
+                          Loading agreement panel...
+                        </div>
+                      )}
+                    </>
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
