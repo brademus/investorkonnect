@@ -53,7 +53,8 @@ function LayoutContent({ children }) {
   const isFullBleedPage = fullBleedPages.some(path => location.pathname.toLowerCase().includes(path.toLowerCase()));
 
   const isNoNavPage = noNavPages.some(path => location.pathname === path || location.pathname.startsWith(path));
-  const showNav = !loading && user && onboarded && hasNDA && (hasRoom || location.pathname.startsWith('/room/'));
+  const isVerificationPage = location.pathname.toLowerCase().startsWith('/verify') || location.pathname.toLowerCase().startsWith('/identity');
+  const showNav = (!loading && user && onboarded && hasNDA && (hasRoom || location.pathname.startsWith('/room/'))) || isVerificationPage;
   const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin' || user?.role === 'admin';
   // Reserve header offset even while loading to prevent layout shift
   const shouldOffset = !isNoNavPage && !isFullBleedPage;
