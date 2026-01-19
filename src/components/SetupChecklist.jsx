@@ -59,6 +59,11 @@ export function SetupChecklist({ profile, onRefresh }) {
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
 
   // Core steps - subscription only for investors, agents are always free
+  // If identity is verified, hide checklist entirely
+  if (identity && identity.verificationStatus === 'VERIFIED') {
+    return null;
+  }
+
   const baseSteps = [
     {
       id: 'onboarding',
