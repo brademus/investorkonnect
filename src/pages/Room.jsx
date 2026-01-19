@@ -494,12 +494,12 @@ export default function Room() {
           staleTime: 60_000
         });
       }
-      // Warm rooms cache (key matches Pipeline)
+      // Warm rooms cache with ENRICHED + DEDUPED data (same key as useRooms)
       queryClient.prefetchQuery({
         queryKey: ['rooms'],
         queryFn: async () => {
-          const res = await base44.functions.invoke('listMyRooms');
-          return res.data;
+          const res = await base44.functions.invoke('listMyRoomsEnriched');
+          return res.data?.rooms || [];
         },
         staleTime: 60_000
       });
