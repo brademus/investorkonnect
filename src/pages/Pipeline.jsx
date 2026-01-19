@@ -653,7 +653,7 @@ function PipelineContent() {
             {(identity?.verificationStatus === 'PROCESSING' || profile?.identity_status === 'pending') && (
               <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
                 <div className="flex items-center gap-3">
-                  <Loader2 className="w-4 h-4 text-[#60A5FA] animate-spin" />
+                  <Loader2 className="w-4 h-4 text-[#60A5FA]" />
                   <div>
                     <h2 className="text-sm font-semibold text-[#FAFAFA]">Reviewing your identity</h2>
                     <p className="text-xs text-[#808080]">Stripe is reviewing your verification. This usually takes a few minutes.</p>
