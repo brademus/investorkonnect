@@ -241,6 +241,7 @@ function PipelineContent() {
     queryKey: ['rooms'],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
