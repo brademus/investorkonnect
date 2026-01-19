@@ -809,24 +809,13 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-4 sm:ml-6">
-                {isInvestor && (
+                {(isInvestor && onboardingComplete && subscriptionComplete) && (
                   <Button 
-                    onClick={async () => {
-                      if (!investorSetupComplete) {
-                        toast.info('Complete your setup (4/4) to create a deal');
-                        const next = !onboardingComplete ? (isInvestor ? 'InvestorDeepOnboarding' : 'AgentDeepOnboarding')
-                          : !ndaComplete ? 'NDA'
-                          : !subscriptionComplete ? 'Pricing'
-                          : !identityComplete ? 'Identity'
-                          : 'Pipeline';
-                        navigate(createPageUrl(next));
-                        return;
-                      }
+                    onClick={() => {
                       try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
                       navigate(createPageUrl("NewDeal"));
                     }}
-                    disabled={!investorSetupComplete}
-                    className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full disabled:opacity-60 disabled:cursor-not-allowed"
+                    className="bg-[#E3C567] text-black hover:bg-[#D4AF37] rounded-full"
                   >
                     <Plus className="w-4 h-4 mr-2" /> New Deal
                   </Button>
