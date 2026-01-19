@@ -76,19 +76,21 @@ function EventCard({ label, data, role, onPrimary, onSecondary, onInvestorReques
 }
 
 export default function DealAppointmentsCard({ dealId, userRole }) {
-  const [loading, setLoading] = useState(true);
+  const defaultEvent = { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null };
+  const defaultData = { walkthrough: defaultEvent, inspection: defaultEvent, rescheduleRequests: [] };
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(defaultData);
   const [opening, setOpening] = useState({ type: null, mode: null });
   const [showAll, setShowAll] = useState(false);
   const [requests, setRequests] = useState([]);
 
   const load = async () => {
     if (!dealId) return;
-    setLoading(true);
+    if (!data) setLoading(true);
     setError('');
     try {
-      const defaultEvent = { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null };
+
       const [a, r] = await Promise.allSettled([
         base44.functions.invoke('getDealAppointments', { dealId }),
         base44.functions.invoke('listRescheduleRequests', { dealId })
@@ -111,7 +113,9 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
       }
 
       if (!apptRes && !reqRes) {
-        setError('Failed to load');
+        setData(defaultData);
+        setRequests([]);
+        setError('');
       }
     } catch (e) {
       // Fallback to direct entity read and safe defaults so the panel never hard-fails
@@ -121,7 +125,7 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
           setData(rows[0]);
           setRequests(rows[0].rescheduleRequests || []);
         } else {
-          setData({ walkthrough: defaultEvent, inspection: defaultEvent, rescheduleRequests: [] });
+          setData(defaultData);
           setRequests([]);
         }
       } catch (_) {
@@ -148,9 +152,7 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
         {loading && <Loader2 className="w-4 h-4 animate-spin text-[#808080]" />}
       </div>
 
-      {error ? (
-        <p className="text-sm text-[#EF4444]">{error}</p>
-      ) : loading ? (
+      {loading ? (
         <div className="grid gap-3 md:grid-cols-2">
           <div className="h-28 bg-[#141414] border border-[#1F1F1F] rounded-xl animate-pulse" />
           <div className="h-28 bg-[#141414] border border-[#1F1F1F] rounded-xl animate-pulse" />
