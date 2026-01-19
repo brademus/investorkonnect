@@ -93,8 +93,8 @@ function LayoutContent({ children }) {
         }
       `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
-      {showNav && !isNoNavPage && (
-        <header className="fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
+      {shouldOffset && (
+        <header className={`fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm transition-opacity duration-200 ${showNav ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
             {/* Left: logo + brand */}
             <img 
