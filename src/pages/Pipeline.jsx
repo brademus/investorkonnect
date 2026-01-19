@@ -221,6 +221,7 @@ function PipelineContent() {
     queryKey: ['activities', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
       // Get all deals for this user
