@@ -186,11 +186,9 @@ export default function AgentOnboarding() {
       const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
       console.log('[AgentOnboarding] Profile saved successfully:', result);
 
+      await refresh();
       toast.success("Profile saved! Welcome to Investor Konnect!");
-      
-      // Force a full page reload to refresh all state
-      await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.href = createPageUrl("Dashboard");
+      navigate(createPageUrl("Dashboard"), { replace: true });
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
