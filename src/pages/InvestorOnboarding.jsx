@@ -71,7 +71,7 @@ export default function InvestorOnboarding() {
         primary_state: selectedState || profile.target_state || profile.markets?.[0] || '',
         investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
         strategy: profile.metadata?.basicProfile?.investment_strategy || '',
-        goals: profile.metadata?.basicProfile?.goals ?? profile.goals || ''
+        goals: (profile.metadata?.basicProfile?.goals ?? profile.goals) || ''
       }));
     }
   }, [profile, selectedState]);
