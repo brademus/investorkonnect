@@ -407,6 +407,20 @@ export default function ContractVerify() {
         toast.success("Contract verified successfully!");
       }
 
+      // Persist additive result on session (no schema changes) for downstream UI if needed
+      try {
+        const draft = JSON.parse(sessionStorage.getItem('newDealDraft') || '{}');
+        draft.__verificationResult = {
+          ...(draft.__verificationResult || {}),
+          buyerNameCheck: {
+            status: buyerNameStatus,
+            expectedName: expectedBuyerRaw || null,
+            contractBuyerName: contractBuyerRaw || null,
+            reason: buyerNameReason || null
+          }
+        };
+        sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
+      } catch (_) {}
     } catch (error) {
       console.error("Verification failed:", error);
       toast.error("Failed to verify contract");
