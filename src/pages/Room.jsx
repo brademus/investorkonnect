@@ -38,6 +38,31 @@ const shouldMaskAddress = (profile, room, deal) => {
   return isAgentView && !isFullySigned;
 };
 
+// Robust check to determine if a message was sent by the current user/profile
+function isMessageFromMe(m, currentProfile) {
+  const myProfileId = currentProfile?.id;
+  const myUserId = currentProfile?.user_id;
+  const myEmail = (currentProfile?.email || '').toLowerCase().trim();
+
+  const senderIds = [
+    m?.sender_profile_id,
+    m?.senderProfileId,
+    m?.sender_profile,
+    m?.sender_id,
+    m?.senderUserId,
+    m?.sender_user_id,
+  ].filter(Boolean);
+
+  if (myProfileId && senderIds.includes(myProfileId)) return true;
+  if (myUserId && senderIds.includes(myUserId)) return true;
+
+  const createdBy = (m?.created_by || '').toLowerCase().trim();
+  if (myEmail && createdBy && createdBy === myEmail) return true;
+
+  return false;
+}
+
+
 // Helper to build a minimal deal snapshot from room for instant render
 function buildDealFromRoom(room, maskAddress = false) {
   if (!room) return null;
@@ -112,7 +137,7 @@ function useMessages(roomId, currentProfile) {
             });
 
             // Stabilize who-is-me mapping to prevent bubble side flicker
-            const stabilized = messages.map(m => ({ ...m, _isMe: m.sender_profile_id === currentProfile?.id }));
+            const stabilized = messages.map(m => ({ ...m, _isMe: isMessageFromMe(m, currentProfile) }));
 
             // Combine real messages + active optimistic, remove duplicates by ID
             const combined = [...stabilized, ...activeOptimistic];
@@ -981,6 +1006,8 @@ export default function Room() {
       id: tempId,
       room_id: roomId,
       sender_profile_id: profile?.id,
+      sender_user_id: profile?.user_id,
+      senderUserId: profile?.user_id,
       body: t,
       created_date: new Date().toISOString(),
       _isOptimistic: true,
@@ -2586,7 +2613,7 @@ ${dealContext}`;
               ) : (
                 <>
                   {messages.map((m) => {
-                    const isMe = m._isMe != null ? m._isMe : (m.sender_profile_id === profile?.id);
+                    const isMe = m._isMe != null ? m._isMe : isMessageFromMe(m, profile);
                     const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
                     return (
