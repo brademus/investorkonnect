@@ -1990,17 +1990,23 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     deal ? (
                       <LegalAgreementPanel
-                                                deal={deal}
-                                                profile={profile}
-                                                allowGenerate={false}
-                                                onUpdate={async () => {
-                                                  await refreshRoomState();
-                                                  queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                                                  queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                                                }}
-                                              />
+                        deal={deal}
+                        profile={profile}
+                        allowGenerate={false}
+                        initialAgreement={currentRoom?.agreement || null}
+                        onUpdate={async () => {
+                          await refreshRoomState();
+                          queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                        }}
+                      />
                     ) : (
-                      <div className="text-center py-8 text-[#808080]">Loading agreement panel...</div>
+                      <LegalAgreementPanel
+                        deal={buildDealFromRoom(currentRoom, maskAddr) || { id: currentRoom?.deal_id }}
+                        profile={profile}
+                        allowGenerate={false}
+                        initialAgreement={currentRoom?.agreement || null}
+                      />
                     )
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
