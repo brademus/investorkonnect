@@ -112,8 +112,27 @@ export function useRooms() {
             }
           }
           const uniqueWithDeal = Array.from(byDeal.values());
-          const deduped = uniqueWithDeal.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
-          return deduped;
+          // Secondary defensive dedupe: collapse rooms that look like the same deal (same address/city/state/zip/budget)
+          const sig = (r) => [
+            String(r?.property_address || '').toLowerCase().replace(/\s+/g,' ').trim(),
+            String(r?.city || '').toLowerCase(),
+            String(r?.state || '').toLowerCase(),
+            String(r?.zip || '').trim().slice(0,10),
+            Number(r?.budget || 0)
+          ].join('|');
+          const bySignature = new Map();
+          for (const r of uniqueWithDeal) {
+            const k = sig(r);
+            const prev = bySignature.get(k);
+            if (!prev) { bySignature.set(k, r); continue; }
+            const sA = score(r), sB = score(prev);
+            const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+            const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+            if (sA > sB || (sA === sB && tA > tB)) bySignature.set(k, r);
+          }
+          const deduped = Array.from(bySignature.values())
+            .filter(r => r?.pipeline_stage !== 'canceled');
+          return deduped.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
         } catch (e) {
           console.error('[useRooms] dedupe error:', e);
           return rooms;
