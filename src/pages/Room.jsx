@@ -2841,6 +2841,6 @@ ${dealContext}`;
         onClose={() => setWizardOpen(false)} 
       />
     </div>
-    </StepGuard>
+    
   );
 }
