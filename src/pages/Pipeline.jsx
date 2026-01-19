@@ -266,6 +266,7 @@ function PipelineContent() {
       } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
