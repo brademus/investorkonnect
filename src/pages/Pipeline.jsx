@@ -6,7 +6,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import LoadingAnimation from "@/components/LoadingAnimation";
+
 import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
@@ -360,6 +360,7 @@ function PipelineContent() {
     queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
       const items = await base44.entities.DealAppointments.list('-updated_date', 500);
@@ -630,13 +631,11 @@ function PipelineContent() {
     return m;
   }, [deals, isAgent]);
 
-  if (loading || !profile || deduplicating) {
+  if (deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
-          {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
-          {(!deduplicating) && <p className="text-sm text-[#808080]">Preparing your workspace...</p>}
+          <p className="text-sm text-[#808080]">Organizing your deals...</p>
         </div>
       </div>
     );
