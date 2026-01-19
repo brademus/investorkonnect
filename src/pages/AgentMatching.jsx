@@ -81,9 +81,24 @@ export default function AgentMatching() {
           return [...roots, ...lic].some((v) => v === target);
         };
 
+        const isAgentFullyOnboarded = (agent) => {
+          const a = agent?.agent || {};
+          const onboardingComplete = Boolean(
+            agent?.onboarding_completed_at ||
+            agent?.onboarding_step === 'basic_complete' ||
+            agent?.onboarding_step === 'deep_complete' ||
+            agent?.onboarding_version
+          );
+          const brokerageComplete = Boolean(agent?.broker || a?.brokerage);
+          const ndaComplete = !!agent?.nda_accepted;
+          const kycComplete = (agent?.kyc_status === 'approved') || (agent?.identity_status === 'verified');
+          return onboardingComplete && brokerageComplete && ndaComplete && kycComplete;
+        };
+
         const mapped = raw
           .map((r) => ({ agent: r.profile || r.agent || r, score: r.score, explanation: r.reason }))
-          .filter((m) => isLicensedInState(m.agent));
+          .filter((m) => isLicensedInState(m.agent))
+          .filter((m) => isAgentFullyOnboarded(m.agent));
 
         if (mapped.length > 0) {
           console.log('[AgentMatching] AI matched licensed agents:', mapped.length);
@@ -110,7 +125,8 @@ export default function AgentMatching() {
 
         console.log('[AgentMatching] Licensed agents in state:', licensedAgents.length);
 
-        matchedAgents = licensedAgents.slice(0, 3).map((agent) => ({
+        const eligibleAgents = licensedAgents.filter(isAgentFullyOnboarded);
+        matchedAgents = eligibleAgents.slice(0, 3).map((agent) => ({
           agent,
           score: 1.0,
           explanation: `Licensed in ${loadedDeal.state}`,
