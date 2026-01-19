@@ -159,6 +159,7 @@ function PipelineContent() {
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
       
@@ -626,7 +627,7 @@ function PipelineContent() {
     return m;
   }, [deals, isAgent]);
 
-  if (loading || !profile || loadingDeals || deduplicating) {
+  if (loading || !profile || deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
