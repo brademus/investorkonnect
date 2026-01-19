@@ -77,6 +77,26 @@ function PipelineContent() {
     })();
   }, [profile?.id]);
 
+  // Auto-refresh identity while under review so the banner updates and hides when done
+  useEffect(() => {
+    if (!profile?.id) return;
+    const isUnderReview = (identity?.verificationStatus === 'PROCESSING') || (profile?.identity_status === 'pending');
+    if (!isUnderReview) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        setIdentity(data?.identity || null);
+        if (data?.identity?.verificationStatus === 'VERIFIED') {
+          await refresh();
+          clearInterval(interval);
+        }
+      } catch (_) { /* noop */ }
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [profile?.id, identity?.verificationStatus, profile?.identity_status]);
+
   // Manual dedup handler
   const handleDedup = async () => {
     if (!profile?.id) return;
@@ -621,7 +641,7 @@ function PipelineContent() {
           <div className="max-w-[1800px] mx-auto">
             
             {/* Identity Reviewing Banner */}
-            {identity?.verificationStatus === 'PROCESSING' && (
+            {(identity?.verificationStatus === 'PROCESSING' || profile?.identity_status === 'pending') && (
               <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
                 <div className="flex items-center gap-3">
                   <Loader2 className="w-4 h-4 text-[#60A5FA] animate-spin" />
