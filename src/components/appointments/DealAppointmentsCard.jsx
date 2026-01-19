@@ -88,12 +88,31 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
     setLoading(true);
     setError('');
     try {
-      const [a, r] = await Promise.all([
+      const defaultEvent = { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null };
+      const [a, r] = await Promise.allSettled([
         base44.functions.invoke('getDealAppointments', { dealId }),
         base44.functions.invoke('listRescheduleRequests', { dealId })
       ]);
-      if (a.status === 200) setData(a.data);
-      if (r.status === 200) setRequests(r.data?.items || []);
+
+      const apptRes = (a.status === 'fulfilled') ? a.value : null;
+      const reqRes = (r.status === 'fulfilled') ? r.value : null;
+
+      if (apptRes?.status === 200 && apptRes.data) {
+        setData(apptRes.data);
+      } else {
+        // Fallback to sensible defaults so UI never errors
+        setData({ walkthrough: defaultEvent, inspection: defaultEvent, rescheduleRequests: [] });
+      }
+
+      if (reqRes?.status === 200) {
+        setRequests(reqRes.data?.items || []);
+      } else {
+        setRequests([]);
+      }
+
+      if (!apptRes && !reqRes) {
+        setError('Failed to load');
+      }
     } catch (e) {
       setError('Failed to load');
     } finally { setLoading(false); }
