@@ -111,15 +111,16 @@ function useMessages(roomId) {
               );
             });
 
-            // Create a map of all real message IDs for deduplication
-            const realMessageIds = new Set(messages.map(m => m.id));
+            // Stabilize who-is-me mapping to prevent bubble side flicker
+            const stabilized = messages.map(m => ({ ...m, _isMe: m.sender_profile_id === profile?.id }));
 
             // Combine real messages + active optimistic, remove duplicates by ID
-            const combined = [...messages, ...activeOptimistic];
+            const combined = [...stabilized, ...activeOptimistic];
             const seen = new Set();
             const deduplicated = combined.filter(m => {
-              if (seen.has(m.id)) return false;
-              seen.add(m.id);
+              const key = m.id || `${m.sender_profile_id}-${m.created_date}-${m.body?.slice(0,20)}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
               return true;
             });
 
