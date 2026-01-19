@@ -697,12 +697,12 @@ function PipelineContent() {
             )}
 
             {/* Setup Checklist (hide if identity verified to prevent stale banner) */}
-            {identityLoaded && (!identity || identity.verificationStatus !== 'VERIFIED') && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
+            {identityLoaded && !((identity && identity.verificationStatus === 'VERIFIED') || profile?.identity_status === 'verified') && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
               <div className="mb-6">
                 <SetupChecklist profile={profile} />
               </div>
             )}
-            
+
             {/* Pending Requests for Agents */}
             {isAgent && pendingRequests.length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
