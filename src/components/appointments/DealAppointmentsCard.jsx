@@ -114,7 +114,21 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
         setError('Failed to load');
       }
     } catch (e) {
-      setError('Failed to load');
+      // Fallback to direct entity read and safe defaults so the panel never hard-fails
+      try {
+        const rows = await base44.entities.DealAppointments.filter({ dealId });
+        if (rows?.[0]) {
+          setData(rows[0]);
+          setRequests(rows[0].rescheduleRequests || []);
+        } else {
+          setData({ walkthrough: defaultEvent, inspection: defaultEvent, rescheduleRequests: [] });
+          setRequests([]);
+        }
+      } catch (_) {
+        setData({ walkthrough: defaultEvent, inspection: defaultEvent, rescheduleRequests: [] });
+        setRequests([]);
+      }
+      setError('');
     } finally { setLoading(false); }
   };
 
