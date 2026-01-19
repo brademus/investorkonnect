@@ -182,7 +182,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
 
   useEffect(() => {
@@ -274,7 +274,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
 
   useEffect(() => {
@@ -384,7 +384,7 @@ function PipelineContent() {
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
 
   // 4b. Load Deal Appointments for visible deals
