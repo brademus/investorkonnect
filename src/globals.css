@@ -120,6 +120,28 @@ html {
     -moz-osx-font-smoothing: grayscale;
     font-weight: 300;
     letter-spacing: 0.015em;
+    /* Prevent white flash between route changes */
+    color-scheme: dark;
+  }
+
+  /* Smooth page fade to reduce flash on mount */
+  #root, body, html {
+    background-color: #050505;
+  }
+
+  .page-fade-enter {
+    opacity: 0.001;
+  }
+  .page-fade-enter-active {
+    opacity: 1;
+    transition: opacity 250ms ease;
+  }
+  .page-fade-exit {
+    opacity: 1;
+  }
+  .page-fade-exit-active {
+    opacity: 0.001;
+    transition: opacity 180ms ease;
   }
 
   h1, h2, h3, h4, h5, h6 {
