@@ -10,9 +10,9 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false }) {
-  const [agreement, setAgreement] = useState(null);
-  const [loading, setLoading] = useState(true);
+export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null }) {
+  const [agreement, setAgreement] = useState(initialAgreement || null);
+  const [loading, setLoading] = useState(!initialAgreement);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -96,7 +96,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const loadAgreement = async () => {
     if (!deal?.id) { setLoading(false); return; }
     try {
-      setLoading(true);
+      setLoading(!agreement);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: deal?.id || deal?.deal_id });
       setAgreement(response.data?.agreement || null);
     } catch (error) {
