@@ -83,7 +83,8 @@ export default function InvestorOnboarding() {
     if (!current || current === 'member') {
       base44.entities.Profile.update(profile.id, { user_role: 'investor', user_type: 'investor' }).catch(() => {});
     } else if (current === 'agent') {
-      navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      // If they somehow land here as agent, send them to PostAuth to reroute cleanly
+      navigate(createPageUrl("PostAuth"), { replace: true });
     }
   }, [profile, navigate]);
 
