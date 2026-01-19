@@ -315,23 +315,6 @@ export default function AgentOnboarding() {
       <p className="text-[18px] text-[#808080] mb-10">This helps matching and sets expectations</p>
       
       <div className="space-y-7">
-        <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Additional Markets You Serve</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select states where you’re licensed or actively serve investor clients.</p>
-          <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
-            {US_STATES.map((state) => (
-              <div key={state} className="flex items-center gap-3">
-                <Checkbox 
-                  id={`market-${state}`} 
-                  checked={formData.markets.includes(state)} 
-                  onCheckedChange={() => toggleMarket(state)} 
-                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
-                />
-                <Label htmlFor={`market-${state}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{state}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
 
         <div className="mt-6">
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Investor Strategy Specialties (optional)</Label>
