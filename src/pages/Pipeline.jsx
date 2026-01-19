@@ -696,8 +696,8 @@ function PipelineContent() {
               </div>
             )}
 
-            {/* Setup Checklist */}
-            {identityLoaded && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
+            {/* Setup Checklist (hide if identity verified to prevent stale banner) */}
+            {identityLoaded && (!identity || identity.verificationStatus !== 'VERIFIED') && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
               <div className="mb-6">
                 <SetupChecklist profile={profile} />
               </div>
