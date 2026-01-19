@@ -13,7 +13,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 export default function ContractVerify() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile } = useCurrentProfile();
+  const { profile, user } = useCurrentProfile();
   
   const dealIdFromUrl = searchParams.get("dealId");
   
@@ -188,7 +188,8 @@ export default function ContractVerify() {
 
       // New: Buyer name verification (additive only)
       const verifiedFullFromProfile = [profile?.verified_first_name, profile?.verified_last_name].filter(Boolean).join(' ').trim();
-      const expectedBuyerRaw = (verifiedFullFromProfile || profile?.identity?.verified_full_name || profile?.full_name || '').trim();
+      const fallbackOnboardingFull = [profile?.onboarding_first_name, profile?.onboarding_last_name].filter(Boolean).join(' ').trim();
+      const expectedBuyerRaw = (verifiedFullFromProfile || profile?.full_name || fallbackOnboardingFull || user?.full_name || '').trim();
       const expectedBuyerCompany = (profile?.company || profile?.investor?.company_name || '').trim();
 
       const normalizeForCompare = (s) => {
