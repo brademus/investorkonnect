@@ -85,7 +85,7 @@ function PipelineContent() {
   // Auto-refresh identity while under review so the banner updates and hides when done
   useEffect(() => {
     if (!profile?.id) return;
-    const isUnderReview = (identity?.verificationStatus === 'PROCESSING') || (profile?.identity_status === 'pending');
+    const isUnderReview = identity?.verificationStatus === 'PROCESSING';
     if (!isUnderReview) return;
 
     const interval = setInterval(async () => {
