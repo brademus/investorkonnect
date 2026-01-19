@@ -115,11 +115,11 @@ export function useRooms() {
           const uniqueWithDeal = Array.from(byDeal.values());
           // Secondary defensive dedupe: collapse rooms that look like the same deal (same address/city/state/zip/budget)
           const sig = (r) => [
-            String(r?.property_address || '').toLowerCase().replace(/\s+/g,' ').trim(),
-            String(r?.city || '').toLowerCase(),
-            String(r?.state || '').toLowerCase(),
-            String(r?.zip || '').trim().slice(0,10),
-            Number(r?.budget || 0)
+           String(r?.property_address || '').toLowerCase().replace(/\s+/g,' ').trim(),
+           String(r?.city || '').toLowerCase(),
+           String(r?.state || '').toLowerCase(),
+           String(r?.zip || '').trim().slice(0,10),
+           Number(Math.round(Number(r?.budget || 0)))
           ].join('|');
           const bySignature = new Map();
           for (const r of uniqueWithDeal) {
