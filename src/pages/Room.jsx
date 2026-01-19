@@ -254,7 +254,7 @@ export default function Room() {
   const roomId = params.get("roomId");
   const { profile } = useCurrentProfile();
   const { rooms } = useMyRooms();
-  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
+  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId, profile);
   const queryClient = useQueryClient();
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
