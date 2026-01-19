@@ -32,7 +32,8 @@ export default function AgentOnboarding() {
     main_county: '',
     markets: [],
     experience_years: '',
-    bio: ''
+    bio: '',
+    specialties: []
   });
 
   const TOTAL_STEPS = 3;
@@ -75,7 +76,8 @@ export default function AgentOnboarding() {
         main_county: agent.main_county || '',
         markets: agent.markets || profile.markets || [],
         experience_years: agent.experience_years || '',
-        bio: agent.bio || ''
+        bio: agent.bio || '',
+        specialties: agent.specialties || []
       }));
     }
   }, [profile]);
@@ -101,6 +103,15 @@ export default function AgentOnboarding() {
       markets: prev.markets.includes(state)
         ? prev.markets.filter(s => s !== state)
         : [...prev.markets, state]
+    }));
+  };
+
+  const toggleSpecialty = (name) => {
+    setFormData(prev => ({
+      ...prev,
+      specialties: (prev.specialties || []).includes(name)
+        ? (prev.specialties || []).filter(s => s !== name)
+        : [...(prev.specialties || []), name]
     }));
   };
 
@@ -171,7 +182,8 @@ export default function AgentOnboarding() {
             experience_years: parseInt(formData.experience_years) || 0,
             bio: formData.bio,
             investor_friendly: true,
-            brokerage: formData.brokerage
+            brokerage: formData.brokerage,
+            specialties: formData.specialties || []
           }
         };
       
@@ -204,11 +216,11 @@ export default function AgentOnboarding() {
   const renderStep1 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
+      <p className="text-[18px] text-[#808080] mb-10">Basic info for your agent profile</p>
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Name *</Label>
+          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Legal Name *</Label>
           <Input 
             id="full_name" 
             value={formData.full_name} 
@@ -229,7 +241,7 @@ export default function AgentOnboarding() {
           />
         </div>
         <div>
-          <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years of Experience</Label>
+          <Label htmlFor="experience_years" className="text-[#FAFAFA] text-[19px] font-medium">Years Licensed (optional)</Label>
           <Input 
             id="experience_years" 
             type="number"
@@ -246,8 +258,8 @@ export default function AgentOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & Location</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Your license info and main service area</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">License & primary market</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Your license + your main service area</p>
       
       <div className="space-y-7">
         <div>
@@ -283,7 +295,7 @@ export default function AgentOnboarding() {
           </select>
         </div>
         <div>
-          <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Main County *</Label>
+          <Label htmlFor="main_county" className="text-[#FAFAFA] text-[19px] font-medium">Primary Service County *</Label>
           <Input 
             id="main_county" 
             value={formData.main_county} 
@@ -291,6 +303,7 @@ export default function AgentOnboarding() {
             placeholder="e.g., Maricopa County" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
+          <p className="text-sm text-[#808080] mt-2">Your main county in your licensed state.</p>
         </div>
       </div>
     </div>
@@ -298,13 +311,13 @@ export default function AgentOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Markets & Bio</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Service areas and professional background</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Investor-focused profile</h3>
+      <p className="text-[18px] text-[#808080] mb-10">This helps matching and sets expectations</p>
       
       <div className="space-y-7">
         <div>
           <Label className="text-[#FAFAFA] text-[19px] font-medium">Additional Markets You Serve</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you're licensed or serve clients</p>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select states where you’re licensed or actively serve investor clients.</p>
           <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-3">
@@ -320,13 +333,38 @@ export default function AgentOnboarding() {
           </div>
         </div>
 
+        <div className="mt-6">
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Investor Strategy Specialties (optional)</Label>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-3">
+            {[
+              "Buy & Hold",
+              "BRRRR",
+              "Fix & Flip",
+              "Multifamily",
+              "Land",
+              "Off-market sourcing",
+              "Property management / leasing"
+            ].map((opt) => (
+              <div key={opt} className="flex items-center gap-3">
+                <Checkbox
+                  id={`spec-${opt}`}
+                  checked={(formData.specialties || []).includes(opt)}
+                  onCheckedChange={() => toggleSpecialty(opt)}
+                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
+                />
+                <Label htmlFor={`spec-${opt}`} className="text-[17px] font-normal cursor-pointer text-[#FAFAFA]">{opt}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div>
-          <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Professional Bio</Label>
+          <Label htmlFor="bio" className="text-[#FAFAFA] text-[19px] font-medium">Investor-Focused Bio (optional)</Label>
           <Textarea 
             id="bio" 
             value={formData.bio} 
             onChange={(e) => updateField('bio', e.target.value)} 
-            placeholder="Introduce yourself and highlight your experience working with investor clients..." 
+            placeholder="What investor strategies do you specialize in (BRRRR, flips, buy & hold, etc.)? What makes you easy to work with?" 
             rows={5}
             className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" 
           />

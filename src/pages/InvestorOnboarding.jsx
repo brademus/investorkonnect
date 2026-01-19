@@ -30,6 +30,7 @@ export default function InvestorOnboarding() {
     company: '',
     primary_state: selectedState || '',
     investment_experience: '',
+    strategy: '',
     goals: ''
   });
 
@@ -69,7 +70,8 @@ export default function InvestorOnboarding() {
         company: profile.company || '',
         primary_state: selectedState || profile.target_state || profile.markets?.[0] || '',
         investment_experience: profile.metadata?.basicProfile?.investment_experience || '',
-        goals: profile.goals || ''
+        strategy: profile.metadata?.basicProfile?.investment_strategy || '',
+        goals: profile.metadata?.basicProfile?.goals ?? profile.goals || ''
       }));
     }
   }, [profile, selectedState]);
@@ -123,7 +125,10 @@ export default function InvestorOnboarding() {
         metadata: {
           ...profile.metadata,
           basicProfile: {
-            investment_experience: formData.investment_experience
+            ...(profile.metadata?.basicProfile || {}),
+            investment_experience: formData.investment_experience,
+            investment_strategy: formData.strategy || '',
+            goals: formData.goals || ''
           }
         }
       });
@@ -149,21 +154,21 @@ export default function InvestorOnboarding() {
   const renderStep1 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Let's get started</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Tell us a bit about yourself</p>
+      <p className="text-[18px] text-[#808080] mb-10">Basic info for your account</p>
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Name *</Label>
+          <Label htmlFor="full_name" className="text-[#FAFAFA] text-[19px] font-medium">Full Legal Name *</Label>
           <Input 
             id="full_name" 
             value={formData.full_name} 
             onChange={(e) => updateField('full_name', e.target.value)} 
-            placeholder="Your full name" 
+            placeholder="Your full legal name" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
         <div>
-          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number</Label>
+          <Label htmlFor="phone" className="text-[#FAFAFA] text-[19px] font-medium">Phone Number *</Label>
           <Input 
             id="phone" 
             type="tel" 
@@ -174,12 +179,12 @@ export default function InvestorOnboarding() {
           />
         </div>
         <div>
-          <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company (optional)</Label>
+          <Label htmlFor="company" className="text-[#FAFAFA] text-[19px] font-medium">Company / LLC (optional)</Label>
           <Input 
             id="company" 
             value={formData.company} 
             onChange={(e) => updateField('company', e.target.value)} 
-            placeholder="Your company name" 
+            placeholder="Company or LLC name (optional)" 
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
@@ -189,12 +194,12 @@ export default function InvestorOnboarding() {
 
   const renderStep2 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your investment focus</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Where are you looking to invest?</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Your target market</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Where are you investing and what do you focus on?</p>
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="primary_state" className="text-[#FAFAFA] text-[19px] font-medium">Primary Market / State *</Label>
+          <Label htmlFor="primary_state" className="text-[#FAFAFA] text-[19px] font-medium">Primary Target State *</Label>
           <select 
             id="primary_state" 
             value={formData.primary_state} 
@@ -206,7 +211,7 @@ export default function InvestorOnboarding() {
           </select>
         </div>
         <div>
-          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">Investment Experience</Label>
+          <Label htmlFor="investment_experience" className="text-[#FAFAFA] text-[19px] font-medium">Experience Level *</Label>
           <select 
             id="investment_experience" 
             value={formData.investment_experience} 
@@ -214,10 +219,29 @@ export default function InvestorOnboarding() {
             className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
           >
             <option value="">Select your experience level</option>
-            <option value="beginner">Beginner (0-2 deals)</option>
-            <option value="intermediate">Intermediate (3-10 deals)</option>
-            <option value="experienced">Experienced (10+ deals)</option>
+            <option value="New (0 deals)">New (0 deals)</option>
+            <option value="1–5 deals">1–5 deals</option>
+            <option value="6–20 deals">6–20 deals</option>
+            <option value="20+ deals">20+ deals</option>
           </select>
+
+          <div className="mt-7">
+            <Label htmlFor="strategy" className="text-[#FAFAFA] text-[19px] font-medium">Primary Strategy *</Label>
+            <select
+              id="strategy"
+              value={formData.strategy}
+              onChange={(e) => updateField('strategy', e.target.value)}
+              className="h-16 w-full rounded-lg border border-[#1F1F1F] px-5 text-[19px] mt-3 bg-[#141414] text-[#FAFAFA] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30"
+            >
+              <option value="">Select your primary strategy</option>
+              <option value="Buy & Hold">Buy & Hold</option>
+              <option value="BRRRR">BRRRR</option>
+              <option value="Fix & Flip">Fix & Flip</option>
+              <option value="Multifamily">Multifamily</option>
+              <option value="Land">Land</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -225,17 +249,17 @@ export default function InvestorOnboarding() {
 
   const renderStep3 = () => (
     <div>
-      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">What are your goals?</h3>
-      <p className="text-[18px] text-[#808080] mb-10">Help us understand what you're looking for</p>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Final details</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Optional — helps your agent understand your criteria</p>
       
       <div className="space-y-7">
         <div>
-          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Investment Goals</Label>
+          <Label htmlFor="goals" className="text-[#FAFAFA] text-[19px] font-medium">Notes (optional)</Label>
           <Textarea 
             id="goals" 
             value={formData.goals} 
             onChange={(e) => updateField('goals', e.target.value)} 
-            placeholder="e.g., Looking for buy-and-hold rentals in growing markets, interested in multifamily properties..." 
+            placeholder="Anything else you want your agent to know (criteria, timeline, strategy, etc.)" 
             rows={6}
             className="text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30 leading-relaxed" 
           />
@@ -296,7 +320,7 @@ export default function InvestorOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && !formData.primary_state)}
+              disabled={saving || (step === 1 && (!formData.full_name || !formData.phone)) || (step === 2 && (!formData.primary_state || !formData.investment_experience || !formData.strategy))}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
