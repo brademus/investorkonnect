@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import { StepGuard } from "@/components/StepGuard";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
 import LegalAgreementPanel from "@/components/LegalAgreementPanel";
