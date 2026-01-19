@@ -22,7 +22,7 @@ import { AuthGuard } from "@/components/AuthGuard";
  */
 function AccountProfileContent() {
   const navigate = useNavigate();
-  const { loading: profileLoading, user, profile, role, onboarded } = useCurrentProfile();
+  const { loading: profileLoading, user, profile, role, onboarded, kycVerified } = useCurrentProfile();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -62,7 +62,7 @@ function AccountProfileContent() {
     console.log('[AccountProfile] 🚀 Saving profile changes...');
 
     // Validation
-    if (!formData.full_name || !formData.full_name.trim()) {
+    if (!kycVerified && (!formData.full_name || !formData.full_name.trim())) {
       toast.error("Please enter your full name");
       return;
     }
@@ -71,13 +71,15 @@ function AccountProfileContent() {
 
     try {
       const updateData = {
-        full_name: formData.full_name.trim(),
         company: formData.company.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
         goals: formData.goals.trim()
       };
+      if (!kycVerified) {
+        updateData.full_name = formData.full_name.trim();
+      }
       
       // Add agent-specific fields if user is an agent
       if (formData.role === 'agent') {
@@ -150,9 +152,12 @@ function AccountProfileContent() {
                 onChange={(e) => setFormData({...formData, full_name: e.target.value})}
                 placeholder="John Doe"
                 required
-                disabled={saving}
+                disabled={saving || kycVerified}
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
+              {kycVerified && (
+                <p className="text-xs text-[#808080] mt-1">Verified identity: legal name cannot be changed.</p>
+              )}
             </div>
 
             {/* Email (read-only) */}
