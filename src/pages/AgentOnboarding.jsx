@@ -178,7 +178,7 @@ export default function AgentOnboarding() {
             license_number: formData.license_number,
             license_state: formData.license_state,
             main_county: formData.main_county,
-            markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
+            markets: [formData.license_state].filter(Boolean),
             experience_years: parseInt(formData.experience_years) || 0,
             bio: formData.bio,
             investor_friendly: true,
