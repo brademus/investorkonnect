@@ -109,7 +109,7 @@ function useMessages(roomId, currentProfile) {
   // Start loading on room switch but keep previous messages until new ones arrive
   useEffect(() => {
     setLoading(true);
-  }, [roomId]);
+  }, [roomId, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
   useEffect(() => {
     if (!roomId) return;
