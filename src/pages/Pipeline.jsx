@@ -167,6 +167,7 @@ function PipelineContent() {
       } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       if (!profile?.id) return [];
       
