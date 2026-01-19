@@ -97,14 +97,7 @@ export default function AgentOnboarding() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const toggleMarket = (state) => {
-    setFormData(prev => ({
-      ...prev,
-      markets: prev.markets.includes(state)
-        ? prev.markets.filter(s => s !== state)
-        : [...prev.markets, state]
-    }));
-  };
+  // Removed additional markets selection; markets is derived from license_state only
 
   const toggleSpecialty = (name) => {
     setFormData(prev => ({
