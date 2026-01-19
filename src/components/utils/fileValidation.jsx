@@ -10,7 +10,7 @@ const FILE_LIMITS = {
 
 const ALLOWED_TYPES = {
   PDF: ['application/pdf'],
-  IMAGE: ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/webp'],
+  IMAGE: ['image/jpeg', 'image/jpg', 'image/png', 'image/heic', 'image/heif', 'image/webp', 'image/gif', 'image/svg+xml', 'image/tiff', 'image/bmp', 'image/avif'],
   SAFE_DOCUMENTS: [
     'application/pdf',
     'application/msword',
@@ -46,13 +46,25 @@ export function validateFile({ file, allowedMimeTypes, allowedExtensions, maxByt
 
   // Check MIME type
   if (!allowedMimeTypes.includes(file.type)) {
-    const allowedNames = allowedMimeTypes
-      .map(type => {
-        if (type.includes('pdf')) return 'PDF';
-        if (type.includes('image')) return type.split('/')[1].toUpperCase();
-        return type.split('/')[1];
-      })
-      .join(', ');
+    const friendly = {
+      'application/pdf': 'PDF',
+      'application/msword': 'DOC',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'DOCX',
+      'application/vnd.ms-excel': 'XLS',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'XLSX',
+      'image/jpeg': 'JPG',
+      'image/jpg': 'JPG',
+      'image/png': 'PNG',
+      'image/webp': 'WEBP',
+      'image/heic': 'HEIC',
+      'image/heif': 'HEIF',
+      'image/gif': 'GIF',
+      'image/svg+xml': 'SVG',
+      'image/tiff': 'TIFF',
+      'image/bmp': 'BMP',
+      'image/avif': 'AVIF',
+    };
+    const allowedNames = Array.from(new Set(allowedMimeTypes.map(type => friendly[type] || (type.includes('/') ? type.split('/')[1].toUpperCase() : type)))).join(', ');
     return {
       valid: false,
       error: `Invalid file type. Allowed types: ${allowedNames}`,
@@ -101,7 +113,7 @@ export function validateImage(file) {
 export function validateSafeDocument(file) {
   return validateFile({
     file,
-    allowedMimeTypes: ALLOWED_TYPES.SAFE_DOCUMENTS,
+    allowedMimeTypes: [...ALLOWED_TYPES.SAFE_DOCUMENTS, ...ALLOWED_TYPES.IMAGE],
     maxBytes: FILE_LIMITS.PDF_MAX_BYTES,
   });
 }
