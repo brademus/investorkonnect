@@ -9,7 +9,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
-  FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
+  FileText, Calendar, TrendingUp, Megaphone, CheckCircle, Shield,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
   Clock, CheckSquare, XCircle, MessageSquare, Circle, Loader2
 } from "lucide-react";
@@ -70,6 +70,19 @@ function PipelineContent() {
   useEffect(() => {
     if (!profile?.id) return;
     (async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        setIdentity(data?.identity || null);
+      } catch (_) {}
+    })();
+  }, [profile?.id]);
+
+  // If returning from Stripe, refresh status once
+  useEffect(() => {
+    const hasStripeReturn = /identity|verification|return/i.test(window.location.href);
+    if (!profile?.id || !hasStripeReturn) return;
+    (async () => {
+      try { await base44.functions.invoke('refreshIdentitySessionStatus'); } catch (_) {}
       try {
         const { data } = await base44.functions.invoke('getIdentityStatus');
         setIdentity(data?.identity || null);
@@ -620,7 +633,21 @@ function PipelineContent() {
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="max-w-[1800px] mx-auto">
             
-            {/* Identity Reviewing Banner */}
+            {/* Identity Status Banners */}
+            {(!identity || identity.verificationStatus === 'NOT_STARTED' || identity.verificationStatus === 'REQUIRES_INPUT') && (
+              <div className="mb-6 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4 h-4 text-[#F59E0B]" />
+                    <div>
+                      <h2 className="text-sm font-semibold text-[#FAFAFA]">Verify your identity</h2>
+                      <p className="text-xs text-[#808080]">Please complete identity verification to access deals.</p>
+                    </div>
+                  </div>
+                  <Button onClick={() => navigate(createPageUrl('Identity'))} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full h-8 px-3 text-xs">Verify now</Button>
+                </div>
+              </div>
+            )}
             {identity?.verificationStatus === 'PROCESSING' && (
               <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
                 <div className="flex items-center gap-3">
@@ -628,6 +655,17 @@ function PipelineContent() {
                   <div>
                     <h2 className="text-sm font-semibold text-[#FAFAFA]">Reviewing your identity</h2>
                     <p className="text-xs text-[#808080]">Stripe is reviewing your verification. This usually takes a few minutes.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+            {identity?.verificationStatus === 'VERIFIED' && (
+              <div className="mb-6 bg-[#10B981]/10 border border-[#10B981]/30 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="w-4 h-4 text-[#10B981]" />
+                  <div>
+                    <h2 className="text-sm font-semibold text-[#FAFAFA]">Identity verified</h2>
+                    <p className="text-xs text-[#808080]">Verified {isInvestor ? 'Investor' : isAgent ? 'Agent' : 'User'}</p>
                   </div>
                 </div>
               </div>
