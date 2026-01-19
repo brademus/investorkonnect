@@ -69,10 +69,15 @@ export default function Identity() {
       <div className="max-w-xl mx-auto">
         <div className="mb-4">
           <Button asChild variant="outline" className="gap-2 rounded-full">
-            <Link to={createPageUrl('Pipeline')}>
-              <ArrowLeft className="w-4 h-4" /> Back to Pipeline
-            </Link>
+           <Link to={createPageUrl('Pipeline')}>
+             <ArrowLeft className="w-4 h-4" /> Back to Pipeline
+           </Link>
           </Button>
+          <div className="mt-2">
+           <Button asChild variant="ghost" className="text-[#E3C567] hover:text-[#EDD89F]">
+             <Link to={createPageUrl('Dashboard')}>Go to Dashboard</Link>
+           </Button>
+          </div>
         </div>
         <div className="flex items-center justify-center min-h-[60vh]">
           <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
