@@ -1128,6 +1128,7 @@ ${dealContext}`;
   }, [messages.length]);
 
   // Memoize filtered rooms to prevent unnecessary recalculations
+  // Final no-dupe guarantee: we dedupe again here by deal_id and by signature
   const filteredRooms = useMemo(() => {
     try {
       const isAgent = profile?.user_role === 'agent';
