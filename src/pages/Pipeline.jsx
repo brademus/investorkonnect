@@ -150,7 +150,10 @@ function PipelineContent() {
   const ndaComplete = !!profile?.nda_accepted;
   const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
-  const identityComplete = Boolean(identity && identity.verificationStatus === 'VERIFIED' && identity.nameMatchStatus === 'MATCH');
+  const identityComplete = Boolean(
+    (identity && identity.verificationStatus === 'VERIFIED') ||
+    (profile?.identity_status === 'verified')
+  );
   const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete && identityComplete) : true;
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
