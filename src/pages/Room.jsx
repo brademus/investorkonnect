@@ -1182,7 +1182,6 @@ ${dealContext}`;
 
 
   return (
-    <StepGuard requiredStep={6}>
     <div className="fixed inset-0 bg-transparent flex overflow-hidden">
       {/* Left Sidebar - Conversation List */}
       <div 
