@@ -10,6 +10,8 @@ import { ArrowLeft, Home, FileText, Handshake, DollarSign, ArrowRight } from "lu
 import { toast } from "sonner";
 import { base44 } from "@/api/base44Client";
 
+import { StepGuard } from "@/components/StepGuard";
+
 export default function NewDeal() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -514,6 +516,7 @@ export default function NewDeal() {
   }
 
   return (
+    <StepGuard requiredStep={6}>
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
@@ -947,5 +950,6 @@ export default function NewDeal() {
         </div>
       </div>
     </div>
+    </StepGuard>
   );
 }

@@ -64,6 +64,10 @@ export function StepGuard({ children, requiredStep }) {
       } else {
         redirectTo = createPageUrl('RoleSelection');
       }
+    } else if (requiredStep >= WIZARD_STEPS.VERIFY && role === 'agent' && !kycVerified) {
+      redirectTo = createPageUrl('Identity');
+    } else if (requiredStep >= WIZARD_STEPS.SUBSCRIPTION && role === 'investor' && !(subscriptionStatus === 'active' || subscriptionStatus === 'trialing')) {
+      redirectTo = createPageUrl('Pricing');
     } else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {
       redirectTo = createPageUrl('NDA');
     }

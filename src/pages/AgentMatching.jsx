@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { CheckCircle, MapPin, Briefcase, Star, ArrowRight, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { StepGuard } from "@/components/StepGuard";
+
 export default function AgentMatching() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -185,6 +187,7 @@ export default function AgentMatching() {
   }
 
   return (
+    <StepGuard requiredStep={6}>
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-5xl mx-auto">
         {/* Header */}
@@ -291,5 +294,6 @@ export default function AgentMatching() {
         )}
       </div>
     </div>
+    </StepGuard>
   );
 }
