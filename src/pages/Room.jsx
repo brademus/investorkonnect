@@ -1241,8 +1241,7 @@ ${dealContext}`;
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            onMouseEnter={prefetchPipeline}
-            onClick={() => { prefetchPipeline(); navigate(createPageUrl("Pipeline")); }}
+            onClick={() => { navigate(createPageUrl("Pipeline")); }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
