@@ -160,6 +160,9 @@ function PipelineContent() {
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
+    initialData: () => {
+      try { return JSON.parse(sessionStorage.getItem('pipelineDealsCache') || '[]'); } catch { return []; }
+    },
     queryFn: async () => {
       if (!profile?.id) return [];
       
@@ -176,6 +179,14 @@ function PipelineContent() {
     refetchOnWindowFocus: false,
     refetchOnMount: false
   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(dealsData)) {
+        sessionStorage.setItem('pipelineDealsCache', JSON.stringify(dealsData));
+      }
+    } catch (_) {}
+  }, [dealsData]);
 
   const uniqueDealsData = useMemo(() => {
     if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
@@ -243,6 +254,9 @@ function PipelineContent() {
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
+    initialData: () => {
+      try { return JSON.parse(sessionStorage.getItem('roomsCache') || '[]'); } catch { return []; }
+    },
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
@@ -252,6 +266,14 @@ function PipelineContent() {
     refetchOnWindowFocus: false,
     refetchOnMount: false
   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(rooms)) {
+        sessionStorage.setItem('roomsCache', JSON.stringify(rooms));
+      }
+    } catch (_) {}
+  }, [rooms]);
 
   // Force refresh after DocuSign return
   useEffect(() => {
