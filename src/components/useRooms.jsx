@@ -101,14 +101,15 @@ export function useRooms() {
           const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed) ? 4 : r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
           const byDeal = new Map();
           for (const r of safeRooms) {
-            if (!r?.deal_id) continue;
-            const prev = byDeal.get(r.deal_id);
-            if (!prev) { byDeal.set(r.deal_id, r); continue; }
+            const normId = String(r?.deal_id || '').trim();
+            if (!normId) continue;
+            const prev = byDeal.get(normId);
+            if (!prev) { byDeal.set(normId, r); continue; }
             const sA = score(r), sB = score(prev);
             const tA = new Date(r.updated_date || r.created_date || 0).getTime();
             const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
             if (sA > sB || (sA === sB && tA > tB)) {
-              byDeal.set(r.deal_id, r);
+              byDeal.set(normId, r);
             }
           }
           const uniqueWithDeal = Array.from(byDeal.values());
