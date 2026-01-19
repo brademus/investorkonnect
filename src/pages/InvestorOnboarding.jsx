@@ -135,8 +135,8 @@ export default function InvestorOnboarding() {
       });
 
       await refresh();
-      toast.success("Welcome to Investor Konnect!");
-      navigate(createPageUrl("Dashboard"), { replace: true });
+      toast.success("Profile saved! Next: choose a subscription.");
+      navigate(createPageUrl("Pricing"), { replace: true });
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);

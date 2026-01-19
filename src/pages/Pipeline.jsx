@@ -979,10 +979,14 @@ function PipelineContent() {
   );
 }
 
+import { StepGuard } from "@/components/StepGuard";
+
 export default function Pipeline() {
   return (
     <AuthGuard requireAuth={true}>
-      <PipelineContent />
+      <StepGuard requiredStep={6}>
+        <PipelineContent />
+      </StepGuard>
     </AuthGuard>
   );
 }

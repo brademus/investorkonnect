@@ -187,8 +187,8 @@ export default function AgentOnboarding() {
       console.log('[AgentOnboarding] Profile saved successfully:', result);
 
       await refresh();
-      toast.success("Profile saved! Welcome to Investor Konnect!");
-      navigate(createPageUrl("Dashboard"), { replace: true });
+      toast.success("Profile saved! Next: verify your identity.");
+      navigate(createPageUrl("Identity"), { replace: true });
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
