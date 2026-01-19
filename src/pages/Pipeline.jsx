@@ -154,7 +154,7 @@ function PipelineContent() {
     (identity && identity.verificationStatus === 'VERIFIED') ||
     (profile?.identity_status === 'verified')
   );
-  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete && identityComplete) : true;
+  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete) : true;
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
   // 2. Load Active Deals via Server-Side Access Control
