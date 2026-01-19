@@ -263,6 +263,7 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  const [lastMyMessageId, setLastMyMessageId] = useState(null);
   
   // Ensure latest photos/files are fetched when opening their tabs so content shows immediately
   useEffect(() => {
