@@ -1133,7 +1133,7 @@ ${dealContext}`;
       const isAgent = profile?.user_role === 'agent';
       const myId = profile?.id;
       // Dedupe rooms by deal_id for sidebar: prioritize signed > accepted > requested, fallback to updated_date
-      const score = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
+      const score = (r) => r?.agreement_status === 'fully_signed' || r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
       const byDeal = new Map();
       (rooms || []).forEach(r => {
        // Base requirements
