@@ -137,7 +137,7 @@ export default function InvestorOnboarding() {
       await refresh();
       toast.success("Welcome to Investor Konnect!");
       await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.href = createPageUrl("Pipeline");
+      window.location.href = createPageUrl("Dashboard");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
