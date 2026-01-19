@@ -35,6 +35,7 @@ function PipelineContent() {
   const [deduplicating, setDeduplicating] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
   const [identity, setIdentity] = useState(null);
+  const [identityLoaded, setIdentityLoaded] = useState(false);
 
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
@@ -73,7 +74,11 @@ function PipelineContent() {
       try {
         const { data } = await base44.functions.invoke('getIdentityStatus');
         setIdentity(data?.identity || null);
-      } catch (_) {}
+      } catch (_) {
+        // noop
+      } finally {
+        setIdentityLoaded(true);
+      }
     })();
   }, [profile?.id]);
 
@@ -654,9 +659,11 @@ function PipelineContent() {
             )}
 
             {/* Setup Checklist */}
-            <div className="mb-6">
-              <SetupChecklist profile={profile} />
-            </div>
+            {identityLoaded && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
+              <div className="mb-6">
+                <SetupChecklist profile={profile} />
+              </div>
+            )}
             
             {/* Pending Requests for Agents */}
             {isAgent && pendingRequests.length > 0 && (
