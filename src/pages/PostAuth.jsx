@@ -139,10 +139,6 @@ export default function PostAuth() {
           const kycApproved = (profile?.kyc_status === 'approved') || (profile?.identity_status === 'verified');
 
           if (role === 'agent') {
-            if (!kycApproved) {
-              navigate(createPageUrl('Identity'), { replace: true });
-              return;
-            }
             if (!hasNDA) {
               navigate(createPageUrl('NDA'), { replace: true });
               return;
