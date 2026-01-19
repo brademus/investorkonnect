@@ -52,6 +52,10 @@ Deno.serve(async (req) => {
         15. Inspection Period End Date
         16. Earnest Money Due Date
         
+        Buyer Information:
+        - Buyer's full legal name as printed on the contract. If multiple buyers, return all names combined in one string as they appear.
+        - Look for labels such as: "Buyer:", "Purchaser:", "Buyer Name:", "Purchaser's Name:", "Grantee:", "Name of Buyer"
+        
         Return exact values as they appear in the document.
 
         Additionally, extract these property characteristics when available:
@@ -72,6 +76,7 @@ Deno.serve(async (req) => {
           state: { type: "string" },
           county: { type: "string" },
           zip: { type: "string" },
+          buyer_name: { type: "string" },
           purchase_price: { type: "number" },
           property_type: { type: "string" },
           property_details: {
@@ -116,9 +121,26 @@ Deno.serve(async (req) => {
 
     console.log('[extractContractData] Extraction result:', extractionResponse);
 
+    const normalizeName = (s) => {
+      if (!s) return null;
+      return s.toLowerCase()
+        .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+        .replace(/\b(llc|inc|ltd|co|corp|corporation|company|jr|sr|ii|iii|iv)\b/gi, '')
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    const data = extractionResponse || {};
+    const buyerRaw = data?.buyer_name || null;
+    const buyerNorm = buyerRaw ? normalizeName(buyerRaw) : null;
+    if (data) {
+      data.buyer_name_raw = buyerRaw;
+      data.buyer_name_normalized = buyerNorm;
+    }
+
     return Response.json({
       success: true,
-      data: extractionResponse
+      data
     });
 
   } catch (error) {
