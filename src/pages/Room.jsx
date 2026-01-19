@@ -70,7 +70,7 @@ function useMyRooms() {
   };
 }
 
-function useMessages(roomId) {
+function useMessages(roomId, currentProfile) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
@@ -112,7 +112,7 @@ function useMessages(roomId) {
             });
 
             // Stabilize who-is-me mapping to prevent bubble side flicker
-            const stabilized = messages.map(m => ({ ...m, _isMe: m.sender_profile_id === profile?.id }));
+            const stabilized = messages.map(m => ({ ...m, _isMe: m.sender_profile_id === currentProfile?.id }));
 
             // Combine real messages + active optimistic, remove duplicates by ID
             const combined = [...stabilized, ...activeOptimistic];
@@ -745,7 +745,7 @@ export default function Room() {
         name: m.metadata.file_name || 'photo.jpg',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: 'image'
@@ -757,7 +757,7 @@ export default function Room() {
         name: m.metadata.file_name || 'document',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: m.metadata.file_type || 'application/octet-stream'
