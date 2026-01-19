@@ -478,6 +478,7 @@ export default function Room() {
   };
 
   // Prefetch Pipeline data to make back navigation instant
+  // NOTE: prefetchPipeline removed from back button to avoid auth/session side-effects
   const prefetchPipeline = () => {
     try {
       if (profile?.id) {
