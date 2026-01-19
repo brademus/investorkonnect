@@ -14,6 +14,13 @@ export default function ContractVerify() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { profile, user } = useCurrentProfile();
+  const isNameLocked = Boolean(
+    profile?.verified_first_name ||
+    profile?.verified_last_name ||
+    profile?.identity_verified_at ||
+    profile?.kyc_status === 'approved' ||
+    profile?.identity_status === 'verified'
+  );
   
   const dealIdFromUrl = searchParams.get("dealId");
   
@@ -598,22 +605,26 @@ export default function ContractVerify() {
               If the buyer name doesn’t match your account:
               <ul className="list-disc ml-5 mt-1 space-y-1">
                 <li>Re-upload the correct contract with your name listed as the buyer</li>
-                <li>Or update your profile name, then retry verification</li>
+                {!isNameLocked && (
+                  <li>Or update your profile name, then retry verification</li>
+                )}
               </ul>
               <div className="mt-2 flex gap-2">
                 <Button
-                  onClick={() => document.querySelector('input[type=file][accept="application/pdf"]').click()}
+                  onClick={() => document.querySelector('input[type=file][accept=\"application/pdf\"]').click()}
                   className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full h-8 px-3 text-xs"
                 >
                   Re-upload contract
                 </Button>
-                <Button
-                  onClick={() => navigate(createPageUrl('AccountProfile'))}
-                  variant="outline"
-                  className="rounded-full h-8 px-3 text-xs"
-                >
-                  Edit my name
-                </Button>
+                {!isNameLocked && (
+                  <Button
+                    onClick={() => navigate(createPageUrl('AccountProfile'))}
+                    variant="outline"
+                    className="rounded-full h-8 px-3 text-xs"
+                  >
+                    Edit my name
+                  </Button>
+                )}
               </div>
             </div>
             <Button
