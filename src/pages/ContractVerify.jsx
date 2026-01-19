@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { StepGuard } from "@/components/StepGuard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { validatePDF } from "@/components/utils/fileValidation";
@@ -558,6 +559,7 @@ export default function ContractVerify() {
   }
 
   return (
+    <StepGuard requiredStep={6}>
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -768,5 +770,6 @@ export default function ContractVerify() {
         </div>
       </div>
     </div>
+    </StepGuard>
   );
 }

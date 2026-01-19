@@ -809,7 +809,7 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-4 sm:ml-6">
-                {(isInvestor && onboardingComplete && subscriptionComplete) && (
+                {(isInvestor && onboardingComplete && subscriptionComplete && ndaComplete) && (
                   <Button 
                     onClick={() => {
                       try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
