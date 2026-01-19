@@ -103,7 +103,7 @@ function LayoutContent({ children }) {
               className="h-8 w-8 object-contain cursor-pointer"
                                   onClick={() => navigate(createPageUrl("Pipeline"))}
             />
-            <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
+            <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors" onClick={(e) => e.stopPropagation()}>
               Investor Konnect
             </Link>
 
