@@ -23,6 +23,7 @@ export default function ContractVerify() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState(null);
   const [dealData, setDealData] = useState(null);
+  const [buyerErrorInfo, setBuyerErrorInfo] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -185,7 +186,8 @@ export default function ContractVerify() {
       const validationErrors = [];
 
       // New: Buyer name verification (additive only)
-      const expectedBuyerRaw = (profile?.verified_full_name || profile?.identity?.verified_full_name || profile?.full_name || '').trim();
+      const verifiedFullFromProfile = [profile?.verified_first_name, profile?.verified_last_name].filter(Boolean).join(' ').trim();
+      const expectedBuyerRaw = (verifiedFullFromProfile || profile?.identity?.verified_full_name || profile?.full_name || '').trim();
       const expectedBuyerCompany = (profile?.company || profile?.investor?.company_name || '').trim();
 
       const normalizeForCompare = (s) => {
@@ -208,7 +210,7 @@ export default function ContractVerify() {
       if (!contractBuyerNorm) {
         buyerNameStatus = 'UNKNOWN';
         buyerNameReason = "We couldn’t confidently find the buyer name in this contract.";
-        validationErrors.push(`Buyer Name: ${buyerNameReason}`);
+        validationErrors.push(`Buyer name missing: ${buyerNameReason}`);
       } else {
         const nameMatch = expectedBuyerNorm && (expectedBuyerNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedBuyerNorm) || expectedBuyerNorm.includes(contractBuyerNorm));
         const companyMatch = expectedCompanyNorm && (expectedCompanyNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedCompanyNorm) || expectedCompanyNorm.includes(contractBuyerNorm));
@@ -221,6 +223,13 @@ export default function ContractVerify() {
           validationErrors.push(`Buyer name doesn’t match: Account="${expectedBuyerRaw || 'Unknown'}" vs Contract="${contractBuyerRaw || 'Unknown'}"`);
         }
       }
+
+      setBuyerErrorInfo({
+        status: buyerNameStatus,
+        expectedName: expectedBuyerRaw || null,
+        contractBuyerName: contractBuyerRaw || null,
+        reason: buyerNameReason || null
+      });
       console.log('[Verification] Comparing entered data vs extracted:', {
         entered: dealData,
         extracted: extracted
