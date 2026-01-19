@@ -133,32 +133,12 @@ export default function PostAuth() {
             navigate(createPageUrl("RoleLanding"), { replace: true });
           }
         } else {
-          // After basic onboarding, enforce ordered steps by role
-          const hasNDA = !!profile?.nda_accepted;
-          const subscriptionActive = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
-          const kycApproved = (profile?.kyc_status === 'approved') || (profile?.identity_status === 'verified');
-
-          if (role === 'agent') {
-            if (!hasNDA) {
-              navigate(createPageUrl('NDA'), { replace: true });
-              return;
-            }
-          } else if (role === 'investor') {
-            if (!subscriptionActive) {
-              navigate(createPageUrl('Pricing'), { replace: true });
-              return;
-            }
-            if (!hasNDA) {
-              navigate(createPageUrl('NDA'), { replace: true });
-              return;
-            }
-          }
-
-          // All prerequisites met - go to Pipeline
+          // Onboarded: go straight to Dashboard
           if (!navigated) {
             setNavigated(true);
-            window.location.href = createPageUrl('Pipeline');
+            navigate(createPageUrl('Dashboard'), { replace: true });
           }
+          return;
         }
 
       } catch (error) {

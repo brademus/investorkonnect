@@ -4,10 +4,11 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Shield, ArrowLeft } from 'lucide-react';
 import IdentityMismatchModal from '@/components/identity/IdentityMismatchModal';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 
 export default function Identity() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [identity, setIdentity] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -39,6 +40,13 @@ export default function Identity() {
       })();
     }
   }, [autoRefreshed]);
+
+  // If already verified, redirect away from this page
+  useEffect(() => {
+    if (!loading && identity?.verificationStatus === 'VERIFIED') {
+      navigate(createPageUrl('Dashboard'), { replace: true });
+    }
+  }, [loading, identity, navigate]);
 
   const startVerification = async () => {
     const { data } = await base44.functions.invoke('createIdentityVerificationSession');
