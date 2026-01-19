@@ -161,7 +161,6 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
         />
       </div>
     </div>
-    </StepGuard>
   );
 });
 
