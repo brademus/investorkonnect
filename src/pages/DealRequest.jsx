@@ -7,6 +7,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, CheckCircle, XCircle, MapPin, DollarSign, Calendar, Handshake, User } from "lucide-react";
 import { toast } from "sonner";
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 
 export default function DealRequest() {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ export default function DealRequest() {
   const [room, setRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [investorProfile, setInvestorProfile] = useState(null);
+  const [statusBadge, setStatusBadge] = useState(null);
 
   useEffect(() => {
     if (!roomId || !profile?.id) {
@@ -51,6 +53,16 @@ export default function DealRequest() {
       }
 
       setRoom(loadedRoom);
+
+      // Fetch enriched room to derive negotiation/counter status for accurate label
+      try {
+        const res = await base44.functions.invoke('listMyRoomsEnriched');
+        const enriched = (res.data?.rooms || []).find(r => r.id === loadedRoom.id);
+        if (enriched) {
+          const badge = getAgreementStatusLabel({ room: enriched, negotiation: enriched.negotiation, role: 'agent' });
+          setStatusBadge(badge || null);
+        }
+      } catch (_) { /* non-blocking */ }
 
       // Load deal (limited info)
       if (loadedRoom.deal_id) {
@@ -143,6 +155,13 @@ export default function DealRequest() {
           </button>
           <h1 className="text-3xl font-bold text-[#E3C567] mb-2">New Deal Request</h1>
           <p className="text-sm text-[#808080]">Review and respond to this opportunity</p>
+          {statusBadge && (
+            <div className="mt-3">
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-medium border ${statusBadge.className}`}>
+                {statusBadge.label}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-6">
