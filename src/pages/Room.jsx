@@ -1347,6 +1347,7 @@ ${dealContext}`;
                           </p>
                         </div>
                         </div>
+                        )}
                         </div>
                         )}
                   )}
