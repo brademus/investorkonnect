@@ -1186,12 +1186,17 @@ ${dealContext}`;
         if (sA > sB || (sA === sB && tA > tB)) byDeal.set(did, r);
       });
 
-      // 2) Secondary collapse by signature to catch any deal duplicates with different IDs
+      // 2) Secondary collapse by canonical address signature (strip apt/suite, normalize zip)
+      const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+      const cleanAddr = (s) => norm(s)
+        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
+        .replace(/[^a-z0-9]/g, '')
+        .slice(0, 80);
       const makeSig = (r) => [
-        String(r?.property_address || '').toLowerCase().replace(/\s+/g, ' ').trim(),
-        String(r?.city || '').toLowerCase(),
-        String(r?.state || '').toLowerCase(),
-        String(String(r?.zip || '').trim().slice(0, 10)),
+        cleanAddr(r?.property_address || r?.deal_title || r?.title || ''),
+        norm(r?.city),
+        norm(r?.state),
+        String(r?.zip || '').toString().slice(0, 5),
         Number(Math.round(Number(r?.budget || 0)))
       ].join('|');
 
