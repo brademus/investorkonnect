@@ -35,9 +35,9 @@ export default function Inbox() {
       const requestsRes = await inboxList();
       setRequests(requestsRes.data.requests || []);
       
-      // Load active rooms for both investors and agents
-      const roomsRes = await listMyRooms({});
-      setRooms(getRoomsFromListMyRoomsResponse(roomsRes));
+      // Load active rooms using enriched endpoint (includes negotiation/regen status)
+      const roomsRes = await base44.functions.invoke('listMyRoomsEnriched');
+      setRooms(roomsRes.data?.rooms || []);
       
       setLoading(false);
     } catch (error) {
