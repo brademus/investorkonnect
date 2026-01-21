@@ -85,6 +85,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
 
   // S4 — TERMS_ACCEPTED_NEEDS_INVESTOR_REGEN_AND_SIGN (robust detection)
   if (regenRequired) {
+    // HARD GUARD: agent must never see "Review & sign" when regeneration is required
     return {
       state: 'S4',
       label: userRole === 'investor' ? 'Regenerate & sign' : 'Waiting on investor',
