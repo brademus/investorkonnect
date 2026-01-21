@@ -363,6 +363,13 @@ export default function Room() {
   // Ensure Agreement is prefetched as soon as the tab is opened
   useEffect(() => {
     if (showBoard && activeTab === 'agreement' && currentRoom?.deal_id) {
+      // Seed immediately from cache or snapshot before fetching
+      const cached = getCachedDeal(currentRoom.deal_id);
+      if (cached) setDeal(prev => prev || cached);
+      else if (currentRoom) {
+        const snap = buildDealFromRoom(currentRoom, maskAddr);
+        if (snap) setDeal(prev => prev || snap);
+      }
       prefetchDeal();
     }
   }, [showBoard, activeTab, currentRoom?.deal_id]);
@@ -915,6 +922,16 @@ export default function Room() {
       property_details: hasPD ? base.property_details : (currentRoom?.property_details || {})
     };
   }, [showBoard, activeTab, deal, currentRoom, maskAddr]);
+
+  // Snapshot for Agreement tab: prefer live deal, then cache, then room snapshot
+  const dealForAgreement = useMemo(() => {
+    if (deal) return deal;
+    if (currentRoom?.deal_id) {
+      const cached = getCachedDeal(currentRoom.deal_id);
+      if (cached) return cached;
+    }
+    return buildDealFromRoom(currentRoom, maskAddr);
+  }, [deal, currentRoom?.deal_id, currentRoom, maskAddr]);
 
   // Prefill editor when deal details load (only when board is open to avoid flicker)
   useEffect(() => {
@@ -2064,7 +2081,7 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     <div>
                       <LegalAgreementPanel
-                        deal={deal}
+                        deal={dealForAgreement}
                         profile={profile}
                         allowGenerate={false}
                         initialAgreement={agreement || currentRoom?.agreement || null}
@@ -2101,13 +2118,13 @@ ${dealContext}`;
                       </div>
 
                       {/* Earnest Money */}
-                      {dealForDetails?.seller_info?.earnest_money && (
+                      {dealForAgreement?.seller_info?.earnest_money && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Earnest Money</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              ${dealForDetails.seller_info.earnest_money.toLocaleString()}
+                              ${dealForAgreement.seller_info.earnest_money.toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -2125,30 +2142,30 @@ ${dealContext}`;
                       </div>
 
                       {/* Seller's Agent Commission */}
-                      {(deal?.proposed_terms?.seller_commission_type || currentRoom?.proposed_terms?.seller_commission_type) && (
+                      {(dealForAgreement?.proposed_terms?.seller_commission_type || currentRoom?.proposed_terms?.seller_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Seller's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {((deal?.proposed_terms?.seller_commission_type ?? currentRoom?.proposed_terms?.seller_commission_type) === 'percentage')
-                                ? `${(deal?.proposed_terms?.seller_commission_percentage ?? currentRoom?.proposed_terms?.seller_commission_percentage)}% of purchase price`
-                                : `$${(deal?.proposed_terms?.seller_flat_fee ?? currentRoom?.proposed_terms?.seller_flat_fee)?.toLocaleString()} flat fee`}
+                              {((dealForAgreement?.proposed_terms?.seller_commission_type ?? currentRoom?.proposed_terms?.seller_commission_type) === 'percentage')
+                                ? `${(dealForAgreement?.proposed_terms?.seller_commission_percentage ?? currentRoom?.proposed_terms?.seller_commission_percentage)}% of purchase price`
+                                : `$${(dealForAgreement?.proposed_terms?.seller_flat_fee ?? currentRoom?.proposed_terms?.seller_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
                       )}
 
                       {/* Buyer's Agent Commission */}
-                      {(deal?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_type) && (
+                      {(dealForAgreement?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
-                                ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
-                                : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
+                              {((dealForAgreement?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
+                                ? `${(dealForAgreement?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
+                                : `$${(dealForAgreement?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
@@ -2557,21 +2574,22 @@ ${dealContext}`;
                   </div>
                   <div>
                     <Button
-                      onMouseEnter={prefetchDeal}
-                      onClick={async () => {
-                        setBoardLoading(true);
-                        const data = await prefetchDeal();
-                        if (data) {
-                          setDeal(data);
-                        } else if (currentRoom) {
-                          const snap = buildDealFromRoom(currentRoom, maskAddr);
-                          if (snap) setDeal(snap);
-                        }
-                        setActiveTab('agreement');
-                        setShowBoard(true);
-                        setBoardLoading(false);
-                      }}
-                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                     onMouseEnter={prefetchDeal}
+                     onClick={() => {
+                       // Open Agreement tab instantly with snapshot/cached data
+                       setBoardLoading(true);
+                       if (currentRoom) {
+                         const snap = buildDealFromRoom(currentRoom, maskAddr);
+                         if (snap) setDeal(snap);
+                       }
+                       setActiveTab('agreement');
+                       setShowBoard(true);
+                       prefetchDeal().then((data) => {
+                         if (data) setDeal(data);
+                         setBoardLoading(false);
+                       });
+                     }}
+                     className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                     >
                       Open My Agreement
                     </Button>
