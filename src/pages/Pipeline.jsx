@@ -293,8 +293,8 @@ function PipelineContent() {
     refetchOnMount: true,
     queryFn: async () => {
       if (!profile?.id) return [];
-      const res = await base44.functions.invoke('listMyRooms');
-      return getRoomsFromListMyRoomsResponse(res);
+      const res = await base44.functions.invoke('listMyRoomsEnriched');
+      return res.data?.rooms || [];
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: false,
