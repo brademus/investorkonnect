@@ -810,7 +810,8 @@ function PipelineContent() {
                           </div>
                         </div>
                         {(() => {
-                          const badge = getAgreementStatusLabel({ room, negotiation: room?.negotiation, role: 'agent' });
+                          const enriched = rooms.find(r => r.id === room.id) || rooms.find(r => r.deal_id === room.deal_id) || room;
+                          const badge = getAgreementStatusLabel({ room: enriched, negotiation: enriched?.negotiation, role: 'agent' });
                           return badge ? (
                             <span className={`text-[10px] border px-2 py-1 rounded-full ${badge.className}`}>
                               {badge.label}
