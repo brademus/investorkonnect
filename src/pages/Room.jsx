@@ -501,7 +501,8 @@ export default function Room() {
         base44.functions.invoke('getLegalAgreement', { deal_id: did }).catch(() => ({ data: null }))
       ]);
 
-      const freshDeal = res?.data || cached || null;
+      const apiDeal = res?.data || null;
+      const freshDeal = apiDeal || cached || (currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null);
       if (freshDeal) setCachedDeal(did, freshDeal);
 
       // Ensure we have the latest shared files/photos for instant Files/Photos tabs
@@ -522,7 +523,8 @@ export default function Room() {
 
       return freshDeal;
     } catch (_) {
-      return null;
+      // As a last resort, return snapshot so UI can still render
+      return currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null;
     }
   };
 
