@@ -2680,7 +2680,7 @@ ${dealContext}`;
               </div>
             </div>
             )}
-      </div>
+        </div>
 
       <ContractWizard 
         roomId={roomId} 
