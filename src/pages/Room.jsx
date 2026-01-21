@@ -246,11 +246,20 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
             </p>
             {userRole === 'agent' && (() => {
               const { priceLabel, compLabel } = getPriceAndComp({ room });
-              if (!priceLabel && !compLabel) return null;
+              const fallbackComp = !compLabel && room?.proposed_terms
+                ? (room.proposed_terms.buyer_commission_type === 'percentage' && room.proposed_terms.buyer_commission_percentage
+                    ? `${room.proposed_terms.buyer_commission_percentage}%`
+                    : (room.proposed_terms.buyer_commission_type === 'flat' && room.proposed_terms.buyer_flat_fee
+                        ? `$${Number(room.proposed_terms.buyer_flat_fee).toLocaleString()}`
+                        : null))
+                : null;
+              const compOut = compLabel || fallbackComp;
+              if (!priceLabel && !compOut) return null;
               return (
-                <p className="text-xs text-[#34D399] font-semibold mt-0.5">
-                  {priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}
-                </p>
+                <div className="text-xs mt-0.5">
+                  {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
+                  {compOut && <div className="text-[#E3C567]">Comp: {compOut}</div>}
+                </div>
               );
             })()}
           </>
