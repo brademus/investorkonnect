@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
-import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, CheckCircle, X, 
