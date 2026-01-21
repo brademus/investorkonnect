@@ -190,7 +190,7 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
 });
 
 // Memoized conversation item to prevent flickering
-const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
+const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDeal }) => {
   // Determine if agent can see full address (check if agreement is fully signed)
   const canSeeFullAddress = userRole === 'investor' || room.is_fully_signed;
   
@@ -245,8 +245,13 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
               }
             </p>
             {userRole === 'agent' && (() => {
-              const { priceLabel, compLabel } = getPriceAndComp({ room });
-              if (!priceLabel && !compLabel) return null;
+              const { priceLabel, compLabel } = getPriceAndComp({ deal: fullDeal, room });
+              if (!priceLabel && !compLabel) return (
+                <div className="text-xs mt-0.5">
+                  <div className="text-[#34D399] font-semibold">${room.budget ? room.budget.toLocaleString() : '0'}</div>
+                  <div className="text-[#E3C567]">Comp: —</div>
+                </div>
+              );
               return (
                 <div className="text-xs mt-0.5">
                   {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
@@ -1316,6 +1321,7 @@ ${dealContext}`;
                 isActive={r.id === roomId}
                 onClick={handleClick}
                 userRole={profile?.user_role}
+                fullDeal={r.id === roomId ? deal : undefined}
               />
             );
           })}
