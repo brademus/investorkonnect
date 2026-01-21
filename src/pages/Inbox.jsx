@@ -6,6 +6,7 @@ import { inboxList, introRespond, listMyRooms } from "@/components/functions";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, CheckCircle, X, 

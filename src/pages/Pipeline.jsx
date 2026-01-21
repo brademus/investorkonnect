@@ -24,6 +24,7 @@ import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 
 function PipelineContent() {
   const navigate = useNavigate();
