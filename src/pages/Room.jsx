@@ -2678,6 +2678,7 @@ ${dealContext}`;
                 )}
               </button>
               </div>
+            </div>
             )}
       </div>
 
