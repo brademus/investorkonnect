@@ -1336,23 +1336,19 @@ ${dealContext}`;
                           <h4 className="text-md font-bold text-[#F59E0B] mb-1">
                             {currentRoom?.request_status === 'accepted' 
                               ? 'Limited Access – Sign Agreement to Unlock Full Details' 
-                              : 'Limited Access – Accept Request to Enable Chat'
-                            }
+                              : 'Limited Access – Accept Request to Enable Chat'}
                           </h4>
                           <p className="text-sm text-[#FAFAFA]/80">
                             {currentRoom?.request_status === 'accepted'
                               ? 'Full property address and seller details will be visible after both parties sign the agreement.'
-                              : 'Accept this deal request to enable chat and view limited deal information. Full details unlock after signing the agreement.'
-                            }
+                              : 'Accept this deal request to enable chat and view limited deal information. Full details unlock after signing the agreement.'}
                           </p>
                         </div>
-                        </div>
-                        )}
-                        </div>
-                        )}
+                      </div>
+                    </div>
                   )}
 
-                              {profile?.user_role === 'investor' ? (
+                               {profile?.user_role === 'investor' ? (
                                 /* INVESTOR DEAL BOARD */
                                 <>
                                   {/* 1. DEAL HEADER */}
