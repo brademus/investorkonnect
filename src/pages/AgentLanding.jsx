@@ -119,7 +119,7 @@ export default function AgentLanding() {
               </div>
               <h3 className="text-xl font-bold text-[#FAFAFA] mb-3">Serious Investors</h3>
               <p className="text-[#808080]">
-                Connect with serious investors who understand the game. No more explaining basic metrics—work with clients who respect your expertise.
+                Work with investors who already have a deal in motion and want an agent to execute.
               </p>
             </div>
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
