@@ -72,6 +72,9 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
           null
         );
   const negUpper = String(negStatus || '').toUpperCase();
+  const lastActor = String(
+    negotiation?.last_actor || negotiation?.lastActor || negotiation?.last_proposed_by || negotiation?.lastProposedBy || negotiation?.last_offer_by || negotiation?.lastOfferedBy || negotiation?.from_role || ''
+  ).toUpperCase();
 
   const regenRequired = needsRegeneration(negotiation) || needsRegeneration(room) || needsRegeneration(agreement) || negUpper.includes('REGEN');
 
@@ -106,7 +109,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   }
 
   // S2 — AGENT_COUNTERED_WAITING_FOR_INVESTOR
-  if (negStatus === 'COUNTERED_BY_AGENT') {
+  if (negUpper === 'COUNTERED_BY_AGENT' || (negUpper.includes('COUNTER') && lastActor === 'AGENT') || (negUpper.includes('PENDING') && lastActor === 'AGENT')) {
     return {
       state: 'S2',
       label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor',
@@ -115,12 +118,17 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   }
 
   // S3 — INVESTOR_COUNTERED_WAITING_FOR_AGENT
-  if (negStatus === 'COUNTERED_BY_INVESTOR') {
+  if (negUpper === 'COUNTERED_BY_INVESTOR' || (negUpper.includes('COUNTER') && lastActor === 'INVESTOR') || (negUpper.includes('PENDING') && lastActor === 'INVESTOR')) {
     return {
       state: 'S3',
       label: userRole === 'investor' ? 'Waiting on agent' : 'Review counter',
       className: pickBadgeClasses('blue')
     };
+  }
+
+  // Generic counter fallback
+  if (negUpper.includes('COUNTER')) {
+    return { state: 'Sx', label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor', className: pickBadgeClasses('blue') };
   }
 
   // S1 — WAITING_FOR_AGENT_SIGNATURE (investor signed current version)
