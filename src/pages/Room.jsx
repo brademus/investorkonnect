@@ -489,7 +489,7 @@ export default function Room() {
   };
 
   // Prefetch board data: deal, latest room photos/files, and appointments
-  const prefetchDeal = async () => {
+  async function prefetchDeal() {
     try {
       const did = currentRoom?.deal_id;
       if (!did) return { deal: null, ready: false };
@@ -504,7 +504,7 @@ export default function Room() {
       ]);
 
       const apiDeal = res?.data || null;
-      const freshDeal = apiDeal || cached || (currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null);
+      const freshDeal = apiDeal || cached || null;
       if (freshDeal) setCachedDeal(did, freshDeal);
 
       // Ensure we have the latest shared files/photos for instant Files/Photos tabs
@@ -527,7 +527,7 @@ export default function Room() {
       return { deal: freshDeal, ready };
     } catch (_) {
       // As a last resort, return snapshot so UI can still render
-      return { deal: currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null, ready: false };
+      return { deal: null, ready: false };
     }
   };
 
