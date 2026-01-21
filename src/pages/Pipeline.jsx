@@ -803,9 +803,16 @@ function PipelineContent() {
                             {formatCurrency(room.budget)}
                           </p>
                         </div>
-                        <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">
-                          New
-                        </span>
+                        {(() => {
+                          const badge = getAgreementStatusLabel({ room, role: 'agent' });
+                          return badge ? (
+                            <span className={`text-[10px] border px-2 py-1 rounded-full ${badge.className}`}>
+                              {badge.label}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">New</span>
+                          );
+                        })()}
                       </div>
                       <Button
                          onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&tab=agreement`)}
@@ -1001,9 +1008,22 @@ function PipelineContent() {
                                       </div>
 
                                       <div className="flex flex-col gap-2 mb-3">
-                                        <div className="flex items-center gap-1 text-xs text-[#666]">
-                                          <Home className="w-3 h-3" />
-                                          <span>{deal.city}, {deal.state}</span>
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-1 text-xs text-[#666]">
+                                            <Home className="w-3 h-3" />
+                                            <span>{deal.city}, {deal.state}</span>
+                                          </div>
+                                          {(() => {
+                                            const badge = getAgreementStatusLabel({
+                                              room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed },
+                                              role: isAgent ? 'agent' : 'investor'
+                                            });
+                                            return badge ? (
+                                              <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
+                                                {badge.label}
+                                              </span>
+                                            ) : null;
+                                          })()}
                                         </div>
 
                                         {deal.walkthrough_date && (

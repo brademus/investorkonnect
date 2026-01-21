@@ -7,6 +7,7 @@ import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFrom
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, CheckCircle, X, 
@@ -255,6 +256,14 @@ export default function Inbox() {
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
+                          {(() => {
+                            const badge = getAgreementStatusLabel({ room, role: 'investor' });
+                            return badge ? (
+                              <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}>
+                                {badge.label}
+                              </span>
+                            ) : null;
+                          })()}
                           {room.ndaAcceptedInvestor && room.ndaAcceptedAgent && (
                             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[#E3C567]/20 text-[#E3C567]">
                               <Shield className="w-3 h-3 mr-1" />

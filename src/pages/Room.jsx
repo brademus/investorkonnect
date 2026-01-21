@@ -6,6 +6,7 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
 import { useRooms } from "@/components/useRooms";
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { Button } from "@/components/ui/button";
@@ -218,9 +219,19 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
               : (userRole === 'investor' ? 'Agent' : 'Investor')
             }
           </p>
-          <span className="text-xs text-[#808080] flex-shrink-0 ml-2">
-            {new Date(room.created_date || Date.now()).toLocaleDateString()}
-          </span>
+          <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+            {(() => {
+              const badge = getAgreementStatusLabel({ room, role: userRole });
+              return badge ? (
+                <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
+                  {badge.label}
+                </span>
+              ) : null;
+            })()}
+            <span className="text-xs text-[#808080]">
+              {new Date(room.created_date || Date.now()).toLocaleDateString()}
+            </span>
+          </div>
         </div>
         
         {/* Location line - show city/state for agents until signed, full address for investors */}
