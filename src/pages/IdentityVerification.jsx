@@ -10,8 +10,8 @@ import { ShieldCheck, ExternalLink, AlertCircle } from "lucide-react";
 export default function IdentityVerification() {
   const navigate = useNavigate();
   const { loading, user, profile } = useCurrentProfile();
-  const [personaUrl, setPersonaUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [personaUrl, setPersonaUrl] = useState(null);
+  const [error, setError] = useState(null);
   const [starting, setStarting] = useState(false);
 
   const startVerification = async () => {
