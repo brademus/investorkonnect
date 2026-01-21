@@ -672,37 +672,8 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Button 
-                  onClick={handleDedup}
-                  variant="outline"
-                  size="sm"
-                  disabled={deduplicating}
-                  className="text-xs"
-                >
-                  {deduplicating ? 'Checking...' : 'Fix Duplicates'}
-                </Button>
-                <Button 
-                  onClick={async () => {
-                    if (!confirm("⚠️ WARNING: This will permanently delete ALL your deals, rooms, and messages. This action cannot be undone!\n\nAre you absolutely sure?")) {
-                      return;
-                    }
-                    try {
-                      const result = await base44.functions.invoke('deleteAllDeals', {
-                        profileId: profile.id
-                      });
-                      toast.success("All deals deleted successfully!");
-                      window.location.reload();
-                    } catch (error) {
-                      console.error("Failed to delete deals:", error);
-                      toast.error("Failed to delete deals");
-                    }
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="text-xs border-red-500/50 text-red-400 hover:bg-red-500/10"
-                >
-                  Delete All Deals
-                </Button>
+
+
                 {isInvestor && (
                   <Button 
                     onClick={async () => {

@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +25,46 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [exhibitA, setExhibitA] = useState(null);
   const [resolvedDealId, setResolvedDealId] = useState(null);
   const [modalTerms, setModalTerms] = useState(null);
+  // Negotiation UI state
+  const [counterOpen, setCounterOpen] = useState(false);
+  const [counterType, setCounterType] = useState('flat');
+  const [counterAmount, setCounterAmount] = useState(0);
+
+  useEffect(() => {
+    const t = (deal?.proposed_terms) || {};
+    if (t.buyer_commission_type) setCounterType(t.buyer_commission_type);
+    const amt = t.buyer_commission_type === 'percentage' ? t.buyer_commission_percentage : t.buyer_flat_fee;
+    if (amt != null) setCounterAmount(amt);
+  }, [deal?.id, deal?.proposed_terms]);
+
+  const proposeCounter = async () => {
+    if (!deal?.id) return;
+    try {
+      await base44.functions.invoke('negotiationPropose', {
+        deal_id: deal.id,
+        buyer_comp_type: counterType,
+        buyer_comp_amount: Number(counterAmount)
+      });
+      toast.success('Counter proposed');
+      await loadNeg(deal.id);
+      setCounterOpen(false);
+      if (onUpdate) onUpdate();
+    } catch (_) {
+      toast.error('Failed to propose counter');
+    }
+  };
+
+  const acceptTerms = async () => {
+    if (!deal?.id) return;
+    try {
+      await base44.functions.invoke('negotiationAccept', { deal_id: deal.id });
+      toast.success('Terms accepted');
+      await loadNeg(deal.id);
+      if (onUpdate) onUpdate();
+    } catch (_) {
+      toast.error('Failed to accept terms');
+    }
+  };
   
   const isInvestor = (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
   const isAgent = (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
@@ -399,12 +441,74 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">Legal Agreement</h3>
-          <p className="text-sm text-[#808080]">Internal Agreement v1.0.1</p>
+          <p className="text-sm text-[#808080]">Investor–Agent Agreement</p>
         </div>
         {agreement && getStatusDisplay()}
       </div>
+
+      {/* Compensation Negotiation */}
+      <div className="bg-[#0D0D0D] rounded-lg p-4 mb-6">
+        <div className="flex items-center justify-between mb-2">
+          <h4 className="text-sm font-semibold text-[#FAFAFA]">Compensation Negotiation</h4>
+          {neg?.status && (
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-[#1F1F1F] text-[#808080] uppercase tracking-wide">{neg.status.replaceAll('_',' ')}</span>
+          )}
+        </div>
+        <div className="text-sm text-[#FAFAFA]">
+          <span className="text-[#808080] mr-1">Current:</span>
+          {(() => {
+            const t = neg?.current_terms || deal?.proposed_terms || {};
+            if (t.buyer_comp_type === 'percentage' || t.buyer_commission_type === 'percentage') {
+              const pct = t.buyer_comp_amount ?? t.buyer_commission_percentage;
+              return `${pct || 0}% of purchase price`;
+            }
+            const amt = t.buyer_comp_amount ?? t.buyer_flat_fee;
+            return amt ? `$${Number(amt).toLocaleString()}` : 'Not set';
+          })()}
+        </div>
+        <div className="flex items-center gap-2 mt-3 flex-wrap">
+          <Button variant="outline" onClick={() => setCounterOpen((s) => !s)}>
+            {counterOpen ? 'Close Counter' : 'Counter Terms'}
+          </Button>
+          <Button
+            onClick={acceptTerms}
+            disabled={!neg?.last_proposed_terms || (neg?.last_proposed_terms?.proposed_by_role === (profile?.user_role))}
+            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+          >
+            Accept Latest Terms
+          </Button>
+        </div>
+        {counterOpen && (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div>
+              <Label className="text-xs text-[#808080] mb-1 block">Type</Label>
+              <Select value={counterType} onValueChange={setCounterType}>
+                <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"><SelectValue placeholder="Select" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage</SelectItem>
+                  <SelectItem value="flat">Flat Fee</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label className="text-xs text-[#808080] mb-1 block">Amount</Label>
+              <Input
+                type="number"
+                step={counterType === 'percentage' ? '0.1' : '1'}
+                value={counterAmount}
+                onChange={(e) => setCounterAmount(e.target.value)}
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+              />
+              <p className="text-[10px] text-[#666] mt-1">{counterType === 'percentage' ? '% of purchase price' : 'USD'}</p>
+            </div>
+            <div className="flex items-end">
+              <Button onClick={proposeCounter} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">Submit Counter</Button>
+            </div>
+          </div>
+        )}
+      </div>
       
-      {/* No agreement yet */}
+      {/* No agreement yet */
       {!agreement && isInvestor && (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
