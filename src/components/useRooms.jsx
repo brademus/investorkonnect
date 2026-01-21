@@ -135,9 +135,9 @@ export function useRooms() {
           
           const deduped = Array.from(byDeal.values());
           return deduped.sort((a, b) => {
-            const dateA = new Date(b?.updated_date || b?.created_date || 0);
-            const dateB = new Date(a?.updated_date || a?.created_date || 0);
-            return dateA - dateB;
+            const dateA = new Date(a?.updated_date || a?.created_date || 0);
+            const dateB = new Date(b?.updated_date || b?.created_date || 0);
+            return dateB - dateA; // Most recent first
           });
         } catch (e) {
           console.error('[useRooms] dedupe error:', e);
