@@ -123,7 +123,7 @@ function PipelineContent() {
     }
   }, [profile?.id, profile?.identity_status, identity?.verificationStatus, refresh]);
 
-  // Manual dedup handler
+  // Manual dedup handler (kept for logic, no UI trigger) 
   const handleDedup = async () => {
     if (!profile?.id) return;
     setDeduplicating(true);
