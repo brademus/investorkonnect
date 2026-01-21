@@ -25,6 +25,7 @@ import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
+import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -799,9 +800,10 @@ function PipelineContent() {
                           <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
                             {room.city}, {room.state}
                           </h3>
-                          <p className="text-xs text-[#808080]">
-                            {formatCurrency(room.budget)}
-                          </p>
+                          <div className="text-xs text-[#808080] flex items-center gap-2">
+                            <span>{formatCurrency(room.budget)}</span>
+                            {(() => { const { compLabel } = getPriceAndComp({ room }); return compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null; })()}
+                          </div>
                         </div>
                         {(() => {
                           const badge = getAgreementStatusLabel({ room, role: 'agent' });
@@ -1013,6 +1015,16 @@ function PipelineContent() {
                                             <Home className="w-3 h-3" />
                                             <span>{deal.city}, {deal.state}</span>
                                           </div>
+                                          {isAgent && (() => {
+                                            const { priceLabel, compLabel } = getPriceAndComp({ deal });
+                                            if (!priceLabel && !compLabel) return null;
+                                            return (
+                                              <div className="flex items-center justify-between text-xs">
+                                                <span className="text-[#34D399] font-semibold">{priceLabel}</span>
+                                                {compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null}
+                                              </div>
+                                            );
+                                          })()}
                                           {(() => {
                                             const badge = getAgreementStatusLabel({
                                               room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed },

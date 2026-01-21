@@ -6,6 +6,7 @@ import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
 import { useRooms } from "@/components/useRooms";
+import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { useQueryClient } from "@tanstack/react-query";
 import { getOrCreateDealRoom } from "@/components/dealRooms";
@@ -236,12 +237,23 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
         
         {/* Location line - show city/state for agents until signed, full address for investors */}
         {(room.city || room.property_address) && (
-          <p className="text-sm text-[#E3C567] truncate font-medium">
-            {canSeeFullAddress 
-              ? (room.property_address || room.deal_title || room.title)
-              : [room.city, room.state].filter(Boolean).join(', ')
-            }
-          </p>
+          <>
+            <p className="text-sm text-[#E3C567] truncate font-medium">
+              {canSeeFullAddress 
+                ? (room.property_address || room.deal_title || room.title)
+                : [room.city, room.state].filter(Boolean).join(', ')
+              }
+            </p>
+            {userRole === 'agent' && (() => {
+              const { priceLabel, compLabel } = getPriceAndComp({ room });
+              if (!priceLabel && !compLabel) return null;
+              return (
+                <p className="text-xs text-[#34D399] font-semibold mt-0.5">
+                  {priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}
+                </p>
+              );
+            })()}
+          </>
         )}
         
         {/* Deal Budget - only show if not already in title */}

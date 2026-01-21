@@ -7,6 +7,7 @@ import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFrom
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
+import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, CheckCircle, X, 
@@ -252,6 +253,9 @@ export default function Inbox() {
                             <p className="text-sm text-[#808080]">
                               Created {new Date(room.created_date).toLocaleDateString()}
                             </p>
+                            {(() => { const { priceLabel, compLabel } = getPriceAndComp({ room }); if (!priceLabel && !compLabel) return null; return (
+                              <p className="text-xs text-[#34D399] font-semibold mt-1">{priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}</p>
+                            ); })()}
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
