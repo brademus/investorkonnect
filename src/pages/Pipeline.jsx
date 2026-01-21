@@ -335,8 +335,10 @@ function PipelineContent() {
         r.deal_id &&
         r.investorId &&
         !r.is_orphan &&
-        r.request_status === 'requested' &&
-        r.request_status !== 'rejected'
+        r.request_status !== 'rejected' &&
+        r.request_status !== 'signed' &&
+        r.agreement_status !== 'fully_signed' &&
+        (r.request_status === 'requested' || r.request_status === 'accepted')
       );
       const byDeal = new Map();
       for (const r of candidates) {
@@ -400,7 +402,8 @@ function PipelineContent() {
       const legit = deduped.filter(r =>
         (Boolean(r.city) || Boolean(r.state)) &&
         Number(r.budget || 0) > 0 &&
-        !r.is_fully_signed
+        r.agreement_status !== 'fully_signed' &&
+        r.request_status !== 'signed'
       );
       // Final dedupe by deal_id and pick most recent
       const finalByDeal = new Map();
@@ -523,10 +526,10 @@ function PipelineContent() {
       };
     });
 
-    // Agents: show only accepted/signed rooms (hide requested to prevent initial flicker)
+    // Agents: show only fully signed deals in the board
     return mappedDeals.filter(d => {
       if (!isAgent) return true;
-      return d.agent_request_status === 'accepted' || d.is_fully_signed;
+      return d.is_fully_signed;
     });
   }, [dealsData, rooms, appointments]);
 
