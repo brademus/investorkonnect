@@ -27,6 +27,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
 
+  // Sync with preloaded agreement from parent (Room prefetch)
+  useEffect(() => {
+    if (initialAgreement && (!agreement || initialAgreement.id !== agreement.id)) {
+      setAgreement(initialAgreement);
+      setLoading(false);
+    }
+  }, [initialAgreement]);
+
   // Derived gating flags
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
   const termsMismatch = (() => {
@@ -50,12 +58,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const isAgent = (profile?.user_role === 'agent') || (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
   const isFullySigned = Boolean(agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed';
 
-  // Load agreement on mount - only if not already loaded
+  // Load agreement when deal is known and agreement not in state
   useEffect(() => {
-    if (deal?.id && !agreement && !loading) {
+    if (deal?.id && !agreement) {
       loadAgreement();
     }
-  }, [deal?.id]);
+  }, [deal?.id, agreement]);
 
   const handleOpenGenerateModal = async () => {
     if (!deal?.id) return;
