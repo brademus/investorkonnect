@@ -2503,7 +2503,7 @@ ${dealContext}`;
 
         {/* Message Input Area - hidden until fully signed */}
         {isWorkingTogether && (
-        <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
+          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
           <div className="flex items-center gap-2">
               {/* Upload Photo Button */}
               <button
