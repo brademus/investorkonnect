@@ -32,6 +32,7 @@ function needsRegeneration(input) {
   if (!input) return false;
   const i = input;
   const fromBooleans = Boolean(
+    i?.regen_required ||
     i?.requires_regen ||
     i?.needs_regeneration ||
     i?.regeneration_required ||

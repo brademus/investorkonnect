@@ -810,7 +810,7 @@ function PipelineContent() {
                           </div>
                         </div>
                         {(() => {
-                          const badge = getAgreementStatusLabel({ room, role: 'agent' });
+                          const badge = getAgreementStatusLabel({ room, negotiation: room?.negotiation, role: 'agent' });
                           return badge ? (
                             <span className={`text-[10px] border px-2 py-1 rounded-full ${badge.className}`}>
                               {badge.label}
