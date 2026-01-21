@@ -1294,31 +1294,32 @@ ${dealContext}`;
                   ];
                   const allowed = isWorkingTogether ? all : all.filter(t => ['details','agreement'].includes(t.id));
                   return allowed.map(tab => {
-                  const Icon = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
-                      onClick={async () => {
-                        setActiveTab(tab.id);
-                        if (['agreement','files'].includes(tab.id)) {
-                          setTabLoading(true);
-                          const data = await prefetchDeal();
-                          if (data) setDeal(data);
-                          setTabLoading(false);
-                        }
-                      }}
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
-                        activeTab === tab.id
-                          ? 'bg-[#E3C567] text-black shadow-lg'
-                          : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4" />
-                      {tab.label}
-                    </button>
-                  );
-                })}
+                    const Icon = tab.icon;
+                    return (
+                      <button
+                        key={tab.id}
+                        onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
+                        onClick={async () => {
+                          setActiveTab(tab.id);
+                          if (['agreement','files'].includes(tab.id)) {
+                            setTabLoading(true);
+                            const data = await prefetchDeal();
+                            if (data) setDeal(data);
+                            setTabLoading(false);
+                          }
+                        }}
+                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+                          activeTab === tab.id
+                            ? 'bg-[#E3C567] text-black shadow-lg'
+                            : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
+                        }`}
+                      >
+                        <Icon className="w-4 h-4" />
+                        {tab.label}
+                      </button>
+                    );
+                  });
+                })()}
               </div>
 
               {/* Tab Content */}
