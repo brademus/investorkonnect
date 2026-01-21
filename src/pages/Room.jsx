@@ -2059,7 +2059,7 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     <div>
                       <LegalAgreementPanel
-                        deal={deal}
+                        deal={deal || (currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null)}
                         profile={profile}
                         allowGenerate={false}
                         initialAgreement={agreement || currentRoom?.agreement || null}
