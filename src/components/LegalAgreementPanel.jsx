@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
-export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null }) {
+export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null, dealId = null }) {
   const [agreement, setAgreement] = useState(initialAgreement || null);
   const [loading, setLoading] = useState(!initialAgreement);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
@@ -26,6 +26,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
+
+  // Effective deal ID (works even if full deal object isn't loaded yet)
+  const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
   // Sync with preloaded agreement from parent (Room prefetch)
   useEffect(() => {
@@ -60,10 +63,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load agreement when deal is known and agreement not in state
   useEffect(() => {
-    if (deal?.id && !agreement) {
+    if (effectiveDealId && !agreement) {
       loadAgreement();
     }
-  }, [deal?.id, agreement]);
+  }, [effectiveDealId, agreement]);
 
   const handleOpenGenerateModal = async () => {
     if (!deal?.id) return;
@@ -105,12 +108,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const loadAgreement = async () => {
-    if (!deal?.id) { setLoading(false); return; }
+    if (!effectiveDealId) { setLoading(false); return; }
     // Skip if already loading or already have agreement
     if (loading || agreement) return;
     try {
       setLoading(true);
-      const response = await base44.functions.invoke('getLegalAgreement', { deal_id: deal?.id || deal?.deal_id });
+      const response = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
       setAgreement(response.data?.agreement || null);
     } catch (error) {
       console.error('[LegalAgreementPanel] Error loading agreement:', error);
@@ -121,16 +124,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const loadLatestOffer = async () => {
-    if (!deal?.id) return;
+    if (!effectiveDealId) return;
     try {
       setLoadingOffer(true);
-      const offers = await base44.entities.CounterOffer.filter({ deal_id: deal.id, status: 'pending' }, '-created_date', 1);
+      const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
       setPendingOffer(offers?.[0] || null);
     } finally {
       setLoadingOffer(false);
     }
   };
-  useEffect(() => { loadLatestOffer(); }, [deal?.id]);
+  useEffect(() => { loadLatestOffer(); }, [effectiveDealId]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
@@ -152,7 +155,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const acceptOffer = async () => {
     if (!pendingOffer) return;
     const newTerms = { ...(deal?.proposed_terms || {}), ...(pendingOffer.terms || {}) };
-    await base44.entities.Deal.update(deal.id, { proposed_terms: newTerms });
+    await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
     await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
     await loadLatestOffer();
     if (onUpdate) onUpdate();
@@ -162,14 +165,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const denyOffer = async () => {
     if (!pendingOffer) return;
     await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'declined', responded_by_role: isInvestor ? 'investor' : 'agent' });
-    await base44.functions.invoke('voidDeal', { deal_id: deal.id });
+    await base44.functions.invoke('voidDeal', { deal_id: effectiveDealId });
     toast.success('Deal voided');
     if (onUpdate) onUpdate();
   };
 
   const handleGenerate = async () => {
-    const effectiveDealId = resolvedDealId || deal?.id || deal?.deal_id;
-    if (!effectiveDealId) { toast.error('Missing deal ID — cannot generate agreement.'); return; }
+    const genDealId = resolvedDealId || effectiveDealId;
+    if (!genDealId) { toast.error('Missing deal ID — cannot generate agreement.'); return; }
     if (!profile?.user_id) { toast.error('Missing user ID — cannot generate agreement.'); return; }
     if (!profile?.user_role) { toast.error('Missing user role — cannot generate agreement.'); return; }
 
@@ -194,7 +197,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       };
 
       const response = await base44.functions.invoke('generateLegalAgreement', {
-        deal_id: effectiveDealId,
+        deal_id: genDealId,
         exhibit_a: derivedExhibitA,
         use_buyer_terms: true,
       });
@@ -263,8 +266,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
       if (data?.error && /investor must sign/i.test(data.error) && agreement?.investor_signed_at) {
         try {
-          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: deal?.id });
-          const refreshed = await base44.functions.invoke('getLegalAgreement', { deal_id: deal?.id });
+          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: effectiveDealId });
+          const refreshed = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
           if (refreshed?.data?.agreement?.investor_signed_at && !refreshed?.data?.agreement?.agent_signed_at) {
             const retry = await base44.functions.invoke('docusignCreateSigningSession', {
               agreement_id: refreshed.data.agreement.id,
@@ -712,7 +715,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                   variant="outline"
                   onClick={() => {
                     setShowGenerateModal(false);
-                    window.location.href = `/NewDeal?dealId=${deal.id}`;
+                    window.location.href = `/NewDeal?dealId=${effectiveDealId}`;
                   }}
                   className="border-[#60A5FA] text-[#60A5FA] hover:bg-[#60A5FA]/10 w-full"
                 >

@@ -2014,6 +2014,7 @@ ${dealContext}`;
                         profile={profile}
                         allowGenerate={false}
                         initialAgreement={agreement || currentRoom?.agreement || null}
+                        dealId={currentRoom?.deal_id}
                         onUpdate={async () => {
                           await refreshRoomState();
                           queryClient.invalidateQueries({ queryKey: ['rooms'] });
