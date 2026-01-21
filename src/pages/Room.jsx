@@ -334,6 +334,20 @@ export default function Room() {
     }
   }, [showBoard, activeTab, currentRoom?.deal_id]);
 
+  // Keep agreement pre-fetched as soon as room changes so panel opens instantly
+  useEffect(() => {
+    const did = currentRoom?.deal_id;
+    if (!did) { setAgreement(null); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: did });
+        if (!cancelled && res?.data?.agreement) setAgreement(res.data.agreement);
+      } catch (_) {}
+    })();
+    return () => { cancelled = true; };
+  }, [currentRoom?.deal_id]);
+
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
     setShowBoard(false);
