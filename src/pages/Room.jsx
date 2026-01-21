@@ -171,7 +171,7 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
   return (
     <div className="p-5 border-b border-[#1F1F1F]">
       <div className="flex items-center gap-3 mb-5">
-        <Logo size="default" showText={false} linkTo={createPageUrl("Dashboard")} />
+        <Logo size="default" showText={false} linkTo={createPageUrl("Pipeline")} />
         <h2 className="text-xl font-bold text-[#E3C567]">Messages</h2>
       </div>
       <div className="relative">
@@ -1288,7 +1288,7 @@ ${dealContext}`;
           <Button
             onClick={(e) => {
               e.stopPropagation();
-              navigate(createPageUrl("Dashboard"));
+              navigate(createPageUrl("Pipeline"));
             }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"

@@ -24,7 +24,6 @@ import ClosedDeals from './pages/ClosedDeals';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
 import Cookies from './pages/Cookies';
-import Dashboard from './pages/Dashboard';
 import DealRequest from './pages/DealRequest';
 import DealWizard from './pages/DealWizard';
 import DemoDiagnostics from './pages/DemoDiagnostics';
@@ -103,7 +102,6 @@ export const PAGES = {
     "Contact": Contact,
     "ContractVerify": ContractVerify,
     "Cookies": Cookies,
-    "Dashboard": Dashboard,
     "DealRequest": DealRequest,
     "DealWizard": DealWizard,
     "DemoDiagnostics": DemoDiagnostics,
