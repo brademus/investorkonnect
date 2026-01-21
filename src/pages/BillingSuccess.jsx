@@ -104,21 +104,15 @@ export default function BillingSuccess() {
           // Show success state
           setState({ syncing: false, matching: false, error: null, redirecting: false });
           
-          // Wait 2.5 seconds, then redirect to next step
+          // Wait 2.5 seconds, then redirect to Identity Verification
           setTimeout(() => {
             console.log('[BillingSuccess] Starting redirect countdown...');
             setState(prev => ({ ...prev, redirecting: true }));
             
             setTimeout(() => {
-              // Check if user needs identity verification
-              const needsIdentity = !profile.identity_verified && profile.kyc_status !== 'approved';
-              if (needsIdentity) {
-                console.log('[BillingSuccess] Redirecting to IdentityVerification');
-                navigate(createPageUrl("IdentityVerification"), { replace: true });
-              } else {
-                console.log('[BillingSuccess] Redirecting to Dashboard');
-                navigate(createPageUrl("Dashboard"), { replace: true });
-              }
+              // Investors go to Identity Verification after payment
+              console.log('[BillingSuccess] Redirecting to IdentityVerification');
+              navigate(createPageUrl("IdentityVerification"), { replace: true });
             }, 500);
           }, 2500);
           
@@ -284,11 +278,11 @@ export default function BillingSuccess() {
         {state.redirecting ? (
           <div className="flex items-center justify-center gap-2 text-slate-600">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>Redirecting to dashboard...</span>
+            <span>Redirecting to identity verification...</span>
           </div>
         ) : (
           <p className="text-sm text-slate-500">
-            Taking you to your dashboard...
+            Next step: Verify your identity...
           </p>
         )}
       </div>
