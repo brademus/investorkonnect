@@ -515,8 +515,11 @@ function PipelineContent() {
       };
     });
 
-    // Hide declined deals entirely for agents
-    return mappedDeals.filter(d => !(isAgent && d.agent_request_status === 'rejected'));
+    // Agents: show only accepted/signed rooms (hide requested to prevent initial flicker)
+    return mappedDeals.filter(d => {
+      if (!isAgent) return true;
+      return d.agent_request_status === 'accepted' || d.is_fully_signed;
+    });
   }, [dealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {

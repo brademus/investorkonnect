@@ -1337,22 +1337,19 @@ ${dealContext}`;
                 <Button
                     onMouseEnter={prefetchDeal}
                     onClick={async () => {
-                      const next = !showBoard;
-                      if (next) {
-                        setBoardLoading(true);
-                        const data = await prefetchDeal();
-                        if (data) {
-                          setDeal(data);
-                        } else if (currentRoom) {
-                          const snap = buildDealFromRoom(currentRoom, maskAddr);
-                          if (snap) setDeal(snap);
-                        }
-                        setShowBoard(true);
-                        setBoardLoading(false);
-                      } else {
-                        setShowBoard(false);
-                      }
-                    }}
+                                        // Always open the Deal Board reliably
+                                        setBoardLoading(true);
+                                        const data = await prefetchDeal();
+                                        if (data) {
+                                          setDeal(data);
+                                        } else if (currentRoom) {
+                                          const snap = buildDealFromRoom(currentRoom, maskAddr);
+                                          if (snap) setDeal(snap);
+                                        }
+                                        setActiveTab('details');
+                                        setShowBoard(true);
+                                        setBoardLoading(false);
+                                      }}
                     className={`rounded-full font-semibold transition-all ${
                          showBoard 
                            ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
