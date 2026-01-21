@@ -16,16 +16,7 @@ function PendingDealsContent() {
   // Pending = no deals in current system (placeholder for future functionality)
   const pendingDeals = [];
 
-  if (isLoading) {
-    return (
-      <>
-        <Header profile={profile} />
-        <div className="min-h-screen bg-transparent flex items-center justify-center">
-          <LoadingAnimation className="w-64 h-64" />
-        </div>
-      </>
-    );
-  }
+
 
   return (
     <>

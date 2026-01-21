@@ -10,20 +10,12 @@ import { DollarSign, ArrowLeft, CheckCircle, MapPin, Home, Calendar, Loader2 } f
 function ClosedDealsContent() {
   const { profile } = useCurrentProfile();
   const { data: rooms, isLoading } = useRooms();
+  const safeRooms = rooms || [];
   
   // Closed = deals in 'closing' pipeline stage
-  const closedDeals = rooms.filter(r => r.pipeline_stage === 'closing');
+  const closedDeals = safeRooms.filter(r => r.pipeline_stage === 'closing');
 
-  if (isLoading) {
-    return (
-      <>
-        <Header profile={profile} />
-        <div className="min-h-screen bg-[#0F0F0F] flex items-center justify-center">
-          <Loader2 className="w-12 h-12 text-[#E3C567] animate-spin" />
-        </div>
-      </>
-    );
-  }
+
 
   return (
     <>
@@ -48,7 +40,20 @@ function ClosedDealsContent() {
           </div>
 
           {/* Deals Grid */}
-          {closedDeals.length === 0 ? (
+          {(isLoading && closedDeals.length === 0) ? (
+            <div className="grid gap-4">
+              {[1,2,3].map(i => (
+                <div key={i} className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-6">
+                  <div className="animate-pulse h-6 w-40 bg-[#262626] rounded mb-4" />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    <div className="h-16 bg-[#262626] rounded border border-[#333333]" />
+                    <div className="h-16 bg-[#262626] rounded border border-[#333333]" />
+                    <div className="h-16 bg-[#262626] rounded border border-[#333333]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : closedDeals.length === 0 ? (
             <div className="bg-[#1A1A1A] border border-[#333333] rounded-3xl p-12 text-center">
               <div className="w-16 h-16 bg-[#34D399]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <CheckCircle className="w-8 h-8 text-[#34D399]" />
@@ -108,7 +113,7 @@ function ClosedDealsContent() {
               </div>
               ))}
             </div>
-          )}
+          )
         </div>
       </div>
     </>

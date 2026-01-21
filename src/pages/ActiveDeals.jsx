@@ -16,6 +16,7 @@ function ActiveDealsContent() {
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const { data: rooms, isLoading: roomsLoading } = useRooms();
+  const safeRooms = rooms || [];
 
   useEffect(() => {
     loadProfile();
@@ -43,19 +44,10 @@ function ActiveDealsContent() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(num);
   };
 
-  if (roomsLoading) {
-    return (
-      <>
-        <Header profile={profile} />
-        <div className="min-h-screen bg-black flex items-center justify-center">
-          <LoadingAnimation className="w-64 h-64" />
-        </div>
-      </>
-    );
-  }
+
 
   // Active = all deals NOT in 'closing' stage
-  const activeDeals = rooms.filter(r => r.pipeline_stage !== 'closing');
+  const activeDeals = safeRooms.filter(r => r.pipeline_stage !== 'closing');
 
   return (
     <>
@@ -86,7 +78,21 @@ function ActiveDealsContent() {
           </div>
 
           {/* Deals Grid */}
-          {activeDeals.length === 0 ? (
+          {(roomsLoading && activeDeals.length === 0) ? (
+            <div className="grid gap-4">
+              {[1,2,3].map(i => (
+                <div key={i} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-6">
+                  <div className="animate-pulse h-6 w-40 bg-[#1F1F1F] rounded mb-4" />
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="h-16 bg-[#141414] rounded border border-[#1F1F1F]" />
+                    <div className="h-16 bg-[#141414] rounded border border-[#1F1F1F]" />
+                    <div className="h-16 bg-[#141414] rounded border border-[#1F1F1F]" />
+                    <div className="h-16 bg-[#141414] rounded border border-[#1F1F1F]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : activeDeals.length === 0 ? (
             <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-12 text-center">
               <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
                 <FileText className="w-8 h-8 text-[#E3C567]" />
@@ -161,7 +167,7 @@ function ActiveDealsContent() {
                 </div>
               ))}
             </div>
-          )}
+          )
         </div>
       </div>
     </>

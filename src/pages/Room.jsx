@@ -620,6 +620,7 @@ export default function Room() {
               photos: safeRoom?.photos || [],
               files: safeRoom?.files || []
             });
+            setRoomLoading(false);
           } else {
             setCurrentRoom(null);
           }
