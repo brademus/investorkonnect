@@ -38,38 +38,68 @@ export default function IdentityVerification() {
   const handleStartVerification = async () => {
     setVerifying(true);
     setStatus('verifying');
-    
+
     try {
-      // In test mode, we simulate the verification
-      // In production, this would create a Stripe Identity session
-      
-      // Simulate verification delay
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Update profile with identity_verified = true
-      // In production, this would be set by the Stripe webhook after successful verification
-      await base44.entities.Profile.update(profile.id, {
-        identity_verified: true,
-        kyc_status: 'approved',
-        // In production: verified_name would come from Stripe
-        // For now, we trust the name they entered
-        verified_name: profile.full_name
+      // 1) Ask backend to create a Stripe Identity Verification Session
+      const { data: sessionData } = await base44.functions.invoke('createStripeIdentitySession');
+      const clientSecret = sessionData?.client_secret;
+      const publishableKey = sessionData?.publishable_key;
+      const sessionId = sessionData?.session_id;
+
+      if (!clientSecret || !publishableKey) {
+        throw new Error('Could not initialize verification');
+      }
+
+      // 2) Load Stripe.js and launch the Identity modal
+      await new Promise((resolve, reject) => {
+        if (window.Stripe) return resolve();
+        const script = document.createElement('script');
+        script.src = 'https://js.stripe.com/v3/';
+        script.onload = () => resolve();
+        script.onerror = reject;
+        document.body.appendChild(script);
       });
-      
-      setStatus('success');
-      toast.success("Identity verified successfully!");
-      
-      await refresh();
-      
-      // Navigate to NDA after short delay
-      setTimeout(() => {
-        navigate(createPageUrl("NDA"), { replace: true });
-      }, 1500);
-      
+
+      const stripe = window.Stripe(publishableKey);
+      const result = await stripe.verifyIdentity(clientSecret);
+
+      if (result?.error) {
+        throw new Error(result.error.message || 'Verification was cancelled or failed');
+      }
+
+      // 3) Poll backend for final status (Stripe may take a moment to finalize)
+      let attempts = 0;
+      let finalStatus = 'processing';
+      while (attempts < 8) {
+        const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
+        const s = statusData?.status;
+        if (s === 'verified') {
+          finalStatus = 'verified';
+          break;
+        }
+        if (s === 'requires_input' || s === 'canceled') {
+          finalStatus = 'error';
+          break;
+        }
+        await new Promise(r => setTimeout(r, 1500));
+        attempts += 1;
+      }
+
+      if (finalStatus === 'verified') {
+        setStatus('success');
+        toast.success('Identity verified successfully!');
+        await refresh();
+        setTimeout(() => {
+          navigate(createPageUrl('NDA'), { replace: true });
+        }, 800);
+      } else {
+        throw new Error('Verification not completed. Please try again.');
+      }
+
     } catch (error) {
-      console.error("Verification error:", error);
+      console.error('Verification error:', error);
       setStatus('error');
-      toast.error("Verification failed. Please try again.");
+      toast.error(error?.message || 'Verification failed. Please try again.');
       setVerifying(false);
     }
   };

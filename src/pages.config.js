@@ -12,14 +12,12 @@ import AgentDocuments from './pages/AgentDocuments';
 import AgentHome from './pages/AgentHome';
 import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
-import AgentOnboarding from './pages/AgentOnboarding';
 import AgentPerformance from './pages/AgentPerformance';
 import AgentProfile from './pages/AgentProfile';
 import Agents from './pages/Agents';
 import AuthCallback from './pages/AuthCallback';
 import Billing from './pages/Billing';
 import BillingSetup from './pages/BillingSetup';
-import BillingSuccess from './pages/BillingSuccess';
 import ClosedDeals from './pages/ClosedDeals';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
@@ -34,14 +32,12 @@ import GetStarted from './pages/GetStarted';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import Inbox from './pages/Inbox';
-import IdentityVerification from './pages/IdentityVerification';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import InvestorDirectory from './pages/InvestorDirectory';
 import InvestorDocuments from './pages/InvestorDocuments';
 import InvestorIntake from './pages/InvestorIntake';
 import InvestorLanding from './pages/InvestorLanding';
-import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorPortfolio from './pages/InvestorPortfolio';
 import InvestorProfile from './pages/InvestorProfile';
 import Investors from './pages/Investors';
@@ -72,6 +68,10 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
+import AgentOnboarding from './pages/AgentOnboarding';
+import IdentityVerification from './pages/IdentityVerification';
+import InvestorOnboarding from './pages/InvestorOnboarding';
+import BillingSuccess from './pages/BillingSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -90,14 +90,12 @@ export const PAGES = {
     "AgentHome": AgentHome,
     "AgentLanding": AgentLanding,
     "AgentMatching": AgentMatching,
-    "AgentOnboarding": AgentOnboarding,
     "AgentPerformance": AgentPerformance,
     "AgentProfile": AgentProfile,
     "Agents": Agents,
     "AuthCallback": AuthCallback,
     "Billing": Billing,
     "BillingSetup": BillingSetup,
-    "BillingSuccess": BillingSuccess,
     "ClosedDeals": ClosedDeals,
     "Contact": Contact,
     "ContractVerify": ContractVerify,
@@ -112,14 +110,12 @@ export const PAGES = {
     "Home": Home,
     "HowItWorks": HowItWorks,
     "Inbox": Inbox,
-    "IdentityVerification": IdentityVerification,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
     "InvestorDirectory": InvestorDirectory,
     "InvestorDocuments": InvestorDocuments,
     "InvestorIntake": InvestorIntake,
     "InvestorLanding": InvestorLanding,
-    "InvestorOnboarding": InvestorOnboarding,
     "InvestorPortfolio": InvestorPortfolio,
     "InvestorProfile": InvestorProfile,
     "Investors": Investors,
@@ -150,6 +146,10 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
+    "AgentOnboarding": AgentOnboarding,
+    "IdentityVerification": IdentityVerification,
+    "InvestorOnboarding": InvestorOnboarding,
+    "BillingSuccess": BillingSuccess,
 }
 
 export const pagesConfig = {
