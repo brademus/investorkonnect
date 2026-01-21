@@ -754,7 +754,7 @@ function PipelineContent() {
   }
 
   // Prevent initial flicker by waiting for core data to load
-  if (loading || loadingDeals || loadingRooms) {
+  if (loading || (loadingDeals && (!dealsData || dealsData.length === 0)) || (loadingRooms && (!rooms || rooms.length === 0))) {
     return (
       <div className="min-h-screen bg-transparent flex flex-col">
         <Header profile={profile} />
