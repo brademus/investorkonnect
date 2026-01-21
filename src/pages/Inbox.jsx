@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
+import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Users, CheckCircle, X, 
@@ -21,10 +23,28 @@ export default function Inbox() {
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
   const [rooms, setRooms] = useState([]);
+  const [dealsMap, setDealsMap] = useState({});
+  const { profile } = useCurrentProfile();
+  const isAgent = profile?.user_role === 'agent';
 
   useEffect(() => {
     loadInbox();
   }, []);
+
+  useEffect(() => {
+    const loadDealsForRooms = async () => {
+      const ids = Array.from(new Set((rooms || []).map(r => r.deal_id).filter(Boolean)));
+      if (ids.length === 0) return;
+      const entries = await Promise.all(ids.map(async (id) => {
+        const list = await base44.entities.Deal.filter({ id });
+        return [id, (list && list[0]) || null];
+      }));
+      const map = {};
+      entries.forEach(([id, d]) => { if (d) map[id] = d; });
+      setDealsMap(map);
+    };
+    loadDealsForRooms();
+  }, [rooms]);
 
   const loadInbox = async () => {
     try {
@@ -253,6 +273,16 @@ export default function Inbox() {
                             <p className="text-sm text-[#808080]">
                               Created {new Date(room.created_date).toLocaleDateString()}
                             </p>
+                            {isAgent && (() => {
+                              const deal = dealsMap[room.deal_id];
+                              const { priceLabel, compLabel } = getPriceAndComp({ deal, room });
+                              if (!priceLabel && !compLabel) return null;
+                              return (
+                                <p className="text-xs text-[#34D399] font-semibold mt-1">
+                                  {priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}
+                                </p>
+                              );
+                            })()}
                             {(() => { const { priceLabel, compLabel } = getPriceAndComp({ room }); if (!priceLabel && !compLabel) return null; return (
                               <p className="text-xs text-[#34D399] font-semibold mt-1">{priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}</p>
                             ); })()}

@@ -802,7 +802,11 @@ function PipelineContent() {
                           </h3>
                           <div className="text-xs text-[#808080] flex items-center gap-2">
                             <span>{formatCurrency(room.budget)}</span>
-                            {(() => { const { compLabel } = getPriceAndComp({ room }); return compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null; })()}
+                            {(() => {
+                              const dealFull = uniqueDealsData.find(d => d.id === room.deal_id);
+                              const { compLabel } = getPriceAndComp({ deal: dealFull, room });
+                              return compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null;
+                            })()}
                           </div>
                         </div>
                         {(() => {
@@ -1016,7 +1020,9 @@ function PipelineContent() {
                                             <span>{deal.city}, {deal.state}</span>
                                           </div>
                                           {isAgent && (() => {
-                                            const { priceLabel, compLabel } = getPriceAndComp({ deal });
+                                            const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
+                                            const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
+                                            const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
                                             if (!priceLabel && !compLabel) return null;
                                             return (
                                               <div className="flex items-center justify-between text-xs">
