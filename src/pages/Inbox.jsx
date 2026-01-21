@@ -282,9 +282,7 @@ export default function Inbox() {
                                 </p>
                               );
                             })()}
-                            {(() => { const { priceLabel, compLabel } = getPriceAndComp({ room }); if (!priceLabel && !compLabel) return null; return (
-                              <p className="text-xs text-[#34D399] font-semibold mt-1">{priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}</p>
-                            ); })()}
+
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
