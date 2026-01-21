@@ -382,14 +382,17 @@ function PipelineContent() {
           const d = dealsById.get(r.deal_id);
           return d && d.investor_id && r.investorId === d.investor_id;
         });
-      // Dedupe by natural signature (address/city/state/price), keep most recent
+      // Dedupe by robust natural signature (address/city/state/zip/price), keep most recent
       const norm = (v) => (v ?? '').toString().trim().toLowerCase();
       const bySig = new Map();
       for (const r of prelim) {
         const d = dealsById.get(r.deal_id);
-        const addr = d?.property_address || r.property_address || r.deal_title || r.title || '';
+        const addr = d?.property_address || r.property_address || d?.title || r.deal_title || r.title || '';
+        const city = d?.city || r.city || '';
+        const state = d?.state || r.state || '';
+        const zip = d?.zip || r.zip || '';
         const price = (d?.purchase_price ?? r.budget ?? 0);
-        const sig = `${norm(addr)}|${norm(r.city)}|${norm(r.state)}|${Number(price)}`;
+        const sig = `${norm(addr)}|${norm(city)}|${norm(state)}|${norm(zip)}|${Number(price)}`;
         const prev = bySig.get(sig);
         const tA = new Date(r.updated_date || r.created_date || 0).getTime();
         const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
