@@ -50,9 +50,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const isAgent = (profile?.user_role === 'agent') || (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
   const isFullySigned = Boolean(agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed';
 
-  // Load agreement on mount
+  // Load agreement on mount - only if not already loaded
   useEffect(() => {
-    if (deal?.id) loadAgreement();
+    if (deal?.id && !agreement && !loading) {
+      loadAgreement();
+    }
   }, [deal?.id]);
 
   const handleOpenGenerateModal = async () => {
@@ -96,8 +98,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   const loadAgreement = async () => {
     if (!deal?.id) { setLoading(false); return; }
+    // Skip if already loading or already have agreement
+    if (loading || agreement) return;
     try {
-      setLoading(!agreement);
+      setLoading(true);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: deal?.id || deal?.deal_id });
       setAgreement(response.data?.agreement || null);
     } catch (error) {

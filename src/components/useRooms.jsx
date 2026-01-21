@@ -97,48 +97,51 @@ export function useRooms() {
         // console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
         
         try {
-          // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
-          const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed) ? 4 : r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+          // Single-pass deduplication by deal_id only (most reliable)
+          // Keep the most relevant room: signed > accepted > requested > others, then latest update
+          const score = (r) => {
+            if (r?.agreement_status === 'fully_signed' || r?.is_fully_signed) return 4;
+            if (r?.request_status === 'signed') return 3;
+            if (r?.request_status === 'accepted') return 2;
+            if (r?.request_status === 'requested') return 1;
+            if (r?.request_status === 'rejected') return -1;
+            return 0;
+          };
+          
           const byDeal = new Map();
           for (const r of safeRooms) {
+            // Skip canceled deals entirely
+            if (r?.pipeline_stage === 'canceled') continue;
+            
             const normId = String(r?.deal_id || '').trim();
             if (!normId) continue;
+            
             const prev = byDeal.get(normId);
-            if (!prev) { byDeal.set(normId, r); continue; }
-            const sA = score(r), sB = score(prev);
+            if (!prev) {
+              byDeal.set(normId, r);
+              continue;
+            }
+            
+            // Compare: higher score wins, ties go to most recent
+            const sA = score(r);
+            const sB = score(prev);
             const tA = new Date(r.updated_date || r.created_date || 0).getTime();
             const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+            
             if (sA > sB || (sA === sB && tA > tB)) {
               byDeal.set(normId, r);
             }
           }
-          const uniqueWithDeal = Array.from(byDeal.values());
-          // Secondary defensive dedupe: collapse rooms that look like the same deal (same address/city/state/zip/budget)
-          const sig = (r) => [
-           String(r?.property_address || '').toLowerCase().replace(/\s+/g,' ').trim(),
-           String(r?.city || '').toLowerCase(),
-           String(r?.state || '').toLowerCase(),
-           String(r?.zip || '').trim().slice(0,10),
-           Number(Math.round(Number(r?.budget || 0)))
-          ].join('|');
-          const bySignature = new Map();
-          for (const r of uniqueWithDeal) {
-            const k = sig(r);
-            const prev = bySignature.get(k);
-            if (!prev) { bySignature.set(k, r); continue; }
-            const sA = score(r), sB = score(prev);
-            const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-            const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-            if (sA > sB || (sA === sB && tA > tB)) bySignature.set(k, r);
-          }
-          const deduped = Array.from(bySignature.values())
-           .filter(r => r?.pipeline_stage !== 'canceled')
-           // Extra guard: ensure uniqueness by normalized deal_id
-           .filter((r, idx, arr) => arr.findIndex(x => String(x.deal_id||'').trim() === String(r.deal_id||'').trim()) === idx);
-          return deduped.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+          
+          const deduped = Array.from(byDeal.values());
+          return deduped.sort((a, b) => {
+            const dateA = new Date(b?.updated_date || b?.created_date || 0);
+            const dateB = new Date(a?.updated_date || a?.created_date || 0);
+            return dateA - dateB;
+          });
         } catch (e) {
           console.error('[useRooms] dedupe error:', e);
-          return rooms;
+          return safeRooms.filter(r => r?.pipeline_stage !== 'canceled');
         }
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
