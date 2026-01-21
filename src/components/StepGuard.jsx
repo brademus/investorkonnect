@@ -72,7 +72,7 @@ export function StepGuard({ children, requiredStep }) {
     }
     // 6. Identity Verification
     else if (requiredStep >= WIZARD_STEPS.VERIFY && !hasVerified) {
-      redirectTo = createPageUrl('IdentityVerification');
+      redirectTo = role === 'agent' ? createPageUrl('AgentOnboarding') : createPageUrl('InvestorOnboarding');
     }
     // 7. NDA
     else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {
