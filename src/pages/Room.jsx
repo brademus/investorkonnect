@@ -2678,7 +2678,7 @@ ${dealContext}`;
                 )}
               </button>
               </div>
-              </div>
+            )}
       </div>
 
       <ContractWizard 
