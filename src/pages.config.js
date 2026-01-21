@@ -34,6 +34,7 @@ import GetStarted from './pages/GetStarted';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import Inbox from './pages/Inbox';
+import IdentityVerification from './pages/IdentityVerification';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import InvestorDirectory from './pages/InvestorDirectory';
@@ -111,6 +112,7 @@ export const PAGES = {
     "Home": Home,
     "HowItWorks": HowItWorks,
     "Inbox": Inbox,
+    "IdentityVerification": IdentityVerification,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
     "InvestorDirectory": InvestorDirectory,

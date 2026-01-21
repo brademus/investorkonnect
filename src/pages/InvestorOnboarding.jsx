@@ -15,11 +15,12 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
 
 /**
  * INVESTOR ONBOARDING - Simple 3-step initial onboarding
- * Full 8-step onboarding is available from Dashboard checklist
+ * 
+ * Flow: Onboarding -> Pricing -> Identity Verification -> NDA -> Dashboard
  */
 export default function InvestorOnboarding() {
   const navigate = useNavigate();
-  const { profile, refresh, user } = useCurrentProfile();
+  const { profile, refresh, user, onboarded, isPaidSubscriber } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
@@ -35,7 +36,7 @@ export default function InvestorOnboarding() {
 
   const TOTAL_STEPS = 3;
 
-  // Check access
+  // Check access and redirect if already onboarded
   useEffect(() => {
     const checkAccess = async () => {
       try {
@@ -57,6 +58,18 @@ export default function InvestorOnboarding() {
     };
     checkAccess();
   }, [navigate]);
+
+  // Redirect if already onboarded
+  useEffect(() => {
+    if (!checking && onboarded) {
+      // Already onboarded, check next step
+      if (!isPaidSubscriber) {
+        navigate(createPageUrl("Pricing"), { replace: true });
+      } else {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
+    }
+  }, [checking, onboarded, isPaidSubscriber, navigate]);
 
   // Load existing data
   useEffect(() => {
@@ -108,18 +121,19 @@ export default function InvestorOnboarding() {
         throw new Error('Profile not found');
       }
 
-      // Save basic info but DON'T mark onboarding as complete
-      // User must complete full 8-step deep onboarding from Dashboard checklist
+      // Save basic info and mark onboarding as complete
       await base44.entities.Profile.update(profile.id, {
         full_name: formData.full_name,
         phone: formData.phone,
         company: formData.company,
         goals: formData.goals,
         user_role: 'investor',
+        user_type: 'investor',
         target_state: formData.primary_state,
         markets: [formData.primary_state].filter(Boolean),
-        // NOT setting onboarding_completed_at - that happens in deep onboarding
         onboarding_step: 'basic_complete',
+        onboarding_completed_at: new Date().toISOString(),
+        onboarding_version: 'investor-v1',
         metadata: {
           ...profile.metadata,
           basicProfile: {
@@ -129,9 +143,11 @@ export default function InvestorOnboarding() {
       });
 
       await refresh();
-      toast.success("Welcome to Investor Konnect!");
+      toast.success("Profile saved! Let's choose your plan.");
+      
+      // Navigate to Pricing (next step for investors)
       await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.href = createPageUrl("Dashboard");
+      window.location.href = createPageUrl("Pricing");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
@@ -244,7 +260,7 @@ export default function InvestorOnboarding() {
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
-            After completing this, you can refine your matching criteria from your dashboard to get better agent recommendations.
+            Next, you'll choose a subscription plan to unlock agent matching and deal rooms.
           </p>
         </div>
       </div>
@@ -302,7 +318,7 @@ export default function InvestorOnboarding() {
               {saving ? (
                 <><LoadingAnimation className="w-4 h-4 mr-2 inline text-black" />Saving...</>
               ) : step === TOTAL_STEPS ? (
-                'Complete Setup →'
+                'Continue to Pricing →'
               ) : (
                 'Continue →'
               )}

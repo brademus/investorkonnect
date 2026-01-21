@@ -11,6 +11,10 @@ import LoadingAnimation from '@/components/LoadingAnimation';
  * 
  * Enforces the linear wizard flow:
  * Map -> Role -> Auth -> Onboarding -> Subscription (Investor) -> Verify -> NDA -> Dashboard
+ * 
+ * IMPORTANT: This guard only applies to pages that REQUIRE a certain step.
+ * Pages like Dashboard/Pipeline should NOT use high requiredStep values
+ * because they need to show the SetupChecklist for incomplete users.
  */
 
 const WIZARD_STEPS = {
@@ -72,7 +76,7 @@ export function StepGuard({ children, requiredStep }) {
     }
     // 6. Identity Verification
     else if (requiredStep >= WIZARD_STEPS.VERIFY && !hasVerified) {
-      redirectTo = role === 'agent' ? createPageUrl('AgentOnboarding') : createPageUrl('InvestorOnboarding');
+      redirectTo = createPageUrl('IdentityVerification');
     }
     // 7. NDA
     else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {

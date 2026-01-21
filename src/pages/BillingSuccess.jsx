@@ -104,14 +104,21 @@ export default function BillingSuccess() {
           // Show success state
           setState({ syncing: false, matching: false, error: null, redirecting: false });
           
-          // Wait 2.5 seconds, then redirect
+          // Wait 2.5 seconds, then redirect to next step
           setTimeout(() => {
             console.log('[BillingSuccess] Starting redirect countdown...');
             setState(prev => ({ ...prev, redirecting: true }));
             
             setTimeout(() => {
-              console.log('[BillingSuccess] Redirecting to Dashboard');
-              navigate(createPageUrl("Dashboard"), { replace: true });
+              // Check if user needs identity verification
+              const needsIdentity = !profile.identity_verified && profile.kyc_status !== 'approved';
+              if (needsIdentity) {
+                console.log('[BillingSuccess] Redirecting to IdentityVerification');
+                navigate(createPageUrl("IdentityVerification"), { replace: true });
+              } else {
+                console.log('[BillingSuccess] Redirecting to Dashboard');
+                navigate(createPageUrl("Dashboard"), { replace: true });
+              }
             }, 500);
           }, 2500);
           

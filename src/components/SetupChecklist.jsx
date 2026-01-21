@@ -26,55 +26,69 @@ export function SetupChecklist({ profile, onRefresh }) {
   const ndaComplete = !!profile?.nda_accepted;
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
 
-  // Define steps in strict order
-  const steps = [
-    {
-      id: 'onboarding',
-      title: 'Onboarding',
-      description: 'Set up your profile',
-      completed: onboardingComplete,
-      icon: User,
-      link: isAgent ? 'AgentDeepOnboarding' : 'InvestorDeepOnboarding'
-    },
-    ...(isInvestor ? [{
+  // Define steps in strict order based on role
+  // Investor: Onboarding -> Subscription -> Identity -> NDA
+  // Agent: Onboarding -> Identity -> NDA -> Brokerage
+  const steps = [];
+
+  // Step 1: Onboarding (both roles)
+  steps.push({
+    id: 'onboarding',
+    title: 'Onboarding',
+    description: 'Set up your profile',
+    completed: onboardingComplete,
+    icon: User,
+    link: isAgent ? 'AgentOnboarding' : 'InvestorOnboarding'
+  });
+
+  // Step 2: Subscription (Investors only)
+  if (isInvestor) {
+    steps.push({
       id: 'subscription',
       title: 'Subscription',
       description: 'Choose your plan',
       completed: subscriptionComplete,
       icon: CreditCard,
       link: 'Pricing'
-    }] : []),
-    {
-      id: 'identity',
-      title: 'Identity',
-      description: 'Verify your identity',
-      completed: kycComplete,
-      icon: Shield,
-      link: 'IdentityVerification'
-    },
-    {
-      id: 'nda',
-      title: 'Sign NDA',
-      description: 'Accept confidentiality',
-      completed: ndaComplete,
-      icon: FileText,
-      link: 'NDA'
-    },
-    ...(isAgent ? [{
+    });
+  }
+
+  // Step 3: Identity Verification (both roles)
+  steps.push({
+    id: 'identity',
+    title: 'Identity',
+    description: 'Verify your identity',
+    completed: kycComplete,
+    icon: Shield,
+    link: 'IdentityVerification'
+  });
+
+  // Step 4: NDA (both roles)
+  steps.push({
+    id: 'nda',
+    title: 'Sign NDA',
+    description: 'Accept confidentiality',
+    completed: ndaComplete,
+    icon: FileText,
+    link: 'NDA'
+  });
+
+  // Step 5: Brokerage (Agents only)
+  if (isAgent) {
+    steps.push({
       id: 'brokerage',
       title: 'Brokerage',
       description: 'Add your brokerage',
       completed: brokerageComplete,
       icon: Briefcase,
-      link: 'AgentOnboarding'
-    }] : [])
-  ];
+      link: 'AgentDeepOnboarding'
+    });
+  }
 
   const completedCount = steps.filter(s => s.completed).length;
   const totalSteps = steps.length;
   const progress = (completedCount / totalSteps) * 100;
   const allComplete = completedCount === totalSteps;
-  const visibleSteps = steps.filter(s => !s.completed);
 
   if (allComplete) return null;
 
@@ -122,7 +136,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       </div>
 
       <div className="p-3">
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+        <div className={`grid gap-2 ${steps.length <= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-2 sm:grid-cols-5'}`}>
           {steps.map((step, idx) => {
             const Icon = step.icon;
             const isCompleted = step.completed;

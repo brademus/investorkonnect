@@ -15,11 +15,13 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
 
 /**
  * AGENT ONBOARDING - Simple 3-step initial onboarding
- * Full detailed onboarding is available from Dashboard checklist
+ * 
+ * Flow: Onboarding -> Identity Verification -> NDA -> Dashboard
+ * (Agents skip the subscription step)
  */
 export default function AgentOnboarding() {
   const navigate = useNavigate();
-  const { profile, refresh, user } = useCurrentProfile();
+  const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
@@ -59,6 +61,18 @@ export default function AgentOnboarding() {
     };
     checkAccess();
   }, [navigate]);
+
+  // Redirect if already onboarded
+  useEffect(() => {
+    if (!checking && onboarded) {
+      // Already onboarded, check next step
+      if (!kycVerified) {
+        navigate(createPageUrl("IdentityVerification"), { replace: true });
+      } else {
+        navigate(createPageUrl("Dashboard"), { replace: true });
+      }
+    }
+  }, [checking, onboarded, kycVerified, navigate]);
 
   // Load existing data
   useEffect(() => {
@@ -181,11 +195,11 @@ export default function AgentOnboarding() {
       const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
       console.log('[AgentOnboarding] Profile saved successfully:', result);
 
-      toast.success("Profile saved! Welcome to Investor Konnect!");
+      toast.success("Profile saved! Let's verify your identity.");
       
-      // Force a full page reload to refresh all state
+      // Navigate to Identity Verification (next step for agents)
       await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.href = createPageUrl("Dashboard");
+      window.location.href = createPageUrl("IdentityVerification");
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
@@ -336,7 +350,7 @@ export default function AgentOnboarding() {
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
-            After completing this, you can add more details from your dashboard to improve your profile and get matched with more investors.
+            Next, we'll verify your identity to ensure trust and security on the platform.
           </p>
         </div>
       </div>
@@ -394,7 +408,7 @@ export default function AgentOnboarding() {
               {saving ? (
                 <><LoadingAnimation className="w-4 h-4 mr-2 inline" />Saving...</>
               ) : step === TOTAL_STEPS ? (
-                'Complete Setup →'
+                'Continue to Verification →'
               ) : (
                 'Continue →'
               )}
