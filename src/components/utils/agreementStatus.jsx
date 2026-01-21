@@ -113,7 +113,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     return {
       state: 'S2',
       label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor',
-      className: pickBadgeClasses('blue')
+      className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber')
     };
   }
 
@@ -122,13 +122,13 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     return {
       state: 'S3',
       label: userRole === 'investor' ? 'Waiting on agent' : 'Review counter',
-      className: pickBadgeClasses('blue')
+      className: pickBadgeClasses(userRole === 'investor' ? 'amber' : 'blue')
     };
   }
 
   // Generic counter fallback
   if (negUpper.includes('COUNTER')) {
-    return { state: 'Sx', label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor', className: pickBadgeClasses('blue') };
+    return { state: 'Sx', label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor', className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber') };
   }
 
   // S1 — WAITING_FOR_AGENT_SIGNATURE (investor signed current version)
