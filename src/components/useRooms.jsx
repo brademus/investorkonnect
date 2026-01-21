@@ -134,7 +134,34 @@ export function useRooms() {
           }
           
           const deduped = Array.from(byDeal.values());
-          return deduped.sort((a, b) => {
+
+          // Secondary collapse by canonical address signature to eliminate dup rooms for same property
+          const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+          const cleanAddr = (s) => norm(s)
+            .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
+            .replace(/[^a-z0-9]/g, '')
+            .slice(0, 80);
+          const makeSig = (r) => [
+            cleanAddr(r?.property_address || r?.deal_title || r?.title || ''),
+            norm(r?.city),
+            norm(r?.state),
+            String(r?.zip || '').toString().slice(0, 5),
+            Number(Math.round(Number(r?.budget || 0)))
+          ].join('|');
+
+          const bySig = new Map();
+          for (const r of deduped) {
+            const k = makeSig(r);
+            const prev = bySig.get(k);
+            if (!prev) { bySig.set(k, r); continue; }
+            const sA = score(r), sB = score(prev);
+            const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+            const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+            if (sA > sB || (sA === sB && tA > tB)) bySig.set(k, r);
+          }
+
+          const finalList = Array.from(bySig.values());
+          return finalList.sort((a, b) => {
             const dateA = new Date(a?.updated_date || a?.created_date || 0);
             const dateB = new Date(b?.updated_date || b?.created_date || 0);
             return dateB - dateA; // Most recent first
