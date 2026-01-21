@@ -250,7 +250,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
               return (
                 <div className="text-xs mt-0.5">
                   {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
-                  {compLabel && <div className="text-[#E3C567]">Comp: {compLabel}</div>}
+                  <div className="text-[#E3C567]">Comp: {compLabel || '—'}</div>
                 </div>
               );
             })()}
