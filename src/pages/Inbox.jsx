@@ -7,6 +7,7 @@ import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFrom
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 
 export default function Inbox() {
   const navigate = useNavigate();
+  const { profile } = useCurrentProfile();
   const [loading, setLoading] = useState(true);
   const [requests, setRequests] = useState([]);
   const [rooms, setRooms] = useState([]);
@@ -258,7 +260,7 @@ export default function Inbox() {
                         </div>
                         <div className="flex items-center gap-2">
                           {(() => {
-                            const badge = getAgreementStatusLabel({ room, role: 'investor' });
+                            const badge = getAgreementStatusLabel({ room, role: (profile?.user_role || 'investor') });
                             return badge ? (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}>
                                 {badge.label}
