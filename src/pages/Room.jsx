@@ -1250,7 +1250,19 @@ ${dealContext}`;
         <div className="flex-1 overflow-y-auto">
           {filteredRooms
            .filter(r => !!String(r.deal_id || '').trim())
-           .filter((r, idx, arr) => arr.findIndex(x => String(x.deal_id||'').trim() === String(r.deal_id||'').trim()) === idx)
+           // Extra safety: also ensure unique by canonical address signature in final render
+           .filter((r, idx, arr) => {
+             const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+             const cleanAddr = (s) => norm(s)
+               .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
+               .replace(/[^a-z0-9]/g, '')
+               .slice(0, 80);
+             const sig = `${cleanAddr(r?.property_address || r?.deal_title || r?.title || '')}|${norm(r?.city)}|${norm(r?.state)}|${String(r?.zip||'').toString().slice(0,5)}|${Number(Math.round(Number(r?.budget||0)))}`;
+             return arr.findIndex(x => {
+               const sigX = `${cleanAddr(x?.property_address || x?.deal_title || x?.title || '')}|${norm(x?.city)}|${norm(x?.state)}|${String(x?.zip||'').toString().slice(0,5)}|${Number(Math.round(Number(x?.budget||0)))}`;
+               return sigX === sig;
+             }) === idx;
+           })
            .map(r => {
             const handleClick = () => {
               if (r.is_orphan) {
