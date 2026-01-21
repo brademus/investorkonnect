@@ -73,8 +73,9 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
 
         const regenRequired = needsRegeneration(negotiation) || needsRegeneration(room) || needsRegeneration(agreement) || (String(negStatus || '').toUpperCase().includes('REGEN'));
 
-  // Hard rule: no labels for agents before investor has signed (pre-sign states)
-  if (userRole === 'agent' && !(isFullySigned || agreementStatus === 'investor_signed')) {
+  // Show nothing to agent only when there is truly no actionable state yet
+  const hasNegotiationSignal = Boolean(negotiation && negotiation.status) || Boolean(getNegotiationStatus(room)) || regenRequired;
+  if (userRole === 'agent' && !(isFullySigned || agreementStatus === 'investor_signed' || hasNegotiationSignal)) {
     return null;
   }
 
