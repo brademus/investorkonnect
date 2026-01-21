@@ -382,17 +382,20 @@ function PipelineContent() {
           const d = dealsById.get(r.deal_id);
           return d && d.investor_id && r.investorId === d.investor_id;
         });
-      // Dedupe by robust natural signature (address/city/state/zip/price), keep most recent
+      // Dedupe by canonical signature (address/city/state/zip), keep the most recent
       const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+      const cleanAddr = (s) => norm(s)
+        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
+        .replace(/[^a-z0-9]/g, '')
+        .slice(0, 80);
       const bySig = new Map();
       for (const r of prelim) {
         const d = dealsById.get(r.deal_id);
         const addr = d?.property_address || r.property_address || d?.title || r.deal_title || r.title || '';
         const city = d?.city || r.city || '';
         const state = d?.state || r.state || '';
-        const zip = d?.zip || r.zip || '';
-        const price = (d?.purchase_price ?? r.budget ?? 0);
-        const sig = `${norm(addr)}|${norm(city)}|${norm(state)}|${norm(zip)}|${Number(price)}`;
+        const zip = (d?.zip || r.zip || '').toString().slice(0,5);
+        const sig = `${cleanAddr(addr)}|${norm(city)}|${norm(state)}|${norm(zip)}`;
         const prev = bySig.get(sig);
         const tA = new Date(r.updated_date || r.created_date || 0).getTime();
         const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
@@ -416,7 +419,28 @@ function PipelineContent() {
         const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
         if (!prev || tA > tB) finalByDeal.set(r.deal_id, r);
       });
-      return Array.from(finalByDeal.values()).sort((a,b)=> new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
+
+      // Extra safety: dedupe again by canonical address signature across remaining items
+      const norm2 = (v) => (v ?? '').toString().trim().toLowerCase();
+      const cleanAddr2 = (s) => norm2(s)
+        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
+        .replace(/[^a-z0-9]/g, '')
+        .slice(0, 80);
+      const bySigFinal = new Map();
+      for (const r of finalByDeal.values()) {
+        const d = dealsById.get(r.deal_id);
+        const addr = d?.property_address || r.property_address || d?.title || r.deal_title || r.title || '';
+        const city = d?.city || r.city || '';
+        const state = d?.state || r.state || '';
+        const zip = (d?.zip || r.zip || '').toString().slice(0,5);
+        const sig = `${cleanAddr2(addr)}|${norm2(city)}|${norm2(state)}|${norm2(zip)}`;
+        const prev = bySigFinal.get(sig);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) bySigFinal.set(sig, r);
+      }
+
+      return Array.from(bySigFinal.values()).sort((a,b)=> new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
