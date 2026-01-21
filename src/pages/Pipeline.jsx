@@ -1032,8 +1032,9 @@ function PipelineContent() {
                                             );
                                           })()}
                                           {(() => {
+                                            const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
                                             const badge = getAgreementStatusLabel({
-                                              room: { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed },
+                                              room: fullRoom,
                                               role: isAgent ? 'agent' : 'investor'
                                             });
                                             return badge ? (
