@@ -639,14 +639,27 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </div>
               )}
 
-              {(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
-                <Button
-                  onClick={() => window.open(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  {agreement.signed_pdf_url ? 'Download Signed PDF' : 'View Agreement PDF'}
-                </Button>
+              {/* PDF access: agents only after fully signed */}
+              {isAgent ? (
+                isFullySigned && (agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) ? (
+                  <Button
+                    onClick={() => window.open(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download Signed PDF
+                  </Button>
+                ) : null
+              ) : (
+                (agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url) && (
+                  <Button
+                    onClick={() => window.open(agreement.signed_pdf_url || agreement.final_pdf_url || agreement.pdf_file_url, '_blank')}
+                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    {agreement.signed_pdf_url ? 'Download Signed PDF' : 'View Agreement PDF'}
+                  </Button>
+                )
               )}
 
               {isInvestor && !agreement.agent_signed_at && (
