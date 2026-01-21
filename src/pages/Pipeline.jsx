@@ -402,7 +402,15 @@ function PipelineContent() {
         Number(r.budget || 0) > 0 &&
         !r.is_fully_signed
       );
-      return legit;
+      // Final dedupe by deal_id and pick most recent
+      const finalByDeal = new Map();
+      legit.forEach(r => {
+        const prev = finalByDeal.get(r.deal_id);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) finalByDeal.set(r.deal_id, r);
+      });
+      return Array.from(finalByDeal.values()).sort((a,b)=> new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,

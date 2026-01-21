@@ -304,6 +304,7 @@ export default function Room() {
 
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
+  const [agreement, setAgreement] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
   const [investorTasks, setInvestorTasks] = useState([]);
   const [agentTasks, setAgentTasks] = useState([]);
@@ -326,6 +327,13 @@ export default function Room() {
     })();
   }, [showBoard, currentRoom?.deal_id]);
 
+  // Ensure Agreement is prefetched as soon as the tab is opened
+  useEffect(() => {
+    if (showBoard && activeTab === 'agreement' && currentRoom?.deal_id) {
+      prefetchDeal();
+    }
+  }, [showBoard, activeTab, currentRoom?.deal_id]);
+
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
     setShowBoard(false);
@@ -333,6 +341,7 @@ export default function Room() {
     setInvestorTasks([]);
     setAgentTasks([]);
     setDeal(null);
+    setAgreement(null);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
@@ -458,10 +467,11 @@ export default function Room() {
 
       const cached = getCachedDeal(did);
       // Kick off all fetches in parallel
-      const [res, roomRows, apptRows] = await Promise.all([
+      const [res, roomRows, apptRows, agRes] = await Promise.all([
         base44.functions.invoke('getDealDetailsForUser', { dealId: did }),
         base44.entities.Room.filter({ id: roomId }),
-        base44.entities.DealAppointments.filter({ dealId: did }).catch(() => [])
+        base44.entities.DealAppointments.filter({ dealId: did }).catch(() => []),
+        base44.functions.invoke('getLegalAgreement', { deal_id: did }).catch(() => ({ data: null }))
       ]);
 
       const freshDeal = res?.data || cached || null;
@@ -476,6 +486,11 @@ export default function Room() {
       // Seed appointments so Details tab renders instantly
       if (Array.isArray(apptRows) && apptRows[0]) {
         setDealAppts(apptRows[0]);
+      }
+
+      // Prefetch agreement for instant Agreement tab
+      if (agRes?.data?.agreement) {
+        setAgreement(agRes.data.agreement);
       }
 
       return freshDeal;
@@ -1998,7 +2013,7 @@ ${dealContext}`;
                         deal={deal}
                         profile={profile}
                         allowGenerate={false}
-                        initialAgreement={currentRoom?.agreement || null}
+                        initialAgreement={agreement || currentRoom?.agreement || null}
                         onUpdate={async () => {
                           await refreshRoomState();
                           queryClient.invalidateQueries({ queryKey: ['rooms'] });
@@ -2487,7 +2502,20 @@ ${dealContext}`;
                   </div>
                   <div>
                     <Button
-                      onClick={() => setShowBoard(true) || setActiveTab('agreement')}
+                      onMouseEnter={prefetchDeal}
+                      onClick={async () => {
+                        setBoardLoading(true);
+                        const data = await prefetchDeal();
+                        if (data) {
+                          setDeal(data);
+                        } else if (currentRoom) {
+                          const snap = buildDealFromRoom(currentRoom, maskAddr);
+                          if (snap) setDeal(snap);
+                        }
+                        setActiveTab('agreement');
+                        setShowBoard(true);
+                        setBoardLoading(false);
+                      }}
                       className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
                     >
                       Open My Agreement
