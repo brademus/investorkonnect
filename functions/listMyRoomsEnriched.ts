@@ -39,6 +39,24 @@ Deno.serve(async (req) => {
     
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
 
+    // Fetch negotiations for these deals to surface counter/regen state
+    const negotiations = dealIds.length > 0
+      ? await base44.asServiceRole.entities.DealNegotiation.filter({ deal_id: { $in: dealIds } })
+      : [];
+
+    // Choose latest negotiation per deal
+    const negotiationMap = new Map();
+    for (const n of negotiations) {
+      const prev = negotiationMap.get(n.deal_id);
+      if (!prev) {
+        negotiationMap.set(n.deal_id, n);
+      } else {
+        const tA = new Date(n.updated_at || n.updated_date || n.created_date || 0).getTime();
+        const tB = new Date(prev.updated_at || prev.updated_date || prev.created_date || 0).getTime();
+        if (tA >= tB) negotiationMap.set(n.deal_id, n);
+      }
+    }
+
     // Get all unique counterparty profile IDs
     const counterpartyIds = [...new Set(
       rooms.map(r => userRole === 'investor' ? r.agentId : r.investorId).filter(Boolean)
@@ -136,11 +154,29 @@ Deno.serve(async (req) => {
                            room.request_status === 'signed';
 
       // Base room data
+      const negotiation = negotiationMap.get(room.deal_id);
       const enriched = {
         id: room.id,
         deal_id: room.deal_id,
         request_status: room.request_status,
         agreement_status: room.agreement_status,
+        negotiation_status: negotiation?.status || null,
+        negotiation: negotiation ? {
+          status: negotiation.status,
+          last_proposed_terms: negotiation.last_proposed_terms || null,
+          current_terms: negotiation.current_terms || null
+        } : null,
+        regen_required: (() => {
+          const s = String(negotiation?.status || '').toUpperCase();
+          return Boolean(
+            s.includes('REGEN') ||
+            negotiation?.requires_regen ||
+            negotiation?.needs_regeneration ||
+            negotiation?.regeneration_required ||
+            negotiation?.last_proposed_terms?.requires_regen
+          );
+        })(),
+        last_counter_by_role: negotiation?.last_proposed_terms?.proposed_by_role || null,
         created_date: room.created_date,
         updated_date: room.updated_date,
 

@@ -222,7 +222,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDe
           </p>
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             {(() => {
-              const badge = getAgreementStatusLabel({ room: room, role: userRole });
+              const badge = getAgreementStatusLabel({ room: room, negotiation: room?.negotiation, role: userRole });
               return badge ? (
                 <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
                   {badge.label}
