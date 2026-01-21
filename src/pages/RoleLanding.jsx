@@ -17,7 +17,7 @@ export default function RoleLanding() {
             Welcome to <span className="text-[#E3C567]">Investor Konnect</span>
           </h1>
           <p className="text-lg text-[#808080]">
-            Choose how you want to get started
+            Pick how you want to get started.
           </p>
         </div>
 
@@ -35,23 +35,23 @@ export default function RoleLanding() {
             </div>
             
             <div className="text-left">
-              <h2 className="text-2xl font-bold text-[#FAFAFA] mb-3">I'm an Investor</h2>
+              <h2 className="text-2xl font-bold text-[#FAFAFA] mb-3">I'M AN INVESTOR</h2>
               <p className="text-[#808080] mb-6">
-                Find investor-friendly agents, manage deals, and access market data for your real estate investments.
+                Create deals, upload and verify contracts, and lock in with investor-focused agents.
               </p>
               
               <div className="space-y-2 mb-6">
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Connect with vetted agents</span>
+                  <span>Create and manage deals</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Manage your deal pipeline</span>
+                  <span>Verify seller contracts</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Access off-market opportunities</span>
+                  <span>Sign & lock in with DocuSign</span>
                 </div>
               </div>
 
@@ -74,23 +74,23 @@ export default function RoleLanding() {
             </div>
             
             <div className="text-left">
-              <h2 className="text-2xl font-bold text-[#FAFAFA] mb-3">I'm an Agent</h2>
+              <h2 className="text-2xl font-bold text-[#FAFAFA] mb-3">I'M AN AGENT</h2>
               <p className="text-[#808080] mb-6">
-                Connect with serious investors, showcase your expertise, and grow your investment property business.
+                Work with serious investors, sign internal agreements, and manage deal milestones in one place.
               </p>
               
               <div className="space-y-2 mb-6">
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Get matched with investors</span>
+                  <span>Qualified investor deal rooms</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Showcase your track record</span>
+                  <span>Clear deal board + documents</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-[#FAFAFA]">
                   <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567]" />
-                  <span>Access qualified investor leads</span>
+                  <span>Secure lock-in before access</span>
                 </div>
               </div>
 
