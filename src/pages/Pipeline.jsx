@@ -384,7 +384,7 @@ function PipelineContent() {
     // Resolve agent for room creation: agents default to themselves
     const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
     if (!agentProfileId) {
-      toast.info('Select an agent for this deal to open a room (use the deal card menu).');
+      navigate(createPageUrl("AgentMatching") + `?dealId=${deal.deal_id}`);
       return;
     }
 
@@ -806,7 +806,7 @@ function PipelineContent() {
                                             size="sm"
                                             className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
                                           >
-                                            Open Deal Room
+                                            {isInvestor ? (!deal.agent_id ? 'Choose Agent' : (deal.is_fully_signed ? 'Open Deal Room' : 'Sign Agreement')) : 'Open Deal Room'}
                                           </Button>
                                         )}
                                         {isInvestor && (
