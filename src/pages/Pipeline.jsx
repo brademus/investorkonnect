@@ -322,7 +322,7 @@ function PipelineContent() {
   }, [location.search, profile?.id, profile?.user_role]);
 
   // 4. Load Pending Requests (for agents)
-  const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
+  const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
