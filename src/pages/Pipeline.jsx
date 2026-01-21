@@ -23,6 +23,7 @@ import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFrom
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
+import { StepGuard } from "@/components/StepGuard";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -849,7 +850,9 @@ function PipelineContent() {
 export default function Pipeline() {
   return (
     <AuthGuard requireAuth={true}>
-      <PipelineContent />
+      <StepGuard requiredStep={6}>
+        <PipelineContent />
+      </StepGuard>
     </AuthGuard>
   );
 }
