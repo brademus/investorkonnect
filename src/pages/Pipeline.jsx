@@ -328,6 +328,24 @@ function PipelineContent() {
   }, [dealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {
+    // Investor gating: require agent selection and fully signed agreement before opening room
+    if (!isAgent) {
+      if (!deal.agent_id) {
+        navigate(createPageUrl('AgentMatching') + `?dealId=${deal.deal_id}`);
+        return;
+      }
+      try {
+        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
+        const ag = agRes?.data?.agreement;
+        if (!ag || ag.status !== 'fully_signed') {
+          navigate(`${createPageUrl('ContractVerify')}?dealId=${deal.deal_id}`);
+          return;
+        }
+      } catch (e) {
+        navigate(`${createPageUrl('ContractVerify')}?dealId=${deal.deal_id}`);
+        return;
+      }
+    }
     // Prefetch deal details and agreement for instant hydration
     if (deal?.deal_id) {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
