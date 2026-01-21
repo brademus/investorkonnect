@@ -324,14 +324,22 @@ export default function Room() {
   // Removed tab-triggered refetch: files/photos are prefetched once when Deal Board opens
   // and kept fresh via realtime subscriptions and background updates.
   
-  // Open Agreement tab via URL param (avoid TDZ on currentRoom)
+  // Open Agreement tab via URL param: prefetch first, then reveal board
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('tab') === 'agreement') {
-      setActiveTab('agreement');
-      setShowBoard(true);
+    if (p.get('tab') === 'agreement' && currentRoom?.deal_id) {
+      setBoardLoading(true);
+      (async () => {
+        const { deal: d, ready } = await prefetchDeal();
+        if (ready && d) {
+          setDeal(d);
+          setActiveTab('agreement');
+          setShowBoard(true);
+        }
+        setBoardLoading(false);
+      })();
     }
-  }, [roomId, location.search]);
+  }, [roomId, location.search, currentRoom?.deal_id]);
 
 
 
@@ -484,7 +492,7 @@ export default function Room() {
   const prefetchDeal = async () => {
     try {
       const did = currentRoom?.deal_id;
-      if (!did) return null;
+      if (!did) return { deal: null, ready: false };
 
       const cached = getCachedDeal(did);
       // Kick off all fetches in parallel
@@ -515,10 +523,11 @@ export default function Room() {
         setAgreement(agRes.data.agreement);
       }
 
-      return freshDeal;
+      const ready = !!apiDeal;
+      return { deal: freshDeal, ready };
     } catch (_) {
       // As a last resort, return snapshot so UI can still render
-      return currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null;
+      return { deal: currentRoom ? buildDealFromRoom(currentRoom, maskAddr) : null, ready: false };
     }
   };
 
@@ -1395,17 +1404,13 @@ ${dealContext}`;
                 <Button
                     onMouseEnter={prefetchDeal}
                     onClick={async () => {
-                                        // Always open the Deal Board reliably
                                         setBoardLoading(true);
-                                        const data = await prefetchDeal();
-                                        if (data) {
-                                          setDeal(data);
-                                        } else if (currentRoom) {
-                                          const snap = buildDealFromRoom(currentRoom, maskAddr);
-                                          if (snap) setDeal(snap);
+                                        const { deal: d, ready } = await prefetchDeal();
+                                        if (ready && d) {
+                                          setDeal(d);
+                                          setActiveTab('details');
+                                          setShowBoard(true);
                                         }
-                                        setActiveTab('details');
-                                        setShowBoard(true);
                                         setBoardLoading(false);
                                       }}
                     className={`rounded-full font-semibold transition-all ${
@@ -2550,10 +2555,12 @@ ${dealContext}`;
                      onClick={() => {
                        // Prefetch, then reveal Agreement tab with full data
                        setBoardLoading(true);
-                       prefetchDeal().then((data) => {
-                         if (data) setDeal(data);
-                         setActiveTab('agreement');
-                         setShowBoard(true);
+                       prefetchDeal().then(({ deal: d, ready }) => {
+                         if (ready && d) {
+                           setDeal(d);
+                           setActiveTab('agreement');
+                           setShowBoard(true);
+                         }
                          setBoardLoading(false);
                        });
                      }}
