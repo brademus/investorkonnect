@@ -10,61 +10,72 @@ import LoadingAnimation from '@/components/LoadingAnimation';
  * STEP GUARD
  * 
  * Enforces the linear wizard flow:
- * Map → Role → Auth → Onboarding → Verify → NDA → Matching/Dashboard → Room
- * 
- * Each step requires all previous steps to be completed.
- * Redirects user back to the first incomplete step.
+ * Map -> Role -> Auth -> Onboarding -> Subscription (Investor) -> Verify -> NDA -> Dashboard
  */
 
 const WIZARD_STEPS = {
-MAP: 0,           // /
-ROLE: 1,          // /role
-AUTH: 2,          // handled by Base44
-ONBOARDING: 3,    // /onboarding/investor or /onboarding/agent
-// VERIFY removed
-NDA: 4,           // /nda
-MATCHING: 5,      // /matches (investor only)
-ROOM: 6           // /room/:id
+  MAP: 0,
+  ROLE: 1,
+  AUTH: 2,
+  ONBOARDING: 3,
+  SUBSCRIPTION: 4,
+  VERIFY: 5,
+  NDA: 6,
+  MATCHING: 7,
+  ROOM: 8
 };
 
 export function StepGuard({ children, requiredStep }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, user, profile, role, onboarded, kycVerified, hasNDA } = useCurrentProfile();
-  const { selectedState, selectedRole } = useWizard();
+  const { 
+    loading, user, profile, role, onboarded, 
+    kycVerified, hasNDA, isPaidSubscriber 
+  } = useCurrentProfile();
+  const { selectedState } = useWizard();
 
   useEffect(() => {
     if (loading) return;
 
-    // Determine current completion level
     const hasState = selectedState || profile?.target_state || profile?.markets?.[0];
     const hasRole = role && role !== 'member';
     const hasAuth = !!user;
     const hasOnboarded = onboarded;
+    const hasSubscription = role === 'agent' || isPaidSubscriber;
     const hasVerified = kycVerified;
     const hasNDAAccepted = hasNDA;
 
-    // Find first incomplete step
     let redirectTo = null;
 
+    // 1. Location Selection
     if (requiredStep >= WIZARD_STEPS.MAP && !hasState) {
       redirectTo = createPageUrl('Home');
-    } else if (requiredStep >= WIZARD_STEPS.ROLE && !hasRole) {
+    } 
+    // 2. Role Selection
+    else if (requiredStep >= WIZARD_STEPS.ROLE && !hasRole) {
       redirectTo = createPageUrl('RoleSelection');
-    } else if (requiredStep >= WIZARD_STEPS.AUTH && !hasAuth) {
-      // Redirect to Base44 login, will return to wizard after
+    } 
+    // 3. Authentication
+    else if (requiredStep >= WIZARD_STEPS.AUTH && !hasAuth) {
       base44.auth.redirectToLogin(location.pathname);
       return;
-    } else if (requiredStep >= WIZARD_STEPS.ONBOARDING && !hasOnboarded) {
-      // Redirect to role-specific onboarding
-      if (role === 'investor') {
-        redirectTo = createPageUrl('InvestorOnboarding');
-      } else if (role === 'agent') {
-        redirectTo = createPageUrl('AgentOnboarding');
-      } else {
-        redirectTo = createPageUrl('RoleSelection');
-      }
-    } else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {
+    } 
+    // 4. Onboarding Questions
+    else if (requiredStep >= WIZARD_STEPS.ONBOARDING && !hasOnboarded) {
+      if (role === 'investor') redirectTo = createPageUrl('InvestorOnboarding');
+      else if (role === 'agent') redirectTo = createPageUrl('AgentOnboarding');
+      else redirectTo = createPageUrl('RoleSelection');
+    } 
+    // 5. Subscription (Investors only)
+    else if (requiredStep >= WIZARD_STEPS.SUBSCRIPTION && !hasSubscription) {
+      redirectTo = createPageUrl('Pricing');
+    }
+    // 6. Identity Verification
+    else if (requiredStep >= WIZARD_STEPS.VERIFY && !hasVerified) {
+      redirectTo = createPageUrl('IdentityVerification');
+    }
+    // 7. NDA
+    else if (requiredStep >= WIZARD_STEPS.NDA && !hasNDAAccepted) {
       redirectTo = createPageUrl('NDA');
     }
 
@@ -72,9 +83,8 @@ export function StepGuard({ children, requiredStep }) {
       navigate(redirectTo, { replace: true });
     }
 
-  }, [loading, user, profile, role, onboarded, kycVerified, hasNDA, selectedState, selectedRole, requiredStep, navigate, location.pathname]);
+  }, [loading, user, profile, role, onboarded, kycVerified, hasNDA, isPaidSubscriber, selectedState, requiredStep, navigate, location.pathname]);
 
-  // Show loading while checking
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
@@ -86,7 +96,6 @@ export function StepGuard({ children, requiredStep }) {
     );
   }
 
-  // All prerequisites met - render children
   return <>{children}</>;
 }
 
