@@ -508,7 +508,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
         )}
       </div>
       
-      {/* No agreement yet */
+      {/* No agreement yet */}
       {!agreement && isInvestor && (
         <div className="text-center py-8">
           <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
