@@ -29,7 +29,7 @@ export default function IdentityVerification() {
         setError("Could not generate verification link.");
         setStarting(false);
       }
-    } catch (e: any) {
+    } catch (e) {
       const msg = e?.response?.data?.error || e?.message || "Failed to start verification.";
       setError(msg);
       setStarting(false);
