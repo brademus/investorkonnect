@@ -324,20 +324,14 @@ export default function Room() {
   // Removed tab-triggered refetch: files/photos are prefetched once when Deal Board opens
   // and kept fresh via realtime subscriptions and background updates.
   
-  // Open Agreement tab via URL param: prefetch first, then reveal board
+  // Open Agreement tab via URL param (avoid TDZ on currentRoom)
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('tab') === 'agreement' && currentRoom?.deal_id) {
-      setBoardLoading(true);
-      (async () => {
-        const data = await prefetchDeal();
-        if (data) setDeal(data);
-        setActiveTab('agreement');
-        setShowBoard(true);
-        setBoardLoading(false);
-      })();
+    if (p.get('tab') === 'agreement') {
+      setActiveTab('agreement');
+      setShowBoard(true);
     }
-  }, [roomId, location.search, currentRoom?.deal_id]);
+  }, [roomId, location.search]);
 
 
 
