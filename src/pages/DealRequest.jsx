@@ -57,11 +57,9 @@ export default function DealRequest() {
       // Fetch enriched room to derive negotiation/counter status for accurate label
       try {
         const res = await base44.functions.invoke('listMyRoomsEnriched');
-        const enriched = (res.data?.rooms || []).find(r => r.id === loadedRoom.id);
-        if (enriched) {
-          const badge = getAgreementStatusLabel({ room: enriched, negotiation: enriched.negotiation, role: 'agent' });
-          setStatusBadge(badge || null);
-        }
+        const enriched = (res.data?.rooms || []).find(r => r.id === loadedRoom.id || r.deal_id === loadedRoom.deal_id) || loadedRoom;
+        const badge = getAgreementStatusLabel({ room: enriched, negotiation: enriched?.negotiation, role: 'agent' });
+        setStatusBadge(badge || null);
       } catch (_) { /* non-blocking */ }
 
       // Load deal (limited info)
