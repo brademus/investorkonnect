@@ -248,9 +248,10 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
               const { priceLabel, compLabel } = getPriceAndComp({ room });
               if (!priceLabel && !compLabel) return null;
               return (
-                <p className="text-xs text-[#34D399] font-semibold mt-0.5">
-                  {priceLabel}{compLabel ? ` • Comp: ${compLabel}` : ''}
-                </p>
+                <div className="text-xs mt-0.5">
+                  {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
+                  {compLabel && <div className="text-[#E3C567]">Comp: {compLabel}</div>}
+                </div>
               );
             })()}
           </>
@@ -258,9 +259,13 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole }) => {
         
         {/* Deal Budget - only show if not already in title */}
         {userRole === 'investor' && room.budget > 0 && (
-          <p className="text-sm text-[#34D399] font-semibold mt-0.5">
-            ${room.budget.toLocaleString()}
-          </p>
+          <div className="text-sm mt-0.5">
+            <div className="text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>
+            {(() => {
+              const { compLabel } = getPriceAndComp({ room });
+              return compLabel ? <div className="text-xs text-[#E3C567]">Comp: {compLabel}</div> : null;
+            })()}
+          </div>
         )}
 
         {/* Fallback state */}
