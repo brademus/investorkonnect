@@ -1321,7 +1321,7 @@ ${dealContext}`;
                 isActive={r.id === roomId}
                 onClick={handleClick}
                 userRole={profile?.user_role}
-                fullDeal={r.id === roomId ? deal : undefined}
+                fullDeal={getCachedDeal(r.deal_id) || (r.id === roomId ? deal : undefined)}
               />
             );
           })}
