@@ -70,8 +70,9 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
           getNegotiationStatus(agreement) ||
           null
         );
+  const negUpper = String(negStatus || '').toUpperCase();
 
-        const regenRequired = needsRegeneration(negotiation) || needsRegeneration(room) || needsRegeneration(agreement) || (String(negStatus || '').toUpperCase().includes('REGEN'));
+  const regenRequired = needsRegeneration(negotiation) || needsRegeneration(room) || needsRegeneration(agreement) || negUpper.includes('REGEN');
 
   // Show nothing to agent only when there is truly no actionable state yet
   const hasNegotiationSignal = Boolean(negotiation && negotiation.status) || Boolean(getNegotiationStatus(room)) || regenRequired;
