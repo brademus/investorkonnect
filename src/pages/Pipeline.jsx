@@ -232,14 +232,14 @@ function PipelineContent() {
       }
     }
 
-    // Step 2: dedupe by natural signature (address/title + city + state + price + day)
+    // Step 2: dedupe by natural signature (address/title + city + state + zip + price)
     const makeSig = (d) => {
       const addr = normalize(d.property_address || d.deal_title || d.title);
       const city = normalize(d.city);
       const state = normalize(d.state);
+      const zip = normalize(d.zip);
       const price = d.purchase_price ?? d.budget ?? '';
-      const day = (d.created_date || '').slice(0, 10);
-      return `${addr}|${city}|${state}|${price}|${day}`;
+      return `${addr}|${city}|${state}|${zip}|${price}`;
     };
 
     const bySig = new Map();
@@ -526,8 +526,21 @@ function PipelineContent() {
       };
     });
 
+    // Deduplicate mapped deals by natural signature, prefer fully-signed and most recent
+    const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+    const mkSig = (d) => `${norm(d.property_address || d.title)}|${norm(d.city)}|${norm(d.state)}|${Number(d.budget || 0)}`;
+    const bySig2 = new Map();
+    for (const d of mappedDeals) {
+      const sig = mkSig(d);
+      const prev = bySig2.get(sig);
+      const prevScore = prev ? ((prev.is_fully_signed ? 1 : 0) * 1e12 + new Date(prev.updated_date || prev.created_date || 0).getTime()) : -1;
+      const curScore = ((d.is_fully_signed ? 1 : 0) * 1e12) + new Date(d.updated_date || d.created_date || 0).getTime();
+      if (!prev || curScore >= prevScore) bySig2.set(sig, d);
+    }
+    const dedupMappedDeals = Array.from(bySig2.values());
+
     // Agents: show only fully signed deals in the board
-    return mappedDeals.filter(d => {
+    return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
       return d.is_fully_signed;
     });
