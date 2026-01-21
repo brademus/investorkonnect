@@ -800,9 +800,13 @@ function PipelineContent() {
                           <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
                             {room.city}, {room.state}
                           </h3>
-                          <div className="text-xs text-[#808080] flex items-center gap-2">
-                            <span>{formatCurrency(room.budget)}</span>
-                            {(() => { const { compLabel } = getPriceAndComp({ room }); return compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null; })()}
+                          <div className="text-xs">
+                            <div className="text-[#34D399] font-semibold">{formatCurrency(room.budget)}</div>
+                            {(() => {
+                              const dealFull = uniqueDealsData.find(d => d.id === room.deal_id);
+                              const { compLabel } = getPriceAndComp({ deal: dealFull, room });
+                              return compLabel ? <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div> : null;
+                            })()}
                           </div>
                         </div>
                         {(() => {
@@ -1016,12 +1020,14 @@ function PipelineContent() {
                                             <span>{deal.city}, {deal.state}</span>
                                           </div>
                                           {isAgent && (() => {
-                                            const { priceLabel, compLabel } = getPriceAndComp({ deal });
+                                            const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
+                                            const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
+                                            const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
                                             if (!priceLabel && !compLabel) return null;
                                             return (
-                                              <div className="flex items-center justify-between text-xs">
-                                                <span className="text-[#34D399] font-semibold">{priceLabel}</span>
-                                                {compLabel ? <span className="text-[#E3C567]">Comp: {compLabel}</span> : null}
+                                              <div className="text-xs text-right">
+                                                {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
+                                                {compLabel && <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div>}
                                               </div>
                                             );
                                           })()}

@@ -33,7 +33,6 @@ import GetStarted from './pages/GetStarted';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import IdentityVerification from './pages/IdentityVerification';
-import Inbox from './pages/Inbox';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import InvestorDirectory from './pages/InvestorDirectory';
@@ -54,7 +53,6 @@ import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
 import Onboarding from './pages/Onboarding';
 import PendingDeals from './pages/PendingDeals';
-import Pipeline from './pages/Pipeline';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
@@ -72,6 +70,8 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
+import Inbox from './pages/Inbox';
+import Pipeline from './pages/Pipeline';
 import __Layout from './Layout.jsx';
 
 
@@ -111,7 +111,6 @@ export const PAGES = {
     "Home": Home,
     "HowItWorks": HowItWorks,
     "IdentityVerification": IdentityVerification,
-    "Inbox": Inbox,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
     "InvestorDirectory": InvestorDirectory,
@@ -132,7 +131,6 @@ export const PAGES = {
     "NotFound": NotFound,
     "Onboarding": Onboarding,
     "PendingDeals": PendingDeals,
-    "Pipeline": Pipeline,
     "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
@@ -150,6 +148,8 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
+    "Inbox": Inbox,
+    "Pipeline": Pipeline,
 }
 
 export const pagesConfig = {
