@@ -167,7 +167,7 @@ function ActiveDealsContent() {
                 </div>
               ))}
             </div>
-          )
+          )}
         </div>
       </div>
     </>

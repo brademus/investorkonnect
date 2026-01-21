@@ -113,8 +113,8 @@ function ClosedDealsContent() {
               </div>
               ))}
             </div>
-          )
-        </div>
+          )}
+          </div>
       </div>
     </>
   );
