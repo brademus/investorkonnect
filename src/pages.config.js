@@ -48,6 +48,7 @@ import Investors from './pages/Investors';
 import Logout from './pages/Logout';
 import MarketIntel from './pages/MarketIntel';
 import Matches from './pages/Matches';
+import MyAgreement from './pages/MyAgreement';
 import MyProfile from './pages/MyProfile';
 import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
@@ -126,6 +127,7 @@ export const PAGES = {
     "Logout": Logout,
     "MarketIntel": MarketIntel,
     "Matches": Matches,
+    "MyAgreement": MyAgreement,
     "MyProfile": MyProfile,
     "NDA": NDA,
     "NewDeal": NewDeal,

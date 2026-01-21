@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { StepGuard } from "@/components/StepGuard";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { validatePDF } from "@/components/utils/fileValidation";
@@ -12,7 +13,14 @@ import LoadingAnimation from "@/components/LoadingAnimation";
 export default function ContractVerify() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile } = useCurrentProfile();
+  const { profile, user } = useCurrentProfile();
+  const isNameLocked = Boolean(
+    profile?.verified_first_name ||
+    profile?.verified_last_name ||
+    profile?.identity_verified_at ||
+    profile?.kyc_status === 'approved' ||
+    profile?.identity_status === 'verified'
+  );
   
   const dealIdFromUrl = searchParams.get("dealId");
   
@@ -23,6 +31,7 @@ export default function ContractVerify() {
   const [fileUrl, setFileUrl] = useState(null);
   const [fileName, setFileName] = useState(null);
   const [dealData, setDealData] = useState(null);
+  const [buyerErrorInfo, setBuyerErrorInfo] = useState(null);
 
   useEffect(() => {
     const loadData = async () => {
@@ -184,6 +193,52 @@ export default function ContractVerify() {
       const extracted = extractRes.data.data;
       const validationErrors = [];
 
+      // New: Buyer name verification (additive only)
+      const verifiedFullFromProfile = [profile?.verified_first_name, profile?.verified_last_name].filter(Boolean).join(' ').trim();
+      const fallbackOnboardingFull = [profile?.onboarding_first_name, profile?.onboarding_last_name].filter(Boolean).join(' ').trim();
+      const expectedBuyerRaw = (verifiedFullFromProfile || profile?.full_name || fallbackOnboardingFull || user?.full_name || '').trim();
+      const expectedBuyerCompany = (profile?.company || profile?.investor?.company_name || '').trim();
+
+      const normalizeForCompare = (s) => {
+        if (!s) return '';
+        return s.toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+          .replace(/\b(llc|inc|ltd|co|corp|corporation|company|jr|sr|ii|iii|iv)\b/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+
+      const expectedBuyerNorm = normalizeForCompare(expectedBuyerRaw);
+      const expectedCompanyNorm = normalizeForCompare(expectedBuyerCompany);
+      const contractBuyerRaw = extracted?.buyer_name_raw || extracted?.buyer_name || null;
+      const contractBuyerNorm = extracted?.buyer_name_normalized || normalizeForCompare(contractBuyerRaw || '');
+
+      let buyerNameStatus = 'UNKNOWN';
+      let buyerNameReason = '';
+
+      if (!contractBuyerNorm) {
+        buyerNameStatus = 'UNKNOWN';
+        buyerNameReason = "We couldn’t confidently find the buyer name in this contract.";
+        validationErrors.push(`Buyer name missing: ${buyerNameReason}`);
+      } else {
+        const nameMatch = expectedBuyerNorm && (expectedBuyerNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedBuyerNorm) || expectedBuyerNorm.includes(contractBuyerNorm));
+        const companyMatch = expectedCompanyNorm && (expectedCompanyNorm === contractBuyerNorm || contractBuyerNorm.includes(expectedCompanyNorm) || expectedCompanyNorm.includes(contractBuyerNorm));
+
+        if (nameMatch || companyMatch) {
+          buyerNameStatus = 'PASS';
+        } else {
+          buyerNameStatus = 'FAIL';
+          buyerNameReason = "The buyer name on the uploaded contract doesn’t match the name on your account.";
+          validationErrors.push(`Buyer name doesn’t match: Account="${expectedBuyerRaw || 'Unknown'}" vs Contract="${contractBuyerRaw || 'Unknown'}"`);
+        }
+      }
+
+      setBuyerErrorInfo({
+        status: buyerNameStatus,
+        expectedName: expectedBuyerRaw || null,
+        contractBuyerName: contractBuyerRaw || null,
+        reason: buyerNameReason || null
+      });
       console.log('[Verification] Comparing entered data vs extracted:', {
         entered: dealData,
         extracted: extracted
@@ -288,22 +343,7 @@ export default function ContractVerify() {
         }
       }
 
-      // 8. Verify buyer name matches investor legal name
-      if (extracted.buyer_name || extracted.buyer?.name || extracted.buyer) {
-        const extractedBuyer = normalizeName(extracted.buyer_name || extracted.buyer?.name || extracted.buyer);
-        const legalName = (() => {
-          const first = (profile?.verified_first_name || '').trim();
-          const last = (profile?.verified_last_name || '').trim();
-          const full = (profile?.full_name || '').trim();
-          const combined = `${first} ${last}`.trim();
-          return normalizeName(combined || full);
-        })();
-        if (legalName && extractedBuyer && legalName !== extractedBuyer) {
-          validationErrors.push(`❌ Buyer Name: Your legal name "${profile?.full_name || `${profile?.verified_first_name || ''} ${profile?.verified_last_name || ''}`.trim()}" does not match the buyer on the contract ("${extracted.buyer_name || extracted.buyer?.name || extracted.buyer}")`);
-        }
-      }
-
-      // 9. Verify seller name
+      // 8. Verify seller name
       if (dealData.sellerName && extracted.seller_info?.seller_name) {
         const inputName = normalizeName(dealData.sellerName);
         const extractedName = normalizeName(extracted.seller_info.seller_name);
@@ -328,7 +368,7 @@ export default function ContractVerify() {
         }
       }
 
-      // 10. Verify closing date (normalized YYYY-MM-DD)
+      // 9. Verify closing date (normalized YYYY-MM-DD)
       if (dealData.closingDate && extracted.key_dates?.closing_date) {
         try {
           const inputDate = new Date(dealData.closingDate).toISOString().split('T')[0];
@@ -351,7 +391,7 @@ export default function ContractVerify() {
         }
       }
 
-      // 11. Verify contract date if entered
+      // 10. Verify contract date if entered
       if (dealData.contractDate && extracted.key_dates?.contract_date) {
         try {
           const inputDate = new Date(dealData.contractDate).toISOString().split('T')[0];
@@ -385,6 +425,20 @@ export default function ContractVerify() {
         toast.success("Contract verified successfully!");
       }
 
+      // Persist additive result on session (no schema changes) for downstream UI if needed
+      try {
+        const draft = JSON.parse(sessionStorage.getItem('newDealDraft') || '{}');
+        draft.__verificationResult = {
+          ...(draft.__verificationResult || {}),
+          buyerNameCheck: {
+            status: buyerNameStatus,
+            expectedName: expectedBuyerRaw || null,
+            contractBuyerName: contractBuyerRaw || null,
+            reason: buyerNameReason || null
+          }
+        };
+        sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
+      } catch (_) {}
     } catch (error) {
       console.error("Verification failed:", error);
       toast.error("Failed to verify contract");
@@ -513,6 +567,7 @@ export default function ContractVerify() {
   }
 
   return (
+    <StepGuard requiredStep={6}>
     <div className="min-h-screen bg-transparent py-8 px-6">
       <div className="max-w-2xl mx-auto">
         {/* Header */}
@@ -545,6 +600,33 @@ export default function ContractVerify() {
                 </li>
               ))}
             </ul>
+            {/* Buyer name mismatch helper UI (inline) */}
+            <div className="mb-4 text-xs text-red-300">
+              If the buyer name doesn’t match your account:
+              <ul className="list-disc ml-5 mt-1 space-y-1">
+                <li>Re-upload the correct contract with your name listed as the buyer</li>
+                {!isNameLocked && (
+                  <li>Or update your profile name, then retry verification</li>
+                )}
+              </ul>
+              <div className="mt-2 flex gap-2">
+                <Button
+                  onClick={() => document.querySelector('input[type=file][accept=\"application/pdf\"]').click()}
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full h-8 px-3 text-xs"
+                >
+                  Re-upload contract
+                </Button>
+                {!isNameLocked && (
+                  <Button
+                    onClick={() => navigate(createPageUrl('AccountProfile'))}
+                    variant="outline"
+                    className="rounded-full h-8 px-3 text-xs"
+                  >
+                    Edit my name
+                  </Button>
+                )}
+              </div>
+            </div>
             <Button
               onClick={() => {
                 const editDealId = dealIdFromUrl || dealData?.dealId;
@@ -700,5 +782,6 @@ export default function ContractVerify() {
         </div>
       </div>
     </div>
+    </StepGuard>
   );
 }

@@ -91,9 +91,55 @@ export function useRooms() {
         const response = await base44.functions.invoke('listMyRoomsEnriched');
         const rooms = response.data?.rooms || [];
         
-        console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side, no N+1)`);
+        // Filter invalid/legacy rooms defensively (must have a deal). Allow pipeline-only "orphan" entries for investors.
+        const safeRooms = rooms.filter(r => r && r.deal_id);
         
-        return rooms;
+        // console.log(`[useRooms] Loaded ${rooms.length} enriched rooms (server-side); using ${safeRooms.length} safe rooms`);
+        
+        try {
+          // Dedupe by deal_id: keep the most relevant room (signed > accepted > requested > others), then latest update
+          const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed) ? 4 : r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+          const byDeal = new Map();
+          for (const r of safeRooms) {
+            const normId = String(r?.deal_id || '').trim();
+            if (!normId) continue;
+            const prev = byDeal.get(normId);
+            if (!prev) { byDeal.set(normId, r); continue; }
+            const sA = score(r), sB = score(prev);
+            const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+            const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+            if (sA > sB || (sA === sB && tA > tB)) {
+              byDeal.set(normId, r);
+            }
+          }
+          const uniqueWithDeal = Array.from(byDeal.values());
+          // Secondary defensive dedupe: collapse rooms that look like the same deal (same address/city/state/zip/budget)
+          const sig = (r) => [
+           String(r?.property_address || '').toLowerCase().replace(/\s+/g,' ').trim(),
+           String(r?.city || '').toLowerCase(),
+           String(r?.state || '').toLowerCase(),
+           String(r?.zip || '').trim().slice(0,10),
+           Number(Math.round(Number(r?.budget || 0)))
+          ].join('|');
+          const bySignature = new Map();
+          for (const r of uniqueWithDeal) {
+            const k = sig(r);
+            const prev = bySignature.get(k);
+            if (!prev) { bySignature.set(k, r); continue; }
+            const sA = score(r), sB = score(prev);
+            const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+            const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+            if (sA > sB || (sA === sB && tA > tB)) bySignature.set(k, r);
+          }
+          const deduped = Array.from(bySignature.values())
+           .filter(r => r?.pipeline_stage !== 'canceled')
+           // Extra guard: ensure uniqueness by normalized deal_id
+           .filter((r, idx, arr) => arr.findIndex(x => String(x.deal_id||'').trim() === String(r.deal_id||'').trim()) === idx);
+          return deduped.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+        } catch (e) {
+          console.error('[useRooms] dedupe error:', e);
+          return rooms;
+        }
       } catch (error) {
         console.error('[useRooms] Error loading rooms:', error);
         return [];

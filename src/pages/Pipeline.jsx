@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import LoadingAnimation from "@/components/LoadingAnimation";
+
 import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
-  Clock, CheckSquare, XCircle, MessageSquare, Circle
+  Clock, CheckSquare, XCircle, MessageSquare, Circle, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { setCachedDeal } from "@/components/utils/dealCache";
@@ -22,16 +22,20 @@ import { requireInvestorSetup } from "@/components/requireInvestorSetup";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
+import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
-import { StepGuard } from "@/components/StepGuard";
 
 function PipelineContent() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
   const { profile, loading, refresh } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
+  const [identity, setIdentity] = useState(null);
+  const [identityLoaded, setIdentityLoaded] = useState(false);
 
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
@@ -62,6 +66,60 @@ function PipelineContent() {
       }
     })();
   }, [loading, profile, refresh]);
+
+  // Load identity status once for setup gating
+  useEffect(() => {
+    if (!profile?.id) return;
+    (async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        setIdentity(data?.identity || null);
+      } catch (_) {
+        // noop
+      } finally {
+        setIdentityLoaded(true);
+      }
+    })();
+  }, [profile?.id]);
+
+  // Auto-refresh identity while under review so the banner updates and hides when done
+  useEffect(() => {
+    if (!profile?.id) return;
+    const isUnderReview = String(identity?.verificationStatus || '').toUpperCase() === 'PROCESSING';
+    if (!isUnderReview) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const { data } = await base44.functions.invoke('getIdentityStatus');
+        const status = String(data?.identity?.verificationStatus || '').toUpperCase();
+        setIdentity(data?.identity || null);
+        if (status === 'VERIFIED') {
+          try { if (profile?.id) { await base44.entities.Profile.update(profile.id, { identity_status: 'approved', identity_verified_at: new Date().toISOString() }); } } catch (_) {}
+          await refresh();
+          clearInterval(interval);
+        }
+      } catch (_) { /* noop */ }
+    }, 8000);
+
+    return () => clearInterval(interval);
+  }, [profile?.id, identity?.verificationStatus, profile?.identity_status]);
+
+  // Backfill identity_status immediately once VERIFIED, then refresh profile
+  useEffect(() => {
+    if (!profile?.id) return;
+    const status = String(identity?.verificationStatus || '').toUpperCase();
+    if (status === 'VERIFIED' && !(profile?.identity_status === 'approved' || profile?.identity_status === 'verified')) {
+      (async () => {
+        try {
+          await base44.entities.Profile.update(profile.id, {
+            identity_status: 'approved',
+            identity_verified_at: new Date().toISOString(),
+          });
+          await refresh();
+        } catch (_) {}
+      })();
+    }
+  }, [profile?.id, profile?.identity_status, identity?.verificationStatus, refresh]);
 
   // Manual dedup handler
   const handleDedup = async () => {
@@ -106,11 +164,32 @@ function PipelineContent() {
   const isAgent = profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor';
 
+  // Setup completion gating (must be 4/4)
+  const onboardingComplete = Boolean(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version);
+  const ndaComplete = !!profile?.nda_accepted;
+  const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
+  const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
+  const identityComplete = Boolean(
+    (identity && String(identity.verificationStatus || '').toUpperCase() === 'VERIFIED') ||
+    (profile?.identity_status === 'approved' || profile?.identity_status === 'verified')
+  );
+  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete) : true;
+  const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
+
   // 2. Load Active Deals via Server-Side Access Control
   const { data: dealsData = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+    initialData: () => {
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('pipelineDealsCache') || '[]');
+        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+      } catch { return undefined; }
+    },
+    initialDataUpdatedAt: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       if (!profile?.id) return [];
       
@@ -125,8 +204,16 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(dealsData)) {
+        sessionStorage.setItem('pipelineDealsCache', JSON.stringify(dealsData));
+      }
+    } catch (_) {}
+  }, [dealsData]);
 
   const uniqueDealsData = useMemo(() => {
     if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
@@ -172,6 +259,7 @@ function PipelineContent() {
     queryKey: ['activities', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
       // Get all deals for this user
@@ -192,6 +280,15 @@ function PipelineContent() {
     queryKey: ['rooms'],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+    initialData: () => {
+      try {
+        const cached = JSON.parse(sessionStorage.getItem('roomsCache') || '[]');
+        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+      } catch { return undefined; }
+    },
+    initialDataUpdatedAt: 0,
+    refetchOnMount: true,
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRooms');
@@ -199,27 +296,117 @@ function PipelineContent() {
     },
     enabled: !!profile?.id,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(rooms)) {
+        sessionStorage.setItem('roomsCache', JSON.stringify(rooms));
+      }
+    } catch (_) {}
+  }, [rooms]);
+
+  // Force refresh after DocuSign return
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('signed') === '1') {
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+      queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
+      refetchDeals();
+      refetchRooms();
+    }
+  }, [location.search, profile?.id, profile?.user_role]);
 
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
       const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      // Show rooms with requested status OR old pending_agent_review status (migration fallback)
-      return allRooms.filter(r => 
-        r.request_status === 'requested' || 
-        r.deal_status === 'pending_agent_review' ||
-        (!r.request_status && !r.deal_status) // New rooms without status
+      // Only VALID, non-orphan, request-status rooms for this agent; dedupe by deal_id
+      const candidates = (allRooms || []).filter(r =>
+        r &&
+        r.agentId === profile.id &&
+        r.deal_id &&
+        r.investorId &&
+        !r.is_orphan &&
+        r.request_status === 'requested' &&
+        r.request_status !== 'rejected'
       );
+      const byDeal = new Map();
+      for (const r of candidates) {
+        const prev = byDeal.get(r.deal_id);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) byDeal.set(r.deal_id, r);
+      }
+      // Hide requests for deals that already have an accepted/signed room (by any agent)
+      const list = Array.from(byDeal.values());
+      const dealIds = Array.from(new Set(list.map(r => r.deal_id)));
+      const roomsByDeal = await Promise.all(
+        dealIds.map(id => base44.entities.Room.filter({ deal_id: id }))
+      );
+      const lockedDeals = new Set();
+      roomsByDeal.forEach(rows => {
+        (rows || []).forEach(rr => {
+          if (rr?.request_status === 'accepted' || rr?.request_status === 'signed' || rr?.agreement_status === 'fully_signed') {
+            lockedDeals.add(rr.deal_id);
+          }
+        });
+      });
+      // Validate that the underlying deal exists and is not archived
+      const dealRows = await Promise.all(
+        dealIds.map(id => base44.entities.Deal.filter({ id }))
+      );
+      const validDeals = new Set();
+      const dealsById = new Map();
+      dealRows.forEach(rows => {
+        const d = rows && rows[0];
+        if (d) {
+          dealsById.set(d.id, d);
+          if (d.status !== 'archived') validDeals.add(d.id);
+        }
+      });
+      // Preliminary: remove locked/archived/mismatched investor rooms
+      const prelim = list
+        .filter(r => !lockedDeals.has(r.deal_id))
+        .filter(r => validDeals.has(r.deal_id))
+        .filter(r => {
+          const d = dealsById.get(r.deal_id);
+          return d && d.investor_id && r.investorId === d.investor_id;
+        });
+      // Dedupe by natural signature (address/city/state/price), keep most recent
+      const norm = (v) => (v ?? '').toString().trim().toLowerCase();
+      const bySig = new Map();
+      for (const r of prelim) {
+        const d = dealsById.get(r.deal_id);
+        const addr = d?.property_address || r.property_address || r.deal_title || r.title || '';
+        const price = (d?.purchase_price ?? r.budget ?? 0);
+        const sig = `${norm(addr)}|${norm(r.city)}|${norm(r.state)}|${Number(price)}`;
+        const prev = bySig.get(sig);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
+        if (!prev || tA > tB) bySig.set(sig, r);
+      }
+      const deduped = Array.from(bySig.values()).sort((a, b) =>
+        new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
+      );
+      // Final legitimacy filter: require basic location + budget and not fully signed (counterparty may be hidden for agents)
+      const legit = deduped.filter(r =>
+        (Boolean(r.city) || Boolean(r.state)) &&
+        Number(r.budget || 0) > 0 &&
+        !r.is_fully_signed
+      );
+      return legit;
     },
     enabled: !!profile?.id && isAgent,
     refetchOnWindowFocus: false,
-    refetchOnMount: false
+    
   });
 
   // 4b. Load Deal Appointments for visible deals
@@ -227,6 +414,7 @@ function PipelineContent() {
     queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
       const items = await base44.entities.DealAppointments.list('-updated_date', 500);
@@ -244,8 +432,11 @@ function PipelineContent() {
   const deals = useMemo(() => {
     // Index rooms by deal_id
     const roomMap = new Map();
+    const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
     rooms.forEach(r => {
-      if (r.deal_id && !r.is_orphan) {
+      if (!r?.deal_id) return;
+      const current = roomMap.get(r.deal_id);
+      if (!current || rank(r) > rank(current)) {
         roomMap.set(r.deal_id, r);
       }
     });
@@ -308,6 +499,7 @@ function PipelineContent() {
         customer_name: counterpartyName,
         agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
         agent_request_status: room?.request_status || null,
+        agreement_status: room?.agreement_status || null,
 
          // Dates
          created_date: deal.created_date,
@@ -328,24 +520,6 @@ function PipelineContent() {
   }, [dealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {
-    // Investor gating: require agent selection and fully signed agreement before opening room
-    if (!isAgent) {
-      if (!deal.agent_id) {
-        navigate(createPageUrl('AgentMatching') + `?dealId=${deal.deal_id}`);
-        return;
-      }
-      try {
-        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
-        const ag = agRes?.data?.agreement;
-        if (!ag || ag.status !== 'fully_signed') {
-          navigate(`${createPageUrl('ContractVerify')}?dealId=${deal.deal_id}`);
-          return;
-        }
-      } catch (e) {
-        navigate(`${createPageUrl('ContractVerify')}?dealId=${deal.deal_id}`);
-        return;
-      }
-    }
     // Prefetch deal details and agreement for instant hydration
     if (deal?.deal_id) {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
@@ -373,7 +547,7 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}&tab=agreement`);
       return;
     }
 
@@ -395,14 +569,20 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${existing.id}`);
+      navigate(`${createPageUrl("Room")}?roomId=${existing.id}&tab=agreement`);
       return;
     }
 
     // Resolve agent for room creation: agents default to themselves
     const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
     if (!agentProfileId) {
-      navigate(createPageUrl("AgentMatching") + `?dealId=${deal.deal_id}`);
+      toast.info('Select an agent for this deal to open a room (use the deal card menu).');
+      return;
+    }
+
+    // If investor: do NOT create a room before signing. Route to agreement first
+    if (!isAgent) {
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
 
@@ -427,7 +607,7 @@ function PipelineContent() {
         };
         setCachedDeal(deal.deal_id, masked);
       }
-      navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
+      navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
     } catch (error) {
       console.error("Failed to create/find room:", error);
       toast.error("Failed to open conversation");
@@ -497,6 +677,8 @@ function PipelineContent() {
     const m = new Map();
     PIPELINE_STAGES.forEach(s => m.set(s.id, []));
     deals.forEach(d => {
+      // Agents: hide deals from the board until the agreement is fully signed
+      if (isAgent && (!d.is_fully_signed)) return;
       if (isAgent && d.agent_request_status === 'rejected') return;
       const arr = m.get(d.pipeline_stage) || [];
       arr.push(d);
@@ -505,13 +687,11 @@ function PipelineContent() {
     return m;
   }, [deals, isAgent]);
 
-  if (loading || !profile || loadingDeals || deduplicating) {
+  if (deduplicating) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-center">
-          <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
-          {deduplicating && <p className="text-sm text-[#808080]">Organizing your deals...</p>}
-          {(!deduplicating) && <p className="text-sm text-[#808080]">Preparing your workspace...</p>}
+          <p className="text-sm text-[#808080]">Organizing your deals...</p>
         </div>
       </div>
     );
@@ -524,11 +704,26 @@ function PipelineContent() {
         <div className="flex-1 overflow-auto px-6 pb-6">
           <div className="max-w-[1800px] mx-auto">
             
+            {/* Identity Reviewing Banner */}
+            {identityLoaded && String(identity?.verificationStatus || '').toUpperCase() === 'PROCESSING' && (
+              <div className="mb-6 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-4">
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-4 h-4 text-[#60A5FA]" />
+                  <div>
+                    <h2 className="text-sm font-semibold text-[#FAFAFA]">Reviewing your identity</h2>
+                    <p className="text-xs text-[#808080]">Stripe is reviewing your verification. This usually takes a few minutes.</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Setup Checklist */}
-            <div className="mb-6">
-              <SetupChecklist profile={profile} />
-            </div>
-            
+            {identityLoaded && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
+              <div className="mb-6">
+                <SetupChecklist profile={profile} onRefresh={refresh} />
+              </div>
+            )}
+
             {/* Pending Requests for Agents */}
             {isAgent && pendingRequests.length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
@@ -540,10 +735,10 @@ function PipelineContent() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pendingRequests.map((room) => (
-                    <div 
-                      key={room.id}
-                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
-                    >
+                   <div 
+                     key={`${room.deal_id}-${room.id}`}
+                     className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
+                   >
                       <div className="flex items-start justify-between mb-3">
                         <div className="flex-1">
                           <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
@@ -558,11 +753,12 @@ function PipelineContent() {
                         </span>
                       </div>
                       <Button
-                        onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}`)}
-                        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2"
-                      >
-                        Review Request
-                      </Button>
+                         onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&tab=agreement`)}
+                         disabled={!agentSetupComplete}
+                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                       >
+                         Review Deal
+                       </Button>
                     </div>
                   ))}
                 </div>
@@ -671,12 +867,10 @@ function PipelineContent() {
                   </div>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-
-
-                {isInvestor && (
+              <div className="flex items-center gap-3 ml-4 sm:ml-6">
+                {(isInvestor && onboardingComplete && subscriptionComplete && ndaComplete) && (
                   <Button 
-                    onClick={async () => {
+                    onClick={() => {
                       try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
                       navigate(createPageUrl("NewDeal"));
                     }}
@@ -685,6 +879,12 @@ function PipelineContent() {
                     <Plus className="w-4 h-4 mr-2" /> New Deal
                   </Button>
                 )}
+                <Button
+                  onClick={() => setHelpOpen(true)}
+                  className="bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full"
+                >
+                  Tutorials
+                </Button>
               </div>
             </div>
 
@@ -775,7 +975,7 @@ function PipelineContent() {
 
                                       {/* Action Buttons */}
                                       <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
-                                        {(!isAgent && deal.agent_request_status === 'rejected') ? (
+                                        {(!isAgent && deal.agent_request_status === 'rejected' && deal.agreement_status !== 'investor_signed' && deal.agreement_status !== 'fully_signed' && deal.agreement_status !== 'attorney_review_pending') ? (
                                           <Button
                                             onClick={(e) => {
                                               e.stopPropagation();
@@ -793,9 +993,10 @@ function PipelineContent() {
                                               handleDealClick(deal);
                                             }}
                                             size="sm"
-                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto"
+                                            disabled={isAgent && !agentSetupComplete}
+                                            className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto disabled:opacity-60 disabled:cursor-not-allowed"
                                           >
-                                            {isInvestor ? (!deal.agent_id ? 'Choose Agent' : (deal.is_fully_signed ? 'Open Deal Room' : 'Sign Agreement')) : 'Open Deal Room'}
+                                            Open Deal Room
                                           </Button>
                                         )}
                                         {isInvestor && (
@@ -832,16 +1033,17 @@ function PipelineContent() {
           </div>
         </div>
       </div>
+      <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} />
     </>
   );
 }
 
+
+
 export default function Pipeline() {
   return (
     <AuthGuard requireAuth={true}>
-      <StepGuard requiredStep={6}>
-        <PipelineContent />
-      </StepGuard>
+      <PipelineContent />
     </AuthGuard>
   );
 }

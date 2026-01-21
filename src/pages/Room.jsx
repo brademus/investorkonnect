@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ContractWizard from "@/components/ContractWizard";
 import LoadingAnimation from "@/components/LoadingAnimation";
+import { StepGuard } from "@/components/StepGuard";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
 import LegalAgreementPanel from "@/components/LegalAgreementPanel";
@@ -36,6 +37,28 @@ const shouldMaskAddress = (profile, room, deal) => {
   const isFullySigned = !!(room?.is_fully_signed || deal?.is_fully_signed);
   return isAgentView && !isFullySigned;
 };
+
+// Robust check to determine if a message was sent by the current user/profile
+function isMessageFromMe(m, authUser, currentProfile) {
+  // 1) Respect optimistic flag immediately
+  if (m?._isMe === true) return true;
+
+  // 2) Prefer stable auth user ID when available
+  const authUserId = authUser?.id;
+  if (authUserId && (m?.sender_user_id === authUserId || m?.senderUserId === authUserId)) return true;
+
+  // 3) Fallback to profile id
+  const myProfileId = currentProfile?.id;
+  if (myProfileId && (m?.sender_profile_id === myProfileId || m?.senderProfileId === myProfileId || m?.sender_id === myProfileId)) return true;
+
+  // 4) Legacy email-based fallback
+  const myEmail = (currentProfile?.email || '').toLowerCase().trim();
+  const createdBy = (m?.created_by || '').toLowerCase().trim();
+  if (myEmail && createdBy && createdBy === myEmail) return true;
+
+  return false;
+}
+
 
 // Helper to build a minimal deal snapshot from room for instant render
 function buildDealFromRoom(room, maskAddress = false) {
@@ -69,7 +92,7 @@ function useMyRooms() {
   };
 }
 
-function useMessages(roomId) {
+function useMessages(roomId, authUser, currentProfile) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
@@ -83,7 +106,7 @@ function useMessages(roomId) {
   // Start loading on room switch but keep previous messages until new ones arrive
   useEffect(() => {
     setLoading(true);
-  }, [roomId]);
+  }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -110,15 +133,16 @@ function useMessages(roomId) {
               );
             });
 
-            // Create a map of all real message IDs for deduplication
-            const realMessageIds = new Set(messages.map(m => m.id));
+            // Stabilize who-is-me mapping to prevent bubble side flicker
+            const stabilized = messages.map(m => ({ ...m, _isMe: isMessageFromMe(m, authUser, currentProfile) }));
 
             // Combine real messages + active optimistic, remove duplicates by ID
-            const combined = [...messages, ...activeOptimistic];
+            const combined = [...stabilized, ...activeOptimistic];
             const seen = new Set();
             const deduplicated = combined.filter(m => {
-              if (seen.has(m.id)) return false;
-              seen.add(m.id);
+              const key = m.id || `${m.sender_profile_id}-${m.created_date}-${m.body?.slice(0,20)}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
               return true;
             });
 
@@ -137,7 +161,7 @@ function useMessages(roomId) {
     fetchMessages();
     const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
     return () => { cancelled = true; clearInterval(interval); };
-  }, [roomId]);
+  }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
   return { items, loading, setItems, messagesEndRef };
 }
@@ -250,9 +274,9 @@ export default function Room() {
   const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
-  const { profile } = useCurrentProfile();
+  const { profile, user } = useCurrentProfile();
   const { rooms } = useMyRooms();
-  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId);
+  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
   const queryClient = useQueryClient();
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
@@ -262,13 +286,22 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
-  // Seed initial view from URL (board/tab)
+  const [lastMyMessageId, setLastMyMessageId] = useState(null);
+  
+  // Removed tab-triggered refetch: files/photos are prefetched once when Deal Board opens
+  // and kept fresh via realtime subscriptions and background updates.
+  
+  // Open Agreement tab automatically when tab=agreement is in URL
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('board') === '1') setShowBoard(true);
-    const t = p.get('tab');
-    if (t) setActiveTab(t);
-  }, []);
+    if (p.get('tab') === 'agreement') {
+      setShowBoard(true);
+      setActiveTab('agreement');
+    }
+  }, [roomId, location.search]);
+
+
+
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -281,6 +314,17 @@ export default function Room() {
   const [boardLoading, setBoardLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
   const lastSentRef = useRef(0);
+
+  // When opening the Deal Board (including via URL), preload everything once
+  useEffect(() => {
+    if (!showBoard || !currentRoom?.deal_id) return;
+    setBoardLoading(true);
+    (async () => {
+      const data = await prefetchDeal();
+      if (data) setDeal(data);
+      setBoardLoading(false);
+    })();
+  }, [showBoard, currentRoom?.deal_id]);
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
@@ -303,14 +347,18 @@ export default function Room() {
   // Extracted details (temporary, require confirmation before applying)
   const [extractedDraft, setExtractedDraft] = useState(null);
 
-        // Unified post-sign flag (strict: do NOT infer from files)
+        // Unified post-sign flag: chat unlocks ONLY when both parties have fully signed
         const isWorkingTogether = useMemo(() => {
           return (
             currentRoom?.agreement_status === 'fully_signed' ||
             currentRoom?.is_fully_signed === true ||
             deal?.is_fully_signed === true
           );
-        }, [currentRoom?.agreement_status, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
+        }, [
+          currentRoom?.agreement_status,
+          currentRoom?.is_fully_signed,
+          deal?.is_fully_signed
+        ]);
 
         // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
@@ -387,7 +435,9 @@ export default function Room() {
             // Include property details so UI can render even if deal object not yet refreshed elsewhere
             property_type: freshDeal.property_type,
             property_details: freshDeal.property_details,
-            proposed_terms: freshDeal.proposed_terms
+            proposed_terms: freshDeal.proposed_terms,
+            photos: freshRoom?.photos || [],
+            files: freshRoom?.files || []
           });
           
 
@@ -400,20 +450,42 @@ export default function Room() {
     }
   };
 
-  // Prefetch secure deal details without blocking UI
+  // Prefetch board data: deal, latest room photos/files, and appointments
   const prefetchDeal = async () => {
     try {
       const did = currentRoom?.deal_id;
       if (!did) return null;
+
       const cached = getCachedDeal(did);
-      if (cached) return cached;
-      const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: did });
-      if (res?.data) setCachedDeal(did, res.data);
-      return res?.data || null;
-    } catch (_) { return null; }
+      // Kick off all fetches in parallel
+      const [res, roomRows, apptRows] = await Promise.all([
+        base44.functions.invoke('getDealDetailsForUser', { dealId: did }),
+        base44.entities.Room.filter({ id: roomId }),
+        base44.entities.DealAppointments.filter({ dealId: did }).catch(() => [])
+      ]);
+
+      const freshDeal = res?.data || cached || null;
+      if (freshDeal) setCachedDeal(did, freshDeal);
+
+      // Ensure we have the latest shared files/photos for instant Files/Photos tabs
+      if (Array.isArray(roomRows) && roomRows[0]) {
+        const r = roomRows[0];
+        setCurrentRoom(prev => prev ? { ...prev, photos: r.photos || [], files: r.files || [] } : r);
+      }
+
+      // Seed appointments so Details tab renders instantly
+      if (Array.isArray(apptRows) && apptRows[0]) {
+        setDealAppts(apptRows[0]);
+      }
+
+      return freshDeal;
+    } catch (_) {
+      return null;
+    }
   };
 
   // Prefetch Pipeline data to make back navigation instant
+  // NOTE: prefetchPipeline removed from back button to avoid auth/session side-effects
   const prefetchPipeline = () => {
     try {
       if (profile?.id) {
@@ -430,29 +502,32 @@ export default function Room() {
           staleTime: 60_000
         });
       }
-      // Warm rooms cache (key matches Pipeline)
+      // Warm rooms cache with ENRICHED + DEDUPED data (same key as useRooms)
       queryClient.prefetchQuery({
         queryKey: ['rooms'],
         queryFn: async () => {
-          const res = await base44.functions.invoke('listMyRooms');
-          return res.data;
+          const res = await base44.functions.invoke('listMyRoomsEnriched');
+          return res.data?.rooms || [];
         },
         staleTime: 60_000
       });
     } catch (_) {}
   };
   
-  // CRITICAL: Reload after DocuSign return with signed=1
+  // CRITICAL: Reload after DocuSign return with signed=1 and flip room flags
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') && roomId && currentRoom?.deal_id) {
       console.log('[Room] 🔄 POST-SIGNING RELOAD TRIGGERED');
-      
+
       const doSync = async () => {
         try {
-          await base44.functions.invoke('docusignSyncEnvelope', {
-            deal_id: currentRoom.deal_id
-          });
+          const syncRes = await base44.functions.invoke('docusignSyncEnvelope', { deal_id: currentRoom.deal_id });
+          // If fully signed, mark room accordingly to unlock UI immediately
+          const ag = (await base44.functions.invoke('getLegalAgreement', { deal_id: currentRoom.deal_id })).data?.agreement;
+          if (ag?.status === 'fully_signed') {
+            try { await base44.entities.Room.update(roomId, { agreement_status: 'fully_signed', request_status: 'signed', signed_at: new Date().toISOString(), is_fully_signed: true }); } catch (_) {}
+          }
           await refreshRoomState();
           queryClient.invalidateQueries({ queryKey: ['rooms'] });
           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
@@ -461,7 +536,7 @@ export default function Room() {
           await refreshRoomState();
         }
       };
-      
+
       doSync();
       setTimeout(doSync, 1000);
       setTimeout(doSync, 2500);
@@ -492,6 +567,8 @@ export default function Room() {
               ...safeRoom,
               title: maskedTitle,
               property_address: shouldMaskAddress(profile, safeRoom, null) ? null : safeRoom?.property_address,
+              photos: safeRoom?.photos || [],
+              files: safeRoom?.files || []
             });
           } else {
             setCurrentRoom(null);
@@ -552,6 +629,8 @@ export default function Room() {
                 property_type: deal.property_type,
                 property_details: deal.property_details,
                 proposed_terms: deal.proposed_terms,
+                photos: rawRoom?.photos || [],
+                files: rawRoom?.files || [],
                 counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
               });
             } else {
@@ -671,7 +750,7 @@ export default function Room() {
         name: m.metadata.file_name || 'photo.jpg',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: 'image'
@@ -683,7 +762,7 @@ export default function Room() {
         name: m.metadata.file_name || 'document',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: m.metadata.file_type || 'application/octet-stream'
@@ -887,6 +966,10 @@ export default function Room() {
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
+    if (!isWorkingTogether) {
+      toast.error('Chat unlocks after both parties sign the agreement.');
+      return;
+    }
     // Client-side throttle: 1.5s between sends
     const now = Date.now();
     if (now - (lastSentRef.current || 0) < 1500) {
@@ -903,9 +986,12 @@ export default function Room() {
       id: tempId,
       room_id: roomId,
       sender_profile_id: profile?.id,
+      sender_user_id: profile?.user_id,
+      senderUserId: profile?.user_id,
       body: t,
       created_date: new Date().toISOString(),
-      _isOptimistic: true
+      _isOptimistic: true,
+      _isMe: true
     };
     setItems(prev => [...prev, optimisticMessage]);
     
@@ -1053,16 +1139,76 @@ ${dealContext}`;
   }, [messages.length]);
 
   // Memoize filtered rooms to prevent unnecessary recalculations
+  // Final no-dupe guarantee: we dedupe again here by deal_id and by signature
   const filteredRooms = useMemo(() => {
-    return (rooms || []).filter(r => {
-      // Only show real conversations with valid counterparty
-      if (r.is_orphan) return false;
-      if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
-      
-      if (!searchConversations) return true;
-      return r.counterparty_name?.toLowerCase().includes(searchConversations.toLowerCase());
-    });
-  }, [rooms, searchConversations]);
+    try {
+      const isAgent = profile?.user_role === 'agent';
+      const myId = profile?.id;
+      const normId = (v) => String(v || '').trim();
+      const score = (r) => (r?.agreement_status === 'fully_signed' || r?.is_fully_signed || r?.request_status === 'signed') ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : 0;
+
+      // 1) Filter and group by normalized deal_id
+      const byDeal = new Map();
+      (rooms || []).forEach((r) => {
+        if (!r) return;
+        const did = normId(r.deal_id);
+        if (!did) return;
+
+        // Role-specific visibility
+        if (isAgent) {
+          if (myId && r.agentId && r.agentId !== myId) return;
+          const ok = !r.request_status || ['requested', 'accepted', 'signed'].includes(r.request_status);
+          if (!ok) return;
+        } else if (myId) {
+          if (r.investorId && r.investorId !== myId) return;
+        }
+
+        const prev = byDeal.get(did);
+        if (!prev) { byDeal.set(did, r); return; }
+        const sA = score(r), sB = score(prev);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        if (sA > sB || (sA === sB && tA > tB)) byDeal.set(did, r);
+      });
+
+      // 2) Secondary collapse by signature to catch any deal duplicates with different IDs
+      const makeSig = (r) => [
+        String(r?.property_address || '').toLowerCase().replace(/\s+/g, ' ').trim(),
+        String(r?.city || '').toLowerCase(),
+        String(r?.state || '').toLowerCase(),
+        String(String(r?.zip || '').trim().slice(0, 10)),
+        Number(Math.round(Number(r?.budget || 0)))
+      ].join('|');
+
+      const bySig = new Map();
+      for (const r of byDeal.values()) {
+        const k = makeSig(r);
+        const prev = bySig.get(k);
+        if (!prev) { bySig.set(k, r); continue; }
+        const sA = score(r), sB = score(prev);
+        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
+        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        if (sA > sB || (sA === sB && tA > tB)) bySig.set(k, r);
+      }
+
+      let list = Array.from(bySig.values());
+
+      // 3) Text filter
+      if (searchConversations) {
+        const q = String(searchConversations || '').toLowerCase();
+        list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || '')).toLowerCase().includes(q));
+      }
+
+      // 4) Final guard: ensure unique by normalized deal_id
+      list = list.filter((r, i, arr) => arr.findIndex(x => normId(x.deal_id) === normId(r.deal_id)) === i);
+
+      // 5) Sort newest first
+      return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
+    } catch (e) {
+      console.error('[Room] filteredRooms error:', e);
+      return Array.isArray(rooms) ? rooms.filter(r => r && r.deal_id) : [];
+    }
+  }, [rooms, searchConversations, profile?.user_role, profile?.id]);
 
 
 
@@ -1082,8 +1228,17 @@ ${dealContext}`;
 
         {/* Conversation List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredRooms.map(r => {
+          {filteredRooms
+           .filter(r => !!String(r.deal_id || '').trim())
+           .filter((r, idx, arr) => arr.findIndex(x => String(x.deal_id||'').trim() === String(r.deal_id||'').trim()) === idx)
+           .map(r => {
             const handleClick = () => {
+              if (r.is_orphan) {
+                // Pipeline-only deal: route to Pipeline to continue
+                navigate(createPageUrl("Pipeline"));
+                setDrawer(false);
+                return;
+              }
               // Optimistically set room to avoid momentary mismatch
               // Reset state immediately to avoid cross-room flicker
               setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
@@ -1116,8 +1271,10 @@ ${dealContext}`;
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            onMouseEnter={prefetchPipeline}
-            onClick={() => { prefetchPipeline(); navigate(createPageUrl("Pipeline")); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(createPageUrl("Dashboard"));
+            }}
             variant="outline"
             className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
@@ -1162,7 +1319,7 @@ ${dealContext}`;
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {profile?.user_role === 'investor' && (roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id) && (
+            {false && (
               <Button
                 onClick={() => {
                   const agentId = roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
@@ -1176,34 +1333,41 @@ ${dealContext}`;
             )}
             
             {roomId && (
-              <Button
-                  onMouseEnter={prefetchDeal}
-                  onClick={async () => {
-                    const next = !showBoard;
-                    if (next) {
-                      setBoardLoading(true);
-                      const data = await prefetchDeal();
-                      if (data) {
-                        setDeal(data);
-                      } else if (currentRoom) {
-                        const snap = buildDealFromRoom(currentRoom, maskAddr);
-                        if (snap) setDeal(snap);
+              <>
+                <Button
+                    onMouseEnter={prefetchDeal}
+                    onClick={async () => {
+                      const next = !showBoard;
+                      if (next) {
+                        setBoardLoading(true);
+                        const data = await prefetchDeal();
+                        if (data) {
+                          setDeal(data);
+                        } else if (currentRoom) {
+                          const snap = buildDealFromRoom(currentRoom, maskAddr);
+                          if (snap) setDeal(snap);
+                        }
+                        setShowBoard(true);
+                        setBoardLoading(false);
+                      } else {
+                        setShowBoard(false);
                       }
-                      setShowBoard(true);
-                      setBoardLoading(false);
-                    } else {
-                      setShowBoard(false);
-                    }
-                  }}
-                  className={`rounded-full font-semibold transition-all ${
-                       showBoard 
-                         ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                         : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                     }`}
-                >
-                <FileText className="w-4 h-4 mr-2" />
-                Deal Board
-              </Button>
+                    }}
+                    className={`rounded-full font-semibold transition-all ${
+                         showBoard 
+                           ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                           : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                       }`}
+                  >
+                  <FileText className="w-4 h-4 mr-2" />
+                  Deal Board
+                </Button>
+                {!isWorkingTogether && (
+                  <span className="ml-3 text-xs bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full">
+                    Files, Photos, and Activity unlock after both signatures
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -1277,49 +1441,43 @@ ${dealContext}`;
           {showBoard ? (
             /* Deal Board View with Tabs */
             <div className="space-y-6 max-w-6xl mx-auto relative">
-              {(boardLoading || tabLoading) && (
-                <div className="absolute inset-0 z-20 flex items-center justify-center bg-[#0D0D0D]/80 backdrop-blur-sm">
-                  <LoadingAnimation className="w-24 h-24" />
-                </div>
-              )}
+
               {/* Tab Navigation */}
-              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
-                {(() => {
-                  const all = [
-                    { id: 'details', label: 'Property Details', icon: Info },
-                    { id: 'agreement', label: 'My Agreement', icon: Shield },
-                    { id: 'files', label: 'Files', icon: FileText },
-                    { id: 'photos', label: 'Photos', icon: Image },
-                    { id: 'activity', label: 'Events & Activity', icon: FileText }
-                  ];
-                  const allowed = isWorkingTogether ? all : all.filter(t => ['details','agreement'].includes(t.id));
-                  return allowed.map(tab => {
-                    const Icon = tab.icon;
-                    return (
-                      <button
-                        key={tab.id}
-                        onMouseEnter={() => { if (tab.id === 'agreement') prefetchDeal(); }}
-                        onClick={async () => {
-                          setActiveTab(tab.id);
-                          if (['agreement','files'].includes(tab.id)) {
-                            setTabLoading(true);
-                            const data = await prefetchDeal();
-                            if (data) setDeal(data);
-                            setTabLoading(false);
-                          }
-                        }}
-                        className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
-                          activeTab === tab.id
-                            ? 'bg-[#E3C567] text-black shadow-lg'
-                            : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
-                        }`}
-                      >
-                        <Icon className="w-4 h-4" />
-                        {tab.label}
-                      </button>
-                    );
-                  });
-                })()}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto items-center">
+                {(isWorkingTogether
+                  ? [
+                      { id: 'details', label: 'Property Details', icon: Info },
+                      { id: 'agreement', label: 'My Agreement', icon: Shield },
+                      { id: 'files', label: 'Files', icon: FileText },
+                      { id: 'photos', label: 'Photos', icon: Image },
+                      { id: 'activity', label: 'Events & Activity', icon: FileText }
+                    ]
+                  : [
+                      { id: 'details', label: 'Property Details', icon: Info },
+                      { id: 'agreement', label: 'My Agreement', icon: Shield }
+                    ]
+                ).map(tab => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap ${
+                        activeTab === tab.id
+                          ? 'bg-[#E3C567] text-black shadow-lg'
+                          : 'bg-transparent text-[#808080] hover:bg-[#1F1F1F] hover:text-[#FAFAFA]'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+                <div className="ml-auto pr-2">
+                  {boardLoading && (
+                    <Loader2 className="w-4 h-4 text-[#808080] animate-spin" />
+                  )}
+                </div>
               </div>
 
               {/* Tab Content */}
@@ -1336,19 +1494,21 @@ ${dealContext}`;
                           <h4 className="text-md font-bold text-[#F59E0B] mb-1">
                             {currentRoom?.request_status === 'accepted' 
                               ? 'Limited Access – Sign Agreement to Unlock Full Details' 
-                              : 'Limited Access – Sign Agreement to Enable Chat'}
+                              : 'Limited Access – Accept Request to Enable Chat'
+                            }
                           </h4>
                           <p className="text-sm text-[#FAFAFA]/80">
                             {currentRoom?.request_status === 'accepted'
                               ? 'Full property address and seller details will be visible after both parties sign the agreement.'
-                              : 'Sign the agreement to enable chat and view limited deal information. Full details unlock after both parties sign.'}
+                              : 'Accept this deal request to enable chat and view limited deal information. Full details unlock after signing the agreement.'
+                            }
                           </p>
                         </div>
                       </div>
                     </div>
                   )}
 
-                               {profile?.user_role === 'investor' ? (
+                              {profile?.user_role === 'investor' ? (
                                 /* INVESTOR DEAL BOARD */
                                 <>
                                   {/* 1. DEAL HEADER */}
@@ -1836,19 +1996,24 @@ ${dealContext}`;
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
                   {currentRoom?.deal_id ? (
-                    deal ? (
+                    <div>
                       <LegalAgreementPanel
                         deal={deal}
                         profile={profile}
+                        allowGenerate={false}
+                        initialAgreement={currentRoom?.agreement || null}
                         onUpdate={async () => {
                           await refreshRoomState();
                           queryClient.invalidateQueries({ queryKey: ['rooms'] });
                           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                         }}
                       />
-                    ) : (
-                      <div className="text-center py-8 text-[#808080]">Loading agreement panel...</div>
-                    )
+                      {!deal && (
+                        <div className="hidden" aria-hidden>
+                          Loading agreement panel...
+                        </div>
+                      )}
+                    </div>
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
@@ -1970,7 +2135,7 @@ ${dealContext}`;
                   {activeTab === 'files' && (
                 <div className="space-y-6">
                   {/* Document Checklist: render only when we have stable deal */}
-                  {deal ? (
+                  {deal && (
                     <DocumentChecklist 
                       deal={deal}
                       room={currentRoom}
@@ -1991,8 +2156,6 @@ ${dealContext}`;
                         fetchDeal();
                       }}
                     />
-                  ) : (
-                    <div className="text-center py-8 text-[#808080]">Loading documents...</div>
                   )}
 
                   {/* Shared Files Section */}
@@ -2004,41 +2167,74 @@ ${dealContext}`;
                           const input = document.createElement('input');
                           input.type = 'file';
                           input.onchange = async (e) => {
-                            const file = e.target.files[0];
-                            if (!file) return;
+                                                        const file = e.target.files[0];
+                                                        if (!file) return;
 
-                            // Validate file before upload
-                            const validation = validateSafeDocument(file);
-                            if (!validation.valid) {
-                              toast.error(validation.error);
-                              return;
-                            }
+                                                        // Validate file before upload
+                                                        const validation = validateSafeDocument(file);
+                                                        if (!validation.valid) {
+                                                          toast.error(validation.error);
+                                                          return;
+                                                        }
 
-                            toast.info('Uploading file...');
-                            try {
-                              const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                              const files = currentRoom?.files || [];
-                              await base44.entities.Room.update(roomId, {
-                                files: [...files, {
-                                  name: file.name,
-                                  url: file_url,
-                                  uploaded_by: profile?.id,
-                                  uploaded_by_name: profile?.full_name || profile?.email,
-                                  uploaded_at: new Date().toISOString(),
-                                  size: file.size,
-                                  type: file.type
-                                }]
-                              });
+                                                        toast.info('Uploading file...');
+                                                        try {
+                                                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                                                          const isImage = (file.type || '').startsWith('image/');
 
-                              // Refresh room
-                              const roomData = await base44.entities.Room.filter({ id: roomId });
-                              
-                              if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
-                              toast.success('File uploaded');
-                            } catch (error) {
-                              toast.error('Upload failed');
-                            }
-                          };
+                                                          if (isImage) {
+                                                            // Save to photos and announce in chat
+                                                            const existing = currentRoom?.photos || [];
+                                                            const next = [...existing, {
+                                                              name: file.name,
+                                                              url: file_url,
+                                                              uploaded_by: profile?.id,
+                                                              uploaded_by_name: profile?.full_name || profile?.email,
+                                                              uploaded_at: new Date().toISOString(),
+                                                              size: file.size,
+                                                              type: 'image'
+                                                            }].filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+
+                                                            await base44.entities.Room.update(roomId, { photos: next });
+                                                            setCurrentRoom(prev => prev ? { ...prev, photos: next } : prev);
+
+                                                            await base44.entities.Message.create({
+                                                              room_id: roomId,
+                                                              sender_profile_id: profile?.id,
+                                                              body: `📷 Uploaded photo: ${file.name}`,
+                                                              metadata: { type: 'photo', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                                                            });
+
+                                                            toast.success('Photo uploaded');
+                                                          } else {
+                                                            // Save to files (non-image)
+                                                            const files = currentRoom?.files || [];
+                                                            const nextFiles = [...files, {
+                                                              name: file.name,
+                                                              url: file_url,
+                                                              uploaded_by: profile?.id,
+                                                              uploaded_by_name: profile?.full_name || profile?.email,
+                                                              uploaded_at: new Date().toISOString(),
+                                                              size: file.size,
+                                                              type: file.type
+                                                            }];
+
+                                                            await base44.entities.Room.update(roomId, { files: nextFiles });
+                                                            setCurrentRoom(prev => prev ? { ...prev, files: nextFiles } : prev);
+
+                                                            await base44.entities.Message.create({
+                                                              room_id: roomId,
+                                                              sender_profile_id: profile?.id,
+                                                              body: `📎 Uploaded file: ${file.name}`,
+                                                              metadata: { type: 'file', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                                                            });
+
+                                                            toast.success('File uploaded');
+                                                          }
+                                                        } catch (error) {
+                                                          toast.error('Upload failed');
+                                                        }
+                                                      };
                           input.click();
                         }}
                         className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"
@@ -2282,7 +2478,26 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-
+              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
+              {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                  <div className="flex items-start gap-3 mb-2">
+                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">Review Agreement</h3>
+                      <p className="text-sm text-[#FAFAFA]/80">Go to the My Agreement tab to sign or counter the compensation terms.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      onClick={() => setShowBoard(true) || setActiveTab('agreement')}
+                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                    >
+                      Open My Agreement
+                    </Button>
+                  </div>
+                </div>
+              )}
               
               {/* Show this banner for agents when deal is accepted but not fully signed, OR for investors waiting for signatures */}
               {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
@@ -2355,15 +2570,7 @@ ${dealContext}`;
 
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto space-y-4">
-              {!isWorkingTogether ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center max-w-sm">
-                    <Shield className="w-10 h-10 text-[#E3C567] mx-auto mb-3" />
-                    <p className="text-sm text-[#FAFAFA] font-semibold mb-1">Messaging Locked</p>
-                    <p className="text-xs text-[#808080]">Sign the agreement in the My Agreement tab to unlock chat, files, photos, and activity.</p>
-                  </div>
-                </div>
-              ) : loading ? (
+              {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
@@ -2382,8 +2589,8 @@ ${dealContext}`;
               ) : (
                 <>
                   {messages.map((m) => {
-                    const isMe = m.sender_profile_id === profile?.id;
-                    const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
+                   const isMe = isMessageFromMe(m, user, profile);
+                   const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
                     return (
                       <div
@@ -2398,7 +2605,10 @@ ${dealContext}`;
                                 : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
                             }`}
                           >
-                            {isFileMessage && m.metadata?.type === 'photo' ? (
+                            {(
+                              m.metadata?.type === 'photo' ||
+                              (m.metadata?.type === 'file' && (m.metadata?.file_type || '').startsWith('image/'))
+                            ) ? (
                               <div>
                                 <img 
                                   src={m.metadata.file_url} 
@@ -2442,27 +2652,140 @@ ${dealContext}`;
           )}
         </div>
 
-        {/* Message Input Area - hidden until fully signed */}
-        {isWorkingTogether && (
+        {/* Message Input Area - STAYS AT BOTTOM */}
+        {isWorkingTogether ? (
           <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
-          <div className="flex items-center gap-2">
-              {/* Upload Photo Button */}
-              <button
-                onClick={async () => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.accept = 'image/*';
-                  input.multiple = true;
-                  input.onchange = async (e) => {
-                    const files = Array.from(e.target.files);
-                    if (files.length === 0) return;
-                    
-                    toast.info(`Uploading ${files.length} photo(s)...`);
-                    try {
-                      const uploads = await Promise.all(
-                        files.map(async (file) => {
-                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                          return {
+            <div className="flex items-center gap-2">
+                {/* Upload Photo Button */}
+                <button
+                  onClick={async () => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.accept = 'image/*';
+                    input.multiple = true;
+                    input.onchange = async (e) => {
+                      const files = Array.from(e.target.files);
+                      if (files.length === 0) return;
+                      
+                      toast.info(`Uploading ${files.length} photo(s)...`);
+                      try {
+                        const uploads = await Promise.all(
+                          files.map(async (file) => {
+                            const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                            return {
+                              name: file.name,
+                              url: file_url,
+                              uploaded_by: profile?.id,
+                              uploaded_by_name: profile?.full_name || profile?.email,
+                              uploaded_at: new Date().toISOString(),
+                              size: file.size,
+                              type: file.type
+                            };
+                          })
+                        );
+                        
+                        const existing = currentRoom?.photos || [];
+                        const merged = [...existing, ...uploads];
+                        const unique = merged.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+                        // Optimistic local update; server will sync via chat auto-sync effect
+                        setCurrentRoom(prev => prev ? { ...prev, photos: unique } : prev);
+                        
+                        // Create chat messages for each photo
+                        for (const upload of uploads) {
+                          await base44.entities.Message.create({
+                            room_id: roomId,
+                            sender_profile_id: profile?.id,
+                            body: `📷 Uploaded photo: ${upload.name}`,
+                            metadata: {
+                              type: 'photo',
+                              file_url: upload.url,
+                              file_name: upload.name
+                            }
+                          });
+                        }
+                        
+                        // Log activity
+                        if (currentRoom?.deal_id) {
+                          base44.entities.Activity.create({
+                            type: 'photo_uploaded',
+                            deal_id: currentRoom.deal_id,
+                            room_id: roomId,
+                            actor_id: profile?.id,
+                            actor_name: profile?.full_name || profile?.email,
+                            message: `${profile?.full_name || profile?.email} uploaded ${uploads.length} photo(s)`
+                          }).catch(() => {});
+                        }
+                        
+                        toast.success(`${files.length} photo(s) uploaded to deal`);
+                      } catch (error) {
+                        toast.error('Upload failed');
+                      }
+                    };
+                    input.click();
+                  }}
+                  className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+                  title="Upload photos"
+                >
+                  <Image className="w-5 h-5 text-[#808080]" />
+                </button>
+
+                {/* Upload File Button */}
+                <button
+                  onClick={async () => {
+                    const input = document.createElement('input');
+                    input.type = 'file';
+                    input.onchange = async (e) => {
+                      const file = e.target.files[0];
+                      if (!file) return;
+
+                      const validation = validateSafeDocument(file);
+                      if (!validation.valid) {
+                        toast.error(validation.error);
+                        return;
+                      }
+                      
+                      toast.info('Uploading file...');
+                      try {
+                        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                        const isImage = (file.type || '').startsWith('image/');
+
+                        if (isImage) {
+                          const existing = currentRoom?.photos || [];
+                          const nextPhotos = [...existing, {
+                            name: file.name,
+                            url: file_url,
+                            uploaded_by: profile?.id,
+                            uploaded_by_name: profile?.full_name || profile?.email,
+                            uploaded_at: new Date().toISOString(),
+                            size: file.size,
+                            type: 'image'
+                          }].filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
+
+                          await base44.entities.Room.update(roomId, { photos: nextPhotos });
+                          setCurrentRoom(prev => prev ? { ...prev, photos: nextPhotos } : prev);
+
+                          await base44.entities.Message.create({
+                            room_id: roomId,
+                            sender_profile_id: profile?.id,
+                            body: `📷 Uploaded photo: ${file.name}`,
+                            metadata: { type: 'photo', file_url: file_url, file_name: file.name, file_type: file.type, file_size: file.size }
+                          });
+
+                          if (currentRoom?.deal_id) {
+                            base44.entities.Activity.create({
+                              type: 'photo_uploaded',
+                              deal_id: currentRoom.deal_id,
+                              room_id: roomId,
+                              actor_id: profile?.id,
+                              actor_name: profile?.full_name || profile?.email,
+                              message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
+                            }).catch(() => {});
+                          }
+                          
+                          toast.success('Photo uploaded to deal');
+                        } else {
+                          const files = currentRoom?.files || [];
+                          const nextFiles = [...files, {
                             name: file.name,
                             url: file_url,
                             uploaded_by: profile?.id,
@@ -2470,158 +2793,84 @@ ${dealContext}`;
                             uploaded_at: new Date().toISOString(),
                             size: file.size,
                             type: file.type
-                          };
-                        })
-                      );
-                      
-                      const existing = currentRoom?.photos || [];
-                      const merged = [...existing, ...uploads];
-                      const unique = merged.filter((p, i, arr) => p?.url && arr.findIndex(x => x?.url === p.url) === i);
-                      // Optimistic local update; server will sync via chat auto-sync effect
-                      setCurrentRoom(prev => prev ? { ...prev, photos: unique } : prev);
-                      
-                      // Create chat messages for each photo
-                      for (const upload of uploads) {
-                        await base44.entities.Message.create({
-                          room_id: roomId,
-                          sender_profile_id: profile?.id,
-                          body: `📷 Uploaded photo: ${upload.name}`,
-                          metadata: {
-                            type: 'photo',
-                            file_url: upload.url,
-                            file_name: upload.name
+                          }];
+                          await base44.entities.Room.update(roomId, { files: nextFiles });
+                          
+                          await base44.entities.Message.create({
+                            room_id: roomId,
+                            sender_profile_id: profile?.id,
+                            body: `📎 Uploaded file: ${file.name}`,
+                            metadata: {
+                              type: 'file',
+                              file_url: file_url,
+                              file_name: file.name,
+                              file_size: file.size,
+                              file_type: file.type
+                            }
+                          });
+                          
+                          if (currentRoom?.deal_id) {
+                            base44.entities.Activity.create({
+                              type: 'file_uploaded',
+                              deal_id: currentRoom.deal_id,
+                              room_id: roomId,
+                              actor_id: profile?.id,
+                              actor_name: profile?.full_name || profile?.email,
+                              message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
+                            }).catch(() => {});
                           }
-                        });
-                      }
-                      
-                      // Log activity
-                      if (currentRoom?.deal_id) {
-                        base44.entities.Activity.create({
-                          type: 'photo_uploaded',
-                          deal_id: currentRoom.deal_id,
-                          room_id: roomId,
-                          actor_id: profile?.id,
-                          actor_name: profile?.full_name || profile?.email,
-                          message: `${profile?.full_name || profile?.email} uploaded ${uploads.length} photo(s)`
-                        }).catch(() => {});
-                      }
-                      
-                      toast.success(`${files.length} photo(s) uploaded to deal`);
-                    } catch (error) {
-                      toast.error('Upload failed');
-                    }
-                  };
-                  input.click();
-                }}
-                className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
-                title="Upload photos"
-              >
-                <Image className="w-5 h-5 text-[#808080]" />
-              </button>
-
-              {/* Upload File Button */}
-              <button
-                onClick={async () => {
-                  const input = document.createElement('input');
-                  input.type = 'file';
-                  input.onchange = async (e) => {
-                    const file = e.target.files[0];
-                    if (!file) return;
-
-                    const validation = validateSafeDocument(file);
-                    if (!validation.valid) {
-                      toast.error(validation.error);
-                      return;
-                    }
-                    
-                    toast.info('Uploading file...');
-                    try {
-                      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                      const files = currentRoom?.files || [];
-                      await base44.entities.Room.update(roomId, {
-                        files: [...files, {
-                          name: file.name,
-                          url: file_url,
-                          uploaded_by: profile?.id,
-                          uploaded_by_name: profile?.full_name || profile?.email,
-                          uploaded_at: new Date().toISOString(),
-                          size: file.size,
-                          type: file.type
-                        }]
-                      });
-                      
-                      // Create chat message for file
-                      await base44.entities.Message.create({
-                        room_id: roomId,
-                        sender_profile_id: profile?.id,
-                        body: `📎 Uploaded file: ${file.name}`,
-                        metadata: {
-                          type: 'file',
-                          file_url: file_url,
-                          file_name: file.name,
-                          file_size: file.size,
-                          file_type: file.type
+                          
+                          const roomData = await base44.entities.Room.filter({ id: roomId });
+                          if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
+                          toast.success('File uploaded to deal');
                         }
-                      });
-                      
-                      // Log activity
-                      if (currentRoom?.deal_id) {
-                        base44.entities.Activity.create({
-                          type: 'file_uploaded',
-                          deal_id: currentRoom.deal_id,
-                          room_id: roomId,
-                          actor_id: profile?.id,
-                          actor_name: profile?.full_name || profile?.email,
-                          message: `${profile?.full_name || profile?.email} uploaded ${file.name}`
-                        }).catch(() => {});
+                      } catch (error) {
+                        toast.error('Upload failed');
                       }
-                      
-                      const roomData = await base44.entities.Room.filter({ id: roomId });
-                      
-                      if (roomData?.[0]) setCurrentRoom({ ...currentRoom, files: roomData[0].files });
-                      toast.success('File uploaded to deal');
-                    } catch (error) {
-                      toast.error('Upload failed');
-                    }
-                  };
-                  input.click();
-                }}
-                className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
-                title="Upload file"
-              >
-                <FileText className="w-5 h-5 text-[#808080]" />
-              </button>
-
-              <div className="flex-1 relative">
-                <Input
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      send();
-                    }
+                    };
+                    input.click();
                   }}
-                  placeholder="Type a message..."
-                  className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
-                  disabled={sending}
-                />
-              </div>
-              <button
-                onClick={send}
-                disabled={!text.trim() || sending}
-                className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] disabled:bg-[#1F1F1F] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#E3C567]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
-              >
-                {sending ? (
-                  <Loader2 className="w-5 h-5 text-white animate-spin" />
-                ) : (
-                  <Send className="w-5 h-5 text-white" />
-                )}
-              </button>
-              </div>
-            </div>
-            )}
-        </div>
+                  className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+                  title="Upload file"
+                >
+                  <FileText className="w-5 h-5 text-[#808080]" />
+                </button>
+
+                <div className="flex-1 relative">
+                  <Input
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        send();
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
+                    disabled={sending}
+                  />
+                </div>
+                <button
+                  onClick={send}
+                  disabled={!text.trim() || sending}
+                  className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] disabled:bg-[#1F1F1F] disabled:cursor-not-allowed rounded-full flex items-center justify-center transition-all shadow-lg shadow-[#E3C567]/30 disabled:shadow-none hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  {sending ? (
+                    <Loader2 className="w-5 h-5 text-white animate-spin" />
+                  ) : (
+                    <Send className="w-5 h-5 text-white" />
+                  )}
+                </button>
+                </div>
+                </div>
+        ) : (
+          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] flex items-center justify-between flex-shrink-0 z-10">
+            <p className="text-sm text-[#808080]">Chat unlocks after both parties sign the agreement.</p>
+            <Button onClick={() => { setShowBoard(true); setActiveTab('agreement'); }} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Open My Agreement</Button>
+          </div>
+        )}
+      </div>
 
       <ContractWizard 
         roomId={roomId} 
@@ -2629,5 +2878,6 @@ ${dealContext}`;
         onClose={() => setWizardOpen(false)} 
       />
     </div>
+    
   );
 }
