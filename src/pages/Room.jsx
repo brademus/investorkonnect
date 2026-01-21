@@ -910,15 +910,6 @@ export default function Room() {
     };
   }, [showBoard, activeTab, deal, currentRoom, maskAddr]);
 
-  // Snapshot for Agreement tab: prefer live deal, then cache, then room snapshot
-  const dealForAgreement = useMemo(() => {
-    if (deal) return deal;
-    if (currentRoom?.deal_id) {
-      const cached = getCachedDeal(currentRoom.deal_id);
-      if (cached) return cached;
-    }
-    return buildDealFromRoom(currentRoom, maskAddr);
-  }, [deal, currentRoom?.deal_id, currentRoom, maskAddr]);
 
   // Prefill editor when deal details load (only when board is open to avoid flicker)
   useEffect(() => {
