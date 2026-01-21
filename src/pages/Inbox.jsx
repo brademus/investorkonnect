@@ -260,7 +260,7 @@ export default function Inbox() {
                         </div>
                         <div className="flex items-center gap-2">
                           {(() => {
-                            const badge = getAgreementStatusLabel({ room, negotiation: room.negotiation, role: (profile?.user_role || 'investor') });
+                            const badge = getAgreementStatusLabel({ room, negotiation: room?.negotiation, role: 'agent' });
                             return badge ? (
                               <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${badge.className}`}>
                                 {badge.label}
