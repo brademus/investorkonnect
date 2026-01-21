@@ -324,14 +324,20 @@ export default function Room() {
   // Removed tab-triggered refetch: files/photos are prefetched once when Deal Board opens
   // and kept fresh via realtime subscriptions and background updates.
   
-  // Open Agreement tab automatically when tab=agreement is in URL
+  // Open Agreement tab via URL param: prefetch first, then reveal board
   useEffect(() => {
     const p = new URLSearchParams(window.location.search);
-    if (p.get('tab') === 'agreement') {
-      setShowBoard(true);
-      setActiveTab('agreement');
+    if (p.get('tab') === 'agreement' && currentRoom?.deal_id) {
+      setBoardLoading(true);
+      (async () => {
+        const data = await prefetchDeal();
+        if (data) setDeal(data);
+        setActiveTab('agreement');
+        setShowBoard(true);
+        setBoardLoading(false);
+      })();
     }
-  }, [roomId, location.search]);
+  }, [roomId, location.search, currentRoom?.deal_id]);
 
 
 
@@ -349,30 +355,9 @@ export default function Room() {
   const [tabLoading, setTabLoading] = useState(false);
   const lastSentRef = useRef(0);
 
-  // When opening the Deal Board (including via URL), preload everything once
-  useEffect(() => {
-    if (!showBoard || !currentRoom?.deal_id) return;
-    setBoardLoading(true);
-    (async () => {
-      const data = await prefetchDeal();
-      if (data) setDeal(data);
-      setBoardLoading(false);
-    })();
-  }, [showBoard, currentRoom?.deal_id]);
 
-  // Ensure Agreement is prefetched as soon as the tab is opened
-  useEffect(() => {
-    if (showBoard && activeTab === 'agreement' && currentRoom?.deal_id) {
-      // Seed immediately from cache or snapshot before fetching
-      const cached = getCachedDeal(currentRoom.deal_id);
-      if (cached) setDeal(prev => prev || cached);
-      else if (currentRoom) {
-        const snap = buildDealFromRoom(currentRoom, maskAddr);
-        if (snap) setDeal(prev => prev || snap);
-      }
-      prefetchDeal();
-    }
-  }, [showBoard, activeTab, currentRoom?.deal_id]);
+
+
 
 
 
@@ -2081,7 +2066,7 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     <div>
                       <LegalAgreementPanel
-                        deal={dealForAgreement}
+                        deal={deal}
                         profile={profile}
                         allowGenerate={false}
                         initialAgreement={agreement || currentRoom?.agreement || null}
@@ -2118,13 +2103,13 @@ ${dealContext}`;
                       </div>
 
                       {/* Earnest Money */}
-                      {dealForAgreement?.seller_info?.earnest_money && (
+                      {deal?.seller_info?.earnest_money && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Earnest Money</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              ${dealForAgreement.seller_info.earnest_money.toLocaleString()}
+                              ${deal.seller_info.earnest_money.toLocaleString()}
                             </p>
                           </div>
                         </div>
@@ -2142,30 +2127,30 @@ ${dealContext}`;
                       </div>
 
                       {/* Seller's Agent Commission */}
-                      {(dealForAgreement?.proposed_terms?.seller_commission_type || currentRoom?.proposed_terms?.seller_commission_type) && (
+                      {(deal?.proposed_terms?.seller_commission_type || currentRoom?.proposed_terms?.seller_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Seller's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {((dealForAgreement?.proposed_terms?.seller_commission_type ?? currentRoom?.proposed_terms?.seller_commission_type) === 'percentage')
-                                ? `${(dealForAgreement?.proposed_terms?.seller_commission_percentage ?? currentRoom?.proposed_terms?.seller_commission_percentage)}% of purchase price`
-                                : `$${(dealForAgreement?.proposed_terms?.seller_flat_fee ?? currentRoom?.proposed_terms?.seller_flat_fee)?.toLocaleString()} flat fee`}
+                              {((deal?.proposed_terms?.seller_commission_type ?? currentRoom?.proposed_terms?.seller_commission_type) === 'percentage')
+                                ? `${(deal?.proposed_terms?.seller_commission_percentage ?? currentRoom?.proposed_terms?.seller_commission_percentage)}% of purchase price`
+                                : `$${(deal?.proposed_terms?.seller_flat_fee ?? currentRoom?.proposed_terms?.seller_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
                       )}
 
                       {/* Buyer's Agent Commission */}
-                      {(dealForAgreement?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_type) && (
+                      {(deal?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
                             <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {((dealForAgreement?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
-                                ? `${(dealForAgreement?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
-                                : `$${(dealForAgreement?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
+                              {((deal?.proposed_terms?.buyer_commission_type ?? currentRoom?.proposed_terms?.buyer_commission_type) === 'percentage')
+                                ? `${(deal?.proposed_terms?.buyer_commission_percentage ?? currentRoom?.proposed_terms?.buyer_commission_percentage)}% of purchase price`
+                                : `$${(deal?.proposed_terms?.buyer_flat_fee ?? currentRoom?.proposed_terms?.buyer_flat_fee)?.toLocaleString()} flat fee`}
                             </p>
                           </div>
                         </div>
@@ -2576,16 +2561,12 @@ ${dealContext}`;
                     <Button
                      onMouseEnter={prefetchDeal}
                      onClick={() => {
-                       // Open Agreement tab instantly with snapshot/cached data
+                       // Prefetch, then reveal Agreement tab with full data
                        setBoardLoading(true);
-                       if (currentRoom) {
-                         const snap = buildDealFromRoom(currentRoom, maskAddr);
-                         if (snap) setDeal(snap);
-                       }
-                       setActiveTab('agreement');
-                       setShowBoard(true);
                        prefetchDeal().then((data) => {
                          if (data) setDeal(data);
+                         setActiveTab('agreement');
+                         setShowBoard(true);
                          setBoardLoading(false);
                        });
                      }}
