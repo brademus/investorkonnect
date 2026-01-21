@@ -753,6 +753,31 @@ function PipelineContent() {
     );
   }
 
+  // Prevent initial flicker by waiting for core data to load
+  if (loading || loadingDeals || loadingRooms) {
+    return (
+      <div className="min-h-screen bg-transparent flex flex-col">
+        <Header profile={profile} />
+        <div className="flex-1 overflow-auto px-6 py-6">
+          <div className="max-w-[1800px] mx-auto">
+            <div className="grid grid-cols-3 gap-6">
+              {[0,1,2].map((i) => (
+                <div key={i} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 h-[400px]">
+                  <div className="h-6 w-36 bg-[#1F1F1F] rounded mb-4" />
+                  <div className="space-y-3">
+                    {[0,1,2].map((j) => (
+                      <div key={j} className="h-20 bg-[#141414] border border-[#1F1F1F] rounded-xl" />
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <>
       <Header profile={profile} />
