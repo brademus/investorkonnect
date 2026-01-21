@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
       import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
-      import HelpPanel from "@/components/HelpPanel";
+      
       import ErrorBoundary from "@/components/ErrorBoundary";
       import {
         DropdownMenu,
@@ -190,8 +190,7 @@ function LayoutContent({ children }) {
         </Link>
       )}
 
-      {/* Help Panel */}
-      <HelpPanel />
+
 
       </div>
       );

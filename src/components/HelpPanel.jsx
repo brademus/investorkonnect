@@ -1,20 +1,14 @@
 import React, { useState } from 'react';
-import { X, Play, BookOpen, Video, HelpCircle } from 'lucide-react';
+import { X, Play, BookOpen, Video } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-export default function HelpPanel() {
-  const [isOpen, setIsOpen] = useState(false);
+export default function HelpPanel({ open, onOpenChange }) {
+  const [internalOpen, setInternalOpen] = useState(false);
+  const isOpen = typeof open === 'boolean' ? open : internalOpen;
+  const setIsOpen = onOpenChange || setInternalOpen;
 
   return (
     <>
-      {/* Floating Help Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className="fixed bottom-24 right-6 z-40 w-14 h-14 bg-[#60A5FA] hover:bg-[#3B82F6] rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110"
-        title="Help & Tutorials"
-      >
-        <HelpCircle className="w-6 h-6 text-white" />
-      </button>
 
       {/* Slide-out Panel */}
       {isOpen && (
