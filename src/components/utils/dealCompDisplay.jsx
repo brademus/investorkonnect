@@ -11,7 +11,18 @@ const formatUsd = (val) => {
 
 function extractCompFromTerms(terms) {
   if (!terms) return null;
-  // Deal/Room proposed_terms shape
+
+  // New schema: terms.compensation { mode: 'FLAT_FEE'|'PERCENTAGE'|'NET_SPREAD', value: number }
+  const comp = terms.compensation;
+  if (comp && typeof comp === 'object') {
+    const mode = String(comp.mode || '').toUpperCase();
+    const val = comp.value;
+    if (mode === 'PERCENTAGE' && val != null) return `${Number(val)}%`;
+    if (mode === 'FLAT_FEE' && val != null) return formatUsd(val);
+    if (mode === 'NET_SPREAD' && val != null) return formatUsd(val);
+  }
+
+  // Legacy Deal/Room proposed_terms shape
   if (terms.buyer_commission_type === 'percentage' && terms.buyer_commission_percentage != null) {
     return `${terms.buyer_commission_percentage}%`;
   }

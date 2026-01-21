@@ -57,6 +57,22 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Pending CounterOffers (latest per deal)
+    const pendingOffers = dealIds.length > 0
+      ? await base44.asServiceRole.entities.CounterOffer.filter({ deal_id: { $in: dealIds }, status: 'pending' })
+      : [];
+    const pendingOfferByDealId = new Map();
+    for (const o of pendingOffers) {
+      const prev = pendingOfferByDealId.get(o.deal_id);
+      if (!prev) {
+        pendingOfferByDealId.set(o.deal_id, o);
+      } else {
+        const tA = new Date(o.updated_date || o.created_date || 0).getTime();
+        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        if (tA >= tB) pendingOfferByDealId.set(o.deal_id, o);
+      }
+    }
+
     // Get all unique counterparty profile IDs
     const counterpartyIds = [...new Set(
       rooms.map(r => userRole === 'investor' ? r.agentId : r.investorId).filter(Boolean)
@@ -155,19 +171,25 @@ Deno.serve(async (req) => {
 
       // Base room data
       const negotiation = negotiationMap.get(room.deal_id);
+      const pending = pendingOfferByDealId.get(room.deal_id) || null;
+      const derivedNegotiation = negotiation || (pending ? {
+        status: pending.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR',
+        from_role: pending.from_role,
+        last_proposed_terms: { proposed_by_role: pending.from_role }
+      } : null);
       const enriched = {
         id: room.id,
         deal_id: room.deal_id,
         request_status: room.request_status,
         agreement_status: room.agreement_status,
-        negotiation_status: negotiation?.status || null,
-        negotiation: negotiation ? {
-          status: negotiation.status,
-          last_proposed_terms: negotiation.last_proposed_terms || null,
-          current_terms: negotiation.current_terms || null
+        negotiation_status: derivedNegotiation?.status || null,
+        negotiation: derivedNegotiation ? {
+          status: derivedNegotiation.status,
+          last_proposed_terms: derivedNegotiation.last_proposed_terms || null,
+          current_terms: derivedNegotiation.current_terms || null
         } : null,
         regen_required: (() => {
-          const s = String(negotiation?.status || '').toUpperCase();
+          const s = String(derivedNegotiation?.status || '').toUpperCase();
           return Boolean(
             s.includes('REGEN') ||
             negotiation?.requires_regen ||
@@ -176,7 +198,14 @@ Deno.serve(async (req) => {
             negotiation?.last_proposed_terms?.requires_regen
           );
         })(),
-        last_counter_by_role: negotiation?.last_proposed_terms?.proposed_by_role || null,
+        last_counter_by_role: derivedNegotiation?.last_proposed_terms?.proposed_by_role || null,
+        pending_counter_offer: pending ? {
+          id: pending.id,
+          from_role: pending.from_role,
+          status: pending.status,
+          terms: pending.terms,
+          created_at: pending.created_date
+        } : null,
         created_date: room.created_date,
         updated_date: room.updated_date,
 

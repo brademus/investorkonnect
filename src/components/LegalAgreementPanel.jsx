@@ -149,6 +149,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     setShowCounterModal(false);
     setCounterAmount('');
     await loadLatestOffer();
+    if (onUpdate) onUpdate();
     toast.success('Counter offer sent');
   };
 
