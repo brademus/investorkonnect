@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Check if agreement is fully signed (anti-circumvention enforcement)
+    // Check if agreement is fully signed (strict gating)
     let isFullySigned = false;
     if (room.deal_id) {
       try {
@@ -62,37 +62,15 @@ Deno.serve(async (req) => {
         if (agreements.length > 0) {
           isFullySigned = agreements[0].status === 'fully_signed';
         }
-      } catch (e) {
-        // No agreement yet
-      }
+      } catch (_) {}
     }
-    
-    // Pre-signature: block contact info exchange
+
+    // Block ALL messaging until fully signed
     if (!isFullySigned) {
-      const violations = detectContactInfo(bodyTrimmed);
-      
-      if (violations.length > 0) {
-        // Log blocked attempt
-        try {
-          await base44.asServiceRole.entities.AuditLog.create({
-            actor_id: profile.id,
-            actor_name: profile.full_name || profile.email,
-            entity_type: 'Message',
-            entity_id: room_id,
-            action: 'message_contact_info_blocked',
-            details: `Blocked message containing: ${violations.join(', ')}`,
-            timestamp: new Date().toISOString()
-          });
-        } catch (auditError) {
-          console.error('Failed to log audit:', auditError);
-        }
-        
-        return Response.json({ 
-          error: 'Message blocked: Please do not share contact information until the agreement is signed. This protects both parties.',
-          violations,
-          ok: false
-        }, { status: 400 });
-      }
+      return Response.json({ 
+        error: 'Messaging is locked until the agreement is fully signed by both parties.',
+        ok: false
+      }, { status: 403 });
     }
     
     // Create message

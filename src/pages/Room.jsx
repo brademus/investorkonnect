@@ -262,6 +262,13 @@ export default function Room() {
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
+  // Seed initial view from URL (board/tab)
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    if (p.get('board') === '1') setShowBoard(true);
+    const t = p.get('tab');
+    if (t) setActiveTab(t);
+  }, []);
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
@@ -296,34 +303,14 @@ export default function Room() {
   // Extracted details (temporary, require confirmation before applying)
   const [extractedDraft, setExtractedDraft] = useState(null);
 
-        // Unified post-sign flag used across Files tab and privacy checks
+        // Unified post-sign flag (strict: do NOT infer from files)
         const isWorkingTogether = useMemo(() => {
-          const agreementSigned = !!(
-            deal?.documents?.internal_agreement?.file_url ||
-            deal?.documents?.internal_agreement?.url ||
-            deal?.documents?.operating_agreement?.file_url ||
-            deal?.documents?.operating_agreement?.url ||
-            deal?.legal_agreement?.signed_pdf_url ||
-            deal?.signed_pdf_url ||
-            deal?.final_pdf_url ||
-            deal?.docusign_pdf_url
-          );
           return (
             currentRoom?.agreement_status === 'fully_signed' ||
             currentRoom?.is_fully_signed === true ||
-            deal?.is_fully_signed === true ||
-            agreementSigned
+            deal?.is_fully_signed === true
           );
-        }, [
-          currentRoom?.agreement_status,
-          currentRoom?.is_fully_signed,
-          deal?.is_fully_signed,
-          deal?.documents,
-          deal?.legal_agreement,
-          deal?.signed_pdf_url,
-          deal?.final_pdf_url,
-          deal?.docusign_pdf_url
-        ]);
+        }, [currentRoom?.agreement_status, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
 
         // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
@@ -1297,13 +1284,16 @@ ${dealContext}`;
               )}
               {/* Tab Navigation */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto">
-                {[
-                  { id: 'details', label: 'Property Details', icon: Info },
-                  { id: 'agreement', label: 'My Agreement', icon: Shield },
-                  { id: 'files', label: 'Files', icon: FileText },
-                  { id: 'photos', label: 'Photos', icon: Image },
-                  { id: 'activity', label: 'Events & Activity', icon: FileText }
-                ].map(tab => {
+                {(() => {
+                  const all = [
+                    { id: 'details', label: 'Property Details', icon: Info },
+                    { id: 'agreement', label: 'My Agreement', icon: Shield },
+                    { id: 'files', label: 'Files', icon: FileText },
+                    { id: 'photos', label: 'Photos', icon: Image },
+                    { id: 'activity', label: 'Events & Activity', icon: FileText }
+                  ];
+                  const allowed = isWorkingTogether ? all : all.filter(t => ['details','agreement'].includes(t.id));
+                  return allowed.map(tab => {
                   const Icon = tab.icon;
                   return (
                     <button
@@ -1355,8 +1345,9 @@ ${dealContext}`;
                             }
                           </p>
                         </div>
-                      </div>
-                    </div>
+                        </div>
+                        </div>
+                        )}
                   )}
 
                               {profile?.user_role === 'investor' ? (
@@ -2425,7 +2416,15 @@ ${dealContext}`;
 
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto space-y-4">
-              {loading ? (
+              {!isWorkingTogether ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center max-w-sm">
+                    <Shield className="w-10 h-10 text-[#E3C567] mx-auto mb-3" />
+                    <p className="text-sm text-[#FAFAFA] font-semibold mb-1">Messaging Locked</p>
+                    <p className="text-xs text-[#808080]">Sign the agreement in the My Agreement tab to unlock chat, files, photos, and activity.</p>
+                  </div>
+                </div>
+              ) : loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
@@ -2504,7 +2503,8 @@ ${dealContext}`;
           )}
         </div>
 
-        {/* Message Input Area - STAYS AT BOTTOM */}
+        {/* Message Input Area - hidden until fully signed */}
+        {isWorkingTogether && (
         <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
           <div className="flex items-center gap-2">
               {/* Upload Photo Button */}

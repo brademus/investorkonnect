@@ -9,6 +9,13 @@ import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   const [agreement, setAgreement] = useState(null);
+  const [neg, setNeg] = useState(null);
+  const loadNeg = async (did) => {
+    try {
+      const { data } = await base44.functions.invoke('negotiationGet', { deal_id: did });
+      setNeg(data?.negotiation || null);
+    } catch (_) {}
+  };
   const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -24,6 +31,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate }) {
   useEffect(() => {
     if (deal?.id) {
       loadAgreement();
+      loadNeg(deal.id);
     }
   }, [deal?.id]);
   

@@ -288,7 +288,22 @@ export default function ContractVerify() {
         }
       }
 
-      // 8. Verify seller name
+      // 8. Verify buyer name matches investor legal name
+      if (extracted.buyer_name || extracted.buyer?.name || extracted.buyer) {
+        const extractedBuyer = normalizeName(extracted.buyer_name || extracted.buyer?.name || extracted.buyer);
+        const legalName = (() => {
+          const first = (profile?.verified_first_name || '').trim();
+          const last = (profile?.verified_last_name || '').trim();
+          const full = (profile?.full_name || '').trim();
+          const combined = `${first} ${last}`.trim();
+          return normalizeName(combined || full);
+        })();
+        if (legalName && extractedBuyer && legalName !== extractedBuyer) {
+          validationErrors.push(`❌ Buyer Name: Your legal name "${profile?.full_name || `${profile?.verified_first_name || ''} ${profile?.verified_last_name || ''}`.trim()}" does not match the buyer on the contract ("${extracted.buyer_name || extracted.buyer?.name || extracted.buyer}")`);
+        }
+      }
+
+      // 9. Verify seller name
       if (dealData.sellerName && extracted.seller_info?.seller_name) {
         const inputName = normalizeName(dealData.sellerName);
         const extractedName = normalizeName(extracted.seller_info.seller_name);
@@ -313,7 +328,7 @@ export default function ContractVerify() {
         }
       }
 
-      // 9. Verify closing date (normalized YYYY-MM-DD)
+      // 10. Verify closing date (normalized YYYY-MM-DD)
       if (dealData.closingDate && extracted.key_dates?.closing_date) {
         try {
           const inputDate = new Date(dealData.closingDate).toISOString().split('T')[0];
@@ -336,7 +351,7 @@ export default function ContractVerify() {
         }
       }
 
-      // 10. Verify contract date if entered
+      // 11. Verify contract date if entered
       if (dealData.contractDate && extracted.key_dates?.contract_date) {
         try {
           const inputDate = new Date(dealData.contractDate).toISOString().split('T')[0];

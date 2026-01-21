@@ -126,6 +126,15 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Agents should not see deals until investor has signed the agreement
+    if (isAgent && deals.length > 0) {
+      const allowedStatuses = new Set(['investor_signed', 'agent_signed', 'fully_signed', 'attorney_review_pending']);
+      deals = deals.filter(d => {
+        const ag = agreementsMap.get(d.id);
+        return ag && allowedStatuses.has(ag.status);
+      });
+    }
+
     // Apply role-based redaction
     const redactedDeals = deals.map(deal => {
       // Get room for this deal to check signature status
