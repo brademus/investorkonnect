@@ -982,7 +982,7 @@ function PipelineContent() {
                                       className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transform-gpu will-change-transform transition-colors ${
                                         snapshot.isDragging ? 'shadow-lg ring-1 ring-[#E3C567] opacity-95' : ''
                                       }`}
-                                      style={{ contain: 'layout paint size' }}
+                                      style={{ ...provided.draggableProps.style, contain: 'layout paint size', willChange: 'transform' }}
                                     >
                                       <div className="flex justify-between items-start mb-2">
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
