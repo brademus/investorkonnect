@@ -65,10 +65,12 @@ Deno.serve(async (req) => {
       } catch (_) {}
     }
 
-    // Block ALL messaging until fully signed
-    if (!isFullySigned) {
+    // Allow messaging when room is accepted or fully signed
+    const status = room.request_status || room.agreement_status;
+    const canMessage = isFullySigned || status === 'accepted' || status === 'signed';
+    if (!canMessage) {
       return Response.json({ 
-        error: 'Messaging is locked until the agreement is fully signed by both parties.',
+        error: 'Messaging is available once the request is accepted.',
         ok: false
       }, { status: 403 });
     }

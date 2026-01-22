@@ -403,6 +403,15 @@ export default function Room() {
           deal?.is_fully_signed
         ]);
 
+        // Chat can start once the request is accepted (or fully signed)
+        const isChatEnabled = useMemo(() => {
+          return (
+            isWorkingTogether ||
+            currentRoom?.request_status === 'accepted' ||
+            currentRoom?.request_status === 'signed'
+          );
+        }, [isWorkingTogether, currentRoom?.request_status]);
+
         // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
 
@@ -1018,8 +1027,8 @@ export default function Room() {
   const send = async () => {
     const t = text.trim();
     if (!t || !roomId || sending) return;
-    if (!isWorkingTogether) {
-      toast.error('Chat unlocks after both parties sign the agreement.');
+    if (!isChatEnabled) {
+      toast.error('Chat unlocks after the request is accepted.');
       return;
     }
     // Client-side throttle: 1.5s between sends
@@ -2743,7 +2752,7 @@ ${dealContext}`;
         </div>
 
         {/* Message Input Area - STAYS AT BOTTOM */}
-        {isWorkingTogether ? (
+        {isChatEnabled ? (
           <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
             <div className="flex items-center gap-2">
                 {/* Upload Photo Button */}
