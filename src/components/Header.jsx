@@ -44,7 +44,7 @@ export function Header({ profile }) {
       label: 'Subscription',
       icon: CreditCard,
       href: createPageUrl("Pricing"),
-      show: true
+      show: isInvestor
     }
   ];
 
@@ -131,14 +131,16 @@ export function Header({ profile }) {
                       <span className="text-sm text-[#FAFAFA]">My Profile</span>
                     </Link>
                     
-                    <Link 
-                      to={createPageUrl("Pricing")}
-                      className="flex items-center gap-3 px-4 py-2 hover:bg-[#141414] transition-colors"
-                      onClick={() => setUserMenuOpen(false)}
-                    >
-                      <CreditCard className="w-4 h-4 text-[#808080]" />
-                      <span className="text-sm text-[#FAFAFA]">Subscription</span>
-                    </Link>
+                    {isInvestor && (
+                      <Link 
+                        to={createPageUrl("Pricing")}
+                        className="flex items-center gap-3 px-4 py-2 hover:bg-[#141414] transition-colors"
+                        onClick={() => setUserMenuOpen(false)}
+                      >
+                        <CreditCard className="w-4 h-4 text-[#808080]" />
+                        <span className="text-sm text-[#FAFAFA]">Subscription</span>
+                      </Link>
+                    )>
                     
                     <div className="border-t border-[#1F1F1F] mt-2 pt-2">
                       <button
