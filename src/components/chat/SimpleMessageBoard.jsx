@@ -38,7 +38,17 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       if (event.type === "create") {
         setMessages((prev) => {
           if (!data?.id) return prev;
+          // If the real message already exists, do nothing
           if (prev.some((m) => m.id === data.id)) return prev;
+          // If we have an optimistic copy for this message, replace it instead of appending
+          const hasOptimisticMatch = prev.some(
+            (m) => m._optimistic && m.sender_profile_id === data.sender_profile_id && m.body === data.body
+          );
+          if (hasOptimisticMatch) {
+            return prev.map((m) =>
+              m._optimistic && m.sender_profile_id === data.sender_profile_id && m.body === data.body ? data : m
+            );
+          }
           return [...prev, data];
         });
         scrollToBottom();
@@ -87,7 +97,14 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       }
       const real = res?.data?.message;
       if (real?.id) {
-        setMessages((prev) => prev.map((m) => (m.id === tempId ? real : m)));
+        setMessages((prev) => {
+          // If subscription already added the real message, just drop the optimistic one
+          if (prev.some((m) => m.id === real.id)) {
+            return prev.filter((m) => m.id !== tempId);
+          }
+          // Otherwise replace optimistic with real
+          return prev.map((m) => (m.id === tempId ? real : m));
+        });
       }
     } catch (e) {
       // rollback optimistic
