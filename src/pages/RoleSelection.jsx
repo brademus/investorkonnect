@@ -40,9 +40,9 @@ export default function RoleSelection() {
         const profile = profiles[0];
         
         if (profile?.user_role && profile.user_role !== 'member') {
-          // Already has role - route appropriately
+          // Already has role - route appropriately (NEVER change role here)
           if (profile.onboarding_completed_at) {
-            navigate(createPageUrl("Dashboard"), { replace: true });
+            navigate(createPageUrl("Pipeline"), { replace: true });
           } else if (profile.user_role === 'investor') {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           } else if (profile.user_role === 'agent') {

@@ -51,7 +51,7 @@ export default function AgentOnboarding() {
         // Admin bypass
         if (authUser.role === 'admin') {
           toast.success('Admin access granted');
-          navigate(createPageUrl("Dashboard"), { replace: true });
+          navigate(createPageUrl("Pipeline"), { replace: true });
           return;
         }
         setChecking(false);
@@ -69,7 +69,7 @@ export default function AgentOnboarding() {
       if (!kycVerified) {
         navigate(createPageUrl("IdentityVerification"), { replace: true });
       } else {
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        navigate(createPageUrl("Pipeline"), { replace: true });
       }
     }
   }, [checking, onboarded, kycVerified, navigate]);

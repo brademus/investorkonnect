@@ -48,7 +48,7 @@ export default function InvestorOnboarding() {
         // Admin bypass
         if (authUser.role === 'admin') {
           toast.success('Admin access granted');
-          navigate(createPageUrl("Dashboard"), { replace: true });
+          navigate(createPageUrl("Pipeline"), { replace: true });
           return;
         }
         setChecking(false);
@@ -66,7 +66,7 @@ export default function InvestorOnboarding() {
       if (!isPaidSubscriber) {
         navigate(createPageUrl("Pricing"), { replace: true });
       } else {
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        navigate(createPageUrl("Pipeline"), { replace: true });
       }
     }
   }, [checking, onboarded, isPaidSubscriber, navigate]);

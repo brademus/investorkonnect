@@ -17,7 +17,7 @@ export default function AgentLanding() {
   };
 
   const handleGetStarted = async () => {
-    // Do not force role for existing users; just go to PostAuth
+    // Pass role hint for brand new users; existing users will keep current role
     const target = createPageUrl("PostAuth") + "?selectedRole=agent";
     try {
       const loggedIn = await base44.auth.isAuthenticated();
