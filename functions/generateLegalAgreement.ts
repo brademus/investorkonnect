@@ -797,7 +797,7 @@ Deno.serve(async (req) => {
     const agentClientUserId = `agent-${deal_id}-${timestamp}`;
     
     // Create envelope definition with both signers
-    const docName = `InvestorKonnect Internal Agreement – ${stateCode} – ${deal_id} – v2.2.pdf`;
+    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal_id} - v2.2.pdf`;
     
     const envelopeDefinition = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
