@@ -104,7 +104,7 @@ function useMessages(roomId, authUser, currentProfile) {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
-  useEffect(() => { scrollToBottom(); }, [items]);
+  useEffect(() => { scrollToBottom(); }, [items.length]);
 
   // Start loading on room switch but keep previous messages until new ones arrive
   useEffect(() => {
