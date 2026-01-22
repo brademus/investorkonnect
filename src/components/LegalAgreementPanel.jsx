@@ -335,45 +335,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Loading card
   if (loading) {
-    const terms = deal?.proposed_terms || null;
     return (
       <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
         <CardHeader className="border-b border-[#1F1F1F] py-4">
           <CardTitle className="text-lg text-[#FAFAFA]">Legal Agreement</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
-          {terms ? (
-            <div className="space-y-3">
-              <div className="mb-2">
-                <h3 className="text-lg font-semibold text-[#FAFAFA]">Key Terms</h3>
-                <p className="text-xs text-[#808080]">Showing deal terms while the agreement loads…</p>
-              </div>
-              <div className="bg-[#0D0D0D] rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
-                <div>
-                  <div className="text-[#808080]">Commission Type</div>
-                  <div className="text-[#FAFAFA] capitalize">{terms.buyer_commission_type || '—'}</div>
-                </div>
-                <div>
-                  <div className="text-[#808080]">Commission Amount</div>
-                  <div className="text-[#FAFAFA]">
-                    {terms.buyer_commission_type === 'percentage'
-                      ? `${terms.buyer_commission_percentage || 0}%`
-                      : terms.buyer_commission_type === 'flat'
-                        ? `$${(terms.buyer_flat_fee || 0).toLocaleString()}`
-                        : terms.net_target
-                          ? `$${(terms.net_target || 0).toLocaleString()}`
-                          : '—'}
-                  </div>
-                </div>
-                <div>
-                  <div className="text-[#808080]">Agreement Length</div>
-                  <div className="text-[#FAFAFA]">{terms.agreement_length || 0} days</div>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
-          )}
+          <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
         </CardContent>
       </Card>
     );
