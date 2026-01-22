@@ -1023,9 +1023,8 @@ export default function Room() {
     }
     // Client-side throttle: 1.5s between sends
     const now = Date.now();
-    if (now - (lastSentRef.current || 0) < 1500) {
-      toast.error('Please wait a moment before sending another message.');
-      return;
+    if (now - (lastSentRef.current || 0) < 1000) {
+      return; // ignore rapid double-taps silently to avoid flicker
     }
     lastSentRef.current = now;
     setText("");
