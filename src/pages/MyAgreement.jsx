@@ -81,24 +81,18 @@ export default function MyAgreement() {
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
         const ag = res?.data?.agreement;
         if (ag?.investor_signed_at) {
-          // After investor signs, create/send room to the selected agent
+          // Immediately notify/send to the agent after investor signs
           try {
-            // Prefer agent on deal; fallback to session
             const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
             const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
             if (agentProfileId) {
-              try {
-                await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId });
-              } catch (e) {
-                // Ignore 409/conflicts if already exists
-              }
+              try { await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId }); } catch (_) {}
             }
           } catch (_) {}
 
-          // If agent already countersigned or NJ auto-approves later, Room UI will unlock via subscriptions
           try { await base44.entities.Deal.update(dealId, { status: 'active' }); } catch (_) {}
           toast.success('Agreement signed. Redirecting to your pipeline...');
-          setTimeout(() => navigate(createPageUrl('Pipeline') + '?signed=1'), 800);
+          navigate(createPageUrl('Pipeline'));
         }
       } catch (_) {}
     })();
