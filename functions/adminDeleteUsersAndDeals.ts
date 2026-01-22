@@ -14,7 +14,7 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const me = await base44.auth.me();
-    if (!me || me.role !== 'admin') {
+    if (me?.role !== 'admin') {
       return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
     }
 
@@ -123,8 +123,9 @@ Deno.serve(async (req) => {
         }
 
         // Delete rooms
-        await deleteAll(base44, 'Room', rooms);
-        deletedCounts.rooms += rooms.length;
+        const roomsAgain = await safeList(base44.asServiceRole.entities.Room.filter, { deal_id: dealId });
+        await deleteAll(base44, 'Room', roomsAgain);
+        deletedCounts.rooms += roomsAgain.length;
 
         // Finally, delete the deal
         try { await base44.asServiceRole.entities.Deal.delete(dealId); deletedCounts.deals += 1; } catch (_) {}
