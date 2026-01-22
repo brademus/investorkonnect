@@ -1025,7 +1025,7 @@ function PipelineContent() {
                                           <Home className="w-3 h-3" />
                                           <span>{deal.city}, {deal.state}</span>
                                         </div>
-                                        {isAgent && (() => {
+                                        {(() => {
                                           const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
                                           const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
                                           const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
