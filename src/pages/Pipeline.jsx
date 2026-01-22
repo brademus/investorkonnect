@@ -963,7 +963,7 @@ function PipelineContent() {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors ${
+                            className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors transform-gpu will-change-transform ${
                               snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''
                             }`}
                           >
@@ -979,9 +979,10 @@ function PipelineContent() {
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
-                                      className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transition-all ${
-                                        snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567] opacity-90' : ''
+                                      className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transform-gpu will-change-transform transition-colors ${
+                                        snapshot.isDragging ? 'shadow-lg ring-1 ring-[#E3C567] opacity-95' : ''
                                       }`}
+                                      style={{ contain: 'layout paint size' }}
                                     >
                                       <div className="flex justify-between items-start mb-2">
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
