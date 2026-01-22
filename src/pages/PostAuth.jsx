@@ -68,12 +68,14 @@ export default function PostAuth() {
           // Create if still missing
           if (!profile) {
             setStatus("Setting up your account...");
+            const selectedRoleParam = (new URLSearchParams(window.location.search).get('selectedRole') || '').toLowerCase();
+            const initialRole = (selectedRoleParam === 'investor' || selectedRoleParam === 'agent') ? selectedRoleParam : 'member';
             profile = await base44.entities.Profile.create({
               user_id: user.id,
               email: emailLower || user.email,
               full_name: user.full_name,
               role: 'member',
-              user_role: 'member',
+              user_role: initialRole,
             });
           } else if (!profile.user_id || profile.user_id !== user.id) {
             await base44.entities.Profile.update(profile.id, { user_id: user.id });
