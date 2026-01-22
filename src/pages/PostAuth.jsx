@@ -125,8 +125,14 @@ export default function PostAuth() {
 
         // Route strictly by existing role state (ignore selectedRole for existing users)
         if (!hasRole) {
-          // No role selected - go to RoleSelection
-          navigate(createPageUrl("RoleSelection"), { replace: true });
+          // New user without role: respect selectedRole from landing and go straight to onboarding
+          if (selectedRole === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+          } else if (selectedRole === 'agent') {
+            navigate(createPageUrl("AgentOnboarding"), { replace: true });
+          } else {
+            navigate(createPageUrl("RoleSelection"), { replace: true });
+          }
         } else if (!isOnboarded) {
           // Has role but not onboarded
           if (role === 'investor') {
