@@ -157,11 +157,8 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     );
 
     if (userRole === 'investor') {
-      // If request accepted or we've already signed, show waiting for agent
-      if (req === 'accepted' || investorHasSigned) {
-        return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
-      }
-      return { state: 'S0', label: 'Sign contract', className: pickBadgeClasses('blue') };
+      // Never show "Sign contract" on cards; default to Waiting for agent in initial states
+      return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
     }
 
     // Agent view
