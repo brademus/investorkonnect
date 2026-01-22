@@ -92,7 +92,7 @@ function LayoutContent({ children }) {
       `}</style>
       {/* Top nav - fixed, minimal, Airbnb-like */}
       {showNav && !isNoNavPage && (
-        <header className="fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
+        <header className="hidden md:block fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
           <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
             {/* Left: logo + brand */}
             <img 
@@ -180,11 +180,31 @@ function LayoutContent({ children }) {
       {/* Sonner toast notifications */}
       <Toaster />
 
+      {/* Mobile bottom nav */}
+      {showNav && !isNoNavPage && (
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-[#1F1F1F] bg-[#0D0D0D]/90 backdrop-blur md:hidden">
+          <div className="mx-auto max-w-3xl px-6 py-2 grid grid-cols-3 gap-2 text-xs">
+            <button onClick={() => navigate(createPageUrl("Pipeline"))} className="flex flex-col items-center gap-1 text-[#FAFAFA]/80">
+              <FileText className="w-5 h-5 text-[#E3C567]" />
+              <span>Pipeline</span>
+            </button>
+            <button onClick={() => navigate(createPageUrl("HowItWorks"))} className="flex flex-col items-center gap-1 text-[#FAFAFA]/80">
+              <FileText className="w-5 h-5 text-[#E3C567]" />
+              <span>Learn</span>
+            </button>
+            <button onClick={() => navigate(createPageUrl("AccountProfile"))} className="flex flex-col items-center gap-1 text-[#FAFAFA]/80">
+              <Settings className="w-5 h-5 text-[#E3C567]" />
+              <span>Account</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Floating Messages Button */}
       {user && onboarded && !isNoNavPage && (
         <Link 
           to={createPageUrl("Room")}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#E3C567] hover:bg-[#EDD89F] rounded-full flex items-center justify-center shadow-2xl transition-all hover:scale-110"
+          className="hidden md:flex fixed bottom-6 right-6 z-50 w-14 h-14 bg-[#E3C567] hover:bg-[#EDD89F] rounded-full items-center justify-center shadow-2xl transition-all hover:scale-110"
         >
           <MessageSquare className="w-6 h-6 text-black" />
         </Link>

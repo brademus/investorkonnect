@@ -813,7 +813,7 @@ function PipelineContent() {
         <Header profile={profile} />
         <div className="flex-1 overflow-auto px-6 py-6">
           <div className="max-w-[1800px] mx-auto">
-            <div className="grid grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
               {[0,1,2].map((i) => (
                 <div key={i} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 h-[400px]">
                   <div className="h-6 w-36 bg-[#1F1F1F] rounded mb-4" />
@@ -1037,13 +1037,13 @@ function PipelineContent() {
 
             {/* Kanban Grid with Drag & Drop */}
             <DragDropContext onDragEnd={handleDragEnd}>
-              <div className="grid grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                 {pipelineStages.map(stage => {
                   const stageDeals = dealsByStage.get(stage.id) || [];
                   const Icon = stage.icon;
 
                   return (
-                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col h-[400px] will-change-transform">
+                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px] h-auto will-change-transform">
                       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
                         <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
                           <Icon className="w-4 h-4" />
@@ -1059,7 +1059,7 @@ function PipelineContent() {
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors ${
+                            className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors ${
                               snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''
                             }`}
                           >
