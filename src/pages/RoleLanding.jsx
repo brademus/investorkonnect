@@ -8,7 +8,7 @@ export default function RoleLanding() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
+    <div className="min-h-screen bg-[#0D0D0D] flex items-center justify-center px-4">
       <div className="max-w-5xl w-full">
         {/* Logo */}
         <div className="text-center mb-12">

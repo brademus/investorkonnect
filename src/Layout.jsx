@@ -80,7 +80,7 @@ function LayoutContent({ children }) {
   const currentNav = role === 'investor' ? investorNav : role === 'agent' ? agentNav : [];
 
   return (
-    <div className="ik-shell" style={useHeavyBg ? { backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/158666991_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png')", backgroundSize: 'cover', backgroundPosition: 'center center', backgroundAttachment: 'fixed', backgroundRepeat: 'no-repeat' } : undefined}>
+    <div className="ik-shell" style={useHeavyBg ? { backgroundImage: "linear-gradient(to bottom, rgba(0,0,0,0.4), rgba(0,0,0,0.7)), url('https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/158666991_Gemini_Generated_Image_1u4rzq1u4rzq1u4r.png')", backgroundSize: 'cover', backgroundPosition: 'center center', backgroundAttachment: 'fixed', backgroundRepeat: 'no-repeat', backgroundColor: '#0D0D0D' } : { backgroundColor: '#0D0D0D' }}>
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
       <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
