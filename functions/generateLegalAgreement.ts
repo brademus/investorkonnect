@@ -622,6 +622,12 @@ Deno.serve(async (req) => {
     if (missingTokens.size > 0) {
       const missingList = Array.from(missingTokens).map(token => {
         const value = renderContext[token];
+        // auto-fill known platform tokens if missing
+        if (token === 'PLATFORM_NAME') return 'PLATFORM_NAME (auto: investor konnect)';
+        if (token === 'PLATFORM_URL') return 'PLATFORM_URL (auto: https://agent-vault-da3d088b.base44.app/)';
+        if (token === 'WEBSITE_URL') return 'WEBSITE_URL (auto: https://agent-vault-da3d088b.base44.app/)';
+        if (token === 'APP_URL') return 'APP_URL (auto: https://agent-vault-da3d088b.base44.app/)';
+        if (token === 'PLATFORM_WEBSITE_URL') return 'PLATFORM_WEBSITE_URL (auto: https://agent-vault-da3d088b.base44.app/)';
         return `${token} (current: ${value || 'empty'})`;
       });
 
