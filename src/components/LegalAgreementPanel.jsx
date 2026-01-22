@@ -365,11 +365,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
             <p className="text-[#808080] mb-4">No agreement generated yet</p>
-            {allowGenerate ? (
-              <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
-            ) : (
-              <p className="text-xs text-[#808080]">Agreement can only be generated during agent selection; this tab is view-only.</p>
-            )}
+            <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
           </div>
         )}
 
