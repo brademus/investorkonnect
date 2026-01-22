@@ -94,7 +94,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     // HARD GUARD: agent must never see "Review & sign" when regeneration is required
     return {
       state: 'S4',
-      label: userRole === 'investor' ? 'Regenerate & sign' : 'Waiting for investor',
+      label: userRole === 'investor' ? 'Regenerate contract' : 'Waiting for investor',
       className: pickBadgeClasses('amber')
     };
   }
