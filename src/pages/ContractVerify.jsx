@@ -505,7 +505,7 @@ export default function ContractVerify() {
         },
         contract_url: fileUrl,
         contract_document: contractDocument,
-        status: 'active',
+        status: 'draft',
         pipeline_stage: 'new_listings'
       };
 

@@ -152,7 +152,8 @@ export default function AgentMatching() {
         toast.error("You already have an active agent request for this deal. Open the existing Deal Room to continue.");
         setSendingToAgent(null);
         setTimeout(() => {
-          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}`);
+          try { sessionStorage.setItem('selectedAgentId', activeRoom.agentId || agentProfile.id); } catch (_) {}
+navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
         }, 1500);
         return;
       }
@@ -204,11 +205,8 @@ export default function AgentMatching() {
       const _first = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Agent selected: ${_first}. Continue to sign your agreement.`);
       // Redirect investor straight to Deal Room → Agreement tab
-      if (room?.id) {
-        navigate(`${createPageUrl("Room")}?roomId=${room.id}&board=1&tab=agreement`);
-      } else {
-        navigate(createPageUrl("Pipeline"));
-      }
+      try { sessionStorage.setItem('selectedAgentId', agentProfile.id); } catch (_) {}
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
 
     } catch (error) {
       console.error("Failed to send deal:", error);

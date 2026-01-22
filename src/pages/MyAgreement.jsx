@@ -72,6 +72,7 @@ export default function MyAgreement() {
           } catch (_) {}
 
           // If agent already countersigned or NJ auto-approves later, Room UI will unlock via subscriptions
+          try { await base44.entities.Deal.update(dealId, { status: 'active' }); } catch (_) {}
           toast.success('Agreement signed. Redirecting to your pipeline...');
           setTimeout(() => navigate(createPageUrl('Pipeline') + '?signed=1'), 800);
         }
@@ -155,6 +156,7 @@ export default function MyAgreement() {
                   }
                 } catch (_) {}
 
+                try { await base44.entities.Deal.update(deal.id, { status: 'active' }); } catch (_) {}
                 toast.success('Agreement signed. Redirecting to your pipeline...');
                 setTimeout(() => navigate(createPageUrl('Pipeline')), 800);
               }
