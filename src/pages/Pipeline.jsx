@@ -646,6 +646,26 @@ function PipelineContent() {
       return;
     }
 
+    // If investor already signed, create/get room now and open it
+    if (!isAgent) {
+      try {
+        const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
+        const ag = data?.agreement;
+        const status = String(ag?.status || '').toLowerCase();
+        const investorSigned = status === 'investor_signed' || !!ag?.investor_signed_at;
+        if (investorSigned) {
+          const agentProfileId = deal.agent_id;
+          if (!agentProfileId) {
+            toast.info('Select an agent for this deal to open a room.');
+            return;
+          }
+          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
+          navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
+          return;
+        }
+      } catch (_) {}
+    }
+
     // Resolve agent for room creation: agents default to themselves
     const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
     if (!agentProfileId) {
