@@ -46,7 +46,7 @@ function NDAContent() {
           // Redirect to Dashboard
           toast.success('Admin access granted - NDA bypassed');
           setTimeout(() => {
-            navigate(createPageUrl("Dashboard"), { replace: true });
+            navigate(createPageUrl("Pipeline"), { replace: true });
           }, 500);
         } catch (err) {
           console.error('[NDA] Admin auto-sign error:', err);
@@ -66,7 +66,7 @@ function NDAContent() {
     if (!loading && hasNDA) {
       devLog('[NDA] Already accepted, redirecting to dashboard...');
       setTimeout(() => {
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        navigate(createPageUrl("Pipeline"), { replace: true });
       }, 500);
     }
   }, [loading, hasNDA, navigate]);
@@ -107,7 +107,7 @@ function NDAContent() {
         
         // Navigate to Dashboard
         devLog('[NDA] Navigating to Dashboard...');
-        navigate(createPageUrl("Dashboard"), { replace: true });
+        navigate(createPageUrl("Pipeline"), { replace: true });
       } else {
         throw new Error("Profile not available");
       }
@@ -142,7 +142,7 @@ function NDAContent() {
               <CheckCircle className="w-10 h-10 text-[#10B981]" />
             </div>
             <h2 className="text-2xl font-bold text-[#111827] mb-2">NDA Already Signed ✓</h2>
-            <p className="text-[#6B7280] mb-6">Redirecting to dashboard...</p>
+            <p className="text-[#6B7280] mb-6">Redirecting to pipeline...</p>
             <Loader2 className="w-8 h-8 text-[#D3A029] animate-spin mx-auto" />
           </div>
         </div>
