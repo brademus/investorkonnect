@@ -39,6 +39,18 @@ function PipelineContent() {
   const [identity, setIdentity] = useState(null);
   const [identityLoaded, setIdentityLoaded] = useState(false);
 
+  // Scope caches per logged-in profile to prevent cross-account flicker
+  const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
+  const roomsCacheKey = profile?.id ? `roomsCache_${profile.id}` : null;
+
+  // Clean up any legacy/global caches when user switches
+  useEffect(() => {
+    try {
+      sessionStorage.removeItem('pipelineDealsCache');
+      sessionStorage.removeItem('roomsCache');
+    } catch (_) {}
+  }, [profile?.id]);
+
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
     (async () => {
@@ -186,7 +198,8 @@ function PipelineContent() {
     placeholderData: (prev) => prev,
     initialData: () => {
       try {
-        const cached = JSON.parse(sessionStorage.getItem('pipelineDealsCache') || '[]');
+        if (!dealsCacheKey) return undefined;
+        const cached = JSON.parse(sessionStorage.getItem(dealsCacheKey) || '[]');
         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
       } catch { return undefined; }
     },
@@ -211,11 +224,11 @@ function PipelineContent() {
 
   useEffect(() => {
     try {
-      if (Array.isArray(dealsData)) {
-        sessionStorage.setItem('pipelineDealsCache', JSON.stringify(dealsData));
+      if (Array.isArray(dealsData) && dealsCacheKey) {
+        sessionStorage.setItem(dealsCacheKey, JSON.stringify(dealsData));
       }
     } catch (_) {}
-  }, [dealsData]);
+  }, [dealsData, dealsCacheKey]);
 
   const uniqueDealsData = useMemo(() => {
     if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
@@ -279,13 +292,14 @@ function PipelineContent() {
 
   // 3. Load Rooms (to link agents/status)
   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
-    queryKey: ['rooms'],
+    queryKey: ['rooms', profile?.id],
     staleTime: 60_000,
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     initialData: () => {
       try {
-        const cached = JSON.parse(sessionStorage.getItem('roomsCache') || '[]');
+        if (!roomsCacheKey) return undefined;
+        const cached = JSON.parse(sessionStorage.getItem(roomsCacheKey) || '[]');
         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
       } catch { return undefined; }
     },
@@ -303,11 +317,11 @@ function PipelineContent() {
 
   useEffect(() => {
     try {
-      if (Array.isArray(rooms)) {
-        sessionStorage.setItem('roomsCache', JSON.stringify(rooms));
+      if (Array.isArray(rooms) && roomsCacheKey) {
+        sessionStorage.setItem(roomsCacheKey, JSON.stringify(rooms));
       }
     } catch (_) {}
-  }, [rooms]);
+  }, [rooms, roomsCacheKey]);
 
   // Force refresh after DocuSign return
   useEffect(() => {
