@@ -115,9 +115,29 @@ function normalizeWinAnsi(text) {
   const map = {
     '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '“': '"', '”': '"', '‘': "'", '’': "'",
     '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≤': '<=', '≥': '>=', '©': '(c)', '®': '(r)', '™': 'TM',
-    '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' '
+    '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' ', '\u202F': ' ', '\u2009': ' ', '\u200A': ' ',
+    '\u200B': '', '\uFEFF': '', '\u2060': '',
+    // Checkbox and shapes
+    '\u2610': '[ ]', // ☐ ballot box
+    '\u2611': '[x]', // ☑ ballot box with check
+    '\u2612': '[x]', // ☒ ballot box with X
+    '\u25A1': '[ ]', // □ white square
+    '\u25A0': '[]',  // ■ black square
+    '\u25CF': '*',   // ● black circle
+    '\u25CB': 'o',   // ○ white circle
+    '\u25AB': '-',   // ▫
+    '\u25AA': '-',   // ▪
+    // Check marks
+    '\u2713': '[x]', // ✓ check mark
+    '\u2714': '[x]', // ✔ heavy check mark
+    '\u2715': 'x',   // ✕
+    '\u2717': 'x'    // ✗
   };
-  return text.replace(/[\u2013\u2014\u2212\u2022\u00B7\u2026\u201C\u201D\u2018\u2019\u2192\u2190\u2194\u21D2\u2264\u2265\u00A9\u00AE\u2122\u00AD\u00A0\u2002\u2003]/g, ch => map[ch] ?? '');
+  // First, replace known problem characters
+  let out = text.replace(/[\u2013\u2014\u2212\u2022\u00B7\u2026\u201C\u201D\u2018\u2019\u2192\u2190\u2194\u21D2\u2264\u2265\u00A9\u00AE\u2122\u00AD\u00A0\u2002\u2003\u202F\u2009\u200A\u200B\uFEFF\u2060\u2610\u2611\u2612\u25A1\u25A0\u25CF\u25CB\u25AB\u25AA\u2713\u2714\u2715\u2717]/g, ch => map[ch] ?? '');
+  // Safety: strip any remaining non-WinAnsi characters
+  out = out.replace(/[^\x00-\xFF]/g, '');
+  return out;
 }
 
 async function sha256(data) {
