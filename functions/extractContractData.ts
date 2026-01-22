@@ -37,11 +37,14 @@ Deno.serve(async (req) => {
         6. Purchase Price (exact dollar amount as number)
         7. Earnest Money Deposit amount (exact dollar amount as number)
         
+        Buyer Information:
+          8. Buyer's full legal name (as appears on contract)
+
         Seller Information:
-        8. Seller's full legal name (as appears on contract)
-        9. Number of sellers/signers (1 or 2)
-        10. Second seller name (if applicable)
-        
+          9. Seller's full legal name (as appears on contract)
+          10. Number of sellers/signers (1 or 2)
+          11. Second seller name (if applicable)
+
         Commission Terms (if mentioned):
         11. Seller's agent commission (percentage or flat dollar amount)
         12. Buyer's agent commission (percentage or flat dollar amount)
@@ -72,6 +75,8 @@ Deno.serve(async (req) => {
           state: { type: "string" },
           county: { type: "string" },
           zip: { type: "string" },
+          buyer_name: { type: "string" },
+          buyer_name_raw: { type: "string" },
           purchase_price: { type: "number" },
           property_type: { type: "string" },
           property_details: {
@@ -116,9 +121,28 @@ Deno.serve(async (req) => {
 
     console.log('[extractContractData] Extraction result:', extractionResponse);
 
+    // Normalize and enrich buyer name fields for verifier
+    let data = extractionResponse || {};
+    if (data && typeof data === 'object') {
+      const rawBuyer = data.buyer_name || data.buyer || data.buyerName || null;
+      const normalize = (s) => {
+        if (!s) return '';
+        return String(s).toLowerCase()
+          .replace(/[.,\/#!$%\^&\*;:{}=\-_`~()]/g, '')
+          .replace(/\b(llc|inc|ltd|co|corp|corporation|company|jr|sr|ii|iii|iv)\b/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim();
+      };
+      data = {
+        ...data,
+        buyer_name_raw: data.buyer_name_raw || rawBuyer || null,
+        buyer_name_normalized: data.buyer_name_normalized || normalize(rawBuyer || data.buyer_name || '')
+      };
+    }
+
     return Response.json({
       success: true,
-      data: extractionResponse
+      data
     });
 
   } catch (error) {
