@@ -372,13 +372,14 @@ export default function Room() {
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
-    setShowBoard(false);
-    setActiveTab('details');
-    setInvestorTasks([]);
-    setAgentTasks([]);
-    setDeal(null);
-    setAgreement(null);
-  }, [roomId]);
+      roomTokenRef.current += 1;
+      setShowBoard(false);
+      setActiveTab('details');
+      setInvestorTasks([]);
+      setAgentTasks([]);
+      setDeal(null);
+      setAgreement(null);
+    }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
   const [pdPropertyType, setPdPropertyType] = useState("");
@@ -1411,7 +1412,7 @@ ${dealContext}`;
             {roomId && (
               <>
                 <Button
-                    onMouseEnter={prefetchDeal}
+                    onMouseEnter={() => prefetchDeal(roomTokenRef.current)}
                     onClick={async () => {
                                         // Always open the Deal Board reliably
                                         setBoardLoading(true);
@@ -2564,7 +2565,7 @@ ${dealContext}`;
                   </div>
                   <div>
                     <Button
-                      onMouseEnter={prefetchDeal}
+                      onMouseEnter={() => prefetchDeal(roomTokenRef.current)}
                       onClick={async () => {
                         setBoardLoading(true);
                         const data = await prefetchDeal(roomTokenRef.current);
