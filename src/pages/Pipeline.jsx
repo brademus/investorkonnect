@@ -940,14 +940,14 @@ function PipelineContent() {
             </div>
 
             {/* Kanban Grid with Drag & Drop */}
-            <DragDropContext onDragEnd={handleDragEnd}>
+            <DragDropContext onDragEnd={handleDragEnd} enableDefaultSensors={true}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                 {pipelineStages.map(stage => {
                   const stageDeals = dealsByStage.get(stage.id) || [];
                   const Icon = stage.icon;
 
                   return (
-                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px] h-auto will-change-transform">
+                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px] h-auto will-change-transform transform-gpu">
                       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
                         <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
                           <Icon className="w-4 h-4" />
@@ -958,7 +958,27 @@ function PipelineContent() {
                         </div>
                       </div>
 
-                      <Droppable droppableId={stage.id}>
+                      <Droppable droppableId={stage.id} renderClone={(provided, snapshot, rubric) => {
+                        const deal = dealsByStage.get(stage.id)?.[rubric.source.index];
+                        if (!deal) return null;
+                        return (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl transform-gpu will-change-transform shadow-2xl ring-2 ring-[#E3C567] opacity-95"
+                            style={{ ...provided.draggableProps.style, contain: 'layout paint size', willChange: 'transform' }}
+                          >
+                            <div className="flex justify-between items-start mb-2">
+                              <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
+                                {isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}
+                              </h4>
+                              <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">{getDaysInPipeline(deal.created_date)}</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" /><span>{deal.city}, {deal.state}</span></div>
+                          </div>
+                        );
+                      }}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
