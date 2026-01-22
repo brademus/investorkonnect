@@ -50,6 +50,29 @@ export default function MyAgreement() {
     })();
   }, [dealId]);
 
+  // If already signed, redirect investor away from My Agreement to Pipeline
+  useEffect(() => {
+    (async () => {
+      if (!dealId) return;
+      try {
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+        const ag = res?.data?.agreement;
+        const status = String(ag?.status || '').toLowerCase();
+        const alreadySigned = status === 'investor_signed' || status === 'fully_signed' || !!ag?.investor_signed_at;
+        if (alreadySigned) {
+          try {
+            const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
+            const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
+            if (agentProfileId) {
+              try { await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId }); } catch (_) {}
+            }
+          } catch (_) {}
+          navigate(createPageUrl('Pipeline'));
+        }
+      } catch (_) {}
+    })();
+  }, [dealId]);
+
   // After DocuSign return with ?signed=1, verify investor signed and redirect to Pipeline
   useEffect(() => {
     (async () => {
