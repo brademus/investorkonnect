@@ -1051,7 +1051,10 @@ export default function Room() {
         room_id: roomId, 
         body: t 
       });
-      
+
+      // If server returned the message, append it with me-flag to avoid side flip
+      const serverMsg = response?.data?.message;
+
       // Check for contact info violation
       if (response.data?.violations) {
         setItems(prev => prev.filter(m => m.id !== tempId));
@@ -1059,11 +1062,11 @@ export default function Room() {
         setSending(false);
         return;
       }
-      
+
       if (!response.data?.ok) {
         throw new Error(response.data?.error || 'Message send failed');
       }
-      
+
       // Log activity - async without blocking
       if (currentRoom?.deal_id) {
         base44.entities.Activity.create({
@@ -1075,9 +1078,13 @@ export default function Room() {
           message: `${profile?.full_name || profile?.email} sent a message`
         }).catch(() => {}); // Silent fail - activity is nice-to-have
       }
-      
-      // Remove optimistic message immediately after successful send
-      setItems(prev => prev.filter(m => m.id !== tempId));
+
+      // Replace optimistic with server one, preserving side
+      setItems(prev => {
+        const withoutTemp = prev.filter(m => m.id !== tempId);
+        const finalized = serverMsg ? { ...serverMsg, _isMe: true } : null;
+        return finalized ? [...withoutTemp, finalized] : withoutTemp;
+      });
     } catch (error) {
       console.error('Failed to send message:', error);
       const status = (error && error.response && error.response.status) || error?.status;
