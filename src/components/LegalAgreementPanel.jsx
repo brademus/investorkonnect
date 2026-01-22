@@ -69,11 +69,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   }, [effectiveDealId, agreement]);
 
   const handleOpenGenerateModal = async () => {
-    if (!deal?.id) return;
+    const genId = effectiveDealId;
+    if (!genId) return;
     try {
       let currentDeal = deal || null;
       try {
-        const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal?.id || deal?.deal_id });
+        const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genId });
         if (data?.deal) currentDeal = data.deal; else if (data) currentDeal = data;
       } catch (e) {
         console.warn('[LegalAgreementPanel] Falling back to passed deal due to fetch error:', e);

@@ -40,7 +40,8 @@ export default function MyAgreement() {
       setLoading(true);
       try {
         const res = await base44.functions.invoke('getDealDetailsForUser', { dealId });
-        setDeal(res.data || null);
+        const dataDeal = res?.data?.deal || res?.data || null;
+        setDeal(dataDeal);
       } catch (e) {
         toast.error('Failed to load agreement context');
       } finally {
@@ -134,11 +135,13 @@ export default function MyAgreement() {
         <LegalAgreementPanel
           deal={deal}
           profile={profile}
+          dealId={deal?.id || dealId}
           allowGenerate={true}
           onUpdate={async () => {
             // Refresh local deal
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
-            setDeal(res.data || deal);
+            const dataDeal = res?.data?.deal || res?.data || deal;
+            setDeal(dataDeal);
             // If investor just signed, send to Pipeline
             try {
               const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
