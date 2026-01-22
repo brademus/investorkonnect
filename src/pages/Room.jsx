@@ -968,11 +968,14 @@ export default function Room() {
     }
   };
 
-  const counterpartName = getCounterpartyDisplayName({ 
-    room: currentRoom, 
-    deal: deal, 
-    currentUserRole: profile?.user_role 
-  }) || location.state?.initialCounterpartyName || "Chat";
+  const counterpartName = (() => {
+    const baseName = getCounterpartyDisplayName({ room: currentRoom, deal, currentUserRole: profile?.user_role }) || location.state?.initialCounterpartyName;
+    if (deal?.is_fully_signed) {
+      if (profile?.user_role === 'investor') return deal?.agent_full_name || baseName || 'Agent';
+      if (profile?.user_role === 'agent') return deal?.investor_full_name || baseName || 'Investor';
+    }
+    return baseName || 'Chat';
+  })();
 
 
 
