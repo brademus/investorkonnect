@@ -13,7 +13,8 @@ export default function InvestorLanding() {
   const navigate = useNavigate();
 
   const handleLogin = () => {
-    base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+    const target = createPageUrl("PostAuth") + "?selectedRole=investor";
+    base44.auth.redirectToLogin(target);
   };
 
   const handleGetStarted = async () => {

@@ -131,7 +131,8 @@ export default function PostAuth() {
           } else if (selectedRole === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            navigate(createPageUrl("RoleSelection"), { replace: true });
+            // No selectedRole: default to investor onboarding (never show role picker)
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           }
         } else if (!isOnboarded) {
           // Has role but not onboarded
@@ -140,7 +141,8 @@ export default function PostAuth() {
           } else if (role === 'agent') {
             navigate(createPageUrl("AgentOnboarding"), { replace: true });
           } else {
-            navigate(createPageUrl("RoleSelection"), { replace: true });
+            // Fallback: default to investor onboarding
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
