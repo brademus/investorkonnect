@@ -598,7 +598,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
               {agreement.investor_signed_at && agreement.agent_signed_at && (
                 <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
-                  <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                  <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
                   <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
                   <p className="text-xs text-[#808080] mt-1">Agreement complete</p>
                 </div>
