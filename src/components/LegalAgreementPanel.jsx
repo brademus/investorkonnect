@@ -63,10 +63,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load agreement when deal is known and agreement not in state
   useEffect(() => {
-    if (effectiveDealId && !agreement) {
+    if (effectiveDealId) {
       loadAgreement();
     }
-  }, [effectiveDealId, agreement]);
+  }, [effectiveDealId]);
 
   const handleOpenGenerateModal = async () => {
     if (!deal?.id) return;
