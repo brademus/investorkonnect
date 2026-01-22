@@ -143,8 +143,8 @@ export default function AgentMatching() {
       // Defer sending to agent until agreement is signed
       try { sessionStorage.setItem('selectedAgentId', agentProfile.id); } catch (_) {}
       try { await base44.entities.Deal.update(deal.id, { agent_id: agentProfile.id, status: 'draft' }); } catch (_) {}
-      const _first = (agentProfile.full_name || 'agent').split(' ')[0];
-      toast.success(`Agent selected: ${_first}. Next: generate and sign your agreement.`);
+      const firstName = (agentProfile.full_name || 'agent').split(' ')[0];
+      toast.success(`Agent selected: ${firstName}. Next: generate and sign your agreement.`);
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
       return;
       // ENFORCED: Only one concurrent agent request per deal
