@@ -2568,7 +2568,7 @@ ${dealContext}`;
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
-                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                <div className="hidden mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3 mb-2">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
@@ -2603,7 +2603,7 @@ ${dealContext}`;
               {/* Show this banner for agents when deal is accepted but not fully signed, OR for investors waiting for signatures */}
               {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
                 (profile?.user_role === 'investor' && currentRoom?.request_status !== 'requested' && !currentRoom?.is_fully_signed)) && (
-                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                <div className="hidden mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div>
@@ -2623,7 +2623,7 @@ ${dealContext}`;
 
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
-                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
+                <div className="hidden mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
@@ -2670,7 +2670,7 @@ ${dealContext}`;
               )}
 
               {/* Messages Container */}
-              <div className="flex-1 overflow-y-auto space-y-4">
+              <div className="flex-1 overflow-y-auto space-y-4 hidden">
               {loading ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
@@ -2755,7 +2755,7 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         {isChatEnabled ? (
-          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
+          <div className="hidden px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
             <div className="flex items-center gap-2">
                 {/* Upload Photo Button */}
                 <button
@@ -2966,7 +2966,7 @@ ${dealContext}`;
                 </div>
                 </div>
         ) : (
-          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] flex items-center justify-between flex-shrink-0 z-10">
+          <div className="hidden px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] flex items-center justify-between flex-shrink-0 z-10">
             <p className="text-sm text-[#808080]">Chat unlocks after both parties sign the agreement.</p>
             <Button onClick={() => { setShowBoard(true); setActiveTab('agreement'); }} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Open My Agreement</Button>
           </div>
