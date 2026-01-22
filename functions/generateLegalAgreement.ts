@@ -604,6 +604,16 @@ Deno.serve(async (req) => {
     const missingTokens = new Set();
     const foundTokens = new Set();
 
+    // Pre-seed platform tokens
+    const platformDefaults = {
+      PLATFORM_NAME: 'investor konnect',
+      PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    };
+    for (const k of Object.keys(platformDefaults)) { if (!renderContext[k]) renderContext[k] = platformDefaults[k]; }
+
     templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
       if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '' && renderContext[token] !== 'N/A' && renderContext[token] !== 'TBD') {
         console.log(`✓ Replacing ${token} with: ${renderContext[token]}`);
