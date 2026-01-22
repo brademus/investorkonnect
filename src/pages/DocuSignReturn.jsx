@@ -47,7 +47,10 @@ export default function DocuSignReturn() {
         setMessage(statusMessage);
         
         // Add cache buster to force reload fresh data
-        const returnTo = data.returnTo || '/Pipeline';
+        let returnTo = data.returnTo || '/Pipeline';
+        if (/myagreement/i.test(returnTo)) {
+          returnTo = '/Pipeline';
+        }
         const cacheBuster = returnTo.includes('?') ? '&signed=1&_t=' : '?signed=1&_t=';
         const finalUrl = `${returnTo}${cacheBuster}${Date.now()}`;
         
@@ -55,7 +58,7 @@ export default function DocuSignReturn() {
         
         setTimeout(() => {
           window.location.href = finalUrl;
-        }, 1500);
+        }, 400);
 
       } catch (err) {
         console.error('Error handling DocuSign return:', err);
