@@ -350,6 +350,9 @@ function PipelineContent() {
         queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
         refetchDeals();
         refetchRooms();
+
+        // Remove ?signed and ?dealId from the URL to prevent repeated refresh/flicker
+        navigate(createPageUrl('Pipeline'), { replace: true });
       })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
