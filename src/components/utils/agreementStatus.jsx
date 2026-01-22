@@ -112,7 +112,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   if (negUpper === 'COUNTERED_BY_AGENT' || (negUpper.includes('COUNTER') && lastActor === 'AGENT') || (negUpper.includes('PENDING') && lastActor === 'AGENT')) {
     return {
       state: 'S2',
-      label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor',
+      label: userRole === 'investor' ? 'Review offer & sign' : 'Waiting on investor',
       className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber')
     };
   }
@@ -128,14 +128,14 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
 
   // Generic counter fallback
   if (negUpper.includes('COUNTER')) {
-    return { state: 'Sx', label: userRole === 'investor' ? 'Review counter' : 'Waiting on investor', className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber') };
+    return { state: 'Sx', label: userRole === 'investor' ? 'Review offer & sign' : 'Waiting on investor', className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber') };
   }
 
   // S1 — WAITING_FOR_AGENT_SIGNATURE (investor signed current version)
   if (agreementStatus === 'investor_signed') {
     return {
       state: 'S1',
-      label: userRole === 'investor' ? 'Waiting on agent' : 'Review & sign',
+      label: userRole === 'investor' ? 'Waiting for agent' : 'Review & sign',
       className: pickBadgeClasses(userRole === 'investor' ? 'amber' : 'blue')
     };
   }
