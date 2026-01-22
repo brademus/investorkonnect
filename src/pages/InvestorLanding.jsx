@@ -16,9 +16,15 @@ export default function InvestorLanding() {
     base44.auth.redirectToLogin(createPageUrl("PostAuth"));
   };
 
-  const handleGetStarted = () => {
-    // Pass role hint for brand new users; existing users will keep current role
-    base44.auth.redirectToLogin(createPageUrl("PostAuth") + "?selectedRole=investor");
+  const handleGetStarted = async () => {
+    // If already logged in, route internally; otherwise go to login
+    const isAuth = await base44.auth.isAuthenticated();
+    const target = createPageUrl("PostAuth") + "?selectedRole=investor";
+    if (isAuth) {
+      navigate(target);
+    } else {
+      base44.auth.redirectToLogin(target);
+    }
   };
 
   return (
