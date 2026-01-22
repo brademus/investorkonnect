@@ -1030,10 +1030,9 @@ function PipelineContent() {
                                           const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
                                           const baseDeal = rawDeal || deal; // fallback to mapped deal to ensure price is shown
                                           const { priceLabel, compLabel } = getPriceAndComp({ deal: baseDeal, room: roomForDeal });
-                                          if (!priceLabel && !compLabel) return null;
                                           return (
                                             <div className="text-xs mt-1">
-                                              {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
+                                              <div className="text-[#34D399] font-semibold">{priceLabel || '—'}</div>
                                               {compLabel && <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div>}
                                             </div>
                                           );
