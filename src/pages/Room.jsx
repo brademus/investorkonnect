@@ -962,7 +962,8 @@ export default function Room() {
     }
   };
 
-  const counterpartName = getCounterpartyDisplayName({ 
+  const counterpartName = isWorkingTogether
+    ? (getCounterpartyDisplayName({ 
     room: currentRoom, 
     deal: deal, 
     currentUserRole: profile?.user_role 
