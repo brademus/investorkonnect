@@ -414,7 +414,7 @@ function PipelineContent() {
       // Agent is accepted/signed if room status is accepted or signed
       const hasAgentAccepted = room?.request_status === 'accepted' || room?.request_status === 'signed';
       const hasAgentPending = room?.request_status === 'requested';
-      const isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
+      const isFullySigned = (room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || deal.is_fully_signed === true);
 
       // Get agent name from Deal or Room
       let agentName = 'No Agent Selected';
@@ -470,7 +470,7 @@ function PipelineContent() {
          walkthrough_status: appt?.walkthrough?.status || null,
 
         // Privacy flags
-        is_fully_signed: room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed',
+        is_fully_signed: (room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed' || deal.is_fully_signed === true),
 
         is_orphan: !hasAgentAccepted && !hasAgentPending
       };
