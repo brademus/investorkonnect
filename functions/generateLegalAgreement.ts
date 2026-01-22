@@ -376,7 +376,7 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   
   return {
     PLATFORM_NAME: 'Investor Konnect',
-    PLATFORM_URL: Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://investorkonnect.com',
+    PLATFORM_URL: 'https://agent-vault-da3d088b.base44.app/',
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
