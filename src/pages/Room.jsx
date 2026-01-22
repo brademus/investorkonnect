@@ -1031,7 +1031,7 @@ export default function Room() {
     setText("");
     setSending(true);
     
-    // Optimistic update - show message immediately
+    // Optimistic update - show message immediately at the bottom
     const tempId = `temp-${Date.now()}`;
     const optimisticMessage = {
       id: tempId,
@@ -1045,6 +1045,8 @@ export default function Room() {
       _isMe: true
     };
     setItems(prev => [...prev, optimisticMessage]);
+    // Ensure we stay pinned to bottom immediately
+    setTimeout(scrollToBottom, 0);
     
     try {
       const response = await base44.functions.invoke('sendMessage', { 
