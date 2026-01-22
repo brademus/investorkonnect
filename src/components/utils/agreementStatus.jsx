@@ -140,13 +140,22 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     };
   }
 
-  // Investor needs to sign initial (sent or draft)
+  // Initial states (sent/draft): investor usually signs immediately.
   if (agreementStatus === 'sent' || agreementStatus === 'draft') {
-    return {
-      state: 'S0',
-      label: userRole === 'investor' ? 'Sign contract' : 'Waiting for investor',
-      className: pickBadgeClasses(userRole === 'investor' ? 'blue' : undefined)
-    };
+    const req = (room?.request_status || '').toLowerCase();
+    const roomStatus = (room?.agreement_status || '').toLowerCase();
+    const investorHasSigned = roomStatus === 'investor_signed' || !!agreement?.investor_signed_at;
+
+    if (userRole === 'investor') {
+      // If request accepted or we've already signed, show waiting for agent
+      if (req === 'accepted' || investorHasSigned) {
+        return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
+      }
+      return { state: 'S0', label: 'Sign contract', className: pickBadgeClasses('blue') };
+    }
+
+    // Agent view
+    return { state: 'S0', label: investorHasSigned ? 'Review & sign' : 'Waiting for investor', className: pickBadgeClasses(investorHasSigned ? 'blue' : undefined) };
   }
 
   // Default: no badge
