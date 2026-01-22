@@ -106,6 +106,7 @@ export default function InvestorLanding() {
                 src="https://drive.google.com/file/d/1TZXb6W9V5_vVITTIxt7tEXLtoFarKzAf/preview" 
                 className="w-full aspect-video"
                 allow="autoplay"
+                loading="lazy"
               />
             </div>
           </div>
