@@ -653,8 +653,24 @@ function PipelineContent() {
       return;
     }
 
-    // If investor: do NOT create a room before signing. Route to agreement first
+    // Investor: if already signed, open/create room; otherwise go to My Agreement
     if (!isAgent) {
+      try {
+        const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
+        const ag = data?.agreement;
+        const status = String(ag?.status || '').toLowerCase();
+        const investorSigned = status === 'investor_signed' || !!ag?.investor_signed_at;
+        if (investorSigned) {
+          const agentProfileId = deal.agent_id;
+          if (!agentProfileId) {
+            toast.info('Select an agent for this deal to open a room.');
+            return;
+          }
+          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
+          navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
+          return;
+        }
+      } catch (_) { /* noop */ }
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
