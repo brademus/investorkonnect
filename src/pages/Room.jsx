@@ -577,6 +577,8 @@ export default function Room() {
           const ag = (await base44.functions.invoke('getLegalAgreement', { deal_id: currentRoom.deal_id })).data?.agreement;
           if (ag?.status === 'fully_signed') {
             try { await base44.entities.Room.update(roomId, { agreement_status: 'fully_signed', request_status: 'signed', signed_at: new Date().toISOString(), is_fully_signed: true }); } catch (_) {}
+          } else if (ag?.status === 'investor_signed' || ag?.investor_signed_at) {
+            try { await base44.entities.Room.update(roomId, { agreement_status: 'investor_signed' }); } catch (_) {}
           }
           await refreshRoomState();
           queryClient.invalidateQueries({ queryKey: ['rooms'] });
