@@ -598,7 +598,7 @@ Deno.serve(async (req) => {
     console.log('Available render context keys:', Object.keys(renderContext));
     // Ensure platform tokens exist for placeholders like {PLATFORM_NAME}
     if (!renderContext.PLATFORM_NAME) renderContext.PLATFORM_NAME = 'Investor Konnect';
-    if (!renderContext.PLATFORM_URL) renderContext.PLATFORM_URL = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://investorkonnect.com';
+    if (!renderContext.PLATFORM_URL) renderContext.PLATFORM_URL = 'https://agent-vault-da3d088b.base44.app/';
 
     // Replace all placeholders
     const missingTokens = new Set();
