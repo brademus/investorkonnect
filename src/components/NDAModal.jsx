@@ -61,6 +61,9 @@ export default function NDAModal({ open, onAccepted }) {
         // Call parent callback to refresh and close modal
         if (onAccepted) {
           onAccepted();
+        } else {
+          // Fallback: hard redirect to Pipeline
+          window.location.href = '/Pipeline';
         }
       } else {
         const errorMsg = "Failed to accept NDA";

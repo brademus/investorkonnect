@@ -99,7 +99,8 @@ Deno.serve(async (req) => {
       ndaAccepted: true,
       profileId: profile.id,
       ndaVersion: "v1.0",
-      acceptedAt: now
+      acceptedAt: now,
+      redirectTo: '/Pipeline'
     }, { status: 200, headers });
 
   } catch (error) {
