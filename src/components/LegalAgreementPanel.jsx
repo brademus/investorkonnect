@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -313,11 +314,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       fully_signed: { icon: CheckCircle2, color: 'text-green-400', ring: 'border-green-400/30', label: 'Fully Executed' },
     };
     const config = statusConfig[agreement.status] || statusConfig.draft;
+    const badge = getAgreementStatusLabel({ agreement, role: isAgent ? 'agent' : 'investor' });
+    const displayLabel = badge?.label || config.label;
     const Icon = config.icon;
     return (
       <Badge variant="outline" className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-transparent ${config.ring}`}>
         <Icon className={`w-4 h-4 ${config.color}`} />
-        <span className={`text-sm font-medium ${config.color}`}>{config.label}</span>
+        <span className={`text-sm font-medium ${config.color}`}>{displayLabel}</span>
       </Badge>
     );
   };
