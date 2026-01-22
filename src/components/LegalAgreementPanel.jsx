@@ -305,8 +305,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const getStatusDisplay = () => {
     if (!agreement) return null;
     const statusConfig = {
-      draft: { icon: FileText, color: 'text-[#808080]', ring: 'border-[#1F1F1F]', label: 'Draft' },
-      sent: { icon: Clock, color: 'text-blue-400', ring: 'border-blue-400/30', label: 'Sent' },
+      draft: { icon: FileText, color: 'text-[#808080]', ring: 'border-[#1F1F1F]', label: 'Sign Contract' },
+      sent: { icon: Clock, color: 'text-blue-400', ring: 'border-blue-400/30', label: 'Sign Contract' },
       investor_signed: { icon: CheckCircle2, color: 'text-yellow-400', ring: 'border-yellow-400/30', label: 'Investor Signed' },
       agent_signed: { icon: CheckCircle2, color: 'text-yellow-400', ring: 'border-yellow-400/30', label: 'Agent Signed' },
       attorney_review_pending: { icon: Clock, color: 'text-orange-400', ring: 'border-orange-400/30', label: 'Attorney Review' },
