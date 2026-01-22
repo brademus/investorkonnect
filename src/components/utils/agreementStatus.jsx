@@ -132,7 +132,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   }
 
   // If the request was accepted, investor sees Waiting for agent (unless a counter/regen overrides)
-  if (userRole === 'investor' && (room?.request_status || '').toLowerCase() === 'accepted' && !isFullySigned) {
+  if (userRole === 'investor' && ((room?.request_status || '').toLowerCase() === 'accepted' || (room?.agreement_status || '').toLowerCase() === 'investor_signed') && !isFullySigned) {
     return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
   }
 
