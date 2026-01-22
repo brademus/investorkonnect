@@ -100,7 +100,8 @@ function useMessages(roomId, authUser, currentProfile) {
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    // Jump instantly to bottom to avoid top-then-bottom flicker
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   };
 
   useEffect(() => { scrollToBottom(); }, [items]);
