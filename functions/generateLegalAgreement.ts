@@ -375,8 +375,6 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   }
   
   return {
-    PLATFORM_NAME: 'Investor Konnect',
-    PLATFORM_URL: 'https://agent-vault-da3d088b.base44.app/',
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
@@ -596,9 +594,6 @@ Deno.serve(async (req) => {
     
     // Log all available context keys
     console.log('Available render context keys:', Object.keys(renderContext));
-    // Ensure platform tokens exist for placeholders like {PLATFORM_NAME}
-    if (!renderContext.PLATFORM_NAME) renderContext.PLATFORM_NAME = 'Investor Konnect';
-    if (!renderContext.PLATFORM_URL) renderContext.PLATFORM_URL = 'https://agent-vault-da3d088b.base44.app/';
 
     // Replace all placeholders
     const missingTokens = new Set();

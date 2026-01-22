@@ -350,9 +350,6 @@ function PipelineContent() {
         queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
         refetchDeals();
         refetchRooms();
-
-        // Remove ?signed and ?dealId from the URL to prevent repeated refresh/flicker
-        navigate(createPageUrl('Pipeline'), { replace: true });
       })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
@@ -454,7 +451,7 @@ function PipelineContent() {
         property_address: deal.property_address || deal.deal_title || 'Address Pending',
         city: deal.city,
         state: deal.state,
-        budget: (deal.purchase_price ?? deal.budget), 
+        budget: deal.purchase_price, 
         seller_name: deal.seller_info?.seller_name,
 
         // Status & Agent  
@@ -943,14 +940,14 @@ function PipelineContent() {
             </div>
 
             {/* Kanban Grid with Drag & Drop */}
-            <DragDropContext onDragEnd={handleDragEnd} enableDefaultSensors={true}>
+            <DragDropContext onDragEnd={handleDragEnd}>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8">
                 {pipelineStages.map(stage => {
                   const stageDeals = dealsByStage.get(stage.id) || [];
                   const Icon = stage.icon;
 
                   return (
-                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px] h-auto will-change-transform transform-gpu">
+                    <div key={stage.id} className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-4 flex flex-col md:h-[400px] h-auto will-change-transform">
                       <div className="flex items-center gap-3 mb-4 pb-3 border-b border-[#1F1F1F]">
                         <div className="w-8 h-8 rounded-lg bg-[#E3C567]/10 flex items-center justify-center text-[#E3C567]">
                           <Icon className="w-4 h-4" />
@@ -961,32 +958,12 @@ function PipelineContent() {
                         </div>
                       </div>
 
-                      <Droppable droppableId={stage.id} renderClone={(provided, snapshot, rubric) => {
-                        const deal = dealsByStage.get(stage.id)?.[rubric.source.index];
-                        if (!deal) return null;
-                        return (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            {...provided.dragHandleProps}
-                            className="bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl transform-gpu will-change-transform shadow-2xl ring-2 ring-[#E3C567] opacity-95"
-                            style={{ ...provided.draggableProps.style, contain: 'layout paint size', willChange: 'transform' }}
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
-                                {isAgent && !deal.is_fully_signed ? `${deal.city}, ${deal.state}` : deal.property_address}
-                              </h4>
-                              <span className="text-[10px] bg-[#222] text-[#808080] px-2 py-0.5 rounded-full">{getDaysInPipeline(deal.created_date)}</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-xs text-[#666]"><Home className="w-3 h-3" /><span>{deal.city}, {deal.state}</span></div>
-                          </div>
-                        );
-                      }}>
+                      <Droppable droppableId={stage.id}>
                         {(provided, snapshot) => (
                           <div
                             ref={provided.innerRef}
                             {...provided.droppableProps}
-                            className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors transform-gpu will-change-transform ${
+                            className={`md:flex-1 md:overflow-y-auto space-y-3 pr-2 custom-scrollbar transition-colors ${
                               snapshot.isDraggingOver ? 'bg-[#E3C567]/5' : ''
                             }`}
                           >
@@ -1002,10 +979,9 @@ function PipelineContent() {
                                       ref={provided.innerRef}
                                       {...provided.draggableProps}
                                       {...provided.dragHandleProps}
-                                      className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transform-gpu will-change-transform transition-colors ${
-                                        snapshot.isDragging ? 'shadow-lg ring-1 ring-[#E3C567] opacity-95' : ''
+                                      className={`bg-[#141414] border border-[#1F1F1F] p-4 rounded-xl hover:border-[#E3C567] group transition-all ${
+                                        snapshot.isDragging ? 'shadow-2xl ring-2 ring-[#E3C567] opacity-90' : ''
                                       }`}
-                                      style={{ ...provided.draggableProps.style, contain: 'layout paint size', willChange: 'transform' }}
                                     >
                                       <div className="flex justify-between items-start mb-2">
                                         <h4 className="text-[#FAFAFA] font-bold text-sm line-clamp-2 leading-tight">
@@ -1025,14 +1001,14 @@ function PipelineContent() {
                                           <Home className="w-3 h-3" />
                                           <span>{deal.city}, {deal.state}</span>
                                         </div>
-                                        {(() => {
+                                        {isAgent && (() => {
                                           const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
                                           const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
-                                          const baseDeal = rawDeal || deal; // fallback to mapped deal to ensure price is shown
-                                          const { priceLabel, compLabel } = getPriceAndComp({ deal: baseDeal, room: roomForDeal });
+                                          const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
+                                          if (!priceLabel && !compLabel) return null;
                                           return (
                                             <div className="text-xs mt-1">
-                                              <div className="text-[#34D399] font-semibold">{priceLabel || '—'}</div>
+                                              {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
                                               {compLabel && <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div>}
                                             </div>
                                           );

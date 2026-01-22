@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useLayoutEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
@@ -15,24 +15,9 @@ export default function MyAgreement() {
   const signedFlag = params.get('signed');
   const { profile, loading: loadingProfile } = useCurrentProfile();
 
-  // Instant redirect after DocuSign return to avoid My Agreement flash
-  useLayoutEffect(() => {
-    if (!signedFlag) return;
-    const target = dealIdParam
-      ? `${createPageUrl('Pipeline')}?signed=1&dealId=${dealIdParam}`
-      : `${createPageUrl('Pipeline')}?signed=1`;
-    navigate(target, { replace: true });
-  }, [signedFlag, dealIdParam]);
-
   const [dealId, setDealId] = useState(dealIdParam || null);
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
-
-  // Prevent UI flash while redirecting after DocuSign
-  if (signedFlag) {
-    // useLayoutEffect above will redirect immediately
-    return null;
-  }
 
   // Resolve dealId from roomId if needed
   useEffect(() => {
