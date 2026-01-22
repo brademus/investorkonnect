@@ -63,6 +63,13 @@ export default function PropertyDetailsCard({ deal }) {
           ))}
         </div>
       )}
+
+      {/* Always show city/state and masked address for agents before signing */}
+      <div className="mt-4 text-xs text-[#808080]">
+        {deal?._is_redacted ? (
+          <span>Address hidden until agreement is fully signed</span>
+        ) : null}
+      </div>
     </div>
   );
 }
