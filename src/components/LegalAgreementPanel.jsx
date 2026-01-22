@@ -377,9 +377,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 {hasPendingOffer ? 'An agent counter offer is pending. Review below and confirm or counter.' : 'Terms changed. Please regenerate the agreement before signing.'}
               </p>
               <div className="flex gap-2">
-                {termsMismatch && (
-                  <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Regenerate Agreement</Button>
-                )}
+                <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">{termsMismatch ? 'Regenerate Agreement' : 'Review & Generate'}</Button>
               </div>
             </div>
           ) : (
