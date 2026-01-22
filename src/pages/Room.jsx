@@ -2672,7 +2672,7 @@ ${dealContext}`;
               ) : (
                 <>
                   {messages.map((m) => {
-                   const isMe = isMessageFromMe(m, user, profile);
+                   const isMe = (m._isMe === true) || isMessageFromMe(m, user, profile);
                    const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
                     return (
