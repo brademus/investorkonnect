@@ -140,7 +140,7 @@ export function Header({ profile }) {
                         <CreditCard className="w-4 h-4 text-[#808080]" />
                         <span className="text-sm text-[#FAFAFA]">Subscription</span>
                       </Link>
-                    )>
+                    )}
                     
                     <div className="border-t border-[#1F1F1F] mt-2 pt-2">
                       <button
