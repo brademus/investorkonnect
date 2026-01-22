@@ -87,6 +87,21 @@ Deno.serve(async (req) => {
       isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
     }
 
+    // Resolve counterpart full names (only exposed after full signing)
+    let investorFullName = null;
+    let agentFullName = null;
+    try {
+      const [invP, agP] = await Promise.all([
+        deal.investor_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : Promise.resolve([]),
+        deal.agent_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : Promise.resolve([])
+      ]);
+      const i = invP?.[0];
+      const a = agP?.[0];
+      const nameOf = (p) => p?.full_name || [p?.verified_first_name || p?.onboarding_first_name, p?.verified_last_name || p?.onboarding_last_name].filter(Boolean).join(' ') || null;
+      investorFullName = nameOf(i);
+      agentFullName = nameOf(a);
+    } catch (_) {}
+
     // Base fields everyone can see
     const baseDeal = {
       id: deal.id,
@@ -108,8 +123,10 @@ Deno.serve(async (req) => {
       // Expose seller contract metadata so Files tab can show it even before full signing
       contract_document: deal.contract_document,
       contract_url: deal.contract_url,
-      is_fully_signed: isFullySigned
-    };
+      is_fully_signed: isFullySigned,
+      investor_full_name: isFullySigned ? (investorFullName || null) : null,
+      agent_full_name: isFullySigned ? (agentFullName || null) : null
+      };
 
     // Fallback: prefer investor-entered Deal.details; if empty/blank, use Room; else try contract
     const isMeaningfulPD = (pd) => {
