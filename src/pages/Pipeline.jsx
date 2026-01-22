@@ -1107,37 +1107,22 @@ function PipelineContent() {
                                       </div>
 
                                       <div className="flex flex-col gap-2 mb-3">
-                                        <div className="flex items-center justify-between">
-                                          <div className="flex items-center gap-1 text-xs text-[#666]">
-                                            <Home className="w-3 h-3" />
-                                            <span>{deal.city}, {deal.state}</span>
-                                          </div>
-                                          {isAgent && (() => {
-                                            const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
-                                            const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
-                                            const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
-                                            if (!priceLabel && !compLabel) return null;
-                                            return (
-                                              <div className="text-xs text-right">
-                                                {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
-                                                {compLabel && <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div>}
-                                              </div>
-                                            );
-                                          })()}
-                                          {(() => {
-                                            const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
-                                            const badge = getAgreementStatusLabel({
-                                              room: fullRoom,
-                                              negotiation: fullRoom?.negotiation,
-                                              role: isAgent ? 'agent' : 'investor'
-                                            });
-                                            return badge ? (
-                                              <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
-                                                {badge.label}
-                                              </span>
-                                            ) : null;
-                                          })()}
+                                        <div className="flex items-center gap-1 text-xs text-[#666]">
+                                          <Home className="w-3 h-3" />
+                                          <span>{deal.city}, {deal.state}</span>
                                         </div>
+                                        {isAgent && (() => {
+                                          const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
+                                          const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
+                                          const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
+                                          if (!priceLabel && !compLabel) return null;
+                                          return (
+                                            <div className="text-xs mt-1">
+                                              {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
+                                              {compLabel && <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div>}
+                                            </div>
+                                          );
+                                        })()}
 
                                         {deal.walkthrough_date && (
                                           <div className="flex items-center gap-1 text-xs text-[#60A5FA]">
@@ -1152,6 +1137,22 @@ function PipelineContent() {
                                             Seller: {deal.seller_name}
                                           </div>
                                         )}
+
+                                        {(() => {
+                                          const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
+                                          const badge = getAgreementStatusLabel({
+                                            room: fullRoom,
+                                            negotiation: fullRoom?.negotiation,
+                                            role: isAgent ? 'agent' : 'investor'
+                                          });
+                                          return badge ? (
+                                            <div className="mt-1">
+                                              <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
+                                                {badge.label}
+                                              </span>
+                                            </div>
+                                          ) : null;
+                                        })()}
 
                                         {!deal.is_orphan && deal.customer_name && (
                                           <div className="text-xs text-[#10B981] flex items-center gap-1">
