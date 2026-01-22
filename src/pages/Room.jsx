@@ -190,7 +190,7 @@ const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
 });
 
 // Memoized conversation item to prevent flickering
-const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDeal }) => {
+const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDeal, agreement }) => {
   // Determine if agent can see full address (check if agreement is fully signed)
   const canSeeFullAddress = userRole === 'investor' || room.is_fully_signed;
   
@@ -222,7 +222,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDe
           </p>
           <div className="flex items-center gap-2 flex-shrink-0 ml-2">
             {(() => {
-              const badge = getAgreementStatusLabel({ room: room, negotiation: room?.negotiation, role: userRole });
+              const badge = getAgreementStatusLabel({ room: room, negotiation: room?.negotiation, agreement, role: userRole });
               return badge ? (
                 <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
                   {badge.label}
@@ -1325,6 +1325,7 @@ ${dealContext}`;
                 onClick={handleClick}
                 userRole={profile?.user_role}
                 fullDeal={getCachedDeal(r.deal_id) || (r.id === roomId ? deal : undefined)}
+                agreement={r.id === roomId ? agreement : undefined}
               />
             );
           })}

@@ -313,11 +313,28 @@ function PipelineContent() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     if (params.get('signed') === '1') {
-      queryClient.invalidateQueries({ queryKey: ['rooms'] });
-      queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
-      queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
-      refetchDeals();
-      refetchRooms();
+      (async () => {
+        const dealId = params.get('dealId') || params.get('deal_id');
+        if (dealId) {
+          try {
+            const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+            const ag = data?.agreement;
+            if (ag?.status === 'investor_signed' || (ag?.investor_signed_at && ag?.status !== 'fully_signed')) {
+              const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+              if (Array.isArray(roomsForDeal)) {
+                for (const r of roomsForDeal) {
+                  try { await base44.entities.Room.update(r.id, { agreement_status: 'investor_signed' }); } catch (_) {}
+                }
+              }
+            }
+          } catch (_) {}
+        }
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+        queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
+        refetchDeals();
+        refetchRooms();
+      })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
 

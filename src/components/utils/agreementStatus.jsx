@@ -144,7 +144,12 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   if (agreementStatus === 'sent' || agreementStatus === 'draft') {
     const req = (room?.request_status || '').toLowerCase();
     const roomStatus = (room?.agreement_status || '').toLowerCase();
-    const investorHasSigned = roomStatus === 'investor_signed' || !!agreement?.investor_signed_at;
+    const investorHasSigned = (
+      roomStatus === 'investor_signed' ||
+      agreementStatus === 'investor_signed' ||
+      !!agreement?.investor_signed_at ||
+      !!room?.investor_signed_at
+    );
 
     if (userRole === 'investor') {
       // If request accepted or we've already signed, show waiting for agent
