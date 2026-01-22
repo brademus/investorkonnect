@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Loader2 } from "lucide-react";
+import { Send } from "lucide-react";
 import { toast } from "sonner";
 
 export default function SimpleMessageBoard({ roomId, profile, user, isChatEnabled }) {
@@ -36,7 +36,11 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       const data = event?.data;
       if (!data || data.room_id !== roomId) return;
       if (event.type === "create") {
-        setMessages((prev) => [...prev, data]);
+        setMessages((prev) => {
+          if (!data?.id) return prev;
+          if (prev.some((m) => m.id === data.id)) return prev;
+          return [...prev, data];
+        });
         scrollToBottom();
       } else if (event.type === "delete") {
         setMessages((prev) => prev.filter((m) => m.id !== event.id));
@@ -55,11 +59,25 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
 
   const send = async () => {
     const body = text.trim();
-    if (!roomId || !body || sending) return;
+    if (!roomId || !body) return;
     if (!isChatEnabled) {
       toast.error("Chat unlocks after the request is accepted.");
       return;
     }
+
+    // optimistic add
+    const tempId = `temp_${Date.now()}`;
+    const optimistic = {
+      id: tempId,
+      room_id: roomId,
+      sender_profile_id: profile?.id,
+      body,
+      created_date: new Date().toISOString(),
+      _optimistic: true,
+    };
+    setMessages((prev) => [...prev, optimistic]);
+    setText("");
+    scrollToBottom();
 
     setSending(true);
     try {
@@ -67,11 +85,14 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       if (!res?.data?.ok) {
         throw new Error(res?.data?.error || "Failed to send");
       }
-      const msg = res?.data?.message;
-      if (msg) setMessages((prev) => [...prev, msg]);
-      setText("");
-      scrollToBottom();
+      const real = res?.data?.message;
+      if (real?.id) {
+        setMessages((prev) => prev.map((m) => (m.id === tempId ? real : m)));
+      }
     } catch (e) {
+      // rollback optimistic
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
+      setText(body);
       toast.error(e?.message || "Failed to send");
     } finally {
       setSending(false);
@@ -105,10 +126,10 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
               }}
               placeholder="Type a message..."
               className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
-              disabled={sending}
+              
             />
-            <Button onClick={send} disabled={!text.trim() || sending} className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-              {sending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            <Button onClick={send} disabled={!text.trim()} className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+              <Send className="w-5 h-5" />
             </Button>
           </div>
         ) : (
