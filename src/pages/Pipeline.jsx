@@ -38,6 +38,8 @@ function PipelineContent() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [identity, setIdentity] = useState(null);
   const [identityLoaded, setIdentityLoaded] = useState(false);
+  const [allowExtras, setAllowExtras] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
@@ -360,122 +362,10 @@ function PipelineContent() {
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id || !isAgent) return [];
-      const allRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      // Only VALID, non-orphan, request-status rooms for this agent; dedupe by deal_id
-      const candidates = (allRooms || []).filter(r =>
-        r &&
-        r.agentId === profile.id &&
-        r.deal_id &&
-        r.investorId &&
-        !r.is_orphan &&
-        r.request_status !== 'rejected' &&
-        r.request_status !== 'signed' &&
-        r.agreement_status !== 'fully_signed' &&
-        (r.request_status === 'requested' || r.request_status === 'accepted')
-      );
-      const byDeal = new Map();
-      for (const r of candidates) {
-        const prev = byDeal.get(r.deal_id);
-        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
-        if (!prev || tA > tB) byDeal.set(r.deal_id, r);
-      }
-      // Hide requests for deals that already have an accepted/signed room (by any agent)
-      const list = Array.from(byDeal.values());
-      const dealIds = Array.from(new Set(list.map(r => r.deal_id)));
-      const roomsByDeal = await Promise.all(
-        dealIds.map(id => base44.entities.Room.filter({ deal_id: id }))
-      );
-      const lockedDeals = new Set();
-      roomsByDeal.forEach(rows => {
-        (rows || []).forEach(rr => {
-          if (rr?.request_status === 'accepted' || rr?.request_status === 'signed' || rr?.agreement_status === 'fully_signed') {
-            lockedDeals.add(rr.deal_id);
-          }
-        });
-      });
-      // Validate that the underlying deal exists and is not archived
-      const dealRows = await Promise.all(
-        dealIds.map(id => base44.entities.Deal.filter({ id }))
-      );
-      const validDeals = new Set();
-      const dealsById = new Map();
-      dealRows.forEach(rows => {
-        const d = rows && rows[0];
-        if (d) {
-          dealsById.set(d.id, d);
-          if (d.status !== 'archived') validDeals.add(d.id);
-        }
-      });
-      // Preliminary: remove locked/archived/mismatched investor rooms
-      const prelim = list
-        .filter(r => !lockedDeals.has(r.deal_id))
-        .filter(r => validDeals.has(r.deal_id))
-        .filter(r => {
-          const d = dealsById.get(r.deal_id);
-          return d && d.investor_id && r.investorId === d.investor_id;
-        });
-      // Dedupe by canonical signature (address/city/state/zip), keep the most recent
-      const norm = (v) => (v ?? '').toString().trim().toLowerCase();
-      const cleanAddr = (s) => norm(s)
-        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
-        .replace(/[^a-z0-9]/g, '')
-        .slice(0, 80);
-      const bySig = new Map();
-      for (const r of prelim) {
-        const d = dealsById.get(r.deal_id);
-        const addr = d?.property_address || r.property_address || d?.title || r.deal_title || r.title || '';
-        const city = d?.city || r.city || '';
-        const state = d?.state || r.state || '';
-        const zip = (d?.zip || r.zip || '').toString().slice(0,5);
-        const sig = `${cleanAddr(addr)}|${norm(city)}|${norm(state)}|${norm(zip)}`;
-        const prev = bySig.get(sig);
-        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
-        if (!prev || tA > tB) bySig.set(sig, r);
-      }
-      const deduped = Array.from(bySig.values()).sort((a, b) =>
-        new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
-      );
-      // Final legitimacy filter: require basic location + budget and not fully signed (counterparty may be hidden for agents)
-      const legit = deduped.filter(r =>
-        (Boolean(r.city) || Boolean(r.state)) &&
-        Number(r.budget || 0) > 0 &&
-        r.agreement_status !== 'fully_signed' &&
-        r.request_status !== 'signed'
-      );
-      // Final dedupe by deal_id and pick most recent
-      const finalByDeal = new Map();
-      legit.forEach(r => {
-        const prev = finalByDeal.get(r.deal_id);
-        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
-        if (!prev || tA > tB) finalByDeal.set(r.deal_id, r);
-      });
-
-      // Extra safety: dedupe again by canonical address signature across remaining items
-      const norm2 = (v) => (v ?? '').toString().trim().toLowerCase();
-      const cleanAddr2 = (s) => norm2(s)
-        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
-        .replace(/[^a-z0-9]/g, '')
-        .slice(0, 80);
-      const bySigFinal = new Map();
-      for (const r of finalByDeal.values()) {
-        const d = dealsById.get(r.deal_id);
-        const addr = d?.property_address || r.property_address || d?.title || r.deal_title || r.title || '';
-        const city = d?.city || r.city || '';
-        const state = d?.state || r.state || '';
-        const zip = (d?.zip || r.zip || '').toString().slice(0,5);
-        const sig = `${cleanAddr2(addr)}|${norm2(city)}|${norm2(state)}|${norm2(zip)}`;
-        const prev = bySigFinal.get(sig);
-        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-        const tB = prev ? new Date(prev.updated_date || prev.created_date || 0).getTime() : -1;
-        if (!prev || tA > tB) bySigFinal.set(sig, r);
-      }
-
-      return Array.from(bySigFinal.values()).sort((a,b)=> new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0));
+      const { data } = await base44.functions.invoke('getAgentPendingRequests');
+      return data?.requests || [];
     },
-    enabled: !!profile?.id && isAgent,
+    enabled: !!profile?.id && isAgent && allowExtras,
     refetchOnWindowFocus: false,
     
   });
@@ -492,7 +382,7 @@ function PipelineContent() {
       const idSet = new Set(uniqueDealsData.map(d => d.id));
       return items.filter(a => idSet.has(a.dealId));
     },
-    enabled: dealsData.length > 0,
+    enabled: allowExtras && dealsData.length > 0,
     refetchOnWindowFocus: false,
     refetchInterval: 0
   });
@@ -821,7 +711,7 @@ function PipelineContent() {
   }
 
   // Prevent initial flicker by waiting for core data to load
-  if (loading || (loadingDeals && (!dealsData || dealsData.length === 0)) || (loadingRooms && (!rooms || rooms.length === 0))) {
+  if (loading || (loadingDeals && (!dealsData || dealsData.length === 0))) {
     return (
       <div className="min-h-screen bg-transparent flex flex-col">
         <Header profile={profile} />
