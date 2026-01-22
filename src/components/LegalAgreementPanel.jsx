@@ -254,7 +254,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       const response = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: agreement.id,
         role: signatureType,
-        redirect_url: returnTo,
+        redirect_url: '/Pipeline',
       });
 
       if (!response?.data) {
