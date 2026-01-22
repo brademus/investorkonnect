@@ -109,8 +109,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   const loadAgreement = async () => {
     if (!effectiveDealId) { setLoading(false); return; }
-    // Skip if already loading or already have agreement
-    if (loading || agreement) return;
+    // Skip only if we already have an agreement
+    if (agreement) return;
     try {
       setLoading(true);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
