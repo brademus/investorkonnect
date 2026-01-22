@@ -1028,7 +1028,8 @@ function PipelineContent() {
                                         {(() => {
                                           const rawDeal = uniqueDealsData.find(d => d.id === deal.deal_id);
                                           const roomForDeal = rooms.find(r => r.deal_id === deal.deal_id);
-                                          const { priceLabel, compLabel } = getPriceAndComp({ deal: rawDeal, room: roomForDeal });
+                                          const baseDeal = rawDeal || deal; // fallback to mapped deal to ensure price is shown
+                                          const { priceLabel, compLabel } = getPriceAndComp({ deal: baseDeal, room: roomForDeal });
                                           if (!priceLabel && !compLabel) return null;
                                           return (
                                             <div className="text-xs mt-1">
