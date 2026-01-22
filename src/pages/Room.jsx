@@ -116,42 +116,40 @@ function useMessages(roomId, authUser, currentProfile) {
 
     const fetchMessages = async () => {
       try {
-        const messages = await base44.entities.Message.filter(
+        const serverItems = await base44.entities.Message.filter(
           { room_id: roomId },
           'created_date' // Sort ascending (oldest first)
         );
 
         if (!cancelled) {
           setItems(prev => {
-            // Keep optimistic messages temporarily
-            const optimisticMessages = prev.filter(m => m._isOptimistic);
+            // 1) Carry over optimistic messages and lock their side
+            const optimistic = prev.filter(m => m._isOptimistic).map(m => ({ ...m, _isMe: true }));
 
-            // Remove optimistic messages that match new real messages
-            const activeOptimistic = optimisticMessages.filter(opt => {
-              return !messages.some(real => 
-                real.body === opt.body && 
-                real.sender_profile_id === opt.sender_profile_id &&
-                Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 5000
-              );
-            });
+            // 2) Stabilize server items with _isMe computed ONCE
+            const stableServer = serverItems.map(m => ({ ...m, _isMe: isMessageFromMe(m, authUser, currentProfile) }));
 
-            // Stabilize who-is-me mapping to prevent bubble side flicker
-            const stabilized = messages.map(m => ({ ...m, _isMe: isMessageFromMe(m, authUser, currentProfile) }));
+            // 3) Drop any optimistic that clearly matches a server message
+            const remainingOptimistic = optimistic.filter(opt => !stableServer.some(real => {
+              const sameSender = (real.sender_profile_id && opt.sender_profile_id && real.sender_profile_id === opt.sender_profile_id) ||
+                                 (real.sender_user_id && opt.sender_user_id && real.sender_user_id === opt.sender_user_id);
+              const sameBody = real.body === opt.body;
+              const closeTime = Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 8000;
+              return sameSender && sameBody && closeTime;
+            }));
 
-            // Combine real messages + active optimistic, remove duplicates by ID
-            const combined = [...stabilized, ...activeOptimistic];
+            // 4) Merge and dedupe by id fallback signature
+            const merged = [...stableServer, ...remainingOptimistic];
             const seen = new Set();
-            const deduplicated = combined.filter(m => {
-              const key = m.id || `${m.sender_profile_id}-${m.created_date}-${m.body?.slice(0,20)}`;
+            const deduped = merged.filter(m => {
+              const key = m.id || `${m.sender_profile_id||m.sender_user_id}-${m.created_date}-${m.body?.slice(0,20)}`;
               if (seen.has(key)) return false;
               seen.add(key);
               return true;
             });
 
-            // Sort by created_date
-            return deduplicated.sort(
-              (a, b) => new Date(a.created_date) - new Date(b.created_date)
-            );
+            // 5) Final stable sort
+            return deduped.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
           });
         }
       } catch (error) {
