@@ -376,6 +376,11 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
   
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
+    PLATFORM_NAME: 'investor konnect',
+    PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
     DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
     INVESTOR_LEGAL_NAME: profile.full_name || profile.email || 'N/A',
