@@ -343,7 +343,6 @@ export default function Room() {
   const [agentTasks, setAgentTasks] = useState([]);
   const [generatingTasks, setGeneratingTasks] = useState(false);
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
-  const roomTokenRef = useRef(0);
   const requestSeqRef = useRef(0);
   const [dealAppts, setDealAppts] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
@@ -355,7 +354,7 @@ export default function Room() {
     if (!showBoard || !currentRoom?.deal_id) return;
     setBoardLoading(true);
     (async () => {
-      const data = await prefetchDeal(roomTokenRef.current);
+      const data = await prefetchDeal();
       if (data) setDeal(data);
       setBoardLoading(false);
     })();
@@ -372,14 +371,13 @@ export default function Room() {
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
-      roomTokenRef.current += 1;
-      setShowBoard(false);
-      setActiveTab('details');
-      setInvestorTasks([]);
-      setAgentTasks([]);
-      setDeal(null);
-      setAgreement(null);
-    }, [roomId]);
+    setShowBoard(false);
+    setActiveTab('details');
+    setInvestorTasks([]);
+    setAgentTasks([]);
+    setDeal(null);
+    setAgreement(null);
+  }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
   const [pdPropertyType, setPdPropertyType] = useState("");
@@ -459,7 +457,6 @@ export default function Room() {
 
         if (freshDeal) {
           setCachedDeal(freshRoom.deal_id, freshDeal);
-          if (isStale()) return;
           setDeal(freshDeal);
           
           const displayTitle = (isAgentView && !freshDeal.is_fully_signed)
@@ -498,7 +495,7 @@ export default function Room() {
   };
 
   // Prefetch board data: deal, latest room photos/files, and appointments
-  const prefetchDeal = async (token = roomTokenRef.current) => {
+  const prefetchDeal = async () => {
     try {
       const did = currentRoom?.deal_id;
       if (!did) return null;
@@ -511,9 +508,6 @@ export default function Room() {
         base44.entities.DealAppointments.filter({ dealId: did }).catch(() => []),
         base44.functions.invoke('getLegalAgreement', { deal_id: did }).catch(() => ({ data: null }))
       ]);
-
-      // If user switched rooms during fetch, abort updates
-      if (token !== roomTokenRef.current) { return null; }
 
       const freshDeal = res?.data || cached || null;
       if (freshDeal) setCachedDeal(did, freshDeal);
@@ -963,13 +957,11 @@ export default function Room() {
     }
   };
 
-  const counterpartName = isWorkingTogether
-    ? (getCounterpartyDisplayName({ 
+  const counterpartName = getCounterpartyDisplayName({ 
     room: currentRoom, 
     deal: deal, 
     currentUserRole: profile?.user_role 
-  }) || location.state?.initialCounterpartyName || "Chat")
-    : (profile?.user_role === 'agent' ? 'Investor' : 'Agent');
+  }) || location.state?.initialCounterpartyName || "Chat";
 
 
 
@@ -1412,11 +1404,11 @@ ${dealContext}`;
             {roomId && (
               <>
                 <Button
-                    onMouseEnter={() => prefetchDeal(roomTokenRef.current)}
+                    onMouseEnter={prefetchDeal}
                     onClick={async () => {
                                         // Always open the Deal Board reliably
                                         setBoardLoading(true);
-                                        const data = await prefetchDeal(roomTokenRef.current);
+                                        const data = await prefetchDeal();
                                         if (data) {
                                           setDeal(data);
                                         } else if (currentRoom) {
@@ -2565,10 +2557,10 @@ ${dealContext}`;
                   </div>
                   <div>
                     <Button
-                      onMouseEnter={() => prefetchDeal(roomTokenRef.current)}
+                      onMouseEnter={prefetchDeal}
                       onClick={async () => {
                         setBoardLoading(true);
-                        const data = await prefetchDeal(roomTokenRef.current);
+                        const data = await prefetchDeal();
                         if (data) {
                           setDeal(data);
                         } else if (currentRoom) {

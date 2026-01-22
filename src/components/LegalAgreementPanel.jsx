@@ -63,10 +63,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load agreement when deal is known and agreement not in state
   useEffect(() => {
-    if (effectiveDealId) {
+    if (effectiveDealId && !agreement) {
       loadAgreement();
     }
-  }, [effectiveDealId]);
+  }, [effectiveDealId, agreement]);
 
   const handleOpenGenerateModal = async () => {
     if (!deal?.id) return;
@@ -109,8 +109,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   const loadAgreement = async () => {
     if (!effectiveDealId) { setLoading(false); return; }
-    // Skip only if we already have an agreement
-    if (agreement) return;
+    // Skip if already loading or already have agreement
+    if (loading || agreement) return;
     try {
       setLoading(true);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
@@ -127,7 +127,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!effectiveDealId) return;
     try {
       setLoadingOffer(true);
-      const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1).catch(() => []);
+      const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
       setPendingOffer(offers?.[0] || null);
     } finally {
       setLoadingOffer(false);
