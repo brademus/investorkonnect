@@ -58,7 +58,7 @@ function ActiveDealsContent() {
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => navigate(createPageUrl("Dashboard"))}
+                onClick={() => navigate(createPageUrl("Pipeline"))}
                 className="w-10 h-10 bg-[#0D0D0D] border border-[#1F1F1F] rounded-full flex items-center justify-center hover:bg-[#141414] transition-colors"
               >
                 <ArrowLeft className="w-5 h-5 text-[#808080]" />

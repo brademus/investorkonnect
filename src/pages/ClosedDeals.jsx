@@ -24,7 +24,7 @@ function ClosedDealsContent() {
         <div className="max-w-7xl mx-auto px-4 py-8">
           {/* Back Button */}
           <Link 
-            to={createPageUrl("Dashboard")} 
+            to={createPageUrl("Pipeline")} 
             className="inline-flex items-center gap-2 text-[#A6A6A6] hover:text-[#E5C37F] mb-6 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
