@@ -140,7 +140,10 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     };
   }
 
-  // Default: no badge
+  // Default: no badge; show a baseline for investors so status appears consistently
+  if (userRole === 'investor') {
+    return { state: 'S0', label: 'Draft', className: pickBadgeClasses() };
+  }
   return null;
 }
 
