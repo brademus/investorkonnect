@@ -110,7 +110,8 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       // rollback optimistic
       setMessages((prev) => prev.filter((m) => m.id !== tempId));
       setText(body);
-      toast.error(e?.message || "Failed to send");
+      const apiErr = e?.response?.data?.error || e?.message;
+      toast.error(apiErr || "Failed to send");
     } finally {
       setSending(false);
     }
