@@ -18,22 +18,27 @@ html {
   outline-offset: 2px;
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Dark theme */
+/* Firefox */
+html { scrollbar-width: thin; scrollbar-color: #2A2A2A #0D0D0D; }
+
+/* WebKit */
 ::-webkit-scrollbar {
   width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #FAF7F2;
+  background: #0D0D0D; /* black track */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #D3A029;
-  border-radius: 5px;
+  background: #2A2A2A; /* dark thumb */
+  border-radius: 6px;
+  border: 1px solid #1F1F1F;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #B8902A;
+  background: #3A3A3A;
 }
 
 /* Fade in animation */
