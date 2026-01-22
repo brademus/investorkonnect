@@ -89,7 +89,7 @@ export default function PostAuth() {
         const urlParams = new URLSearchParams(window.location.search);
         const selectedRole = urlParams.get('selectedRole')?.toLowerCase();
 
-        // If a role was preselected, only set it when no role exists
+        // If a role was preselected, only set it when no role exists; NEVER switch roles for existing users
         if (selectedRole === 'agent' || selectedRole === 'investor') {
           if (!profile?.user_role || profile.user_role === 'member') {
             try {
@@ -99,6 +99,8 @@ export default function PostAuth() {
             } catch (e) {
               console.warn('[PostAuth] Failed to set preselected role', e);
             }
+          } else {
+            // Existing users keep their current role; ignore selectedRole
           }
         }
 
