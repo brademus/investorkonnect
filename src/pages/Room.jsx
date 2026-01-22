@@ -967,7 +967,8 @@ export default function Room() {
     room: currentRoom, 
     deal: deal, 
     currentUserRole: profile?.user_role 
-  }) || location.state?.initialCounterpartyName || "Chat";
+  }) || location.state?.initialCounterpartyName || "Chat")
+    : (profile?.user_role === 'agent' ? 'Investor' : 'Agent');
 
 
 
