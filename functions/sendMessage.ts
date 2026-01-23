@@ -44,19 +44,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    // Basic per-user rate limit: 1.5s between messages in the same room (use user-scoped call to avoid platform rate limits)
-    try {
-      const lastMsgs = await base44.entities.Message.filter({ room_id, sender_profile_id: profile.id }, '-created_date', 1);
-      const lastMsg = lastMsgs?.[0];
-      if (lastMsg) {
-        const lastTs = new Date(lastMsg.created_date).getTime();
-        if (!Number.isNaN(lastTs) && (Date.now() - lastTs) < 1500) {
-          return Response.json({ error: 'Please wait a moment before sending another message.' }, { status: 429 });
-        }
-      }
-    } catch (_) {
-      // If lookup fails (e.g., transient rate limit), continue without blocking send
-    }
+
 
     // Check if agreement is fully signed (strict gating)
     let isFullySigned = false;
