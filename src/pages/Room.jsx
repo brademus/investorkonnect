@@ -2622,101 +2622,11 @@ ${dealContext}`;
                 </div>
               )}
 
-              {/* Floating Deal Summary Box */}
-              {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
-                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                        {isAgentView && !currentRoom?.is_fully_signed
-                          ? `Deal in ${[currentRoom.city, currentRoom.state].filter(Boolean).join(', ') || 'Location'}`
-                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
-                        }
-                      </h3>
-                      <div className="space-y-1 text-sm">
-                        {currentRoom.counterparty_name && currentRoom.is_fully_signed && (
-                          <p className="text-[#FAFAFA]">
-                            {currentRoom.counterparty_role === 'agent' ? 'Agent' : 'Investor'}: {currentRoom.counterparty_name}
-                          </p>
-                        )}
-                        {(currentRoom.city || currentRoom.state) && (
-                          <p className="text-[#808080]">
-                            {/* Privacy: Only show city/state/zip for agents until internal agreement is fully signed */}
-                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
-                              ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
-                              : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
-                            }
-                          </p>
-                        )}
-                        {currentRoom.budget > 0 && (
-                          <p className="text-[#34D399] font-semibold">
-                            ${currentRoom.budget.toLocaleString()}
-                          </p>
-                        )}
-                        {currentRoom.closing_date && (
-                          <p className="text-[#808080]">
-                            Closing: {new Date(currentRoom.closing_date).toLocaleDateString()}
-                          </p>
-                        )}
-                        {!currentRoom.closing_date && currentRoom.created_date && (
-                          <p className="text-[#666]">
-                            Started: {new Date(currentRoom.created_date).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
 
-              {/* Floating Deal Summary Box */}
-              {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
-                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-bold text-[#E3C567] mb-1">
-                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
-                        {isAgentView && !currentRoom?.is_fully_signed
-                          ? `Deal in ${[currentRoom.city, currentRoom.state].filter(Boolean).join(', ') || 'Location'}`
-                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
-                        }
-                      </h3>
-                      <div className="space-y-1 text-sm">
-                        {currentRoom.counterparty_name && currentRoom.is_fully_signed && (
-                          <p className="text-[#FAFAFA]">
-                            {currentRoom.counterparty_role === 'agent' ? 'Agent' : 'Investor'}: {currentRoom.counterparty_name}
-                          </p>
-                        )}
-                        {(currentRoom.city || currentRoom.state) && (
-                          <p className="text-[#808080]">
-                            {/* Privacy: Only show city/state/zip for agents until internal agreement is fully signed */}
-                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
-                              ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
-                              : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
-                            }
-                          </p>
-                        )}
-                        {currentRoom.budget > 0 && (
-                          <p className="text-[#34D399] font-semibold">
-                            ${currentRoom.budget.toLocaleString()}
-                          </p>
-                        )}
-                        {currentRoom.closing_date && (
-                          <p className="text-[#808080]">
-                            Closing: {new Date(currentRoom.closing_date).toLocaleDateString()}
-                          </p>
-                        )}
-                        {!currentRoom.closing_date && currentRoom.created_date && (
-                          <p className="text-[#666]">
-                            Started: {new Date(currentRoom.created_date).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
+
+
+
+
 
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
