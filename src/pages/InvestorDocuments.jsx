@@ -6,7 +6,6 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
-import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { FileText, ArrowLeft, Download, Search, Calendar, DollarSign, MapPin } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
@@ -34,14 +33,8 @@ function InvestorDocumentsContent() {
     queryKey: ['investorRooms', profile?.id],
     queryFn: async () => {
         if (!profile?.id) return [];
-        // Try enriched first (includes room.files as used by Files tab)
-        const respEnriched = await base44.functions.invoke('listMyRoomsEnriched');
-        let fromFn = getRoomsFromListMyRoomsResponse(respEnriched);
-        if (!Array.isArray(fromFn) || fromFn.length === 0) {
-          const resp = await base44.functions.invoke('listMyRooms');
-          fromFn = getRoomsFromListMyRoomsResponse(resp);
-        }
-        return Array.isArray(fromFn) ? fromFn : [];
+        const res = await base44.functions.invoke('listMyRoomsEnriched');
+        return res.data?.rooms || [];
     },
     enabled: !!profile?.id,
     staleTime: 0,
