@@ -85,9 +85,9 @@ export default function Pricing() {
     try {
       // Map plan names to actual Stripe price IDs
       const priceIds = {
-        'starter': Deno.env?.get?.('STRIPE_PRICE_STARTER') || 'price_1SP89V1Nw95Lp8qMNv6ZlA6q',
-        'pro': Deno.env?.get?.('STRIPE_PRICE_PRO') || 'price_1SP8AB1Nw95Lp8qMSu9CdqJk',
-        'enterprise': Deno.env?.get?.('STRIPE_PRICE_ENTERPRISE') || 'price_1SP8B01Nw95Lp8qMsNzWobkZ'
+        'starter': 'price_1SP89V1Nw95Lp8qMNv6ZlA6q',
+        'pro': 'price_1SP8AB1Nw95Lp8qMSu9CdqJk',
+        'enterprise': 'price_1SP8B01Nw95Lp8qMsNzWobkZ'
       };
 
       const priceId = priceIds[plan];
@@ -100,16 +100,11 @@ export default function Pricing() {
         price: priceId
       });
 
-      if (response.data?.id) {
-        // Create Stripe checkout URL from session ID
-        const stripe = window.Stripe?.(Deno.env?.get?.('STRIPE_PUBLISHABLE_KEY') || 'pk_live_51SP84G1Nw95Lp8qMYHbEcyJKxn0f3I5FwPaA1vH0zUHxdRJZmwIPHazU6A8WnJM9aZfAyYBbHHv7Sj2DHKJ4bz8z00Y1QNvBqe');
-        if (stripe) {
-          await stripe.redirectToCheckout({ sessionId: response.data.id });
-        } else {
-          throw new Error('Stripe.js not loaded');
-        }
+      if (response.data?.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url;
       } else {
-        throw new Error('No checkout session ID returned');
+        throw new Error('No checkout URL returned');
       }
 
     } catch (error) {
