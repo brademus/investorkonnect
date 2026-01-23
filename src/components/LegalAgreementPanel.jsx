@@ -273,9 +273,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (onUpdate) onUpdate();
     } catch (error) {
       const errorMessage = error?.response?.data?.error || error?.message || String(error);
-      toast.error(`Generate agreement failed: ${errorMessage}`);
+      if (errorMessage.includes('rate limit')) {
+        toast.error('Rate limit exceeded. Please wait a moment before trying again.', { duration: 5000 });
+      } else {
+        toast.error(`Generate agreement failed: ${errorMessage}`);
+      }
     } finally {
       setGenerating(false);
+      generationInProgressRef.current = false;
     }
   };
 
