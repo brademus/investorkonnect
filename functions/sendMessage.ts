@@ -78,10 +78,7 @@ Deno.serve(async (req) => {
     } catch (err) {
       const status = err?.status || err?.response?.status;
       const msg = err?.data?.message || err?.message || '';
-      if (status === 429 || /rate limit/i.test(msg)) {
-        return Response.json({ ok: false, error: 'Please wait a moment before sending another message.' }, { status: 429 });
-      }
-      throw err;
+      return Response.json({ ok: false, error: msg || 'Failed to send message' }, { status: status || 500 });
     }
     
   } catch (error) {
