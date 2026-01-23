@@ -39,10 +39,10 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
         if (!cancelled) {
           const annotated = (rows || []).map(r => ({ ...r, _isMe: isMessageFromMe(r, user, profile) }));
           setMessages(annotated);
-          scrollToBottom();
+          setTimeout(() => scrollToBottom(), 0);
         }
       } catch (e) {
-        // keep silent
+        console.error('Failed to load messages:', e);
       }
     };
 
@@ -54,9 +54,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       if (event.type === "create") {
         setMessages((prev) => {
           if (!data?.id) return prev;
-          // If the real message already exists, do nothing
           if (prev.some((m) => m.id === data.id)) return prev;
-          // If we have an optimistic copy for this message, replace it instead of appending
           const hasOptimisticMatch = prev.some(
             (m) => m._optimistic && m.sender_profile_id === data.sender_profile_id && m.body === data.body
           );
@@ -80,28 +78,6 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       try { unsubscribe && unsubscribe(); } catch (_) {}
     };
   }, [roomId, user?.id, profile?.id, profile?.email]);
-
-  // Force reload when component becomes visible
-  useEffect(() => {
-    if (!roomId) return;
-    let cancelled = false;
-
-    const load = async () => {
-      try {
-        const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
-        if (!cancelled) {
-          const annotated = (rows || []).map(r => ({ ...r, _isMe: isMessageFromMe(r, user, profile) }));
-          setMessages(annotated);
-          scrollToBottom();
-        }
-      } catch (e) {
-        // keep silent
-      }
-    };
-
-    load();
-    return () => { cancelled = true; };
-  }, [roomId]);
 
   const isMe = (m) => m?.sender_profile_id && m.sender_profile_id === profile?.id;
 
