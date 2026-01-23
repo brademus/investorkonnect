@@ -2571,7 +2571,7 @@ ${dealContext}`;
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
-                <div className="hidden mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3 mb-2">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
@@ -2606,7 +2606,7 @@ ${dealContext}`;
               {/* Show this banner for agents when deal is accepted but not fully signed, OR for investors waiting for signatures */}
               {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
                 (profile?.user_role === 'investor' && currentRoom?.request_status !== 'requested' && !currentRoom?.is_fully_signed)) && (
-                <div className="hidden mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start gap-3">
                     <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                     <div>
@@ -2626,7 +2626,7 @@ ${dealContext}`;
 
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
-                <div className="hidden mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
+                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#E3C567] mb-1">
