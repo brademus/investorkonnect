@@ -161,7 +161,7 @@ function useMessages(roomId, authUser, currentProfile) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+    const interval = setInterval(fetchMessages, 5000); // Poll every 5 seconds to reduce unnecessary refresh
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
@@ -348,6 +348,7 @@ export default function Room() {
   const [boardLoading, setBoardLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
   const lastSentRef = useRef(0);
+  const lastFetchKeyRef = useRef('');
 
   // When opening the Deal Board (including via URL), preload everything once
   useEffect(() => {
@@ -612,7 +613,9 @@ export default function Room() {
       const rid = roomId;
       const thisReq = ++requestSeqRef.current;
       const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
-      setRoomLoading(true);
+      if (lastFetchKeyRef.current !== `${roomId}|${profile?.user_role}`) {
+        setRoomLoading(true);
+      }
       
       try {
         // First, try to get enriched room data from our rooms list
@@ -712,7 +715,9 @@ export default function Room() {
       }
     };
     
-    fetchCurrentRoom();
+    fetchCurrentRoom().finally(() => {
+      lastFetchKeyRef.current = `${roomId}|${profile?.user_role}`;
+    });
   }, [roomId, profile?.user_role, rooms]);
   
   // Load and subscribe to DealAppointments for walkthrough display
