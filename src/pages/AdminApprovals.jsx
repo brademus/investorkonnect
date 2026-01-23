@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { profileDedup, profileHealthCheck } from "@/components/functions";
+
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -123,7 +123,7 @@ export default function AdminApprovals() {
   const handleRunHealthCheck = async () => {
     setRunningHealthCheck(true);
     try {
-      const response = await profileHealthCheck();
+      const response = await base44.functions.invoke('profileHealthCheck');
       setHealthCheckResults(response.data);
       setShowHealthCheck(true);
       toast.success('Health check complete!');
@@ -140,7 +140,7 @@ export default function AdminApprovals() {
     
     setRunningDedup(true);
     try {
-      const response = await profileDedup();
+      const response = await base44.functions.invoke('profileDedup');
       const results = response.data;
       
       toast.success(`Dedup complete! Removed ${results.summary.duplicates_removed} duplicates, fixed ${results.summary.orphans_fixed} orphans`);
