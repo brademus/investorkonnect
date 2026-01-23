@@ -2762,7 +2762,7 @@ ${dealContext}`;
 
         {/* Message Input Area - STAYS AT BOTTOM */}
         {isChatEnabled ? (
-          <div className="hidden px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
+          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] shadow-[0_-4px_20px_rgba(0,0,0,0.5)] flex-shrink-0 z-10">
             <div className="flex items-center gap-2">
                 {/* Upload Photo Button */}
                 <button
@@ -2973,7 +2973,7 @@ ${dealContext}`;
                 </div>
                 </div>
         ) : (
-          <div className="hidden px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] flex items-center justify-between flex-shrink-0 z-10">
+          <div className="px-5 py-4 bg-[#0D0D0D] border-t border-[#1F1F1F] flex items-center justify-between flex-shrink-0 z-10">
             <p className="text-sm text-[#808080]">Chat unlocks after both parties sign the agreement.</p>
             <Button onClick={() => { setShowBoard(true); setActiveTab('agreement'); }} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Open My Agreement</Button>
           </div>
