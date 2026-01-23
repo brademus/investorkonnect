@@ -507,12 +507,12 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show deals once investor has signed (or later)
+    // Agents: show deals only after investor has signed (or later)
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
       const status = d.agreement_status;
       const req = d.agent_request_status;
-      return d.is_fully_signed || status === 'investor_signed' || status === 'agent_signed' || status === 'attorney_review_pending' || req === 'requested' || req === 'accepted' || req === 'signed';
+      return d.is_fully_signed || status === 'investor_signed' || status === 'agent_signed' || status === 'attorney_review_pending' || req === 'signed';
     });
   }, [dealsData, rooms, appointments]);
 
@@ -615,12 +615,7 @@ function PipelineContent() {
           return;
         }
       } catch (_) { /* noop */ }
-      // Create a pending request so the agent sees it immediately
-      try {
-        if (deal.agent_id) {
-          await base44.functions.invoke('sendDealRequest', { deal_id: deal.deal_id, agent_profile_id: deal.agent_id });
-        }
-      } catch (_) { /* noop */ }
+
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
@@ -719,7 +714,7 @@ function PipelineContent() {
       // Agents: show once a request exists (requested/accepted/signed) or any signed status
       if (isAgent) {
         const st = d.agreement_status;
-        const allowed = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending' || d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed';
+        const allowed = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending' || d.agent_request_status === 'signed';
         if (!allowed) return;
         if (d.agent_request_status === 'rejected') return;
       }
@@ -793,16 +788,16 @@ function PipelineContent() {
             )}
 
             {/* Pending Requests for Agents */}
-            {isAgent && pendingRequests.length > 0 && (
+            {isAgent && pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-[#E3C567]">New Deal Requests</h2>
-                    <p className="text-sm text-[#808080]">{pendingRequests.length} investors want to work with you</p>
+                    <p className="text-sm text-[#808080]">{pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).length} investors want to work with you</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingRequests.map((room) => (
+                  {pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).map((room) => (
                    <div 
                      key={`${room.deal_id}-${room.id}`}
                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
