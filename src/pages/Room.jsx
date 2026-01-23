@@ -552,32 +552,16 @@ export default function Room() {
   };
 
   // Prefetch Pipeline data to make back navigation instant
-  // NOTE: prefetchPipeline removed from back button to avoid auth/session side-effects
   const prefetchPipeline = () => {
     try {
       if (profile?.id) {
-        // Warm pipeline deals cache with the SAME key and shape as Pipeline page
-        queryClient.prefetchQuery({
-          queryKey: ['pipelineDeals', profile.id, profile.user_role],
-          queryFn: async () => {
-            const res = await base44.functions.invoke('getPipelineDealsForUser');
-            const deals = res.data?.deals || [];
-            return deals
-              .filter(d => d.status !== 'archived')
-              .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-          },
-          staleTime: 60_000
-        });
+        // Invalidate + refetch for both agents and investors
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+        queryClient.refetchQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] });
       }
       // Warm rooms cache with ENRICHED + DEDUPED data (same key as useRooms)
-      queryClient.prefetchQuery({
-        queryKey: ['rooms'],
-        queryFn: async () => {
-          const res = await base44.functions.invoke('listMyRoomsEnriched');
-          return res.data?.rooms || [];
-        },
-        staleTime: 60_000
-      });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+      queryClient.refetchQueries({ queryKey: ['rooms'] });
     } catch (_) {}
   };
   
@@ -1370,13 +1354,10 @@ ${dealContext}`;
         {/* Conversation Header */}
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0 z-10">
           <button 
-            className="mr-4 md:hidden text-[#6B7280] hover:text-[#111827] transition-colors"
-            onClick={() => {
-              prefetchPipeline();
-              navigate(createPageUrl("Pipeline"));
-            }}
+           className="mr-4 md:hidden text-[#6B7280] hover:text-[#111827] transition-colors"
+           onClick={() => setDrawer(s => !s)}
           >
-            <Menu className="w-6 h-6" />
+           <Menu className="w-6 h-6" />
           </button>
           <Button
            onClick={(e) => {

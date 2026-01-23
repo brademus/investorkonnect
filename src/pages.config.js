@@ -2,8 +2,13 @@ import About from './pages/About';
 import AccountBilling from './pages/AccountBilling';
 import AccountProfile from './pages/AccountProfile';
 import ActiveDeals from './pages/ActiveDeals';
+import Admin from './pages/Admin';
+import AdminApprovals from './pages/AdminApprovals';
 import AdminSeed from './pages/AdminSeed';
+import AgentDashboard from './pages/AgentDashboard';
 import AgentDeepOnboarding from './pages/AgentDeepOnboarding';
+import AgentDirectory from './pages/AgentDirectory';
+import AgentDocuments from './pages/AgentDocuments';
 import AgentHome from './pages/AgentHome';
 import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
@@ -21,15 +26,18 @@ import ContractVerify from './pages/ContractVerify';
 import Cookies from './pages/Cookies';
 import DealRequest from './pages/DealRequest';
 import DealWizard from './pages/DealWizard';
+import DemoDiagnostics from './pages/DemoDiagnostics';
 import DocuSignReturn from './pages/DocuSignReturn';
 import FAQ from './pages/FAQ';
 import GetStarted from './pages/GetStarted';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import IdentityVerification from './pages/IdentityVerification';
+import Inbox from './pages/Inbox';
 import InvestorBuyBox from './pages/InvestorBuyBox';
 import InvestorDeepOnboarding from './pages/InvestorDeepOnboarding';
 import InvestorDirectory from './pages/InvestorDirectory';
+import InvestorDocuments from './pages/InvestorDocuments';
 import InvestorIntake from './pages/InvestorIntake';
 import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
@@ -46,7 +54,9 @@ import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
 import Onboarding from './pages/Onboarding';
 import PendingDeals from './pages/PendingDeals';
+import Pipeline from './pages/Pipeline';
 import PostAuth from './pages/PostAuth';
+import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import Resources from './pages/Resources';
@@ -54,6 +64,7 @@ import ReviewPolicy from './pages/ReviewPolicy';
 import Reviews from './pages/Reviews';
 import RoleLanding from './pages/RoleLanding';
 import RoleSelection from './pages/RoleSelection';
+import Room from './pages/Room';
 import Security from './pages/Security';
 import Terms from './pages/Terms';
 import ThankYou from './pages/ThankYou';
@@ -61,17 +72,6 @@ import Verify from './pages/Verify';
 import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
-import AgentDashboard from './pages/AgentDashboard';
-import DemoDiagnostics from './pages/DemoDiagnostics';
-import AgentDirectory from './pages/AgentDirectory';
-import Room from './pages/Room';
-import AdminApprovals from './pages/AdminApprovals';
-import Admin from './pages/Admin';
-import Pipeline from './pages/Pipeline';
-import InvestorDocuments from './pages/InvestorDocuments';
-import Pricing from './pages/Pricing';
-import Inbox from './pages/Inbox';
-import AgentDocuments from './pages/AgentDocuments';
 import __Layout from './Layout.jsx';
 
 
@@ -80,8 +80,13 @@ export const PAGES = {
     "AccountBilling": AccountBilling,
     "AccountProfile": AccountProfile,
     "ActiveDeals": ActiveDeals,
+    "Admin": Admin,
+    "AdminApprovals": AdminApprovals,
     "AdminSeed": AdminSeed,
+    "AgentDashboard": AgentDashboard,
     "AgentDeepOnboarding": AgentDeepOnboarding,
+    "AgentDirectory": AgentDirectory,
+    "AgentDocuments": AgentDocuments,
     "AgentHome": AgentHome,
     "AgentLanding": AgentLanding,
     "AgentMatching": AgentMatching,
@@ -99,15 +104,18 @@ export const PAGES = {
     "Cookies": Cookies,
     "DealRequest": DealRequest,
     "DealWizard": DealWizard,
+    "DemoDiagnostics": DemoDiagnostics,
     "DocuSignReturn": DocuSignReturn,
     "FAQ": FAQ,
     "GetStarted": GetStarted,
     "Home": Home,
     "HowItWorks": HowItWorks,
     "IdentityVerification": IdentityVerification,
+    "Inbox": Inbox,
     "InvestorBuyBox": InvestorBuyBox,
     "InvestorDeepOnboarding": InvestorDeepOnboarding,
     "InvestorDirectory": InvestorDirectory,
+    "InvestorDocuments": InvestorDocuments,
     "InvestorIntake": InvestorIntake,
     "InvestorLanding": InvestorLanding,
     "InvestorOnboarding": InvestorOnboarding,
@@ -124,7 +132,9 @@ export const PAGES = {
     "NotFound": NotFound,
     "Onboarding": Onboarding,
     "PendingDeals": PendingDeals,
+    "Pipeline": Pipeline,
     "PostAuth": PostAuth,
+    "Pricing": Pricing,
     "Privacy": Privacy,
     "PrivacyPolicy": PrivacyPolicy,
     "Resources": Resources,
@@ -132,6 +142,7 @@ export const PAGES = {
     "Reviews": Reviews,
     "RoleLanding": RoleLanding,
     "RoleSelection": RoleSelection,
+    "Room": Room,
     "Security": Security,
     "Terms": Terms,
     "ThankYou": ThankYou,
@@ -139,17 +150,6 @@ export const PAGES = {
     "VerifyCallback": VerifyCallback,
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
-    "AgentDashboard": AgentDashboard,
-    "DemoDiagnostics": DemoDiagnostics,
-    "AgentDirectory": AgentDirectory,
-    "Room": Room,
-    "AdminApprovals": AdminApprovals,
-    "Admin": Admin,
-    "Pipeline": Pipeline,
-    "InvestorDocuments": InvestorDocuments,
-    "Pricing": Pricing,
-    "Inbox": Inbox,
-    "AgentDocuments": AgentDocuments,
 }
 
 export const pagesConfig = {
