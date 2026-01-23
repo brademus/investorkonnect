@@ -2568,6 +2568,60 @@ ${dealContext}`;
                           ) : (
                             /* Messages View */
             <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
+              {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                  <div className="flex items-start gap-3 mb-2">
+                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">Review Agreement</h3>
+                      <p className="text-sm text-[#FAFAFA]/80">Go to the My Agreement tab to sign or counter the compensation terms.</p>
+                    </div>
+                  </div>
+                  <div>
+                    <Button
+                      onMouseEnter={prefetchDeal}
+                      onClick={async () => {
+                        setBoardLoading(true);
+                        const data = await prefetchDeal();
+                        if (data) {
+                          setDeal(data);
+                        } else if (currentRoom) {
+                          const snap = buildDealFromRoom(currentRoom, maskAddr);
+                          if (snap) setDeal(snap);
+                        }
+                        setActiveTab('agreement');
+                        setShowBoard(true);
+                        setBoardLoading(false);
+                      }}
+                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                    >
+                      Open My Agreement
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
+                (profile?.user_role === 'investor' && currentRoom?.request_status !== 'requested' && !currentRoom?.is_fully_signed)) && (
+                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
+                  <div className="flex items-start gap-3">
+                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">
+                        Sign Agreement to Unlock Full Details
+                      </h3>
+                      <p className="text-sm text-[#FAFAFA]/80">
+                        {profile?.user_role === 'agent' 
+                          ? 'You can chat and view general deal info. Full property address and seller details unlock after both parties sign the agreement in the Agreement tab.'
+                          : 'Chat with the agent to discuss this deal. Full details including agent name and contact unlock after both parties sign the agreement in the Agreement tab.'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
@@ -2603,26 +2657,7 @@ ${dealContext}`;
                 </div>
               )}
               
-              {/* Show this banner for agents when deal is accepted but not fully signed, OR for investors waiting for signatures */}
-              {((profile?.user_role === 'agent' && currentRoom?.request_status === 'accepted' && !currentRoom?.is_fully_signed) || 
-                (profile?.user_role === 'investor' && currentRoom?.request_status !== 'requested' && !currentRoom?.is_fully_signed)) && (
-                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
-                  <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
-                    <div>
-                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                        Sign Agreement to Unlock Full Details
-                      </h3>
-                      <p className="text-sm text-[#FAFAFA]/80">
-                        {profile?.user_role === 'agent' 
-                          ? 'You can chat and view general deal info. Full property address and seller details unlock after both parties sign the agreement in the Agreement tab.'
-                          : 'Chat with the agent to discuss this deal. Full details including agent name and contact unlock after both parties sign the agreement in the Agreement tab.'
-                        }
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
+
 
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
