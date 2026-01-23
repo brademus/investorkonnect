@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { inboxList } from '@/components/functions';
 import { DEMO_MODE } from '@/components/config/demo';
 
 /**
@@ -126,8 +125,8 @@ export function useCurrentProfile() {
         const targetState = profile?.target_state || profile?.markets?.[0] || null;
         let hasRoom = false;
         try {
-          const roomsResponse = await inboxList();
-          hasRoom = (roomsResponse.data || []).length > 0;
+          const roomsResponse = await base44.functions.invoke('listMyRoomsEnriched');
+          hasRoom = (roomsResponse.data?.rooms || []).length > 0;
         } catch (roomErr) {}
 
         setState({
