@@ -84,8 +84,8 @@ export default function Pricing() {
     toast.loading("Opening checkout...", { id: toastId });
 
     try {
-      console.log('[Pricing] Calling checkoutLite with plan:', plan);
-      const response = await base44.functions.invoke('checkoutLite', { plan });
+      console.log('[Pricing] Calling createCheckoutSession with plan:', plan);
+      const response = await base44.functions.invoke('createCheckoutSession', { plan });
 
       // Validate response
       if (!response || !response.data) {
