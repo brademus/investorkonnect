@@ -135,12 +135,13 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto space-y-4">
+      <div className="flex-1 overflow-y-auto space-y-4 pr-2" style={{ scrollbarWidth: 'thin', scrollbarColor: '#1F1F1F #0D0D0D' }}>
+        <style>{`::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background-color: #1F1F1F; border-radius: 3px; }`}</style>
         {messages.map((m) => {
           const isMe = m?._isMe===true||isMessageFromMe(m,user,profile);
           const isPhotoMessage = m?.metadata?.type === 'photo' || (m?.metadata?.type === 'file' && (m?.metadata?.file_type || '').startsWith('image/'));
           return (
-            <div key={m.id} className={"flex " + (isMe ? "justify-end" : "justify-start")}>
+            <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
               <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + (isMe ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
                 {isPhotoMessage && m?.metadata?.file_url ? (
                   <div>
