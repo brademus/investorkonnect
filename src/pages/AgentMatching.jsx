@@ -146,7 +146,7 @@ export default function AgentMatching() {
       const firstName = (agentProfile.full_name || 'agent').split(' ')[0];
       toast.success(`Agent selected: ${firstName}. Next: generate and sign your agreement.`);
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
-      return;
+      // Do NOT return; proceed to create/request the room immediately so the agent sees it right away.
       // ENFORCED: Only one concurrent agent request per deal
       const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
       const activeRoom = allRoomsForDeal.find(r => 
