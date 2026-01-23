@@ -147,6 +147,64 @@ export default function AgentMatching() {
       toast.success(`Agent selected: ${firstName}. Next: generate and sign your agreement.`);
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
       // Do NOT return; proceed to create/request the room immediately so the agent sees it right away.
+      // Create or reuse room immediately so it appears in agent inbox even before signing
+      const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
+      const activeRoom = allRoomsForDeal.find(r =>
+        r.agentId === agentProfile.id ||
+        r.request_status === 'requested' ||
+        r.request_status === 'accepted' ||
+        r.request_status === 'signed'
+      );
+
+      if (activeRoom) {
+        try { sessionStorage.setItem('selectedAgentId', activeRoom.agentId || agentProfile.id); } catch (_) {}
+        navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
+        return;
+      }
+
+      let room;
+      try {
+        room = await base44.entities.Room.create({
+          deal_id: deal.id,
+          investorId: profile.id,
+          agentId: agentProfile.id,
+          title: deal.title || deal.property_address,
+          property_address: deal.property_address,
+          city: deal.city,
+          state: deal.state,
+          county: deal.county,
+          zip: deal.zip,
+          budget: deal.purchase_price || deal.budget,
+          request_status: 'requested',
+          requested_at: new Date().toISOString()
+        });
+      } catch (e) {
+        console.warn('Room create failed, continuing:', e?.message);
+      }
+
+      if (room) {
+        try {
+          const storedData = sessionStorage.getItem("newDealData");
+          if (storedData) {
+            const parsed = JSON.parse(storedData);
+            await base44.entities.Room.update(room.id, {
+              proposed_terms: {
+                seller_commission_type: parsed.sellerCommissionType,
+                seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
+                seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
+                buyer_commission_type: parsed.buyerCommissionType,
+                buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
+                buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
+                agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
+              }
+            });
+          }
+        } catch(_) {}
+      }
+
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
+      return;
+
       // ENFORCED: Only one concurrent agent request per deal
       const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
       const activeRoom = allRoomsForDeal.find(r => 
