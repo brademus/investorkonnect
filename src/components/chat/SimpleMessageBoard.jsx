@@ -81,6 +81,28 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     };
   }, [roomId, user?.id, profile?.id, profile?.email]);
 
+  // Force reload when component becomes visible
+  useEffect(() => {
+    if (!roomId) return;
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
+        if (!cancelled) {
+          const annotated = (rows || []).map(r => ({ ...r, _isMe: isMessageFromMe(r, user, profile) }));
+          setMessages(annotated);
+          scrollToBottom();
+        }
+      } catch (e) {
+        // keep silent
+      }
+    };
+
+    load();
+    return () => { cancelled = true; };
+  }, [roomId]);
+
   const isMe = (m) => m?.sender_profile_id && m.sender_profile_id === profile?.id;
 
   const send = async () => {
