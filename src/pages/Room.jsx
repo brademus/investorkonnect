@@ -554,11 +554,10 @@ export default function Room() {
   // Prefetch Pipeline data to make back navigation instant
   const prefetchPipeline = () => {
     try {
-      if (profile?.id) {
-        // Invalidate + refetch for both agents and investors
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-        queryClient.refetchQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] });
-      }
+      // Broad invalidate to catch all pipeline deal queries regardless of key structure
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals'], exact: false });
+      queryClient.refetchQueries({ queryKey: ['pipelineDeals'], exact: false });
+      
       // Warm rooms cache with ENRICHED + DEDUPED data (same key as useRooms)
       queryClient.invalidateQueries({ queryKey: ['rooms'] });
       queryClient.refetchQueries({ queryKey: ['rooms'] });
