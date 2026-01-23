@@ -595,6 +595,12 @@ function PipelineContent() {
           return;
         }
       } catch (_) { /* noop */ }
+      // Create a pending request so the agent sees it immediately
+      try {
+        if (deal.agent_id) {
+          await base44.functions.invoke('sendDealRequest', { deal_id: deal.deal_id, agent_profile_id: deal.agent_id });
+        }
+      } catch (_) { /* noop */ }
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
