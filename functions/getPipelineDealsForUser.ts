@@ -127,11 +127,16 @@ Deno.serve(async (req) => {
     }
 
     // Agents should not see deals until investor has signed the agreement
+    // Fallback: if LegalAgreement hasn't synced yet, allow when a Room shows investor_signed/accepted/signed
     if (isAgent && deals.length > 0) {
       const allowedStatuses = new Set(['investor_signed', 'agent_signed', 'fully_signed', 'attorney_review_pending']);
       deals = deals.filter(d => {
         const ag = agreementsMap.get(d.id);
-        return ag && allowedStatuses.has(ag.status);
+        if (ag && allowedStatuses.has(ag.status)) return true;
+        const hasRoomSignal = (agentRooms || []).some(r => r.deal_id === d.id && (
+          r.agreement_status === 'investor_signed' || r.request_status === 'accepted' || r.request_status === 'signed'
+        ));
+        return hasRoomSignal;
       });
     }
 
