@@ -98,6 +98,7 @@ function useMyRooms() {
 function useMessages(roomId, authUser, currentProfile) {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -107,10 +108,11 @@ function useMessages(roomId, authUser, currentProfile) {
 
   useEffect(() => { scrollToBottom(); }, [items.length]);
 
-  // Start loading on room switch but keep previous messages until new ones arrive
+  // Only show loading on initial room load
   useEffect(() => {
-    setLoading(true);
-  }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
+    setLoading(!initialLoadDone);
+    setInitialLoadDone(false);
+  }, [roomId]);
 
   useEffect(() => {
     if (!roomId) return;
@@ -157,7 +159,12 @@ function useMessages(roomId, authUser, currentProfile) {
       } catch (error) {
         console.error('Failed to fetch messages:', error);
       }
-      finally { if (!cancelled) setLoading(false); }
+      finally { 
+        if (!cancelled) {
+          setLoading(false);
+          setInitialLoadDone(true);
+        }
+      }
     };
 
     fetchMessages();
@@ -2633,7 +2640,7 @@ ${dealContext}`;
 
 
               {/* Floating Deal Summary Box - always visible when a room is selected */}
-              {currentRoom && (
+              {currentRoom?.id && !roomLoading && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
