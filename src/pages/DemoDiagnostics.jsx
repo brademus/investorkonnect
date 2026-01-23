@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
 import { listMyRooms, matchAgentsForInvestor } from "@/components/functions";
-import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -102,13 +101,13 @@ export default function DemoDiagnostics() {
         return;
       }
 
-      const roomId = await getOrCreateDealRoom({
+      const response = await base44.functions.invoke('createDealRoom', {
         dealId: deals[0].id,
         agentProfileId: agents[0].id
       });
       
       addResult('Create Test Room', 'success', {
-        roomId,
+        roomId: response.data?.room?.id,
         dealId: deals[0].id,
         agentId: agents[0].id
       });
