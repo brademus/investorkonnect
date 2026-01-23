@@ -581,7 +581,8 @@ function PipelineContent() {
             toast.info('Select an agent for this deal to open a room.');
             return;
           }
-          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
+          const { data: roomData } = await base44.functions.invoke('createDealRoom', { dealId: deal.deal_id, agentProfileId });
+          const roomId = roomData?.roomId;
           navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
           return;
         }
