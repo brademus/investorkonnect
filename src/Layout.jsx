@@ -5,6 +5,8 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { useIsFetching } from "@tanstack/react-query";
+import LoadingAnimation from "@/components/LoadingAnimation";
 
       import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
       
@@ -32,6 +34,16 @@ const queryClient = new QueryClient({
  * LAYOUT - Airbnb-style shell with conditional navigation
  */
 function LayoutContent({ children }) {
+  const isFetching = useIsFetching();
+  const [showAppLoader, setShowAppLoader] = React.useState(true);
+  React.useEffect(() => {
+    if (loading || isFetching > 0) {
+      setShowAppLoader(true);
+    } else {
+      const t = setTimeout(() => setShowAppLoader(false), 150);
+      return () => clearTimeout(t);
+    }
+  }, [loading, isFetching]);
   const navigate = useNavigate();
   const location = useLocation();
   const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
@@ -180,8 +192,18 @@ function LayoutContent({ children }) {
         </header>
       )}
 
+      {/* Global loading overlay to prevent flicker until data is ready */}
+      {showAppLoader && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0D0D0D]">
+          <LoadingAnimation className="w-48 h-48" />
+        </div>
+      )}
+
       {/* Page content – centered, offset for fixed header */}
-      <main className={showNav && !isNoNavPage && !isFullBleedPage ? "mx-auto max-w-6xl px-4 pb-28 md:pb-12 pt-4 md:pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}>
+      <main
+        className={showNav && !isNoNavPage && !isFullBleedPage ? "mx-auto max-w-6xl px-4 pb-28 md:pb-12 pt-4 md:pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}
+        style={{ opacity: showAppLoader ? 0 : 1, pointerEvents: showAppLoader ? 'none' : 'auto', transition: 'opacity 150ms ease' }}
+      >
         {children}
       </main>
 
