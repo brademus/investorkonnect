@@ -2627,8 +2627,8 @@ ${dealContext}`;
 
 
 
-              {/* Floating Deal Summary Box */}
-              {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
+              {/* Floating Deal Summary Box - always visible when a room is selected */}
+              {currentRoom && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
