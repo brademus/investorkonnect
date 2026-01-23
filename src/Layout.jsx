@@ -34,6 +34,10 @@ const queryClient = new QueryClient({
  * LAYOUT - Airbnb-style shell with conditional navigation
  */
 function LayoutContent({ children }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
+
   const isFetching = useIsFetching();
   const [showAppLoader, setShowAppLoader] = React.useState(true);
   React.useEffect(() => {
@@ -44,9 +48,6 @@ function LayoutContent({ children }) {
       return () => clearTimeout(t);
     }
   }, [loading, isFetching]);
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
 
   const noNavPages = [
     '/',
