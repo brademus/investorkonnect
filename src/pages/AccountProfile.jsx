@@ -98,7 +98,7 @@ function AccountProfileContent() {
 
       // Go back to Dashboard
       setTimeout(() => {
-        navigate(createPageUrl("Dashboard"));
+        navigate(createPageUrl("Pipeline"));
       }, 500)
 
     } catch (error) {
@@ -127,7 +127,7 @@ function AccountProfileContent() {
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
-          <Link to={createPageUrl("Dashboard")} className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4">
+          <Link to={createPageUrl("Pipeline")} className="inline-flex items-center gap-2 text-sm text-[#808080] hover:text-[#E3C567] mb-4">
             <ArrowLeft className="w-4 h-4" />
             Dashboard
           </Link>
@@ -301,7 +301,7 @@ function AccountProfileContent() {
                   </>
                 )}
               </Button>
-              <Link to={createPageUrl("Dashboard")}>
+              <Link to={createPageUrl("Pipeline")}>
                 <Button
                   type="button"
                   disabled={saving}

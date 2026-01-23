@@ -5,6 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Send } from "lucide-react";
 import { toast } from "sonner";
 
+// Robust sender detection to avoid side-flip on first paint
+const isMessageFromMe = (m, authUser, currentProfile) => {
+  if (m?._isMe === true) return true;
+  const authUserId = authUser?.id;
+  if (authUserId && (m?.sender_user_id === authUserId || m?.senderUserId === authUserId)) return true;
+  const myProfileId = currentProfile?.id;
+  if (myProfileId && (m?.sender_profile_id === myProfileId || m?.senderProfileId === myProfileId || m?.sender_id === myProfileId)) return true;
+  const myEmail = (currentProfile?.email || '').toLowerCase().trim();
+  const createdBy = (m?.created_by || '').toLowerCase().trim();
+  if (myEmail && createdBy && myEmail === createdBy) return true;
+  return false;
+};
+
 export default function SimpleMessageBoard({ roomId, profile, user, isChatEnabled }) {
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
@@ -23,7 +36,8 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       try {
         const rows = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
         if (!cancelled) {
-          setMessages(rows || []);
+          const annotated = (rows || []).map(r => ({ ...r, _isMe: isMessageFromMe(r, user, profile) }));
+          setMessages(annotated);
           scrollToBottom();
         }
       } catch (e) {
@@ -33,7 +47,8 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
 
     load();
     const unsubscribe = base44.entities.Message.subscribe((event) => {
-      const data = event?.data;
+      let data = event?.data;
+      data = data ? { ...data, _isMe: isMessageFromMe(data, user, profile) } : data;
       if (!data || data.room_id !== roomId) return;
       if (event.type === "create") {
         setMessages((prev) => {
@@ -63,7 +78,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       cancelled = true;
       try { unsubscribe && unsubscribe(); } catch (_) {}
     };
-  }, [roomId]);
+  }, [roomId, user?.id, profile?.id, profile?.email]);
 
   const isMe = (m) => m?.sender_profile_id && m.sender_profile_id === profile?.id;
 
@@ -81,9 +96,11 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       id: tempId,
       room_id: roomId,
       sender_profile_id: profile?.id,
+      sender_user_id: user?.id,
       body,
       created_date: new Date().toISOString(),
       _optimistic: true,
+      _isMe: true,
     };
     setMessages((prev) => [...prev, optimistic]);
     setText("");
@@ -121,8 +138,8 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-4">
         {messages.map((m) => (
-          <div key={m.id} className={`flex ${isMe(m) ? "justify-end" : "justify-start"}`}>
-            <div className={`px-4 py-2 rounded-2xl max-w-[70%] ${isMe(m) ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md"}`}>
+          <div key={m.id} className={`flex ${(m?._isMe===true||isMessageFromMe(m,user,profile)) ? "justify-end" : "justify-start"}`>
+            <div className={`px-4 py-2 rounded-2xl max-w-[70%] ${(m?._isMe===true||isMessageFromMe(m,user,profile)) ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md"}`}>
               <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
             </div>
           </div>
