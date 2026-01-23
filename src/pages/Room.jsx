@@ -2718,43 +2718,6 @@ ${dealContext}`;
                 </div>
               )}
 
-              <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
-              {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
-              {profile?.user_role === 'agent' && currentRoom && !currentRoom?.is_fully_signed && (
-                <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
-                  <div className="flex items-start gap-3 mb-2">
-                    <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
-                    <div className="flex-1">
-                      <h3 className="text-md font-bold text-[#60A5FA] mb-1">Review Agreement</h3>
-                      <p className="text-sm text-[#FAFAFA]/80">Go to the My Agreement tab to sign or counter the compensation terms.</p>
-                    </div>
-                  </div>
-                  <div>
-                    <Button
-                      onMouseEnter={prefetchDeal}
-                      onClick={async () => {
-                        setBoardLoading(true);
-                        const data = await prefetchDeal();
-                        if (data) {
-                          setDeal(data);
-                        } else if (currentRoom) {
-                          const snap = buildDealFromRoom(currentRoom, maskAddr);
-                          if (snap) setDeal(snap);
-                        }
-                        setActiveTab('agreement');
-                        setShowBoard(true);
-                        setBoardLoading(false);
-                      }}
-                      className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
-                    >
-                      Open My Agreement
-                    </Button>
-                  </div>
-                </div>
-              )}
-              
-
-
               {/* Floating Deal Summary Box */}
               {currentRoom && (currentRoom.property_address || currentRoom.deal_title || currentRoom.budget) && (
                 <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
@@ -2802,6 +2765,10 @@ ${dealContext}`;
                   </div>
                 </div>
               )}
+
+              <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
+              
+
 
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto space-y-4 hidden">
