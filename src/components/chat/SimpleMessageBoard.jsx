@@ -140,6 +140,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
         {messages.map((m) => {
           const isMe = m?._isMe===true||isMessageFromMe(m,user,profile);
           const isPhotoMessage = m?.metadata?.type === 'photo' || (m?.metadata?.type === 'file' && (m?.metadata?.file_type || '').startsWith('image/'));
+          const isFileMessage = m?.metadata?.type === 'file' && !(m?.metadata?.file_type || '').startsWith('image/');
           return (
             <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
               <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + (isMe ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
@@ -153,6 +154,14 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
                     />
                     <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
                   </div>
+                ) : isFileMessage && m?.metadata?.file_url ? (
+                  <a 
+                    href={m.metadata.file_url}
+                    download={m.metadata.file_name || 'download'}
+                    className={"flex items-center gap-2 text-[15px] hover:underline " + (isMe ? "text-black" : "text-[#E3C567]")}
+                  >
+                    📎 {m.metadata.file_name || 'Download file'}
+                  </a>
                 ) : (
                   <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
                 )}
