@@ -201,11 +201,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const handleGenerate = async () => {
+    // Prevent rapid-fire generation attempts
+    if (generationInProgressRef.current) {
+      toast.error('Generation already in progress. Please wait.');
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastGen = now - lastGenerationTimeRef.current;
+    if (timeSinceLastGen < 3000) {
+      toast.error('Please wait before generating again');
+      return;
+    }
+
     const genDealId = resolvedDealId || effectiveDealId;
     if (!genDealId) { toast.error('Missing deal ID — cannot generate agreement.'); return; }
     if (!profile?.user_id) { toast.error('Missing user ID — cannot generate agreement.'); return; }
     if (!profile?.user_role) { toast.error('Missing user role — cannot generate agreement.'); return; }
 
+    generationInProgressRef.current = true;
+    lastGenerationTimeRef.current = now;
     setGenerating(true);
     try {
       let compensationModel = 'FLAT_FEE';
