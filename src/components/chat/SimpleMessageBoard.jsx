@@ -2,8 +2,9 @@ import React, { useEffect, useRef, useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send } from "lucide-react";
+import { Send, Image as ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
+import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 
 // Robust sender detection to avoid side-flip on first paint
 const isMessageFromMe = (m, authUser, currentProfile) => {
