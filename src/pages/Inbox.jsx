@@ -2,8 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList, introRespond, listMyRooms } from "@/components/functions";
-import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
@@ -32,10 +31,9 @@ export default function Inbox() {
     try {
       setLoading(true);
       
-      const requestsRes = await inboxList();
-      setRequests(requestsRes.data.requests || []);
+      const requestsRes = await base44.functions.invoke('getAgentPendingRequests');
+      setRequests(requestsRes.data?.requests || []);
       
-      // Load active rooms using enriched endpoint (includes negotiation/regen status)
       const roomsRes = await base44.functions.invoke('listMyRoomsEnriched');
       setRooms(roomsRes.data?.rooms || []);
       
@@ -49,14 +47,14 @@ export default function Inbox() {
 
   const handleAccept = async (requestId) => {
     try {
-      const response = await introRespond({
+      const response = await base44.functions.invoke('respondToDealRequest', {
         requestId,
         action: 'accept'
       });
       
       toast.success("Connection accepted!");
       
-      if (response.data.roomId) {
+      if (response.data?.roomId) {
         navigate(createPageUrl("Room") + `?roomId=${response.data.roomId}`);
       } else {
         loadInbox();
@@ -69,7 +67,7 @@ export default function Inbox() {
 
   const handleDecline = async (requestId) => {
     try {
-      await introRespond({
+      await base44.functions.invoke('respondToDealRequest', {
         requestId,
         action: 'decline'
       });
