@@ -205,51 +205,7 @@ export default function AgentMatching() {
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
       return;
 
-      // ENFORCED: Only one concurrent agent request per deal
-      const allRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.id });
-      const activeRoom = allRoomsForDeal.find(r => 
-        r.request_status === 'requested' || 
-        r.request_status === 'accepted' || 
-        r.request_status === 'signed'
-      );
-
-      if (activeRoom) {
-        toast.error("You already have an active agent request for this deal. Open the existing Deal Room to continue.");
-        setSendingToAgent(null);
-        setTimeout(() => {
-          try { sessionStorage.setItem('selectedAgentId', activeRoom.agentId || agentProfile.id); } catch (_) {}
-navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
-        }, 1500);
-        return;
-      }
-
-      // Check for existing room with this specific agent
-      const existingRoomWithAgent = allRoomsForDeal.find(r => r.agentId === agentProfile.id);
-
-      let room;
-      if (existingRoomWithAgent) {
-        room = existingRoomWithAgent;
-        console.log('[AgentMatching] Reusing existing room:', room.id);
-      } else {
-        // Create new room
-        console.log('[AgentMatching] Creating new room for deal:', deal.id);
-        room = await base44.entities.Room.create({
-          deal_id: deal.id,
-          investorId: profile.id,
-          agentId: agentProfile.id,
-          title: deal.title,
-          property_address: deal.property_address,
-          city: deal.city,
-          state: deal.state,
-          county: deal.county,
-          zip: deal.zip,
-          budget: deal.purchase_price || deal.budget,
-          request_status: 'requested',
-          requested_at: new Date().toISOString()
-        });
-        console.log('[AgentMatching] Room created:', room.id);
-      }
-
+      // Legacy ENFORCED block removed (handled earlier for instant visibility)
       // Store proposed terms using CORRECT seller/buyer keys
       const storedData = sessionStorage.getItem("newDealData");
       if (storedData) {
