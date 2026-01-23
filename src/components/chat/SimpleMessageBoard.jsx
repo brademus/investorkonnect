@@ -151,6 +151,116 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       <div className="mt-4">
         {isChatEnabled ? (
           <div className="flex items-center gap-2">
+            {/* Upload Photo Button */}
+            <button
+              onClick={async () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = 'image/*';
+                input.multiple = true;
+                input.onchange = async (e) => {
+                  const files = Array.from(e.target.files);
+                  if (files.length === 0) return;
+                  
+                  // Validate all files
+                  for (const file of files) {
+                    const validation = validateImage(file);
+                    if (!validation.valid) {
+                      toast.error(validation.error);
+                      return;
+                    }
+                  }
+                  
+                  toast.info(`Uploading ${files.length} photo(s)...`);
+                  try {
+                    const uploads = await Promise.all(
+                      files.map(async (file) => {
+                        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                        return {
+                          name: file.name,
+                          url: file_url,
+                          uploaded_by: profile?.id,
+                          uploaded_by_name: profile?.full_name || profile?.email,
+                          uploaded_at: new Date().toISOString(),
+                          size: file.size,
+                          type: file.type
+                        };
+                      })
+                    );
+                    
+                    // Create message for each photo
+                    for (const upload of uploads) {
+                      await base44.entities.Message.create({
+                        room_id: roomId,
+                        sender_profile_id: profile?.id,
+                        body: `📷 Uploaded photo: ${upload.name}`,
+                        metadata: {
+                          type: 'photo',
+                          file_url: upload.url,
+                          file_name: upload.name,
+                          file_type: upload.type
+                        }
+                      });
+                    }
+                    
+                    toast.success(`${files.length} photo(s) uploaded`);
+                  } catch (error) {
+                    toast.error('Upload failed');
+                  }
+                };
+                input.click();
+              }}
+              className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+              title="Upload photos"
+            >
+              <ImageIcon className="w-5 h-5 text-[#808080]" />
+            </button>
+
+            {/* Upload File Button */}
+            <button
+              onClick={async () => {
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.onchange = async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+
+                  const validation = validateSafeDocument(file);
+                  if (!validation.valid) {
+                    toast.error(validation.error);
+                    return;
+                  }
+                  
+                  toast.info('Uploading file...');
+                  try {
+                    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                    
+                    await base44.entities.Message.create({
+                      room_id: roomId,
+                      sender_profile_id: profile?.id,
+                      body: `📎 Uploaded file: ${file.name}`,
+                      metadata: {
+                        type: 'file',
+                        file_url: file_url,
+                        file_name: file.name,
+                        file_size: file.size,
+                        file_type: file.type
+                      }
+                    });
+                    
+                    toast.success('File uploaded');
+                  } catch (error) {
+                    toast.error('Upload failed');
+                  }
+                };
+                input.click();
+              }}
+              className="w-10 h-10 bg-[#1F1F1F] hover:bg-[#333] rounded-full flex items-center justify-center transition-colors"
+              title="Upload file"
+            >
+              <FileText className="w-5 h-5 text-[#808080]" />
+            </button>
+
             <Input
               value={text}
               onChange={(e) => setText(e.target.value)}
