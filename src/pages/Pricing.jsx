@@ -80,56 +80,21 @@ export default function Pricing() {
     }
 
     setCheckoutLoading(true);
-    const toastId = 'checkout-' + Date.now();
-    toast.loading("Opening checkout...", { id: toastId });
+    toast.loading("Opening Stripe checkout...");
 
     try {
-      console.log('[Pricing] Calling createCheckoutSession with plan:', plan);
-      const response = await base44.functions.invoke('createCheckoutSession', { plan });
+      // Get price ID from env
+      const priceIds = {
+        'starter': Deno.env?.get?.('STRIPE_PRICE_STARTER') || 'price_1SP89V1Nw95Lp8qMNv6ZlA6q',
+        'pro': Deno.env?.get?.('STRIPE_PRICE_PRO') || 'price_1SP8AB1Nw95Lp8qMSu9CdqJk',
+        'enterprise': Deno.env?.get?.('STRIPE_PRICE_ENTERPRISE') || 'price_1SP8B01Nw95Lp8qMsNzWobkZ'
+      };
 
-      // Validate response
-      if (!response || !response.data) {
-        toast.dismiss(toastId);
-        toast.error("No response from server. Please try again.");
-        setCheckoutLoading(false);
-        return;
-      }
-
-      if (!response.data.ok) {
-        toast.dismiss(toastId);
-        toast.error(response.data?.message || "Failed to create checkout session");
-        setCheckoutLoading(false);
-        return;
-      }
-
-      // Validate URL exists
-      if (!response.data.url) {
-        toast.dismiss(toastId);
-        toast.error("Checkout URL not provided. Please contact support.");
-        console.error('[Pricing] No checkout URL in response:', response.data);
-        setCheckoutLoading(false);
-        return;
-      }
-
-      // Show redirecting message
-      toast.dismiss(toastId);
-      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
-
-      // Add small delay to ensure toast is visible
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Redirect to Stripe
-      window.location.href = response.data.url;
-
-      // Fallback: If redirect doesn't happen in 3 seconds, show error
-      setTimeout(() => {
-        toast.dismiss(toastId + '-redirect');
-        toast.error("Redirect failed. Please try again or contact support.");
-        setCheckoutLoading(false);
-      }, 3000);
+      // Direct redirect to checkoutSession endpoint
+      const checkoutUrl = `/functions/checkoutSession?plan=${plan}`;
+      window.location.href = checkoutUrl;
 
     } catch (error) {
-      toast.dismiss(toastId);
       console.error('[Pricing] Checkout error:', error);
       toast.error("Failed to start checkout. Please try again.");
       setCheckoutLoading(false);
