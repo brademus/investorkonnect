@@ -5,6 +5,10 @@ import {
   adminNdaSet,
   adminSetup,
   grantAdmin,
+  profileDedup,
+  profileHealthCheck,
+  refreshAllEmbeddings,
+  resetProfiles,
 } from "@/components/functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -172,7 +176,7 @@ function AdminContent() {
   const runHealthCheck = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('profileHealthCheck');
+      const response = await profileHealthCheck();
       setHealthData(response.data);
       toast.success("Health check completed!");
     } catch (error) {
@@ -190,7 +194,7 @@ function AdminContent() {
 
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('profileDedup');
+      const response = await profileDedup();
       const data = response.data;
       
       console.log('[Admin] Dedup result:', data);
@@ -260,7 +264,7 @@ Type "RESET" to confirm:`;
     
     try {
       console.log('[Admin] Calling resetProfiles...');
-      const response = await base44.functions.invoke('resetProfiles');
+      const response = await resetProfiles();
       const data = response.data;
       
       console.log('[Admin] Reset result:', data);
@@ -385,7 +389,7 @@ Type "RESET" to confirm:`;
   const refreshAgentVectors = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+      const response = await refreshAllEmbeddings({ 
         role: 'agent' 
       });
       const data = response.data;
@@ -402,7 +406,7 @@ Type "RESET" to confirm:`;
   const refreshInvestorVectors = async () => {
     setProcessing(true);
     try {
-      const response = await base44.functions.invoke('refreshAllEmbeddings', { 
+      const response = await refreshAllEmbeddings({ 
         role: 'investor' 
       });
       const data = response.data;

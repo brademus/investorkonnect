@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
-import { matchAgentsForInvestor } from "@/components/functions";
+import { listMyRooms, matchAgentsForInvestor } from "@/components/functions";
+import { getOrCreateDealRoom } from "@/components/dealRooms";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
@@ -24,9 +26,9 @@ export default function DemoDiagnostics() {
   const testPingBackend = async () => {
     setLoadingOp('ping');
     try {
-      const response = await base44.functions.invoke('listMyRoomsEnriched');
-      const rooms = response?.data?.rooms || [];
-      addResult('Ping Backend (listMyRoomsEnriched)', 'success', {
+      const response = await listMyRooms();
+      const rooms = getRoomsFromListMyRoomsResponse(response);
+      addResult('Ping Backend (listMyRooms)', 'success', {
         roomCount: rooms.length,
         rooms: rooms.map(r => ({ id: r.id, deal_id: r.deal_id }))
       });
@@ -100,12 +102,10 @@ export default function DemoDiagnostics() {
         return;
       }
 
-      const response = await base44.functions.invoke('createDealRoom', {
+      const roomId = await getOrCreateDealRoom({
         dealId: deals[0].id,
         agentProfileId: agents[0].id
       });
-      
-      const roomId = response?.data?.roomId;
       
       addResult('Create Test Room', 'success', {
         roomId,

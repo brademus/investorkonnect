@@ -17,7 +17,9 @@ import { Button } from "@/components/ui/button";
 import { setCachedDeal } from "@/components/utils/dealCache";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
-
+import { getOrCreateDealRoom } from "@/components/dealRooms";
+import { requireInvestorSetup } from "@/components/requireInvestorSetup";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { DragDropContext, Droppable, Draggable } from "@hello-pangea/dnd";
 import SetupChecklist from "@/components/SetupChecklist";
 import HelpPanel from "@/components/HelpPanel";
@@ -581,8 +583,7 @@ function PipelineContent() {
             toast.info('Select an agent for this deal to open a room.');
             return;
           }
-          const { data: roomData } = await base44.functions.invoke('createDealRoom', { dealId: deal.deal_id, agentProfileId });
-          const roomId = roomData?.roomId;
+          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
           navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
           return;
         }
@@ -609,8 +610,7 @@ function PipelineContent() {
             toast.info('Select an agent for this deal to open a room.');
             return;
           }
-          const { data } = await base44.functions.invoke('createDealRoom', { dealId: deal.deal_id, agentProfileId });
-          const roomId = data?.roomId;
+          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
           navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
           return;
         }
@@ -622,11 +622,10 @@ function PipelineContent() {
 
     // Otherwise, create or get the room for this deal + agent
     try {
-      const { data } = await base44.functions.invoke('createDealRoom', {
+      const roomId = await getOrCreateDealRoom({
         dealId: deal.deal_id,
         agentProfileId
       });
-      const roomId = data?.roomId;
       if (isAgent) {
         const masked = {
           id: deal.deal_id,

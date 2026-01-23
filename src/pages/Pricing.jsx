@@ -80,34 +80,56 @@ export default function Pricing() {
     }
 
     setCheckoutLoading(true);
-    toast.loading("Opening Stripe checkout...");
+    const toastId = 'checkout-' + Date.now();
+    toast.loading("Opening checkout...", { id: toastId });
 
     try {
-      // Map plan names to actual Stripe price IDs
-      const priceIds = {
-        'starter': 'price_1SP89V1Nw95Lp8qMNv6ZlA6q',
-        'pro': 'price_1SP8AB1Nw95Lp8qMSu9CdqJk',
-        'enterprise': 'price_1SP8B01Nw95Lp8qMsNzWobkZ'
-      };
+      console.log('[Pricing] Calling checkoutLite with plan:', plan);
+      const response = await base44.functions.invoke('checkoutLite', { plan });
 
-      const priceId = priceIds[plan];
-      if (!priceId) {
-        throw new Error('Invalid plan selected');
+      // Validate response
+      if (!response || !response.data) {
+        toast.dismiss(toastId);
+        toast.error("No response from server. Please try again.");
+        setCheckoutLoading(false);
+        return;
       }
 
-      // Call createCheckoutSession function with the actual price ID
-      const response = await base44.functions.invoke('createCheckoutSession', {
-        price: priceId
-      });
-
-      if (response.data?.url) {
-        // Redirect to Stripe Checkout
-        window.location.href = response.data.url;
-      } else {
-        throw new Error('No checkout URL returned');
+      if (!response.data.ok) {
+        toast.dismiss(toastId);
+        toast.error(response.data?.message || "Failed to create checkout session");
+        setCheckoutLoading(false);
+        return;
       }
+
+      // Validate URL exists
+      if (!response.data.url) {
+        toast.dismiss(toastId);
+        toast.error("Checkout URL not provided. Please contact support.");
+        console.error('[Pricing] No checkout URL in response:', response.data);
+        setCheckoutLoading(false);
+        return;
+      }
+
+      // Show redirecting message
+      toast.dismiss(toastId);
+      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
+
+      // Add small delay to ensure toast is visible
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Redirect to Stripe
+      window.location.href = response.data.url;
+
+      // Fallback: If redirect doesn't happen in 3 seconds, show error
+      setTimeout(() => {
+        toast.dismiss(toastId + '-redirect');
+        toast.error("Redirect failed. Please try again or contact support.");
+        setCheckoutLoading(false);
+      }, 3000);
 
     } catch (error) {
+      toast.dismiss(toastId);
       console.error('[Pricing] Checkout error:', error);
       toast.error("Failed to start checkout. Please try again.");
       setCheckoutLoading(false);
