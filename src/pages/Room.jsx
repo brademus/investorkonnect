@@ -807,7 +807,7 @@ export default function Room() {
         name: m.metadata.file_name || 'photo.jpg',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: 'image'
@@ -819,7 +819,7 @@ export default function Room() {
         name: m.metadata.file_name || 'document',
         url: m.metadata.file_url,
         uploaded_by: m.sender_profile_id,
-        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (currentProfile?.full_name || currentProfile?.email || 'Chat'),
+        uploaded_by_name: m.metadata.uploaded_by_name || m.sender_name || (profile?.full_name || profile?.email || 'Chat'),
         uploaded_at: m.created_date || new Date().toISOString(),
         size: m.metadata.file_size || 0,
         type: m.metadata.file_type || 'application/octet-stream'
