@@ -354,6 +354,24 @@ function PipelineContent() {
     }
   }, [location.search, profile?.id, profile?.user_role]);
 
+  // Realtime: instantly refresh agent dashboard when investor signs or room updates
+  useEffect(() => {
+    if (!profile?.id || !isAgent) return;
+    const unsubRoom = base44.entities.Room.subscribe((event) => {
+      const r = event?.data;
+      if (!r || r.agentId !== profile.id) return;
+      if (event.type === 'create' || event.type === 'update') {
+        const st = r.agreement_status;
+        const rs = r.request_status;
+        if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted') {
+          try { queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); } catch (_) {}
+          try { queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] }); } catch (_) {}
+        }
+      }
+    });
+    return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
+  }, [profile?.id, profile?.user_role, isAgent]);
+
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
@@ -489,10 +507,11 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show only fully signed deals in the board
+    // Agents: show deals once investor has signed (or later)
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
-      return d.is_fully_signed;
+      const status = d.agreement_status;
+      return d.is_fully_signed || status === 'investor_signed' || status === 'agent_signed' || status === 'attorney_review_pending';
     });
   }, [dealsData, rooms, appointments]);
 
