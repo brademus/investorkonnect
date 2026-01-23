@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
         const ag = agreementsMap.get(d.id);
         if (ag && allowedStatuses.has(ag.status)) return true;
         const hasRoomSignal = (agentRooms || []).some(r => r.deal_id === d.id && (
-          r.agreement_status === 'investor_signed' || r.request_status === 'accepted' || r.request_status === 'signed'
+          r.agreement_status === 'investor_signed' || r.request_status === 'requested' || r.request_status === 'accepted' || r.request_status === 'signed'
         ));
         return hasRoomSignal;
       });

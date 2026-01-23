@@ -715,10 +715,10 @@ function PipelineContent() {
     const m = new Map();
     PIPELINE_STAGES.forEach(s => m.set(s.id, []));
     deals.forEach(d => {
-      // Agents: show once investor or agent has signed (or fully signed) OR request accepted
+      // Agents: show once a request exists (requested/accepted/signed) or any signed status
       if (isAgent) {
         const st = d.agreement_status;
-        const allowed = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed';
+        const allowed = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending' || d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed';
         if (!allowed) return;
         if (d.agent_request_status === 'rejected') return;
       }
