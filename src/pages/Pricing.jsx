@@ -83,16 +83,16 @@ export default function Pricing() {
     toast.loading("Opening Stripe checkout...");
 
     try {
-      // Get price ID from env
-      const priceIds = {
-        'starter': Deno.env?.get?.('STRIPE_PRICE_STARTER') || 'price_1SP89V1Nw95Lp8qMNv6ZlA6q',
-        'pro': Deno.env?.get?.('STRIPE_PRICE_PRO') || 'price_1SP8AB1Nw95Lp8qMSu9CdqJk',
-        'enterprise': Deno.env?.get?.('STRIPE_PRICE_ENTERPRISE') || 'price_1SP8B01Nw95Lp8qMsNzWobkZ'
-      };
+      // Call createCheckoutSession function
+      const response = await base44.functions.invoke('createCheckoutSession', {
+        priceId: plan
+      });
 
-      // Direct redirect to checkoutSession endpoint
-      const checkoutUrl = `/functions/checkoutSession?plan=${plan}`;
-      window.location.href = checkoutUrl;
+      if (response.data?.url) {
+        window.location.href = response.data.url;
+      } else {
+        throw new Error('No checkout URL returned');
+      }
 
     } catch (error) {
       console.error('[Pricing] Checkout error:', error);
