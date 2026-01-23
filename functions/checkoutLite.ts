@@ -1,5 +1,5 @@
 import Stripe from 'npm:stripe@14.11.0';
-import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
 
 // LITE CHECKOUT - CALLED VIA SDK (not direct URL)
 Deno.serve(async (req) => {
@@ -30,10 +30,11 @@ Deno.serve(async (req) => {
     }
     
     // Map plan to price ID
+    // Prioritize IDs from recent product catalog, fallback to env vars
     const priceMap = {
-      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
     const price = plan ? priceMap[plan] : null;
@@ -102,37 +103,21 @@ Deno.serve(async (req) => {
           kyc_status: profile.kyc_status
         });
         
-        // Check if investor role
-        if (profile.user_role === 'investor') {
-          // For investors, only require onboarding completion
-          // KYC and NDA will be required after subscription, before deal access
-          
-          // 1. Check onboarding
-          if (!profile.onboarding_completed_at || !profile.user_role) {
-            console.log('❌ Onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete your investor profile first',
-              redirect: `${base}/onboarding/investor`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Investor ready for checkout - onboarding completed');
-        } else {
-          // For non-investors (agents, etc.), just check basic onboarding
-          if (!profile.onboarding_completed_at) {
-            console.log('❌ Basic onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete onboarding before subscribing',
-              redirect: `${base}/onboarding`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Non-investor user ready');
+        // Check onboarding for both investors and agents
+        if (!profile.onboarding_completed_at) {
+          console.log('❌ Onboarding not completed for user_role:', profile.user_role);
+          const redirectPath = profile.user_role === 'agent' 
+            ? `${base}/AgentOnboarding` 
+            : `${base}/InvestorOnboarding`;
+          return Response.json({ 
+            ok: false, 
+            reason: 'ONBOARDING_REQUIRED',
+            message: 'Please complete your profile first',
+            redirect: redirectPath
+          }, { status: 403 });
         }
+        
+        console.log('✅ User ready:', profile.user_role);
         
       } catch (gateError) {
         console.error('❌ Gating check failed:', gateError);

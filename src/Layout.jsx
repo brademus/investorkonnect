@@ -40,18 +40,16 @@ function LayoutContent({ children }) {
 
   const isFetching = useIsFetching();
   const [showAppLoader, setShowAppLoader] = React.useState(true);
-  const [hasLoaded, setHasLoaded] = React.useState(false);
-  
   React.useEffect(() => {
-    // Only show the global loader on FIRST load
-    // Once loaded, never show again to prevent random loading flashes
-    if (loading && !hasLoaded) {
+    // Only show the global loader during initial auth/profile loading,
+    // not for background query refetches to avoid random loading flashes.
+    if (loading) {
       setShowAppLoader(true);
-    } else if (!loading) {
-      setHasLoaded(true);
-      setShowAppLoader(false);
+    } else {
+      const t = setTimeout(() => setShowAppLoader(false), 150);
+      return () => clearTimeout(t);
     }
-  }, [loading, hasLoaded]);
+  }, [loading]);
 
   const noNavPages = [
     '/',

@@ -5,7 +5,8 @@ import { useQueryClient } from "@tanstack/react-query";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { DEMO_MODE, DEMO_CONFIG } from "@/components/config/demo";
-
+import { getOrCreateDealRoom } from "@/components/dealRooms";
+import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -95,10 +96,21 @@ export default function AgentDirectory() {
           
           // Try to find the existing room
           try {
-            const roomsResponse = await base44.functions.invoke('listMyRoomsEnriched');
-            const rooms = roomsResponse?.data?.rooms || [];
+            const roomsResponse = await base44.functions.invoke('listMyRooms');
+            const rooms = getRoomsFromListMyRoomsResponse(roomsResponse);
             
-            const existingRoom = rooms.find(room => room.deal_id === dealData.id);
+            const existingRoom = rooms.find(room => {
+              // Match deal - support both key styles
+              const dealMatch = room.deal_id === dealData.id || room.suggested_deal_id === dealData.id;
+              
+              // Match agent - support multiple key styles
+              const agentMatch = 
+                (room.agentId || room.agent_id) === dealData.agent_id ||
+                room.counterparty_profile_id === dealData.agent_id ||
+                room.counterparty_profile?.id === dealData.agent_id;
+              
+              return dealMatch && agentMatch;
+            });
             
             if (existingRoom) {
               navigate(`${createPageUrl("Room")}?roomId=${existingRoom.id}`, { replace: true });
@@ -190,16 +202,11 @@ export default function AgentDirectory() {
         return;
       }
       
-      // Create or get room
-      const response = await base44.functions.invoke('createDealRoom', {
+      // Get or create room for this deal + agent
+      const roomId = await getOrCreateDealRoom({
         dealId: deal.id,
         agentProfileId: agent.id
       });
-      
-      const roomId = response?.data?.roomId;
-      if (!roomId) {
-        throw new Error("Failed to create deal room");
-      }
 
       toast.success(`Opening conversation with ${agent.full_name}`);
       navigate(`${createPageUrl("Room")}?roomId=${roomId}`);

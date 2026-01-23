@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { inboxList } from "@/components/functions";
+import { inboxList, introRespond } from "@/components/functions";
 import { AuthGuard } from "@/components/AuthGuard";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
@@ -56,7 +56,7 @@ function AgentDashboardContent() {
 
   const handleRespondToLead = async (item, accept) => {
     try {
-      await base44.functions.invoke('introRespond', {
+      await introRespond({
         introId: item.intro?.id || item.id,
         accept
       });

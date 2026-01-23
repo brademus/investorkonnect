@@ -72,7 +72,6 @@ Deno.serve(async (req) => {
       const message = await base44.asServiceRole.entities.Message.create({
         room_id,
         sender_profile_id: profile.id,
-        sender_user_id: user.id,
         body: bodyTrimmed
       });
       return Response.json({ ok: true, message });

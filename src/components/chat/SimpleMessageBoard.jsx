@@ -84,7 +84,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
 
   const send = async () => {
     const body = text.trim();
-    if (!roomId || !body || sending) return;
+    if (!roomId || !body) return;
     if (!isChatEnabled) {
       toast.error("Chat unlocks after the request is accepted.");
       return;
@@ -120,7 +120,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
             return prev.filter((m) => m.id !== tempId);
           }
           // Otherwise replace optimistic with real
-          return prev.map((m) => (m.id === tempId ? { ...real, _isMe: true } : m));
+          return prev.map((m) => (m.id === tempId ? real : m));
         });
       }
     } catch (e) {
@@ -161,9 +161,9 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
               }}
               placeholder="Type a message..."
               className="h-12 pl-5 pr-4 rounded-full bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#808080] text-[15px] focus:border-[#E3C567] focus:ring-[#E3C567]/20"
-              disabled={sending}
+              
             />
-            <Button onClick={send} disabled={!text.trim() || sending} className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+            <Button onClick={send} disabled={!text.trim()} className="w-12 h-12 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
               <Send className="w-5 h-5" />
             </Button>
           </div>
