@@ -5,7 +5,7 @@ import { AuthGuard } from "@/components/AuthGuard";
 import { Header } from "@/components/Header";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { base44 } from "@/api/base44Client";
-import { getRoomsFromListMyRoomsResponse } from "@/components/utils/getRoomsFromListMyRooms";
+
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,18 +23,9 @@ function AgentDocumentsContent() {
     queryKey: ['agentRooms', profile?.id],
     queryFn: async () => {
       if (!profile?.id) return [];
-      // Prefer enriched rooms (includes files like the Files tab)
       const respEnriched = await base44.functions.invoke('listMyRoomsEnriched');
-      let fromFn = getRoomsFromListMyRoomsResponse(respEnriched);
-      if (!Array.isArray(fromFn) || fromFn.length === 0) {
-        const resp = await base44.functions.invoke('listMyRooms');
-        fromFn = getRoomsFromListMyRoomsResponse(resp);
-      }
-      if (Array.isArray(fromFn) && fromFn.length > 0) return fromFn;
-      // Fallback in case function returns nothing for this user
-      const fallback = await base44.entities.Room.filter({ agentId: profile.id });
-      // Attach files/photos from fallback rooms explicitly if present
-      return (fallback || []).map(r => ({ ...r, files: Array.isArray(r.files) ? r.files : [], photos: Array.isArray(r.photos) ? r.photos : [] }));
+      const rooms = respEnriched?.data?.rooms || [];
+      return rooms.map(r => ({ ...r, files: Array.isArray(r.files) ? r.files : [], photos: Array.isArray(r.photos) ? r.photos : [] }));
     },
     enabled: !!profile?.id,
     staleTime: 0,
