@@ -507,12 +507,11 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show deals only after investor has signed (or later)
+    // Agents: show deals in pipeline only if AGENT has signed (deal is fully signed or agent signed)
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
-      const status = d.agreement_status;
-      const req = d.agent_request_status;
-      return d.is_fully_signed || status === 'investor_signed' || status === 'agent_signed' || status === 'attorney_review_pending' || req === 'signed';
+      // Only show if agent has already signed
+      return d.is_fully_signed || d.agreement_status === 'agent_signed' || d.agreement_status === 'fully_signed';
     });
   }, [dealsData, rooms, appointments]);
 
