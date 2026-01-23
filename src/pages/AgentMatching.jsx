@@ -205,29 +205,7 @@ export default function AgentMatching() {
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
       return;
 
-      // Legacy ENFORCED block removed (handled earlier for instant visibility)
-      // Store proposed terms using CORRECT seller/buyer keys
-      const storedData = sessionStorage.getItem("newDealData");
-      if (storedData) {
-        const parsed = JSON.parse(storedData);
-        await base44.entities.Room.update(room.id, {
-          proposed_terms: {
-            seller_commission_type: parsed.sellerCommissionType,
-            seller_commission_percentage: parsed.sellerCommissionPercentage ? Number(parsed.sellerCommissionPercentage) : null,
-            seller_flat_fee: parsed.sellerFlatFee ? Number(parsed.sellerFlatFee) : null,
-            buyer_commission_type: parsed.buyerCommissionType,
-            buyer_commission_percentage: parsed.buyerCommissionPercentage ? Number(parsed.buyerCommissionPercentage) : null,
-            buyer_flat_fee: parsed.buyerFlatFee ? Number(parsed.buyerFlatFee) : null,
-            agreement_length: parsed.agreementLength ? Number(parsed.agreementLength) : null
-          }
-        });
-      }
 
-      const _first = (agentProfile.full_name || 'agent').split(' ')[0];
-      toast.success(`Agent selected: ${_first}. Continue to sign your agreement.`);
-      // Redirect investor straight to Deal Room → Agreement tab
-      try { sessionStorage.setItem('selectedAgentId', agentProfile.id); } catch (_) {}
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.id}`);
 
     } catch (error) {
       console.error("Failed to send deal:", error);
