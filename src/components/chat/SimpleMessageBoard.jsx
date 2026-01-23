@@ -138,13 +138,29 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 overflow-y-auto space-y-4">
-        {messages.map((m) => (
-          <div key={m.id} className={"flex " + ((m?._isMe===true||isMessageFromMe(m,user,profile)) ? "justify-end" : "justify-start")}>
-            <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + ((m?._isMe===true||isMessageFromMe(m,user,profile)) ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
-              <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+        {messages.map((m) => {
+          const isMe = m?._isMe===true||isMessageFromMe(m,user,profile);
+          const isPhotoMessage = m?.metadata?.type === 'photo' || (m?.metadata?.type === 'file' && (m?.metadata?.file_type || '').startsWith('image/'));
+          return (
+            <div key={m.id} className={"flex " + (isMe ? "justify-end" : "justify-start")}>
+              <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + (isMe ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
+                {isPhotoMessage && m?.metadata?.file_url ? (
+                  <div>
+                    <img 
+                      src={m.metadata.file_url} 
+                      alt={m.metadata.file_name || "photo"}
+                      className="rounded-lg max-w-full h-auto max-h-64 mb-2 cursor-pointer"
+                      onClick={() => window.open(m.metadata.file_url, '_blank')}
+                    />
+                    <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                  </div>
+                ) : (
+                  <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={endRef} />
       </div>
 
