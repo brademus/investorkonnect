@@ -170,6 +170,11 @@ export default function MyAgreement() {
                   if (agentProfileId) {
                     try {
                       await base44.functions.invoke('sendDealRequest', { deal_id: deal.id, agent_profile_id: agentProfileId });
+                      const rooms = await base44.entities.Room.filter({ deal_id: deal.id, agentId: agentProfileId }).catch(() => []);
+                      if (rooms?.[0]) {
+                        try { await base44.entities.Room.update(rooms[0].id, { agreement_status: 'investor_signed' }); } catch (_) {}
+                        try { await base44.entities.Activity.create({ type: 'agent_locked_in', deal_id: deal.id, room_id: rooms[0].id, actor_id: profile?.id, actor_name: profile?.full_name || profile?.email, message: 'Investor signed agreement' }); } catch (_) {}
+                      }
                     } catch (e) {
                       // Ignore conflict if already created
                     }
