@@ -740,7 +740,7 @@ export default function Room() {
   useEffect(() => {
     if (!roomId && !currentRoom?.deal_id) return;
     const unsubscribers = [];
-    const freeze = showBoard && (activeTab === 'details' || activeTab === 'agreement');
+    const freeze = showBoard && activeTab === 'details';
 
     if (roomId) {
       const unsubRoom = base44.entities.Room.subscribe((event) => {
@@ -775,6 +775,34 @@ export default function Room() {
       });
     };
   }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
+
+  // Real-time agreement refresh on counter offer changes
+  useEffect(() => {
+    if (!currentRoom?.deal_id) return;
+    
+    const unsubscribers = [];
+    const dealId = currentRoom.deal_id;
+
+    // Subscribe to counter offer changes
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        // Reload agreement whenever a counter offer changes
+        (async () => {
+          try {
+            const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+            if (data?.agreement) setAgreement(data.agreement);
+          } catch (_) {}
+        })();
+      }
+    });
+    unsubscribers.push(unsubCounter);
+
+    return () => {
+      unsubscribers.forEach((u) => {
+        try { u(); } catch (_) {}
+      });
+    };
+  }, [currentRoom?.deal_id, activeTab]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
