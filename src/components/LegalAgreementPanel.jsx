@@ -28,6 +28,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
 
+  // Rate limiting for generate
+  const generationInProgressRef = React.useRef(false);
+  const lastGenerationTimeRef = React.useRef(0);
+
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
