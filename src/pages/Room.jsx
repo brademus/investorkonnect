@@ -1337,6 +1337,7 @@ ${dealContext}`;
             const handleClick = () => {
               if (r.is_orphan) {
                 // Pipeline-only deal: route to Pipeline to continue
+                prefetchPipeline();
                 navigate(createPageUrl("Pipeline"));
                 setDrawer(false);
                 return;
@@ -1370,20 +1371,24 @@ ${dealContext}`;
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0 z-10">
           <button 
             className="mr-4 md:hidden text-[#6B7280] hover:text-[#111827] transition-colors"
-            onClick={() => setDrawer(s => !s)}
+            onClick={() => {
+              prefetchPipeline();
+              navigate(createPageUrl("Pipeline"));
+            }}
           >
             <Menu className="w-6 h-6" />
           </button>
           <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(createPageUrl("Pipeline"));
-            }}
-            variant="outline"
-            className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
+           onClick={(e) => {
+             e.stopPropagation();
+             prefetchPipeline();
+             navigate(createPageUrl("Pipeline"));
+           }}
+           variant="outline"
+           className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#141414] text-[#FAFAFA] rounded-full flex items-center gap-2"
           >
-            <ArrowLeft className="w-4 h-4" />
-            <span className="hidden md:inline">Pipeline</span>
+           <ArrowLeft className="w-4 h-4" />
+           <span className="hidden md:inline">Pipeline</span>
           </Button>
           
           {/* Avatar */}
