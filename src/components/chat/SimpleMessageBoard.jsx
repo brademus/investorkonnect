@@ -139,7 +139,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
       <div className="flex-1 overflow-y-auto space-y-4">
         {messages.map((m) => (
           <div key={m.id} className={`flex ${(m?._isMe===true||isMessageFromMe(m,user,profile)) ? "justify-end" : "justify-start"}`>
-            <div className={`px-4 py-2 rounded-2xl max-w-[70%] ${(m?._isMe===true||isMessageFromMe(m,user,profile)) ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md"}`}>
+            <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + ((m?._isMe===true||isMessageFromMe(m,user,profile)) ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
               <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
             </div>
           </div>
