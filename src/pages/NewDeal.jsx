@@ -464,7 +464,17 @@ export default function NewDeal() {
       }
     }
 
-    // Save to sessionStorage - include dealId if editing
+    // Immediately create a room request so the agent sees it right away (if agent already selected)
+  try {
+    if (dealId) {
+      const selectedAgentId = sessionStorage.getItem('selectedAgentId');
+      if (selectedAgentId) {
+        await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: selectedAgentId });
+      }
+    }
+  } catch (_) {}
+
+  // Save to sessionStorage - include dealId if editing
     sessionStorage.setItem(draftKey, JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
