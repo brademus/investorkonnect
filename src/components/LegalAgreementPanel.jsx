@@ -519,24 +519,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             {/* Pending Counter Offer panel */}
             {pendingOffer && (
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-3">
                   <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
                   <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <div className="text-[#808080]">Type</div>
-                    <div className="text-[#FAFAFA] capitalize">{pendingOffer.terms?.buyer_commission_type}</div>
-                  </div>
-                  <div>
-                    <div className="text-[#808080]">Amount</div>
-                    <div className="text-[#FAFAFA]">
-                      {pendingOffer.terms?.buyer_commission_type === 'percentage'
-                        ? `${pendingOffer.terms?.buyer_commission_percentage || 0}%`
-                        : `$${(pendingOffer.terms?.buyer_flat_fee || 0).toLocaleString()}`}
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <div className="text-[#808080]">Type</div>
+                      <div className="text-[#FAFAFA] capitalize">{pendingOffer.terms?.buyer_commission_type}</div>
+                    </div>
+                    <div>
+                      <div className="text-[#808080]">Amount</div>
+                      <div className="text-[#FAFAFA]">
+                        {pendingOffer.terms?.buyer_commission_type === 'percentage'
+                          ? `${pendingOffer.terms?.buyer_commission_percentage || 0}%`
+                          : `$${(pendingOffer.terms?.buyer_flat_fee || 0).toLocaleString()}`}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-end justify-end gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {!isFullySigned && ((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
                       <>
                         <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
