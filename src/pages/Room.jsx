@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMyRooms, roomUpdate } from "@/components/functions";
+import { roomUpdate } from "@/components/functions";
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
@@ -9,7 +9,7 @@ import { useRooms } from "@/components/useRooms";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { useQueryClient } from "@tanstack/react-query";
-import { getOrCreateDealRoom } from "@/components/dealRooms";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
