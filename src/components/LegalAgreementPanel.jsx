@@ -133,6 +133,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setLoadingOffer(false);
     }
   };
+
+  // Real-time subscriptions to counter offer changes
+  useEffect(() => {
+    if (!effectiveDealId) return;
+    let unsubscribe = null;
+
+    (async () => {
+      unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
+        if (event?.data?.deal_id !== effectiveDealId) return;
+
+        // Whenever a counter offer changes, reload the latest pending offer
+        if (event.type === 'create' || event.type === 'update') {
+          loadLatestOffer();
+        }
+      });
+    })();
+
+    return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
+  }, [effectiveDealId]);
+
   useEffect(() => { loadLatestOffer(); }, [effectiveDealId]);
 
   const submitCounterOffer = async (fromRole) => {
