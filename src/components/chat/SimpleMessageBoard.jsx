@@ -79,7 +79,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
     };
   }, [roomId, user?.id, profile?.id, profile?.email]);
 
-  const isMe = (m) => m?.sender_profile_id && m.sender_profile_id === profile?.id;
+
 
   const send = async () => {
     const body = text.trim();
