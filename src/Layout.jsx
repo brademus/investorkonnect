@@ -41,13 +41,15 @@ function LayoutContent({ children }) {
   const isFetching = useIsFetching();
   const [showAppLoader, setShowAppLoader] = React.useState(true);
   React.useEffect(() => {
-    if (loading || isFetching > 0) {
+    // Only show the global loader during initial auth/profile loading,
+    // not for background query refetches to avoid random loading flashes.
+    if (loading) {
       setShowAppLoader(true);
     } else {
       const t = setTimeout(() => setShowAppLoader(false), 150);
       return () => clearTimeout(t);
     }
-  }, [loading, isFetching]);
+  }, [loading]);
 
   const noNavPages = [
     '/',
