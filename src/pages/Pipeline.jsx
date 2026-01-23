@@ -735,8 +735,8 @@ function PipelineContent() {
     );
   }
 
-  // Prevent initial flicker by waiting for core data to load
-  if (loading || (loadingDeals && (!dealsData || dealsData.length === 0))) {
+  // Prevent initial flicker by waiting for profile to load
+  if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex flex-col">
         <Header profile={profile} />
