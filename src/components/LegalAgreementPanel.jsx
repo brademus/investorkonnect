@@ -349,24 +349,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         seller_flat_fee: currentTerms.seller_flat_fee,
       };
 
+      // Update deal with new terms and mark counter as accepted
       await Promise.all([
         base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms }),
         base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
       ]);
 
+      // Update local state
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
       setJustAcceptedCounter(true);
 
-      // Reload fresh data to detect mismatch
-      const [dealData, agreementData] = await Promise.all([
-        base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(() => ({})),
-        loadAgreement()
-      ]);
-      if (dealData?.data) setFreshDeal(dealData.data);
-
       if (onUpdate) onUpdate();
-      toast.success('Counter offer accepted - please regenerate agreement to continue');
+      toast.success('Counter offer accepted - now regenerate the agreement with the new terms');
     } catch (error) {
       toast.error('Failed to accept counter offer');
       console.error('[LegalAgreementPanel] Error accepting offer:', error);
