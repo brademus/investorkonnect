@@ -575,7 +575,7 @@ export default function ContractVerify() {
           <button
             onClick={() => {
               const editDealId = dealIdFromUrl || dealData?.dealId;
-              navigate(editDealId ? `${createPageUrl("NewDeal")}?dealId=${editDealId}` : createPageUrl("NewDeal"));
+              navigate(editDealId ? `${createPageUrl("NewDeal")}?dealId=${editDealId}` : `${createPageUrl("NewDeal")}?fromVerify=1`);
             }}
             className="text-[#808080] hover:text-[#E3C567] text-sm flex items-center gap-2 mb-4"
           >
