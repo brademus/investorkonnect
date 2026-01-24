@@ -387,16 +387,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const handleGenerate = async () => {
-    // Prevent rapid-fire generation attempts
+    // Prevent simultaneous generations
     if (generationInProgressRef.current) {
       toast.error('Generation already in progress. Please wait.');
-      return;
-    }
-
-    const now = Date.now();
-    const timeSinceLastGen = now - lastGenerationTimeRef.current;
-    if (timeSinceLastGen < 3000) {
-      toast.error('Please wait before generating again');
       return;
     }
 
