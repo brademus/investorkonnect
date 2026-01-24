@@ -28,6 +28,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
 
+  // Fresh deal state to ensure we always have latest terms
+  const [freshDeal, setFreshDeal] = useState(deal || null);
+
   // Rate limiting for generate
   const generationInProgressRef = React.useRef(false);
   const lastGenerationTimeRef = React.useRef(0);
@@ -43,11 +46,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   }, [initialAgreement]);
 
-  // Derived gating flags
+  // Derived gating flags - use freshDeal instead of deal
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
   const termsMismatch = (() => {
     try {
-      const t = deal?.proposed_terms;
+      const t = freshDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
       if (!t || !a) return false;
       if (t.buyer_commission_type === 'percentage') {
@@ -70,6 +73,38 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     [agreement?.investor_signed_at, agreement?.agent_signed_at, agreement?.status]
   );
 
+  // Keep freshDeal in sync with deal prop
+  useEffect(() => {
+    if (deal) {
+      setFreshDeal(deal);
+    }
+  }, [deal]);
+
+  // Load fresh deal data when panel mounts
+  useEffect(() => {
+    if (effectiveDealId) {
+      (async () => {
+        try {
+          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
+          if (data) setFreshDeal(data);
+        } catch (_) {}
+      })();
+    }
+  }, [effectiveDealId]);
+
+  // Subscribe to Deal updates to get fresh terms immediately
+  useEffect(() => {
+    if (!effectiveDealId) return;
+    
+    const unsubscribe = base44.entities.Deal.subscribe((event) => {
+      if (event?.data?.id === effectiveDealId && event.type === 'update') {
+        setFreshDeal(prev => ({ ...prev, ...event.data }));
+      }
+    });
+    
+    return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
+  }, [effectiveDealId]);
+
   // Load agreement when deal is known
   useEffect(() => {
     if (effectiveDealId && !agreement) {
@@ -81,17 +116,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     const genId = effectiveDealId;
     if (!genId) return;
     try {
-      let currentDeal = deal || null;
-      try {
-        const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genId });
-        if (data?.deal) currentDeal = data.deal; else if (data) currentDeal = data;
-      } catch (e) {
-        console.warn('[LegalAgreementPanel] Falling back to passed deal due to fetch error:', e);
-      }
+      // Always fetch fresh deal data
+      const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genId });
+      const currentDeal = data?.deal || data || freshDeal || deal;
+      
       if (!currentDeal) {
         toast.error('Failed to load deal data');
         return;
       }
+      
+      setFreshDeal(currentDeal);
       setResolvedDealId(currentDeal.id);
       const terms = currentDeal.proposed_terms || currentDeal.room?.proposed_terms || {};
       setModalTerms(terms);
@@ -285,18 +319,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (exhibitA?.commission_type === 'percentage') compensationModel = 'COMMISSION_PCT';
       else if (exhibitA?.commission_type === 'net') compensationModel = 'NET_SPREAD';
 
+      const dealToUse = freshDeal || deal;
       const derivedExhibitA = {
         compensation_model: compensationModel,
         flat_fee_amount: exhibitA?.flat_fee_amount || 0,
         commission_percentage: exhibitA?.commission_percentage || 0,
         net_target: exhibitA?.net_target || 0,
-        transaction_type: exhibitA?.transaction_type || deal.transaction_type || 'ASSIGNMENT',
+        transaction_type: exhibitA?.transaction_type || dealToUse?.transaction_type || 'ASSIGNMENT',
         agreement_length_days: exhibitA?.agreement_length_days || 180,
         termination_notice_days: exhibitA?.termination_notice_days || 30,
-        buyer_commission_type: deal.proposed_terms?.buyer_commission_type,
-        buyer_commission_amount: deal.proposed_terms?.buyer_commission_percentage || deal.proposed_terms?.buyer_flat_fee,
-        seller_commission_type: deal.proposed_terms?.seller_commission_type,
-        seller_commission_amount: deal.proposed_terms?.seller_commission_percentage || deal.proposed_terms?.seller_flat_fee,
+        buyer_commission_type: dealToUse?.proposed_terms?.buyer_commission_type,
+        buyer_commission_amount: dealToUse?.proposed_terms?.buyer_commission_percentage || dealToUse?.proposed_terms?.buyer_flat_fee,
+        seller_commission_type: dealToUse?.proposed_terms?.seller_commission_type,
+        seller_commission_amount: dealToUse?.proposed_terms?.seller_commission_percentage || dealToUse?.proposed_terms?.seller_flat_fee,
       };
 
       const response = await base44.functions.invoke('generateLegalAgreement', {
@@ -537,7 +572,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Key Terms (from deal) - Always show counter button for agents */}
-            {deal?.proposed_terms && (
+            {freshDeal?.proposed_terms && (
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
@@ -546,7 +581,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                       onClick={() => {
-                        const t = deal.proposed_terms || {};
+                        const t = freshDeal.proposed_terms || {};
                         const tType = t.buyer_commission_type || 'flat';
                         setCounterType(tType);
                         setCounterAmount(String(tType === 'percentage' ? (t.buyer_commission_percentage || 0) : (t.buyer_flat_fee || 0)));
@@ -559,14 +594,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#808080]">Type</span>
-                  <span className="text-[#FAFAFA] capitalize">{deal.proposed_terms.buyer_commission_type || '—'}</span>
+                  <span className="text-[#FAFAFA] capitalize">{freshDeal.proposed_terms.buyer_commission_type || '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#808080]">Amount</span>
                   <span className="text-[#FAFAFA]">
-                    {deal.proposed_terms.buyer_commission_type === 'percentage'
-                      ? `${deal.proposed_terms.buyer_commission_percentage || 0}%`
-                      : `$${(deal.proposed_terms.buyer_flat_fee || 0).toLocaleString()}`}
+                    {freshDeal.proposed_terms.buyer_commission_type === 'percentage'
+                      ? `${freshDeal.proposed_terms.buyer_commission_percentage || 0}%`
+                      : `$${(freshDeal.proposed_terms.buyer_flat_fee || 0).toLocaleString()}`}
                   </span>
                 </div>
               </div>
