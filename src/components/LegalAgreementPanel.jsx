@@ -667,7 +667,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
-                  {!isFullySigned && agreement && (
+                  {isInvestor && !isFullySigned && agreement && !hasPendingOffer && (
                       <Button
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
