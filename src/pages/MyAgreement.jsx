@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { createPageUrl } from '@/components/utils';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import LegalAgreementPanel from '@/components/LegalAgreementPanel.jsx';
+import LegalAgreementPanel from '@/components/LegalAgreementPanel';
 import { toast } from 'sonner';
 
 export default function MyAgreement() {
@@ -170,6 +170,7 @@ export default function MyAgreement() {
           deal={deal}
           profile={profile}
           dealId={deal?.id || dealId}
+          allowGenerate={true}
           onUpdate={async () => {
             // Refresh local deal
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });

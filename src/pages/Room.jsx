@@ -2118,6 +2118,8 @@ ${dealContext}`;
                         key={`${currentRoom.deal_id}-${deal?.proposed_terms?.buyer_commission_type}-${deal?.proposed_terms?.buyer_flat_fee}-${deal?.proposed_terms?.buyer_commission_percentage}`}
                         deal={deal || buildDealFromRoom(currentRoom, false)}
                         profile={profile}
+                        allowGenerate={false}
+                        initialAgreement={agreement || currentRoom?.agreement || null}
                         dealId={currentRoom?.deal_id}
                         onUpdate={async () => {
                           // Reload fresh deal data
