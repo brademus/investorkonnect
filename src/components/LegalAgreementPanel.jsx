@@ -893,7 +893,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </Button>
               )}
 
-              {!isFullySigned && isInvestor && (
+              {!isFullySigned && isInvestor && !hideRegenerateButton && (
                 <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
                   Regenerate Agreement
                 </Button>
