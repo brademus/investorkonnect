@@ -167,13 +167,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   })();
 
-  // Log regenerate button conditions for debugging
-  React.useEffect(() => {
-    if (agreement && isInvestor && !agreement.investor_signed_at) {
-      console.log('[LegalAgreementPanel] Regenerate button conditions:', { hasPendingOffer, termsMismatch, justAcceptedCounter, agreement_status: agreement.status });
-    }
-  }, [agreement, isInvestor, hasPendingOffer, termsMismatch, justAcceptedCounter]);
-
   // Role detection - user_role is authoritative (memoized to prevent recalculation)
   const isInvestor = React.useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
   const isAgent = React.useMemo(() => profile?.user_role === 'agent', [profile?.user_role]);
