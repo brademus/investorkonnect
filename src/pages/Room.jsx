@@ -1626,11 +1626,11 @@ ${dealContext}`;
                     </div>
                   )}
 
-                              {profile?.user_role === 'investor' ? (
-                                /* INVESTOR DEAL BOARD */
-                                <>
-                                  {/* 1. DEAL HEADER */}
-                                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                          {profile?.user_role === 'investor' ? (
+                /* INVESTOR DEAL BOARD */
+                <>
+                  {/* 1. DEAL HEADER */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
                                         <h3 className="text-2xl font-bold text-[#E3C567] mb-2">
@@ -1890,7 +1890,7 @@ ${dealContext}`;
                                         </div>
                                         )}
 
-                  {/* LAST: DEAL PROGRESS */}
+                                        {/* LAST: DEAL PROGRESS */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
                     <div className="space-y-3">
@@ -1936,11 +1936,11 @@ ${dealContext}`;
                       })}
                     </div>
                   </div>
-                                </>
-                              ) : (
-                                /* AGENT DEAL BOARD */
-                                <>
-                                  {/* 1. Deal Header (agent version) */}
+                </>
+              ) : (
+                /* AGENT DEAL BOARD */
+                <>
+                  {/* 1. Deal Header (agent version) */}
                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                                     <div className="flex items-start justify-between mb-4">
                                       <div className="flex-1">
@@ -2103,14 +2103,14 @@ ${dealContext}`;
                                           </button>
                                         );
                                       })}
-                                    </div>
-                                  </div>
-                                </>
-                              )}
-                            </div>
+                    </div>
+                  </div>
+                </>
               )}
+            </div>
+          )}
 
-              {activeTab === 'agreement' && (
+          {activeTab === 'agreement' && (
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
                   {currentRoom?.deal_id ? (
