@@ -674,13 +674,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                   <p className="text-sm text-[#FAFAFA] mb-1">
                     {hasPendingOffer 
                       ? 'An agent counter offer is pending. Review below and confirm or counter.' 
-                      : justAcceptedCounter 
-                      ? 'Counter offer accepted! Please regenerate the agreement with the new terms before signing.' 
-                      : 'Terms changed. Please regenerate the agreement before signing.'}
+                      : (justAcceptedCounter || termsMismatch)
+                      ? 'Terms changed! Please regenerate the agreement with the new terms before signing.' 
+                      : 'Review and generate the agreement.'}
                   </p>
                   <div className="flex gap-2">
                     <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                      {termsMismatch || justAcceptedCounter ? 'Regenerate Agreement' : 'Review & Generate'}
+                      Regenerate Agreement
                     </Button>
                   </div>
                 </div>
