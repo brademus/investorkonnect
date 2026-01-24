@@ -41,7 +41,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
-  // Single coordinated initial load - show loading only if no initial data
+  // Reset and load data when deal ID changes
+  useEffect(() => {
+    if (!effectiveDealId) return;
+    
+    // Detect deal change and reset state
+    if (currentDealId && currentDealId !== effectiveDealId) {
+      console.log('[LegalAgreementPanel] Deal ID changed, resetting state');
+      setAgreement(null);
+      setPendingOffer(null);
+      setLoading(true);
+    }
+    
+    setCurrentDealId(effectiveDealId);
+  }, [effectiveDealId, currentDealId]);
+
+  // Single coordinated initial load - always fresh
   useEffect(() => {
     if (!effectiveDealId) return;
     
@@ -49,6 +64,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     
     (async () => {
       try {
+        console.log('[LegalAgreementPanel] Starting fresh load for deal:', effectiveDealId);
+        
         const [dealResponse, agreementResponse, offers] = await Promise.all([
           base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(e => {
             console.error('[LegalAgreementPanel] Deal load failed:', e);
@@ -64,37 +81,39 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           })
         ]);
         
-        if (!mounted) return;
+        if (!mounted || effectiveDealId !== (deal?.id || deal?.deal_id || dealId)) return;
         
-        // Update deal only if successfully loaded - don't clear freshDeal on failure
+        // Set deal
         if (dealResponse?.data) {
           console.log('[LegalAgreementPanel] Deal loaded successfully');
           setFreshDeal(dealResponse.data);
         } else {
-          console.log('[LegalAgreementPanel] Deal load failed, keeping existing freshDeal');
+          console.log('[LegalAgreementPanel] Deal load failed');
+          setFreshDeal(null);
         }
         
-        // Update agreement only if successfully loaded - NEVER clear existing agreement
+        // Set agreement - always update to ensure correctness
         if (agreementResponse?.data?.agreement) {
           console.log('[LegalAgreementPanel] Agreement loaded:', agreementResponse.data.agreement.id);
           setAgreement(agreementResponse.data.agreement);
         } else {
-          console.log('[LegalAgreementPanel] No agreement found, keeping existing agreement');
+          console.log('[LegalAgreementPanel] No agreement found');
+          setAgreement(null);
         }
         
-        // Update counter offers
+        // Set pending offers
         if (offers && offers.length > 0) {
-          console.log('[LegalAgreementPanel] Found pending counter offer on initial load:', offers[0]);
+          console.log('[LegalAgreementPanel] Found pending counter offer:', offers[0].id);
           setPendingOffer(offers[0]);
         } else {
-          console.log('[LegalAgreementPanel] No pending counter offers found on initial load');
+          console.log('[LegalAgreementPanel] No pending counter offers');
           setPendingOffer(null);
         }
         
         setLoading(false);
       } catch (e) {
-        console.error('[LegalAgreementPanel] Unexpected error during initial load:', e);
-        setLoading(false);
+        console.error('[LegalAgreementPanel] Unexpected error during load:', e);
+        if (mounted) setLoading(false);
       }
     })();
     
