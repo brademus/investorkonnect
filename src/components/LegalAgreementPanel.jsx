@@ -361,7 +361,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       // Update local state with new terms - investor always needs to regenerate
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
-      setJustAcceptedCounter(true);  // Always true for investor to regenerate
+      justAcceptedCounterRef.current = true;
+      setJustAcceptedCounter(true);  // Trigger re-render
 
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - investor must regenerate the agreement with the new terms');
