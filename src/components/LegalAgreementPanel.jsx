@@ -430,6 +430,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return;
     }
 
+    // Prevent rapid re-submissions (cooldown of 5 seconds)
+    if (generationCooldownRef.current > Date.now()) {
+      const remainingSeconds = Math.ceil((generationCooldownRef.current - Date.now()) / 1000);
+      toast.error(`Please wait ${remainingSeconds} second${remainingSeconds > 1 ? 's' : ''} before generating again.`);
+      return;
+    }
+
     const genDealId = resolvedDealId || effectiveDealId;
     if (!genDealId) { toast.error('Missing deal ID — cannot generate agreement.'); return; }
     if (!profile?.user_id) { toast.error('Missing user ID — cannot generate agreement.'); return; }
