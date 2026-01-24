@@ -181,6 +181,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   );
 
   const handleOpenGenerateModal = async () => {
+    // Block regeneration if there's a pending counter offer
+    if (hasPendingOffer) {
+      toast.error('You must respond to the counter offer before regenerating the agreement.');
+      return;
+    }
+    
     const genId = effectiveDealId;
     if (!genId) return;
     try {
