@@ -743,6 +743,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                   </div>
                   <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
                 </div>
+                {/* Debug: show role info */}
+                <div className="text-xs text-[#808080] mb-2">
+                  [Debug: isInvestor={String(isInvestor)}, isAgent={String(isAgent)}, from_role={pendingOffer.from_role}]
+                </div>
                 <div className="space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
