@@ -138,9 +138,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setLoadingOffer(true);
       const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
       console.log('[LegalAgreementPanel] Found counter offers:', offers);
+      console.log('[LegalAgreementPanel] Current role - isInvestor:', isInvestor, 'isAgent:', isAgent);
       setPendingOffer(offers?.[0] || null);
       if (offers?.[0]) {
-        console.log('[LegalAgreementPanel] Set pending offer:', offers[0]);
+        console.log('[LegalAgreementPanel] Set pending offer:', {
+          id: offers[0].id,
+          from_role: offers[0].from_role,
+          terms: offers[0].terms,
+          status: offers[0].status
+        });
+      } else {
+        console.log('[LegalAgreementPanel] No pending offers found');
       }
     } catch (e) {
       console.error('[LegalAgreementPanel] Error loading counter offer:', e);
@@ -178,8 +186,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load counter offers when component mounts or deal/agreement changes
   useEffect(() => { 
-    console.log('[LegalAgreementPanel] Loading counter offers, dealId:', effectiveDealId);
-    loadLatestOffer(); 
+    console.log('[LegalAgreementPanel] Component mounted/updated - Loading counter offers');
+    console.log('[LegalAgreementPanel] State:', { effectiveDealId, hasAgreement: !!agreement, isInvestor, isAgent, profile_user_role: profile?.user_role });
+    if (effectiveDealId) {
+      loadLatestOffer();
+    }
   }, [effectiveDealId, agreement]);
 
   const submitCounterOffer = async (fromRole) => {
@@ -533,6 +544,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Pending Counter Offer panel */}
+            {console.log('[LegalAgreementPanel] Rendering - pendingOffer:', pendingOffer, 'hasPendingOffer:', hasPendingOffer)}
             {pendingOffer && (
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
                 <div className="flex items-center justify-between mb-3">
