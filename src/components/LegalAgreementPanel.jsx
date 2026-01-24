@@ -349,42 +349,80 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   }, [window.location.search]);
 
   const submitCounterOffer = async (fromRole) => {
-    if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
-      toast.error('Agreement is fully signed; countering is disabled.');
-      setShowCounterModal(false);
-      return;
-    }
     if (!effectiveDealId) {
       toast.error('Deal ID missing');
       return;
     }
+
+    if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
+      toast.error('Agreement is already fully signed. Cannot propose counter offers.');
+      return;
+    }
+
     try {
-      // Mark any existing pending offers as superseded
-      if (pendingOffer) {
-        await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'superseded' });
+      // Build new terms from counter
+      const newTerms = {
+        buyer_commission_type: counterType,
+        buyer_commission_percentage: counterType === 'percentage' ? Number(counterAmount || 0) : null,
+        buyer_flat_fee: counterType === 'flat' ? Number(counterAmount || 0) : null,
+      };
+
+      // Void old agreement if exists
+      if (agreement?.docusign_envelope_id) {
+        try {
+          console.log('[Counter] Voiding old agreement envelope:', agreement.docusign_envelope_id);
+          await base44.entities.LegalAgreement.update(agreement.id, {
+            docusign_envelope_id: null,
+            docusign_status: 'voided',
+            investor_signed_at: null,
+            agent_signed_at: null,
+            investor_recipient_id: null,
+            agent_recipient_id: null,
+            status: 'draft'
+          });
+        } catch (e) {
+          console.warn('[Counter] Warning clearing old agreement:', e?.message);
+        }
       }
 
-      const terms = counterType === 'flat'
-        ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
-        : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
+      // Mark existing pending counter offer as superseded
+      if (pendingOffer?.status === 'pending') {
+        await base44.entities.CounterOffer.update(pendingOffer.id, { 
+          status: 'superseded',
+          responded_by_role: fromRole 
+        });
+      }
 
-      // Create counter offer
-      const newOffer = await base44.entities.CounterOffer.create({ 
-        deal_id: effectiveDealId, 
-        from_role: fromRole, 
-        terms, 
-        status: 'pending' 
+      // Create new counter offer
+      const newOffer = await base44.entities.CounterOffer.create({
+        deal_id: effectiveDealId,
+        from_role: fromRole,
+        terms: newTerms,
+        status: 'pending'
       });
 
+      // Update deal with new terms
+      await base44.entities.Deal.update(effectiveDealId, {
+        proposed_terms: {
+          ...(activeDeal?.proposed_terms || {}),
+          ...newTerms
+        }
+      });
+
+      // Clear UI
       setShowCounterModal(false);
       setCounterAmount('');
       setPendingOffer(newOffer);
+      setFreshDeal(prev => ({
+        ...(prev || {}),
+        proposed_terms: { ...(prev?.proposed_terms || {}), ...newTerms }
+      }));
 
       if (onUpdate) onUpdate();
       toast.success('Counter offer sent successfully');
     } catch (error) {
-      toast.error('Failed to send counter offer');
-      console.error('[LegalAgreementPanel] Error submitting counter:', error);
+      toast.error(error?.message || 'Failed to send counter offer');
+      console.error('[Counter] Error:', error);
     }
   };
 
