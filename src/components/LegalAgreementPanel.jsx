@@ -1057,9 +1057,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" onClick={() => setShowGenerateModal(false)} className="flex-1">Cancel</Button>
-                <Button onClick={handleGenerate} disabled={generating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                  {generating ? 'Generating...' : 'Generate'}
+                <Button variant="outline" onClick={() => setShowGenerateModal(false)} disabled={generating} className="flex-1">Cancel</Button>
+                <Button onClick={handleGenerate} disabled={generating || generationCooldown > Date.now()} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                  {generating ? 'Generating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Generate'}
                 </Button>
               </div>
             </div>
