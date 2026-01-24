@@ -127,14 +127,17 @@ export default function MyAgreement() {
   };
   const safe = (v) => (v ?? '—');
 
-  // Derived values for buyer commission display
-  const purchasePrice = Number(deal?.purchase_price ?? deal?.budget) || 0;
-  const buyerType = deal?.proposed_terms?.buyer_commission_type;
-  const buyerPct = Number(deal?.proposed_terms?.buyer_commission_percentage ?? NaN);
-  const buyerFlat = Number(deal?.proposed_terms?.buyer_flat_fee ?? NaN);
-  const buyerCommissionAmount = buyerType === 'percentage' && !Number.isNaN(buyerPct)
-    ? purchasePrice * (buyerPct / 100)
-    : null;
+  // Derived values for buyer commission display (memoized for stability)
+  const keyTerms = useMemo(() => {
+    const purchasePrice = Number(deal?.purchase_price ?? deal?.budget) || 0;
+    const buyerType = deal?.proposed_terms?.buyer_commission_type;
+    const buyerPct = Number(deal?.proposed_terms?.buyer_commission_percentage ?? NaN);
+    const buyerFlat = Number(deal?.proposed_terms?.buyer_flat_fee ?? NaN);
+    const buyerCommissionAmount = buyerType === 'percentage' && !Number.isNaN(buyerPct)
+      ? purchasePrice * (buyerPct / 100)
+      : null;
+    return { purchasePrice, buyerType, buyerPct, buyerFlat, buyerCommissionAmount };
+  }, [deal?.purchase_price, deal?.budget, deal?.proposed_terms]);
 
   if (loadingProfile || loading || !deal) {
     return (
@@ -209,16 +212,22 @@ export default function MyAgreement() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
             <div>
               <p className="text-xs text-[#808080]">Purchase Price</p>
-              <p className="text-[#FAFAFA]">{formatCurrency(deal.purchase_price ?? deal.budget)}</p>
+              <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.purchasePrice)}</p>
             </div>
             <div>
               <p className="text-xs text-[#808080]">Buyer Commission</p>
-              <p className="text-[#FAFAFA]">{buyerType === 'percentage' && !Number.isNaN(buyerPct) ? `${buyerPct}%` : '—'}</p>
+              <p className="text-[#FAFAFA]">
+                {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) 
+                  ? `${keyTerms.buyerPct}%` 
+                  : keyTerms.buyerType === 'flat' && !Number.isNaN(keyTerms.buyerFlat)
+                  ? formatCurrency(keyTerms.buyerFlat)
+                  : '—'}
+              </p>
             </div>
-            {buyerType === 'percentage' && !Number.isNaN(buyerPct) && (
+            {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) && (
               <div className="sm:col-span-2">
                 <p className="text-xs text-[#808080]">Buyer Commission (Estimated)</p>
-                <p className="text-[#FAFAFA]">{formatCurrency(buyerCommissionAmount)}</p>
+                <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.buyerCommissionAmount)}</p>
               </div>
             )}
           </div>
