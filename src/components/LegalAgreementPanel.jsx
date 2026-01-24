@@ -296,42 +296,28 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const acceptOffer = async () => {
     if (!pendingOffer) return;
     try {
-      console.log('[LegalAgreementPanel] Accepting counter offer:', pendingOffer);
-
-      // CRITICAL: Only update buyer commission fields, preserve seller commission
       const currentTerms = (freshDeal || deal)?.proposed_terms || {};
       const newTerms = {
         ...currentTerms,
         buyer_commission_type: pendingOffer.terms?.buyer_commission_type,
         buyer_commission_percentage: pendingOffer.terms?.buyer_commission_percentage,
         buyer_flat_fee: pendingOffer.terms?.buyer_flat_fee,
-        // Seller commission stays untouched
         seller_commission_type: currentTerms.seller_commission_type,
         seller_commission_percentage: currentTerms.seller_commission_percentage,
         seller_flat_fee: currentTerms.seller_flat_fee,
       };
 
-      console.log('[LegalAgreementPanel] Updating deal with new terms:', newTerms);
-
-      // Update deal and counter offer status
       await Promise.all([
         base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms }),
         base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
       ]);
 
-      // Immediately update local state with new terms AND set flag to show regenerate UI
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
       setJustAcceptedCounter(true);
 
-      // Reload fresh data
-      await Promise.all([
-        loadLatestOffer(),
-        (async () => {
-          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
-          if (data) setFreshDeal(data);
-        })()
-      ]);
+      const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(() => ({}));
+      if (data) setFreshDeal(data);
 
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - please regenerate agreement to continue');
