@@ -555,23 +555,38 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       </CardHeader>
 
       <CardContent className="p-6">
-        {/* No agreement yet - show pending counter first, then generate */}
-        {!agreement && isInvestor && (
-          justAcceptedCounter ? (
-            <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
-              <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-3" />
-              <p className="text-[#FAFAFA] font-semibold mb-2">Counter Offer Accepted!</p>
-              <p className="text-sm text-[#808080] mb-4">Generate the agreement with the new terms to continue.</p>
-              <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+        {/* No agreement yet */}
+        {!agreement ? (
+          isInvestor ? (
+            justAcceptedCounter ? (
+              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
+                <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-3" />
+                <p className="text-[#FAFAFA] font-semibold mb-2">Counter Offer Accepted!</p>
+                <p className="text-sm text-[#808080] mb-4">Generate the agreement with the new terms to continue.</p>
+                <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
+                <p className="text-[#808080] mb-4">No agreement generated yet</p>
+                <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+              </div>
+            )
+          ) : isAgent ? (
+            <div className="text-center py-8">
+              <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
+              <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for investor</p>
+              <p className="text-xs text-[#808080] mt-1">The investor will create and sign the agreement first</p>
             </div>
           ) : (
             <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
-              <p className="text-[#808080] mb-4">No agreement generated yet</p>
-              <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+              <p className="text-[#808080]">No agreement available</p>
             </div>
           )
-        )}
+        ) : (
+          /* Agreement exists */
+          <div className="space-y-4">
+            {/* Rest of agreement UI... */}
 
         {/* If agreement exists but investor hasn't signed yet */}
         {agreement && !agreement.investor_signed_at && isInvestor && (
@@ -715,6 +730,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     ) : (
                       <div className="text-xs text-[#808080]">Waiting for the other party to respond</div>
                     )}
+                </div>
+              )}
                   </div>
                 </div>
               </div>
