@@ -252,20 +252,15 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDe
               }
             </p>
             {userRole === 'agent' && (() => {
-              const { priceLabel, compLabel } = getPriceAndComp({ deal: fullDeal, room });
-              if (!priceLabel && !compLabel) return (
-                <div className="text-xs mt-0.5">
-                  <div className="text-[#34D399] font-semibold">${room.budget ? room.budget.toLocaleString() : '0'}</div>
-                  <div className="text-[#E3C567]">Comp: —</div>
-                </div>
-              );
-              return (
-                <div className="text-xs mt-0.5">
-                  {priceLabel && <div className="text-[#34D399] font-semibold">{priceLabel}</div>}
-                  <div className="text-[#E3C567]">Comp: {compLabel || '—'}</div>
-                </div>
-              );
-            })()}
+               // Always check room.proposed_terms first (most up-to-date), then fall back to fullDeal
+               const { priceLabel, compLabel } = getPriceAndComp({ deal: fullDeal, room });
+               return (
+                 <div className="text-xs mt-0.5">
+                   <div className="text-[#34D399] font-semibold">${room.budget ? room.budget.toLocaleString() : '0'}</div>
+                   <div className="text-[#E3C567]">Comp: {compLabel || '—'}</div>
+                 </div>
+               );
+             })()}
           </>
         )}
         
