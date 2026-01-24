@@ -154,7 +154,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     try {
       const t = activeDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
-      console.log('[LegalAgreementPanel] termsMismatch calc:', { t, a, justAcceptedCounter });
       if (!t || !a) return false;
       if (t.buyer_commission_type === 'percentage') {
         return !(a.compensation_model === 'COMMISSION_PCT' && Number(a.commission_percentage || 0) === Number(t.buyer_commission_percentage || 0));
@@ -167,6 +166,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return false;
     }
   })();
+
+  // Log regenerate button conditions for debugging
+  React.useEffect(() => {
+    if (agreement && isInvestor && !agreement.investor_signed_at) {
+      console.log('[LegalAgreementPanel] Regenerate button conditions:', { hasPendingOffer, termsMismatch, justAcceptedCounter, agreement_status: agreement.status });
+    }
+  }, [agreement, isInvestor, hasPendingOffer, termsMismatch, justAcceptedCounter]);
 
   // Role detection - user_role is authoritative (memoized to prevent recalculation)
   const isInvestor = React.useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
