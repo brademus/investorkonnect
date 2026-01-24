@@ -27,6 +27,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
   const [loadingOffer, setLoadingOffer] = useState(false);
+  const [justAcceptedCounter, setJustAcceptedCounter] = useState(false);
 
   // Fresh deal state to ensure we always have latest terms
   const [freshDeal, setFreshDeal] = useState(deal || null);
@@ -272,7 +273,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!pendingOffer) return;
     try {
       console.log('[LegalAgreementPanel] Accepting counter offer:', pendingOffer);
-      
+
       // CRITICAL: Only update buyer commission fields, preserve seller commission
       const currentTerms = (freshDeal || deal)?.proposed_terms || {};
       const newTerms = {
@@ -285,19 +286,20 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         seller_commission_percentage: currentTerms.seller_commission_percentage,
         seller_flat_fee: currentTerms.seller_flat_fee,
       };
-      
+
       console.log('[LegalAgreementPanel] Updating deal with new terms:', newTerms);
-      
+
       // Update deal and counter offer status
       await Promise.all([
         base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms }),
         base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
       ]);
-      
-      // Immediately update local state with new terms
+
+      // Immediately update local state with new terms AND set flag to show regenerate UI
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
-      
+      setJustAcceptedCounter(true);
+
       // Reload fresh data
       await Promise.all([
         loadLatestOffer(),
@@ -306,7 +308,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           if (data) setFreshDeal(data);
         })()
       ]);
-      
+
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - please regenerate agreement to continue');
     } catch (error) {
@@ -397,6 +399,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
       if (response.data?.regenerated === false) toast.info('Agreement already up to date (no changes needed)');
       else toast.success('Agreement generated successfully');
+
+      // Clear the "just accepted" flag after regeneration
+      setJustAcceptedCounter(false);
 
       // Reload agreement and fresh deal data
       await Promise.all([
@@ -550,24 +555,39 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       </CardHeader>
 
       <CardContent className="p-6">
-        {/* No agreement yet */}
+        {/* No agreement yet - show pending counter first, then generate */}
         {!agreement && isInvestor && (
-          <div className="text-center py-8">
-            <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
-            <p className="text-[#808080] mb-4">No agreement generated yet</p>
-            <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
-          </div>
+          justAcceptedCounter ? (
+            <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
+              <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-3" />
+              <p className="text-[#FAFAFA] font-semibold mb-2">Counter Offer Accepted!</p>
+              <p className="text-sm text-[#808080] mb-4">Generate the agreement with the new terms to continue.</p>
+              <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
+              <p className="text-[#808080] mb-4">No agreement generated yet</p>
+              <Button onClick={handleOpenGenerateModal} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black">Generate Agreement</Button>
+            </div>
+          )
         )}
 
         {/* If agreement exists but investor hasn't signed yet */}
         {agreement && !agreement.investor_signed_at && isInvestor && (
-          hasPendingOffer || termsMismatch ? (
+          hasPendingOffer || termsMismatch || justAcceptedCounter ? (
             <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
               <p className="text-sm text-[#FAFAFA] mb-1">
-                {hasPendingOffer ? 'An agent counter offer is pending. Review below and confirm or counter.' : 'Terms changed. Please regenerate the agreement before signing.'}
+                {hasPendingOffer 
+                  ? 'An agent counter offer is pending. Review below and confirm or counter.' 
+                  : justAcceptedCounter 
+                  ? 'Counter offer accepted! Please regenerate the agreement with the new terms before signing.' 
+                  : 'Terms changed. Please regenerate the agreement before signing.'}
               </p>
               <div className="flex gap-2">
-                <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">{termsMismatch ? 'Regenerate Agreement' : 'Review & Generate'}</Button>
+                <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                  {termsMismatch || justAcceptedCounter ? 'Regenerate Agreement' : 'Review & Generate'}
+                </Button>
               </div>
             </div>
           ) : (
@@ -653,14 +673,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Pending Counter Offer panel */}
-            {pendingOffer && pendingOffer.status === 'pending' && (
+            {pendingOffer && pendingOffer.status === 'pending' && !justAcceptedCounter && (
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
+                  <div className="text-[#FAFAFA] font-semibold">
+                    {(isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor') 
+                      ? 'Review Counter Offer' 
+                      : 'Proposed New Deal Terms'}
+                  </div>
                   <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
                 </div>
                 <div className="space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <div className="text-[#808080]">Type</div>
                       <div className="text-[#FAFAFA] capitalize">{pendingOffer.terms?.buyer_commission_type}</div>
@@ -677,8 +701,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                   <div className="flex flex-wrap gap-2">
                     {((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
                       <>
-                        <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
-                        <Button size="sm" variant="destructive" onClick={denyOffer}>Deny</Button>
+                        <Button size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white" onClick={acceptOffer}>Accept</Button>
+                        <Button size="sm" variant="destructive" onClick={denyOffer}>Decline</Button>
                         <Button size="sm" className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={() => {
                           setCounterType(pendingOffer.terms?.buyer_commission_type || 'flat');
                           const amt = pendingOffer.terms?.buyer_commission_type === 'percentage'
@@ -815,7 +839,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 )
               )}
 
-              {isInvestor && !isFullySigned && (
+              {isInvestor && !isFullySigned && (termsMismatch || justAcceptedCounter) && (
                 <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">Regenerate Agreement</Button>
               )}
             </div>
