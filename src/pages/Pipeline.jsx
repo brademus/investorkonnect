@@ -515,11 +515,13 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show deals in pipeline only if AGENT has signed (deal is fully signed or agent signed)
+    // Agents: show deals that are accepted/signed or have an active agreement
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
-      // Only show if agent has already signed
-      return d.is_fully_signed || d.agreement_status === 'agent_signed' || d.agreement_status === 'fully_signed';
+      // Show if request accepted/signed OR agreement is signed or in progress
+      const accepted = d.agent_request_status === 'accepted' || d.agent_request_status === 'signed';
+      const agreementActive = d.agreement_status && d.agreement_status !== 'draft';
+      return accepted || agreementActive;
     });
   }, [dealsData, rooms, appointments]);
 
