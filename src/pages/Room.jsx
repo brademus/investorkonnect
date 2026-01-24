@@ -270,7 +270,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDe
             <div className="text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>
             {(() => {
               const { compLabel } = getPriceAndComp({ room });
-              return <div className="text-xs text-[#E3C567]">Comp: {compLabel || '—'}</div>;
+              return compLabel ? <div className="text-xs text-[#E3C567]">Comp: {compLabel}</div> : null;
             })()}
           </div>
         )}
@@ -1637,33 +1637,33 @@ ${dealContext}`;
                                         <div className="text-3xl font-bold text-[#34D399] mb-4">
                                           ${(currentRoom?.budget || 0).toLocaleString()}
                                         </div>
-                                        {currentRoom?.counterparty_role === 'agent' && currentRoom?.counterparty_name ? (
-                                           <div className="flex items-center gap-3">
-                                             <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
-                                               <User className="w-5 h-5 text-[#E3C567]" />
-                                             </div>
-                                             <div>
-                                               <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
-                                               <p className="text-sm font-semibold text-[#FAFAFA]">
-                                                {currentRoom?.is_fully_signed 
-                                                  ? currentRoom.counterparty_name
-                                                  : 'Hidden until agreement fully signed'}
-                                               </p>
-                                             </div>
-                                           </div>
-                                         ) : (
-                                           <div className="flex items-center gap-3">
-                                             <div className="w-10 h-10 bg-[#808080]/20 rounded-full flex items-center justify-center">
-                                               <User className="w-5 h-5 text-[#808080]" />
-                                             </div>
-                                             <div>
-                                               <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
-                                               <p className="text-sm font-semibold text-[#808080]">
-                                                 No agent selected
-                                               </p>
-                                             </div>
-                                           </div>
-                                         )}
+                                        {currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? (
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
+                                              <User className="w-5 h-5 text-[#E3C567]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
+                                              <p className="text-sm font-semibold text-[#FAFAFA]">
+                                               {currentRoom?.is_fully_signed 
+                                                 ? (currentRoom?.counterparty_name || 'Agent')
+                                                 : 'Hidden until agreement fully signed'}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-[#808080]/20 rounded-full flex items-center justify-center">
+                                              <User className="w-5 h-5 text-[#808080]" />
+                                            </div>
+                                            <div>
+                                              <p className="text-xs text-[#808080] uppercase tracking-wider">Your Agent</p>
+                                              <p className="text-sm font-semibold text-[#808080]">
+                                                No agent selected
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
                                       </div>
                                       <div className="flex-shrink-0">
                                         <span className="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold bg-[#E3C567]/20 text-[#E3C567] border border-[#E3C567]/30">
