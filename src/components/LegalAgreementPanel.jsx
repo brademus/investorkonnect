@@ -168,7 +168,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
-  useEffect(() => { loadLatestOffer(); }, [effectiveDealId, agreement]);
+  // Load counter offers when component mounts or deal/agreement changes
+  useEffect(() => { 
+    console.log('[LegalAgreementPanel] Loading counter offers, dealId:', effectiveDealId);
+    loadLatestOffer(); 
+  }, [effectiveDealId, agreement]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
