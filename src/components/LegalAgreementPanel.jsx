@@ -43,8 +43,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (initialAgreement && (!agreement || initialAgreement.id !== agreement.id)) {
       setAgreement(initialAgreement);
       setLoading(false);
+      // Also refresh counter offers when agreement loads
+      if (effectiveDealId) {
+        loadLatestOffer();
+      }
     }
-  }, [initialAgreement]);
+  }, [initialAgreement, effectiveDealId]);
 
   // Derived gating flags - use freshDeal or fall back to deal
   const activeDeal = freshDeal || deal;
@@ -177,9 +181,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     try {
       setLoadingOffer(true);
       const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+      console.log('[LegalAgreementPanel] Loaded counter offers for deal', effectiveDealId, ':', offers);
       setPendingOffer(offers?.[0] || null);
     } catch (e) {
       console.error('[LegalAgreementPanel] Error loading counter offer:', e);
+      setPendingOffer(null);
     } finally {
       setLoadingOffer(false);
     }
@@ -190,10 +196,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!effectiveDealId) return;
 
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
+      console.log('[LegalAgreementPanel] Counter offer event:', event);
       if (event?.data?.deal_id !== effectiveDealId) return;
 
       // Whenever a counter offer is created or updated, reload immediately
       if (event.type === 'create' || event.type === 'update') {
+        console.log('[LegalAgreementPanel] Reloading counter offers after', event.type);
         loadLatestOffer();
       }
     });
