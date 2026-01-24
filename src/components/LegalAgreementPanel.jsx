@@ -662,8 +662,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       </CardHeader>
 
       <CardContent className="p-6">
-        {/* No agreement yet */}
-        {!agreement ? (
+         {/* Persistent pending counter banner - appears at top for investor */}
+         {pendingOffer && pendingOffer.status === 'pending' && isInvestor && !loading && (
+           <div className="mb-4 bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
+             <div className="flex items-center justify-between mb-2">
+               <div className="text-[#F59E0B] font-semibold">⚠️ Pending Counter Offer</div>
+               <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
+             </div>
+             <p className="text-sm text-[#FAFAFA] mb-3">Agent has proposed new terms. Review and respond below.</p>
+           </div>
+         )}
+
+         {/* No agreement yet */}
+         {!agreement ? (
           isInvestor ? (
             justAcceptedCounter ? (
               <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
