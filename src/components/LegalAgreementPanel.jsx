@@ -38,8 +38,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [currentDealId, setCurrentDealId] = useState(null);
 
   // Generation state tracking
-  const generationInProgressRef = React.useRef(false);
-  const generationTimeoutRef = React.useRef(null);
+   const generationInProgressRef = React.useRef(false);
+   const generationTimeoutRef = React.useRef(null);
+   const generationCooldownRef = React.useRef(0);
+   const [generationCooldown, setGenerationCooldown] = useState(0);
 
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
