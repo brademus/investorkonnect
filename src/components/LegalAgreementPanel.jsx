@@ -146,14 +146,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!effectiveDealId) return;
 
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
+      console.log('[LegalAgreementPanel] Counter offer event:', event);
       if (event?.data?.deal_id !== effectiveDealId) return;
 
       // Whenever a counter offer is created or updated, reload immediately
       if (event.type === 'create' || event.type === 'update') {
+        console.log('[LegalAgreementPanel] Reloading counter offers after event');
         (async () => {
           try {
             setLoadingOffer(true);
             const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+            console.log('[LegalAgreementPanel] Loaded counter offers:', offers);
             setPendingOffer(offers?.[0] || null);
           } finally {
             setLoadingOffer(false);
