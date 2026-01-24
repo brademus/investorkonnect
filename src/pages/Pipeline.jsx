@@ -821,6 +821,7 @@ function PipelineContent() {
                           <div className="text-xs">
                             <div className="text-[#34D399] font-semibold">{formatCurrency(room.budget)}</div>
                             {(() => {
+                              // Try to get comp from room first (most up-to-date), then fall back to deal
                               const dealFull = uniqueDealsData.find(d => d.id === room.deal_id);
                               const { compLabel } = getPriceAndComp({ deal: dealFull, room });
                               return compLabel ? <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div> : null;
