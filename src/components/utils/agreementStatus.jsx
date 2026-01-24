@@ -91,11 +91,10 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
 
   // S4 — TERMS_ACCEPTED_NEEDS_INVESTOR_REGEN_AND_SIGN (robust detection)
   if (regenRequired) {
-    // HARD GUARD: agent must never see "Review & sign" when regeneration is required
     return {
       state: 'S4',
       label: userRole === 'investor' ? 'Regenerate contract' : 'Waiting for investor',
-      className: pickBadgeClasses('amber')
+      className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber')
     };
   }
 
@@ -131,13 +130,13 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     return { state: 'Sx', label: userRole === 'investor' ? 'Review and confirm new offer' : 'Waiting for investor', className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber') };
   }
 
-  // Investor who hasn't signed yet should see "Sign contract" not "Waiting for agent"
-  if (userRole === 'investor' && !agreement?.investor_signed_at && !room?.investor_signed_at && (agreementStatus === 'draft' || agreementStatus === 'sent')) {
+  // Investor who hasn't signed current agreement should see "Sign contract"
+  if (userRole === 'investor' && !agreement?.investor_signed_at && !room?.investor_signed_at && agreement && (agreementStatus === 'draft' || agreementStatus === 'sent')) {
     return { state: 'S0', label: 'Sign contract', className: pickBadgeClasses('blue') };
   }
 
-  // If the request was accepted and investor has signed, investor sees Waiting for agent
-  if (userRole === 'investor' && ((room?.request_status || '').toLowerCase() === 'accepted' || (room?.agreement_status || '').toLowerCase() === 'investor_signed' || agreement?.investor_signed_at || room?.investor_signed_at) && !isFullySigned) {
+  // If investor has signed, they wait for agent
+  if (userRole === 'investor' && (agreement?.investor_signed_at || room?.investor_signed_at || (room?.agreement_status || '').toLowerCase() === 'investor_signed') && !isFullySigned) {
     return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
   }
 
