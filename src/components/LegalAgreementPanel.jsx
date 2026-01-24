@@ -252,9 +252,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         if (mounted) {
           // Show pending offer if exists, otherwise show accepted offer to trigger regenerate
           if (pendingOffers?.length > 0) {
+            console.log('[LegalAgreementPanel] Loaded pending offer:', pendingOffers[0].id);
             setPendingOffer(pendingOffers[0]);
           } else if (acceptedOffers?.length > 0) {
             // Set accepted offer to trigger regenerate flag
+            console.log('[LegalAgreementPanel] Loaded accepted offer, triggering regenerate');
             justAcceptedCounterRef.current = true;
             setJustAcceptedCounter(true);
             setPendingOffer(null);
@@ -286,16 +288,28 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         return;
       }
 
-      // On update: check if it changed to accepted and trigger regenerate
+      // On update: check if it changed to accepted or declined/superseded
       if (event.type === 'update') {
-        if (event.data?.status === 'accepted') {
+        const status = event.data?.status;
+        if (status === 'accepted') {
           console.log('[LegalAgreementPanel] Offer accepted, triggering regenerate:', event.data.id);
           justAcceptedCounterRef.current = true;
           setJustAcceptedCounter(true);
           setPendingOffer(null);
+        } else if (status === 'declined' || status === 'superseded') {
+          console.log('[LegalAgreementPanel] Offer declined/superseded, clearing:', event.data.id);
+          setPendingOffer(null);
+        } else if (status === 'pending') {
+          // If still pending, ensure we show it
+          setPendingOffer(event.data);
         }
-        loadOffers();
         return;
+      }
+
+      // On delete: clear if it was our pending offer
+      if (event.type === 'delete' && event.data?.id === pendingOffer?.id) {
+        console.log('[LegalAgreementPanel] Pending offer deleted');
+        setPendingOffer(null);
       }
     });
 
@@ -303,7 +317,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       mounted = false;
       try { unsubscribe?.(); } catch (_) {} 
     };
-  }, [effectiveDealId]);
+  }, [effectiveDealId, pendingOffer?.id]);
 
   // Refresh agreement when returning from DocuSign without signing
   useEffect(() => {
