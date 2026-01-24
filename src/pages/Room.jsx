@@ -610,31 +610,13 @@ export default function Room() {
       try {
         // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
-        if (enrichedRoom) {
-          // Ensure we never render stale room: verify ID matches current selection
-          const safeRoom = enrichedRoom.id === roomId ? enrichedRoom : null;
-          if (safeRoom) {
-            const maskedTitle = (isAgentView && !safeRoom?.is_fully_signed)
-              ? `${safeRoom?.city || 'City'}, ${safeRoom?.state || 'State'}`
-              : (safeRoom?.title || safeRoom?.deal_title);
-            setCurrentRoom({
-              ...safeRoom,
-              title: maskedTitle,
-              property_address: shouldMaskAddress(profile, safeRoom, null) ? null : safeRoom?.property_address,
-              photos: safeRoom?.photos || [],
-              files: safeRoom?.files || []
-            });
-            setRoomLoading(false);
-          } else {
-            setCurrentRoom(null);
-          }
-        } else {
-          setCurrentRoom(null);
-        }
+        
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
-
-        if (!rawRoom) return;
+        if (!rawRoom) {
+          setRoomLoading(false);
+          return;
+        }
 
         // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
@@ -655,38 +637,37 @@ export default function Room() {
             const response = await base44.functions.invoke('getDealDetailsForUser', {
               dealId: rawRoom.deal_id
             });
-            const deal = response.data;
+            const dealData = response.data;
             
-            
-            if (deal) {
-              setDeal(deal);
-              setCachedDeal(deal.id, deal);
+            if (dealData) {
+              setDeal(dealData);
+              setCachedDeal(dealData.id, dealData);
               
-              const displayTitle = profile?.user_role === 'agent' && !deal.is_fully_signed
-                ? `${deal.city || 'City'}, ${deal.state || 'State'}`
-                : deal.title;
+              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
+                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
+                : dealData.title;
               
               // Ensure we still match current selection
               if (rid !== roomId) return;
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
-                property_address: shouldMaskAddress(profile, rawRoom, deal) ? null : deal.property_address,
-                city: deal.city,
-                state: deal.state,
-                county: deal.county,
-                zip: deal.zip,
-                budget: deal.purchase_price,
-                pipeline_stage: deal.pipeline_stage,
-                closing_date: deal.key_dates?.closing_date,
-                deal_assigned_agent_id: deal.agent_id,
-                is_fully_signed: deal.is_fully_signed,
-                property_type: deal.property_type,
-                property_details: deal.property_details,
-                proposed_terms: deal.proposed_terms,
+                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
+                city: dealData.city,
+                state: dealData.state,
+                county: dealData.county,
+                zip: dealData.zip,
+                budget: dealData.purchase_price,
+                pipeline_stage: dealData.pipeline_stage,
+                closing_date: dealData.key_dates?.closing_date,
+                deal_assigned_agent_id: dealData.agent_id,
+                is_fully_signed: dealData.is_fully_signed,
+                property_type: dealData.property_type,
+                property_details: dealData.property_details,
+                proposed_terms: dealData.proposed_terms,
                 photos: rawRoom?.photos || [],
                 files: rawRoom?.files || [],
-                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (deal?.investor_name || deal?.investor?.full_name) : (deal?.agent_name || deal?.agent?.full_name))
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
               });
             } else {
               setCurrentRoom(rawRoom);
@@ -786,11 +767,23 @@ export default function Room() {
     // Subscribe to counter offer changes
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        // Reload agreement whenever a counter offer changes
+        // Reload both agreement AND deal when counter offer changes
         (async () => {
           try {
-            const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-            if (data?.agreement) setAgreement(data.agreement);
+            const [agRes, dealRes] = await Promise.all([
+              base44.functions.invoke('getLegalAgreement', { deal_id: dealId }),
+              base44.functions.invoke('getDealDetailsForUser', { dealId })
+            ]);
+            if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
+            if (dealRes?.data) {
+              setDeal(dealRes.data);
+              setCachedDeal(dealId, dealRes.data);
+              // Update currentRoom with latest terms
+              setCurrentRoom(prev => prev ? { 
+                ...prev, 
+                proposed_terms: dealRes.data.proposed_terms 
+              } : prev);
+            }
           } catch (_) {}
         })();
       }
@@ -2123,12 +2116,22 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     <div>
                       <LegalAgreementPanel
-                        deal={deal}
+                        key={`${currentRoom.deal_id}-${deal?.proposed_terms?.buyer_commission_type}-${deal?.proposed_terms?.buyer_flat_fee}-${deal?.proposed_terms?.buyer_commission_percentage}`}
+                        deal={deal || buildDealFromRoom(currentRoom, false)}
                         profile={profile}
                         allowGenerate={false}
                         initialAgreement={agreement || currentRoom?.agreement || null}
                         dealId={currentRoom?.deal_id}
                         onUpdate={async () => {
+                          // Reload fresh deal data
+                          try {
+                            const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id });
+                            if (data) {
+                              setDeal(data);
+                              setCachedDeal(currentRoom.deal_id, data);
+                              setCurrentRoom(prev => prev ? { ...prev, proposed_terms: data.proposed_terms } : prev);
+                            }
+                          } catch (_) {}
                           await refreshRoomState();
                           queryClient.invalidateQueries({ queryKey: ['rooms'] });
                           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });

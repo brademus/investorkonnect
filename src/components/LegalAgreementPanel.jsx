@@ -223,6 +223,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
       await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
       setPendingOffer(null);
+      
+      // Refresh deal data to get updated terms everywhere
+      if (effectiveDealId) {
+        try {
+          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
+          if (data && window.updateDealFromCounterOffer) {
+            window.updateDealFromCounterOffer(data);
+          }
+        } catch (_) {}
+      }
+      
       await loadLatestOffer();
       await loadAgreement();
       if (onUpdate) onUpdate();
