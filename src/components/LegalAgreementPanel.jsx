@@ -586,51 +586,36 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ) : (
           /* Agreement exists */
           <div className="space-y-4">
-            {/* Rest of agreement UI... */}
-
-        {/* If agreement exists but investor hasn't signed yet */}
-        {agreement && !agreement.investor_signed_at && isInvestor && (
-          hasPendingOffer || termsMismatch || justAcceptedCounter ? (
-            <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
-              <p className="text-sm text-[#FAFAFA] mb-1">
-                {hasPendingOffer 
-                  ? 'An agent counter offer is pending. Review below and confirm or counter.' 
-                  : justAcceptedCounter 
-                  ? 'Counter offer accepted! Please regenerate the agreement with the new terms before signing.' 
-                  : 'Terms changed. Please regenerate the agreement before signing.'}
-              </p>
-              <div className="flex gap-2">
-                <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                  {termsMismatch || justAcceptedCounter ? 'Regenerate Agreement' : 'Review & Generate'}
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 mb-4">
-              <div className="flex items-center justify-between mb-2">
-                {getStatusDisplay()}
-              </div>
-              <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
-              <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
-              </Button>
-            </div>
-          )
-        )}
-
-        {/* Agent waiting copy */}
-        {!agreement && isAgent && (
-          <div className="text-center py-8">
-            <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
-            <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for investor</p>
-            <p className="text-xs text-[#808080]">The investor will create and sign the agreement first</p>
-          </div>
-        )}
-
-        {/* Agreement exists */}
-        {agreement && (
-          <div className="space-y-4">
-            {termsMismatch && (
+            {/* If agreement exists but investor hasn't signed yet */}
+            {!agreement.investor_signed_at && isInvestor && (
+              hasPendingOffer || termsMismatch || justAcceptedCounter ? (
+                <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
+                  <p className="text-sm text-[#FAFAFA] mb-1">
+                    {hasPendingOffer 
+                      ? 'An agent counter offer is pending. Review below and confirm or counter.' 
+                      : justAcceptedCounter 
+                      ? 'Counter offer accepted! Please regenerate the agreement with the new terms before signing.' 
+                      : 'Terms changed. Please regenerate the agreement before signing.'}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                      {termsMismatch || justAcceptedCounter ? 'Regenerate Agreement' : 'Review & Generate'}
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 mb-4">
+                  <div className="flex items-center justify-between mb-2">
+                    {getStatusDisplay()}
+                  </div>
+                  <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
+                  <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+                  </Button>
+                </div>
+              )
+            )}
+            {termsMismatch && !justAcceptedCounter && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
                 <div className="text-sm text-[#FAFAFA] font-semibold">Agreement out of date</div>
                 <div className="text-xs text-[#808080]">Terms changed. Investor must regenerate and sign before agent can sign.</div>
