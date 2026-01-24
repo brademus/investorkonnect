@@ -866,6 +866,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </Button>
               )}
 
+              {!isFullySigned && isInvestor && (
+                <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                  Regenerate Agreement
+                </Button>
+              )}
+
               {!agreement.investor_signed_at && isAgent && (
                 <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                   <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
