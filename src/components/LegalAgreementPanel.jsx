@@ -355,13 +355,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
       ]);
 
-      // Update local state
+      // Update local state with new terms - investor always needs to regenerate
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
-      setJustAcceptedCounter(true);
+      setJustAcceptedCounter(true);  // Always true for investor to regenerate
 
       if (onUpdate) onUpdate();
-      toast.success('Counter offer accepted - now regenerate the agreement with the new terms');
+      toast.success('Counter offer accepted - investor must regenerate the agreement with the new terms');
     } catch (error) {
       toast.error('Failed to accept counter offer');
       console.error('[LegalAgreementPanel] Error accepting offer:', error);
