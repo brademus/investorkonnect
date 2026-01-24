@@ -254,7 +254,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!pendingOffer) return;
     try {
       // CRITICAL: Only update buyer commission fields, preserve seller commission
-      const currentTerms = deal?.proposed_terms || {};
+      const currentTerms = freshDeal?.proposed_terms || deal?.proposed_terms || {};
       const newTerms = {
         ...currentTerms,
         buyer_commission_type: pendingOffer.terms?.buyer_commission_type,
@@ -268,6 +268,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       
       await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
       await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
+      
+      // Immediately update local state with new terms
+      setFreshDeal(prev => ({ ...prev, proposed_terms: newTerms }));
+      
       setPendingOffer(null);
       await loadLatestOffer();
       if (onUpdate) onUpdate();
