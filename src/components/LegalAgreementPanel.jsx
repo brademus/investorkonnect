@@ -48,16 +48,39 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     (async () => {
       try {
         const [dealResponse, agreementResponse, offers] = await Promise.all([
-          base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }),
-          base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId }),
-          base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1)
+          base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(e => {
+            console.error('[LegalAgreementPanel] Deal load failed:', e);
+            return null;
+          }),
+          base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId }).catch(e => {
+            console.error('[LegalAgreementPanel] Agreement load failed:', e);
+            return null;
+          }),
+          base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1).catch(e => {
+            console.error('[LegalAgreementPanel] Counter offers load failed:', e);
+            return [];
+          })
         ]);
         
         if (!mounted) return;
         
-        if (dealResponse?.data) setFreshDeal(dealResponse.data);
-        setAgreement(agreementResponse?.data?.agreement || null);
+        // Update deal only if successfully loaded - don't clear freshDeal on failure
+        if (dealResponse?.data) {
+          console.log('[LegalAgreementPanel] Deal loaded successfully');
+          setFreshDeal(dealResponse.data);
+        } else {
+          console.log('[LegalAgreementPanel] Deal load failed, keeping existing freshDeal');
+        }
         
+        // Update agreement only if successfully loaded - NEVER clear existing agreement
+        if (agreementResponse?.data?.agreement) {
+          console.log('[LegalAgreementPanel] Agreement loaded:', agreementResponse.data.agreement.id);
+          setAgreement(agreementResponse.data.agreement);
+        } else {
+          console.log('[LegalAgreementPanel] No agreement found, keeping existing agreement');
+        }
+        
+        // Update counter offers
         if (offers && offers.length > 0) {
           console.log('[LegalAgreementPanel] Found pending counter offer on initial load:', offers[0]);
           setPendingOffer(offers[0]);
@@ -65,9 +88,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           console.log('[LegalAgreementPanel] No pending counter offers found on initial load');
           setPendingOffer(null);
         }
+        
         setLoading(false);
       } catch (e) {
-        console.error('[LegalAgreementPanel] Error during initial load:', e);
+        console.error('[LegalAgreementPanel] Unexpected error during initial load:', e);
         setLoading(false);
       }
     })();
