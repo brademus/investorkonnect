@@ -30,9 +30,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Fresh deal state to ensure we always have latest terms
   const [freshDeal, setFreshDeal] = useState(deal || null);
-  
-  // Track if initial load is complete
-  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Rate limiting for generate
   const generationInProgressRef = React.useRef(false);
@@ -43,43 +40,37 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Single coordinated initial load
   useEffect(() => {
-    if (!effectiveDealId || initialLoadComplete) return;
+    if (!effectiveDealId) return;
     
     let mounted = true;
     
     (async () => {
       try {
-        console.log('[LegalAgreementPanel] Starting initial load for deal:', effectiveDealId);
+        console.log('[LegalAgreementPanel] Loading for deal:', effectiveDealId, 'initialAgreement:', initialAgreement);
         setLoading(true);
         
         // 1. Load deal data
         const dealResponse = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
         if (!mounted) return;
         if (dealResponse?.data) {
-          console.log('[LegalAgreementPanel] Loaded deal data:', dealResponse.data);
           setFreshDeal(dealResponse.data);
         }
         
-        // 2. Load agreement if not already provided
-        if (!initialAgreement) {
+        // 2. Use initialAgreement if provided, otherwise fetch
+        if (initialAgreement) {
+          setAgreement(initialAgreement);
+        } else {
           const agreementResponse = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
           if (!mounted) return;
-          console.log('[LegalAgreementPanel] Loaded agreement:', agreementResponse?.data?.agreement);
           setAgreement(agreementResponse?.data?.agreement || null);
-        } else {
-          console.log('[LegalAgreementPanel] Using initial agreement:', initialAgreement);
-          setAgreement(initialAgreement);
         }
         
         // 3. Load counter offers
         const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
         if (!mounted) return;
-        console.log('[LegalAgreementPanel] Loaded counter offers:', offers);
         setPendingOffer(offers?.[0] || null);
-        
-        setInitialLoadComplete(true);
       } catch (e) {
-        console.error('[LegalAgreementPanel] Error during initial load:', e);
+        console.error('[LegalAgreementPanel] Error during load:', e);
         if (mounted) {
           setAgreement(null);
           setPendingOffer(null);
@@ -93,6 +84,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     
     return () => { mounted = false; };
   }, [effectiveDealId, initialAgreement]);
+
+  // Keep freshDeal in sync with deal prop updates
+  useEffect(() => {
+    if (deal && deal.id === effectiveDealId) {
+      setFreshDeal(prev => prev?.id === deal.id ? { ...prev, ...deal } : deal);
+    }
+  }, [deal, effectiveDealId]);
+
+  // Subscribe to Deal updates to get fresh terms immediately
+  useEffect(() => {
+    if (!effectiveDealId) return;
+    
+    const unsubscribe = base44.entities.Deal.subscribe((event) => {
+      if (event?.data?.id === effectiveDealId && event.type === 'update') {
+        setFreshDeal(prev => ({ ...(prev || {}), ...event.data }));
+      }
+    });
+    
+    return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
+  }, [effectiveDealId]);
 
   // Derived gating flags - use freshDeal or fall back to deal
   const activeDeal = freshDeal || deal;
