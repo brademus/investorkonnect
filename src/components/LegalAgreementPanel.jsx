@@ -208,42 +208,47 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   };
 
-  const loadLatestOffer = React.useCallback(async () => {
-    if (!effectiveDealId) return;
-    try {
-      const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-      if (offers?.length > 0) {
-        setPendingOffer(offers[0]);
-      } else {
-        setPendingOffer(null);
-      }
-    } catch (e) {
-      console.error('[LegalAgreementPanel] Error loading counter offers:', e);
-      setPendingOffer(null);
-    }
-  }, [effectiveDealId]);
-
   // Real-time subscriptions to counter offer changes + initial load
   useEffect(() => {
     if (!effectiveDealId) return;
 
-    // Load on mount
-    loadLatestOffer();
+    let mounted = true;
+
+    // Load initial offers
+    const loadOffers = async () => {
+      try {
+        const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+        if (mounted) {
+          setPendingOffer(offers?.length > 0 ? offers[0] : null);
+        }
+      } catch (e) {
+        console.error('[LegalAgreementPanel] Error loading counter offers:', e);
+        if (mounted) setPendingOffer(null);
+      }
+    };
+
+    loadOffers();
 
     // Subscribe to real-time updates
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id !== effectiveDealId) return;
+      if (!mounted) return;
+      
       if (event.type === 'create' || event.type === 'update') {
         if (event.data?.status === 'pending') {
+          console.log('[LegalAgreementPanel] Pending offer received:', event.data);
           setPendingOffer(event.data);
         } else {
-          loadLatestOffer();
+          loadOffers();
         }
       }
     });
 
-    return () => { try { unsubscribe?.(); } catch (_) {} };
-  }, [effectiveDealId, loadLatestOffer]);
+    return () => { 
+      mounted = false;
+      try { unsubscribe?.(); } catch (_) {} 
+    };
+  }, [effectiveDealId]);
 
   // Refresh agreement when returning from DocuSign without signing
   useEffect(() => {
