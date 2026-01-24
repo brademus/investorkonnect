@@ -153,6 +153,7 @@ export function useCurrentProfile() {
         });
 
       } catch (error) {
+        console.error('[useCurrentProfile] Fatal error:', error);
         if (!mounted) return;
         setState(prev => ({ ...prev, loading: false, error: error.message }));
       }

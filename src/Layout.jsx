@@ -36,7 +36,11 @@ const queryClient = new QueryClient({
 function LayoutContent({ children }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { loading, user, role, hasRoom, onboarded, profile } = useCurrentProfile();
+  const { loading, user, role, hasRoom, onboarded, profile, error } = useCurrentProfile();
+  
+  useEffect(() => {
+    if (error) console.error('[Layout] Profile error:', error);
+  }, [error]);
 
   const isFetching = useIsFetching();
   const [showAppLoader, setShowAppLoader] = React.useState(true);
