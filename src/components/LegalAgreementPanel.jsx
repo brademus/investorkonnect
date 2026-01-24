@@ -123,12 +123,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { mounted = false; };
   }, [effectiveDealId]);
 
-  // Keep freshDeal in sync with deal prop updates
+  // Keep freshDeal in sync with deal prop updates, preserve justAcceptedCounter flag
   useEffect(() => {
     if (deal && deal.id === effectiveDealId) {
       setFreshDeal(prev => prev?.id === deal.id ? { ...prev, ...deal } : deal);
+      // Restore justAcceptedCounter from ref if state was lost due to parent re-render
+      if (justAcceptedCounterRef.current && !justAcceptedCounter) {
+        setJustAcceptedCounter(true);
+      }
     }
-  }, [deal, effectiveDealId]);
+  }, [deal, effectiveDealId, justAcceptedCounter]);
 
   // Subscribe to Deal updates to get fresh terms immediately
   useEffect(() => {
