@@ -129,27 +129,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const loadLatestOffer = async () => {
-    if (!effectiveDealId) {
-      console.log('[LegalAgreementPanel] Cannot load offers - no effectiveDealId');
-      return;
-    }
+    if (!effectiveDealId) return;
     try {
-      console.log('[LegalAgreementPanel] Loading counter offers for deal:', effectiveDealId);
       setLoadingOffer(true);
       const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-      console.log('[LegalAgreementPanel] Found counter offers:', offers);
-      console.log('[LegalAgreementPanel] Current role - isInvestor:', isInvestor, 'isAgent:', isAgent);
       setPendingOffer(offers?.[0] || null);
-      if (offers?.[0]) {
-        console.log('[LegalAgreementPanel] Set pending offer:', {
-          id: offers[0].id,
-          from_role: offers[0].from_role,
-          terms: offers[0].terms,
-          status: offers[0].status
-        });
-      } else {
-        console.log('[LegalAgreementPanel] No pending offers found');
-      }
     } catch (e) {
       console.error('[LegalAgreementPanel] Error loading counter offer:', e);
     } finally {
@@ -184,14 +168,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
-  // Load counter offers when component mounts or deal/agreement/profile changes
+  // Load counter offers when component mounts or deal/agreement changes
   useEffect(() => { 
-    console.log('[LegalAgreementPanel] Component mounted/updated - Loading counter offers');
-    console.log('[LegalAgreementPanel] State:', { effectiveDealId, hasAgreement: !!agreement, isInvestor, isAgent, profile_user_role: profile?.user_role });
-    if (effectiveDealId && profile) {
+    if (effectiveDealId) {
       loadLatestOffer();
     }
-  }, [effectiveDealId, agreement, profile?.user_role]);
+  }, [effectiveDealId, agreement]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
