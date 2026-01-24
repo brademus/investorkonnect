@@ -291,27 +291,27 @@ function PipelineContent() {
   });
 
   // 3. Load Rooms (to link agents/status)
-   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
-     queryKey: ['rooms', profile?.id],
-     staleTime: Infinity,
-     gcTime: 30 * 60_000,
-    initialData: () => {
-      try {
-        if (!roomsCacheKey) return undefined;
-        const cached = JSON.parse(sessionStorage.getItem(roomsCacheKey) || '[]');
-        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
-      } catch { return undefined; }
-    },
-    refetchOnMount: true,
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      const res = await base44.functions.invoke('listMyRoomsEnriched');
-      return res.data?.rooms || [];
-    },
-    enabled: !!profile?.id,
-    refetchOnWindowFocus: false,
-    
-  });
+    const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
+      queryKey: ['rooms', profile?.id],
+      staleTime: Infinity,
+      gcTime: 30 * 60_000,
+     initialData: () => {
+       try {
+         if (!roomsCacheKey) return undefined;
+         const cached = JSON.parse(sessionStorage.getItem(roomsCacheKey) || '[]');
+         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+       } catch { return undefined; }
+     },
+     refetchOnMount: 'stale',
+     queryFn: async () => {
+       if (!profile?.id) return [];
+       const res = await base44.functions.invoke('listMyRoomsEnriched');
+       return res.data?.rooms || [];
+     },
+     enabled: !!profile?.id,
+     refetchOnWindowFocus: false,
+
+   });
 
   useEffect(() => {
     try {
