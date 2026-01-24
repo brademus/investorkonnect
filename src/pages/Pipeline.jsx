@@ -56,13 +56,12 @@ function PipelineContent() {
   // Ensure profile exists to avoid redirect loops
   useEffect(() => {
     (async () => {
-      if (!loading && !profile && !triedEnsureProfileRef.current) {
+      if (!loading && profile && !triedEnsureProfileRef.current) {
         triedEnsureProfileRef.current = true;
         try {
-          await base44.functions.invoke('ensureProfile');
           await refresh();
         } catch (e) {
-          console.warn('ensureProfile failed', e);
+          console.warn('profile refresh failed', e);
         }
       }
     })();
