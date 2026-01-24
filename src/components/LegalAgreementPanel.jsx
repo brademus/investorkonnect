@@ -362,12 +362,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
         : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
       
+      // Create counter offer
       const newOffer = await base44.entities.CounterOffer.create({ 
         deal_id: effectiveDealId, 
         from_role: fromRole, 
         terms, 
         status: 'pending' 
       });
+      
+      // If agent is sending counter, void the old deal immediately
+      if (fromRole === 'agent') {
+        try {
+          await base44.functions.invoke('voidDeal', { deal_id: effectiveDealId });
+          console.log('[LegalAgreementPanel] Deal voided after agent counter:', effectiveDealId);
+        } catch (voidError) {
+          console.error('[LegalAgreementPanel] Failed to void deal:', voidError);
+          // Don't fail the counter submission if void fails
+        }
+      }
       
       setShowCounterModal(false);
       setCounterAmount('');
