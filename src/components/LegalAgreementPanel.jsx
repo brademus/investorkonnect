@@ -70,12 +70,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     [agreement?.investor_signed_at, agreement?.agent_signed_at, agreement?.status]
   );
 
-  // Load agreement when deal is known and profile is loaded
+  // Load agreement when deal is known
   useEffect(() => {
-    if (effectiveDealId && profile && !agreement && !loading) {
+    if (effectiveDealId && !agreement && !loading) {
       loadAgreement();
     }
-  }, [effectiveDealId, profile, agreement, loading]);
+  }, [effectiveDealId, agreement, loading]);
 
   const handleOpenGenerateModal = async () => {
     const genId = effectiveDealId;
@@ -146,7 +146,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Real-time subscriptions to counter offer changes
   useEffect(() => {
-    if (!effectiveDealId || !profile) return;
+    if (!effectiveDealId) return;
 
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
       console.log('[LegalAgreementPanel] Counter offer event:', event);
@@ -171,12 +171,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
-  // Load counter offers when component mounts and all dependencies are ready
+  // Load counter offers when component mounts
   useEffect(() => { 
-    if (effectiveDealId && profile && !loading) {
+    if (effectiveDealId && !loading) {
       loadLatestOffer();
     }
-  }, [effectiveDealId, profile, agreement, loading]);
+  }, [effectiveDealId, agreement, loading]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
