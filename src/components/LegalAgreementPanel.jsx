@@ -579,7 +579,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Reset signing state when user returns from DocuSign without completing signature
   useEffect(() => {
-    if (setSigning && !window.location.search.includes('signed=1')) {
+    if (!window.location.search.includes('signed=1')) {
       setSigning(false);
     }
   }, [window.location.search]);
