@@ -1398,11 +1398,11 @@ ${dealContext}`;
           </div>
           
           {/* Name and Status */}
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-[#FAFAFA]">
-              {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed)
-                      ? counterpartName : (profile?.user_role === 'agent' ? 'Investor' : 'Agent')}
-            </h2>
+           <div className="flex-1">
+             <h2 className="text-lg font-semibold text-[#FAFAFA]">
+               {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed)
+                       ? counterpartName : (profile?.user_role === 'investor' ? 'Agent' : 'Investor')}
+             </h2>
             <div className="flex items-center gap-3">
               {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed) ? (
                                     <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
