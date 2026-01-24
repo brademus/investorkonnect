@@ -795,8 +795,8 @@ function PipelineContent() {
 
 
 
-            {/* Pending Requests for Agents */}
-            {isAgent && pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).length > 0 && (
+            {/* New Deal Requests for Agents - show all unsigned agreements */}
+            {isAgent && pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
                 <div className="flex items-center justify-between mb-4">
                   <div>
