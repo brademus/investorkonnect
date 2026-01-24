@@ -74,24 +74,37 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     [agreement?.investor_signed_at, agreement?.agent_signed_at, agreement?.status]
   );
 
-  // Keep freshDeal in sync with deal prop
+  // Load fresh deal data and agreement when panel mounts - single coordinated fetch
   useEffect(() => {
-    if (deal) {
-      setFreshDeal(deal);
-    }
-  }, [deal]);
-
-  // Load fresh deal data when panel mounts
-  useEffect(() => {
-    if (effectiveDealId) {
-      (async () => {
-        try {
-          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
-          if (data) setFreshDeal(data);
-        } catch (_) {}
-      })();
-    }
+    if (!effectiveDealId) return;
+    
+    (async () => {
+      try {
+        // Fetch deal data first
+        const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
+        if (data) {
+          setFreshDeal(data);
+        }
+        
+        // Then load agreement
+        if (!agreement) {
+          await loadAgreement();
+        }
+        
+        // Then load counter offers
+        await loadLatestOffer();
+      } catch (e) {
+        console.error('[LegalAgreementPanel] Error loading data:', e);
+      }
+    })();
   }, [effectiveDealId]);
+
+  // Keep freshDeal in sync with deal prop updates
+  useEffect(() => {
+    if (deal && deal.id === effectiveDealId) {
+      setFreshDeal(prev => prev?.id === deal.id ? { ...prev, ...deal } : deal);
+    }
+  }, [deal, effectiveDealId]);
 
   // Subscribe to Deal updates to get fresh terms immediately
   useEffect(() => {
@@ -99,18 +112,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     
     const unsubscribe = base44.entities.Deal.subscribe((event) => {
       if (event?.data?.id === effectiveDealId && event.type === 'update') {
-        setFreshDeal(prev => ({ ...prev, ...event.data }));
+        setFreshDeal(prev => ({ ...(prev || {}), ...event.data }));
       }
     });
     
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
-  }, [effectiveDealId]);
-
-  // Load agreement when deal is known
-  useEffect(() => {
-    if (effectiveDealId && !agreement) {
-      loadAgreement();
-    }
   }, [effectiveDealId]);
 
   const handleOpenGenerateModal = async () => {
@@ -184,33 +190,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!effectiveDealId) return;
 
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      console.log('[LegalAgreementPanel] Counter offer event:', event);
       if (event?.data?.deal_id !== effectiveDealId) return;
 
       // Whenever a counter offer is created or updated, reload immediately
       if (event.type === 'create' || event.type === 'update') {
-        console.log('[LegalAgreementPanel] Reloading counter offers after event');
-        (async () => {
-          try {
-            setLoadingOffer(true);
-            const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-            console.log('[LegalAgreementPanel] Loaded counter offers:', offers);
-            setPendingOffer(offers?.[0] || null);
-          } finally {
-            setLoadingOffer(false);
-          }
-        })();
+        loadLatestOffer();
       }
     });
 
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
-  }, [effectiveDealId]);
-
-  // Load counter offers when component mounts
-  useEffect(() => { 
-    if (effectiveDealId) {
-      loadLatestOffer();
-    }
   }, [effectiveDealId]);
 
   const submitCounterOffer = async (fromRole) => {
