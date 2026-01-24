@@ -784,21 +784,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               )}
 
               {agreement.investor_signed_at && !agreement.agent_signed_at && isInvestor && (
-                termsMismatch ? (
-                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                    <p className="text-sm text-[#FAFAFA] font-semibold mb-2">Terms Changed - Action Required</p>
-                    <p className="text-xs text-[#808080] mb-3">Counter offer accepted. Please regenerate and re-sign the agreement.</p>
-                    <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                      Regenerate & Re-sign
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                    <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
-                    <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
-                    <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
-                  </div>
-                )
+                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
+                  <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
+                  <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
+                </div>
               )}
 
               {agreement.investor_signed_at && agreement.agent_signed_at && (
