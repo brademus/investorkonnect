@@ -243,12 +243,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
     let mounted = true;
 
-    // Load initial offers
+    // Load initial offers (both pending and recently accepted)
     const loadOffers = async () => {
       try {
-        const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+        const pendingOffers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+        const acceptedOffers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'accepted' }, '-updated_date', 1);
+
         if (mounted) {
-          setPendingOffer(offers?.length > 0 ? offers[0] : null);
+          // Show pending offer if exists, otherwise show accepted offer to trigger regenerate
+          if (pendingOffers?.length > 0) {
+            setPendingOffer(pendingOffers[0]);
+          } else if (acceptedOffers?.length > 0) {
+            // Set accepted offer to trigger regenerate flag
+            justAcceptedCounterRef.current = true;
+            setJustAcceptedCounter(true);
+            setPendingOffer(null);
+          } else {
+            setPendingOffer(null);
+          }
         }
       } catch (e) {
         console.error('[LegalAgreementPanel] Error loading counter offers:', e);
@@ -262,9 +274,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
       if (!mounted) return;
       if (event?.data?.deal_id !== effectiveDealId) return;
-      
+
       console.log('[LegalAgreementPanel] CounterOffer event:', event.type, event.data?.id, event.data?.status);
-      
+
       // On create: immediately show if pending
       if (event.type === 'create') {
         if (event.data?.status === 'pending') {
@@ -273,9 +285,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         }
         return;
       }
-      
-      // On update: reload to get latest state
+
+      // On update: check if it changed to accepted and trigger regenerate
       if (event.type === 'update') {
+        if (event.data?.status === 'accepted') {
+          console.log('[LegalAgreementPanel] Offer accepted, triggering regenerate:', event.data.id);
+          justAcceptedCounterRef.current = true;
+          setJustAcceptedCounter(true);
+          setPendingOffer(null);
+        }
         loadOffers();
         return;
       }
