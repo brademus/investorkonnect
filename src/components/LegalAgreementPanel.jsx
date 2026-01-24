@@ -613,43 +613,39 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
             {/* Actions */}
             <div className="flex flex-col gap-3">
-              {!agreement.investor_signed_at && (
-                <>
-                  {isInvestor ? (
-                    <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                      {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
-                    </Button>
-                  ) : (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                      <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
-                      <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
-                      <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
-                    </div>
-                  )}
-                </>
+              {!agreement.investor_signed_at && isInvestor && (
+                <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                  {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
+                </Button>
               )}
 
-              {agreement.investor_signed_at && !agreement.agent_signed_at && (
-                <>
-                  {isAgent ? (
-                    hasPendingOffer || termsMismatch ? (
-                      <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                        <p className="text-sm text-[#FAFAFA] font-semibold">{hasPendingOffer ? 'Counter offer pending' : 'Agreement needs regeneration'}</p>
-                        <p className="text-xs text-[#808080] mt-1">Agent cannot sign until investor confirms and regenerates, then signs.</p>
-                      </div>
-                    ) : (
-                      <Button onClick={() => handleSign('agent')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                        {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
-                      </Button>
-                    )
-                  ) : (
-                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                      <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
-                      <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
-                      <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
-                    </div>
-                  )}
-                </>
+              {!agreement.investor_signed_at && isAgent && (
+                <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                  <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
+                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
+                  <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
+                </div>
+              )}
+
+              {agreement.investor_signed_at && !agreement.agent_signed_at && isAgent && (
+                hasPendingOffer || termsMismatch ? (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                    <p className="text-sm text-[#FAFAFA] font-semibold">{hasPendingOffer ? 'Counter offer pending' : 'Agreement needs regeneration'}</p>
+                    <p className="text-xs text-[#808080] mt-1">Agent cannot sign until investor confirms and regenerates, then signs.</p>
+                  </div>
+                ) : (
+                  <Button onClick={() => handleSign('agent')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                    {signing ? 'Opening DocuSign...' : 'Sign as Agent'}
+                  </Button>
+                )
+              )}
+
+              {agreement.investor_signed_at && !agreement.agent_signed_at && isInvestor && (
+                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                  <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
+                  <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
+                  <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
+                </div>
               )}
 
               {agreement.investor_signed_at && agreement.agent_signed_at && (
