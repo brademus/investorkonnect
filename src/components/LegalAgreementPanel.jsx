@@ -652,8 +652,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </div>
             )}
 
-            {/* Key Terms (from deal) - Always show counter button for agents */}
-            {activeDeal?.proposed_terms && (
+            {/* Key Terms (from deal) - show to investor only */}
+            {activeDeal?.proposed_terms && isInvestor && (
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
