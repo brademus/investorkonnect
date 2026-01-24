@@ -12,8 +12,8 @@ import { FileText, CheckCircle2, Clock, Download, AlertCircle } from 'lucide-rea
 import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null, dealId = null }) {
-  const [agreement, setAgreement] = useState(initialAgreement || null);
-  const [loading, setLoading] = useState(!initialAgreement);
+  const [agreement, setAgreement] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -30,6 +30,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Fresh deal state to ensure we always have latest terms
   const [freshDeal, setFreshDeal] = useState(deal || null);
+  
+  // Track current deal ID to detect changes
+  const [currentDealId, setCurrentDealId] = useState(null);
 
   // Rate limiting for generate
   const generationInProgressRef = React.useRef(false);
