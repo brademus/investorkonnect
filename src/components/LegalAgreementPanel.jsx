@@ -399,8 +399,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!profile?.user_role) { toast.error('Missing user role — cannot generate agreement.'); return; }
 
     generationInProgressRef.current = true;
-    lastGenerationTimeRef.current = now;
     setGenerating(true);
+    
+    // Auto-reset flag after 60s if generation hangs
+    if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
+    generationTimeoutRef.current = setTimeout(() => {
+      generationInProgressRef.current = false;
+      setGenerating(false);
+      console.warn('[LegalAgreementPanel] Generation timeout - flag auto-reset');
+    }, 60000);
+    
     try {
       let compensationModel = 'FLAT_FEE';
       if (exhibitA?.commission_type === 'percentage') compensationModel = 'COMMISSION_PCT';
