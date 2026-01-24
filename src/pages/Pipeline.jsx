@@ -193,10 +193,10 @@ function PipelineContent() {
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
   // 2. Load Active Deals via Server-Side Access Control
-  const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
-    queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
+     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
+     staleTime: Infinity,
+     gcTime: 30 * 60_000,
     initialData: () => {
       try {
         if (!dealsCacheKey) return undefined;
