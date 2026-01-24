@@ -270,7 +270,7 @@ const ConversationItem = React.memo(({ room, isActive, onClick, userRole, fullDe
             <div className="text-[#34D399] font-semibold">${room.budget.toLocaleString()}</div>
             {(() => {
               const { compLabel } = getPriceAndComp({ room });
-              return compLabel ? <div className="text-xs text-[#E3C567]">Comp: {compLabel}</div> : null;
+              return <div className="text-xs text-[#E3C567]">Comp: {compLabel || '—'}</div>;
             })()}
           </div>
         )}
