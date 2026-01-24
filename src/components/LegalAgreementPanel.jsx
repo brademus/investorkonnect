@@ -406,6 +406,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }, 60000);
     
     try {
+      // If regenerating after counter acceptance, void the old agreement first
+      if (justAcceptedCounter && agreement) {
+        console.log('[LegalAgreementPanel] Voiding old agreement before regenerating:', agreement.id);
+        try {
+          await base44.functions.invoke('voidDeal', { deal_id: genDealId });
+        } catch (e) {
+          console.warn('[LegalAgreementPanel] Failed to void agreement, continuing anyway:', e);
+        }
+      }
+
       let compensationModel = 'FLAT_FEE';
       if (exhibitA?.commission_type === 'percentage') compensationModel = 'COMMISSION_PCT';
       else if (exhibitA?.commission_type === 'net') compensationModel = 'NET_SPREAD';
@@ -452,10 +462,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (response.data?.regenerated === false) toast.info('Agreement already up to date (no changes needed)');
       else toast.success('Agreement generated successfully');
 
-      // Clear the "just accepted" flag after regeneration
-      setJustAcceptedCounter(false);
-
-      // Reload agreement and fresh deal data
+      // Reload agreement and deal data
       await Promise.all([
         loadAgreement(),
         (async () => {
@@ -464,6 +471,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         })()
       ]);
 
+      // Clear the "just accepted" flag AFTER successful reload
+      setJustAcceptedCounter(false);
       setShowGenerateModal(false);
       if (onUpdate) onUpdate();
     } catch (error) {
