@@ -535,6 +535,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
       setGenerating(false);
       generationInProgressRef.current = false;
+      
+      // Set 5-second cooldown before next generation attempt
+      const cooldownUntil = Date.now() + 5000;
+      generationCooldownRef.current = cooldownUntil;
+      setGenerationCooldown(cooldownUntil);
+      
+      // Countdown timer
+      const countdownInterval = setInterval(() => {
+        const remaining = Date.now() < cooldownUntil;
+        if (!remaining) {
+          clearInterval(countdownInterval);
+          setGenerationCooldown(0);
+        } else {
+          setGenerationCooldown(cooldownUntil);
+        }
+      }, 100);
     }
   };
 
