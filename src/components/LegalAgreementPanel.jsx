@@ -247,8 +247,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   // Ensure we load counter offers on mount and refresh periodically
   useEffect(() => {
     if (!effectiveDealId) return;
+    console.log('[LegalAgreementPanel] Loading counter offers on mount for deal:', effectiveDealId);
     loadLatestOffer();
-  }, [effectiveDealId]);
+  }, [effectiveDealId, loadLatestOffer]);
 
   // Refresh agreement when returning from DocuSign without signing
   useEffect(() => {
