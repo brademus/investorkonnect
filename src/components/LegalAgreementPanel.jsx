@@ -317,7 +317,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       mounted = false;
       try { unsubscribe?.(); } catch (_) {} 
     };
-  }, [effectiveDealId, pendingOffer?.id]);
+    }, [effectiveDealId]);
 
   // Refresh agreement when returning from DocuSign without signing
   useEffect(() => {
