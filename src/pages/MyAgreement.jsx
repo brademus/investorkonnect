@@ -170,7 +170,6 @@ export default function MyAgreement() {
           deal={deal}
           profile={profile}
           dealId={deal?.id || dealId}
-          allowGenerate={true}
           onUpdate={async () => {
             // Refresh local deal
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
