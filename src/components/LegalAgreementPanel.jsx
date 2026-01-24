@@ -150,16 +150,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     const genId = effectiveDealId;
     if (!genId) return;
     try {
-      // Always fetch fresh deal data
-      const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genId });
-      const currentDeal = data?.deal || data || freshDeal || deal;
+      // Try to fetch fresh data, but fall back to freshDeal or deal if fetch fails
+      let currentDeal = freshDeal || deal;
+      try {
+        const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genId });
+        if (data?.deal || data) {
+          currentDeal = data?.deal || data;
+          setFreshDeal(currentDeal);
+        }
+      } catch (fetchError) {
+        console.log('[LegalAgreementPanel] Fetch failed, using cached freshDeal:', fetchError);
+      }
       
       if (!currentDeal) {
         toast.error('Failed to load deal data');
         return;
       }
       
-      setFreshDeal(currentDeal);
       setResolvedDealId(currentDeal.id);
       const terms = currentDeal.proposed_terms || currentDeal.room?.proposed_terms || {};
       setModalTerms(terms);
@@ -175,7 +182,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setExhibitA(newExhibitAState);
       setShowGenerateModal(true);
     } catch (error) {
-      console.error('[LegalAgreementPanel] Error loading fresh deal data:', error);
+      console.error('[LegalAgreementPanel] Error loading deal data:', error);
       toast.error('Failed to load deal data');
     }
   };
