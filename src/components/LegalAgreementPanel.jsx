@@ -205,19 +205,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const loadLatestOffer = React.useCallback(async () => {
     if (!effectiveDealId) return;
     try {
-      setLoadingOffer(true);
       const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-      console.log('[LegalAgreementPanel] Loaded counter offers for deal', effectiveDealId, ':', offers);
-      if (offers && offers.length > 0) {
+      if (offers?.length > 0) {
         setPendingOffer(offers[0]);
       } else {
         setPendingOffer(null);
       }
     } catch (e) {
-      console.error('[LegalAgreementPanel] Error loading counter offer for deal', effectiveDealId, ':', e);
+      console.error('[LegalAgreementPanel] Error loading counter offers:', e);
       setPendingOffer(null);
-    } finally {
-      setLoadingOffer(false);
     }
   }, [effectiveDealId]);
 
