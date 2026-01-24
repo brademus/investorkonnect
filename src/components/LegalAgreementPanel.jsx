@@ -26,7 +26,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterType, setCounterType] = useState('flat');
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
-  const [loadingOffer, setLoadingOffer] = useState(false);
   const [justAcceptedCounter, setJustAcceptedCounter] = useState(false);
 
   // Fresh deal state to ensure we always have latest terms
