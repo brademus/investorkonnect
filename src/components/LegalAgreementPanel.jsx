@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null, dealId = null }) {
   const [agreement, setAgreement] = useState(initialAgreement || null);
-  const [loading, setLoading] = useState(!initialAgreement);
+  const [loading, setLoading] = useState(false);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -30,6 +30,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Fresh deal state to ensure we always have latest terms
   const [freshDeal, setFreshDeal] = useState(deal || null);
+  
+  // Track if initial load is complete
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false);
 
   // Rate limiting for generate
   const generationInProgressRef = React.useRef(false);
@@ -163,16 +166,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const loadAgreement = async () => {
-    if (!effectiveDealId) { setLoading(false); return; }
+    if (!effectiveDealId) return;
     try {
-      setLoading(true);
+      console.log('[LegalAgreementPanel] Loading agreement for deal:', effectiveDealId);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
+      console.log('[LegalAgreementPanel] Agreement loaded:', response?.data?.agreement);
       setAgreement(response.data?.agreement || null);
     } catch (error) {
       console.error('[LegalAgreementPanel] Error loading agreement:', error);
       setAgreement(null);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -220,8 +222,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return;
     }
     try {
+      console.log('[LegalAgreementPanel] Submitting counter offer from:', fromRole);
+      
       // First, mark any existing pending offers as superseded
       if (pendingOffer) {
+        console.log('[LegalAgreementPanel] Superseding existing offer:', pendingOffer.id);
         await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'superseded' });
       }
       
@@ -229,16 +234,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
         : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
       
-      await base44.entities.CounterOffer.create({ 
+      console.log('[LegalAgreementPanel] Creating counter offer with terms:', terms);
+      
+      const newOffer = await base44.entities.CounterOffer.create({ 
         deal_id: effectiveDealId, 
         from_role: fromRole, 
         terms, 
         status: 'pending' 
       });
       
+      console.log('[LegalAgreementPanel] Counter offer created:', newOffer);
+      
       setShowCounterModal(false);
       setCounterAmount('');
+      
+      // Immediately reload counter offers
       await loadLatestOffer();
+      
       if (onUpdate) onUpdate();
       toast.success('Counter offer sent successfully');
     } catch (error) {
@@ -250,6 +262,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const acceptOffer = async () => {
     if (!pendingOffer) return;
     try {
+      console.log('[LegalAgreementPanel] Accepting counter offer:', pendingOffer);
+      
       // CRITICAL: Only update buyer commission fields, preserve seller commission
       const currentTerms = (freshDeal || deal)?.proposed_terms || {};
       const newTerms = {
@@ -263,14 +277,27 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         seller_flat_fee: currentTerms.seller_flat_fee,
       };
       
-      await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
-      await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
+      console.log('[LegalAgreementPanel] Updating deal with new terms:', newTerms);
+      
+      // Update deal and counter offer status
+      await Promise.all([
+        base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms }),
+        base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
+      ]);
       
       // Immediately update local state with new terms
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
-      
       setPendingOffer(null);
-      await loadLatestOffer();
+      
+      // Reload fresh data
+      await Promise.all([
+        loadLatestOffer(),
+        (async () => {
+          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
+          if (data) setFreshDeal(data);
+        })()
+      ]);
+      
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - please regenerate agreement to continue');
     } catch (error) {
@@ -362,7 +389,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (response.data?.regenerated === false) toast.info('Agreement already up to date (no changes needed)');
       else toast.success('Agreement generated successfully');
 
-      await loadAgreement();
+      // Reload agreement and fresh deal data
+      await Promise.all([
+        loadAgreement(),
+        (async () => {
+          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genDealId });
+          if (data) setFreshDeal(data);
+        })()
+      ]);
+
       setShowGenerateModal(false);
       if (onUpdate) onUpdate();
     } catch (error) {
