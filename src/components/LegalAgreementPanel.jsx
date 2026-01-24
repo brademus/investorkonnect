@@ -45,22 +45,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Derived gating flags
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
-  
-  // Debug logging
-  useEffect(() => {
-    console.log('[LegalAgreementPanel] State update:', {
-      effectiveDealId,
-      hasPendingOffer,
-      pendingOffer,
-      isInvestor,
-      isAgent,
-      profile_user_role: profile?.user_role,
-      agreement_exists: !!agreement,
-      investor_signed: agreement?.investor_signed_at,
-      agent_signed: agreement?.agent_signed_at
-    });
-  }, [pendingOffer, agreement, effectiveDealId, isInvestor, isAgent]);
-  
   const termsMismatch = (() => {
     try {
       const t = deal?.proposed_terms;
@@ -77,6 +61,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return false;
     }
   })();
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[LegalAgreementPanel] State update:', {
+      effectiveDealId,
+      hasPendingOffer,
+      pendingOffer,
+      termsMismatch,
+      isInvestor,
+      isAgent,
+      profile_user_role: profile?.user_role,
+      agreement_exists: !!agreement,
+      investor_signed: agreement?.investor_signed_at,
+      agent_signed: agreement?.agent_signed_at
+    });
+  }, [pendingOffer, agreement, effectiveDealId, isInvestor, isAgent, hasPendingOffer, termsMismatch]);
 
   // Role detection - user_role is authoritative
   const isInvestor = profile?.user_role === 'investor';
