@@ -265,19 +265,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return;
     }
     try {
-      console.log('[LegalAgreementPanel] Submitting counter offer from:', fromRole);
-      
-      // First, mark any existing pending offers as superseded
+      // Mark any existing pending offers as superseded
       if (pendingOffer) {
-        console.log('[LegalAgreementPanel] Superseding existing offer:', pendingOffer.id);
         await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'superseded' });
       }
       
       const terms = counterType === 'flat'
         ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
         : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
-      
-      console.log('[LegalAgreementPanel] Creating counter offer with terms:', terms);
       
       const newOffer = await base44.entities.CounterOffer.create({ 
         deal_id: effectiveDealId, 
@@ -286,16 +281,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         status: 'pending' 
       });
       
-      console.log('[LegalAgreementPanel] Counter offer created:', newOffer);
-      
       setShowCounterModal(false);
       setCounterAmount('');
-      
-      // Immediately update local state with the new offer
       setPendingOffer(newOffer);
-      
-      // Then reload to ensure we have the latest data
-      setTimeout(() => loadLatestOffer(), 500);
       
       if (onUpdate) onUpdate();
       toast.success('Counter offer sent successfully');
