@@ -778,9 +778,11 @@ Deno.serve(async (req) => {
     const connection = await getDocuSignConnection();
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // Attempt to void prior envelope (if any) before creating a new one
+    // Attempt to void prior DocuSign envelope (if any) before creating a new one
+    // CRITICAL: Only void the DocuSign envelope, never touch the deal itself
     if (toVoidEnvelopeId) {
       try {
+        console.log('[DocuSign] Voiding prior envelope:', toVoidEnvelopeId);
         const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
         const voidResp = await fetch(voidUrl, {
           method: 'PUT',
@@ -788,27 +790,19 @@ Deno.serve(async (req) => {
             'Authorization': `Bearer ${accessToken}`,
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated on ${new Date().toISOString()}` })
+          body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated with new terms on ${new Date().toISOString()}` })
         });
+
         if (!voidResp.ok) {
           const txt = await voidResp.text();
-          console.warn('[DocuSign] Warning: failed to void prior envelope', txt);
+          console.warn('[DocuSign] Warning: failed to void prior envelope:', txt);
+          // Continue anyway - we'll still create the new envelope
         } else {
-          console.log('[DocuSign] Prior envelope voided:', toVoidEnvelopeId);
-          try {
-            await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
-              docusign_envelope_id: null,
-              investor_recipient_id: null,
-              agent_recipient_id: null,
-              investor_signing_url: null,
-              agent_signing_url: null
-            });
-          } catch (e) {
-            console.warn('[DocuSign] Warning: failed to clear prior envelope fields', e?.message || e);
-          }
+          console.log('[DocuSign] ✓ Prior envelope voided successfully:', toVoidEnvelopeId);
         }
       } catch (e) {
-        console.warn('[DocuSign] Warning: void attempt threw error', e?.message || e);
+        console.warn('[DocuSign] Warning: void attempt threw error:', e?.message || e);
+        // Continue anyway - the new envelope creation is more important
       }
     }
     
