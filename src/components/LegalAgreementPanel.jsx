@@ -192,10 +192,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       console.log('[LegalAgreementPanel] Loading agreement for deal:', effectiveDealId);
       const response = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
       console.log('[LegalAgreementPanel] Agreement loaded:', response?.data?.agreement);
-      setAgreement(response.data?.agreement || null);
+      if (response?.data?.agreement) {
+        setAgreement(response.data.agreement);
+      } else {
+        console.log('[LegalAgreementPanel] No agreement found, keeping existing');
+      }
     } catch (error) {
       console.error('[LegalAgreementPanel] Error loading agreement:', error);
-      setAgreement(null);
     }
   };
 
