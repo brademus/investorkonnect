@@ -2475,11 +2475,11 @@ ${dealContext}`;
                 </div>
               )}
 
-              {activeTab === 'photos' && (
-                <div className="space-y-6">
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 transition-opacity duration-150" style={{ opacity: tabLoading ? 0.6 : 1 }}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Property Photos</h4>
+          {activeTab === 'photos' && (
+            <div className="space-y-6">
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 transition-opacity duration-150" style={{ opacity: tabLoading ? 0.6 : 1 }}>
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-lg font-semibold text-[#FAFAFA]">Property Photos</h4>
                       <Button
                         onClick={async () => {
                           const input = document.createElement('input');
@@ -2573,12 +2573,12 @@ ${dealContext}`;
                           </div>
                         ))}
                       </div>
-                    )}
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+          )}
 
-              {activeTab === 'activity' && (
+          {activeTab === 'activity' && (
                 <div className="space-y-6">
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Events & Activity</h4>
@@ -2599,14 +2599,14 @@ ${dealContext}`;
                           </div>
                         </div>
                       ))}
-                    </div>
-                  </div>
                 </div>
-              )}
+              </div>
             </div>
-                          ) : (
-                            /* Messages View */
-            <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+          )}
+        </div>
+      ) : (
+        /* Messages View */
+        <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
@@ -2797,13 +2797,10 @@ ${dealContext}`;
                   <div ref={messagesEndRef} />
                 </>
               )}
-              </div>
-            </div>
-          )}
-        </div>
-
-
+          </div>
+        )}
       </div>
+    </div>
 
       <ContractWizard 
         roomId={roomId} 
