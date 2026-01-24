@@ -62,8 +62,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   })();
 
-  const isInvestor = (profile?.user_role === 'investor') || (deal?.investor_id === profile?.id) || (agreement?.investor_profile_id === profile?.id) || (agreement?.investor_user_id === profile?.user_id);
-  const isAgent = (profile?.user_role === 'agent') || (deal?.agent_id === profile?.id) || (agreement?.agent_profile_id === profile?.id) || (agreement?.agent_user_id === profile?.user_id);
+  // Role detection - user_role is authoritative
+  const isInvestor = profile?.user_role === 'investor';
+  const isAgent = profile?.user_role === 'agent';
   const isFullySigned = Boolean(agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed';
 
   // Load agreement when deal is known and agreement not in state
