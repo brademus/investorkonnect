@@ -226,6 +226,21 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
+  // Refresh agreement when returning from DocuSign without signing
+  useEffect(() => {
+    const handleDocuSignReturn = async () => {
+      // Check if we're returning from DocuSign (has DocuSign params but no signed=1)
+      const params = new URLSearchParams(window.location.search);
+      if ((params.get('code') || params.get('state')) && !params.get('signed')) {
+        // User cancelled or went back from DocuSign without signing - refresh agreement
+        console.log('[LegalAgreementPanel] User returned from DocuSign without signing, refreshing...');
+        await loadAgreement();
+      }
+    };
+    
+    handleDocuSignReturn();
+  }, [window.location.search]);
+
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
       toast.error('Agreement is fully signed; countering is disabled.');
