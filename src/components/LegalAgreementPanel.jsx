@@ -758,22 +758,24 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-col gap-2 w-full">
                     {((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
                       <>
-                        <Button size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white" onClick={acceptOffer}>Accept</Button>
-                        <Button size="sm" variant="destructive" onClick={denyOffer}>Decline</Button>
-                        <Button size="sm" className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={() => {
+                        <div className="flex flex-wrap gap-2 w-full">
+                          <Button size="sm" className="bg-[#10B981] hover:bg-[#059669] text-white flex-1" onClick={acceptOffer}>Accept</Button>
+                          <Button size="sm" variant="destructive" className="flex-1" onClick={denyOffer}>Decline</Button>
+                        </div>
+                        <Button size="sm" className="w-full rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black" onClick={() => {
                           setCounterType(pendingOffer.terms?.buyer_commission_type || 'flat');
                           const amt = pendingOffer.terms?.buyer_commission_type === 'percentage'
                             ? pendingOffer.terms?.buyer_commission_percentage || 0
                             : pendingOffer.terms?.buyer_flat_fee || 0;
                           setCounterAmount(String(amt));
                           setShowCounterModal(true);
-                        }}>Counter</Button>
+                        }}>Propose Counter Offer</Button>
                       </>
                     ) : (
-                      <div className="text-xs text-[#808080]">Waiting for the other party to respond</div>
+                      <div className="text-xs text-[#808080] text-center py-2">Waiting for the other party to respond</div>
                     )}
                   </div>
                 </div>
