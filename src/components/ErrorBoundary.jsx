@@ -12,6 +12,7 @@ export default class ErrorBoundary extends React.Component {
 
   componentDidCatch(error, errorInfo) {
     console.error("UI Error:", error, errorInfo);
+    console.error("Full error stack:", error?.stack);
     this.setState({ errorInfo });
   }
 
