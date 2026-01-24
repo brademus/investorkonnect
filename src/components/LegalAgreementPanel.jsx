@@ -715,8 +715,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     ) : (
                       <div className="text-xs text-[#808080]">Waiting for the other party to respond</div>
                     )}
-                </div>
-              )}
                   </div>
                 </div>
               </div>
