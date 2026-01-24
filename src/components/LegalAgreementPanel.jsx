@@ -480,6 +480,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       ]);
 
       // Clear the "just accepted" flag AFTER successful reload
+      justAcceptedCounterRef.current = false;
       setJustAcceptedCounter(false);
       setShowGenerateModal(false);
       if (onUpdate) onUpdate();
