@@ -689,7 +689,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Pending Counter Offer panel */}
-            {pendingOffer && pendingOffer.status === 'pending' && !justAcceptedCounter && (
+            {pendingOffer && pendingOffer.status === 'pending' && (
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
