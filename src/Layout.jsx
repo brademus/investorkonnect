@@ -242,21 +242,18 @@ function LayoutContent({ children }) {
           <MessageSquare className="w-6 h-6 text-black" />
         </Link>
       )}
-
-
-
-      </div>
-      );
-      }
+    </div>
+  );
+}
 
 export default function Layout({ children, currentPageName }) {
-        return (
-          <QueryClientProvider client={queryClient}>
-            <WizardProvider>
-              <ErrorBoundary>
-                <LayoutContent>{children}</LayoutContent>
-              </ErrorBoundary>
-            </WizardProvider>
-          </QueryClientProvider>
-        );
-      }
+  return (
+    <QueryClientProvider client={queryClient}>
+      <WizardProvider>
+        <ErrorBoundary>
+          <LayoutContent>{children}</LayoutContent>
+        </ErrorBoundary>
+      </WizardProvider>
+    </QueryClientProvider>
+  );
+}
