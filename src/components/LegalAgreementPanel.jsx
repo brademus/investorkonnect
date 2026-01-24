@@ -154,6 +154,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
   const termsMismatch = (() => {
     try {
+      // Don't show mismatch if we just regenerated - investor is about to sign
+      if (justAcceptedCounter) return false;
+      
       const t = activeDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
       if (!t || !a) return false;
