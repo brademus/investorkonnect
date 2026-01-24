@@ -662,12 +662,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </div>
             )}
 
-            {/* Key Terms (from deal) - show to investor only */}
-            {activeDeal?.proposed_terms && isInvestor && (
+            {/* Key Terms (from deal) - show to both investor and agent */}
+            {activeDeal?.proposed_terms && (isInvestor || isAgent) && (
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
-                  {isAgent && !isFullySigned && agreement && (
+                  {!isFullySigned && agreement && (
                       <Button
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
