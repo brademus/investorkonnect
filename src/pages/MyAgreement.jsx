@@ -167,11 +167,12 @@ export default function MyAgreement() {
         </div>
 
         <LegalAgreementPanel
-          deal={deal}
-          profile={profile}
-          dealId={deal?.id || dealId}
-          allowGenerate={true}
-          onUpdate={async () => {
+           deal={deal}
+           profile={profile}
+           dealId={deal?.id || dealId}
+           allowGenerate={true}
+           hideRegenerateButton={true}
+           onUpdate={async () => {
             // Refresh local deal
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
             const dataDeal = res?.data?.deal || res?.data || deal;
