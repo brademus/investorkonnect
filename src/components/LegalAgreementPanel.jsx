@@ -147,6 +147,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     try {
       const t = activeDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
+      console.log('[LegalAgreementPanel] termsMismatch calc:', { t, a, justAcceptedCounter });
       if (!t || !a) return false;
       if (t.buyer_commission_type === 'percentage') {
         return !(a.compensation_model === 'COMMISSION_PCT' && Number(a.commission_percentage || 0) === Number(t.buyer_commission_percentage || 0));
