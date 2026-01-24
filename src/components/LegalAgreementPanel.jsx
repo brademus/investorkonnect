@@ -251,18 +251,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
     loadOffers();
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates - trigger immediately on any event
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id !== effectiveDealId) return;
       if (!mounted) return;
+      if (event?.data?.deal_id !== effectiveDealId) return;
       
-      if (event.type === 'create' || event.type === 'update') {
+      console.log('[LegalAgreementPanel] CounterOffer event:', event.type, event.data?.id, event.data?.status);
+      
+      // On create: immediately show if pending
+      if (event.type === 'create') {
         if (event.data?.status === 'pending') {
-          console.log('[LegalAgreementPanel] Pending offer received:', event.data);
+          console.log('[LegalAgreementPanel] New pending offer received instantly:', event.data.id);
           setPendingOffer(event.data);
-        } else {
-          loadOffers();
         }
+        return;
+      }
+      
+      // On update: reload to get latest state
+      if (event.type === 'update') {
+        loadOffers();
+        return;
       }
     });
 
