@@ -226,23 +226,28 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!effectiveDealId) return;
 
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      console.log('[LegalAgreementPanel] Counter offer event:', event);
-      if (event?.data?.deal_id !== effectiveDealId) return;
+      console.log('[LegalAgreementPanel] Counter offer event for deal', effectiveDealId, ':', event);
+      if (event?.data?.deal_id !== effectiveDealId) {
+        console.log('[LegalAgreementPanel] Ignoring event - deal_id mismatch');
+        return;
+      }
 
       // Whenever a counter offer is created or updated, reload immediately
       if (event.type === 'create' || event.type === 'update') {
-        console.log('[LegalAgreementPanel] Reloading counter offers after', event.type);
+        console.log('[LegalAgreementPanel] Reloading counter offers after', event.type, 'event data:', event.data);
         // Force immediate state update with new data
         if (event.data && event.data.status === 'pending') {
+          console.log('[LegalAgreementPanel] Setting pending offer from event:', event.data);
           setPendingOffer(event.data);
         } else {
+          console.log('[LegalAgreementPanel] Calling loadLatestOffer');
           loadLatestOffer();
         }
       }
     });
 
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
-  }, [effectiveDealId]);
+  }, [effectiveDealId, loadLatestOffer]);
 
   // Ensure we load counter offers on mount and refresh periodically
   useEffect(() => {
