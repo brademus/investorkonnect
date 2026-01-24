@@ -912,7 +912,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 )
               )}
 
-              {isInvestor && !agreement.investor_signed_at && (termsMismatch || justAcceptedCounter) && (
+              {isInvestor && !agreement?.investor_signed_at && (termsMismatch || justAcceptedCounter) && (
                 <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
                   Regenerate Agreement
                 </Button>
