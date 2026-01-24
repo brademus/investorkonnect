@@ -147,26 +147,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     [agreement?.investor_signed_at, agreement?.agent_signed_at, agreement?.status]
   );
 
-  // Keep freshDeal in sync with deal prop updates
-  useEffect(() => {
-    if (deal && deal.id === effectiveDealId) {
-      setFreshDeal(prev => prev?.id === deal.id ? { ...prev, ...deal } : deal);
-    }
-  }, [deal, effectiveDealId]);
-
-  // Subscribe to Deal updates to get fresh terms immediately
-  useEffect(() => {
-    if (!effectiveDealId) return;
-    
-    const unsubscribe = base44.entities.Deal.subscribe((event) => {
-      if (event?.data?.id === effectiveDealId && event.type === 'update') {
-        setFreshDeal(prev => ({ ...(prev || {}), ...event.data }));
-      }
-    });
-    
-    return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
-  }, [effectiveDealId]);
-
   const handleOpenGenerateModal = async () => {
     const genId = effectiveDealId;
     if (!genId) return;
