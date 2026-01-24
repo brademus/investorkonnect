@@ -207,20 +207,13 @@ function AgentDashboardContent() {
           )}
         </div>
 
-        {/* Active Deals */}
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-emerald-600" />
-            Active Deals
-          </h2>
-          
-          {activeDeals.length === 0 ? (
-            <div className="bg-white rounded-xl p-8 text-center border border-slate-200">
-              <FileText className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-              <p className="text-slate-600">No active deals yet</p>
-              <p className="text-sm text-slate-500 mt-1">Accept leads to start working on deals</p>
-            </div>
-          ) : (
+        {/* Active Deals merged into New Leads */}
+        {activeDeals.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-slate-900 mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-emerald-600" />
+              Active Deals
+            </h2>
             <div className="grid md:grid-cols-2 gap-4">
               {activeDeals.map((deal) => (
                 <div 
@@ -272,8 +265,8 @@ function AgentDashboardContent() {
                 </div>
               ))}
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );
