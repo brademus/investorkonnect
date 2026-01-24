@@ -794,6 +794,53 @@ function PipelineContent() {
               </div>
             )}
 
+            {/* New Contracts for Agents (fully signed deals) */}
+            {isAgent && deals.filter(d => d.is_fully_signed).length > 0 && (
+              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-2xl p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#10B981]">Active Contracts</h2>
+                    <p className="text-sm text-[#808080]">{deals.filter(d => d.is_fully_signed).length} signed deals in progress</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {deals.filter(d => d.is_fully_signed).map((deal) => (
+                   <div 
+                      key={deal.id}
+                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 cursor-pointer hover:border-[#10B981]/50 transition-colors"
+                      onClick={() => handleDealClick(deal)}
+                    >
+                       <div className="flex items-start justify-between mb-3">
+                         <div className="flex-1">
+                           <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
+                             {deal.property_address || `${deal.city}, ${deal.state}`}
+                           </h3>
+                           <div className="text-xs">
+                             <div className="text-[#34D399] font-semibold">{formatCurrency(deal.budget)}</div>
+                             {(() => {
+                               const { compLabel } = getPriceAndComp({ deal, room: rooms.find(r => r.deal_id === deal.id) });
+                               return compLabel ? <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div> : null;
+                             })()}
+                           </div>
+                         </div>
+                         <span className="text-[10px] bg-[#10B981]/20 text-[#10B981] px-2 py-1 rounded-full">Signed</span>
+                       </div>
+                       <Button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDealClick(deal);
+                          }}
+                          disabled={!agentSetupComplete}
+                          className="w-full bg-[#10B981] hover:bg-[#059669] text-white rounded-full text-xs py-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                          View Deal
+                        </Button>
+                     </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Pending Requests for Agents */}
             {isAgent && pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
