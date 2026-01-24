@@ -278,8 +278,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setShowCounterModal(false);
       setCounterAmount('');
       
-      // Immediately reload counter offers
-      await loadLatestOffer();
+      // Immediately update local state with the new offer
+      setPendingOffer(newOffer);
+      
+      // Then reload to ensure we have the latest data
+      setTimeout(() => loadLatestOffer(), 500);
       
       if (onUpdate) onUpdate();
       toast.success('Counter offer sent successfully');
