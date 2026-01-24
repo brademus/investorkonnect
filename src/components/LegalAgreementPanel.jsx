@@ -184,14 +184,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
-  // Load counter offers when component mounts or deal/agreement changes
+  // Load counter offers when component mounts or deal/agreement/profile changes
   useEffect(() => { 
     console.log('[LegalAgreementPanel] Component mounted/updated - Loading counter offers');
     console.log('[LegalAgreementPanel] State:', { effectiveDealId, hasAgreement: !!agreement, isInvestor, isAgent, profile_user_role: profile?.user_role });
-    if (effectiveDealId) {
+    if (effectiveDealId && profile) {
       loadLatestOffer();
     }
-  }, [effectiveDealId, agreement]);
+  }, [effectiveDealId, agreement, profile?.user_role]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
@@ -199,34 +199,67 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setShowCounterModal(false);
       return;
     }
-    if (!deal?.id) return;
-    const terms = counterType === 'flat'
-      ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
-      : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
-    await base44.entities.CounterOffer.create({ deal_id: deal.id, from_role: fromRole, terms, status: 'pending' });
-    setShowCounterModal(false);
-    setCounterAmount('');
-    await loadLatestOffer();
-    if (onUpdate) onUpdate();
-    toast.success('Counter offer sent');
+    if (!effectiveDealId) {
+      toast.error('Deal ID missing');
+      return;
+    }
+    try {
+      // First, mark any existing pending offers as superseded
+      if (pendingOffer) {
+        await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'superseded' });
+      }
+      
+      const terms = counterType === 'flat'
+        ? { buyer_commission_type: 'flat', buyer_flat_fee: Number(counterAmount || 0), buyer_commission_percentage: null }
+        : { buyer_commission_type: 'percentage', buyer_commission_percentage: Number(counterAmount || 0), buyer_flat_fee: null };
+      
+      await base44.entities.CounterOffer.create({ 
+        deal_id: effectiveDealId, 
+        from_role: fromRole, 
+        terms, 
+        status: 'pending' 
+      });
+      
+      setShowCounterModal(false);
+      setCounterAmount('');
+      await loadLatestOffer();
+      if (onUpdate) onUpdate();
+      toast.success('Counter offer sent successfully');
+    } catch (error) {
+      toast.error('Failed to send counter offer');
+      console.error('[LegalAgreementPanel] Error submitting counter:', error);
+    }
   };
 
   const acceptOffer = async () => {
     if (!pendingOffer) return;
-    const newTerms = { ...(deal?.proposed_terms || {}), ...(pendingOffer.terms || {}) };
-    await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
-    await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
-    await loadLatestOffer();
-    if (onUpdate) onUpdate();
-    toast.success('Terms updated');
+    try {
+      const newTerms = { ...(deal?.proposed_terms || {}), ...(pendingOffer.terms || {}) };
+      await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
+      await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
+      setPendingOffer(null);
+      await loadLatestOffer();
+      await loadAgreement();
+      if (onUpdate) onUpdate();
+      toast.success('Counter offer accepted - please regenerate agreement to continue');
+    } catch (error) {
+      toast.error('Failed to accept counter offer');
+      console.error('[LegalAgreementPanel] Error accepting offer:', error);
+    }
   };
 
   const denyOffer = async () => {
     if (!pendingOffer) return;
-    await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'declined', responded_by_role: isInvestor ? 'investor' : 'agent' });
-    await base44.functions.invoke('voidDeal', { deal_id: effectiveDealId });
-    toast.success('Deal voided');
-    if (onUpdate) onUpdate();
+    try {
+      await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'declined', responded_by_role: isInvestor ? 'investor' : 'agent' });
+      await base44.functions.invoke('voidDeal', { deal_id: effectiveDealId });
+      setPendingOffer(null);
+      toast.success('Counter offer declined - deal voided');
+      if (onUpdate) onUpdate();
+    } catch (error) {
+      toast.error('Failed to decline counter offer');
+      console.error('[LegalAgreementPanel] Error declining offer:', error);
+    }
   };
 
   const handleGenerate = async () => {
@@ -544,8 +577,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Pending Counter Offer panel */}
-            {console.log('[LegalAgreementPanel] Rendering - pendingOffer:', pendingOffer, 'hasPendingOffer:', hasPendingOffer)}
-            {pendingOffer && (
+            {pendingOffer && pendingOffer.status === 'pending' && (
               <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
@@ -567,7 +599,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {!isFullySigned && ((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
+                    {((isInvestor && pendingOffer.from_role === 'agent') || (isAgent && pendingOffer.from_role === 'investor')) ? (
                       <>
                         <Button size="sm" className="bg-[#10B981] hover:bg-[#059669]" onClick={acceptOffer}>Confirm</Button>
                         <Button size="sm" variant="destructive" onClick={denyOffer}>Deny</Button>
@@ -581,7 +613,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                         }}>Counter</Button>
                       </>
                     ) : (
-                      <div className="text-xs text-[#808080]">Waiting for the other party</div>
+                      <div className="text-xs text-[#808080]">Waiting for the other party to respond</div>
                     )}
                   </div>
                 </div>
