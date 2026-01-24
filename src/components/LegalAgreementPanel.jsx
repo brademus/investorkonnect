@@ -214,7 +214,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       // Whenever a counter offer is created or updated, reload immediately
       if (event.type === 'create' || event.type === 'update') {
         console.log('[LegalAgreementPanel] Reloading counter offers after', event.type);
-        loadLatestOffer();
+        // Force immediate state update with new data
+        if (event.data && event.data.status === 'pending') {
+          setPendingOffer(event.data);
+        } else {
+          loadLatestOffer();
+        }
       }
     });
 
