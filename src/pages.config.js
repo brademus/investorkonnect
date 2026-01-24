@@ -47,7 +47,6 @@ import Investors from './pages/Investors';
 import Logout from './pages/Logout';
 import MarketIntel from './pages/MarketIntel';
 import Matches from './pages/Matches';
-import MyAgreement from './pages/MyAgreement';
 import MyProfile from './pages/MyProfile';
 import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
@@ -72,6 +71,7 @@ import VerifyCallback from './pages/VerifyCallback';
 import VerifyStart from './pages/VerifyStart';
 import Vetting from './pages/Vetting';
 import Room from './pages/Room';
+import MyAgreement from './pages/MyAgreement';
 import __Layout from './Layout.jsx';
 
 
@@ -125,7 +125,6 @@ export const PAGES = {
     "Logout": Logout,
     "MarketIntel": MarketIntel,
     "Matches": Matches,
-    "MyAgreement": MyAgreement,
     "MyProfile": MyProfile,
     "NDA": NDA,
     "NewDeal": NewDeal,
@@ -150,6 +149,7 @@ export const PAGES = {
     "VerifyStart": VerifyStart,
     "Vetting": Vetting,
     "Room": Room,
+    "MyAgreement": MyAgreement,
 }
 
 export const pagesConfig = {

@@ -193,34 +193,34 @@ function PipelineContent() {
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
   // 2. Load Active Deals via Server-Side Access Control
-   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
-     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-     staleTime: Infinity,
-     gcTime: 30 * 60_000,
-    initialData: () => {
-      try {
-        if (!dealsCacheKey) return undefined;
-        const cached = JSON.parse(sessionStorage.getItem(dealsCacheKey) || '[]');
-        return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
-      } catch { return undefined; }
-    },
-    refetchOnMount: true,
-    queryFn: async () => {
-      if (!profile?.id) return [];
-      
-      // PRODUCTION: Server-side access control enforces role-based redaction
-      const response = await base44.functions.invoke('getPipelineDealsForUser');
-      const deals = response.data?.deals || [];
-      
-      // Filter out archived and deals with invalid addresses
-      return deals
-        .filter(d => d.status !== 'archived')
-        .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-    },
-    enabled: !!profile?.id,
-    refetchOnWindowFocus: false,
-    
-  });
+    const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
+      queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
+      staleTime: Infinity,
+      gcTime: 30 * 60_000,
+     initialData: () => {
+       try {
+         if (!dealsCacheKey) return undefined;
+         const cached = JSON.parse(sessionStorage.getItem(dealsCacheKey) || '[]');
+         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+       } catch { return undefined; }
+     },
+     refetchOnMount: 'stale',
+     queryFn: async () => {
+       if (!profile?.id) return [];
+
+       // PRODUCTION: Server-side access control enforces role-based redaction
+       const response = await base44.functions.invoke('getPipelineDealsForUser');
+       const deals = response.data?.deals || [];
+
+       // Filter out archived and deals with invalid addresses
+       return deals
+         .filter(d => d.status !== 'archived')
+         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+     },
+     enabled: !!profile?.id,
+     refetchOnWindowFocus: false,
+
+   });
 
   useEffect(() => {
     try {
