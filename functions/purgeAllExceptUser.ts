@@ -31,6 +31,7 @@ Deno.serve(async (req) => {
     for (const profile of otherProfiles) {
       console.log(`[Purge] Deleting profile: ${profile.id}`);
       await base44.asServiceRole.entities.Profile.delete(profile.id);
+      await new Promise(resolve => setTimeout(resolve, 150)); // Delay to avoid rate limits
     }
 
     // Delete all deals
