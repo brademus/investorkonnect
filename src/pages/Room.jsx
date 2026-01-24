@@ -1377,6 +1377,10 @@ ${dealContext}`;
           <Button
            onClick={(e) => {
              e.stopPropagation();
+             // Refresh profile and query caches before navigating to Pipeline
+             profile?.refresh?.();
+             queryClient.invalidateQueries({ queryKey: ['pipelineDeals'], exact: false });
+             queryClient.invalidateQueries({ queryKey: ['rooms'], exact: false });
              prefetchPipeline();
              navigate(createPageUrl("Pipeline"));
            }}
