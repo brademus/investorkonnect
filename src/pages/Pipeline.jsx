@@ -817,7 +817,7 @@ function PipelineContent() {
                         </div>
                         {(() => {
                           const enriched = rooms.find(r => r.id === room.id) || rooms.find(r => r.deal_id === room.deal_id) || room;
-                          const badge = getAgreementStatusLabel({ room: enriched, negotiation: enriched?.negotiation, role: 'agent' });
+                          const badge = getAgreementStatusLabel({ room: enriched, agreement: enriched?.agreement, negotiation: enriched?.negotiation, role: 'agent' });
                           return badge ? (
                             <span className={`text-[10px] border px-2 py-1 rounded-full ${badge.className}`}>
                               {badge.label}
@@ -1056,6 +1056,7 @@ function PipelineContent() {
                                           const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
                                           const badge = getAgreementStatusLabel({
                                             room: fullRoom,
+                                            agreement: fullRoom?.agreement,
                                             negotiation: fullRoom?.negotiation,
                                             role: isAgent ? 'agent' : 'investor'
                                           });
