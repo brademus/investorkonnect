@@ -244,6 +244,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
   }, [effectiveDealId]);
 
+  // Ensure we load counter offers on mount and refresh periodically
+  useEffect(() => {
+    if (!effectiveDealId) return;
+    loadLatestOffer();
+  }, [effectiveDealId]);
+
   // Refresh agreement when returning from DocuSign without signing
   useEffect(() => {
     const handleDocuSignReturn = async () => {
