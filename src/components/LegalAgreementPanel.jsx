@@ -219,23 +219,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const acceptOffer = async () => {
     if (!pendingOffer) return;
     try {
-      const newTerms = { ...(deal?.proposed_terms || {}), ...(pendingOffer.terms || {}) };
+      // CRITICAL: Only update buyer commission fields, preserve seller commission
+      const currentTerms = deal?.proposed_terms || {};
+      const newTerms = {
+        ...currentTerms,
+        buyer_commission_type: pendingOffer.terms?.buyer_commission_type,
+        buyer_commission_percentage: pendingOffer.terms?.buyer_commission_percentage,
+        buyer_flat_fee: pendingOffer.terms?.buyer_flat_fee,
+        // Seller commission stays untouched
+        seller_commission_type: currentTerms.seller_commission_type,
+        seller_commission_percentage: currentTerms.seller_commission_percentage,
+        seller_flat_fee: currentTerms.seller_flat_fee,
+      };
+      
       await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
       await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
       setPendingOffer(null);
-      
-      // Refresh deal data to get updated terms everywhere
-      if (effectiveDealId) {
-        try {
-          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
-          if (data && window.updateDealFromCounterOffer) {
-            window.updateDealFromCounterOffer(data);
-          }
-        } catch (_) {}
-      }
-      
       await loadLatestOffer();
-      await loadAgreement();
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - please regenerate agreement to continue');
     } catch (error) {
@@ -536,12 +536,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </div>
             )}
 
-            {/* Key Terms (from deal) */}
+            {/* Key Terms (from deal) - Always show counter button for agents */}
             {deal?.proposed_terms && (
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
-                  {isAgent && !isFullySigned && (
+                  {isAgent && !isFullySigned && agreement && (
                       <Button
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
