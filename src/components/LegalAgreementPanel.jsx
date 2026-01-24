@@ -519,10 +519,23 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         })()
       ]);
 
+      // Add small delay to ensure DocuSign updates are reflected
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Reload agreement again to get final synced state
+      await loadAgreement();
+
       // Clear the "just accepted" flag AFTER successful reload
       justAcceptedCounterRef.current = false;
       setJustAcceptedCounter(false);
       setShowGenerateModal(false);
+
+      // If regenerating after counter acceptance and investor, auto-sign
+      if (isInvestor && justAcceptedCounter) {
+        // Wait for state to settle, then trigger sign
+        setTimeout(() => handleSign('investor'), 800);
+      }
+
       if (onUpdate) onUpdate();
     } catch (error) {
       const errorMessage = error?.response?.data?.error || error?.message || String(error);
