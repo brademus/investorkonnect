@@ -57,10 +57,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         
         if (dealResponse?.data) setFreshDeal(dealResponse.data);
         setAgreement(agreementResponse?.data?.agreement || null);
-        setPendingOffer(offers?.[0] || null);
+        
+        if (offers && offers.length > 0) {
+          console.log('[LegalAgreementPanel] Found pending counter offer on initial load:', offers[0]);
+          setPendingOffer(offers[0]);
+        } else {
+          console.log('[LegalAgreementPanel] No pending counter offers found on initial load');
+          setPendingOffer(null);
+        }
         setLoading(false);
       } catch (e) {
-        console.error('[LegalAgreementPanel] Error during load:', e);
+        console.error('[LegalAgreementPanel] Error during initial load:', e);
         setLoading(false);
       }
     })();
