@@ -72,10 +72,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load agreement when deal is known
   useEffect(() => {
-    if (effectiveDealId && !agreement && !loading) {
+    if (effectiveDealId && !agreement) {
       loadAgreement();
     }
-  }, [effectiveDealId, agreement, loading]);
+  }, [effectiveDealId]);
 
   const handleOpenGenerateModal = async () => {
     const genId = effectiveDealId;
@@ -173,10 +173,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Load counter offers when component mounts
   useEffect(() => { 
-    if (effectiveDealId && !loading) {
+    if (effectiveDealId) {
       loadLatestOffer();
     }
-  }, [effectiveDealId, agreement, loading]);
+  }, [effectiveDealId]);
 
   const submitCounterOffer = async (fromRole) => {
     if ((agreement?.investor_signed_at && agreement?.agent_signed_at) || agreement?.status === 'fully_signed') {
