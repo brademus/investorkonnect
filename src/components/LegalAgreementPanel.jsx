@@ -730,9 +730,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                     {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
                   </Button>
                 </div>
-                <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                  Regenerate Agreement
-                </Button>
+                {!hideRegenerateButton && (
+                  <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                    Regenerate Agreement
+                  </Button>
+                )}
               </div>
             )}
             {termsMismatch && !justAcceptedCounter && (
