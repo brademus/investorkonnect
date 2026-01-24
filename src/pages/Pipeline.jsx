@@ -368,6 +368,18 @@ function PipelineContent() {
     return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
   }, [profile?.id, profile?.user_role, isAgent]);
 
+  // Real-time: refresh deals when new ones are created
+  useEffect(() => {
+    if (!profile?.id) return;
+    const unsubDeal = base44.entities.Deal.subscribe((event) => {
+      if (event?.type === 'create') {
+        console.log('[Pipeline] New deal created, refreshing...');
+        try { queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); } catch (_) {}
+      }
+    });
+    return () => { try { unsubDeal && unsubDeal(); } catch (_) {} };
+  }, [profile?.id, profile?.user_role, queryClient]);
+
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
