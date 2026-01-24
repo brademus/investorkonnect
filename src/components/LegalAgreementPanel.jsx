@@ -217,39 +217,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   }, [effectiveDealId]);
 
-  // Real-time subscriptions to counter offer changes
+  // Real-time subscriptions to counter offer changes + initial load
   useEffect(() => {
     if (!effectiveDealId) return;
 
-    const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      console.log('[LegalAgreementPanel] Counter offer event for deal', effectiveDealId, ':', event);
-      if (event?.data?.deal_id !== effectiveDealId) {
-        console.log('[LegalAgreementPanel] Ignoring event - deal_id mismatch');
-        return;
-      }
+    // Load on mount
+    loadLatestOffer();
 
-      // Whenever a counter offer is created or updated, reload immediately
+    // Subscribe to real-time updates
+    const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id !== effectiveDealId) return;
       if (event.type === 'create' || event.type === 'update') {
-        console.log('[LegalAgreementPanel] Reloading counter offers after', event.type, 'event data:', event.data);
-        // Force immediate state update with new data
-        if (event.data && event.data.status === 'pending') {
-          console.log('[LegalAgreementPanel] Setting pending offer from event:', event.data);
+        if (event.data?.status === 'pending') {
           setPendingOffer(event.data);
         } else {
-          console.log('[LegalAgreementPanel] Calling loadLatestOffer');
           loadLatestOffer();
         }
       }
     });
 
-    return () => { try { unsubscribe && unsubscribe(); } catch (_) {} };
-  }, [effectiveDealId, loadLatestOffer]);
-
-  // Ensure we load counter offers on mount and refresh periodically
-  useEffect(() => {
-    if (!effectiveDealId) return;
-    console.log('[LegalAgreementPanel] Loading counter offers on mount for deal:', effectiveDealId);
-    loadLatestOffer();
+    return () => { try { unsubscribe?.(); } catch (_) {} };
   }, [effectiveDealId, loadLatestOffer]);
 
   // Refresh agreement when returning from DocuSign without signing
