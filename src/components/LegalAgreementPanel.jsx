@@ -492,13 +492,25 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const handleSign = async (signatureType) => {
     try {
       if (signatureType === 'agent') {
-        if (hasPendingOffer || termsMismatch || !agreement?.investor_signed_at) {
-          toast.error(hasPendingOffer ? 'Counter offer pending. Wait for investor to confirm and regenerate.' : (termsMismatch ? 'Agreement out of date. Wait for investor to regenerate and sign.' : 'Investor must sign first.'));
+        if (hasPendingOffer) {
+          toast.error('Counter offer pending. Wait for investor to respond and regenerate the agreement.');
+          return;
+        }
+        if (termsMismatch) {
+          toast.error('Agreement out of date. Wait for investor to regenerate and sign.');
+          return;
+        }
+        if (!agreement?.investor_signed_at) {
+          toast.error('Investor must sign first.');
           return;
         }
       } else if (signatureType === 'investor') {
-        if (hasPendingOffer || termsMismatch) {
-          toast.error(hasPendingOffer ? 'Respond to the counter offer first.' : 'Regenerate the agreement to reflect current terms before signing.');
+        if (hasPendingOffer) {
+          toast.error('Respond to the counter offer first.');
+          return;
+        }
+        if (termsMismatch) {
+          toast.error('Regenerate the agreement to reflect current terms before signing.');
           return;
         }
       }
