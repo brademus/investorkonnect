@@ -695,32 +695,20 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           <div className="space-y-4">
             {/* If agreement exists but investor hasn't signed yet */}
             {!agreement.investor_signed_at && isInvestor && (
-              hasPendingOffer || termsMismatch || justAcceptedCounter ? (
-                <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4">
-                  <p className="text-sm text-[#FAFAFA] mb-1">
-                    {hasPendingOffer 
-                      ? 'An agent counter offer is pending. Review below and confirm or counter.' 
-                      : (justAcceptedCounter || termsMismatch)
-                      ? 'Terms changed! Please regenerate the agreement with the new terms before signing.' 
-                      : 'Review and generate the agreement.'}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button onClick={handleOpenGenerateModal} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                      Regenerate Agreement
-                    </Button>
-                  </div>
-                </div>
-              ) : (
-                <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4 mb-4">
+              <div className="space-y-3">
+                <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     {getStatusDisplay()}
                   </div>
-                  <p className="text-sm text-[#FAFAFA] mb-2">Your agreement is ready. Please sign to continue.</p>
+                  <p className="text-sm text-[#FAFAFA] mb-3">Your agreement is ready. Please sign to continue.</p>
                   <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                     {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
                   </Button>
                 </div>
-              )
+                <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                  Regenerate Agreement
+                </Button>
+              </div>
             )}
             {termsMismatch && !justAcceptedCounter && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
