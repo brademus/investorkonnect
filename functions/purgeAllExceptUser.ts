@@ -83,10 +83,24 @@ Deno.serve(async (req) => {
     const otherUsers = allUsers.filter(u => u.id !== preserveUserId);
     for (const u of otherUsers) {
       console.log(`[Purge] Deleting user: ${u.email}`);
-      try {
-        await base44.asServiceRole.entities.User.delete(u.id);
-      } catch (e) {
-        console.warn(`[Purge] Could not delete user ${u.id}: ${e.message}`);
+      let deleted = false;
+      let retries = 0;
+      
+      while (!deleted && retries < 5) {
+        try {
+          await base44.asServiceRole.entities.User.delete(u.id);
+          deleted = true;
+        } catch (e) {
+          if (e.message.includes('rate')) {
+            retries++;
+            const waitMs = Math.pow(2, retries) * 500;
+            console.log(`[Purge] Rate limit on user ${u.id}, waiting ${waitMs}ms before retry`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
+          } else {
+            console.warn(`[Purge] Could not delete user ${u.id}: ${e.message}`);
+            deleted = true; // Don't retry on non-rate-limit errors
+          }
+        }
       }
     }
 
