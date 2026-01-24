@@ -202,7 +202,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   };
 
-  const loadLatestOffer = async () => {
+  const loadLatestOffer = React.useCallback(async () => {
     if (!effectiveDealId) return;
     try {
       setLoadingOffer(true);
@@ -219,7 +219,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     } finally {
       setLoadingOffer(false);
     }
-  };
+  }, [effectiveDealId]);
 
   // Real-time subscriptions to counter offer changes
   useEffect(() => {
