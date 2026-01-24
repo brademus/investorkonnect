@@ -956,19 +956,51 @@ Deno.serve(async (req) => {
     };
     
     const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
-    const createResponse = await fetch(createUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(envelopeDefinition)
-    });
     
-    if (!createResponse.ok) {
-      const errorText = await createResponse.text();
-      console.error('[DocuSign] Envelope creation failed:', errorText);
-      throw new Error('Failed to create DocuSign envelope: ' + errorText);
+    // Retry logic for rate limits
+    let createResponse;
+    let retries = 0;
+    const maxRetries = 3;
+    
+    while (retries <= maxRetries) {
+      try {
+        createResponse = await fetch(createUrl, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(envelopeDefinition)
+        });
+        
+        if (createResponse.status === 429) {
+          // Rate limit - wait and retry
+          if (retries < maxRetries) {
+            const waitMs = Math.pow(2, retries) * 1000; // 1s, 2s, 4s
+            console.log(`[DocuSign] Rate limited, waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
+            await new Promise(resolve => setTimeout(resolve, waitMs));
+            retries++;
+            continue;
+          }
+        }
+        
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          console.error('[DocuSign] Envelope creation failed:', errorText);
+          throw new Error('Failed to create DocuSign envelope: ' + errorText);
+        }
+        
+        break; // Success, exit retry loop
+      } catch (err) {
+        if (retries < maxRetries && err.message.includes('rate')) {
+          const waitMs = Math.pow(2, retries) * 1000;
+          console.log(`[DocuSign] Error, waiting ${waitMs}ms before retry: ${err.message}`);
+          await new Promise(resolve => setTimeout(resolve, waitMs));
+          retries++;
+          continue;
+        }
+        throw err;
+      }
     }
     
     const envelope = await createResponse.json();
