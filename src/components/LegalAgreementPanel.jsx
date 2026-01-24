@@ -45,6 +45,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   // Derived gating flags
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
+  
+  // Debug logging
+  useEffect(() => {
+    console.log('[LegalAgreementPanel] State update:', {
+      effectiveDealId,
+      hasPendingOffer,
+      pendingOffer,
+      isInvestor,
+      isAgent,
+      profile_user_role: profile?.user_role,
+      agreement_exists: !!agreement,
+      investor_signed: agreement?.investor_signed_at,
+      agent_signed: agreement?.agent_signed_at
+    });
+  }, [pendingOffer, agreement, effectiveDealId, isInvestor, isAgent]);
+  
   const termsMismatch = (() => {
     try {
       const t = deal?.proposed_terms;
@@ -129,11 +145,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const loadLatestOffer = async () => {
-    if (!effectiveDealId) return;
+    if (!effectiveDealId) {
+      console.log('[LegalAgreementPanel] Cannot load offers - no effectiveDealId');
+      return;
+    }
     try {
+      console.log('[LegalAgreementPanel] Loading counter offers for deal:', effectiveDealId);
       setLoadingOffer(true);
       const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
+      console.log('[LegalAgreementPanel] Found counter offers:', offers);
       setPendingOffer(offers?.[0] || null);
+      if (offers?.[0]) {
+        console.log('[LegalAgreementPanel] Set pending offer:', offers[0]);
+      }
     } catch (e) {
       console.error('[LegalAgreementPanel] Error loading counter offer:', e);
     } finally {
