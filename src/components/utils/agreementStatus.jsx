@@ -131,8 +131,13 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     return { state: 'Sx', label: userRole === 'investor' ? 'Review and confirm new offer' : 'Waiting for investor', className: pickBadgeClasses(userRole === 'investor' ? 'blue' : 'amber') };
   }
 
-  // If the request was accepted, investor sees Waiting for agent (unless a counter/regen overrides)
-  if (userRole === 'investor' && ((room?.request_status || '').toLowerCase() === 'accepted' || (room?.agreement_status || '').toLowerCase() === 'investor_signed') && !isFullySigned) {
+  // Investor who hasn't signed yet should see "Sign contract" not "Waiting for agent"
+  if (userRole === 'investor' && !agreement?.investor_signed_at && !room?.investor_signed_at && (agreementStatus === 'draft' || agreementStatus === 'sent')) {
+    return { state: 'S0', label: 'Sign contract', className: pickBadgeClasses('blue') };
+  }
+
+  // If the request was accepted and investor has signed, investor sees Waiting for agent
+  if (userRole === 'investor' && ((room?.request_status || '').toLowerCase() === 'accepted' || (room?.agreement_status || '').toLowerCase() === 'investor_signed' || agreement?.investor_signed_at || room?.investor_signed_at) && !isFullySigned) {
     return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
   }
 
@@ -145,20 +150,17 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     };
   }
 
-  // Initial states (sent/draft): investor usually signs immediately.
+  // Initial states (sent/draft)
   if (agreementStatus === 'sent' || agreementStatus === 'draft') {
-    const req = (room?.request_status || '').toLowerCase();
-    const roomStatus = (room?.agreement_status || '').toLowerCase();
     const investorHasSigned = (
-      roomStatus === 'investor_signed' ||
+      (room?.agreement_status || '').toLowerCase() === 'investor_signed' ||
       agreementStatus === 'investor_signed' ||
       !!agreement?.investor_signed_at ||
       !!room?.investor_signed_at
     );
 
     if (userRole === 'investor') {
-      // Never show "Sign contract" on cards; default to Waiting for agent in initial states
-      return { state: 'S1', label: 'Waiting for agent', className: pickBadgeClasses('amber') };
+      return { state: investorHasSigned ? 'S1' : 'S0', label: investorHasSigned ? 'Waiting for agent' : 'Sign contract', className: pickBadgeClasses(investorHasSigned ? 'amber' : 'blue') };
     }
 
     // Agent view

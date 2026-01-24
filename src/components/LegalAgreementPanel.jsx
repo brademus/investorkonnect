@@ -38,7 +38,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
-  // Single coordinated initial load - always fetch fresh data
+  // Single coordinated initial load - load in background without showing loading state
   useEffect(() => {
     if (!effectiveDealId) return;
     
@@ -46,34 +46,20 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     
     (async () => {
       try {
-        console.log('[LegalAgreementPanel] Loading for deal:', effectiveDealId);
-        setLoading(true);
+        // Load all data in background without showing loading spinner
+        const [dealResponse, agreementResponse, offers] = await Promise.all([
+          base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }),
+          base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId }),
+          base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1)
+        ]);
         
-        // 1. Load deal data
-        const dealResponse = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
         if (!mounted) return;
-        if (dealResponse?.data) {
-          setFreshDeal(dealResponse.data);
-        }
         
-        // 2. Always fetch agreement from server to ensure we have latest
-        const agreementResponse = await base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId });
-        if (!mounted) return;
-        const loadedAgreement = agreementResponse?.data?.agreement || null;
-        console.log('[LegalAgreementPanel] Loaded agreement:', loadedAgreement);
-        setAgreement(loadedAgreement);
-        
-        // 3. Load counter offers
-        const offers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-        if (!mounted) return;
-        console.log('[LegalAgreementPanel] Loaded offers:', offers);
+        if (dealResponse?.data) setFreshDeal(dealResponse.data);
+        setAgreement(agreementResponse?.data?.agreement || null);
         setPendingOffer(offers?.[0] || null);
       } catch (e) {
         console.error('[LegalAgreementPanel] Error during load:', e);
-      } finally {
-        if (mounted) {
-          setLoading(false);
-        }
       }
     })();
     
@@ -600,7 +586,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         {!agreement && isAgent && (
           <div className="text-center py-8">
             <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
-            <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for Investor to Generate Agreement</p>
+            <p className="text-[#FAFAFA] font-semibold mb-2">Waiting for investor</p>
             <p className="text-xs text-[#808080]">The investor will create and sign the agreement first</p>
           </div>
         )}
@@ -771,7 +757,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               {!agreement.investor_signed_at && isAgent && (
                 <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                   <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Investor Signature</p>
+                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for investor</p>
                   <p className="text-xs text-[#808080] mt-1">You'll be notified when it's your turn to sign</p>
                 </div>
               )}
@@ -792,7 +778,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               {agreement.investor_signed_at && !agreement.agent_signed_at && isInvestor && (
                 <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                   <div className="flex items-center justify-center mb-2">{getStatusDisplay()}</div>
-                  <p className="text-sm text-[#FAFAFA] font-semibold">Investor Signed</p>
+                  <p className="text-sm text-[#FAFAFA] font-semibold">You signed</p>
                   <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
                 </div>
               )}
