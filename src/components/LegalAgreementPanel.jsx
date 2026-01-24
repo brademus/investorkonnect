@@ -468,7 +468,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
     generationInProgressRef.current = true;
     setGenerating(true);
-    
+
     // Auto-reset flag after 60s if generation hangs
     if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
     generationTimeoutRef.current = setTimeout(() => {
@@ -476,17 +476,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       setGenerating(false);
       console.warn('[LegalAgreementPanel] Generation timeout - flag auto-reset');
     }, 60000);
-    
+
     try {
-      // If regenerating after counter acceptance, void the old agreement first
-      if (justAcceptedCounter && agreement) {
-        console.log('[LegalAgreementPanel] Voiding old agreement before regenerating:', agreement.id);
-        try {
-          await base44.functions.invoke('voidDeal', { deal_id: genDealId });
-        } catch (e) {
-          console.warn('[LegalAgreementPanel] Failed to void agreement, continuing anyway:', e);
-        }
-      }
 
       let compensationModel = 'FLAT_FEE';
       if (exhibitA?.commission_type === 'percentage') compensationModel = 'COMMISSION_PCT';
