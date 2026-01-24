@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { createPageUrl } from '@/components/utils';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import LegalAgreementPanel from '@/components/LegalAgreementPanel';
+import LegalAgreementPanel from '@/components/LegalAgreementPanel.jsx';
 import { toast } from 'sonner';
 
 export default function MyAgreement() {
