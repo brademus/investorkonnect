@@ -291,10 +291,10 @@ function PipelineContent() {
   });
 
   // 3. Load Rooms (to link agents/status)
-  const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
-    queryKey: ['rooms', profile?.id],
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
+   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
+     queryKey: ['rooms', profile?.id],
+     staleTime: Infinity,
+     gcTime: 30 * 60_000,
     initialData: () => {
       try {
         if (!roomsCacheKey) return undefined;
