@@ -478,6 +478,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         toast.error(`Generate agreement failed: ${errorMessage}`);
       }
     } finally {
+      if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
       setGenerating(false);
       generationInProgressRef.current = false;
     }
