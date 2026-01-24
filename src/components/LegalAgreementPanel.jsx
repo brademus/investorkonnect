@@ -320,10 +320,13 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
-      setJustAcceptedCounter(true);
 
-      const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(() => ({}));
-      if (data) setFreshDeal(data);
+      // Reload fresh data to detect mismatch
+      const [dealData, agreementData] = await Promise.all([
+        base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }).catch(() => ({})),
+        loadAgreement()
+      ]);
+      if (dealData?.data) setFreshDeal(dealData.data);
 
       if (onUpdate) onUpdate();
       toast.success('Counter offer accepted - please regenerate agreement to continue');
