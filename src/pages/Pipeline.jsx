@@ -195,7 +195,7 @@ function PipelineContent() {
   // 2. Load Active Deals via Server-Side Access Control
   const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-    staleTime: 60_000,
+    staleTime: 0,
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     initialData: () => {
@@ -206,7 +206,7 @@ function PipelineContent() {
       } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     queryFn: async () => {
       if (!profile?.id) return [];
       
@@ -295,7 +295,7 @@ function PipelineContent() {
   // 3. Load Rooms (to link agents/status)
   const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['rooms', profile?.id],
-    staleTime: 60_000,
+    staleTime: 0,
     gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     initialData: () => {
@@ -306,7 +306,7 @@ function PipelineContent() {
       } catch { return undefined; }
     },
     initialDataUpdatedAt: 0,
-    refetchOnMount: true,
+    refetchOnMount: 'always',
     queryFn: async () => {
       if (!profile?.id) return [];
       const res = await base44.functions.invoke('listMyRoomsEnriched');
