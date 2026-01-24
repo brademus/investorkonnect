@@ -355,6 +355,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
+      setJustAcceptedCounter(true);
 
       // Reload fresh data to detect mismatch
       const [dealData, agreementData] = await Promise.all([
