@@ -26,6 +26,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterType, setCounterType] = useState('flat');
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
+
+  // Persist justAcceptedCounter across parent re-renders using a ref that survives state updates
+  const justAcceptedCounterRef = React.useRef(false);
   const [justAcceptedCounter, setJustAcceptedCounter] = useState(false);
 
   // Fresh deal state to ensure we always have latest terms
