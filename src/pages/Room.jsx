@@ -2800,12 +2800,14 @@ ${dealContext}`;
           </div>
         </div>
       )}
-      
-      <ContractWizard 
-        roomId={roomId} 
-        open={wizardOpen} 
-        onClose={() => setWizardOpen(false)} 
-      />
     </div>
+  </div>
+      
+  <ContractWizard 
+    roomId={roomId} 
+    open={wizardOpen} 
+    onClose={() => setWizardOpen(false)} 
+  />
+</div>
   );
 }
