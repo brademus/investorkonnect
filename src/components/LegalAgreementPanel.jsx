@@ -38,15 +38,17 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
-  // Single coordinated initial load - load in background without showing loading state
+  // Single coordinated initial load - show loading only on first mount
   useEffect(() => {
     if (!effectiveDealId) return;
     
     let mounted = true;
+    const isFirstLoad = !agreement;
     
     (async () => {
       try {
-        // Load all data in background without showing loading spinner
+        if (isFirstLoad) setLoading(true);
+        
         const [dealResponse, agreementResponse, offers] = await Promise.all([
           base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId }),
           base44.functions.invoke('getLegalAgreement', { deal_id: effectiveDealId }),
@@ -60,6 +62,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         setPendingOffer(offers?.[0] || null);
       } catch (e) {
         console.error('[LegalAgreementPanel] Error during load:', e);
+      } finally {
+        if (mounted && isFirstLoad) setLoading(false);
       }
     })();
     
