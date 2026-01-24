@@ -46,11 +46,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     }
   }, [initialAgreement]);
 
-  // Derived gating flags - use freshDeal instead of deal
+  // Derived gating flags - use freshDeal or fall back to deal
+  const activeDeal = freshDeal || deal;
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
   const termsMismatch = (() => {
     try {
-      const t = freshDeal?.proposed_terms;
+      const t = activeDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
       if (!t || !a) return false;
       if (t.buyer_commission_type === 'percentage') {
@@ -254,7 +255,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     if (!pendingOffer) return;
     try {
       // CRITICAL: Only update buyer commission fields, preserve seller commission
-      const currentTerms = freshDeal?.proposed_terms || deal?.proposed_terms || {};
+      const currentTerms = (freshDeal || deal)?.proposed_terms || {};
       const newTerms = {
         ...currentTerms,
         buyer_commission_type: pendingOffer.terms?.buyer_commission_type,
@@ -270,7 +271,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' });
       
       // Immediately update local state with new terms
-      setFreshDeal(prev => ({ ...prev, proposed_terms: newTerms }));
+      setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       
       setPendingOffer(null);
       await loadLatestOffer();
@@ -576,7 +577,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             )}
 
             {/* Key Terms (from deal) - Always show counter button for agents */}
-            {freshDeal?.proposed_terms && (
+            {activeDeal?.proposed_terms && (
               <div className="bg-[#0D0D0D] rounded-xl p-4 space-y-3 text-sm">
                 <div className="flex items-center justify-between">
                   <div className="text-[#808080]">Buyer Agent Compensation</div>
@@ -585,7 +586,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                       onClick={() => {
-                        const t = freshDeal.proposed_terms || {};
+                        const t = activeDeal.proposed_terms || {};
                         const tType = t.buyer_commission_type || 'flat';
                         setCounterType(tType);
                         setCounterAmount(String(tType === 'percentage' ? (t.buyer_commission_percentage || 0) : (t.buyer_flat_fee || 0)));
@@ -598,14 +599,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#808080]">Type</span>
-                  <span className="text-[#FAFAFA] capitalize">{freshDeal.proposed_terms.buyer_commission_type || '—'}</span>
+                  <span className="text-[#FAFAFA] capitalize">{activeDeal.proposed_terms.buyer_commission_type || '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-[#808080]">Amount</span>
                   <span className="text-[#FAFAFA]">
-                    {freshDeal.proposed_terms.buyer_commission_type === 'percentage'
-                      ? `${freshDeal.proposed_terms.buyer_commission_percentage || 0}%`
-                      : `$${(freshDeal.proposed_terms.buyer_flat_fee || 0).toLocaleString()}`}
+                    {activeDeal.proposed_terms.buyer_commission_type === 'percentage'
+                      ? `${activeDeal.proposed_terms.buyer_commission_percentage || 0}%`
+                      : `$${(activeDeal.proposed_terms.buyer_flat_fee || 0).toLocaleString()}`}
                   </span>
                 </div>
               </div>
