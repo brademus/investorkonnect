@@ -231,11 +231,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       console.log('[LegalAgreementPanel] Agreement loaded:', response?.data?.agreement);
       if (response?.data?.agreement) {
         setAgreement(response.data.agreement);
+        return response.data.agreement;
       } else {
         console.log('[LegalAgreementPanel] No agreement found, keeping existing');
+        return null;
       }
     } catch (error) {
       console.error('[LegalAgreementPanel] Error loading agreement:', error);
+      return null;
     }
   };
 
