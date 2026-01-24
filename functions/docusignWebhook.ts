@@ -219,6 +219,20 @@ Deno.serve(async (req) => {
     // Update agreement
     await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
     console.log('[DocuSign Webhook] Agreement updated:', agreement.id);
+    
+    // Update Room agreement_status to match final agreement status
+    try {
+      const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id });
+      if (rooms && rooms.length > 0) {
+        for (const room of rooms) {
+          await base44.asServiceRole.entities.Room.update(room.id, { 
+            agreement_status: updates.status || agreement.status 
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('[DocuSign Webhook] Warning: failed to update Room agreement_status', e?.message || e);
+    }
 
     // Persist signed agreement into Deal.documents so Shared Files can show it immediately
     try {
