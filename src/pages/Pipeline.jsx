@@ -805,7 +805,7 @@ function PipelineContent() {
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingRequests.filter(r => (r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed' || r.agreement_status === 'attorney_review_pending' || r.request_status === 'signed')).map((room) => (
+                  {pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).map((room) => (
                    <div 
                      key={`${room.deal_id}-${room.id}`}
                      className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
