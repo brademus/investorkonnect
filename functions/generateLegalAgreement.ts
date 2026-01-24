@@ -951,10 +951,10 @@ Deno.serve(async (req) => {
     
     const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
     
-    // Retry logic for rate limits
+    // Retry logic for rate limits with exponential backoff
     let createResponse;
     let retries = 0;
-    const maxRetries = 3;
+    const maxRetries = 5;
     
     while (retries <= maxRetries) {
       try {
@@ -968,10 +968,10 @@ Deno.serve(async (req) => {
         });
         
         if (createResponse.status === 429) {
-          // Rate limit - wait and retry
+          // Rate limit - wait and retry with longer backoff
           if (retries < maxRetries) {
-            const waitMs = Math.pow(2, retries) * 1000; // 1s, 2s, 4s
-            console.log(`[DocuSign] Rate limited, waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
+            const waitMs = Math.pow(2, retries + 1) * 1500; // 3s, 6s, 12s, 24s, 48s, 96s
+            console.log(`[DocuSign] Rate limited (429), waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
             await new Promise(resolve => setTimeout(resolve, waitMs));
             retries++;
             continue;
@@ -987,7 +987,7 @@ Deno.serve(async (req) => {
         break; // Success, exit retry loop
       } catch (err) {
         if (retries < maxRetries && err.message.includes('rate')) {
-          const waitMs = Math.pow(2, retries) * 1000;
+          const waitMs = Math.pow(2, retries + 1) * 1500;
           console.log(`[DocuSign] Error, waiting ${waitMs}ms before retry: ${err.message}`);
           await new Promise(resolve => setTimeout(resolve, waitMs));
           retries++;
