@@ -13,7 +13,7 @@ import { toast } from 'sonner';
 
 export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGenerate = false, initialAgreement = null, dealId = null }) {
   const [agreement, setAgreement] = useState(initialAgreement || null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(!initialAgreement);
   const [showGenerateModal, setShowGenerateModal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [signing, setSigning] = useState(false);
@@ -38,7 +38,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
 
-  // Single coordinated initial load - always load in background, never show loading spinner
+  // Single coordinated initial load - show loading only if no initial data
   useEffect(() => {
     if (!effectiveDealId) return;
     
@@ -57,8 +57,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         if (dealResponse?.data) setFreshDeal(dealResponse.data);
         setAgreement(agreementResponse?.data?.agreement || null);
         setPendingOffer(offers?.[0] || null);
+        setLoading(false);
       } catch (e) {
         console.error('[LegalAgreementPanel] Error during load:', e);
+        setLoading(false);
       }
     })();
     
@@ -521,7 +523,19 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return `${hours}h ${minutes}m remaining`;
   };
 
-  {/* No loading state - data loads in background */}
+  // Loading card - only shown on initial load
+  if (loading) {
+    return (
+      <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
+        <CardHeader className="border-b border-[#1F1F1F] py-4">
+          <CardTitle className="text-lg text-[#FAFAFA]">Legal Agreement</CardTitle>
+        </CardHeader>
+        <CardContent className="p-6">
+          <div className="text-center py-8 text-[#808080]">Loading agreement...</div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="ik-card p-0 overflow-hidden bg-[#0D0D0D] border-[#1F1F1F] text-[#FAFAFA]">
