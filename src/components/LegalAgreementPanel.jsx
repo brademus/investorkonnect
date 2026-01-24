@@ -778,9 +778,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
               </div>
             )}
 
-            {/* Pending Counter Offer panel - only show to investor */}
-            {pendingOffer && pendingOffer.status === 'pending' && isInvestor && (
-              <div className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 text-sm">
+            {/* Pending Counter Offer panel - only show to investor - prominent display */}
+             {pendingOffer && pendingOffer.status === 'pending' && isInvestor && (
+               <div className="bg-[#F59E0B]/5 border-2 border-[#F59E0B]/50 rounded-xl p-4 text-sm">
                 <div className="flex items-center justify-between mb-3">
                   <div className="text-[#FAFAFA] font-semibold">Proposed New Deal Terms</div>
                   <div className="text-xs text-[#808080]">from {pendingOffer.from_role}</div>
