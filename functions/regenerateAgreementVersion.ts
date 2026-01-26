@@ -163,6 +163,8 @@ Deno.serve(async (req) => {
       pdf_url: newAgreement.final_pdf_url,
       docusign_pdf_url: newAgreement.docusign_pdf_url,
       pdf_sha256: newAgreement.docusign_pdf_sha256,
+      investor_recipient_id: newAgreement.investor_recipient_id,
+      agent_recipient_id: newAgreement.agent_recipient_id,
       created_by_role: 'system'
     });
     
