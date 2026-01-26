@@ -436,12 +436,12 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xs"
                       onClick={() => {
-                        const terms = agreement.exhibit_a_terms || {};
+                        const terms = currentTerms || {};
                         const type = terms.buyer_commission_type || 'flat';
                         setCounterType(type);
                         const amt = type === 'percentage' 
-                          ? (terms.commission_percentage || 0)
-                          : (terms.flat_fee_amount || 0);
+                          ? (terms.buyer_commission_percentage || 0)
+                          : (terms.buyer_flat_fee || 0);
                         setCounterAmount(String(amt));
                         setCounterModal(true);
                       }}
@@ -452,7 +452,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                   )}
                 </div>
                 <div className="text-[#FAFAFA]">
-                  {formatCommission(agreement.exhibit_a_terms)}
+                  {formatCommission(currentTerms)}
                 </div>
               </div>
 
