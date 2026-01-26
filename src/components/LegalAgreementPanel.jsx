@@ -397,6 +397,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   const acceptOffer = async () => {
     if (!pendingOffer) return;
+    if (generationInProgressRef.current) {
+      toast.info('Please wait...');
+      return;
+    }
+
     try {
       const currentTerms = (freshDeal || deal)?.proposed_terms || {};
       const newTerms = {
@@ -424,12 +429,63 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       // Auto-regenerate for investor
       if (isInvestor) {
         toast.success('Counter accepted - regenerating agreement...');
-        setTimeout(() => handleOpenGenerateModal(), 500);
+        
+        // Auto-generate agreement directly
+        generationInProgressRef.current = true;
+        setGenerating(true);
+
+        if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
+        generationTimeoutRef.current = setTimeout(() => {
+          generationInProgressRef.current = false;
+          setGenerating(false);
+        }, 90000);
+
+        try {
+          let compensationModel = 'FLAT_FEE';
+          if (newTerms.buyer_commission_type === 'percentage') compensationModel = 'COMMISSION_PCT';
+
+          const derivedExhibitA = {
+            compensation_model: compensationModel,
+            flat_fee_amount: newTerms.buyer_flat_fee || 0,
+            commission_percentage: newTerms.buyer_commission_percentage || 0,
+            transaction_type: activeDeal?.transaction_type || 'ASSIGNMENT',
+            agreement_length_days: activeDeal?.proposed_terms?.agreement_length || 180,
+            termination_notice_days: 30,
+            buyer_commission_type: newTerms.buyer_commission_type,
+            buyer_commission_amount: newTerms.buyer_commission_percentage || newTerms.buyer_flat_fee,
+          };
+
+          const response = await base44.functions.invoke('generateLegalAgreement', {
+            deal_id: effectiveDealId,
+            exhibit_a: derivedExhibitA,
+            use_buyer_terms: true,
+          });
+
+          if (response.data?.error) {
+            toast.error(response.data.error);
+            return;
+          }
+
+          toast.success('Agreement regenerated - ready to sign');
+          
+          // Reload data
+          await loadAgreement();
+          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
+          if (data) setFreshDeal(data);
+
+          if (onUpdate) onUpdate();
+        } catch (genError) {
+          const errorMessage = genError?.response?.data?.error || genError?.message || String(genError);
+          toast.error('Failed to regenerate: ' + errorMessage, { duration: 5000 });
+        } finally {
+          if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
+          setGenerating(false);
+          generationInProgressRef.current = false;
+        }
       } else {
         toast.success('Counter accepted - waiting for investor to regenerate');
+        if (onUpdate) onUpdate();
       }
-
-      if (onUpdate) onUpdate();
     } catch (error) {
       toast.error('Failed to accept counter offer');
       console.error('[LegalAgreementPanel] Error accepting offer:', error);
