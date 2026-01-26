@@ -60,25 +60,47 @@ export default function MyAgreement() {
         const status = String(ag?.status || '').toLowerCase();
         const alreadySigned = status === 'investor_signed' || status === 'fully_signed' || !!ag?.investor_signed_at;
         if (alreadySigned) {
+          // Ensure the room is created before redirecting
           try {
             const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
             const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
             if (agentProfileId) {
               try {
+                // sendDealRequest will create the room if it doesn't exist
                 await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId });
-                const rooms = await base44.entities.Room.filter({ deal_id: dealId, agentId: agentProfileId }).catch(() => []);
-                if (rooms?.[0]) {
-                  try { await base44.entities.Room.update(rooms[0].id, { agreement_status: 'investor_signed' }); } catch (_) {}
-                  try { await base44.entities.Activity.create({ type: 'agent_locked_in', deal_id: dealId, room_id: rooms[0].id, actor_id: profile?.id, actor_name: profile?.full_name || profile?.email, message: 'Investor signed agreement' }); } catch (_) {}
+              } catch (roomErr) {
+                // 409 means room already exists - that's fine
+                if (roomErr?.response?.status !== 409) {
+                  console.error('[MyAgreement] Room creation error:', roomErr);
                 }
-              } catch (_) {}
+              }
+              
+              // Update room agreement status
+              const rooms = await base44.entities.Room.filter({ deal_id: dealId, agentId: agentProfileId }).catch(() => []);
+              if (rooms?.[0]) {
+                try { 
+                  await base44.entities.Room.update(rooms[0].id, { 
+                    agreement_status: ag?.status || 'investor_signed' 
+                  }); 
+                } catch (_) {}
+                try { 
+                  await base44.entities.Activity.create({ 
+                    type: 'agent_locked_in', 
+                    deal_id: dealId, 
+                    room_id: rooms[0].id, 
+                    actor_id: profile?.id, 
+                    actor_name: profile?.full_name || profile?.email, 
+                    message: 'Investor signed agreement' 
+                  }); 
+                } catch (_) {}
+              }
             }
           } catch (_) {}
           navigate(createPageUrl('Pipeline'));
         }
       } catch (_) {}
     })();
-  }, [dealId]);
+  }, [dealId, profile?.id, profile?.full_name, profile?.email]);
 
   // After DocuSign return with ?signed=1, verify investor signed and redirect to Pipeline
   useEffect(() => {
@@ -173,37 +195,11 @@ export default function MyAgreement() {
            allowGenerate={true}
            hideRegenerateButton={true}
            onUpdate={async () => {
+            console.log('[MyAgreement.onUpdate] Agreement update triggered');
             // Refresh local deal
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
             const dataDeal = res?.data?.deal || res?.data || deal;
             setDeal(dataDeal);
-            // If investor just signed, send to Pipeline
-            try {
-              const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.id });
-              const ag = agRes?.data?.agreement;
-              if (ag?.investor_signed_at && isInvestor) {
-                // After investor signs, create/send room to the selected agent
-                try {
-                  const agentProfileId = (res?.data?.agent_id) || deal.agent_id || sessionStorage.getItem('selectedAgentId');
-                  if (agentProfileId) {
-                    try {
-                      await base44.functions.invoke('sendDealRequest', { deal_id: deal.id, agent_profile_id: agentProfileId });
-                      const rooms = await base44.entities.Room.filter({ deal_id: deal.id, agentId: agentProfileId }).catch(() => []);
-                      if (rooms?.[0]) {
-                        try { await base44.entities.Room.update(rooms[0].id, { agreement_status: 'investor_signed' }); } catch (_) {}
-                        try { await base44.entities.Activity.create({ type: 'agent_locked_in', deal_id: deal.id, room_id: rooms[0].id, actor_id: profile?.id, actor_name: profile?.full_name || profile?.email, message: 'Investor signed agreement' }); } catch (_) {}
-                      }
-                    } catch (e) {
-                      // Ignore conflict if already created
-                    }
-                  }
-                } catch (_) {}
-
-                try { await base44.entities.Deal.update(deal.id, { status: 'active' }); } catch (_) {}
-                toast.success('Agreement signed. Redirecting to your pipeline...');
-                setTimeout(() => navigate(createPageUrl('Pipeline')), 800);
-              }
-            } catch (_) {}
           }}
         />
 
