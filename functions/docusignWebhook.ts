@@ -110,11 +110,90 @@ Deno.serve(async (req) => {
       return Response.json({ received: true });
     }
     
-    // Find agreement by envelope ID
+    // Find agreement by envelope ID (check both AgreementVersion and LegalAgreement)
     const base44 = createClient(Deno.env.get('BASE44_APP_ID'), {
       serviceRoleKey: Deno.env.get('BASE44_SERVICE_ROLE_KEY')
     });
     
+    // Try AgreementVersion first (new system)
+    let versions = await base44.asServiceRole.entities.AgreementVersion.filter({ 
+      docusign_envelope_id: envelopeId 
+    });
+    
+    if (versions && versions.length > 0) {
+      // Update AgreementVersion
+      const version = versions[0];
+      console.log('[DocuSign Webhook] Found AgreementVersion:', version.id);
+      
+      const eventType = event.event || event.data?.envelopeStatus;
+      console.log('[DocuSign Webhook] Processing event:', eventType, 'for version:', version.id);
+      
+      const updates = {
+        docusign_status: eventType
+      };
+      
+      switch (eventType) {
+        case 'sent':
+        case 'delivered':
+          updates.status = 'awaiting_investor_signature';
+          break;
+          
+        case 'signing_complete':
+        case 'completed':
+          const recipients = event.data?.envelopeRecipients || [];
+          const investorRecipient = recipients.find(r => r.recipientId === version.investor_recipient_id);
+          const agentRecipient = recipients.find(r => r.recipientId === version.agent_recipient_id);
+          
+          const investorSigned = investorRecipient?.status === 'completed';
+          const agentSigned = agentRecipient?.status === 'completed';
+          
+          if (investorSigned && !version.investor_signed_at) {
+            updates.investor_signed_at = new Date().toISOString();
+          }
+          
+          if (agentSigned && !version.agent_signed_at) {
+            updates.agent_signed_at = new Date().toISOString();
+          }
+          
+          if (investorSigned && agentSigned) {
+            updates.status = 'fully_signed';
+            
+            // Download signed PDF
+            try {
+              const pdfBuffer = await downloadSignedPdf(base44, envelopeId);
+              const pdfHash = await sha256(pdfBuffer);
+              
+              const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+              const file = new File([blob], `agreement_${version.id}_signed.pdf`);
+              const uploadResponse = await base44.integrations.Core.UploadFile({ file });
+              
+              updates.signed_pdf_url = uploadResponse.file_url;
+              updates.pdf_sha256 = pdfHash;
+              
+              console.log('[DocuSign Webhook] Signed PDF uploaded:', uploadResponse.file_url);
+            } catch (error) {
+              console.error('[DocuSign Webhook] Failed to download/upload signed PDF:', error);
+            }
+          } else if (investorSigned) {
+            updates.status = 'awaiting_agent_signature';
+          } else if (agentSigned) {
+            updates.status = 'awaiting_investor_signature';
+          }
+          break;
+          
+        case 'voided':
+        case 'declined':
+          updates.status = 'voided';
+          break;
+      }
+      
+      await base44.asServiceRole.entities.AgreementVersion.update(version.id, updates);
+      console.log('[DocuSign Webhook] AgreementVersion updated:', version.id);
+      
+      return Response.json({ received: true });
+    }
+    
+    // Fallback to legacy LegalAgreement
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
       docusign_envelope_id: envelopeId 
     });
