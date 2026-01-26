@@ -26,22 +26,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const [counterType, setCounterType] = useState('flat');
   const [counterAmount, setCounterAmount] = useState('');
   const [pendingOffer, setPendingOffer] = useState(null);
-
-  // Persist justAcceptedCounter across parent re-renders using a ref that survives state updates
-  const justAcceptedCounterRef = React.useRef(false);
-  const [justAcceptedCounter, setJustAcceptedCounter] = useState(false);
-
-  // Fresh deal state to ensure we always have latest terms
   const [freshDeal, setFreshDeal] = useState(deal || null);
-  
-  // Track current deal ID to detect changes
   const [currentDealId, setCurrentDealId] = useState(null);
 
   // Generation state tracking
-   const generationInProgressRef = React.useRef(false);
-   const generationTimeoutRef = React.useRef(null);
-   const generationCooldownRef = React.useRef(0);
-   const [generationCooldown, setGenerationCooldown] = useState(0);
+  const generationInProgressRef = React.useRef(false);
+  const generationTimeoutRef = React.useRef(null);
 
   // Effective deal ID (works even if full deal object isn't loaded yet)
   const effectiveDealId = deal?.id || deal?.deal_id || dealId;
@@ -125,16 +115,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
     return () => { mounted = false; };
   }, [effectiveDealId]);
 
-  // Keep freshDeal in sync with deal prop updates, preserve justAcceptedCounter flag
+  // Keep freshDeal in sync with deal prop updates
   useEffect(() => {
     if (deal && deal.id === effectiveDealId) {
       setFreshDeal(prev => prev?.id === deal.id ? { ...prev, ...deal } : deal);
-      // Restore justAcceptedCounter from ref if state was lost due to parent re-render
-      if (justAcceptedCounterRef.current && !justAcceptedCounter) {
-        setJustAcceptedCounter(true);
-      }
     }
-  }, [deal, effectiveDealId, justAcceptedCounter]);
+  }, [deal, effectiveDealId]);
 
   // Subscribe to Deal updates to get fresh terms immediately
   useEffect(() => {
@@ -154,9 +140,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const hasPendingOffer = !!pendingOffer && pendingOffer.status === 'pending';
   const termsMismatch = (() => {
     try {
-      // Don't show mismatch if we just regenerated - investor is about to sign
-      if (justAcceptedCounter) return false;
-      
       const t = activeDeal?.proposed_terms;
       const a = agreement?.exhibit_a_terms;
       if (!t || !a) return false;
@@ -257,26 +240,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
     let mounted = true;
 
-    // Load initial offers (both pending and recently accepted)
+    // Load initial pending offers only
     const loadOffers = async () => {
       try {
         const pendingOffers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'pending' }, '-created_date', 1);
-        const acceptedOffers = await base44.entities.CounterOffer.filter({ deal_id: effectiveDealId, status: 'accepted' }, '-updated_date', 1);
-
-        if (mounted) {
-          // Show pending offer if exists, otherwise show accepted offer to trigger regenerate
-          if (pendingOffers?.length > 0) {
-            console.log('[LegalAgreementPanel] Loaded pending offer:', pendingOffers[0].id);
-            setPendingOffer(pendingOffers[0]);
-          } else if (acceptedOffers?.length > 0) {
-            // Set accepted offer to trigger regenerate flag
-            console.log('[LegalAgreementPanel] Loaded accepted offer, triggering regenerate');
-            justAcceptedCounterRef.current = true;
-            setJustAcceptedCounter(true);
-            setPendingOffer(null);
-          } else {
-            setPendingOffer(null);
-          }
+        if (mounted && pendingOffers?.length > 0) {
+          console.log('[LegalAgreementPanel] Loaded pending offer:', pendingOffers[0].id);
+          setPendingOffer(pendingOffers[0]);
+        } else if (mounted) {
+          setPendingOffer(null);
         }
       } catch (e) {
         console.error('[LegalAgreementPanel] Error loading counter offers:', e);
@@ -302,19 +274,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         return;
       }
 
-      // On update: check if it changed to accepted or declined/superseded
+      // On update: check if it changed to declined/superseded
       if (event.type === 'update') {
         const status = event.data?.status;
         if (status === 'accepted') {
-          console.log('[LegalAgreementPanel] Offer accepted, triggering regenerate:', event.data.id);
-          justAcceptedCounterRef.current = true;
-          setJustAcceptedCounter(true);
+          console.log('[LegalAgreementPanel] Offer accepted, clearing:', event.data.id);
           setPendingOffer(null);
         } else if (status === 'declined' || status === 'superseded') {
           console.log('[LegalAgreementPanel] Offer declined/superseded, clearing:', event.data.id);
           setPendingOffer(null);
         } else if (status === 'pending') {
-          // If still pending, ensure we show it
           setPendingOffer(event.data);
         }
         return;
@@ -440,20 +409,27 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         seller_flat_fee: currentTerms.seller_flat_fee,
       };
 
-      // Update deal with new terms and mark counter as accepted
-      await Promise.all([
-        base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms }),
-        base44.entities.CounterOffer.update(pendingOffer.id, { status: 'accepted', responded_by_role: isInvestor ? 'investor' : 'agent' })
-      ]);
+      // Mark counter as accepted and update deal
+      await base44.entities.CounterOffer.update(pendingOffer.id, { 
+        status: 'accepted', 
+        responded_by_role: isInvestor ? 'investor' : 'agent' 
+      });
+      
+      await base44.entities.Deal.update(effectiveDealId, { proposed_terms: newTerms });
 
-      // Update local state with new terms - investor always needs to regenerate
+      // Update local state
       setFreshDeal(prev => ({ ...(prev || deal), proposed_terms: newTerms }));
       setPendingOffer(null);
-      justAcceptedCounterRef.current = true;
-      setJustAcceptedCounter(true);  // Trigger re-render
+
+      // Auto-regenerate for investor
+      if (isInvestor) {
+        toast.success('Counter accepted - regenerating agreement...');
+        setTimeout(() => handleOpenGenerateModal(), 500);
+      } else {
+        toast.success('Counter accepted - waiting for investor to regenerate');
+      }
 
       if (onUpdate) onUpdate();
-      toast.success('Counter offer accepted - investor must regenerate the agreement with the new terms');
     } catch (error) {
       toast.error('Failed to accept counter offer');
       console.error('[LegalAgreementPanel] Error accepting offer:', error);
@@ -463,10 +439,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   const denyOffer = async () => {
     if (!pendingOffer) return;
     try {
-      await base44.entities.CounterOffer.update(pendingOffer.id, { status: 'declined', responded_by_role: isInvestor ? 'investor' : 'agent' });
-      await base44.functions.invoke('voidDeal', { deal_id: effectiveDealId });
+      await base44.entities.CounterOffer.update(pendingOffer.id, { 
+        status: 'declined', 
+        responded_by_role: isInvestor ? 'investor' : 'agent' 
+      });
       setPendingOffer(null);
-      toast.success('Counter offer declined - deal voided');
+      toast.success('Counter offer declined');
       if (onUpdate) onUpdate();
     } catch (error) {
       toast.error('Failed to decline counter offer');
@@ -475,34 +453,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
   };
 
   const handleGenerate = async () => {
-    // Prevent simultaneous generations
     if (generationInProgressRef.current) {
-      toast.info('Generation already in progress. Please wait...');
-      return;
-    }
-
-    // Prevent rapid re-submissions (cooldown of 5 seconds)
-    if (generationCooldownRef.current > Date.now()) {
-      const remainingSeconds = Math.ceil((generationCooldownRef.current - Date.now()) / 1000);
-      toast.info(`Please wait ${remainingSeconds}s before regenerating again`);
+      toast.info('Generation in progress...');
       return;
     }
 
     const genDealId = resolvedDealId || effectiveDealId;
-    if (!genDealId) { toast.error('Missing deal ID — cannot generate agreement.'); return; }
-    if (!profile?.user_id) { toast.error('Missing user ID — cannot generate agreement.'); return; }
-    if (!profile?.user_role) { toast.error('Missing user role — cannot generate agreement.'); return; }
+    if (!genDealId) { toast.error('Missing deal ID'); return; }
 
     generationInProgressRef.current = true;
     setGenerating(true);
 
-    // Auto-reset flag after 60s if generation hangs
     if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
     generationTimeoutRef.current = setTimeout(() => {
       generationInProgressRef.current = false;
       setGenerating(false);
-      console.warn('[LegalAgreementPanel] Generation timeout - flag auto-reset');
-    }, 60000);
+    }, 90000);
 
     try {
 
@@ -553,31 +519,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       else toast.success('Agreement generated successfully');
 
       // Reload agreement and deal data
-      await Promise.all([
-        loadAgreement(),
-        (async () => {
-          const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genDealId });
-          if (data) setFreshDeal(data);
-        })()
-      ]);
+      const freshAgreement = await loadAgreement();
+      const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: genDealId });
+      if (data) setFreshDeal(data);
 
-      // Add small delay to ensure DocuSign updates are reflected
-      await new Promise(resolve => setTimeout(resolve, 500));
-
-      // Reload agreement again to get final synced state
-      await loadAgreement();
-
-      // Clear the "just accepted" flag AFTER successful reload
-      justAcceptedCounterRef.current = false;
-      setJustAcceptedCounter(false);
       setShowGenerateModal(false);
-
-      // If regenerating after counter acceptance and investor, auto-sign
-      if (isInvestor && justAcceptedCounter) {
-        // Wait for state to settle, then trigger sign
-        setTimeout(() => handleSign('investor'), 800);
-      }
-
+      
       if (onUpdate) onUpdate();
     } catch (error) {
       const errorMessage = error?.response?.data?.error || error?.message || String(error);
@@ -594,22 +541,6 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
       setGenerating(false);
       generationInProgressRef.current = false;
-      
-      // Set 5-second cooldown before next generation attempt
-      const cooldownUntil = Date.now() + 5000;
-      generationCooldownRef.current = cooldownUntil;
-      setGenerationCooldown(cooldownUntil);
-      
-      // Countdown timer
-      const countdownInterval = setInterval(() => {
-        const remaining = Date.now() < cooldownUntil;
-        if (!remaining) {
-          clearInterval(countdownInterval);
-          setGenerationCooldown(0);
-        } else {
-          setGenerationCooldown(cooldownUntil);
-        }
-      }, 100);
     }
   };
 
@@ -760,12 +691,12 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       </CardHeader>
 
       <CardContent className="p-6">
-         {/* PRIMARY: Pending Counter Offer Panel - Show FIRST if exists */}
+         {/* Pending Counter Offer Panel - Show to investor when there's a counter */}
          {pendingOffer && pendingOffer.status === 'pending' && isInvestor && !loading && (
            <div className="bg-[#0D0D0D] border-2 border-[#F59E0B]/50 rounded-xl p-5 mb-4">
              <div className="flex items-center justify-between mb-4">
                <h3 className="text-lg font-bold text-[#FAFAFA]">Proposed New Deal Terms</h3>
-               <span className="text-xs text-[#808080]">from {pendingOffer.from_role}</span>
+               <span className="text-xs text-[#808080]">from agent</span>
              </div>
              
              <div className="grid grid-cols-2 gap-4 mb-4">
@@ -788,8 +719,9 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                  size="lg" 
                  className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-semibold" 
                  onClick={acceptOffer}
+                 disabled={generating}
                >
-                 Accept
+                 Accept & Regenerate
                </Button>
                <Button 
                  size="lg" 
@@ -811,7 +743,7 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                    setShowCounterModal(true);
                  }}
                >
-                 Propose Counter Offer
+                 Counter Offer
                </Button>
              </div>
            </div>
@@ -819,38 +751,18 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
          {/* No agreement yet */}
          {!agreement ? (
-          // If pending counter exists, don't show "no agreement" - the counter panel above is primary
-          pendingOffer && pendingOffer.status === 'pending' && isInvestor ? (
-            <div className="text-center py-4 text-[#808080] text-sm">
-              Please respond to the counter offer above to continue
-            </div>
-          ) : isInvestor ? (
-            justAcceptedCounter ? (
-              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-5 text-center">
-                <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-3" />
-                <p className="text-[#FAFAFA] font-semibold mb-2">Counter Offer Accepted!</p>
-                <p className="text-sm text-[#808080] mb-4">Generate the agreement with the new terms to continue.</p>
-                <Button 
-                  onClick={handleOpenGenerateModal} 
-                  disabled={generating || generationCooldown > Date.now()}
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {generating ? 'Generating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Generate Agreement'}
-                </Button>
-              </div>
-            ) : (
+          pendingOffer && pendingOffer.status === 'pending' && isInvestor ? null : isInvestor ? (
               <div className="text-center py-8">
                 <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
                 <p className="text-[#808080] mb-4">No agreement generated yet</p>
                 <Button 
                   onClick={handleOpenGenerateModal}
-                  disabled={generating || generationCooldown > Date.now()}
+                  disabled={generating}
                   className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
                 >
-                  {generating ? 'Generating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Generate Agreement'}
+                  {generating ? 'Generating...' : 'Generate Agreement'}
                 </Button>
               </div>
-            )
           ) : isAgent ? (
             <div className="text-center py-8">
               <Clock className="w-12 h-12 text-[#F59E0B] mx-auto mb-4" />
@@ -865,16 +777,14 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ) : (
           /* Agreement exists */
           <div className="space-y-4">
-            {/* Terms Mismatch Warning - show prominently at top */}
-            {termsMismatch && !justAcceptedCounter && (
+            {/* Terms Mismatch Warning - investor needs to regenerate */}
+            {termsMismatch && isInvestor && !hasPendingOffer && !hideRegenerateButton && (
               <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
                 <div className="text-sm text-[#FAFAFA] font-semibold mb-1">Agreement out of date</div>
-                <div className="text-xs text-[#808080] mb-3">Terms changed. Investor must regenerate and sign before agent can sign.</div>
-                {isInvestor && !hideRegenerateButton && !hasPendingOffer && (
-                  <Button onClick={handleOpenGenerateModal} disabled={generating || generationCooldown > Date.now()} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                    {generating ? 'Regenerating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Regenerate Agreement'}
-                  </Button>
-                )}
+                <div className="text-xs text-[#808080] mb-3">Terms changed. Regenerate and sign before agent can sign.</div>
+                <Button onClick={handleOpenGenerateModal} disabled={generating} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold">
+                  {generating ? 'Regenerating...' : 'Regenerate Agreement'}
+                </Button>
               </div>
             )}
 
@@ -1004,10 +914,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </Button>
               )}
 
-              {/* Regenerate button for signed investors - show when they need to update agreement */}
-              {!isFullySigned && isInvestor && !hideRegenerateButton && !hasPendingOffer && agreement.investor_signed_at && (
-                <Button onClick={handleOpenGenerateModal} disabled={generating || generationCooldown > Date.now()} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold">
-                  {generating ? 'Regenerating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Regenerate Agreement'}
+              {/* Regenerate button - investor can regenerate anytime before agent signs */}
+              {!isFullySigned && isInvestor && !hideRegenerateButton && !hasPendingOffer && termsMismatch && (
+                <Button onClick={handleOpenGenerateModal} disabled={generating} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold">
+                  {generating ? 'Regenerating...' : 'Regenerate Agreement'}
                 </Button>
               )}
 
@@ -1145,8 +1055,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
               <div className="flex gap-3">
                 <Button variant="outline" onClick={() => setShowGenerateModal(false)} disabled={generating} className="flex-1">Cancel</Button>
-                <Button onClick={handleGenerate} disabled={generating || generationCooldown > Date.now()} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                  {generating ? 'Generating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Generate'}
+                <Button onClick={handleGenerate} disabled={generating} className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold">
+                  {generating ? 'Generating...' : 'Generate'}
                 </Button>
               </div>
             </div>
