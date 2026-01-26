@@ -197,7 +197,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, dealId = 
     setActionInProgress('signing');
     
     try {
-      const returnUrl = `/Room?dealId=${effectiveDealId}&tab=agreement&signed=1`;
+      const currentUrl = window.location.pathname;
+      const isInMyAgreement = currentUrl.includes('MyAgreement');
+      const params = new URLSearchParams(window.location.search);
+      const currentRoomId = params.get('roomId');
+      
+      const returnUrl = currentRoomId 
+        ? `/Room?roomId=${currentRoomId}&dealId=${effectiveDealId}&tab=agreement&signed=1`
+        : isInMyAgreement
+        ? `/MyAgreement?dealId=${effectiveDealId}&signed=1`
+        : `/Room?dealId=${effectiveDealId}&tab=agreement&signed=1`;
       
       const response = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: state.agreement.id,

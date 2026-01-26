@@ -53,24 +53,27 @@ export function SetupChecklist({ profile, onRefresh }) {
     });
   }
 
-  // Step 3: Identity Verification (both roles)
+  // Step 3: Identity Verification (both roles - but only after onboarding AND subscription for investors)
+  const canVerifyIdentity = isAgent ? onboardingComplete : (onboardingComplete && subscriptionComplete);
   steps.push({
     id: 'identity',
     title: 'Identity',
     description: 'Verify your identity',
     completed: kycComplete,
     icon: Shield,
-    link: 'IdentityVerification'
+    link: 'IdentityVerification',
+    locked: !canVerifyIdentity
   });
 
-  // Step 4: NDA (both roles)
+  // Step 4: NDA (both roles - only after identity verified)
   steps.push({
     id: 'nda',
     title: 'Sign NDA',
     description: 'Accept confidentiality',
     completed: ndaComplete,
     icon: FileText,
-    link: 'NDA'
+    link: 'NDA',
+    locked: !kycComplete
   });
 
   // Step 5: Brokerage (Agents only)
@@ -81,7 +84,7 @@ export function SetupChecklist({ profile, onRefresh }) {
       description: 'Add your brokerage',
       completed: brokerageComplete,
       icon: Briefcase,
-      link: 'AgentDeepOnboarding'
+      link: 'AccountProfile'
     });
   }
 
@@ -141,7 +144,7 @@ export function SetupChecklist({ profile, onRefresh }) {
             const Icon = step.icon;
             const isCompleted = step.completed;
             const isNext = !isCompleted && steps.slice(0, idx).every(s => s.completed);
-            const isLocked = !isCompleted && !isNext;
+            const isLocked = step.locked || (!isCompleted && !isNext);
             
             const handleClick = () => {
               if (!isLocked && !isCompleted) {
