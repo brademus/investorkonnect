@@ -764,9 +764,11 @@ function PipelineContent() {
   // Memoize to keep column identity stable
   const pipelineStages = useMemo(() => PIPELINE_STAGES.map(stage => ({
     ...stage,
-    icon: stage.id === 'new_listings' ? FileText :
+    icon: stage.id === 'new_deals' ? FileText :
+          stage.id === 'connected_deals' ? CheckCircle :
           stage.id === 'active_listings' ? TrendingUp :
-          stage.id === 'ready_to_close' ? CheckCircle :
+          stage.id === 'in_closing' ? Clock :
+          stage.id === 'completed' ? CheckCircle :
           XCircle
   })), []);
 
