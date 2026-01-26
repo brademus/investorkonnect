@@ -28,10 +28,11 @@ export default function DocuSignReturn() {
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          if (dealId) {
-            navigate(`${createPageUrl("Pipeline")}?signed=1&dealId=${dealId}`);
-          } else if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&signed=1`);
+          // Deterministic routing: always return to deal context
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement&dealId=${dealId || ''}&signed=1`);
+          } else if (dealId) {
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement&signed=1`);
           } else {
             navigate(createPageUrl("Pipeline"));
           }
@@ -42,10 +43,11 @@ export default function DocuSignReturn() {
 
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`);
-          } else if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
+          // Return to same deal context on cancel
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
+          } else if (dealId) {
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`);
           } else {
             navigate(createPageUrl("Pipeline"));
           }

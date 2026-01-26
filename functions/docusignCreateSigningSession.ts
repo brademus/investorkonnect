@@ -165,7 +165,13 @@ Deno.serve(async (req) => {
     // Validate redirect_url (flexible origin matching for dev/prod)
     const reqUrl = new URL(req.url);
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
-    let validatedRedirect = redirect_url || (publicAppUrl ? `${publicAppUrl}/Pipeline` : '/Pipeline');
+    
+    // Build redirect with deal context preserved
+    let validatedRedirect = redirect_url;
+    if (!validatedRedirect) {
+      // Default: return to Room with agreement tab if available
+      validatedRedirect = `/Room?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+    }
     
     // Allow relative URLs
     if (validatedRedirect.startsWith('/')) {
