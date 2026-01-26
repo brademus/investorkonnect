@@ -49,8 +49,10 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         console.log('[AgreementPanel] Full response:', JSON.stringify(res.data, null, 2));
         if (res.data) {
           console.log('[AgreementPanel] Setting pending_counter to:', res.data.pending_counter);
+          console.log('[AgreementPanel] Setting deal_terms to:', res.data.deal_terms);
           setAgreement(res.data.agreement || null);
           setPendingCounter(res.data.pending_counter || null);
+          setDealTerms(res.data.deal_terms || null);
           setTermsChanged(res.data.terms_mismatch || false);
         }
       } catch (error) {
