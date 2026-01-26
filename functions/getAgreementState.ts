@@ -48,6 +48,19 @@ Deno.serve(async (req) => {
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
     const legacyAgreement = agreements[0] || null;
 
+    // Normalize exhibit_a_terms to use consistent field names
+    const normalizeTerms = (terms) => {
+      if (!terms) return {};
+      // Map from legal agreement field names to buyer commission field names
+      return {
+        buyer_commission_type: terms.compensation_model === 'COMMISSION_PCT' ? 'percentage' : 
+                               terms.compensation_model === 'FLAT_FEE' ? 'flat' : null,
+        buyer_commission_percentage: terms.commission_percentage || null,
+        buyer_flat_fee: terms.flat_fee_amount || null,
+        ...terms // Include all original fields too
+      };
+    };
+
     // Use AgreementVersion if available, fallback to LegalAgreement
     const agreement = latestVersion ? {
       id: latestVersion.id,
@@ -59,7 +72,7 @@ Deno.serve(async (req) => {
       signed_pdf_url: latestVersion.signed_pdf_url,
       final_pdf_url: latestVersion.pdf_url,
       docusign_pdf_url: latestVersion.docusign_pdf_url,
-      exhibit_a_terms: latestVersion.terms_snapshot || {}
+      exhibit_a_terms: normalizeTerms(latestVersion.terms_snapshot || {})
     } : legacyAgreement;
     
     // Get pending counter offers
