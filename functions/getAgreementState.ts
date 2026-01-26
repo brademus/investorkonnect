@@ -107,13 +107,7 @@ Deno.serve(async (req) => {
       }
     }
     
-    console.log('[getAgreementState] Final response:', {
-      hasAgreement: !!agreement,
-      hasPendingCounter: !!pendingCounter,
-      pendingCounterData: pendingCounter
-    });
-
-    return Response.json({
+    const responsePayload = {
       success: true,
       agreement,
       latest_version: latestVersion,
