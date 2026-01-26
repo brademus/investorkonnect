@@ -8,6 +8,7 @@ import Agents from './pages/Agents';
 import BillingSuccess from './pages/BillingSuccess';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
+import DocuSignReturn from './pages/DocuSignReturn';
 import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
@@ -30,7 +31,6 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import Terms from './pages/Terms';
-import DocuSignReturn from './pages/DocuSignReturn';
 import __Layout from './Layout.jsx';
 
 
@@ -45,6 +45,7 @@ export const PAGES = {
     "BillingSuccess": BillingSuccess,
     "Contact": Contact,
     "ContractVerify": ContractVerify,
+    "DocuSignReturn": DocuSignReturn,
     "FAQ": FAQ,
     "Home": Home,
     "HowItWorks": HowItWorks,
@@ -67,7 +68,6 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "Terms": Terms,
-    "DocuSignReturn": DocuSignReturn,
 }
 
 export const pagesConfig = {
