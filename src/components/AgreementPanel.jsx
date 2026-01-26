@@ -87,9 +87,10 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       window.history.replaceState({}, '', newUrl);
 
       // Reload state multiple times to catch webhook
-      setTimeout(() => loadState(), 1500);
-      setTimeout(() => loadState(), 3000);
-      setTimeout(() => loadState(), 5000);
+      setTimeout(() => loadState(), 2000);
+      setTimeout(() => loadState(), 4000);
+      setTimeout(() => loadState(), 7000);
+      setTimeout(() => loadState(), 10000);
     }
 
     // Also reload on window focus (user switching tabs)
