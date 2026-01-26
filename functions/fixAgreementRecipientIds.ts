@@ -28,13 +28,24 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'agreement_id required' }, { status: 400 });
     }
     
-    // Load agreement
-    const agreements = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
-    if (!agreements || agreements.length === 0) {
-      return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    // Try AgreementVersion first, then fall back to LegalAgreement
+    let agreement = null;
+    let isLegacy = false;
+    
+    const versions = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
+    if (versions && versions.length > 0) {
+      agreement = versions[0];
+    } else {
+      const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+      if (legacyAgreements && legacyAgreements.length > 0) {
+        agreement = legacyAgreements[0];
+        isLegacy = true;
+      }
     }
     
-    const agreement = agreements[0];
+    if (!agreement) {
+      return Response.json({ error: 'Agreement not found in AgreementVersion or LegalAgreement' }, { status: 404 });
+    }
     if (!agreement.docusign_envelope_id) {
       return Response.json({ error: 'No DocuSign envelope ID' }, { status: 400 });
     }
