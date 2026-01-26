@@ -29,6 +29,7 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import Terms from './pages/Terms';
+import BillingSuccess from './pages/BillingSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -64,6 +65,7 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "Terms": Terms,
+    "BillingSuccess": BillingSuccess,
 }
 
 export const pagesConfig = {
