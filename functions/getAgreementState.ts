@@ -44,16 +44,20 @@ Deno.serve(async (req) => {
     }
     
     // Load deal
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-    if (!deals || deals.length === 0) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
-    }
-    const deal = deals[0];
-    
+    const deal = await withRetry(async () => {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+      if (!deals || deals.length === 0) {
+        throw new Error('Deal not found');
+      }
+      return deals[0];
+    });
+
     // Get latest version (from AgreementVersion entity - primary)
-    const versions = await base44.asServiceRole.entities.AgreementVersion.filter({ 
-      deal_id 
-    }, '-version', 100);
+    const versions = await withRetry(async () => {
+      return await base44.asServiceRole.entities.AgreementVersion.filter({ 
+        deal_id 
+      }, '-version', 100);
+    });
 
     console.log('[getAgreementState] Versions found:', versions.length, versions.map(v => ({ v: v.version, s: v.status })));
 
@@ -62,8 +66,10 @@ Deno.serve(async (req) => {
     console.log('[getAgreementState] Latest active version:', latestVersion?.version, latestVersion?.status);
 
     // Get active agreement (from LegalAgreement entity - legacy fallback)
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
-    const legacyAgreement = agreements[0] || null;
+    const legacyAgreement = await withRetry(async () => {
+      const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+      return agreements[0] || null;
+    });
 
     // Normalize exhibit_a_terms to use consistent field names
     const normalizeTerms = (terms) => {
