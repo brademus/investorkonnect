@@ -325,51 +325,56 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         </CardHeader>
 
         <CardContent className="p-6 space-y-4">
-          {/* Pending Counter Card - ALWAYS show to recipient when pending */}
+          {/* Pending Counter Card - ALWAYS show FIRST and prominently to recipient when pending */}
           {hasPendingOffer && amRecipient && (
-            <div className="bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 rounded-xl p-5 mb-6">
+            <div className="bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 rounded-xl p-5 mb-6 ring-2 ring-[#F59E0B]/20">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-md font-bold text-[#FAFAFA]">⚠️ New Counter Offer Received</h3>
-                <span className="text-xs text-[#808080]">from {pendingCounter.from_role}</span>
+                <h3 className="text-lg font-bold text-[#FAFAFA]">⚠️ Counter Offer Pending Your Response</h3>
+                <span className="text-xs text-[#808080] bg-[#F59E0B]/20 px-2 py-1 rounded-full">from {pendingCounter.from_role}</span>
               </div>
               
-              <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                <div className="bg-[#0D0D0D] rounded-lg p-3">
-                  <div className="text-xs text-[#808080] mb-1">Type</div>
-                  <div className="text-[#FAFAFA] font-medium capitalize">
-                    {pendingCounter.terms_delta?.buyer_commission_type}
+              <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-lg p-4 mb-4">
+                <div className="text-xs text-[#808080] mb-2 uppercase tracking-wider font-semibold">Proposed Terms</div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-xs text-[#808080] mb-1">Commission Type</div>
+                    <div className="text-[#FAFAFA] font-semibold capitalize text-lg">
+                      {pendingCounter.terms_delta?.buyer_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'}
+                    </div>
                   </div>
-                </div>
-                <div className="bg-[#0D0D0D] rounded-lg p-3">
-                  <div className="text-xs text-[#808080] mb-1">Amount</div>
-                  <div className="text-[#FAFAFA] font-medium">
-                    {pendingCounter.terms_delta?.buyer_commission_type === 'percentage'
-                      ? `${pendingCounter.terms_delta?.buyer_commission_percentage || 0}%`
-                      : `$${(pendingCounter.terms_delta?.buyer_flat_fee || 0).toLocaleString()}`}
+                  <div>
+                    <div className="text-xs text-[#808080] mb-1">Amount</div>
+                    <div className="text-[#E3C567] font-bold text-lg">
+                      {pendingCounter.terms_delta?.buyer_commission_type === 'percentage'
+                        ? `${pendingCounter.terms_delta?.buyer_commission_percentage || 0}%`
+                        : `$${(pendingCounter.terms_delta?.buyer_flat_fee || 0).toLocaleString()}`}
+                    </div>
                   </div>
                 </div>
               </div>
 
+              <p className="text-xs text-[#808080] mb-4">What would you like to do?</p>
+
               <div className="flex flex-col gap-2">
                 <Button
-                  className="w-full bg-[#10B981] hover:bg-[#059669] text-white"
+                  className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-semibold py-2.5"
                   onClick={() => handleRespondToCounter('accept')}
                   disabled={busy}
                 >
                   {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                  Accept Terms
+                  ✓ Accept These Terms
                 </Button>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
                     variant="destructive"
                     onClick={() => handleRespondToCounter('decline')}
                     disabled={busy}
+                    className="py-2"
                   >
-                    Decline
+                    ✗ Decline
                   </Button>
                   <Button
-                    variant="outline"
-                    className="border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10"
+                    className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold py-2"
                     onClick={() => {
                       const type = pendingCounter.terms_delta?.buyer_commission_type || 'flat';
                       setCounterType(type);
@@ -381,7 +386,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                     }}
                     disabled={busy}
                   >
-                    Counter Back
+                    ↔️ Counter Back
                   </Button>
                 </div>
               </div>
