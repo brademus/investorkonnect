@@ -63,14 +63,21 @@ Deno.serve(async (req) => {
     } : legacyAgreement;
     
     // Get pending counter offers
-    const pendingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
-      deal_id,
-      status: 'pending'
-    }, '-created_date', 1);
+    let pendingCounters = [];
+    try {
+      pendingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
+        deal_id,
+        status: 'pending'
+      }, '-created_date', 1);
+    } catch (e) {
+      console.log('[getAgreementState] Counter filter error:', e.message);
+      pendingCounters = [];
+    }
 
     let pendingCounter = null;
     if (pendingCounters && pendingCounters.length > 0) {
       const raw = pendingCounters[0];
+      console.log('[getAgreementState] Pending counter found:', { id: raw.id, status: raw.status, terms: raw.terms });
       // Map fields to match AgreementPanel expectations
       pendingCounter = {
         id: raw.id,
@@ -81,6 +88,8 @@ Deno.serve(async (req) => {
         terms_delta: raw.terms || raw.terms_delta || {},
         responded_by_role: raw.responded_by_role
       };
+    } else {
+      console.log('[getAgreementState] No pending counters found');
     }
     
     // Determine if terms mismatch
