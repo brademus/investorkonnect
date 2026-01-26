@@ -1,14 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-// Retry helper with exponential backoff for rate limiting
 async function withRetry(fn, maxAttempts = 3) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
       if (error.status === 429 && attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt - 1) * 1000; // 1s, 2s, 4s
-        console.log(`[getAgreementState] Rate limited, retrying in ${delay}ms (attempt ${attempt}/${maxAttempts})`);
+        const delay = Math.pow(2, attempt - 1) * 1000;
+        console.log(`[getAgreementState] Rate limited, retrying in ${delay}ms`);
         await new Promise(r => setTimeout(r, delay));
       } else {
         throw error;
@@ -17,10 +16,6 @@ async function withRetry(fn, maxAttempts = 3) {
   }
 }
 
-/**
- * Get current agreement state for a deal
- * Returns: active agreement, pending counter offer, and version info
- */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -31,135 +26,82 @@ Deno.serve(async (req) => {
     }
     
     const { deal_id } = await req.json();
-    
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
-    }
-    
-    // Get profile to check role
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     
     // Load deal
     const deal = await withRetry(async () => {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-      if (!deals || deals.length === 0) {
-        throw new Error('Deal not found');
-      }
+      if (!deals?.length) throw new Error('Deal not found');
       return deals[0];
     });
 
-    // Get latest version (from AgreementVersion entity - primary)
+    // Get latest agreement version
     const versions = await withRetry(async () => {
-      return await base44.asServiceRole.entities.AgreementVersion.filter({ 
-        deal_id 
-      }, '-version', 100);
+      const all = await base44.asServiceRole.entities.AgreementVersion.filter({ deal_id }, '-version', 100);
+      return all || [];
     });
 
-    console.log('[getAgreementState] Versions found:', versions.length, versions.map(v => ({ v: v.version, s: v.status })));
-
-    // Find active version (latest non-superseded)
     const latestVersion = versions.find(v => v.status !== 'superseded' && v.status !== 'voided') || null;
-    console.log('[getAgreementState] Latest active version:', latestVersion?.version, latestVersion?.status);
-
-    // Get active agreement (from LegalAgreement entity - legacy fallback)
-    const legacyAgreement = await withRetry(async () => {
-      const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
-      return agreements[0] || null;
-    });
-
-    // Normalize exhibit_a_terms to use consistent field names
-    const normalizeTerms = (terms) => {
-      if (!terms) return {};
-      // Map from legal agreement field names to buyer commission field names
-      return {
-        buyer_commission_type: terms.compensation_model === 'COMMISSION_PCT' ? 'percentage' : 
-                               terms.compensation_model === 'FLAT_FEE' ? 'flat' : null,
-        buyer_commission_percentage: terms.commission_percentage || null,
-        buyer_flat_fee: terms.flat_fee_amount || null,
-        ...terms // Include all original fields too
-      };
-    };
-
-    // Use AgreementVersion if available, fallback to LegalAgreement
-    const agreement = latestVersion ? {
-      id: latestVersion.id,
-      deal_id: latestVersion.deal_id,
-      status: latestVersion.status,
-      version: latestVersion.version,
-      investor_signed_at: latestVersion.investor_signed_at,
-      agent_signed_at: latestVersion.agent_signed_at,
-      signed_pdf_url: latestVersion.signed_pdf_url,
-      final_pdf_url: latestVersion.pdf_url,
-      docusign_pdf_url: latestVersion.docusign_pdf_url,
-      exhibit_a_terms: normalizeTerms(latestVersion.terms_snapshot || {})
-    } : legacyAgreement;
     
-    // Get pending counter offers
-    let pendingCounters = [];
+    // Fallback to legacy agreement
+    let agreement = null;
+    if (latestVersion) {
+      agreement = {
+        id: latestVersion.id,
+        deal_id: latestVersion.deal_id,
+        status: latestVersion.status,
+        version: latestVersion.version,
+        investor_signed_at: latestVersion.investor_signed_at,
+        agent_signed_at: latestVersion.agent_signed_at,
+        signed_pdf_url: latestVersion.signed_pdf_url,
+        final_pdf_url: latestVersion.pdf_url,
+        docusign_pdf_url: latestVersion.docusign_pdf_url,
+        exhibit_a_terms: latestVersion.terms_snapshot || {}
+      };
+    } else {
+      const legacyAgreements = await withRetry(async () => {
+        const all = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+        return all || [];
+      });
+      agreement = legacyAgreements[0] || null;
+    }
+
+    // Get pending counter offers - simple filter, no extra args
+    let pendingCounter = null;
     try {
-      pendingCounters = await withRetry(async () => {
+      const counters = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.filter({
           deal_id,
           status: 'pending'
-        }, '-created_date', 1);
+        });
       });
+
+      if (counters && counters.length > 0) {
+        const raw = counters[0];
+        pendingCounter = {
+          id: raw.id,
+          deal_id: raw.deal_id,
+          from_role: raw.from_role,
+          to_role: raw.to_role,
+          status: raw.status,
+          terms_delta: raw.terms_delta || {},
+          responded_by_role: raw.responded_by_role
+        };
+        console.log('[getAgreementState] Found pending counter:', pendingCounter);
+      }
     } catch (e) {
-      console.log('[getAgreementState] Counter filter error:', e.message);
-      pendingCounters = [];
+      console.log('[getAgreementState] Counter error:', e.message);
     }
 
-    let pendingCounter = null;
-    console.log('[getAgreementState] pendingCounters length:', pendingCounters?.length);
-    if (pendingCounters && pendingCounters.length > 0) {
-      const raw = pendingCounters[0];
-      console.log('[getAgreementState] Pending counter raw:', JSON.stringify({ id: raw.id, status: raw.status, from_role: raw.from_role, terms: raw.terms }));
-      // Map fields to match AgreementPanel expectations
-      pendingCounter = {
-        id: raw.id,
-        deal_id: raw.deal_id,
-        from_role: raw.from_role,
-        to_role: raw.from_role === 'agent' ? 'investor' : 'agent',
-        status: raw.status,
-        terms_delta: raw.terms || raw.terms_delta || {},
-        responded_by_role: raw.responded_by_role
-      };
-      console.log('[getAgreementState] Mapped pendingCounter:', JSON.stringify(pendingCounter));
-    } else {
-      console.log('[getAgreementState] No pending counters found');
-    }
-    
-    // Determine if terms mismatch
-    let termsMismatch = false;
-    if (agreement && deal.proposed_terms) {
-      const t = deal.proposed_terms;
-      const a = agreement.exhibit_a_terms || {};
-      
-      if (t.buyer_commission_type === 'percentage') {
-        termsMismatch = !(a.compensation_model === 'COMMISSION_PCT' && 
-                         Number(a.commission_percentage || 0) === Number(t.buyer_commission_percentage || 0));
-      } else if (t.buyer_commission_type === 'flat') {
-        termsMismatch = !(a.compensation_model === 'FLAT_FEE' && 
-                         Number(a.flat_fee_amount || 0) === Number(t.buyer_flat_fee || 0));
-      }
-    }
-    
-    const responsePayload = {
+    return Response.json({
       success: true,
       agreement,
       latest_version: latestVersion,
       pending_counter: pendingCounter,
-      terms_mismatch: termsMismatch,
       deal_terms: deal.proposed_terms
-    };
-
-    console.log('[getAgreementState] Final response object keys:', Object.keys(responsePayload));
-    console.log('[getAgreementState] pending_counter in response:', responsePayload.pending_counter);
-
-    return Response.json(responsePayload);
+    });
     
   } catch (error) {
     console.error('[getAgreementState] Error:', error);
