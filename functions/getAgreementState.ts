@@ -68,18 +68,21 @@ Deno.serve(async (req) => {
       agreement = legacyAgreements[0] || null;
     }
 
-    // Get pending or accepted counter offers (latest by creation)
+    // Get active counter offers (pending or accepted, not superseded/declined)
     let pendingCounter = null;
     try {
       const counters = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.filter({
           deal_id,
           status: { $in: ['pending', 'accepted'] }
-        }, '-created_date', 1);
+        }, '-created_date', 100);
       });
 
       if (counters && counters.length > 0) {
-        const raw = counters[0];
+        // Take the LATEST accepted counter if it exists, otherwise the latest pending
+        let selected = counters.find(c => c.status === 'accepted') || counters[0];
+
+        const raw = selected;
         pendingCounter = {
           id: raw.id,
           deal_id: raw.deal_id,
