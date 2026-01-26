@@ -578,12 +578,14 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </>
               )}
 
-              {/* Agent Wait */}
+              {/* Agent Wait - either for initial sig or regeneration */}
               {!investorSigned && isAgent && (
                 <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                   <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
                   <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for investor</p>
-                  <p className="text-xs text-[#808080] mt-1">You'll sign after investor completes</p>
+                  <p className="text-xs text-[#808080] mt-1">
+                    {hasAcceptedCounter ? 'Investor is regenerating agreement with new terms' : 'You\'ll sign after investor completes'}
+                  </p>
                 </div>
               )}
 
