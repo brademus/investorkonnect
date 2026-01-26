@@ -126,12 +126,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'role must be investor or agent' }, { status: 400 });
     }
     
-    // Load agreement
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
-    if (!agreements || agreements.length === 0) {
-      return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    // Load agreement - check both LegalAgreement and AgreementVersion
+    let agreement = null;
+    
+    // Try LegalAgreement first
+    const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    if (legacyAgreements && legacyAgreements.length > 0) {
+      agreement = legacyAgreements[0];
+      console.log('[docusignCreateSigningSession] Found LegalAgreement');
+    } else {
+      // Try AgreementVersion
+      const versionAgreements = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
+      if (versionAgreements && versionAgreements.length > 0) {
+        agreement = versionAgreements[0];
+        console.log('[docusignCreateSigningSession] Found AgreementVersion');
+      }
     }
-    const agreement = agreements[0];
+    
+    if (!agreement) {
+      console.error('[docusignCreateSigningSession] Agreement not found:', agreement_id);
+      return Response.json({ error: 'Agreement not found. Please regenerate the agreement.' }, { status: 404 });
+    }
 
     // GATING: Check DB immediately - if agent trying to sign, investor must have signed first
     if (role === 'agent' && !agreement.investor_signed_at) {
