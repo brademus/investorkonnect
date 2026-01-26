@@ -17,21 +17,26 @@ export const PIPELINE_STAGES = [
  * Maps old stage IDs to new canonical IDs
  */
 export const LEGACY_STAGE_MAP = {
-  // Old wizard flow stages
-  'new_deal_under_contract': 'new_listings',
+  // Old names map to new canonical names
+  'new_listings': 'new_deals',
+  'new_deal_under_contract': 'new_deals',
+  'active_listings': 'active_listings',
   'walkthrough_scheduled': 'active_listings',
   'evaluate_deal': 'active_listings',
   'active_marketing': 'active_listings',
+  'ready_to_close': 'in_closing',
+  'in_closing': 'in_closing',
+  'closed': 'completed',
+  'clear_to_close_closed': 'completed',
   'cancelling_deal': 'canceled',
-  'clear_to_close_closed': 'ready_to_close',
+  'canceled': 'canceled',
+  'cancelled': 'canceled',
   
-  // Other legacy variants
-  'new_deal': 'new_listings',
-  'pending': 'new_listings',
+  // Additional legacy variants
+  'new_deal': 'new_deals',
+  'pending': 'new_deals',
   'active': 'active_listings',
-  'closing': 'ready_to_close',
-  'closed': 'ready_to_close',
-  'cancelled': 'canceled'
+  'closing': 'in_closing'
 };
 
 /**
