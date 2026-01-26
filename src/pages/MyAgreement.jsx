@@ -137,32 +137,34 @@ export default function MyAgreement() {
           }}
         />
 
-        {/* Key Deal Terms - simplified for My Agreement: show only purchase price, buyer commission, and computed amount when percentage */}
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
-          <h2 className="text-xl font-bold text-[#E3C567] mb-3">Key Deal Terms</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-            <div>
-              <p className="text-xs text-[#808080]">Purchase Price</p>
-              <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.purchasePrice)}</p>
-            </div>
-            <div>
-              <p className="text-xs text-[#808080]">Buyer Commission</p>
-              <p className="text-[#FAFAFA]">
-                {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) 
-                  ? `${keyTerms.buyerPct}%` 
-                  : keyTerms.buyerType === 'flat' && !Number.isNaN(keyTerms.buyerFlat)
-                  ? formatCurrency(keyTerms.buyerFlat)
-                  : '—'}
-              </p>
-            </div>
-            {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) && (
-              <div className="sm:col-span-2">
-                <p className="text-xs text-[#808080]">Buyer Commission (Estimated)</p>
-                <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.buyerCommissionAmount)}</p>
+        {/* Key Deal Terms - only render once deal fully loaded to prevent flicker */}
+        {deal && !loading && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
+            <h2 className="text-xl font-bold text-[#E3C567] mb-3">Key Deal Terms</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-xs text-[#808080]">Purchase Price</p>
+                <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.purchasePrice)}</p>
               </div>
-            )}
+              <div>
+                <p className="text-xs text-[#808080]">Buyer Commission</p>
+                <p className="text-[#FAFAFA]">
+                  {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) 
+                    ? `${keyTerms.buyerPct}%` 
+                    : keyTerms.buyerType === 'flat' && !Number.isNaN(keyTerms.buyerFlat)
+                    ? formatCurrency(keyTerms.buyerFlat)
+                    : '—'}
+                </p>
+              </div>
+              {keyTerms.buyerType === 'percentage' && !Number.isNaN(keyTerms.buyerPct) && (
+                <div className="sm:col-span-2">
+                  <p className="text-xs text-[#808080]">Buyer Commission (Estimated)</p>
+                  <p className="text-[#FAFAFA]">{formatCurrency(keyTerms.buyerCommissionAmount)}</p>
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
