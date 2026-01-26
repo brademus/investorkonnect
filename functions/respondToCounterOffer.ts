@@ -83,8 +83,7 @@ Deno.serve(async (req) => {
         from_role: responderRole,
         to_role: counter.from_role,
         status: 'pending',
-        terms_delta,
-        superseded_by_counter_offer_id: counter_offer_id
+        terms_delta
       });
       
       return Response.json({
