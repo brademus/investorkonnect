@@ -247,7 +247,7 @@ Deno.serve(async (req) => {
       console.warn('[DocuSign] Failed to sync status (non-blocking):', syncError.message);
     }
 
-    // Check for terminal envelope states
+    // Check for terminal envelope states - but allow 'sent' or 'delivered'
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
     const statusResponse = await fetch(statusUrl, {
       method: 'GET',
@@ -256,12 +256,17 @@ Deno.serve(async (req) => {
 
     if (statusResponse.ok) {
       const envStatus = await statusResponse.json();
+      console.log('[DocuSign] Envelope status check:', envStatus.status);
 
+      // Only block if truly terminal - allow 'sent' and 'delivered' which are active states
       if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
+        console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
         return Response.json({ 
-          error: `Agreement is already ${envStatus.status}. Please regenerate from the Agreement tab.`
+          error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
         }, { status: 400 });
       }
+
+      console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
     }
 
     // Verify PDF hash hasn't changed (prevent signing stale document)

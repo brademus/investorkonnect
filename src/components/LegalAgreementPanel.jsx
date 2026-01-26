@@ -468,7 +468,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
           toast.success('Agreement regenerated - ready to sign');
           
-          // Reload data
+          // Reload data - give DocuSign a moment to settle
+          await new Promise(r => setTimeout(r, 800));
           await loadAgreement();
           const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
           if (data) setFreshDeal(data);
