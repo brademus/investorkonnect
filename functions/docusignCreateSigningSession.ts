@@ -402,18 +402,27 @@ Deno.serve(async (req) => {
     
     const viewData = await viewResponse.json();
     
-    // Log signing session
-    await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-      audit_log: [
-        ...(agreement.audit_log || []),
-        {
-          timestamp: new Date().toISOString(),
-          actor: user.email,
-          action: 'signing_session_created',
-          details: `${role} signing session created for envelope ${envelopeId}`
-        }
-      ]
-    });
+    // Log signing session (only update the entity type we found)
+    if (agreementType === 'LegalAgreement') {
+      try {
+        await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
+          audit_log: [
+            ...(agreement.audit_log || []),
+            {
+              timestamp: new Date().toISOString(),
+              actor: user.email,
+              action: 'signing_session_created',
+              details: `${role} signing session created for envelope ${envelopeId}`
+            }
+          ]
+        });
+      } catch (e) {
+        console.warn('[DocuSign] Failed to update LegalAgreement audit log (non-blocking):', e.message);
+      }
+    } else if (agreementType === 'AgreementVersion') {
+      // AgreementVersion doesn't have audit_log field, skip
+      console.log('[DocuSign] Skipping audit log for AgreementVersion');
+    }
     
     console.log('[DocuSign] Signing session created successfully - returning URL');
     
