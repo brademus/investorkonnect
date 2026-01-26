@@ -75,6 +75,17 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
 
   useEffect(() => {
     loadState();
+
+    // Reload state when user returns from DocuSign signing
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('signed') === '1') {
+      // Remove the signed flag from URL
+      const newUrl = window.location.pathname + window.location.search.replace('&signed=1', '').replace('?signed=1', '');
+      window.history.replaceState({}, '', newUrl);
+
+      // Reload state after a short delay to ensure DocuSign webhook processed
+      setTimeout(() => loadState(), 1500);
+    }
   }, [dealId]);
 
   // Real-time updates
