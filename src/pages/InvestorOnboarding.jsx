@@ -20,6 +20,9 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
  */
 export default function InvestorOnboarding() {
   const navigate = useNavigate();
+  const { profile, refresh, user, onboarded, isPaidSubscriber } = useCurrentProfile();
+  const { selectedState } = useWizard();
+  const [step, setStep] = useState(1);
   
   // Block navigation away during onboarding (except to mandatory steps)
   useEffect(() => {
@@ -32,9 +35,6 @@ export default function InvestorOnboarding() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [step]);
-  const { profile, refresh, user, onboarded, isPaidSubscriber } = useCurrentProfile();
-  const { selectedState } = useWizard();
-  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [formData, setFormData] = useState({
