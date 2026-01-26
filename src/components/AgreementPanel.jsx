@@ -46,6 +46,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     try {
       const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
       console.log('[AgreementPanel] State loaded:', res.data);
+      console.log('[AgreementPanel] Agreement from response:', res.data?.agreement);
+      console.log('[AgreementPanel] Pending counter from response:', res.data?.pending_counter);
       if (res.data) {
         setAgreement(res.data.agreement || null);
         setPendingCounter(res.data.pending_counter || null);
