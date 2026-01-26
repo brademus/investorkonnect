@@ -380,7 +380,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
               <p className="text-[#808080] mb-4">
-                {isAgent ? 'Waiting for investor to generate agreement' : 'No agreement yet'}
+                {isAgent ? 'Waiting for investor to generate agreement' : 'Generate agreement to proceed'}
               </p>
               {isInvestor && (
                 <Button
@@ -463,31 +463,34 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               </div>
 
-              {/* Investor: Regenerate & Sign if terms changed after counter accepted */}
-              {!investorSigned && isInvestor && !hasPendingOffer && termsChanged && (
-                <Button
-                  onClick={() => setRegenerateModal(true)}
-                  disabled={busy}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  Regenerate & Sign
-                </Button>
-              )}
-
-              {/* Investor Sign (normal flow - no terms changes) */}
-              {!investorSigned && isInvestor && !hasPendingOffer && !termsChanged && (
-                <Button
-                  onClick={() => handleSign('investor')}
-                  disabled={busy}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Opening DocuSign...
-                    </>
-                  ) : 'Sign as Investor'}
-                </Button>
+              {/* Investor Actions */}
+              {!isFullySigned && isInvestor && !hasPendingOffer && (
+                <>
+                  {/* Show Regenerate & Sign only if terms changed after counter acceptance */}
+                  {termsChanged ? (
+                    <Button
+                      onClick={() => setRegenerateModal(true)}
+                      disabled={busy}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                    >
+                      Regenerate & Sign
+                    </Button>
+                  ) : (
+                    /* Normal Sign button when no terms changes */
+                    <Button
+                      onClick={() => handleSign('investor')}
+                      disabled={busy}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Opening DocuSign...
+                        </>
+                      ) : 'Sign Agreement'}
+                    </Button>
+                  )}
+                </>
               )}
 
               {/* Agent Wait */}
