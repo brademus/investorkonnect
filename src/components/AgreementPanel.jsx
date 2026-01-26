@@ -555,7 +555,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
               )}
 
               {/* Investor Actions */}
-              {!isFullySigned && isInvestor && !hasPendingOffer && (
+              {!isFullySigned && isInvestor && !investorSigned && !hasPendingOffer && (
                 <>
                   {/* Show Regenerate & Sign only if terms changed after counter acceptance */}
                   {termsChanged ? (
