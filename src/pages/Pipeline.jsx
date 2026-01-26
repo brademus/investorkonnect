@@ -11,7 +11,8 @@ import LegalFooterLinks from "@/components/LegalFooterLinks";
 import { 
   FileText, Calendar, TrendingUp, Megaphone, CheckCircle,
   ArrowLeft, Plus, Home, Bath, Maximize2, DollarSign,
-  Clock, CheckSquare, XCircle, MessageSquare, Circle, Loader2
+  Clock, CheckSquare, XCircle, MessageSquare, Circle, Loader2,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { setCachedDeal } from "@/components/utils/dealCache";
@@ -398,6 +399,19 @@ function PipelineContent() {
     return () => { try { unsubDeal && unsubDeal(); } catch (_) {} };
   }, [profile?.id, profile?.user_role, queryClient]);
 
+  // Real-time: refresh counter offers when they change
+  useEffect(() => {
+    if (!profile?.id || !isInvestor) return;
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      console.log('[Pipeline] Counter offer event:', event.type);
+      try { 
+        queryClient.invalidateQueries({ queryKey: ['counterOffers'] });
+        refetchCounters();
+      } catch (_) {}
+    });
+    return () => { try { unsubCounter && unsubCounter(); } catch (_) {} };
+  }, [profile?.id, isInvestor, queryClient]);
+
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
     queryKey: ['pendingRequests', profile?.id],
@@ -430,6 +444,30 @@ function PipelineContent() {
     refetchOnWindowFocus: false,
     refetchInterval: 0
   });
+
+  // 4c. Load Counter Offers for all deals (investor-only)
+  const { data: counterOffers = [], isLoading: loadingCounters, refetch: refetchCounters } = useQuery({
+    queryKey: ['counterOffers', uniqueDealsData.map(d => d.id)],
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      if (!uniqueDealsData || uniqueDealsData.length === 0 || !isInvestor) return [];
+      const items = await base44.entities.CounterOffer.filter({ status: 'pending' }, '-created_date', 500);
+      const idSet = new Set(uniqueDealsData.map(d => d.id));
+      return items.filter(c => idSet.has(c.deal_id));
+    },
+    enabled: allowExtras && dealsData.length > 0 && isInvestor,
+    refetchOnWindowFocus: false,
+    refetchInterval: 0
+  });
+
+  // Modal state for counter offer response
+  const [counterModalOpen, setCounterModalOpen] = useState(false);
+  const [selectedCounter, setSelectedCounter] = useState(null);
+  const [respondingToCounter, setRespondingToCounter] = useState(false);
+  const [newCounterType, setNewCounterType] = useState('flat');
+  const [newCounterAmount, setNewCounterAmount] = useState('');
 
   
 
@@ -814,6 +852,113 @@ function PipelineContent() {
 
 
 
+            {/* Counter Offers for Investors - show pending counter offers */}
+            {isInvestor && counterOffers.length > 0 && (
+              <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h2 className="text-xl font-bold text-[#F59E0B]">⚠️ Counter Offers Pending</h2>
+                    <p className="text-sm text-[#808080]">{counterOffers.length} {counterOffers.length === 1 ? 'agent has' : 'agents have'} proposed new terms</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {counterOffers.map((offer) => {
+                    const dealForOffer = uniqueDealsData.find(d => d.id === offer.deal_id);
+                    if (!dealForOffer) return null;
+                    return (
+                      <div
+                        key={offer.id}
+                        className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
+                      >
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex-1">
+                            <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
+                              {dealForOffer.property_address || dealForOffer.title}
+                            </h3>
+                            <div className="text-xs text-[#808080]">
+                              {dealForOffer.city}, {dealForOffer.state}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="bg-[#141414] rounded-lg p-3 mb-3 space-y-2 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-[#808080]">Proposed Type:</span>
+                            <span className="text-[#FAFAFA] capitalize">{offer.terms?.buyer_commission_type || 'N/A'}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-[#808080]">Amount:</span>
+                            <span className="text-[#FAFAFA]">
+                              {offer.terms?.buyer_commission_type === 'percentage'
+                                ? `${offer.terms?.buyer_commission_percentage || 0}%`
+                                : `$${(offer.terms?.buyer_flat_fee || 0).toLocaleString()}`}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            onClick={async () => {
+                              try {
+                                // Accept the counter offer
+                                await base44.entities.CounterOffer.update(offer.id, { status: 'accepted', responded_by_role: 'investor' });
+                                // Update deal with new terms
+                                const newTerms = {
+                                  ...dealForOffer.proposed_terms,
+                                  buyer_commission_type: offer.terms?.buyer_commission_type,
+                                  buyer_commission_percentage: offer.terms?.buyer_commission_percentage,
+                                  buyer_flat_fee: offer.terms?.buyer_flat_fee,
+                                };
+                                await base44.entities.Deal.update(offer.deal_id, { proposed_terms: newTerms });
+                                // Refresh
+                                refetchDeals();
+                                refetchCounters();
+                                toast.success('Counter accepted. Open the deal to regenerate the agreement with new terms.');
+                              } catch (e) {
+                                toast.error('Failed to accept counter offer');
+                              }
+                            }}
+                            size="sm"
+                            className="bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            onClick={() => {
+                              setSelectedCounter(offer);
+                              setNewCounterType(offer.terms?.buyer_commission_type || 'flat');
+                              setNewCounterAmount(String(offer.terms?.buyer_commission_type === 'percentage' ? (offer.terms?.buyer_commission_percentage || 0) : (offer.terms?.buyer_flat_fee || 0)));
+                              setCounterModalOpen(true);
+                            }}
+                            size="sm"
+                            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xs"
+                          >
+                            Send Different Counter
+                          </Button>
+                          <Button
+                            onClick={async () => {
+                              try {
+                                await base44.entities.CounterOffer.update(offer.id, { status: 'declined', responded_by_role: 'investor' });
+                                await base44.functions.invoke('voidDeal', { deal_id: offer.deal_id });
+                                refetchDeals();
+                                refetchCounters();
+                                toast.success('Counter declined. Deal voided.');
+                              } catch (e) {
+                                toast.error('Failed to decline counter offer');
+                              }
+                            }}
+                            size="sm"
+                            variant="destructive"
+                            className="text-xs"
+                          >
+                            Decline & Void Deal
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* New Deal Requests for Agents - show all unsigned agreements */}
             {isAgent && pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).length > 0 && (
               <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
@@ -1082,20 +1227,32 @@ function PipelineContent() {
                                         )}
 
                                         {(() => {
-                                          const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
-                                          const badge = getAgreementStatusLabel({
-                                            room: fullRoom,
-                                            agreement: fullRoom?.agreement,
-                                            negotiation: fullRoom?.negotiation,
-                                            role: isAgent ? 'agent' : 'investor'
-                                          });
-                                          return badge ? (
-                                            <div className="mt-1">
-                                              <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
-                                                {badge.label}
-                                              </span>
-                                            </div>
-                                          ) : null;
+                                         // Check if there's a pending counter offer for this deal
+                                         const pendingCounter = counterOffers.find(c => c.deal_id === deal.deal_id && c.status === 'pending');
+                                         if (pendingCounter && isInvestor) {
+                                           return (
+                                             <div className="mt-1">
+                                               <span className="text-[10px] border border-[#F59E0B]/50 bg-[#F59E0B]/20 text-[#F59E0B] px-2 py-0.5 rounded-full animate-pulse">
+                                                 ⚠️ Counter Offer Pending
+                                               </span>
+                                             </div>
+                                           );
+                                         }
+
+                                         const fullRoom = rooms.find(r => r.deal_id === deal.deal_id) || { agreement_status: deal.agreement_status, is_fully_signed: deal.is_fully_signed };
+                                         const badge = getAgreementStatusLabel({
+                                           room: fullRoom,
+                                           agreement: fullRoom?.agreement,
+                                           negotiation: fullRoom?.negotiation,
+                                           role: isAgent ? 'agent' : 'investor'
+                                         });
+                                         return badge ? (
+                                           <div className="mt-1">
+                                             <span className={`text-[10px] border px-2 py-0.5 rounded-full ${badge.className}`}>
+                                               {badge.label}
+                                             </span>
+                                           </div>
+                                         ) : null;
                                         })()}
 
                                         {!deal.is_orphan && deal.customer_name && (
@@ -1167,6 +1324,104 @@ function PipelineContent() {
         </div>
       </div>
       <HelpPanel open={helpOpen} onOpenChange={setHelpOpen} />
+
+      {/* Counter Offer Response Modal */}
+      {selectedCounter && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4" onClick={() => setCounterModalOpen(false)}>
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-[#E3C567] mb-2">Send Counter Offer</h3>
+            <p className="text-sm text-[#808080] mb-4">Propose different terms for this deal</p>
+            
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm text-[#FAFAFA] mb-2 block">Commission Type</label>
+                <Select value={newCounterType} onValueChange={setNewCounterType}>
+                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#141414] border-[#1F1F1F]">
+                    <SelectItem value="flat" className="text-[#FAFAFA]">Flat Fee</SelectItem>
+                    <SelectItem value="percentage" className="text-[#FAFAFA]">Percentage</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm text-[#FAFAFA] mb-2 block">Amount</label>
+                <input
+                  type="number"
+                  value={newCounterAmount}
+                  onChange={(e) => setNewCounterAmount(e.target.value)}
+                  placeholder={newCounterType === 'percentage' ? 'Enter %' : 'Enter $ amount'}
+                  className="w-full bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] rounded-xl px-4 py-2 placeholder:text-[#808080]"
+                />
+                <p className="text-xs text-[#808080] mt-1">
+                  {newCounterType === 'percentage' ? 'Example: 3 for 3%' : 'Example: 5000 for $5,000'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                onClick={() => {
+                  setCounterModalOpen(false);
+                  setSelectedCounter(null);
+                }}
+                variant="outline"
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={async () => {
+                  setRespondingToCounter(true);
+                  try {
+                    const newTerms = {
+                      buyer_commission_type: newCounterType,
+                      buyer_commission_percentage: newCounterType === 'percentage' ? Number(newCounterAmount || 0) : null,
+                      buyer_flat_fee: newCounterType === 'flat' ? Number(newCounterAmount || 0) : null,
+                    };
+
+                    // Mark old counter as superseded
+                    await base44.entities.CounterOffer.update(selectedCounter.id, { status: 'superseded', responded_by_role: 'investor' });
+                    
+                    // Create new counter offer
+                    await base44.entities.CounterOffer.create({
+                      deal_id: selectedCounter.deal_id,
+                      from_role: 'investor',
+                      terms: newTerms,
+                      status: 'pending'
+                    });
+
+                    // Update deal with new terms
+                    const dealForOffer = uniqueDealsData.find(d => d.id === selectedCounter.deal_id);
+                    await base44.entities.Deal.update(selectedCounter.deal_id, {
+                      proposed_terms: {
+                        ...(dealForOffer?.proposed_terms || {}),
+                        ...newTerms
+                      }
+                    });
+
+                    refetchDeals();
+                    refetchCounters();
+                    setCounterModalOpen(false);
+                    setSelectedCounter(null);
+                    toast.success('Counter offer sent to agent');
+                  } catch (e) {
+                    toast.error('Failed to send counter offer');
+                  } finally {
+                    setRespondingToCounter(false);
+                  }
+                }}
+                disabled={respondingToCounter || !newCounterAmount}
+                className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+              >
+                {respondingToCounter ? 'Sending...' : 'Send Counter'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
