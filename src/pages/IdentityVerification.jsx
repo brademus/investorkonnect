@@ -28,17 +28,10 @@ export default function IdentityVerification() {
     }
   }, [loading, kycVerified, navigate]);
 
-  // Check if user should be here - redirect to onboarding if not complete
+  // Check if user should be here - redirect to proper step if needed
   useEffect(() => {
     if (!loading && !profile) {
       navigate(createPageUrl("PostAuth"), { replace: true });
-    } else if (!loading && profile && !onboarded) {
-      const role = profile.user_role;
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      }
     }
   }, [loading, profile, navigate]);
 
