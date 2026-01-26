@@ -21,7 +21,7 @@ import { DEMO_MODE } from "@/components/config/demo";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const { loading, hasNDA, refresh, profile, user, kycVerified } = useCurrentProfile();
+  const { loading, hasNDA, refresh, profile, user, kycVerified, onboarded } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
@@ -60,6 +60,31 @@ function NDAContent() {
   useEffect(() => {
     document.title = "NDA Required - Investor Konnect";
   }, []);
+
+  // Redirect incomplete users back to proper step
+  useEffect(() => {
+    if (loading) return;
+    
+    if (!profile) {
+      navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
+    }
+    
+    if (!onboarded) {
+      const role = profile.user_role;
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+      return;
+    }
+    
+    if (!kycVerified) {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      return;
+    }
+  }, [loading, profile, onboarded, kycVerified, navigate]);
 
   // Redirect if already accepted (check after loading completes)
   useEffect(() => {

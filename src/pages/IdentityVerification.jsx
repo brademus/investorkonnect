@@ -17,7 +17,7 @@ import LoadingAnimation from "@/components/LoadingAnimation";
  */
 export default function IdentityVerification() {
   const navigate = useNavigate();
-  const { profile, refresh, loading, kycVerified } = useCurrentProfile();
+  const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [verifying, setVerifying] = useState(false);
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
 
@@ -28,10 +28,17 @@ export default function IdentityVerification() {
     }
   }, [loading, kycVerified, navigate]);
 
-  // Check if user should be here
+  // Check if user should be here - redirect to onboarding if not complete
   useEffect(() => {
     if (!loading && !profile) {
       navigate(createPageUrl("PostAuth"), { replace: true });
+    } else if (!loading && profile && !onboarded) {
+      const role = profile.user_role;
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
     }
   }, [loading, profile, navigate]);
 
