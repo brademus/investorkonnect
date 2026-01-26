@@ -33,15 +33,31 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
-    // Get active agreement (from LegalAgreement entity - legacy)
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
-    const agreement = agreements[0] || null;
-    
-    // Get latest version (from AgreementVersion entity - new)
+    // Get latest version (from AgreementVersion entity - primary)
     const versions = await base44.asServiceRole.entities.AgreementVersion.filter({ 
       deal_id 
-    }, '-version', 1);
-    const latestVersion = versions[0] || null;
+    }, '-version', 100);
+
+    // Find active version (latest non-superseded)
+    const latestVersion = versions.find(v => v.status !== 'superseded' && v.status !== 'voided') || null;
+
+    // Get active agreement (from LegalAgreement entity - legacy fallback)
+    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+    const legacyAgreement = agreements[0] || null;
+
+    // Use AgreementVersion if available, fallback to LegalAgreement
+    const agreement = latestVersion ? {
+      id: latestVersion.id,
+      deal_id: latestVersion.deal_id,
+      status: latestVersion.status,
+      version: latestVersion.version,
+      investor_signed_at: latestVersion.investor_signed_at,
+      agent_signed_at: latestVersion.agent_signed_at,
+      signed_pdf_url: latestVersion.signed_pdf_url,
+      final_pdf_url: latestVersion.pdf_url,
+      docusign_pdf_url: latestVersion.docusign_pdf_url,
+      exhibit_a_terms: latestVersion.terms_snapshot || {}
+    } : legacyAgreement;
     
     // Get pending counter offers
     const pendingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
