@@ -65,8 +65,8 @@ Deno.serve(async (req) => {
     const connection = await getDocuSignConnection(base44);
     const { access_token, account_id, base_uri } = connection;
     
-    // Get envelope details from DocuSign
-    const envUrl = `${base_uri}/restapi/v2.1/accounts/${account_id}/envelopes/${agreement.docusign_envelope_id}`;
+    // Get full envelope details including recipients
+    const envUrl = `${base_uri}/restapi/v2.1/accounts/${account_id}/envelopes/${agreement.docusign_envelope_id}?include=recipients`;
     const envResp = await fetch(envUrl, {
       headers: { 'Authorization': `Bearer ${access_token}` }
     });
@@ -76,29 +76,38 @@ Deno.serve(async (req) => {
     }
     
     const envData = await envResp.json();
-    const recipients = envData.recipients || [];
+    const signers = envData.recipients?.signers || [];
     
-    // Find investor and agent recipients
+    console.log('[fixAgreementRecipientIds] Found signers:', signers.length);
+    
+    // Match signers by routing order
     let investorRecipientId = null;
     let agentRecipientId = null;
+    let investorSignedAt = null;
+    let agentSignedAt = null;
     
-    for (const recipient of recipients) {
-      const email = (recipient.email || '').toLowerCase();
-      
-      // Try to match based on role tabs or routing order
-      if (recipient.routingOrder === '1') {
-        investorRecipientId = recipient.recipientId;
-        console.log('[fixAgreementRecipientIds] Investor recipient ID:', investorRecipientId);
-      } else if (recipient.routingOrder === '2') {
-        agentRecipientId = recipient.recipientId;
-        console.log('[fixAgreementRecipientIds] Agent recipient ID:', agentRecipientId);
+    for (const signer of signers) {
+      const routingOrder = String(signer.routingOrder);
+      if (routingOrder === '1') {
+        investorRecipientId = signer.recipientId;
+        if (signer.signedDateTime) {
+          investorSignedAt = signer.signedDateTime;
+        }
+        console.log('[fixAgreementRecipientIds] Investor - ID:', investorRecipientId, 'signed:', investorSignedAt);
+      } else if (routingOrder === '2') {
+        agentRecipientId = signer.recipientId;
+        if (signer.signedDateTime) {
+          agentSignedAt = signer.signedDateTime;
+        }
+        console.log('[fixAgreementRecipientIds] Agent - ID:', agentRecipientId, 'signed:', agentSignedAt);
       }
     }
     
     if (!investorRecipientId || !agentRecipientId) {
       return Response.json({ 
         error: 'Could not determine recipient IDs from envelope',
-        recipients: recipients.map(r => ({ recipientId: r.recipientId, routingOrder: r.routingOrder, email: r.email }))
+        signers: signers.map(s => ({ recipientId: s.recipientId, routingOrder: s.routingOrder, signedDateTime: s.signedDateTime })),
+        found: { investorRecipientId, agentRecipientId }
       }, { status: 400 });
     }
     
