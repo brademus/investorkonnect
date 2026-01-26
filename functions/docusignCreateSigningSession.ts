@@ -128,17 +128,20 @@ Deno.serve(async (req) => {
     
     // Load agreement - check both LegalAgreement and AgreementVersion
     let agreement = null;
+    let agreementType = null;
     
     // Try LegalAgreement first
     const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
     if (legacyAgreements && legacyAgreements.length > 0) {
       agreement = legacyAgreements[0];
+      agreementType = 'LegalAgreement';
       console.log('[docusignCreateSigningSession] Found LegalAgreement');
     } else {
       // Try AgreementVersion
       const versionAgreements = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
       if (versionAgreements && versionAgreements.length > 0) {
         agreement = versionAgreements[0];
+        agreementType = 'AgreementVersion';
         console.log('[docusignCreateSigningSession] Found AgreementVersion');
       }
     }
