@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const [agreement, setAgreement] = useState(null);
   const [pendingCounter, setPendingCounter] = useState(null);
+  const [termsChanged, setTermsChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   
@@ -47,6 +48,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       if (res.data) {
         setAgreement(res.data.agreement || null);
         setPendingCounter(res.data.pending_counter || null);
+        setTermsChanged(res.data.terms_mismatch || false);
       }
     } catch (error) {
       console.error('[AgreementPanel] Load error:', error);
@@ -461,8 +463,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               </div>
 
-              {/* Investor: Regenerate & Sign if counter was accepted */}
-              {!investorSigned && isInvestor && !hasPendingOffer && pendingCounter?.status === 'accepted' && (
+              {/* Investor: Regenerate & Sign if terms changed after counter accepted */}
+              {!investorSigned && isInvestor && !hasPendingOffer && termsChanged && (
                 <Button
                   onClick={() => setRegenerateModal(true)}
                   disabled={busy}
@@ -472,8 +474,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </Button>
               )}
 
-              {/* Investor Sign (normal flow - no counter accepted) */}
-              {!investorSigned && isInvestor && !hasPendingOffer && pendingCounter?.status !== 'accepted' && (
+              {/* Investor Sign (normal flow - no terms changes) */}
+              {!investorSigned && isInvestor && !hasPendingOffer && !termsChanged && (
                 <Button
                   onClick={() => handleSign('investor')}
                   disabled={busy}
