@@ -118,10 +118,8 @@ Deno.serve(async (req) => {
       deal_terms: deal.proposed_terms
     };
 
-    console.log('[getAgreementState] Returning:', JSON.stringify({
-      hasPendingCounter: !!pendingCounter,
-      pendingCounterFormatted: pendingCounter
-    }));
+    console.log('[getAgreementState] Final response object keys:', Object.keys(responsePayload));
+    console.log('[getAgreementState] pending_counter in response:', responsePayload.pending_counter);
 
     return Response.json(responsePayload);
     
