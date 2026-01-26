@@ -960,60 +960,7 @@ function PipelineContent() {
               </div>
             )}
 
-            {/* New Deal Requests for Agents - show all unsigned agreements */}
-            {isAgent && pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).length > 0 && (
-              <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-2xl p-6 mb-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div>
-                    <h2 className="text-xl font-bold text-[#E3C567]">New Deal Requests</h2>
-                    <p className="text-sm text-[#808080]">{pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).length} agreements awaiting your signature</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pendingRequests.filter(r => !(r.investor_signed_at && r.agent_signed_at) && !(r.agreement_status === 'fully_signed')).map((room) => (
-                   <div 
-                     key={`${room.deal_id}-${room.id}`}
-                     className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4"
-                   >
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex-1">
-                          <h3 className="text-[#FAFAFA] font-bold text-sm mb-1">
-                            {room.city}, {room.state}
-                          </h3>
-                          <div className="text-xs">
-                            <div className="text-[#34D399] font-semibold">{formatCurrency(room.budget)}</div>
-                            {(() => {
-                              // Try to get comp from room first (most up-to-date), then fall back to deal
-                              const dealFull = uniqueDealsData.find(d => d.id === room.deal_id);
-                              const { compLabel } = getPriceAndComp({ deal: dealFull, room });
-                              return compLabel ? <div className="text-[#E3C567] mt-0.5">Comp: {compLabel}</div> : null;
-                            })()}
-                          </div>
-                        </div>
-                        {(() => {
-                          const enriched = rooms.find(r => r.id === room.id) || rooms.find(r => r.deal_id === room.deal_id) || room;
-                          const badge = getAgreementStatusLabel({ room: enriched, agreement: enriched?.agreement, negotiation: enriched?.negotiation, role: 'agent' });
-                          return badge ? (
-                            <span className={`text-[10px] border px-2 py-1 rounded-full ${badge.className}`}>
-                              {badge.label}
-                            </span>
-                          ) : (
-                            <span className="text-[10px] bg-[#E3C567]/20 text-[#E3C567] px-2 py-1 rounded-full">New</span>
-                          );
-                        })()}
-                      </div>
-                      <Button
-                         onClick={() => navigate(createPageUrl("Room") + `?roomId=${room.id}&tab=agreement`)}
-                         disabled={!agentSetupComplete}
-                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-2 disabled:opacity-60 disabled:cursor-not-allowed"
-                       >
-                         Review Deal
-                       </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* Header */}
             <div className="flex items-center justify-between mb-8">
