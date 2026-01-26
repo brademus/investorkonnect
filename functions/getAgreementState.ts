@@ -68,13 +68,13 @@ Deno.serve(async (req) => {
       agreement = legacyAgreements[0] || null;
     }
 
-    // Get pending counter offers - simple filter, no extra args
+    // Get pending or accepted counter offers
     let pendingCounter = null;
     try {
       const counters = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.filter({
           deal_id,
-          status: 'pending'
+          status: { $in: ['pending', 'accepted'] }
         });
       });
 
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
           terms_delta: raw.terms_delta || {},
           responded_by_role: raw.responded_by_role
         };
-        console.log('[getAgreementState] Found pending counter:', pendingCounter);
+        console.log('[getAgreementState] Found counter:', pendingCounter);
       }
     } catch (e) {
       console.log('[getAgreementState] Counter error:', e.message);
