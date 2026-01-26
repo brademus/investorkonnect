@@ -68,14 +68,14 @@ Deno.serve(async (req) => {
       agreement = legacyAgreements[0] || null;
     }
 
-    // Get pending or accepted counter offers
+    // Get pending or accepted counter offers (latest by creation)
     let pendingCounter = null;
     try {
       const counters = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.filter({
           deal_id,
           status: { $in: ['pending', 'accepted'] }
-        });
+        }, '-created_date', 1);
       });
 
       if (counters && counters.length > 0) {
