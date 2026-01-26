@@ -45,7 +45,7 @@ export const LEGACY_STAGE_MAP = {
  * @returns {string} - The canonical stage ID
  */
 export function normalizeStage(stageId) {
-  if (!stageId) return 'new_listings'; // Default
+  if (!stageId) return 'new_deals'; // Default
   
   // Already canonical
   if (PIPELINE_STAGES.some(s => s.id === stageId)) {
@@ -53,7 +53,7 @@ export function normalizeStage(stageId) {
   }
   
   // Map legacy to canonical
-  return LEGACY_STAGE_MAP[stageId] || 'new_listings';
+  return LEGACY_STAGE_MAP[stageId] || 'new_deals';
 }
 
 /**
