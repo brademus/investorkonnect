@@ -111,21 +111,34 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
     
-    // Update agreement with recipient IDs
-    if (isLegacy) {
-      await base44.asServiceRole.entities.LegalAgreement.update(agreementId, {
-        investor_recipient_id: investorRecipientId,
-        agent_recipient_id: agentRecipientId
-      });
-    } else {
-      await base44.asServiceRole.entities.AgreementVersion.update(agreementId, {
-        investor_recipient_id: investorRecipientId,
-        agent_recipient_id: agentRecipientId
-      });
+    // Update agreement with recipient IDs and signatures
+    const updateData = {
+      investor_recipient_id: investorRecipientId,
+      agent_recipient_id: agentRecipientId
+    };
+    
+    if (investorSignedAt) {
+      updateData.investor_signed_at = investorSignedAt;
+    }
+    if (agentSignedAt) {
+      updateData.agent_signed_at = agentSignedAt;
     }
     
-    console.log('[fixAgreementRecipientIds] ✓ Updated agreement with recipient IDs');
-    return Response.json({ success: true, investor_recipient_id: investorRecipientId, agent_recipient_id: agentRecipientId, isLegacy });
+    if (isLegacy) {
+      await base44.asServiceRole.entities.LegalAgreement.update(agreementId, updateData);
+    } else {
+      await base44.asServiceRole.entities.AgreementVersion.update(agreementId, updateData);
+    }
+    
+    console.log('[fixAgreementRecipientIds] ✓ Updated agreement');
+    return Response.json({ 
+      success: true, 
+      investor_recipient_id: investorRecipientId, 
+      agent_recipient_id: agentRecipientId, 
+      investor_signed_at: investorSignedAt,
+      agent_signed_at: agentSignedAt,
+      isLegacy 
+    });
     
   } catch (error) {
     console.error('[fixAgreementRecipientIds] Error:', error);
