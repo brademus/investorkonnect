@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { createPageUrl } from '@/components/utils';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import LegalAgreementPanel from '@/components/LegalAgreementPanel';
+import AgreementPanel from '@/components/AgreementPanel';
 import { toast } from 'sonner';
 
 export default function MyAgreement() {
@@ -128,10 +128,9 @@ export default function MyAgreement() {
           <p className="text-sm text-[#808080] mt-1">Generate and sign to unlock your pipeline</p>
         </div>
 
-        <LegalAgreementPanel
-          deal={deal}
-          profile={profile}
+        <AgreementPanel
           dealId={deal?.id || dealId}
+          profile={profile}
           onUpdate={async () => {
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
             if (res?.data) setDeal(res.data);

@@ -19,7 +19,7 @@ import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import { StepGuard } from "@/components/StepGuard";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
-import LegalAgreementPanel from "@/components/LegalAgreementPanel";
+import AgreementPanel from "@/components/AgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
@@ -2113,46 +2113,15 @@ ${dealContext}`;
                 <div className="space-y-6">
                   {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
                   {currentRoom?.deal_id ? (
-                    <div>
-                      <LegalAgreementPanel
-                        key={`${currentRoom.deal_id}-${deal?.proposed_terms?.buyer_commission_type}-${deal?.proposed_terms?.buyer_flat_fee}-${deal?.proposed_terms?.buyer_commission_percentage}`}
-                        deal={deal || buildDealFromRoom(currentRoom, false)}
-                        profile={profile}
-                        allowGenerate={profile?.user_role === 'investor'}
-                        initialAgreement={agreement || currentRoom?.agreement || null}
-                        dealId={currentRoom?.deal_id}
-                        hideRegenerateButton={false}
-                        onUpdate={async () => {
-                          console.log('[Room] Agreement onUpdate triggered');
-                          // Reload fresh deal data
-                          try {
-                            const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id });
-                            if (data) {
-                              setDeal(data);
-                              setCachedDeal(currentRoom.deal_id, data);
-                              setCurrentRoom(prev => prev ? { ...prev, proposed_terms: data.proposed_terms } : prev);
-                            }
-                          } catch (_) {}
-                          
-                          // Reload agreement
-                          try {
-                            const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: currentRoom.deal_id });
-                            if (data?.agreement) {
-                              setAgreement(data.agreement);
-                            }
-                          } catch (_) {}
-                          
-                          await refreshRoomState();
-                          queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                          queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                        }}
-                      />
-                      {!deal && !boardLoading && (
-                        <div className="text-center py-4 text-[#808080] text-sm">
-                          Loading deal data...
-                        </div>
-                      )}
-                    </div>
+                    <AgreementPanel
+                      dealId={currentRoom.deal_id}
+                      profile={profile}
+                      onUpdate={async () => {
+                        await refreshRoomState();
+                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                      }}
+                    />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}

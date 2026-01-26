@@ -114,18 +114,16 @@ Deno.serve(async (req) => {
         proposed_terms: acceptedTerms
       });
       
-      console.log('[respondToCounterOffer] ✓ Accepted terms merged into deal');
+      console.log('[respondToCounterOffer] ✓ Terms accepted and saved to deal');
+      console.log('[respondToCounterOffer] ⏸️  Waiting for investor to regenerate');
       
-      // Trigger regeneration
-      const regenResponse = await base44.functions.invoke('regenerateAgreementVersion', {
-        deal_id: counter.deal_id
-      });
+      // DO NOT auto-regenerate - investor must click "Regenerate & Sign"
       
       return Response.json({
         success: true,
         action: 'accepted',
         counter_offer: { ...counter, status: 'accepted' },
-        regeneration: regenResponse.data
+        message: 'Terms accepted. Investor must regenerate the agreement.'
       });
     }
     
