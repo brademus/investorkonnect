@@ -21,6 +21,8 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
  */
 export default function AgentOnboarding() {
   const navigate = useNavigate();
+  const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
+  const [step, setStep] = useState(1);
   
   // Block navigation away during onboarding (except to mandatory steps)
   useEffect(() => {
@@ -33,8 +35,6 @@ export default function AgentOnboarding() {
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [step]);
-  const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
-  const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
   const [formData, setFormData] = useState({
