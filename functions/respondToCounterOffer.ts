@@ -114,24 +114,35 @@ Deno.serve(async (req) => {
       // Get the terms to accept (from counter, not deal)
       const acceptedTerms = counter.terms_delta || counter.terms || {};
       
+      console.log('[respondToCounterOffer] Attempting to accept counter:', counter_offer_id);
+      console.log('[respondToCounterOffer] Current counter status:', counter.status);
+      console.log('[respondToCounterOffer] Accepted terms:', acceptedTerms);
+      
       // Mark counter as accepted
-      await withRetry(async () => {
-        await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
+      try {
+        const updatedCounter = await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'accepted',
-          terms_delta: existingTerms,
           responded_at: new Date().toISOString(),
           responded_by_role: userRole
         });
-      });
+        console.log('[respondToCounterOffer] Counter update result:', updatedCounter);
+      } catch (e) {
+        console.error('[respondToCounterOffer] Failed to update counter:', e.message);
+        throw e;
+      }
 
       // Update deal proposed_terms with accepted counter terms
-      await withRetry(async () => {
+      try {
         await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
           proposed_terms: acceptedTerms
         });
-      });
+        console.log('[respondToCounterOffer] Deal updated with accepted terms');
+      } catch (e) {
+        console.error('[respondToCounterOffer] Failed to update deal:', e.message);
+        throw e;
+      }
 
-      console.log('[respondToCounterOffer] Accepted counter with terms:', acceptedTerms);
+      console.log('[respondToCounterOffer] ✓ Accepted counter with terms:', acceptedTerms);
       return Response.json({ success: true, action: 'accepted', accepted_terms: acceptedTerms });
     }
 
