@@ -104,12 +104,12 @@ Deno.serve(async (req) => {
     
     // Update agreement with recipient IDs
     if (isLegacy) {
-      await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
+      await base44.asServiceRole.entities.LegalAgreement.update(agreementId, {
         investor_recipient_id: investorRecipientId,
         agent_recipient_id: agentRecipientId
       });
     } else {
-      await base44.asServiceRole.entities.AgreementVersion.update(agreement_id, {
+      await base44.asServiceRole.entities.AgreementVersion.update(agreementId, {
         investor_recipient_id: investorRecipientId,
         agent_recipient_id: agentRecipientId
       });
