@@ -49,14 +49,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
           if (res.data) {
             const agreement = res.data.agreement || null;
             const dealTerms = res.data.deal_terms || null;
-
-            // If investor just signed, show toast
-                      if (agreement?.investor_signed_at && !investorSigned) {
-                        toast.success('✓ Your signature recorded!');
-                      }
-
-                      // Show regenerate if an accepted counter exists and investor hasn't signed yet
-                      const termsHaveChanged = !!(agreement && res.data?.pending_counter?.status === 'accepted' && !agreement.investor_signed_at);
+            const termsHaveChanged = !!(agreement && res.data?.pending_counter?.status === 'accepted' && !agreement?.investor_signed_at);
 
             setAgreement(agreement);
             setPendingCounter(res.data.pending_counter || null);
