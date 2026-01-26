@@ -42,36 +42,39 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
 
   // Load state from server
     const loadState = async () => {
-      if (!dealId) return;
+        if (!dealId) return;
 
-      try {
-        const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
-        console.log('[AgreementPanel] Full response:', JSON.stringify(res.data, null, 2));
-        if (res.data) {
-          const agreement = res.data.agreement || null;
-          const dealTerms = res.data.deal_terms || null;
-          
-          // Terms changed if deal_terms differ from agreement's exhibit_a_terms
-          const termsHaveChanged = agreement && !!(
-            dealTerms && 
-            agreement.exhibit_a_terms && 
-            (dealTerms.buyer_commission_percentage !== agreement.exhibit_a_terms.buyer_commission_percentage ||
-             dealTerms.buyer_flat_fee !== agreement.exhibit_a_terms.buyer_flat_fee ||
-             dealTerms.buyer_commission_type !== agreement.exhibit_a_terms.buyer_commission_type)
-          );
-          
-          console.log('[AgreementPanel] Terms changed:', termsHaveChanged);
-          setAgreement(agreement);
-          setPendingCounter(res.data.pending_counter || null);
-          setDealTerms(dealTerms);
-          setTermsChanged(termsHaveChanged);
+        try {
+          const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
+          if (res.data) {
+            const agreement = res.data.agreement || null;
+            const dealTerms = res.data.deal_terms || null;
+
+            // If investor just signed, show toast
+            if (agreement?.investor_signed_at && !investorSigned) {
+              toast.success('✓ Your signature recorded!');
+            }
+
+            // Terms changed if deal_terms differ from agreement's exhibit_a_terms
+            const termsHaveChanged = agreement && !!(
+              dealTerms && 
+              agreement.exhibit_a_terms && 
+              (dealTerms.buyer_commission_percentage !== agreement.exhibit_a_terms.buyer_commission_percentage ||
+               dealTerms.buyer_flat_fee !== agreement.exhibit_a_terms.buyer_flat_fee ||
+               dealTerms.buyer_commission_type !== agreement.exhibit_a_terms.buyer_commission_type)
+            );
+
+            setAgreement(agreement);
+            setPendingCounter(res.data.pending_counter || null);
+            setDealTerms(dealTerms);
+            setTermsChanged(termsHaveChanged);
+          }
+        } catch (error) {
+          console.error('[AgreementPanel] Load error:', error);
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('[AgreementPanel] Load error:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
   useEffect(() => {
     loadState();
