@@ -533,6 +533,15 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               </div>
 
+              {/* Waiting for Agent Card */}
+              {investorSigned && !agentSigned && (
+                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                  <Clock className="w-8 h-8 text-[#60A5FA] mx-auto mb-2" />
+                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Agent</p>
+                  <p className="text-xs text-[#808080] mt-1">Agent will sign after you</p>
+                </div>
+              )}
+
               {/* Investor Actions */}
               {!isFullySigned && isInvestor && !hasPendingOffer && (
                 <>
