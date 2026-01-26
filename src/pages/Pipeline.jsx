@@ -503,9 +503,9 @@ function PipelineContent() {
       if (hasAgentAccepted) {
         const fullName = room?.counterparty_name || deal.agent_name || 'Agent Connected';
         // Hide agent name until both parties have fully signed
-        agentName = isFullySigned ? fullName : 'Pending Agent Signature';
+        agentName = isFullySigned ? fullName : isAgent ? 'Pending Investor Signature' : 'Pending Agent Signature';
       } else if (hasAgentPending) {
-        agentName = 'Pending Agent Review';
+        agentName = isAgent ? 'Pending Your Review' : 'Pending Agent Review';
       }
 
       // For agents: show investor name. For investors: show agent name
