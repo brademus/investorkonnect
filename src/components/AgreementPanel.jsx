@@ -136,7 +136,9 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     counterToRole: pendingCounter?.to_role,
     counterStatus: pendingCounter?.status,
     investorSigned,
-    agentSigned 
+    agentSigned,
+    agreement_investor_signed_at: agreement?.investor_signed_at,
+    agreement_agent_signed_at: agreement?.agent_signed_at
   });
 
   // Actions
