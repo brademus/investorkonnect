@@ -45,6 +45,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     
     try {
       const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
+      console.log('[AgreementPanel] State loaded:', res.data);
       if (res.data) {
         setAgreement(res.data.agreement || null);
         setPendingCounter(res.data.pending_counter || null);
@@ -93,6 +94,17 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const hasPendingOffer = !!pendingCounter && pendingCounter?.status === 'pending';
   const myRole = isInvestor ? 'investor' : 'agent';
   const amRecipient = hasPendingOffer && pendingCounter?.to_role === myRole;
+
+  console.log('[AgreementPanel] State:', { 
+    hasAgreement: !!agreement, 
+    hasPendingOffer, 
+    amRecipient, 
+    myRole,
+    counterToRole: pendingCounter?.to_role,
+    counterStatus: pendingCounter?.status,
+    investorSigned,
+    agentSigned 
+  });
 
   // Actions
   const handleGenerate = async () => {
