@@ -572,11 +572,11 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show deals ONLY if fully signed (investor signed + agent signed)
+    // Agents: show deals if accepted/signed/requested OR fully signed
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
-      // Agents ONLY see deals that are fully signed
-      return d.is_fully_signed === true;
+      // Agents see deals that have a room request (requested/accepted/signed) or are fully signed
+      return d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed' || d.is_fully_signed === true;
     });
   }, [dealsData, rooms, appointments]);
 
