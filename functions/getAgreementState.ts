@@ -101,10 +101,12 @@ Deno.serve(async (req) => {
     // Get pending counter offers
     let pendingCounters = [];
     try {
-      pendingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
-        deal_id,
-        status: 'pending'
-      }, '-created_date', 1);
+      pendingCounters = await withRetry(async () => {
+        return await base44.asServiceRole.entities.CounterOffer.filter({
+          deal_id,
+          status: 'pending'
+        }, '-created_date', 1);
+      });
     } catch (e) {
       console.log('[getAgreementState] Counter filter error:', e.message);
       pendingCounters = [];
