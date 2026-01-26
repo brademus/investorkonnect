@@ -94,13 +94,20 @@ Deno.serve(async (req) => {
     }
     
     // Update agreement with recipient IDs
-    await base44.asServiceRole.entities.AgreementVersion.update(agreement_id, {
-      investor_recipient_id: investorRecipientId,
-      agent_recipient_id: agentRecipientId
-    });
+    if (isLegacy) {
+      await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
+        investor_recipient_id: investorRecipientId,
+        agent_recipient_id: agentRecipientId
+      });
+    } else {
+      await base44.asServiceRole.entities.AgreementVersion.update(agreement_id, {
+        investor_recipient_id: investorRecipientId,
+        agent_recipient_id: agentRecipientId
+      });
+    }
     
     console.log('[fixAgreementRecipientIds] ✓ Updated agreement with recipient IDs');
-    return Response.json({ success: true, investor_recipient_id: investorRecipientId, agent_recipient_id: agentRecipientId });
+    return Response.json({ success: true, investor_recipient_id: investorRecipientId, agent_recipient_id: agentRecipientId, isLegacy });
     
   } catch (error) {
     console.error('[fixAgreementRecipientIds] Error:', error);
