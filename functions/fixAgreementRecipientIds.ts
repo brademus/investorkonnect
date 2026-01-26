@@ -23,28 +23,37 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Admin only' }, { status: 403 });
     }
     
-    const { agreement_id } = await req.json();
-    if (!agreement_id) {
-      return Response.json({ error: 'agreement_id required' }, { status: 400 });
+    const { deal_id } = await req.json();
+    if (!deal_id) {
+      return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Try AgreementVersion first, then fall back to LegalAgreement
+    // Try AgreementVersion first (get latest non-superseded)
     let agreement = null;
     let isLegacy = false;
+    let agreementId = null;
     
-    const versions = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
+    const versions = await base44.asServiceRole.entities.AgreementVersion.filter({ deal_id }, '-version', 100);
     if (versions && versions.length > 0) {
-      agreement = versions[0];
-    } else {
-      const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+      const current = versions.find(v => v.status !== 'superseded' && v.status !== 'voided');
+      if (current) {
+        agreement = current;
+        agreementId = current.id;
+      }
+    }
+    
+    // Fall back to LegalAgreement
+    if (!agreement) {
+      const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
       if (legacyAgreements && legacyAgreements.length > 0) {
         agreement = legacyAgreements[0];
         isLegacy = true;
+        agreementId = agreement.id;
       }
     }
     
     if (!agreement) {
-      return Response.json({ error: 'Agreement not found in AgreementVersion or LegalAgreement' }, { status: 404 });
+      return Response.json({ error: 'No agreement found for deal' }, { status: 404 });
     }
     if (!agreement.docusign_envelope_id) {
       return Response.json({ error: 'No DocuSign envelope ID' }, { status: 400 });
