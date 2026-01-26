@@ -101,9 +101,9 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   // Real-time updates
   useEffect(() => {
     if (!dealId) return;
-    
+
     const unsubs = [];
-    
+
     // Subscribe to counter offers
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
@@ -111,7 +111,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       }
     });
     unsubs.push(unsubCounter);
-    
+
     // Subscribe to legacy agreement
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
@@ -119,7 +119,15 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       }
     });
     unsubs.push(unsubAgreement);
-    
+
+    // Subscribe to AgreementVersion
+    const unsubVersion = base44.entities.AgreementVersion.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        loadState();
+      }
+    });
+    unsubs.push(unsubVersion);
+
     return () => unsubs.forEach(u => { try { u?.(); } catch (_) {} });
   }, [dealId]);
 
