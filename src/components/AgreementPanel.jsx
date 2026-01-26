@@ -40,25 +40,24 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const isAgent = profile?.user_role === 'agent';
 
   // Load state from server
-  const loadState = async () => {
-    if (!dealId) return;
-    
-    try {
-      const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
-      console.log('[AgreementPanel] State loaded:', res.data);
-      console.log('[AgreementPanel] Agreement from response:', res.data?.agreement);
-      console.log('[AgreementPanel] Pending counter from response:', res.data?.pending_counter);
-      if (res.data) {
-        setAgreement(res.data.agreement || null);
-        setPendingCounter(res.data.pending_counter || null);
-        setTermsChanged(res.data.terms_mismatch || false);
+    const loadState = async () => {
+      if (!dealId) return;
+
+      try {
+        const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
+        console.log('[AgreementPanel] Full response:', JSON.stringify(res.data, null, 2));
+        if (res.data) {
+          console.log('[AgreementPanel] Setting pending_counter to:', res.data.pending_counter);
+          setAgreement(res.data.agreement || null);
+          setPendingCounter(res.data.pending_counter || null);
+          setTermsChanged(res.data.terms_mismatch || false);
+        }
+      } catch (error) {
+        console.error('[AgreementPanel] Load error:', error);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error('[AgreementPanel] Load error:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
   useEffect(() => {
     loadState();
