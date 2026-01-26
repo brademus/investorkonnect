@@ -55,16 +55,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                         toast.success('✓ Your signature recorded!');
                       }
 
-                      // Terms changed if deal_terms differ from agreement's exhibit_a_terms
-                      // Also show regenerate if counter was just accepted (accepted status means investor accepted it)
-                      const termsHaveChanged = agreement && !!(
-                        (dealTerms && 
-                        agreement.exhibit_a_terms && 
-                        (dealTerms.buyer_commission_percentage !== agreement.exhibit_a_terms.buyer_commission_percentage ||
-                         dealTerms.buyer_flat_fee !== agreement.exhibit_a_terms.buyer_flat_fee ||
-                         dealTerms.buyer_commission_type !== agreement.exhibit_a_terms.buyer_commission_type)) ||
-                        (res.data?.pending_counter?.status === 'accepted' && isInvestor && !agreement.investor_signed_at)
-                      );
+                      // Show regenerate if an accepted counter exists and investor hasn't signed yet
+                      const termsHaveChanged = !!(agreement && res.data?.pending_counter?.status === 'accepted' && !agreement.investor_signed_at);
 
             setAgreement(agreement);
             setPendingCounter(res.data.pending_counter || null);
