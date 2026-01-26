@@ -994,8 +994,8 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
             {/* Actions */}
             <div className="flex flex-col gap-3">
-              {!agreement.investor_signed_at && isInvestor && (
-                <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+              {!agreement.investor_signed_at && isInvestor && !hasPendingOffer && !termsMismatch && (
+                <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold">
                   {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
                 </Button>
               )}
