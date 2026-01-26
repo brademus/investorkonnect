@@ -1,0 +1,98 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+
+async function getDocuSignConnection(base44) {
+  const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
+  if (!connections || connections.length === 0) {
+    throw new Error('DocuSign not connected');
+  }
+  const connection = connections[0];
+  const now = new Date();
+  const expiresAt = connection.expires_at ? new Date(connection.expires_at) : null;
+  if (expiresAt && now >= expiresAt) {
+    throw new Error('DocuSign token expired');
+  }
+  return connection;
+}
+
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user || user.role !== 'admin') {
+      return Response.json({ error: 'Admin only' }, { status: 403 });
+    }
+    
+    const { agreement_id } = await req.json();
+    if (!agreement_id) {
+      return Response.json({ error: 'agreement_id required' }, { status: 400 });
+    }
+    
+    // Load agreement
+    const agreements = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
+    if (!agreements || agreements.length === 0) {
+      return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    }
+    
+    const agreement = agreements[0];
+    if (!agreement.docusign_envelope_id) {
+      return Response.json({ error: 'No DocuSign envelope ID' }, { status: 400 });
+    }
+    
+    console.log('[fixAgreementRecipientIds] Loading envelope:', agreement.docusign_envelope_id);
+    
+    // Get DocuSign connection
+    const connection = await getDocuSignConnection(base44);
+    const { access_token, account_id, base_uri } = connection;
+    
+    // Get envelope details from DocuSign
+    const envUrl = `${base_uri}/restapi/v2.1/accounts/${account_id}/envelopes/${agreement.docusign_envelope_id}`;
+    const envResp = await fetch(envUrl, {
+      headers: { 'Authorization': `Bearer ${access_token}` }
+    });
+    
+    if (!envResp.ok) {
+      throw new Error(`Failed to fetch envelope: ${envResp.status}`);
+    }
+    
+    const envData = await envResp.json();
+    const recipients = envData.recipients || [];
+    
+    // Find investor and agent recipients
+    let investorRecipientId = null;
+    let agentRecipientId = null;
+    
+    for (const recipient of recipients) {
+      const email = (recipient.email || '').toLowerCase();
+      
+      // Try to match based on role tabs or routing order
+      if (recipient.routingOrder === '1') {
+        investorRecipientId = recipient.recipientId;
+        console.log('[fixAgreementRecipientIds] Investor recipient ID:', investorRecipientId);
+      } else if (recipient.routingOrder === '2') {
+        agentRecipientId = recipient.recipientId;
+        console.log('[fixAgreementRecipientIds] Agent recipient ID:', agentRecipientId);
+      }
+    }
+    
+    if (!investorRecipientId || !agentRecipientId) {
+      return Response.json({ 
+        error: 'Could not determine recipient IDs from envelope',
+        recipients: recipients.map(r => ({ recipientId: r.recipientId, routingOrder: r.routingOrder, email: r.email }))
+      }, { status: 400 });
+    }
+    
+    // Update agreement with recipient IDs
+    await base44.asServiceRole.entities.AgreementVersion.update(agreement_id, {
+      investor_recipient_id: investorRecipientId,
+      agent_recipient_id: agentRecipientId
+    });
+    
+    console.log('[fixAgreementRecipientIds] ✓ Updated agreement with recipient IDs');
+    return Response.json({ success: true, investor_recipient_id: investorRecipientId, agent_recipient_id: agentRecipientId });
+    
+  } catch (error) {
+    console.error('[fixAgreementRecipientIds] Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+});
