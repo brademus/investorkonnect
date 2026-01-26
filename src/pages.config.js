@@ -5,6 +5,7 @@ import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
 import AgentOnboarding from './pages/AgentOnboarding';
 import Agents from './pages/Agents';
+import BillingSuccess from './pages/BillingSuccess';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
 import FAQ from './pages/FAQ';
@@ -29,7 +30,6 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import Terms from './pages/Terms';
-import BillingSuccess from './pages/BillingSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -41,6 +41,7 @@ export const PAGES = {
     "AgentMatching": AgentMatching,
     "AgentOnboarding": AgentOnboarding,
     "Agents": Agents,
+    "BillingSuccess": BillingSuccess,
     "Contact": Contact,
     "ContractVerify": ContractVerify,
     "FAQ": FAQ,
@@ -65,7 +66,6 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "Terms": Terms,
-    "BillingSuccess": BillingSuccess,
 }
 
 export const pagesConfig = {
