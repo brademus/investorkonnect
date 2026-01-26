@@ -24,6 +24,7 @@ import { toast } from 'sonner';
 export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const [agreement, setAgreement] = useState(null);
   const [pendingCounter, setPendingCounter] = useState(null);
+  const [dealTerms, setDealTerms] = useState(null);
   const [termsChanged, setTermsChanged] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
