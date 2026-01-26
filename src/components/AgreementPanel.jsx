@@ -283,11 +283,15 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     if (agreement?.exhibit_a_terms) {
       return agreement.exhibit_a_terms;
     }
-    // Fallback to deal proposed_terms (updated after counter acceptance)
+    // Fallback to agreement's proposed_terms, then to server's deal terms
     return agreement?.proposed_terms || null;
   };
 
   const currentTerms = getCurrentTerms();
+  
+  useEffect(() => {
+    console.log('[AgreementPanel] currentTerms:', currentTerms);
+  }, [currentTerms]);
 
   if (loading) {
     return (
