@@ -461,8 +461,19 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               </div>
 
-              {/* Investor Sign */}
-              {!investorSigned && isInvestor && !hasPendingOffer && (
+              {/* Investor: Regenerate & Sign if counter was accepted */}
+              {!investorSigned && isInvestor && !hasPendingOffer && pendingCounter?.status === 'accepted' && (
+                <Button
+                  onClick={() => setRegenerateModal(true)}
+                  disabled={busy}
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                >
+                  Regenerate & Sign
+                </Button>
+              )}
+
+              {/* Investor Sign (normal flow - no counter accepted) */}
+              {!investorSigned && isInvestor && !hasPendingOffer && pendingCounter?.status !== 'accepted' && (
                 <Button
                   onClick={() => handleSign('investor')}
                   disabled={busy}
