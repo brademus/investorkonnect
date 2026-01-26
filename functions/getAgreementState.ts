@@ -114,7 +114,14 @@ Deno.serve(async (req) => {
       pending_counter: pendingCounter,
       terms_mismatch: termsMismatch,
       deal_terms: deal.proposed_terms
-    });
+    };
+
+    console.log('[getAgreementState] Returning:', JSON.stringify({
+      hasPendingCounter: !!pendingCounter,
+      pendingCounterFormatted: pendingCounter
+    }));
+
+    return Response.json(responsePayload);
     
   } catch (error) {
     console.error('[getAgreementState] Error:', error);
