@@ -38,8 +38,11 @@ Deno.serve(async (req) => {
       deal_id 
     }, '-version', 100);
 
+    console.log('[getAgreementState] Versions found:', versions.length, versions.map(v => ({ v: v.version, s: v.status })));
+
     // Find active version (latest non-superseded)
     const latestVersion = versions.find(v => v.status !== 'superseded' && v.status !== 'voided') || null;
+    console.log('[getAgreementState] Latest active version:', latestVersion?.version, latestVersion?.status);
 
     // Get active agreement (from LegalAgreement entity - legacy fallback)
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
