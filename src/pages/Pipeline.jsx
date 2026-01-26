@@ -529,20 +529,21 @@ function PipelineContent() {
         room_id: room?.id || null,
 
         // Content - Prefer Deal Entity (User Uploaded Data)
-        title: deal.title || 'Untitled Deal',
-        property_address: deal.property_address || deal.deal_title || 'Address Pending',
-        city: deal.city,
-        state: deal.state,
-        budget: deal.purchase_price, 
-        seller_name: deal.seller_info?.seller_name,
+         title: deal.title || 'Untitled Deal',
+         property_address: deal.property_address || deal.deal_title || 'Address Pending',
+         city: deal.city,
+         state: deal.state,
+         budget: deal.purchase_price, 
+         seller_name: deal.seller_info?.seller_name,
 
-        // Status & Agent  
-        pipeline_stage: normalizeStage(deal.pipeline_stage || 'new_listings'),
-        raw_pipeline_stage: deal.pipeline_stage,
-        customer_name: counterpartyName,
-        agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
-        agent_request_status: room?.request_status || null,
-        agreement_status: room?.agreement_status || null,
+         // Status & Agent  
+         // Auto-move to connected_deals if agreement is fully signed, otherwise use deal's pipeline_stage
+         pipeline_stage: isFullySigned ? 'connected_deals' : normalizeStage(deal.pipeline_stage || 'new_deals'),
+         raw_pipeline_stage: deal.pipeline_stage,
+         customer_name: counterpartyName,
+         agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
+         agent_request_status: room?.request_status || null,
+         agreement_status: room?.agreement_status || null,
 
          // Dates
          created_date: deal.created_date,
