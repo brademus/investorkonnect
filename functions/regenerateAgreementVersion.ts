@@ -152,6 +152,12 @@ Deno.serve(async (req) => {
       throw new Error('Agreement generation failed');
     }
     
+    console.log('[regenerateAgreementVersion] Generated agreement keys:', Object.keys(newAgreement));
+    console.log('[regenerateAgreementVersion] investor_recipient_id:', newAgreement.investor_recipient_id);
+    console.log('[regenerateAgreementVersion] agent_recipient_id:', newAgreement.agent_recipient_id);
+    console.log('[regenerateAgreementVersion] investor_client_user_id:', newAgreement.investor_client_user_id);
+    console.log('[regenerateAgreementVersion] agent_client_user_id:', newAgreement.agent_client_user_id);
+    
     // Create AgreementVersion record
     const newVersion = await base44.asServiceRole.entities.AgreementVersion.create({
       deal_id,
