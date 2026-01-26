@@ -312,6 +312,20 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
     console.log('[DocuSign Webhook] Agreement updated:', agreement.id);
     
+    // Auto-move deal to connected_deals if fully signed
+    const finalStatus = updates.status || agreement.status;
+    if (finalStatus === 'fully_signed' || finalStatus === 'attorney_review_pending') {
+      try {
+        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+        if (dealArr && dealArr.length > 0 && dealArr[0].pipeline_stage !== 'connected_deals') {
+          await base44.asServiceRole.entities.Deal.update(agreement.deal_id, { pipeline_stage: 'connected_deals' });
+          console.log('[DocuSign Webhook] Moved deal', agreement.deal_id, 'to connected_deals');
+        }
+      } catch (e) {
+        console.warn('[DocuSign Webhook] Failed to auto-move deal to connected_deals:', e?.message || e);
+      }
+    }
+    
     // Update Room agreement_status to match final agreement status
     try {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id });
