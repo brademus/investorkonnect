@@ -48,12 +48,23 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
         console.log('[AgreementPanel] Full response:', JSON.stringify(res.data, null, 2));
         if (res.data) {
-          console.log('[AgreementPanel] Setting pending_counter to:', res.data.pending_counter);
-          console.log('[AgreementPanel] Setting deal_terms to:', res.data.deal_terms);
-          setAgreement(res.data.agreement || null);
+          const agreement = res.data.agreement || null;
+          const dealTerms = res.data.deal_terms || null;
+          
+          // Terms changed if deal_terms differ from agreement's exhibit_a_terms
+          const termsHaveChanged = agreement && !!(
+            dealTerms && 
+            agreement.exhibit_a_terms && 
+            (dealTerms.buyer_commission_percentage !== agreement.exhibit_a_terms.buyer_commission_percentage ||
+             dealTerms.buyer_flat_fee !== agreement.exhibit_a_terms.buyer_flat_fee ||
+             dealTerms.buyer_commission_type !== agreement.exhibit_a_terms.buyer_commission_type)
+          );
+          
+          console.log('[AgreementPanel] Terms changed:', termsHaveChanged);
+          setAgreement(agreement);
           setPendingCounter(res.data.pending_counter || null);
-          setDealTerms(res.data.deal_terms || null);
-          setTermsChanged(res.data.terms_mismatch || false);
+          setDealTerms(dealTerms);
+          setTermsChanged(termsHaveChanged);
         }
       } catch (error) {
         console.error('[AgreementPanel] Load error:', error);
