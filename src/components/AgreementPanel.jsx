@@ -389,7 +389,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
           )}
 
           {/* No Agreement - Investor Generate */}
-          {!agreement && !hasPendingOffer && (
+          {!agreement && (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
               <p className="text-[#808080] mb-4">
@@ -412,7 +412,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
             </div>
           )}
 
-          {/* Agreement Exists */}
+          {/* Agreement Exists - SHOW EVEN IF PENDING COUNTER */}
           {agreement && (
             <div className="space-y-4">
               {/* Current Terms */}
