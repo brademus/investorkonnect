@@ -3,13 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { CheckCircle, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
+  const { refresh } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
-  }, []);
+    // Refresh profile to get updated subscription status
+    refresh();
+  }, [refresh]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
@@ -28,10 +32,10 @@ export default function BillingSuccess() {
           </p>
 
           <Button
-            onClick={() => navigate(createPageUrl("Pipeline"))}
+            onClick={() => navigate(createPageUrl("IdentityVerification"))}
             className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-12"
           >
-            Go to Dashboard
+            Continue to Identity Verification
             <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
