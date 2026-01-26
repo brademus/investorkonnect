@@ -589,8 +589,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               )}
 
-              {/* Agent Sign */}
-              {investorSigned && !agentSigned && isAgent && !hasPendingOffer && (
+              {/* Agent Sign - blocked if accepted counter exists */}
+              {investorSigned && !agentSigned && isAgent && !hasPendingOffer && !hasAcceptedCounter && (
                 <Button
                   onClick={() => handleSign('agent')}
                   disabled={busy}
