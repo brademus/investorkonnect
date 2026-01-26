@@ -83,9 +83,16 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       const newUrl = window.location.pathname + window.location.search.replace('&signed=1', '').replace('?signed=1', '');
       window.history.replaceState({}, '', newUrl);
 
-      // Reload state after a short delay to ensure DocuSign webhook processed
+      // Reload state multiple times to catch webhook
       setTimeout(() => loadState(), 1500);
+      setTimeout(() => loadState(), 3000);
+      setTimeout(() => loadState(), 5000);
     }
+
+    // Also reload on window focus (user switching tabs)
+    const handleFocus = () => loadState();
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
   }, [dealId]);
 
   // Real-time updates
