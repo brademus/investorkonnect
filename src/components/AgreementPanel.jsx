@@ -548,34 +548,36 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               )}
 
-              {/* Investor Actions */}
-              {!isFullySigned && isInvestor && !investorSigned && !hasPendingOffer && (
-                <>
-                  {/* Show Regenerate & Sign only if terms changed after counter acceptance */}
-                  {termsChanged ? (
-                    <Button
-                      onClick={() => setRegenerateModal(true)}
-                      disabled={busy}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                    >
-                      Regenerate & Sign
-                    </Button>
-                  ) : (
-                    /* Normal Sign button when no terms changes */
-                    <Button
-                      onClick={() => handleSign('investor')}
-                      disabled={busy}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                    >
-                      {busy ? (
-                        <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                          Opening DocuSign...
-                        </>
-                      ) : 'Sign Agreement'}
-                    </Button>
-                  )}
-                </>
+              {/* Investor Actions - show if no pending offer (pending or accepted) */}
+              {!isFullySigned && isInvestor && !investorSigned && !hasPendingOffer && !hasAcceptedCounter && (
+                <Button
+                  onClick={() => handleSign('investor')}
+                  disabled={busy}
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Opening DocuSign...
+                    </>
+                  ) : 'Sign Agreement'}
+                </Button>
+              )}
+
+              {/* Investor Regenerate & Sign - ONLY if accepted counter exists and not yet signed */}
+              {!isFullySigned && isInvestor && !investorSigned && hasAcceptedCounter && (
+                <Button
+                  onClick={() => setRegenerateModal(true)}
+                  disabled={busy}
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                >
+                  {busy ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Regenerating...
+                    </>
+                  ) : 'Regenerate & Sign'}
+                </Button>
               )}
 
               {/* Agent Wait - either for initial sig or regeneration */}
