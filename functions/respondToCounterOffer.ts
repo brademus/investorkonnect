@@ -7,7 +7,7 @@ async function withRetry(fn, maxAttempts = 3) {
     } catch (error) {
       if (error.status === 429 && attempt < maxAttempts) {
         const delay = Math.pow(2, attempt - 1) * 1000;
-        console.log(`[respondToCounterOffer] Rate limited, retrying`);
+        console.log(`[respondToCounterOffer] Rate limited, retrying in ${delay}ms`);
         await new Promise(r => setTimeout(r, delay));
       } else {
         throw error;
@@ -26,76 +26,89 @@ Deno.serve(async (req) => {
     }
     
     const { counter_offer_id, action, terms_delta } = await req.json();
+    console.log('[respondToCounterOffer] Request:', { counter_offer_id, action, user_id: user.id });
     
     if (!counter_offer_id || !action) {
       return Response.json({ error: 'counter_offer_id and action required' }, { status: 400 });
     }
     
     if (!['accept', 'decline', 'recounter'].includes(action)) {
-      return Response.json({ error: 'Invalid action' }, { status: 400 });
+      return Response.json({ error: 'Invalid action: accept, decline, or recounter' }, { status: 400 });
     }
-
-    // Load counter offer
+    
+    // 1. Load the counter offer
     const counter = await withRetry(async () => {
       const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
       if (!counters?.length) throw new Error('Counter offer not found');
       return counters[0];
     });
-
+    
+    console.log('[respondToCounterOffer] Counter loaded:', { 
+      id: counter.id, 
+      status: counter.status, 
+      from_role: counter.from_role, 
+      to_role: counter.to_role 
+    });
+    
     if (counter.status !== 'pending') {
-      return Response.json({ error: `Counter already ${counter.status}` }, { status: 400 });
+      return Response.json({ 
+        error: `Counter is already ${counter.status}. Cannot respond to non-pending counters.` 
+      }, { status: 400 });
     }
-
-    // Get user profile
-    const profile = await withRetry(async () => {
+    
+    // 2. Verify user is the recipient
+    const userProfile = await withRetry(async () => {
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      if (!profiles?.length) throw new Error('Profile not found');
+      if (!profiles?.length) throw new Error('Profile not found for user');
       return profiles[0];
     });
-
-    const userRole = profile.user_role;
+    
+    const userRole = userProfile.user_role;
+    console.log('[respondToCounterOffer] User role:', userRole, 'Counter recipient:', counter.to_role);
+    
     if (userRole !== counter.to_role) {
-      return Response.json({ error: 'Only recipient can respond' }, { status: 403 });
+      return Response.json({ 
+        error: `Only the ${counter.to_role} can respond to this counter` 
+      }, { status: 403 });
     }
-
-    // Get deal
-    const deal = await withRetry(async () => {
-      const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
-      if (!deals?.length) throw new Error('Deal not found');
-      return deals[0];
-    });
-
-    // Handle actions
-    // Get existing terms (handle both old 'terms' and new 'terms_delta' fields)
-    const existingTerms = counter.terms_delta || counter.terms || {};
-
+    
+    const now = new Date().toISOString();
+    
+    // 3. Handle DECLINE
     if (action === 'decline') {
+      console.log('[respondToCounterOffer] Processing DECLINE');
+      
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'declined',
-          terms_delta: existingTerms,
-          responded_at: new Date().toISOString(),
+          responded_at: now,
           responded_by_role: userRole
         });
       });
+      
+      console.log('[respondToCounterOffer] ✓ Counter declined');
       return Response.json({ success: true, action: 'declined' });
     }
-
+    
+    // 4. Handle RECOUNTER (counter back)
     if (action === 'recounter') {
+      console.log('[respondToCounterOffer] Processing RECOUNTER');
+      
       if (!terms_delta) {
-        return Response.json({ error: 'terms_delta required for recounter' }, { status: 400 });
+        return Response.json({ error: 'terms_delta required for recounter action' }, { status: 400 });
       }
-
+      
       // Mark old counter as superseded
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'superseded',
-          terms_delta: existingTerms,
-          responded_at: new Date().toISOString(),
+          responded_at: now,
           responded_by_role: userRole
         });
       });
-
+      
+      console.log('[respondToCounterOffer] Old counter marked superseded');
+      
       // Create new counter with flipped roles
       const newCounter = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.create({
@@ -103,41 +116,57 @@ Deno.serve(async (req) => {
           from_role: userRole,
           to_role: counter.from_role,
           status: 'pending',
-          terms_delta
+          terms_delta: terms_delta
         });
       });
-
-      return Response.json({ success: true, action: 'recountered', counter_offer: newCounter });
-    }
-
-    if (action === 'accept') {
-      // Get the terms to accept (from counter, not deal)
-      const acceptedTerms = counter.terms_delta || counter.terms || {};
       
-      // Mark counter as accepted with retry
+      console.log('[respondToCounterOffer] ✓ New counter created:', newCounter.id);
+      return Response.json({ 
+        success: true, 
+        action: 'recountered', 
+        counter_offer_id: newCounter.id 
+      });
+    }
+    
+    // 5. Handle ACCEPT
+    if (action === 'accept') {
+      console.log('[respondToCounterOffer] Processing ACCEPT');
+      
+      // Mark counter as accepted
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'accepted',
-          responded_at: new Date().toISOString(),
+          responded_at: now,
           responded_by_role: userRole
         });
       });
-
+      
+      console.log('[respondToCounterOffer] Counter marked accepted');
+      
       // Update deal proposed_terms with accepted counter terms
+      const acceptedTerms = counter.terms_delta || {};
+      
       await withRetry(async () => {
         await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
           proposed_terms: acceptedTerms
         });
       });
-
-      console.log('[respondToCounterOffer] ✓ Accepted counter with terms:', acceptedTerms);
-      return Response.json({ success: true, action: 'accepted', accepted_terms: acceptedTerms });
+      
+      console.log('[respondToCounterOffer] ✓ Deal proposed_terms updated with accepted counter terms:', acceptedTerms);
+      
+      return Response.json({ 
+        success: true, 
+        action: 'accepted',
+        accepted_terms: acceptedTerms
+      });
     }
-
-    return Response.json({ error: 'Invalid action' }, { status: 400 });
-
+    
+    return Response.json({ error: 'Unknown action' }, { status: 400 });
+    
   } catch (error) {
-    console.error('[respondToCounterOffer] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[respondToCounterOffer] Fatal error:', error);
+    return Response.json({ 
+      error: error?.message || 'Failed to respond to counter offer' 
+    }, { status: 500 });
   }
 });
