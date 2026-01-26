@@ -66,10 +66,14 @@ Deno.serve(async (req) => {
     });
 
     // Handle actions
+    // Get existing terms (handle both old 'terms' and new 'terms_delta' fields)
+    const existingTerms = counter.terms_delta || counter.terms || {};
+
     if (action === 'decline') {
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'declined',
+          terms_delta: existingTerms,
           responded_at: new Date().toISOString(),
           responded_by_role: userRole
         });
@@ -86,6 +90,7 @@ Deno.serve(async (req) => {
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'superseded',
+          terms_delta: existingTerms,
           responded_at: new Date().toISOString(),
           responded_by_role: userRole
         });
