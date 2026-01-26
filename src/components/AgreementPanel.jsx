@@ -124,6 +124,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const investorSigned = !!agreement?.investor_signed_at;
   const agentSigned = !!agreement?.agent_signed_at;
   const hasPendingOffer = !!pendingCounter && pendingCounter?.status === 'pending';
+  const hasAcceptedCounter = !!pendingCounter && pendingCounter?.status === 'accepted';
   const myRole = isInvestor ? 'investor' : 'agent';
   const amRecipient = hasPendingOffer && pendingCounter?.to_role === myRole;
 
