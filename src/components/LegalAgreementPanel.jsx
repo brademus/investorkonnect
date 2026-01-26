@@ -798,29 +798,31 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
         ) : (
           /* Agreement exists */
           <div className="space-y-4">
+            {/* Terms Mismatch Warning - show prominently at top */}
+            {termsMismatch && !justAcceptedCounter && (
+              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
+                <div className="text-sm text-[#FAFAFA] font-semibold mb-1">Agreement out of date</div>
+                <div className="text-xs text-[#808080] mb-3">Terms changed. Investor must regenerate and sign before agent can sign.</div>
+                {isInvestor && !hideRegenerateButton && !hasPendingOffer && (
+                  <Button onClick={handleOpenGenerateModal} disabled={generating || generationCooldown > Date.now()} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                    {generating ? 'Regenerating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Regenerate Agreement'}
+                  </Button>
+                )}
+              </div>
+            )}
+
             {/* If agreement exists but investor hasn't signed yet */}
-            {!agreement.investor_signed_at && isInvestor && (
+            {!agreement.investor_signed_at && isInvestor && !termsMismatch && (
               <div className="space-y-3">
                 <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-xl p-4">
                   <div className="flex items-center justify-between mb-2">
                     {getStatusDisplay()}
                   </div>
                   <p className="text-sm text-[#FAFAFA] mb-3">Your agreement is ready. Please sign to continue.</p>
-                  <Button onClick={() => handleSign('investor')} disabled={signing} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
+                  <Button onClick={() => handleSign('investor')} disabled={signing || hasPendingOffer} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                     {signing ? 'Opening DocuSign...' : 'Sign as Investor'}
                   </Button>
                 </div>
-                {!hideRegenerateButton && (
-                  <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                    Regenerate Agreement
-                  </Button>
-                )}
-              </div>
-            )}
-            {termsMismatch && !justAcceptedCounter && (
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                <div className="text-sm text-[#FAFAFA] font-semibold">Agreement out of date</div>
-                <div className="text-xs text-[#808080]">Terms changed. Investor must regenerate and sign before agent can sign.</div>
               </div>
             )}
 
@@ -973,9 +975,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
                 </Button>
               )}
 
+              {/* Additional regenerate button for signed investors */}
               {!isFullySigned && isInvestor && !hideRegenerateButton && !hasPendingOffer && !termsMismatch && agreement.investor_signed_at && (
-                <Button onClick={handleOpenGenerateModal} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
-                  Regenerate Agreement
+                <Button onClick={handleOpenGenerateModal} disabled={generating || generationCooldown > Date.now()} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full">
+                  {generating ? 'Regenerating...' : generationCooldown > Date.now() ? `Wait ${Math.ceil((generationCooldown - Date.now()) / 1000)}s` : 'Regenerate Agreement'}
                 </Button>
               )}
 
