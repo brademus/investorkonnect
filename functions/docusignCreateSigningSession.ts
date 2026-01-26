@@ -193,18 +193,12 @@ Deno.serve(async (req) => {
     // Validate envelope exists
     if (!envelopeId) {
       return Response.json({ 
-        error: 'No DocuSign envelope found. Please regenerate the agreement first.'
+        error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.'
       }, { status: 400 });
     }
 
-    console.log('[DocuSign] Using envelope:', envelopeId);
-    console.log('[DocuSign] Agreement status:', agreement.status);
-    console.log('[DocuSign] Investor signed at:', agreement.investor_signed_at || 'not signed');
-    console.log('[DocuSign] Agent signed at:', agreement.agent_signed_at || 'not signed');
-
     // Validate recipient IDs exist
     if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
-      console.error('[DocuSign] Missing recipient IDs - need regeneration');
       return Response.json({ 
         error: 'Missing recipient IDs. Please regenerate the agreement.'
       }, { status: 400 });
@@ -212,13 +206,12 @@ Deno.serve(async (req) => {
 
     // Validate client user IDs exist
     if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
-      console.error('[DocuSign] Missing client user IDs - need regeneration');
       return Response.json({ 
         error: 'Missing client user IDs. Please regenerate the agreement.'
       }, { status: 400 });
     }
 
-    console.log('[DocuSign] Recipient validation passed');
+    console.log('[DocuSign] Using existing envelope:', envelopeId);
     console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
     console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
 
@@ -263,50 +256,17 @@ Deno.serve(async (req) => {
 
     if (statusResponse.ok) {
       const envStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status from DocuSign API:', envStatus.status);
-      
-      // Get recipient statuses from envelope
-      const signers = envStatus.recipients?.signers || [];
-      const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
-      const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
-      
-      console.log('[DocuSign] Investor signer status:', investorSigner?.status || 'not found');
-      console.log('[DocuSign] Agent signer status:', agentSigner?.status || 'not found');
+      console.log('[DocuSign] Envelope status check:', envStatus.status);
 
-      // Only block if envelope is voided or declined (completed with partial signatures is OK)
-      if (['voided', 'declined'].includes(envStatus.status)) {
-        console.error('[DocuSign] ❌ Envelope is voided/declined:', envStatus.status);
+      // Only block if truly terminal - allow 'sent' and 'delivered' which are active states
+      if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
+        console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
         return Response.json({ 
-          error: `This envelope was ${envStatus.status}. Please regenerate the agreement.`
+          error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
         }, { status: 400 });
       }
 
-      // Special case: envelope shows "completed" but agent trying to sign
-      // This means envelope is truly complete (both signed) - should not happen if we reset correctly
-      if (envStatus.status === 'completed' && role === 'agent') {
-        // Check if agent actually signed in DocuSign
-        if (agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed')) {
-          console.log('[DocuSign] ✓ Agent already signed this envelope');
-          // Sync signature to DB if missing
-          if (!agreement.agent_signed_at) {
-            await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-              agent_signed_at: agentSigner.signedDateTime || new Date().toISOString(),
-              status: 'fully_signed'
-            });
-          }
-          return Response.json({ 
-            error: 'You have already signed this agreement. Refresh the page to see the latest status.'
-          }, { status: 400 });
-        }
-        
-        // Envelope marked complete but agent didn't sign? Something is wrong
-        console.error('[DocuSign] ❌ Envelope is completed but agent has not signed');
-        return Response.json({ 
-          error: 'Envelope is in an invalid state. Please regenerate the agreement.'
-        }, { status: 400 });
-      }
-
-      console.log('[DocuSign] ✓ Envelope is in valid state for signing:', envStatus.status);
+      console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
     }
 
     // Verify PDF hash hasn't changed (prevent signing stale document)

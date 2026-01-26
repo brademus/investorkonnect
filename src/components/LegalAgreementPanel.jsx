@@ -466,15 +466,15 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
             return;
           }
 
-          // Reload agreement data - ensure fresh envelope details
-          await new Promise(r => setTimeout(r, 1000));
-          const freshAgreement = await loadAgreement();
+          toast.success('Agreement regenerated - ready to sign');
+          
+          // Reload data - give DocuSign a moment to settle
+          await new Promise(r => setTimeout(r, 800));
+          await loadAgreement();
           const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: effectiveDealId });
           if (data) setFreshDeal(data);
 
           if (onUpdate) onUpdate();
-          
-          toast.success('Agreement regenerated - please sign to continue', { duration: 4000 });
         } catch (genError) {
           const errorMessage = genError?.response?.data?.error || genError?.message || String(genError);
           toast.error('Failed to regenerate: ' + errorMessage, { duration: 5000 });
@@ -603,25 +603,16 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
 
   const handleSign = async (signatureType) => {
     try {
-      // Refresh agreement data before signing to ensure we have latest envelope details
-      console.log('[handleSign] Refreshing agreement before signing as', signatureType);
-      const freshAgreement = await loadAgreement();
-      
-      if (!freshAgreement) {
-        toast.error('Failed to load agreement. Please refresh the page.');
-        return;
-      }
-      
       if (signatureType === 'agent') {
         if (hasPendingOffer) {
-          toast.error('Counter offer pending. Wait for investor to respond.');
+          toast.error('Counter offer pending. Wait for investor to respond and regenerate the agreement.');
           return;
         }
         if (termsMismatch) {
           toast.error('Agreement out of date. Wait for investor to regenerate and sign.');
           return;
         }
-        if (!freshAgreement.investor_signed_at) {
+        if (!agreement?.investor_signed_at) {
           toast.error('Investor must sign first.');
           return;
         }
@@ -635,12 +626,11 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
           return;
         }
       }
-      
       setSigning(true);
 
       const returnTo = window.location.pathname + window.location.search;
       const response = await base44.functions.invoke('docusignCreateSigningSession', {
-        agreement_id: freshAgreement.id,
+        agreement_id: agreement.id,
         role: signatureType,
         redirect_url: (window.location.pathname.toLowerCase().includes('/myagreement') ? '/Pipeline' : returnTo),
       });
