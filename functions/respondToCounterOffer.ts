@@ -78,10 +78,12 @@ Deno.serve(async (req) => {
     
     // Handle decline
     if (action === 'decline') {
-      await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
-        status: 'declined',
-        responded_at: new Date().toISOString(),
-        responded_by_role: responderRole
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
+          status: 'declined',
+          responded_at: new Date().toISOString(),
+          responded_by_role: responderRole
+        });
       });
       
       return Response.json({
@@ -94,19 +96,23 @@ Deno.serve(async (req) => {
     // Handle recounter
     if (action === 'recounter') {
       // Mark current counter as superseded
-      await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
-        status: 'superseded',
-        responded_at: new Date().toISOString(),
-        responded_by_role: responderRole
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
+          status: 'superseded',
+          responded_at: new Date().toISOString(),
+          responded_by_role: responderRole
+        });
       });
       
       // Create new counter with flipped roles
-      const newCounter = await base44.asServiceRole.entities.CounterOffer.create({
-        deal_id: counter.deal_id,
-        from_role: responderRole,
-        to_role: counter.from_role,
-        status: 'pending',
-        terms_delta
+      const newCounter = await withRetry(async () => {
+        return await base44.asServiceRole.entities.CounterOffer.create({
+          deal_id: counter.deal_id,
+          from_role: responderRole,
+          to_role: counter.from_role,
+          status: 'pending',
+          terms_delta
+        });
       });
       
       return Response.json({
@@ -119,10 +125,12 @@ Deno.serve(async (req) => {
     // Handle accept
     if (action === 'accept') {
       // Mark counter as accepted
-      await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
-        status: 'accepted',
-        responded_at: new Date().toISOString(),
-        responded_by_role: responderRole
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
+          status: 'accepted',
+          responded_at: new Date().toISOString(),
+          responded_by_role: responderRole
+        });
       });
       
       // Merge accepted terms into Deal.proposed_terms (canonical accepted state)
@@ -132,8 +140,10 @@ Deno.serve(async (req) => {
         ...counter.terms_delta
       };
       
-      await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-        proposed_terms: acceptedTerms
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+          proposed_terms: acceptedTerms
+        });
       });
       
       console.log('[respondToCounterOffer] ✓ Terms accepted and saved to deal');
