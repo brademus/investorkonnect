@@ -81,23 +81,35 @@ Deno.serve(async (req) => {
     const keep = current[0];
     const deletedIds = [];
 
-    // Delete the rest, logging to AuditLog
+    // Delete the rest, logging to AuditLog (but don't block on errors)
     for (let i = 1; i < current.length; i++) {
       const dup = current[i];
       try {
-        await base44.asServiceRole.entities.AuditLog.create({
-          actor_id: user.id,
-          actor_name: user.email,
-          entity_type: 'Profile',
-          entity_id: dup.id,
-          action: 'delete_duplicate_self',
-          details: `Self-dedup: kept ${keep.id}, deleted duplicate ${dup.id} for user ${user.id}`,
-          timestamp: new Date().toISOString(),
-        });
-        await base44.asServiceRole.entities.Profile.delete(dup.id);
-        deletedIds.push(dup.id);
+        // Try to log but don't fail if audit fails
+        try {
+          await base44.asServiceRole.entities.AuditLog.create({
+            actor_id: user.id,
+            actor_name: user.email,
+            entity_type: 'Profile',
+            entity_id: dup.id,
+            action: 'delete_duplicate_self',
+            details: `Self-dedup: kept ${keep.id}, deleted duplicate ${dup.id} for user ${user.id}`,
+            timestamp: new Date().toISOString(),
+          });
+        } catch (auditErr) {
+          console.warn('[profileDedupSelf] Audit log failed (non-blocking):', auditErr.message);
+        }
+        
+        // Try to delete duplicate
+        try {
+          await base44.asServiceRole.entities.Profile.delete(dup.id);
+          deletedIds.push(dup.id);
+        } catch (delErr) {
+          console.warn('[profileDedupSelf] Failed to delete duplicate', dup.id, '(non-blocking):', delErr.message);
+        }
       } catch (e) {
-        // If delete fails, continue processing others
+        // If anything fails, continue processing others
+        console.warn('[profileDedupSelf] Error processing duplicate:', e.message);
       }
     }
 
