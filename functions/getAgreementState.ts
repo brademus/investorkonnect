@@ -75,9 +75,10 @@ Deno.serve(async (req) => {
     }
 
     let pendingCounter = null;
+    console.log('[getAgreementState] pendingCounters length:', pendingCounters?.length);
     if (pendingCounters && pendingCounters.length > 0) {
       const raw = pendingCounters[0];
-      console.log('[getAgreementState] Pending counter found:', { id: raw.id, status: raw.status, terms: raw.terms });
+      console.log('[getAgreementState] Pending counter raw:', JSON.stringify({ id: raw.id, status: raw.status, from_role: raw.from_role, terms: raw.terms }));
       // Map fields to match AgreementPanel expectations
       pendingCounter = {
         id: raw.id,
@@ -88,6 +89,7 @@ Deno.serve(async (req) => {
         terms_delta: raw.terms || raw.terms_delta || {},
         responded_by_role: raw.responded_by_role
       };
+      console.log('[getAgreementState] Mapped pendingCounter:', JSON.stringify(pendingCounter));
     } else {
       console.log('[getAgreementState] No pending counters found');
     }
