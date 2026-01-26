@@ -282,16 +282,19 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     if (hasPendingOffer && amRecipient) {
       return pendingCounter.terms_delta;
     }
-    // Show agreement terms if exists
-    if (agreement?.exhibit_a_terms) {
+    // If unsigned agreement, prioritize deal_terms (accepted counter terms override old agreement)
+    if (agreement && !isFullySigned && dealTerms) {
+      return dealTerms;
+    }
+    // Show signed agreement terms
+    if (agreement?.exhibit_a_terms && isFullySigned) {
       return agreement.exhibit_a_terms;
     }
-    // Use deal terms (updated after counter acceptance)
+    // Use deal terms as fallback
     if (dealTerms) {
       return dealTerms;
     }
-    // Fallback to agreement's proposed_terms
-    return agreement?.proposed_terms || null;
+    return null;
   };
 
   const currentTerms = getCurrentTerms();
