@@ -173,44 +173,50 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   };
 
   const handleSign = async (role) => {
-    if (!agreement?.id) {
-      toast.error('No agreement to sign');
-      return;
-    }
-    
-    setBusy(true);
-    
-    try {
-      const params = new URLSearchParams(window.location.search);
-      const currentRoomId = params.get('roomId');
-      const currentPath = window.location.pathname;
-      
-      const returnUrl = currentRoomId 
-        ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
-        : currentPath.includes('MyAgreement')
-        ? `/MyAgreement?dealId=${dealId}&signed=1`
-        : `/Pipeline?dealId=${dealId}&signed=1`;
-      
-      const res = await base44.functions.invoke('docusignCreateSigningSession', {
-        agreement_id: agreement.id,
-        role,
-        redirect_url: returnUrl
-      });
-      
-      if (res.data?.error) {
-        toast.error(res.data.error);
-        setBusy(false);
-      } else if (res.data?.signing_url) {
-        window.location.assign(res.data.signing_url);
-      } else {
-        toast.error('No signing URL returned');
-        setBusy(false);
-      }
-    } catch (error) {
-      toast.error('Failed to start signing');
-      setBusy(false);
-    }
-  };
+        if (!agreement?.id) {
+          toast.error('No agreement to sign');
+          return;
+        }
+
+        setBusy(true);
+
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const currentRoomId = params.get('roomId');
+          const currentPath = window.location.pathname;
+
+          const returnUrl = currentRoomId 
+            ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
+            : currentPath.includes('MyAgreement')
+            ? `/MyAgreement?dealId=${dealId}&signed=1`
+            : `/Pipeline?dealId=${dealId}&signed=1`;
+
+          console.log('[AgreementPanel] Signing request:', { agreement_id: agreement.id, role, returnUrl });
+
+          const res = await base44.functions.invoke('docusignCreateSigningSession', {
+            agreement_id: agreement.id,
+            role,
+            redirect_url: returnUrl
+          });
+
+          console.log('[AgreementPanel] Signing response:', res.data);
+
+          if (res.data?.error) {
+            toast.error(res.data.error);
+            setBusy(false);
+          } else if (res.data?.signing_url) {
+            window.location.assign(res.data.signing_url);
+          } else {
+            toast.error('No signing URL returned');
+            console.error('[AgreementPanel] No signing URL in response:', res.data);
+            setBusy(false);
+          }
+        } catch (error) {
+          console.error('[AgreementPanel] Signing error:', error);
+          toast.error(error?.message || 'Failed to start signing');
+          setBusy(false);
+        }
+      };
 
   const handleSendCounter = async () => {
     if (!counterAmount || !dealId) return;
