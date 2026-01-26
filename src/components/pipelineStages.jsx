@@ -64,7 +64,7 @@ export function normalizeStage(stageId) {
 export function getStageLabel(stageId) {
   const normalized = normalizeStage(stageId);
   const stage = PIPELINE_STAGES.find(s => s.id === normalized);
-  return stage ? stage.label : 'New Deal / New Contracts';
+  return stage ? stage.label : 'New Deals (Pending Agent)';
 }
 
 /**
