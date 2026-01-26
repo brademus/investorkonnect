@@ -240,43 +240,47 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   };
 
   const handleRespondToCounter = async (action, customTerms = null) => {
-    if (!pendingCounter?.id) return;
-    
-    setBusy(true);
-    
-    try {
-      const payload = {
-        counter_offer_id: pendingCounter.id,
-        action
-      };
-      
-      if (action === 'recounter' && customTerms) {
-        payload.terms_delta = customTerms;
-      }
-      
-      const res = await base44.functions.invoke('respondToCounterOffer', payload);
-      
-      if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
-        if (action === 'accept') {
-          toast.success('Counter accepted - click "Regenerate & Sign" to continue');
-        } else if (action === 'decline') {
-          toast.success('Counter declined');
-        } else {
-          toast.success('Counter sent');
-          setCounterModal(false);
-          setCounterAmount('');
+        if (!pendingCounter?.id) return;
+
+        setBusy(true);
+        console.log('[AgreementPanel] respondToCounter:', { action, counter_id: pendingCounter.id });
+
+        try {
+          const payload = {
+            counter_offer_id: pendingCounter.id,
+            action
+          };
+
+          if (action === 'recounter' && customTerms) {
+            payload.terms_delta = customTerms;
+          }
+
+          console.log('[AgreementPanel] Sending payload:', payload);
+          const res = await base44.functions.invoke('respondToCounterOffer', payload);
+          console.log('[AgreementPanel] Response:', res.data);
+
+          if (res.data?.error) {
+            toast.error(res.data.error);
+          } else {
+            if (action === 'accept') {
+              toast.success('Counter accepted - click "Regenerate & Sign" to continue');
+            } else if (action === 'decline') {
+              toast.success('Counter declined');
+            } else {
+              toast.success('Counter sent');
+              setCounterModal(false);
+              setCounterAmount('');
+            }
+            await loadState();
+            if (onUpdate) onUpdate();
+          }
+        } catch (error) {
+          console.error('[AgreementPanel] respondToCounter error:', error);
+          toast.error('Failed to respond');
+        } finally {
+          setBusy(false);
         }
-        await loadState();
-        if (onUpdate) onUpdate();
-      }
-    } catch (error) {
-      toast.error('Failed to respond');
-    } finally {
-      setBusy(false);
-    }
-  };
+      };
 
   const handleRegenerateAndSign = async () => {
     setBusy(true);
