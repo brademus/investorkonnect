@@ -67,7 +67,21 @@ Deno.serve(async (req) => {
       deal_id,
       status: 'pending'
     }, '-created_date', 1);
-    const pendingCounter = pendingCounters[0] || null;
+
+    let pendingCounter = null;
+    if (pendingCounters && pendingCounters.length > 0) {
+      const raw = pendingCounters[0];
+      // Map fields to match AgreementPanel expectations
+      pendingCounter = {
+        id: raw.id,
+        deal_id: raw.deal_id,
+        from_role: raw.from_role,
+        to_role: raw.from_role === 'agent' ? 'investor' : 'agent',
+        status: raw.status,
+        terms_delta: raw.terms || raw.terms_delta || {},
+        responded_by_role: raw.responded_by_role
+      };
+    }
     
     // Determine if terms mismatch
     let termsMismatch = false;
