@@ -275,10 +275,16 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   };
 
   const getCurrentTerms = () => {
+    // Show pending counter terms to recipient
     if (hasPendingOffer && amRecipient) {
       return pendingCounter.terms_delta;
     }
-    return agreement?.exhibit_a_terms || null;
+    // Show agreement terms if exists
+    if (agreement?.exhibit_a_terms) {
+      return agreement.exhibit_a_terms;
+    }
+    // Fallback to deal proposed_terms (updated after counter acceptance)
+    return agreement?.proposed_terms || null;
   };
 
   const currentTerms = getCurrentTerms();
