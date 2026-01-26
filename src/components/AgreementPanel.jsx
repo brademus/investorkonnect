@@ -131,14 +131,18 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   console.log('[AgreementPanel] State:', { 
     hasAgreement: !!agreement, 
     hasPendingOffer, 
+    hasAcceptedCounter,
     amRecipient, 
     myRole,
     counterToRole: pendingCounter?.to_role,
     counterStatus: pendingCounter?.status,
     investorSigned,
     agentSigned,
+    isInvestor,
+    isFullySigned,
     agreement_investor_signed_at: agreement?.investor_signed_at,
-    agreement_agent_signed_at: agreement?.agent_signed_at
+    agreement_agent_signed_at: agreement?.agent_signed_at,
+    pending_counter: pendingCounter
   });
 
   // Actions
