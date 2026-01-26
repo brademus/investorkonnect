@@ -115,6 +115,7 @@ Deno.serve(async (req) => {
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'accepted',
+          terms_delta: existingTerms,
           responded_at: new Date().toISOString(),
           responded_by_role: userRole
         });
