@@ -951,10 +951,10 @@ Deno.serve(async (req) => {
     
     const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
     
-    // Retry logic for rate limits with exponential backoff
+    // Retry logic for rate limits with exponential backoff + jitter
     let createResponse;
     let retries = 0;
-    const maxRetries = 8;
+    const maxRetries = 12;
     
     while (retries <= maxRetries) {
       try {
@@ -968,17 +968,20 @@ Deno.serve(async (req) => {
         });
         
         if (createResponse.status === 429) {
-          // Rate limit - wait and retry with exponential backoff
+          // Rate limit - wait and retry with exponential backoff + jitter
           if (retries < maxRetries) {
-            const baseDelay = 2000;
-            const waitMs = baseDelay * Math.pow(2, retries); // 2s, 4s, 8s, 16s, 32s, 64s, 128s, 256s
-            console.log(`[DocuSign] Rate limited (429), waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
+            const baseDelay = 1500;
+            const exponentialDelay = baseDelay * Math.pow(2, retries);
+            const jitter = Math.random() * 1000; // Add 0-1s random jitter to prevent thundering herd
+            const waitMs = exponentialDelay + jitter;
+            console.log(`[DocuSign] Rate limited (429), waiting ${Math.round(waitMs)}ms before retry ${retries + 1}/${maxRetries}`);
             await new Promise(resolve => setTimeout(resolve, waitMs));
             retries++;
             continue;
           } else {
-            // Final retry failed - return error
-            throw new Error('DocuSign rate limit exceeded. Please wait a few minutes and try again.');
+            // Should never reach here with 12 retries, but just in case
+            console.error('[DocuSign] Exhausted all retries after rate limiting');
+            throw new Error('Service temporarily busy. Please try again in a moment.');
           }
         }
         
@@ -988,16 +991,21 @@ Deno.serve(async (req) => {
           // Check if it's a rate limit error in the response body
           if (errorText.includes('HOURLY_APIINVOCATION_LIMIT_EXCEEDED') || 
               errorText.includes('API_RATE_LIMIT_EXCEEDED') ||
-              errorText.includes('rate limit')) {
+              errorText.includes('MINUTELY_APIINVOCATION_LIMIT_EXCEEDED') ||
+              errorText.toLowerCase().includes('rate limit') ||
+              errorText.toLowerCase().includes('too many requests')) {
             if (retries < maxRetries) {
-              const baseDelay = 2000;
-              const waitMs = baseDelay * Math.pow(2, retries);
-              console.log(`[DocuSign] Rate limit in response, waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
+              const baseDelay = 1500;
+              const exponentialDelay = baseDelay * Math.pow(2, retries);
+              const jitter = Math.random() * 1000;
+              const waitMs = exponentialDelay + jitter;
+              console.log(`[DocuSign] Rate limit in response, waiting ${Math.round(waitMs)}ms before retry ${retries + 1}/${maxRetries}`);
               await new Promise(resolve => setTimeout(resolve, waitMs));
               retries++;
               continue;
             }
-            throw new Error('DocuSign rate limit exceeded. Please wait a few minutes and try again.');
+            console.error('[DocuSign] Exhausted all retries for rate limit');
+            throw new Error('Service temporarily busy. Please try again in a moment.');
           }
           
           console.error('[DocuSign] Envelope creation failed:', errorText);
@@ -1006,14 +1014,18 @@ Deno.serve(async (req) => {
         
         break; // Success, exit retry loop
       } catch (err) {
-        const isRateLimit = err.message.includes('rate') || 
+        const isRateLimit = err.message.toLowerCase().includes('rate') || 
                            err.message.includes('HOURLY') || 
-                           err.message.includes('429');
+                           err.message.includes('MINUTELY') ||
+                           err.message.includes('429') ||
+                           err.message.toLowerCase().includes('too many');
         
         if (retries < maxRetries && isRateLimit) {
-          const baseDelay = 2000;
-          const waitMs = baseDelay * Math.pow(2, retries);
-          console.log(`[DocuSign] Error (${err.message}), waiting ${waitMs}ms before retry ${retries + 1}/${maxRetries}`);
+          const baseDelay = 1500;
+          const exponentialDelay = baseDelay * Math.pow(2, retries);
+          const jitter = Math.random() * 1000;
+          const waitMs = exponentialDelay + jitter;
+          console.log(`[DocuSign] Error retry ${retries + 1}/${maxRetries}, waiting ${Math.round(waitMs)}ms: ${err.message}`);
           await new Promise(resolve => setTimeout(resolve, waitMs));
           retries++;
           continue;

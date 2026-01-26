@@ -481,10 +481,10 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       return;
     }
 
-    // Prevent rapid re-submissions (cooldown of 3 seconds)
+    // Prevent rapid re-submissions (cooldown of 5 seconds)
     if (generationCooldownRef.current > Date.now()) {
       const remainingSeconds = Math.ceil((generationCooldownRef.current - Date.now()) / 1000);
-      toast.info(`Processing... ${remainingSeconds}s`);
+      toast.info(`Please wait ${remainingSeconds}s before regenerating again`);
       return;
     }
 
@@ -581,18 +581,22 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, allowGene
       if (onUpdate) onUpdate();
     } catch (error) {
       const errorMessage = error?.response?.data?.error || error?.message || String(error);
-      if (errorMessage.includes('rate limit')) {
-        toast.error('Rate limit exceeded. Please wait a moment before trying again.', { duration: 5000 });
+      const lowerError = errorMessage.toLowerCase();
+      
+      if (lowerError.includes('rate limit') || lowerError.includes('too many') || lowerError.includes('temporarily busy')) {
+        toast.error('Processing your request... This may take a moment. Please wait.', { duration: 4000 });
+      } else if (lowerError.includes('missing required fields') || lowerError.includes('missing:')) {
+        toast.error(errorMessage, { duration: 6000 });
       } else {
-        toast.error(`Generate agreement failed: ${errorMessage}`);
+        toast.error(`Failed to generate: ${errorMessage}`, { duration: 5000 });
       }
     } finally {
       if (generationTimeoutRef.current) clearTimeout(generationTimeoutRef.current);
       setGenerating(false);
       generationInProgressRef.current = false;
       
-      // Set 3-second cooldown before next generation attempt
-      const cooldownUntil = Date.now() + 3000;
+      // Set 5-second cooldown before next generation attempt
+      const cooldownUntil = Date.now() + 5000;
       generationCooldownRef.current = cooldownUntil;
       setGenerationCooldown(cooldownUntil);
       
