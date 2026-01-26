@@ -2118,10 +2118,12 @@ ${dealContext}`;
                         key={`${currentRoom.deal_id}-${deal?.proposed_terms?.buyer_commission_type}-${deal?.proposed_terms?.buyer_flat_fee}-${deal?.proposed_terms?.buyer_commission_percentage}`}
                         deal={deal || buildDealFromRoom(currentRoom, false)}
                         profile={profile}
-                        allowGenerate={false}
+                        allowGenerate={profile?.user_role === 'investor'}
                         initialAgreement={agreement || currentRoom?.agreement || null}
                         dealId={currentRoom?.deal_id}
+                        hideRegenerateButton={false}
                         onUpdate={async () => {
+                          console.log('[Room] Agreement onUpdate triggered');
                           // Reload fresh deal data
                           try {
                             const { data } = await base44.functions.invoke('getDealDetailsForUser', { dealId: currentRoom.deal_id });
@@ -2131,14 +2133,23 @@ ${dealContext}`;
                               setCurrentRoom(prev => prev ? { ...prev, proposed_terms: data.proposed_terms } : prev);
                             }
                           } catch (_) {}
+                          
+                          // Reload agreement
+                          try {
+                            const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: currentRoom.deal_id });
+                            if (data?.agreement) {
+                              setAgreement(data.agreement);
+                            }
+                          } catch (_) {}
+                          
                           await refreshRoomState();
                           queryClient.invalidateQueries({ queryKey: ['rooms'] });
                           queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                         }}
                       />
-                      {!deal && (
-                        <div className="hidden" aria-hidden>
-                          Loading agreement panel...
+                      {!deal && !boardLoading && (
+                        <div className="text-center py-4 text-[#808080] text-sm">
+                          Loading deal data...
                         </div>
                       )}
                     </div>
