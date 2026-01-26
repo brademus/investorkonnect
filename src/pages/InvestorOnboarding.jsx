@@ -20,6 +20,18 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
  */
 export default function InvestorOnboarding() {
   const navigate = useNavigate();
+  
+  // Block navigation away during onboarding (except to mandatory steps)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (step !== 3) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step]);
   const { profile, refresh, user, onboarded, isPaidSubscriber } = useCurrentProfile();
   const { selectedState } = useWizard();
   const [step, setStep] = useState(1);

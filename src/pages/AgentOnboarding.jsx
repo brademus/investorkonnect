@@ -21,6 +21,18 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
  */
 export default function AgentOnboarding() {
   const navigate = useNavigate();
+  
+  // Block navigation away during onboarding (except to mandatory steps)
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (step !== 3) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [step]);
   const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);

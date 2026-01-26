@@ -31,7 +31,7 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, refresh } = useCurrentProfile();
+  const { profile, loading, refresh, onboarded } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
@@ -40,6 +40,25 @@ function PipelineContent() {
   const [identityLoaded, setIdentityLoaded] = useState(false);
   const [allowExtras, setAllowExtras] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
+
+  // CRITICAL: Redirect to onboarding if not complete
+  useEffect(() => {
+    if (loading) return;
+    if (!profile) {
+      navigate(createPageUrl("Home"), { replace: true });
+      return;
+    }
+    if (!onboarded) {
+      const role = profile.user_role;
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      } else {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      }
+    }
+  }, [loading, profile, onboarded, navigate]);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;

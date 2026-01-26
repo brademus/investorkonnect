@@ -156,8 +156,8 @@ export default function PostAuth() {
       } catch (error) {
         console.error('[PostAuth] Error:', error);
         if (mounted) {
-          // Fallback hard to main dashboard to avoid blank screens
-          navigate(createPageUrl("Pipeline"), { replace: true });
+          // Fallback to Home on error, not Pipeline
+          navigate(createPageUrl("Home"), { replace: true });
         }
       }
     };
