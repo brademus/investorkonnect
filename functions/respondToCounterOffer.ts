@@ -41,22 +41,26 @@ Deno.serve(async (req) => {
     }
     
     // Load counter offer
-    const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
-    if (!counters || counters.length === 0) {
-      return Response.json({ error: 'Counter offer not found' }, { status: 404 });
-    }
-    const counter = counters[0];
+    const counter = await withRetry(async () => {
+      const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
+      if (!counters || counters.length === 0) {
+        throw new Error('Counter offer not found');
+      }
+      return counters[0];
+    });
     
     if (counter.status !== 'pending') {
       return Response.json({ error: `Counter offer is already ${counter.status}` }, { status: 400 });
     }
     
     // Verify user has access
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
+    const profile = await withRetry(async () => {
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      if (!profiles || profiles.length === 0) {
+        throw new Error('Profile not found');
+      }
+      return profiles[0];
+    });
     
     const responderRole = profile.user_role;
     if (responderRole !== counter.to_role) {
@@ -64,11 +68,13 @@ Deno.serve(async (req) => {
     }
     
     // Load deal
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
-    if (!deals || deals.length === 0) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
-    }
-    const deal = deals[0];
+    const deal = await withRetry(async () => {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
+      if (!deals || deals.length === 0) {
+        throw new Error('Deal not found');
+      }
+      return deals[0];
+    });
     
     // Handle decline
     if (action === 'decline') {
