@@ -90,8 +90,9 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const isFullySigned = !!(agreement?.investor_signed_at && agreement?.agent_signed_at);
   const investorSigned = !!agreement?.investor_signed_at;
   const agentSigned = !!agreement?.agent_signed_at;
-  const hasPendingOffer = pendingCounter?.status === 'pending';
-  const amRecipient = hasPendingOffer && pendingCounter?.to_role === (isInvestor ? 'investor' : 'agent');
+  const hasPendingOffer = !!pendingCounter && pendingCounter?.status === 'pending';
+  const myRole = isInvestor ? 'investor' : 'agent';
+  const amRecipient = hasPendingOffer && pendingCounter?.to_role === myRole;
 
   // Actions
   const handleGenerate = async () => {
@@ -312,11 +313,11 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         </CardHeader>
 
         <CardContent className="p-6 space-y-4">
-          {/* Pending Counter Card - Show to recipient */}
+          {/* Pending Counter Card - ALWAYS show to recipient when pending */}
           {hasPendingOffer && amRecipient && (
-            <div className="bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 rounded-xl p-5">
+            <div className="bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 rounded-xl p-5 mb-6">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-md font-bold text-[#FAFAFA]">⚠️ Counter Offer</h3>
+                <h3 className="text-md font-bold text-[#FAFAFA]">⚠️ New Counter Offer Received</h3>
                 <span className="text-xs text-[#808080]">from {pendingCounter.from_role}</span>
               </div>
               
