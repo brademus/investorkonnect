@@ -50,89 +50,29 @@ export default function MyAgreement() {
     })();
   }, [dealId]);
 
-  // If already signed, redirect investor away from My Agreement to Pipeline
+  // After signing, create room and redirect to Pipeline
   useEffect(() => {
+    if (!dealId || !signedFlag || !profile?.id) return;
+    
     (async () => {
-      if (!dealId) return;
       try {
-        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-        const ag = res?.data?.agreement;
-        const status = String(ag?.status || '').toLowerCase();
-        const alreadySigned = status === 'investor_signed' || status === 'fully_signed' || !!ag?.investor_signed_at;
-        if (alreadySigned) {
-          // Ensure the room is created before redirecting
-          try {
-            const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
-            const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
-            if (agentProfileId) {
-              try {
-                // sendDealRequest will create the room if it doesn't exist
-                await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId });
-              } catch (roomErr) {
-                // 409 means room already exists - that's fine
-                if (roomErr?.response?.status !== 409) {
-                  console.error('[MyAgreement] Room creation error:', roomErr);
-                }
-              }
-              
-              // Update room agreement status
-              const rooms = await base44.entities.Room.filter({ deal_id: dealId, agentId: agentProfileId }).catch(() => []);
-              if (rooms?.[0]) {
-                try { 
-                  await base44.entities.Room.update(rooms[0].id, { 
-                    agreement_status: ag?.status || 'investor_signed' 
-                  }); 
-                } catch (_) {}
-                try { 
-                  await base44.entities.Activity.create({ 
-                    type: 'agent_locked_in', 
-                    deal_id: dealId, 
-                    room_id: rooms[0].id, 
-                    actor_id: profile?.id, 
-                    actor_name: profile?.full_name || profile?.email, 
-                    message: 'Investor signed agreement' 
-                  }); 
-                } catch (_) {}
-              }
-            }
-          } catch (_) {}
-          navigate(createPageUrl('Pipeline'));
+        await new Promise(r => setTimeout(r, 1000));
+        
+        const agentProfileId = deal?.agent_id || sessionStorage.getItem('selectedAgentId');
+        if (agentProfileId) {
+          await base44.functions.invoke('sendDealRequest', { 
+            deal_id: dealId, 
+            agent_profile_id: agentProfileId 
+          }).catch(() => {});
         }
-      } catch (_) {}
+        
+        toast.success('Agreement signed successfully');
+        navigate(createPageUrl('Pipeline'));
+      } catch (_) {
+        navigate(createPageUrl('Pipeline'));
+      }
     })();
-  }, [dealId, profile?.id, profile?.full_name, profile?.email]);
-
-  // After DocuSign return with ?signed=1, verify investor signed and redirect to Pipeline
-  useEffect(() => {
-    (async () => {
-      if (!dealId || !signedFlag) return;
-      try {
-        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-        const ag = res?.data?.agreement;
-        if (ag?.investor_signed_at) {
-          // Immediately notify/send to the agent after investor signs
-          try {
-            const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
-            const agentProfileId = dealRes?.data?.agent_id || sessionStorage.getItem('selectedAgentId');
-            if (agentProfileId) {
-              try {
-                await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: agentProfileId });
-                const rooms = await base44.entities.Room.filter({ deal_id: dealId, agentId: agentProfileId }).catch(() => []);
-                if (rooms?.[0]) {
-                  try { await base44.entities.Room.update(rooms[0].id, { agreement_status: 'investor_signed' }); } catch (_) {}
-                  try { await base44.entities.Activity.create({ type: 'agent_locked_in', deal_id: dealId, room_id: rooms[0].id, actor_id: profile?.id, actor_name: profile?.full_name || profile?.email, message: 'Investor signed agreement' }); } catch (_) {}
-                }
-              } catch (_) {}
-            }
-          } catch (_) {}
-
-          try { await base44.entities.Deal.update(dealId, { status: 'active' }); } catch (_) {}
-          toast.success('Agreement signed. Redirecting to your pipeline...');
-          navigate(createPageUrl('Pipeline'));
-        }
-      } catch (_) {}
-    })();
-  }, [dealId, signedFlag]);
+  }, [dealId, signedFlag, profile?.id]);
 
   const isInvestor = useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
 
@@ -189,17 +129,12 @@ export default function MyAgreement() {
         </div>
 
         <LegalAgreementPanel
-           deal={deal}
-           profile={profile}
-           dealId={deal?.id || dealId}
-           allowGenerate={true}
-           hideRegenerateButton={true}
-           onUpdate={async () => {
-            console.log('[MyAgreement.onUpdate] Agreement update triggered');
-            // Refresh local deal
+          deal={deal}
+          profile={profile}
+          dealId={deal?.id || dealId}
+          onUpdate={async () => {
             const res = await base44.functions.invoke('getDealDetailsForUser', { dealId: deal.id });
-            const dataDeal = res?.data?.deal || res?.data || deal;
-            setDeal(dataDeal);
+            if (res?.data) setDeal(res.data);
           }}
         />
 

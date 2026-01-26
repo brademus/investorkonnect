@@ -376,28 +376,26 @@ export default function LegalAgreementPanel({ deal, profile, onUpdate, dealId = 
 
         {/* No Agreement Yet */}
         {!agreement ? (
-          hasPendingOffer && isInvestor ? null : (
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
-              <p className="text-[#808080] mb-4">
-                {isAgent ? 'Waiting for investor to generate agreement' : 'No agreement generated yet'}
-              </p>
-              {isInvestor && (
-                <Button
-                  onClick={handleRegenerate}
-                  disabled={!!actionInProgress}
-                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {actionInProgress === 'regenerating' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : 'Generate Agreement'}
-                </Button>
-              )}
-            </div>
-          )
+        <div className="text-center py-8">
+        <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
+        <p className="text-[#808080] mb-4">
+          {isAgent ? 'Waiting for investor to generate agreement' : 'No agreement generated yet'}
+        </p>
+        {isInvestor && !hasPendingOffer && (
+          <Button
+            onClick={handleRegenerate}
+            disabled={!!actionInProgress}
+            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+          >
+            {actionInProgress === 'regenerating' ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating...
+              </>
+            ) : 'Generate Agreement'}
+          </Button>
+        )}
+        </div>
         ) : (
           /* Agreement Exists */
           <div className="space-y-4">
