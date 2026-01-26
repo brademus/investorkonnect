@@ -4,10 +4,12 @@
  */
 
 export const PIPELINE_STAGES = [
-  { id: 'new_listings', label: 'New Deal / New Contracts', order: 1 },
-  { id: 'active_listings', label: 'Active Listings', order: 2 },
-  { id: 'ready_to_close', label: 'Ready to Close', order: 3 },
-  { id: 'canceled', label: 'Canceled', order: 4 }
+  { id: 'new_deals', label: 'New Deals (Pending Agent)', order: 1 },
+  { id: 'connected_deals', label: 'Connected Deals', order: 2 },
+  { id: 'active_listings', label: 'Active Listings', order: 3 },
+  { id: 'in_closing', label: 'In Closing', order: 4 },
+  { id: 'completed', label: 'Completed', order: 5 },
+  { id: 'canceled', label: 'Canceled', order: 6 }
 ];
 
 /**
