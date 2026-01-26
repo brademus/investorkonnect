@@ -111,6 +111,9 @@ Deno.serve(async (req) => {
     }
 
     if (action === 'accept') {
+      // Get the terms to accept (from counter, not deal)
+      const acceptedTerms = counter.terms_delta || counter.terms || {};
+      
       // Mark counter as accepted
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
@@ -121,19 +124,15 @@ Deno.serve(async (req) => {
         });
       });
 
-      // Update deal with accepted terms
-      const newTerms = {
-        ...deal.proposed_terms,
-        ...counter.terms_delta
-      };
-
+      // Update deal proposed_terms with accepted counter terms
       await withRetry(async () => {
         await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-          proposed_terms: newTerms
+          proposed_terms: acceptedTerms
         });
       });
 
-      return Response.json({ success: true, action: 'accepted' });
+      console.log('[respondToCounterOffer] Accepted counter with terms:', acceptedTerms);
+      return Response.json({ success: true, action: 'accepted', accepted_terms: acceptedTerms });
     }
 
     return Response.json({ error: 'Invalid action' }, { status: 400 });
