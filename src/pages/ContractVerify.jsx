@@ -156,7 +156,12 @@ export default function ContractVerify() {
   };
 
   const handleProceed = async () => {
-    if (verificationResult || creatingDeal) {
+    if (!selectedAgentId) {
+      toast.error("Please select an agent");
+      return;
+    }
+    
+    if (creatingDeal) {
       return;
     }
     
@@ -211,15 +216,32 @@ export default function ContractVerify() {
           },
           status: "draft",
           pipeline_stage: "new_listings",
+          agent_id: selectedAgentId,
+        });
+
+        // Generate legal agreement and send to DocuSign for investor signing
+        const agreementRes = await base44.functions.invoke('generateLegalAgreement', {
+          deal_id: newDeal.id,
+          agent_profile_id: selectedAgentId,
+        });
+
+        // Get DocuSign signing URL for investor
+        const signingRes = await base44.functions.invoke('docusignCreateSigningSession', {
+          legal_agreement_id: agreementRes.data.agreement_id,
         });
 
         sessionStorage.removeItem("newDealDraft");
-        toast.success("Deal created successfully!");
-        navigate(createPageUrl("Pipeline"));
+        toast.success("Deal created! Redirecting to sign agreement...");
+        
+        // Redirect to DocuSign
+        if (signingRes.data?.investor_signing_url) {
+          window.location.href = signingRes.data.investor_signing_url;
+        } else {
+          navigate(createPageUrl("Pipeline"));
+        }
       } catch (error) {
         console.error("Error creating deal:", error);
         toast.error("Failed to create deal");
-      } finally {
         setCreatingDeal(false);
       }
   };
