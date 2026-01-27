@@ -216,28 +216,77 @@ Deno.serve(async (req) => {
     // Critical decision logic: create new envelope if PDF changed
     // Validate envelope exists
     if (!envelopeId) {
+      console.error('[DocuSign] No envelope ID found');
       return Response.json({ 
-        error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.'
+        error: 'No DocuSign envelope found. Please try generating the agreement again.'
       }, { status: 400 });
     }
 
-    // Validate recipient IDs exist
-    if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
-      return Response.json({ 
-        error: 'Missing recipient IDs. Please regenerate the agreement.'
-      }, { status: 400 });
-    }
-
-    // Validate client user IDs exist
-    if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
-      return Response.json({ 
-        error: 'Missing client user IDs. Please regenerate the agreement.'
-      }, { status: 400 });
+    // For LegalAgreement, recipient IDs might be missing - try to recover from DocuSign
+    let investorRecipientId = agreement.investor_recipient_id;
+    let agentRecipientId = agreement.agent_recipient_id;
+    let investorClientUserId = agreement.investor_client_user_id;
+    let agentClientUserId = agreement.agent_client_user_id;
+    
+    if (!investorRecipientId || !agentRecipientId || !investorClientUserId || !agentClientUserId) {
+      console.log('[DocuSign] Missing recipient data - attempting to fetch from DocuSign envelope');
+      
+      try {
+        const connection = await getDocuSignConnection(base44);
+        const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
+        
+        const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+        const recipientsResponse = await fetch(recipientsUrl, {
+          headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        
+        if (recipientsResponse.ok) {
+          const recipients = await recipientsResponse.json();
+          const signers = recipients.signers || [];
+          
+          // Match by routing order: investor=1, agent=2
+          const investorSigner = signers.find(s => s.routingOrder === '1');
+          const agentSigner = signers.find(s => s.routingOrder === '2');
+          
+          if (investorSigner && agentSigner) {
+            investorRecipientId = investorSigner.recipientId;
+            agentRecipientId = agentSigner.recipientId;
+            investorClientUserId = investorSigner.clientUserId;
+            agentClientUserId = agentSigner.clientUserId;
+            
+            console.log('[DocuSign] ✓ Recovered recipient data from envelope');
+            
+            // Update the agreement with recovered data
+            const updateData = {
+              investor_recipient_id: investorRecipientId,
+              agent_recipient_id: agentRecipientId,
+              investor_client_user_id: investorClientUserId,
+              agent_client_user_id: agentClientUserId
+            };
+            
+            if (agreementType === 'LegalAgreement') {
+              await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, updateData);
+            } else {
+              await base44.asServiceRole.entities.AgreementVersion.update(agreement_id, updateData);
+            }
+          } else {
+            console.error('[DocuSign] Could not find both signers in envelope');
+            return Response.json({ 
+              error: 'Envelope recipient data is incomplete. Please regenerate the agreement.'
+            }, { status: 400 });
+          }
+        }
+      } catch (recoverError) {
+        console.error('[DocuSign] Failed to recover recipient data:', recoverError.message);
+        return Response.json({ 
+          error: 'Missing recipient IDs and could not recover from DocuSign. Please regenerate the agreement.'
+        }, { status: 400 });
+      }
     }
 
     console.log('[DocuSign] Using existing envelope:', envelopeId);
-    console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
-    console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
+    console.log('[DocuSign] Investor recipientId:', investorRecipientId);
+    console.log('[DocuSign] Agent recipientId:', agentRecipientId);
 
     // Sync with DocuSign to get latest recipient statuses (don't block, just update DB)
     try {
@@ -250,8 +299,8 @@ Deno.serve(async (req) => {
         const recipients = await recipientsResponse.json();
         const signers = recipients.signers || [];
         
-        const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
-        const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+        const investorSigner = signers.find(s => s.recipientId === investorRecipientId);
+        const agentSigner = signers.find(s => s.recipientId === agentRecipientId);
         
         console.log('[DocuSign] DocuSign status sync:', {
           investor: investorSigner?.status,
@@ -324,8 +373,8 @@ Deno.serve(async (req) => {
     const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
     
     // Get recipient details
-    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
-    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
+    const recipientId = role === 'investor' ? investorRecipientId : agentRecipientId;
+    const clientUserId = role === 'investor' ? investorClientUserId : agentClientUserId;
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
     
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
