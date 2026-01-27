@@ -4,9 +4,7 @@ import Admin from './pages/Admin';
 import AgentLanding from './pages/AgentLanding';
 import AgentOnboarding from './pages/AgentOnboarding';
 import Agents from './pages/Agents';
-import BillingSuccess from './pages/BillingSuccess';
 import Contact from './pages/Contact';
-import ContractVerify from './pages/ContractVerify';
 import DocuSignReturn from './pages/DocuSignReturn';
 import FAQ from './pages/FAQ';
 import Home from './pages/Home';
@@ -21,7 +19,6 @@ import MyAgreement from './pages/MyAgreement';
 import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
-import Onboarding from './pages/Onboarding';
 import Pipeline from './pages/Pipeline';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
@@ -39,9 +36,7 @@ export const PAGES = {
     "AgentLanding": AgentLanding,
     "AgentOnboarding": AgentOnboarding,
     "Agents": Agents,
-    "BillingSuccess": BillingSuccess,
     "Contact": Contact,
-    "ContractVerify": ContractVerify,
     "DocuSignReturn": DocuSignReturn,
     "FAQ": FAQ,
     "Home": Home,
@@ -56,7 +51,6 @@ export const PAGES = {
     "NDA": NDA,
     "NewDeal": NewDeal,
     "NotFound": NotFound,
-    "Onboarding": Onboarding,
     "Pipeline": Pipeline,
     "PostAuth": PostAuth,
     "Pricing": Pricing,
