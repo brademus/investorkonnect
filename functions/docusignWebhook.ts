@@ -329,12 +329,16 @@ Deno.serve(async (req) => {
     // Update Room agreement_status to match final agreement status
     try {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id });
+      console.log('[DocuSign Webhook] Found rooms for deal', agreement.deal_id, ':', rooms.length);
       if (rooms && rooms.length > 0) {
         for (const room of rooms) {
+          console.log('[DocuSign Webhook] Updating room', room.id, 'with agreement_status:', updates.status || agreement.status);
           await base44.asServiceRole.entities.Room.update(room.id, { 
             agreement_status: updates.status || agreement.status 
           });
         }
+      } else {
+        console.warn('[DocuSign Webhook] No rooms found for deal_id:', agreement.deal_id);
       }
     } catch (e) {
       console.warn('[DocuSign Webhook] Warning: failed to update Room agreement_status', e?.message || e);
