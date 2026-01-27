@@ -33,8 +33,8 @@ export default function BillingSuccess() {
 
           <Button
             onClick={() => {
-              console.log('Navigating to IdentityVerification');
-              navigate(createPageUrl("IdentityVerification"));
+              console.log('Navigating to Verify');
+              navigate(createPageUrl("Verify"));
             }}
             className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-12"
           >
