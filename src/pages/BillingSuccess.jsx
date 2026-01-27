@@ -66,14 +66,6 @@ export default function BillingSuccess() {
             Go to Pipeline
             <ArrowRight className="w-4 h-4" />
           </Button>
-
-          <Button
-            variant="outline"
-            onClick={() => navigate(createPageUrl("Pricing"))}
-            className="w-full border-[#1F1F1F] text-[#FAFAFA] h-12 rounded-full"
-          >
-            View Subscription Details
-          </Button>
         </div>
       </div>
     </div>
