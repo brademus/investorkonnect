@@ -13,14 +13,14 @@ import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
 import Pipeline from './pages/Pipeline';
+import PipelineStage from './pages/PipelineStage';
 import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
-import Terms from './pages/Terms';
-import PipelineStage from './pages/PipelineStage';
 import roomRefactored from './pages/Room_Refactored';
+import Terms from './pages/Terms';
 import __Layout from './Layout.jsx';
 
 
@@ -40,14 +40,14 @@ export const PAGES = {
     "NewDeal": NewDeal,
     "NotFound": NotFound,
     "Pipeline": Pipeline,
+    "PipelineStage": PipelineStage,
     "PostAuth": PostAuth,
     "Pricing": Pricing,
     "Privacy": Privacy,
     "RoleLanding": RoleLanding,
     "Room": Room,
-    "Terms": Terms,
-    "PipelineStage": PipelineStage,
     "Room_Refactored": roomRefactored,
+    "Terms": Terms,
 }
 
 export const pagesConfig = {

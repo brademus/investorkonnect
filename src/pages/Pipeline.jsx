@@ -219,17 +219,17 @@ function PipelineContent() {
     profile?.user_role
   );
 
-  // Consolidated subscription management
-  const [subscriptionUpdate, setSubscriptionUpdate] = useState(0);
-  useRealtimeSubscriptions(profile?.id, profile?.user_role, (update) => {
-    setSubscriptionUpdate(t => t + 1);
-  });
+  // Disable real-time subscription refetches - they cause constant flicker
+  // Subscriptions managed but NOT triggering refetches (causing performance issues)
 
   // Load recent activity
   const { data: activities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['activities', profile?.id],
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
+    staleTime: 10 * 60_000,  // 10 minutes
+    gcTime: 30 * 60_000,     // 30 minutes
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
@@ -238,9 +238,7 @@ function PipelineContent() {
       const allActivities = await base44.entities.Activity.list('-created_date', 20);
       return allActivities.filter(a => dealIds.includes(a.deal_id));
     },
-    enabled: !!profile?.id && uniqueDealsData.length > 0,
-    refetchOnWindowFocus: false,
-    refetchInterval: 0
+    enabled: !!profile?.id && uniqueDealsData.length > 0
   });
 
   // Force refresh after DocuSign return
@@ -263,21 +261,11 @@ function PipelineContent() {
             }
           } catch (_) {}
         }
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
-        queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
+        // Only refetch on explicit sign event, not continuous polling
         refetchDeals();
       })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
-
-  // Subscriptions consolidated via useRealtimeSubscriptions hook
-  // Replaces 3 separate subscription useEffect blocks
-  useEffect(() => {
-    if (subscriptionUpdate > 0) {
-      refetchDeals();
-    }
-  }, [subscriptionUpdate]);
 
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
