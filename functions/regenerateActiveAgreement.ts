@@ -185,8 +185,14 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     console.error('[regenerateActiveAgreement] Fatal error:', error);
+    console.error('[regenerateActiveAgreement] Error type:', error?.constructor?.name);
+    console.error('[regenerateActiveAgreement] Error response:', error?.response?.data);
+    console.error('[regenerateActiveAgreement] Error message:', error?.message);
+    
+    const errorMsg = error?.response?.data?.error || error?.response?.data?.message || error?.message || 'Failed to regenerate agreement';
     return Response.json({ 
-      error: error?.message || 'Failed to regenerate agreement' 
+      error: errorMsg,
+      details: error?.response?.data 
     }, { status: 500 });
   }
 });
