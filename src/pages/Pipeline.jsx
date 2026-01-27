@@ -335,24 +335,24 @@ function PipelineContent() {
   
 
   // 5. Merge Data (no automatic dedup - user clicks button if needed)
-  const deals = useMemo(() => {
-    // Index rooms by deal_id
-    const roomMap = new Map();
-    const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
-    rooms.forEach(r => {
-      if (!r?.deal_id) return;
-      const current = roomMap.get(r.deal_id);
-      if (!current || rank(r) > rank(current)) {
-        roomMap.set(r.deal_id, r);
-      }
-    });
+    const deals = useMemo(() => {
+      // Index rooms by deal_id
+      const roomMap = new Map();
+      const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+      (rooms || []).forEach(r => {
+        if (!r?.deal_id) return;
+        const current = roomMap.get(r.deal_id);
+        if (!current || rank(r) > rank(current)) {
+          roomMap.set(r.deal_id, r);
+        }
+      });
 
-    // Index appointments by dealId
-    const apptMap = new Map();
-    (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
+      // Index appointments by dealId
+      const apptMap = new Map();
+      (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
 
-    // Stable map to avoid reshuffles
-    const mappedDeals = uniqueDealsData.map(deal => {
+      // Stable map to avoid reshuffles
+      const mappedDeals = (uniqueDealsData || []).map(deal => {
       const room = roomMap.get(deal.id);
       const appt = apptMap.get(deal.id);
       
@@ -446,7 +446,7 @@ function PipelineContent() {
       // Agents see deals that have a room request (requested/accepted/signed) or are fully signed
       return d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed' || d.is_fully_signed === true;
     });
-  }, [dealsData, rooms, appointments]);
+    }, [uniqueDealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {
     // Prefetch deal details and agreement for instant hydration
