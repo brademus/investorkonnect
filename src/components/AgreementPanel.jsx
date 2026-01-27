@@ -76,17 +76,30 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     if (params.get('signed') === '1') {
       window.history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[&?]signed=1/g, ''));
       
-      // Aggressive refresh to catch newly signed agreements
-      loadState(true);
-      setTimeout(() => loadState(true), 500);
-      setTimeout(() => loadState(true), 1500);
+      // Sync envelope status from DocuSign first
+      const syncEnvelope = async () => {
+        try {
+          await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
+          console.log('[AgreementPanel] Synced DocuSign envelope');
+        } catch (e) {
+          console.error('[AgreementPanel] Sync error:', e);
+        }
+      };
+      
+      // Aggressive refresh with envelope sync
+      syncEnvelope();
+      setTimeout(() => loadState(true), 300);
+      setTimeout(() => syncEnvelope(), 800);
+      setTimeout(() => loadState(true), 1200);
+      setTimeout(() => syncEnvelope(), 2500);
       setTimeout(() => loadState(true), 3000);
-      setTimeout(() => loadState(true), 5000);
       setTimeout(() => {
-        loadState(true);
-        // Also notify parent to refresh deal data (Pipeline, Room, etc.)
-        if (onUpdate) onUpdate();
-      }, 8000);
+        syncEnvelope();
+        setTimeout(() => {
+          loadState(true);
+          if (onUpdate) onUpdate();
+        }, 500);
+      }, 5000);
     }
 
     const handleFocus = () => loadState(true); // Force refresh on focus
