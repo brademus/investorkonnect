@@ -364,18 +364,34 @@ export default function ContractVerify() {
                 )}
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Select Agent *</label>
+                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
+                    <SelectValue placeholder={loadingAgents ? "Loading agents..." : "Choose an agent"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.full_name || agent.email}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <Button
                 onClick={handleProceed}
-                disabled={creatingDeal}
+                disabled={creatingDeal || !selectedAgentId || loadingAgents}
                 className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 disabled:opacity-50"
               >
                 {creatingDeal ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Deal...
+                    Creating Deal & Signing...
                   </>
                 ) : (
-                  "Create Deal"
+                  "Create Deal & Sign Agreement"
                 )}
               </Button>
             </div>
