@@ -27,46 +27,25 @@ export function Header({ profile }) {
     }
   };
   
-  const navLinks = [
-    {
-      label: 'Dashboard',
-      icon: Home,
-      href: createPageUrl("Pipeline"),
-      show: true
-    }
-  ];
+  const navLinks = [];
 
   return (
     <header className="bg-black/95 backdrop-blur-sm border-b border-[#1F1F1F] sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           
-          {/* Logo */}
+          {/* Left Spacer */}
+          <div className="flex-1"></div>
+
+          {/* Centered Logo */}
           <Logo 
             size="default"
             showText={true}
             linkTo={createPageUrl("Pipeline")}
           />
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-1">
-            {navLinks.filter(link => link.show).map((link) => {
-              const Icon = link.icon;
-              return (
-                <Link 
-                  key={link.label}
-                  to={link.href} 
-                  className="flex items-center gap-2 px-4 py-2 text-[#808080] hover:text-[#E3C567] hover:bg-[#0D0D0D] rounded-lg transition-all"
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="font-medium">{link.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User Menu */}
-          <div className="flex items-center gap-2">
+          {/* Right: User Menu */}
+          <div className="flex items-center gap-2 flex-1 justify-end">
             {/* Desktop User Dropdown */}
             <div className="hidden md:block relative">
               <Button 
