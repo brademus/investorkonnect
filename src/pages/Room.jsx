@@ -518,7 +518,7 @@ export default function Room() {
     }
   }, [location.search, roomId, currentRoom?.deal_id]);
 
-  // Fetch current room with server-side access control - ALL IN PARALLEL
+  // Fetch current room with server-side access control
   useEffect(() => {
     if (!roomId) return;
     
@@ -531,8 +531,9 @@ export default function Room() {
       }
       
       try {
-        // Get room - from cache or DB
+        // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
+        
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
         if (!rawRoom) {
@@ -540,25 +541,27 @@ export default function Room() {
           return;
         }
 
-        // Optimistic hydrate from cache (instant UI)
-        const didCache = rawRoom.deal_id ? getCachedDeal(rawRoom.deal_id) : null;
-        if (didCache && didCache.id === rawRoom.deal_id) {
-          const visibleDeal = shouldMaskAddress(profile, rawRoom, didCache) && didCache.property_address 
-            ? { ...didCache, property_address: null } 
-            : didCache;
-          setDeal(visibleDeal);
-        }
-
-        // PARALLEL FETCH: deal + appointments all at once (no waterfalls)
+        // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
-          const [dealRes, apptRows, agRes] = await Promise.all([
-            base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null })),
-            base44.entities.DealAppointments.filter({ dealId: rawRoom.deal_id }).catch(() => []),
-            base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id }).catch(() => ({ data: null }))
-          ]);
+          const cached = getCachedDeal(rawRoom.deal_id);
+          if (cached) {
+            // Ensure cached belongs to this deal id (guard against residual cache)
+            if (cached.id !== rawRoom.deal_id) {
+              // ignore wrong cached snapshot
+            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
+              setDeal({ ...cached, property_address: null });
+            } else {
+              setDeal(cached);
+            }
+          }
 
-          const dealData = dealRes?.data;
-          if (!isStale()) {
+          // Use server-side access-controlled deal fetch
+          try {
+            const response = await base44.functions.invoke('getDealDetailsForUser', {
+              dealId: rawRoom.deal_id
+            });
+            const dealData = response.data;
+            
             if (dealData) {
               setDeal(dealData);
               setCachedDeal(dealData.id, dealData);
@@ -567,6 +570,8 @@ export default function Room() {
                 ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
                 : dealData.title;
               
+              // Ensure we still match current selection
+              if (rid !== roomId) return;
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
@@ -590,16 +595,9 @@ export default function Room() {
             } else {
               setCurrentRoom(rawRoom);
             }
-
-            // Seed appointments for instant Details tab render
-            if (Array.isArray(apptRows) && apptRows[0]) {
-              setDealAppts(apptRows[0]);
-            }
-
-            // Prefetch agreement for instant Agreement tab
-            if (agRes?.data?.agreement) {
-              setAgreement(agRes.data.agreement);
-            }
+          } catch (error) {
+            console.error('Failed to fetch deal:', error);
+            setCurrentRoom(rawRoom);
           }
         } else {
           setCurrentRoom(rawRoom);
