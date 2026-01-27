@@ -78,7 +78,11 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       setTimeout(() => loadState(true), 1000);
       setTimeout(() => loadState(true), 3000);
       setTimeout(() => loadState(true), 6000);
-      setTimeout(() => loadState(true), 10000);
+      setTimeout(() => {
+        loadState(true);
+        // Also notify parent to refresh deal data (Pipeline, Room, etc.)
+        if (onUpdate) onUpdate();
+      }, 10000);
     }
 
     const handleFocus = () => loadState(true); // Force refresh on focus
