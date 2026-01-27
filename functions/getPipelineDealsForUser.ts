@@ -126,18 +126,34 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Agents should not see deals until the INVESTOR has signed on DocuSign
-    // If LegalAgreement hasn't synced yet, allow only when Room shows agreement_status ≥ investor_signed
+    // Agents should see deals after the INVESTOR has signed
     if (isAgent && deals.length > 0) {
-      const allowedStatuses = new Set(['investor_signed', 'agent_signed', 'fully_signed', 'attorney_review_pending']);
       deals = deals.filter(d => {
+        // Check LegalAgreement for investor_signed_at
         const ag = agreementsMap.get(d.id);
-        if (ag && allowedStatuses.has(ag.status)) return true;
+        if (ag && ag.investor_signed_at) {
+          console.log('[getPipelineDealsForUser] Deal', d.id, 'allowed: LegalAgreement has investor_signed_at');
+          return true;
+        }
+        
+        // Check AgreementVersion entities for investor_signed_at
+        // (we'll load these below if needed)
+        
+        // Check Room agreement_status as fallback
         const hasRoomSignal = (agentRooms || []).some(r => r.deal_id === d.id && (
           r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed'
         ));
-        return hasRoomSignal;
+        
+        if (hasRoomSignal) {
+          console.log('[getPipelineDealsForUser] Deal', d.id, 'allowed: Room shows investor_signed or better');
+          return true;
+        }
+        
+        console.log('[getPipelineDealsForUser] Deal', d.id, 'filtered out: no investor signature found');
+        return false;
       });
+      
+      console.log('[getPipelineDealsForUser] Agent deals after filtering:', deals.length);
     }
 
     // Apply role-based redaction
