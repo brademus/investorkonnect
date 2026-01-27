@@ -216,6 +216,14 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
 
       console.log('[AgreementPanel] Signing response:', res.data);
 
+      // FIX 5: Handle already_signed response
+      if (res.data?.already_signed) {
+        toast.success(res.data.message || 'Already signed.');
+        await loadState(true);
+        setBusy(false);
+        return;
+      }
+
       if (res.data?.error) {
         toast.error(res.data.error);
         setBusy(false);
