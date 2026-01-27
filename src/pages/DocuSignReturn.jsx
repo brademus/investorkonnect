@@ -28,19 +28,13 @@ export default function DocuSignReturn() {
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // Deterministic routing: always return to deal context
+          // Deterministic routing: ALWAYS return to deal context (NEVER random Pipeline)
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement&signed=1`, { replace: true });
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
           } else if (dealId) {
-            // Check if investor already signed - if so, go to Pipeline instead of MyAgreement
-            const agreementRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-            const agreement = agreementRes?.data?.agreement;
-            if (agreement?.investor_signed_at) {
-              navigate(createPageUrl("Pipeline"), { replace: true });
-            } else {
-              navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&signed=1`, { replace: true });
-            }
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement&signed=1`, { replace: true });
           } else {
+            // Last-resort fallback only
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else if (event === 'decline' || event === 'cancel') {
@@ -50,23 +44,23 @@ export default function DocuSignReturn() {
 
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // Return to same deal context on cancel
+          // Return to same deal context on cancel (no signed flag)
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`, { replace: true });
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`, { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else {
-          // Unknown event - redirect back to room or pipeline
+          // Unknown event - redirect back to deal context
           setMessage("Redirecting...");
           await new Promise(resolve => setTimeout(resolve, 1000));
           
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`, { replace: true });
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`, { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });
           }

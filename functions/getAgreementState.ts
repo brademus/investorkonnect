@@ -39,14 +39,29 @@ Deno.serve(async (req) => {
       return deals[0];
     });
 
-    // Get active LegalAgreement (single source of truth)
+    // Get active LegalAgreement (single source of truth with backwards compatibility)
     let agreement = null;
+    
+    // Resolution order:
+    // 1) Use deal.current_legal_agreement_id if set and not superseded
     if (deal.current_legal_agreement_id) {
       const a = await withRetry(async () => 
         base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id })
       );
-      agreement = a?.[0] || null;
-      console.log('[getAgreementState] Current agreement by ID:', {
+      const candidate = a?.[0] || null;
+      
+      // If superseded/voided, fall back to latest non-superseded
+      if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
+        console.log('[getAgreementState] Current pointer is superseded, finding latest active');
+        const allAgreements = await withRetry(async () => 
+          base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
+        );
+        agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
+      } else {
+        agreement = candidate;
+      }
+      
+      console.log('[getAgreementState] Resolved agreement by ID:', {
         id: agreement?.id,
         status: agreement?.status,
         investor_signed_at: agreement?.investor_signed_at,
@@ -55,12 +70,11 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Fallback: latest non-superseded LegalAgreement for this deal
+    // 2) Fallback: latest non-superseded LegalAgreement for this deal (legacy compatibility)
     if (!agreement) {
       const allAgreements = await withRetry(async () => 
         base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
       );
-      // Prefer non-superseded agreements
       agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || allAgreements?.[0] || null;
       console.log('[getAgreementState] Fallback to latest non-superseded:', {
         id: agreement?.id,
@@ -81,17 +95,33 @@ Deno.serve(async (req) => {
       });
 
       pending_counter = counters?.[0] || null;
+      
+      // Backwards compatibility: if terms_delta is missing but terms exists, treat terms as terms_delta
+      if (pending_counter && !pending_counter.terms_delta && pending_counter.terms) {
+        console.log('[getAgreementState] Applying legacy terms → terms_delta compatibility');
+        pending_counter.terms_delta = pending_counter.terms;
+      }
+      
       console.log('[getAgreementState] Pending counter:', pending_counter?.id || 'none');
     } catch (e) {
       console.log('[getAgreementState] Counter error:', e.message);
     }
+
+    // Derived stage fields for easier UI consumption
+    const investor_signed = !!agreement?.investor_signed_at;
+    const agent_signed = !!agreement?.agent_signed_at;
+    const fully_signed = investor_signed && agent_signed;
 
     return Response.json({
       success: true,
       agreement,
       pending_counter,
       deal_terms: deal.proposed_terms || {},
-      requires_regenerate: !!deal.requires_regenerate
+      requires_regenerate: !!deal.requires_regenerate,
+      // Helper flags
+      investor_signed,
+      agent_signed,
+      fully_signed
     });
     
   } catch (error) {
