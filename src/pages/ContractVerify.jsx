@@ -210,7 +210,7 @@ export default function ContractVerify() {
               <Button
                 onClick={handleVerify}
                 disabled={!file || uploading || verifying}
-                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11"
+                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
               >
                 {uploading ? (
                   <>
