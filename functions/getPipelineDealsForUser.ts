@@ -111,16 +111,32 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch all LegalAgreements for these deals (BEFORE mapping)
+    // Fetch all LegalAgreements and AgreementVersions for these deals
     const dealIds = deals.map(d => d.id);
     let agreementsMap = new Map();
     if (dealIds.length > 0) {
       try {
+        // Load LegalAgreements
         const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({
           deal_id: { $in: dealIds }
         });
         allAgreements.forEach(a => agreementsMap.set(a.deal_id, a));
-        console.log('[getPipelineDealsForUser] Loaded agreements:', allAgreements.length);
+        console.log('[getPipelineDealsForUser] Loaded LegalAgreements:', allAgreements.length);
+        
+        // Also load AgreementVersions (newer system)
+        const allVersions = await base44.asServiceRole.entities.AgreementVersion.filter({
+          deal_id: { $in: dealIds }
+        }, '-version', 100);
+        
+        // For each deal, use the latest version if it exists and has investor_signed_at
+        allVersions.forEach(v => {
+          const existing = agreementsMap.get(v.deal_id);
+          // Prefer version with investor_signed_at, or if no existing agreement
+          if (!existing || (v.investor_signed_at && !existing.investor_signed_at)) {
+            agreementsMap.set(v.deal_id, v);
+          }
+        });
+        console.log('[getPipelineDealsForUser] Loaded AgreementVersions:', allVersions.length);
       } catch (e) {
         console.error('Error fetching agreements:', e);
       }
