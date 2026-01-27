@@ -117,18 +117,7 @@ Deno.serve(async (req) => {
             }, { status: 403 });
           }
           
-          // 2. Check NDA (KYC no longer required for checkout)
-          if (!profile.nda_accepted) {
-            console.log('❌ NDA not accepted');
-            return Response.json({ 
-              ok: false, 
-              reason: 'NDA_REQUIRED',
-              message: 'Please accept the NDA first',
-              redirect: `${base}/nda`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Investor fully ready - all gates passed');
+          console.log('✅ Investor ready for checkout - onboarding verified');
         } else {
           // For non-investors (agents, etc.), just check basic onboarding
           if (!profile.onboarding_completed_at) {
