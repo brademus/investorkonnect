@@ -59,10 +59,17 @@ export default function DocuSignReturn() {
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else {
-          // Unknown event
+          // Unknown event - redirect back to room or pipeline
           setMessage("Redirecting...");
           await new Promise(resolve => setTimeout(resolve, 1000));
-          navigate(createPageUrl("Pipeline"));
+          
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`, { replace: true });
+          } else if (dealId) {
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
+          } else {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }
         }
 
       } catch (error) {
