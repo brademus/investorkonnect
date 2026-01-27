@@ -266,7 +266,7 @@ export default function ContractVerify() {
               </Button>
             </div>
           )}
-        </Card>
+        </div>
       </div>
     </div>
   );
