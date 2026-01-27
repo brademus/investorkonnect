@@ -913,14 +913,18 @@ function PipelineContent() {
                               try {
                                 // Accept the counter offer
                                 await base44.entities.CounterOffer.update(offer.id, { status: 'accepted', responded_by_role: 'investor' });
-                                // Update deal with new terms
+                                // Update deal with new terms and set regeneration flag
                                 const newTerms = {
                                   ...dealForOffer.proposed_terms,
                                   buyer_commission_type: offer.terms?.buyer_commission_type,
                                   buyer_commission_percentage: offer.terms?.buyer_commission_percentage,
                                   buyer_flat_fee: offer.terms?.buyer_flat_fee,
                                 };
-                                await base44.entities.Deal.update(offer.deal_id, { proposed_terms: newTerms });
+                                await base44.entities.Deal.update(offer.deal_id, { 
+                                  proposed_terms: newTerms,
+                                  requires_regenerate: true,
+                                  requires_regenerate_reason: `Investor accepted counter offer at ${new Date().toISOString()}`
+                                });
                                 // Refresh
                                 refetchDeals();
                                 refetchCounters();
