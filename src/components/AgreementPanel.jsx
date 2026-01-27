@@ -187,14 +187,15 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
 
       const returnUrl = currentRoomId 
         ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
-        : `/MyAgreement?dealId=${dealId}&signed=1`;
+        : `/Pipeline`;
 
       console.log('[AgreementPanel] Signing request:', { agreement_id: agreementId, role, returnUrl });
 
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: agreementId,
         role,
-        redirect_url: returnUrl
+        redirect_url: returnUrl,
+        room_id: currentRoomId
       });
 
       console.log('[AgreementPanel] Signing response:', res.data);
