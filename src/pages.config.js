@@ -2,7 +2,6 @@ import About from './pages/About';
 import AccountProfile from './pages/AccountProfile';
 import Admin from './pages/Admin';
 import AgentLanding from './pages/AgentLanding';
-import AgentMatching from './pages/AgentMatching';
 import AgentOnboarding from './pages/AgentOnboarding';
 import Agents from './pages/Agents';
 import BillingSuccess from './pages/BillingSuccess';
@@ -13,7 +12,6 @@ import FAQ from './pages/FAQ';
 import Home from './pages/Home';
 import HowItWorks from './pages/HowItWorks';
 import IdentityVerification from './pages/IdentityVerification';
-import Inbox from './pages/Inbox';
 import InvestorLanding from './pages/InvestorLanding';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorProfile from './pages/InvestorProfile';
@@ -39,7 +37,6 @@ export const PAGES = {
     "AccountProfile": AccountProfile,
     "Admin": Admin,
     "AgentLanding": AgentLanding,
-    "AgentMatching": AgentMatching,
     "AgentOnboarding": AgentOnboarding,
     "Agents": Agents,
     "BillingSuccess": BillingSuccess,
@@ -50,7 +47,6 @@ export const PAGES = {
     "Home": Home,
     "HowItWorks": HowItWorks,
     "IdentityVerification": IdentityVerification,
-    "Inbox": Inbox,
     "InvestorLanding": InvestorLanding,
     "InvestorOnboarding": InvestorOnboarding,
     "InvestorProfile": InvestorProfile,
