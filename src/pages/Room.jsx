@@ -13,7 +13,7 @@ import { getOrCreateDealRoom } from "@/components/dealRooms";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ContractWizard from "@/components/ContractWizard";
+
 import LoadingAnimation from "@/components/LoadingAnimation";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import { StepGuard } from "@/components/StepGuard";
@@ -315,7 +315,7 @@ export default function Room() {
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
-  const [wizardOpen, setWizardOpen] = useState(false);
+
 
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
@@ -2781,11 +2781,7 @@ ${dealContext}`;
     </div>
   </div>
       
-  <ContractWizard 
-    roomId={roomId} 
-    open={wizardOpen} 
-    onClose={() => setWizardOpen(false)} 
-  />
+
 </div>
   );
 }
