@@ -17,6 +17,7 @@ export default function ContractVerify() {
   const [dealData, setDealData] = useState(null);
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [creatingDeal, setCreatingDeal] = useState(false);
 
   // Get deal data from sessionStorage
   useEffect(() => {
