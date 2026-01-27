@@ -260,10 +260,10 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const handleRespondToCounter = async (action, customTerms = null) => {
     if (!pendingCounter?.id) return;
 
-    // Rate limit protection: 2 second cooldown
+    // Rate limit protection: 4 second cooldown
     const now = Date.now();
-    if (now - lastCounterTime < 2000) {
-      toast.error('Please wait a moment before sending another counter');
+    if (now - lastCounterTime < 4000) {
+      toast.error('Please wait a moment before responding to offer');
       return;
     }
     
