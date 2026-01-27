@@ -550,7 +550,7 @@ function PipelineContent() {
          customer_name: counterpartyName,
          agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
          agent_request_status: room?.request_status || null,
-         agreement_status: room?.agreement_status || null,
+         agreement_status: room?.agreement_status || deal.agreement_status || null,
 
          // Dates
          created_date: deal.created_date,
