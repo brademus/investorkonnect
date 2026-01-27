@@ -28,6 +28,14 @@ export default function IdentityVerification() {
     }
   }, [loading, kycVerified, navigate]);
 
+  // Auto-start verification when page loads
+  useEffect(() => {
+    if (!loading && profile && onboarded && !kycVerified && !verifying && status === 'pending') {
+      console.log('[IdentityVerification] Auto-starting verification flow');
+      handleStartVerification();
+    }
+  }, [loading, profile, onboarded, kycVerified]);
+
   // Check if user should be here - redirect to proper step if needed
   useEffect(() => {
     if (loading) return; // Wait for loading to complete
@@ -168,57 +176,20 @@ export default function IdentityVerification() {
               </Button>
             </div>
           ) : (
-            <>
-              <div className="text-center mb-10">
-                <div className="w-20 h-20 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Shield className="w-10 h-10 text-[#E3C567]" />
-                </div>
-                <h2 className="text-3xl font-bold text-[#E3C567] mb-4">Verify Your Identity</h2>
-                <p className="text-[#808080]">
-                  To protect our community and ensure secure transactions, we need to verify your identity.
-                </p>
+            <div className="text-center">
+              <div className="w-20 h-20 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Loader2 className="w-10 h-10 text-[#E3C567] animate-spin" />
               </div>
-
-              <div className="bg-[#141414] rounded-xl p-6 mb-8 border border-[#1F1F1F]">
+              <h2 className="text-3xl font-bold text-[#E3C567] mb-4">Opening Verification...</h2>
+              <p className="text-[#808080] mb-6">
+                Launching Stripe Identity verification. This will open in a new window.
+              </p>
+              <div className="bg-[#141414] rounded-xl p-6 border border-[#1F1F1F]">
                 <h3 className="font-semibold text-[#FAFAFA] mb-3">Verifying as:</h3>
                 <p className="text-xl text-[#E3C567] font-bold">{profile?.full_name || 'Unknown'}</p>
                 <p className="text-sm text-[#808080] mt-2">{profile?.email}</p>
               </div>
-
-              <div className="space-y-4 mb-8">
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#E3C567] mt-0.5 flex-shrink-0" />
-                  <p className="text-[#FAFAFA] text-sm">Your information is encrypted and secure</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#E3C567] mt-0.5 flex-shrink-0" />
-                  <p className="text-[#FAFAFA] text-sm">Verification takes less than 2 minutes</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <CheckCircle className="w-5 h-5 text-[#E3C567] mt-0.5 flex-shrink-0" />
-                  <p className="text-[#FAFAFA] text-sm">Required for all investors and agents</p>
-                </div>
-              </div>
-
-              <Button
-                onClick={handleStartVerification}
-                disabled={verifying}
-                className="w-full h-14 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold text-lg"
-              >
-                {verifying ? (
-                  <>
-                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                    Verifying...
-                  </>
-                ) : (
-                  'Verify My Identity'
-                )}
-              </Button>
-
-              <p className="text-center text-xs text-[#666666] mt-6">
-                By clicking verify, you agree to our identity verification process powered by Stripe Identity.
-              </p>
-            </>
+            </div>
           )}
         </div>
       </div>
