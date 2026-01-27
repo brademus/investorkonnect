@@ -230,22 +230,56 @@ Deno.serve(async (req) => {
     // Critical decision logic: create new envelope if PDF changed
     // Validate envelope exists
     if (!envelopeId) {
+      console.error('[DocuSign] ❌ Missing envelope ID. Agreement fields:', {
+        id: agreement.id,
+        status: agreement.status,
+        docusign_envelope_id: agreement.docusign_envelope_id,
+        investor_recipient_id: agreement.investor_recipient_id,
+        agent_recipient_id: agreement.agent_recipient_id
+      });
       return Response.json({ 
-        error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.'
+        error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.',
+        debug: { agreement_id, has_envelope: false }
       }, { status: 400 });
     }
 
     // Validate recipient IDs exist
     if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
+      console.error('[DocuSign] ❌ Missing recipient IDs. Agreement:', {
+        id: agreement.id,
+        envelope_id: envelopeId,
+        investor_recipient_id: agreement.investor_recipient_id,
+        agent_recipient_id: agreement.agent_recipient_id,
+        investor_client_user_id: agreement.investor_client_user_id,
+        agent_client_user_id: agreement.agent_client_user_id
+      });
       return Response.json({ 
-        error: 'Missing recipient IDs. Please regenerate the agreement.'
+        error: 'Missing recipient IDs. Please regenerate the agreement.',
+        debug: { 
+          agreement_id,
+          envelope_id: envelopeId,
+          has_investor_recipient: !!agreement.investor_recipient_id,
+          has_agent_recipient: !!agreement.agent_recipient_id
+        }
       }, { status: 400 });
     }
 
     // Validate client user IDs exist
     if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
+      console.error('[DocuSign] ❌ Missing client user IDs. Agreement:', {
+        id: agreement.id,
+        envelope_id: envelopeId,
+        investor_client_user_id: agreement.investor_client_user_id,
+        agent_client_user_id: agreement.agent_client_user_id
+      });
       return Response.json({ 
-        error: 'Missing client user IDs. Please regenerate the agreement.'
+        error: 'Missing client user IDs. Please regenerate the agreement.',
+        debug: {
+          agreement_id,
+          envelope_id: envelopeId,
+          has_investor_client_id: !!agreement.investor_client_user_id,
+          has_agent_client_id: !!agreement.agent_client_user_id
+        }
       }, { status: 400 });
     }
 
