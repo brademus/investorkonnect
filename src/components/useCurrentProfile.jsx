@@ -124,11 +124,8 @@ export function useCurrentProfile() {
         const isInvestorReady = isAdmin || (role === 'investor' && onboarded && isPaidSubscriber && kycVerified && hasNDA);
 
         const targetState = profile?.target_state || profile?.markets?.[0] || null;
-        let hasRoom = false;
-        try {
-          const roomsResponse = await inboxList();
-          hasRoom = (roomsResponse.data || []).length > 0;
-        } catch (roomErr) {}
+        // Skip expensive hasRoom check on initial load for faster performance
+        const hasRoom = false;
 
         setState({
           loading: false,
