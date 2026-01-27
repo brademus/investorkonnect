@@ -52,11 +52,11 @@ export default function DocuSignReturn() {
 
           // Return to same deal context on cancel
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`);
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
           } else {
-            navigate(createPageUrl("Pipeline"));
+            navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else {
           // Unknown event
