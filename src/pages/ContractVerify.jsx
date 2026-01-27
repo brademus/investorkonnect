@@ -147,24 +147,21 @@ export default function ContractVerify() {
 
   if (!dealData) {
     return (
-      <div className="min-h-screen bg-black px-4 py-8">
-        <div className="max-w-2xl mx-auto">
+      <div className="min-h-screen bg-transparent py-8 px-6">
+        <div className="max-w-4xl mx-auto">
           <button
             onClick={() => navigate(createPageUrl("NewDeal"))}
-            className="flex items-center gap-2 text-[#E3C567] hover:text-[#EDD89F] mb-8"
+            className="text-[#808080] hover:text-[#E3C567] text-sm flex items-center gap-2 mb-4"
           >
-            <ArrowLeft className="w-4 h-4" />
-            Back to Deal Form
+            <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <Card className="bg-[#0D0D0D] border-[#1F1F1F] p-8">
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
             <div className="flex items-center gap-3 mb-4">
               <AlertCircle className="w-6 h-6 text-red-500" />
               <h2 className="text-lg font-semibold text-[#FAFAFA]">No Deal Data</h2>
             </div>
-            <p className="text-sm text-[#808080] mb-6">
-              Please fill out the deal form first.
-            </p>
-          </Card>
+            <p className="text-sm text-[#808080]">Please fill out the deal form first.</p>
+          </div>
         </div>
       </div>
     );
