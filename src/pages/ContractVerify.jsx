@@ -202,6 +202,8 @@ export default function ContractVerify() {
       } catch (error) {
         console.error("Error creating deal:", error);
         toast.error("Failed to create deal");
+      } finally {
+        setCreatingDeal(false);
       }
     }
   };
