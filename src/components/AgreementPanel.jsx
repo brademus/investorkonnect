@@ -38,11 +38,13 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const isAgent = profile?.user_role === 'agent';
 
   // Load state from server (single source of truth)
-  const loadState = async () => {
+  const loadState = async (forceRefresh = false) => {
     if (!dealId) return;
 
     try {
-      const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
+      // Add cache buster to force fresh data if requested
+      const timestamp = forceRefresh ? `&_t=${Date.now()}` : '';
+      const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId, force_refresh: forceRefresh });
       if (res.data) {
         setAgreement(res.data.agreement || null);
         setPendingCounter(res.data.pending_counter || null);
