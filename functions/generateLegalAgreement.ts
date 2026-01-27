@@ -531,6 +531,14 @@ Deno.serve(async (req) => {
     // Build render context
     const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a);
     
+    // Extract buyer compensation amount for later use
+    let buyerCompAmount = 0;
+    if (exhibit_a.buyer_commission_type === 'flat') {
+      buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
+    } else if (exhibit_a.buyer_commission_type === 'percentage') {
+      buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
+    }
+    
     // Compute render input hash for regeneration guard
     const inputData = JSON.stringify({
       state_code: stateCode,
