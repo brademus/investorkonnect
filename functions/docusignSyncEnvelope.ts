@@ -106,11 +106,11 @@ Deno.serve(async (req) => {
     // Fallback: if no exact match, match by email
     if (!investorSigner) {
       console.log('[docusignSyncEnvelope] No investor recipient ID match, trying email fallback');
-      investorSigner = signers.find(s => s.email?.toLowerCase() === agreement.investor_user_id);
+      investorSigner = signers.find(s => s.email?.toLowerCase() === user.email?.toLowerCase());
     }
     if (!agentSigner) {
       console.log('[docusignSyncEnvelope] No agent recipient ID match, trying email fallback');
-      agentSigner = signers.find(s => s.email?.toLowerCase() === agreement.agent_user_id);
+      agentSigner = signers.find(s => s.email?.toLowerCase() === user.email?.toLowerCase());
     }
 
     console.log('[docusignSyncEnvelope] Found signers:', {
