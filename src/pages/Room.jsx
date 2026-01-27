@@ -30,7 +30,6 @@ import { getCachedDeal, setCachedDeal } from "@/components/utils/dealCache";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
-import EscrowPanel from "@/components/EscrowPanel";
 import { toast } from "sonner";
 
 // Privacy helper: should we mask address for the current viewer?
@@ -317,7 +316,7 @@ export default function Room() {
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [wizardOpen, setWizardOpen] = useState(false);
-  const [showEscrow, setShowEscrow] = useState(false);
+
   const [searchConversations, setSearchConversations] = useState("");
   const [showBoard, setShowBoard] = useState(false);
   const [activeTab, setActiveTab] = useState('details');
