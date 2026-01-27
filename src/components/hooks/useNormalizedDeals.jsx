@@ -7,14 +7,15 @@ import { base44 } from '@/api/base44Client';
  * Eliminates redundant deduplication logic and provides derived views
  */
 export function useNormalizedDeals(profileId, userRole, enabled = true) {
-  // Fetch raw deals - VERY aggressive cache: only refetch on manual request
+  // Fetch raw deals - VERY aggressive cache: return cached immediately, NEVER auto-refetch
   const { data: rawDeals = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['normalizedDeals', profileId, userRole],
-    staleTime: 24 * 60 * 60 * 1000,  // 24 hours
-    gcTime: 24 * 60 * 60 * 1000,      // 24 hours
+    staleTime: Infinity,              // NEVER stale - use cache forever
+    gcTime: 24 * 60 * 60 * 1000,      // Keep in memory 24 hours
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!profileId) return [];
       const response = await base44.functions.invoke('getPipelineDealsForUser');
@@ -23,14 +24,15 @@ export function useNormalizedDeals(profileId, userRole, enabled = true) {
     enabled: enabled && !!profileId,
   });
 
-  // Fetch raw rooms - VERY aggressive cache: only refetch on manual request
+  // Fetch raw rooms - VERY aggressive cache: return cached immediately, NEVER auto-refetch
   const { data: rawRooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['normalizedRooms', profileId],
-    staleTime: 24 * 60 * 60 * 1000,   // 24 hours
-    gcTime: 24 * 60 * 60 * 1000,       // 24 hours
+    staleTime: Infinity,              // NEVER stale - use cache forever
+    gcTime: 24 * 60 * 60 * 1000,      // Keep in memory 24 hours
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!profileId) return [];
       const res = await base44.functions.invoke('listMyRoomsEnriched');
