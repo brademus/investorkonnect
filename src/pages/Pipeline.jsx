@@ -764,20 +764,21 @@ function PipelineContent() {
 
   // Pipeline stages with icons
   // Memoize to keep column identity stable
-  const pipelineStages = useMemo(() => PIPELINE_STAGES.map(stage => ({
+  const pipelineStages = useMemo(() => PIPELINE_STAGES.filter(s => s.id !== 'canceled').map(stage => ({
     ...stage,
     icon: stage.id === 'new_deals' ? FileText :
           stage.id === 'connected_deals' ? CheckCircle :
           stage.id === 'active_listings' ? TrendingUp :
           stage.id === 'in_closing' ? Clock :
           stage.id === 'completed' ? CheckCircle :
-          XCircle
+          XCircle,
+    label: stage.id === 'completed' ? 'Completed/Canceled' : stage.label
   })), []);
 
   // Precompute deals by stage to avoid per-render filtering and flicker
   const dealsByStage = useMemo(() => {
     const m = new Map();
-    PIPELINE_STAGES.forEach(s => m.set(s.id, []));
+    PIPELINE_STAGES.filter(s => s.id !== 'canceled').forEach(s => m.set(s.id, []));
     deals.forEach(d => {
       // Agents: show deals if there's a room request OR if investor has signed (even if room status not synced)
       if (isAgent) {
@@ -789,9 +790,10 @@ function PipelineContent() {
         if (!allowed) return;
         if (rs === 'rejected') return;
       }
-      const arr = m.get(d.pipeline_stage) || [];
+      const stage = d.pipeline_stage === 'canceled' ? 'completed' : d.pipeline_stage;
+      const arr = m.get(stage) || [];
       arr.push(d);
-      m.set(d.pipeline_stage, arr);
+      m.set(stage, arr);
     });
     return m;
   }, [deals, isAgent]);
