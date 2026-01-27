@@ -50,36 +50,29 @@ export default function MyAgreement() {
     })();
   }, [dealId]);
 
-  // After signing, create room and redirect to Pipeline
+  // After signing, redirect to Pipeline immediately
   useEffect(() => {
-    if (!dealId || !signedFlag || !profile?.id) return;
+    if (!dealId || !signedFlag) return;
     
     console.log('[MyAgreement] Signed flag detected, redirecting to Pipeline...');
     
-    (async () => {
-      try {
-        await new Promise(r => setTimeout(r, 1500));
-        
-        const agentProfileId = deal?.agent_id || sessionStorage.getItem('selectedAgentId');
-        if (agentProfileId) {
-          console.log('[MyAgreement] Sending deal request to agent:', agentProfileId);
-          await base44.functions.invoke('sendDealRequest', { 
-            deal_id: dealId, 
-            agent_profile_id: agentProfileId 
-          }).catch((e) => {
-            console.log('[MyAgreement] sendDealRequest error (non-fatal):', e);
-          });
-        }
-        
-        toast.success('Agreement signed successfully');
-        console.log('[MyAgreement] Navigating to Pipeline...');
-        navigate(createPageUrl('Pipeline'), { replace: true });
-      } catch (e) {
-        console.error('[MyAgreement] Post-sign error:', e);
-        navigate(createPageUrl('Pipeline'), { replace: true });
+    const redirect = async () => {
+      // Optional: send deal request in background (don't block redirect)
+      const agentProfileId = deal?.agent_id || sessionStorage.getItem('selectedAgentId');
+      if (agentProfileId) {
+        base44.functions.invoke('sendDealRequest', { 
+          deal_id: dealId, 
+          agent_profile_id: agentProfileId 
+        }).catch(() => {});
       }
-    })();
-  }, [dealId, signedFlag, profile?.id, deal, navigate]);
+      
+      await new Promise(r => setTimeout(r, 800));
+      toast.success('Agreement signed successfully');
+      navigate(createPageUrl('Pipeline'), { replace: true });
+    };
+    
+    redirect();
+  }, [dealId, signedFlag, navigate]);
 
   const isInvestor = useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
 
