@@ -60,19 +60,21 @@ Deno.serve(async (req) => {
       console.log('[createCounterOffer] Superseded existing pending offer:', existing.id);
     }
     
-    // Create new counter offer
+    // Create new counter offer with original terms snapshot
     const toRole = from_role === 'investor' ? 'agent' : 'investor';
+    const originalTerms = deal.proposed_terms || {};
+    
     const newCounter = await base44.asServiceRole.entities.CounterOffer.create({
       deal_id,
       from_role,
       to_role: toRole,
       status: 'pending',
-      terms_delta
+      terms_delta,
+      original_terms_snapshot: originalTerms
     });
     
     console.log('[createCounterOffer] ✓ Created new counter offer:', newCounter.id);
     
-    // Return new counter + current deal state
     return Response.json({
       success: true,
       counter_offer: newCounter,

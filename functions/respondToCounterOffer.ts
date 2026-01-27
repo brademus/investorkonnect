@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid action: accept, decline, or recounter' }, { status: 400 });
     }
     
-    // 1. Load the counter offer
+    // Load the counter offer
     const counter = await withRetry(async () => {
       const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
       if (!counters?.length) throw new Error('Counter offer not found');
@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
     
-    // 2. Verify user is the recipient
+    // Verify user is the recipient
     const userProfile = await withRetry(async () => {
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       if (!profiles?.length) throw new Error('Profile not found for user');
@@ -74,7 +74,14 @@ Deno.serve(async (req) => {
     
     const now = new Date().toISOString();
     
-    // 3. Handle DECLINE
+    // Load deal for context
+    const deal = await withRetry(async () => {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
+      if (!deals?.length) throw new Error('Deal not found');
+      return deals[0];
+    });
+    
+    // DECLINE
     if (action === 'decline') {
       console.log('[respondToCounterOffer] Processing DECLINE');
       
@@ -90,7 +97,7 @@ Deno.serve(async (req) => {
       return Response.json({ success: true, action: 'declined' });
     }
     
-    // 4. Handle RECOUNTER (counter back)
+    // RECOUNTER
     if (action === 'recounter') {
       console.log('[respondToCounterOffer] Processing RECOUNTER');
       
@@ -103,7 +110,8 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
           status: 'superseded',
           responded_at: now,
-          responded_by_role: userRole
+          responded_by_role: userRole,
+          superseded_by_counter_offer_id: 'pending_creation'
         });
       });
       
@@ -116,7 +124,15 @@ Deno.serve(async (req) => {
           from_role: userRole,
           to_role: counter.from_role,
           status: 'pending',
-          terms_delta: terms_delta
+          terms_delta: terms_delta,
+          original_terms_snapshot: deal.proposed_terms || {}
+        });
+      });
+      
+      // Update superseded pointer
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
+          superseded_by_counter_offer_id: newCounter.id
         });
       });
       
@@ -128,9 +144,11 @@ Deno.serve(async (req) => {
       });
     }
     
-    // 5. Handle ACCEPT
+    // ACCEPT
     if (action === 'accept') {
       console.log('[respondToCounterOffer] Processing ACCEPT');
+      
+      const acceptedTerms = counter.terms_delta || {};
       
       // Mark counter as accepted
       await withRetry(async () => {
@@ -143,16 +161,16 @@ Deno.serve(async (req) => {
       
       console.log('[respondToCounterOffer] Counter marked accepted');
       
-      // Update deal proposed_terms with accepted counter terms
-      const acceptedTerms = counter.terms_delta || {};
-      
+      // Update deal with accepted terms + set regeneration flag
       await withRetry(async () => {
         await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-          proposed_terms: acceptedTerms
+          proposed_terms: acceptedTerms,
+          requires_regenerate: true,
+          requires_regenerate_reason: `${userRole} accepted counter at ${now}`
         });
       });
       
-      console.log('[respondToCounterOffer] ✓ Deal proposed_terms updated with accepted counter terms:', acceptedTerms);
+      console.log('[respondToCounterOffer] ✓ Deal terms updated + regenerate flag set:', acceptedTerms);
       
       return Response.json({ 
         success: true, 

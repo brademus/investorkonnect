@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -11,21 +11,18 @@ import { FileText, CheckCircle2, Clock, Download, Loader2, AlertTriangle } from 
 import { toast } from 'sonner';
 
 /**
- * AGREEMENT PANEL - Clean, deterministic agreement + counter-offer flow
+ * AGREEMENT PANEL - Simplified, consistent counter-offer flow
  * 
- * State machine:
- * 1. No agreement → Investor can Generate
- * 2. Agreement unsigned → Both can sign (investor first)
- * 3. Pending counter → Recipient sees Accept/Decline/Counter Back
- * 4. Terms accepted → ONLY investor sees "Regenerate & Sign"
- * 5. Fully signed → Show success + download
+ * Single source of truth: LegalAgreement entity
+ * No AgreementVersion confusion
+ * Clean state machine based on Deal.requires_regenerate flag
  */
 
 export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const [agreement, setAgreement] = useState(null);
   const [pendingCounter, setPendingCounter] = useState(null);
   const [dealTerms, setDealTerms] = useState(null);
-  const [termsChanged, setTermsChanged] = useState(false);
+  const [requiresRegenerate, setRequiresRegenerate] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   
@@ -40,47 +37,47 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
 
-  // Load state from server
-    const loadState = async () => {
-        if (!dealId) return;
+  // Load state from server (single source of truth)
+  const loadState = async () => {
+    if (!dealId) return;
 
-        try {
-          const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
-          if (res.data) {
-            const agreement = res.data.agreement || null;
-            const dealTerms = res.data.deal_terms || null;
-            const termsHaveChanged = !!(agreement && res.data?.pending_counter?.status === 'accepted' && !agreement?.investor_signed_at);
-
-            setAgreement(agreement);
-            setPendingCounter(res.data.pending_counter || null);
-            setDealTerms(dealTerms);
-            setTermsChanged(termsHaveChanged);
-          }
-        } catch (error) {
-          console.error('[AgreementPanel] Load error:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
+    try {
+      const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId });
+      if (res.data) {
+        setAgreement(res.data.agreement || null);
+        setPendingCounter(res.data.pending_counter || null);
+        setDealTerms(res.data.deal_terms || {});
+        setRequiresRegenerate(!!res.data.requires_regenerate);
+        
+        console.log('[AgreementPanel] State loaded:', {
+          hasAgreement: !!res.data.agreement,
+          agreementId: res.data.agreement?.id,
+          hasPendingCounter: !!res.data.pending_counter,
+          requiresRegenerate: !!res.data.requires_regenerate,
+          investorSigned: !!res.data.agreement?.investor_signed_at,
+          agentSigned: !!res.data.agreement?.agent_signed_at
+        });
+      }
+    } catch (error) {
+      console.error('[AgreementPanel] Load error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     loadState();
 
-    // Reload state when user returns from DocuSign signing
+    // Reload after DocuSign return
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1') {
-      // Remove the signed flag from URL
-      const newUrl = window.location.pathname + window.location.search.replace('&signed=1', '').replace('?signed=1', '');
-      window.history.replaceState({}, '', newUrl);
-
-      // Reload state multiple times to catch webhook
+      window.history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[&?]signed=1/g, ''));
+      
       setTimeout(() => loadState(), 2000);
       setTimeout(() => loadState(), 4000);
       setTimeout(() => loadState(), 7000);
-      setTimeout(() => loadState(), 10000);
     }
 
-    // Also reload on window focus (user switching tabs)
     const handleFocus = () => loadState();
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
@@ -95,26 +92,29 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     // Subscribe to counter offers
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
+        console.log('[AgreementPanel] Counter event:', event.type);
         loadState();
       }
     });
     unsubs.push(unsubCounter);
 
-    // Subscribe to legacy agreement
+    // Subscribe to LegalAgreement only
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
+        console.log('[AgreementPanel] Agreement event:', event.type);
         loadState();
       }
     });
     unsubs.push(unsubAgreement);
 
-    // Subscribe to AgreementVersion
-    const unsubVersion = base44.entities.AgreementVersion.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
+    // Subscribe to Deal for regenerate flag
+    const unsubDeal = base44.entities.Deal.subscribe((event) => {
+      if (event?.data?.id === dealId || event?.id === dealId) {
+        console.log('[AgreementPanel] Deal event:', event.type);
         loadState();
       }
     });
-    unsubs.push(unsubVersion);
+    unsubs.push(unsubDeal);
 
     return () => unsubs.forEach(u => { try { u?.(); } catch (_) {} });
   }, [dealId]);
@@ -124,32 +124,26 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const investorSigned = !!agreement?.investor_signed_at;
   const agentSigned = !!agreement?.agent_signed_at;
   const hasPendingOffer = !!pendingCounter && pendingCounter?.status === 'pending';
-  const hasAcceptedCounter = !!pendingCounter && pendingCounter?.status === 'accepted';
   const myRole = isInvestor ? 'investor' : 'agent';
   const amRecipient = hasPendingOffer && pendingCounter?.to_role === myRole;
 
-  console.log('[AgreementPanel] State:', { 
-    hasAgreement: !!agreement, 
+  console.log('[AgreementPanel] Render state:', { 
+    hasAgreement: !!agreement,
+    agreementId: agreement?.id,
     hasPendingOffer, 
-    hasAcceptedCounter,
     amRecipient, 
     myRole,
-    counterToRole: pendingCounter?.to_role,
-    counterStatus: pendingCounter?.status,
+    requiresRegenerate,
     investorSigned,
     agentSigned,
-    isInvestor,
-    isFullySigned,
-    agreement_investor_signed_at: agreement?.investor_signed_at,
-    agreement_agent_signed_at: agreement?.agent_signed_at,
-    pending_counter: pendingCounter
+    isFullySigned
   });
 
   // Actions
   const handleGenerate = async () => {
     setBusy(true);
     try {
-      const res = await base44.functions.invoke('regenerateAgreementVersion', { deal_id: dealId });
+      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
       if (res.data?.error) {
         toast.error(res.data.error);
       } else {
@@ -164,51 +158,50 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     }
   };
 
-  const handleSign = async (role) => {
-        if (!agreement?.id) {
-          toast.error('No agreement to sign');
-          return;
-        }
+  const handleSign = async (role, agreementIdOverride) => {
+    const agreementId = agreementIdOverride || agreement?.id;
+    if (!agreementId) {
+      toast.error('No agreement to sign');
+      return;
+    }
 
-        setBusy(true);
+    setBusy(true);
 
-        try {
-          const params = new URLSearchParams(window.location.search);
-          const currentRoomId = params.get('roomId');
-          const currentPath = window.location.pathname;
+    try {
+      // ALWAYS return to deal context (never Pipeline)
+      const params = new URLSearchParams(window.location.search);
+      const currentRoomId = params.get('roomId');
 
-          const returnUrl = currentRoomId 
-            ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
-            : currentPath.includes('MyAgreement')
-            ? `/MyAgreement?dealId=${dealId}&signed=1`
-            : `/Pipeline?dealId=${dealId}&signed=1`;
+      const returnUrl = currentRoomId 
+        ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
+        : `/MyAgreement?dealId=${dealId}&signed=1`;
 
-          console.log('[AgreementPanel] Signing request:', { agreement_id: agreement.id, role, returnUrl });
+      console.log('[AgreementPanel] Signing request:', { agreement_id: agreementId, role, returnUrl });
 
-          const res = await base44.functions.invoke('docusignCreateSigningSession', {
-            agreement_id: agreement.id,
-            role,
-            redirect_url: returnUrl
-          });
+      const res = await base44.functions.invoke('docusignCreateSigningSession', {
+        agreement_id: agreementId,
+        role,
+        redirect_url: returnUrl
+      });
 
-          console.log('[AgreementPanel] Signing response:', res.data);
+      console.log('[AgreementPanel] Signing response:', res.data);
 
-          if (res.data?.error) {
-            toast.error(res.data.error);
-            setBusy(false);
-          } else if (res.data?.signing_url) {
-            window.location.assign(res.data.signing_url);
-          } else {
-            toast.error('No signing URL returned');
-            console.error('[AgreementPanel] No signing URL in response:', res.data);
-            setBusy(false);
-          }
-        } catch (error) {
-          console.error('[AgreementPanel] Signing error:', error);
-          toast.error(error?.message || 'Failed to start signing');
-          setBusy(false);
-        }
-      };
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        setBusy(false);
+      } else if (res.data?.signing_url) {
+        window.location.assign(res.data.signing_url);
+      } else {
+        toast.error('No signing URL returned');
+        console.error('[AgreementPanel] No signing URL in response:', res.data);
+        setBusy(false);
+      }
+    } catch (error) {
+      console.error('[AgreementPanel] Signing error:', error);
+      toast.error(error?.message || 'Failed to start signing');
+      setBusy(false);
+    }
+  };
 
   const handleSendCounter = async () => {
     if (!counterAmount || !dealId) return;
@@ -244,56 +237,65 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   };
 
   const handleRespondToCounter = async (action, customTerms = null) => {
-        if (!pendingCounter?.id) return;
+    if (!pendingCounter?.id) return;
 
-        setBusy(true);
-        console.log('[AgreementPanel] respondToCounter:', { action, counter_id: pendingCounter.id });
+    setBusy(true);
+    console.log('[AgreementPanel] respondToCounter:', { action, counter_id: pendingCounter.id });
 
-        try {
-          const payload = {
-            counter_offer_id: pendingCounter.id,
-            action
-          };
-
-          if (action === 'recounter' && customTerms) {
-            payload.terms_delta = customTerms;
-          }
-
-          console.log('[AgreementPanel] Sending payload:', payload);
-          const res = await base44.functions.invoke('respondToCounterOffer', payload);
-          console.log('[AgreementPanel] Response:', res.data);
-
-          if (res.data?.error) {
-            toast.error(res.data.error);
-          } else {
-            if (action === 'accept') {
-              toast.success('Counter accepted - click "Regenerate & Sign" to continue');
-            } else if (action === 'decline') {
-              toast.success('Counter declined');
-            } else {
-              toast.success('Counter sent');
-              setCounterModal(false);
-              setCounterAmount('');
-            }
-            await loadState();
-            if (onUpdate) onUpdate();
-          }
-        } catch (error) {
-          console.error('[AgreementPanel] respondToCounter error:', error);
-          toast.error('Failed to respond');
-        } finally {
-          setBusy(false);
-        }
+    try {
+      const payload = {
+        counter_offer_id: pendingCounter.id,
+        action
       };
+
+      if (action === 'recounter' && customTerms) {
+        payload.terms_delta = customTerms;
+      }
+
+      console.log('[AgreementPanel] Sending payload:', payload);
+      const res = await base44.functions.invoke('respondToCounterOffer', payload);
+      console.log('[AgreementPanel] Response:', res.data);
+
+      if (res.data?.error) {
+        toast.error(res.data.error);
+      } else {
+        if (action === 'accept') {
+          toast.success('Counter accepted - click "Regenerate & Sign" to continue');
+        } else if (action === 'decline') {
+          toast.success('Counter declined');
+        } else {
+          toast.success('Counter sent');
+          setCounterModal(false);
+          setCounterAmount('');
+        }
+        await loadState();
+        if (onUpdate) onUpdate();
+      }
+    } catch (error) {
+      console.error('[AgreementPanel] respondToCounter error:', error);
+      toast.error('Failed to respond');
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const handleRegenerateAndSign = async () => {
     setBusy(true);
     
     try {
-      const res = await base44.functions.invoke('regenerateAgreementVersion', { deal_id: dealId });
+      console.log('[AgreementPanel] Regenerating agreement for deal:', dealId);
+      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
       
       if (res.data?.error) {
         toast.error(res.data.error);
+        setBusy(false);
+        setRegenerateModal(false);
+        return;
+      }
+      
+      const newAgreement = res.data?.agreement;
+      if (!newAgreement?.id) {
+        toast.error('No agreement returned from regeneration');
         setBusy(false);
         setRegenerateModal(false);
         return;
@@ -304,8 +306,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       await loadState();
       setRegenerateModal(false);
       
-      // Auto-open signing for investor
-      setTimeout(() => handleSign('investor'), 500);
+      // Auto-open signing for investor with NEW agreement ID
+      setTimeout(() => handleSign('investor', newAgreement.id), 500);
     } catch (error) {
       toast.error('Regeneration failed');
       setBusy(false);
@@ -313,7 +315,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     }
   };
 
-  // Terms display helpers
+  // Terms display helper
   const formatCommission = (terms) => {
     if (!terms) return '—';
     if (terms.buyer_commission_type === 'percentage') {
@@ -321,32 +323,6 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     }
     return `$${(terms.buyer_flat_fee || 0).toLocaleString()} flat fee`;
   };
-
-  const getCurrentTerms = () => {
-    // Show pending counter terms to recipient
-    if (hasPendingOffer && amRecipient) {
-      return pendingCounter.terms_delta;
-    }
-    // If unsigned agreement, prioritize deal_terms (accepted counter terms override old agreement)
-    if (agreement && !isFullySigned && dealTerms) {
-      return dealTerms;
-    }
-    // Show signed agreement terms
-    if (agreement?.exhibit_a_terms && isFullySigned) {
-      return agreement.exhibit_a_terms;
-    }
-    // Use deal terms as fallback
-    if (dealTerms) {
-      return dealTerms;
-    }
-    return null;
-  };
-
-  const currentTerms = getCurrentTerms();
-  
-  useEffect(() => {
-    console.log('[AgreementPanel] currentTerms:', currentTerms);
-  }, [currentTerms]);
 
   if (loading) {
     return (
@@ -391,7 +367,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         </CardHeader>
 
         <CardContent className="p-6 space-y-4">
-          {/* Pending Counter Card - ALWAYS show FIRST and prominently to recipient when pending */}
+          {/* Pending Counter - HIGHEST PRIORITY for recipient */}
           {hasPendingOffer && amRecipient && (
             <div className="bg-[#F59E0B]/10 border-2 border-[#F59E0B]/50 rounded-xl p-5 mb-6 ring-2 ring-[#F59E0B]/20">
               <div className="flex items-center justify-between mb-3">
@@ -459,7 +435,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
             </div>
           )}
 
-          {/* No Agreement - Investor Generate (only if NO pending counter) */}
+          {/* No Agreement - Investor Generate */}
           {!agreement && !hasPendingOffer && (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
@@ -483,19 +459,19 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
             </div>
           )}
 
-          {/* Agreement Exists - SHOW EVEN IF PENDING COUNTER */}
+          {/* Agreement Exists */}
           {agreement && (
             <div className="space-y-4">
               {/* Current Terms */}
               <div className="bg-[#141414] rounded-xl p-4">
                 <div className="flex items-center justify-between mb-3">
                   <h4 className="text-sm font-semibold text-[#FAFAFA]">Buyer Agent Compensation</h4>
-                  {isAgent && !isFullySigned && !hasPendingOffer && (
+                  {isAgent && !isFullySigned && !hasPendingOffer && !requiresRegenerate && (
                     <Button
                       size="sm"
                       className="rounded-full bg-[#E3C567] hover:bg-[#EDD89F] text-black text-xs"
                       onClick={() => {
-                        const terms = currentTerms || {};
+                        const terms = dealTerms || {};
                         const type = terms.buyer_commission_type || 'flat';
                         setCounterType(type);
                         const amt = type === 'percentage' 
@@ -511,7 +487,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                   )}
                 </div>
                 <div className="text-[#FAFAFA]">
-                  {formatCommission(currentTerms)}
+                  {formatCommission(dealTerms)}
                 </div>
               </div>
 
@@ -547,81 +523,82 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                 </div>
               </div>
 
-              {/* Waiting for Agent Card */}
-              {investorSigned && !agentSigned && (
-                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                  <Clock className="w-8 h-8 text-[#60A5FA] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for Agent</p>
-                  <p className="text-xs text-[#808080] mt-1">Agent will sign after you</p>
-                </div>
+              {/* Investor Actions */}
+              {isInvestor && !hasPendingOffer && (
+                <>
+                  {/* Initial Sign - no counter accepted, investor hasn't signed */}
+                  {!investorSigned && !requiresRegenerate && (
+                    <Button
+                      onClick={() => handleSign('investor')}
+                      disabled={busy}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Opening DocuSign...
+                        </>
+                      ) : 'Sign Agreement'}
+                    </Button>
+                  )}
+
+                  {/* Regenerate & Sign - counter accepted OR regenerate flag set */}
+                  {requiresRegenerate && (
+                    <Button
+                      onClick={() => setRegenerateModal(true)}
+                      disabled={busy}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Regenerating...
+                        </>
+                      ) : 'Regenerate & Sign'}
+                    </Button>
+                  )}
+
+                  {/* Investor Waiting for Agent */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && (
+                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                      <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
+                      <p className="text-sm text-[#FAFAFA] font-semibold">You signed</p>
+                      <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
+                    </div>
+                  )}
+                </>
               )}
 
-              {/* Investor Actions - show if no pending offer (pending or accepted) */}
-              {!isFullySigned && isInvestor && !investorSigned && !hasPendingOffer && !hasAcceptedCounter && (
-                <Button
-                  onClick={() => handleSign('investor')}
-                  disabled={busy}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Opening DocuSign...
-                    </>
-                  ) : 'Sign Agreement'}
-                </Button>
-              )}
+              {/* Agent Actions */}
+              {isAgent && !hasPendingOffer && (
+                <>
+                  {/* Agent Wait - investor hasn't signed or regenerate required */}
+                  {(!investorSigned || requiresRegenerate) && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
+                      <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for investor</p>
+                      <p className="text-xs text-[#808080] mt-1">
+                        {requiresRegenerate ? 'Investor is regenerating agreement with new terms' : 'You\'ll sign after investor completes'}
+                      </p>
+                    </div>
+                  )}
 
-              {/* Investor Regenerate & Sign - ONLY if accepted counter exists and not yet signed */}
-              {!isFullySigned && isInvestor && !investorSigned && hasAcceptedCounter && (
-                <Button
-                  onClick={() => setRegenerateModal(true)}
-                  disabled={busy}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Regenerating...
-                    </>
-                  ) : 'Regenerate & Sign'}
-                </Button>
-              )}
-
-              {/* Agent Wait - either for initial sig or regeneration */}
-              {!investorSigned && isAgent && (
-                <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                  <Clock className="w-8 h-8 text-[#F59E0B] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA] font-semibold">Waiting for investor</p>
-                  <p className="text-xs text-[#808080] mt-1">
-                    {hasAcceptedCounter ? 'Investor is regenerating agreement with new terms' : 'You\'ll sign after investor completes'}
-                  </p>
-                </div>
-              )}
-
-              {/* Agent Sign - blocked if accepted counter exists */}
-              {investorSigned && !agentSigned && isAgent && !hasPendingOffer && !hasAcceptedCounter && (
-                <Button
-                  onClick={() => handleSign('agent')}
-                  disabled={busy}
-                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
-                >
-                  {busy ? (
-                    <>
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                      Opening DocuSign...
-                    </>
-                  ) : 'Sign as Agent'}
-                </Button>
-              )}
-
-              {/* Investor Waiting */}
-              {investorSigned && !agentSigned && isInvestor && (
-                <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                  <CheckCircle2 className="w-8 h-8 text-[#10B981] mx-auto mb-2" />
-                  <p className="text-sm text-[#FAFAFA] font-semibold">You signed</p>
-                  <p className="text-xs text-[#808080] mt-1">Waiting for agent to sign</p>
-                </div>
+                  {/* Agent Sign - investor signed, no regenerate needed */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && (
+                    <Button
+                      onClick={() => handleSign('agent')}
+                      disabled={busy}
+                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold"
+                    >
+                      {busy ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Opening DocuSign...
+                        </>
+                      ) : 'Sign as Agent'}
+                    </Button>
+                  )}
+                </>
               )}
 
               {/* Fully Signed Success */}
@@ -717,7 +694,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         </DialogContent>
       </Dialog>
 
-      {/* Regenerate Confirm Modal - INVESTOR ONLY */}
+      {/* Regenerate Confirm Modal */}
       {isInvestor && (
         <Dialog open={regenerateModal} onOpenChange={setRegenerateModal}>
           <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F]">
@@ -732,7 +709,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
               <div className="bg-[#141414] rounded-xl p-4 mb-4">
                 <div className="text-sm text-[#808080] mb-1">New Compensation</div>
                 <div className="text-[#FAFAFA] font-semibold">
-                  {formatCommission(currentTerms)}
+                  {formatCommission(dealTerms)}
                 </div>
               </div>
               
