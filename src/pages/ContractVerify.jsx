@@ -229,61 +229,41 @@ export default function ContractVerify() {
             </div>
           ) : (
             <div className="space-y-6">
-              <div className="space-y-3">
-                <h3 className="text-lg font-semibold text-[#FAFAFA]">Verification Results</h3>
-                {verificationResult.matches.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-[#34D399]">Matches:</h4>
-                    {verificationResult.matches.map((match, idx) => (
-                      <div key={idx} className="flex items-center gap-2 text-[#34D399]">
-                        <CheckCircle2 className="w-4 h-4" />
-                        <span className="text-sm">{match}</span>
+              <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-6">
+                <div className="flex items-start gap-3">
+                  <CheckCircle2 className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-[#34D399] mb-3">Verification Results</h3>
+                    {verificationResult.matches.length > 0 && (
+                      <div className="space-y-2 mb-4">
+                        {verificationResult.matches.map((match, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-[#34D399] text-sm">
+                            <div className="w-1.5 h-1.5 bg-[#34D399] rounded-full"></div>
+                            {match}
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                )}
-                {verificationResult.mismatches.length > 0 && (
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium text-yellow-500">Differences:</h4>
-                    {verificationResult.mismatches.map((mismatch, idx) => (
-                      <div key={idx} className="flex items-start gap-2 text-yellow-500">
-                        <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">{mismatch}</span>
+                    )}
+                    {verificationResult.mismatches.length > 0 && (
+                      <div className="space-y-2 pt-4 border-t border-[#1F1F1F]">
+                        <p className="text-yellow-500 text-sm font-medium mb-2">Items to review:</p>
+                        {verificationResult.mismatches.map((mismatch, idx) => (
+                          <div key={idx} className="flex items-start gap-2 text-yellow-500/80 text-sm">
+                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                            {mismatch}
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    )}
                   </div>
-                )}
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Select Agent *</label>
-                <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
-                  <SelectTrigger className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]">
-                    <SelectValue placeholder={loadingAgents ? "Loading agents..." : "Choose an agent"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {agents.map((agent) => (
-                      <SelectItem key={agent.id} value={agent.id}>
-                        {agent.full_name || agent.email}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
               </div>
 
               <Button
                 onClick={handleProceed}
-                disabled={creatingDeal || !selectedAgentId || loadingAgents}
-                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 disabled:opacity-50"
+                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
               >
-                {creatingDeal ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating Deal & Signing...
-                  </>
-                ) : (
-                  "Create Deal & Sign Agreement"
-                )}
+                Continue to Agent Selection
               </Button>
             </div>
           )}
