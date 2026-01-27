@@ -406,7 +406,7 @@ export default function Room() {
           deal?.is_fully_signed
         ]);
 
-        // Chat can start once the request is accepted (or fully signed)
+        // Chat unlocks: request accepted OR fully signed together
         const isChatEnabled = useMemo(() => {
           return (
             isWorkingTogether ||
