@@ -52,8 +52,16 @@ Deno.serve(async (req) => {
     
     const agreement = agreements[0];
     
-    // Verify access
+    // Verify access - log for debugging
+    console.log('[docusignSyncEnvelope] Auth check:', {
+      user_id: user.id,
+      investor_user_id: agreement.investor_user_id,
+      agent_user_id: agreement.agent_user_id,
+      match: agreement.investor_user_id === user.id || agreement.agent_user_id === user.id
+    });
+
     if (agreement.investor_user_id !== user.id && agreement.agent_user_id !== user.id) {
+      console.warn('[docusignSyncEnvelope] User not authorized for this agreement');
       return Response.json({ error: 'Not authorized' }, { status: 403 });
     }
     
