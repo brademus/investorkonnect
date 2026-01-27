@@ -17,7 +17,7 @@ export default function ContractVerify() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Get deal data from sessionStorage and load agents
+  // Get deal data from sessionStorage
   useEffect(() => {
     const draft = sessionStorage.getItem("newDealDraft");
     if (draft) {
@@ -30,22 +30,6 @@ export default function ContractVerify() {
       }
     }
     setLoading(false);
-  }, []);
-
-  // Load available agents
-  useEffect(() => {
-    const loadAgents = async () => {
-      setLoadingAgents(true);
-      try {
-        const profiles = await base44.entities.Profile.filter({ user_role: "agent" });
-        setAgents(profiles || []);
-      } catch (err) {
-        console.error("Error loading agents:", err);
-        toast.error("Failed to load available agents");
-      }
-      setLoadingAgents(false);
-    };
-    loadAgents();
   }, []);
 
   const handleFileSelect = (e) => {
