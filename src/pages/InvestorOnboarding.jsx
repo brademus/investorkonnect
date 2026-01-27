@@ -74,14 +74,10 @@ export default function InvestorOnboarding() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!checking && onboarded) {
-      // Already onboarded, check next step
-      if (!isPaidSubscriber) {
-        navigate(createPageUrl("Pricing"), { replace: true });
-      } else {
-        navigate(createPageUrl("IdentityVerification"), { replace: true });
-      }
+      // Already onboarded, check next step (KYC before pricing)
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
-  }, [checking, onboarded, isPaidSubscriber, navigate]);
+  }, [checking, onboarded, navigate]);
 
   // Load existing data
   useEffect(() => {
