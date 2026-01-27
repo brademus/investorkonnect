@@ -4,9 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle, FileText } from "lucide-react";
 import { toast } from "sonner";
 
 export default function ContractVerify() {
