@@ -54,25 +54,32 @@ export default function MyAgreement() {
   useEffect(() => {
     if (!dealId || !signedFlag || !profile?.id) return;
     
+    console.log('[MyAgreement] Signed flag detected, redirecting to Pipeline...');
+    
     (async () => {
       try {
-        await new Promise(r => setTimeout(r, 1000));
+        await new Promise(r => setTimeout(r, 1500));
         
         const agentProfileId = deal?.agent_id || sessionStorage.getItem('selectedAgentId');
         if (agentProfileId) {
+          console.log('[MyAgreement] Sending deal request to agent:', agentProfileId);
           await base44.functions.invoke('sendDealRequest', { 
             deal_id: dealId, 
             agent_profile_id: agentProfileId 
-          }).catch(() => {});
+          }).catch((e) => {
+            console.log('[MyAgreement] sendDealRequest error (non-fatal):', e);
+          });
         }
         
         toast.success('Agreement signed successfully');
-        navigate(createPageUrl('Pipeline'));
-      } catch (_) {
-        navigate(createPageUrl('Pipeline'));
+        console.log('[MyAgreement] Navigating to Pipeline...');
+        navigate(createPageUrl('Pipeline'), { replace: true });
+      } catch (e) {
+        console.error('[MyAgreement] Post-sign error:', e);
+        navigate(createPageUrl('Pipeline'), { replace: true });
       }
     })();
-  }, [dealId, signedFlag, profile?.id]);
+  }, [dealId, signedFlag, profile?.id, deal, navigate]);
 
   const isInvestor = useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
 
