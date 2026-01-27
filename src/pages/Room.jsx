@@ -168,7 +168,7 @@ function useMessages(roomId, authUser, currentProfile) {
     };
 
     fetchMessages();
-    const interval = setInterval(fetchMessages, 10000); // Poll every 10 seconds to reduce rate limit errors
+    const interval = setInterval(fetchMessages, 15000); // Poll every 15 seconds to reduce rate limit errors
     return () => { cancelled = true; clearInterval(interval); };
   }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
 
