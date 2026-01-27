@@ -37,30 +37,21 @@ export function useCurrentProfile() {
     
     const loadProfile = async () => {
       try {
-        const user = await base44.auth.me();
+        // Get auth status - DON'T treat missing user as logout
+        let user;
+        try {
+          user = await base44.auth.me();
+        } catch (e) {
+          // Auth check failed - keep existing state, don't logout
+          if (!mounted) return;
+          return;
+        }
+        
         if (!mounted) return;
         
         if (!user) {
-          setState({
-            loading: false,
-            user: null,
-            profile: null,
-            role: null,
-            onboarded: false,
-            needsOnboarding: false,
-            kycStatus: 'unverified',
-            kycVerified: false,
-            needsKyc: false,
-            hasNDA: false,
-            needsNda: false,
-            isInvestorReady: false,
-            hasRoom: false,
-            targetState: null,
-            subscriptionPlan: 'none',
-            subscriptionStatus: 'none',
-            isPaidSubscriber: false,
-            error: null
-          });
+          // Only clear state if we explicitly need to (very rare)
+          // Don't do this on refresh - keep existing profile
           return;
         }
 
