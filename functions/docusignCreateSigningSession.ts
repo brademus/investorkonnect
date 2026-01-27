@@ -152,6 +152,20 @@ Deno.serve(async (req) => {
     }
 
     // GATING: Check DB immediately - if agent trying to sign, investor must have signed first
+    // Refresh agreement from DB to get latest signature status
+    const freshAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    const freshAgreement = freshAgreements?.[0];
+    
+    if (freshAgreement) {
+      agreement = freshAgreement; // Use fresh data
+      console.log('[DocuSign] Fresh agreement loaded:', {
+        id: agreement.id,
+        status: agreement.status,
+        investor_signed_at: agreement.investor_signed_at,
+        agent_signed_at: agreement.agent_signed_at
+      });
+    }
+    
     if (role === 'agent' && !agreement.investor_signed_at) {
       console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
       console.error('[DocuSign] Agreement status:', agreement.status);
