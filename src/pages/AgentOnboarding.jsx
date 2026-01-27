@@ -214,7 +214,7 @@ export default function AgentOnboarding() {
       
       // Navigate to Identity Verification (next step for agents)
       await new Promise(resolve => setTimeout(resolve, 500));
-      window.location.href = createPageUrl("IdentityVerification");
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
