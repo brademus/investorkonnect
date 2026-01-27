@@ -34,14 +34,14 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true });
     }
 
-    console.log('[moveDealOnFullySignedAgreement] Moving deal', dealId, 'from', deal.pipeline_stage, 'to active_listings');
+    console.log('[moveDealOnFullySignedAgreement] Moving deal', dealId, 'from', deal.pipeline_stage, 'to connected_deals');
 
-    // Move deal to active_listings stage
+    // Move deal to connected_deals stage
     await base44.asServiceRole.entities.Deal.update(dealId, {
-      pipeline_stage: 'active_listings'
+      pipeline_stage: 'connected_deals'
     });
 
-    console.log('[moveDealOnFullySignedAgreement] Deal moved to active_listings');
+    console.log('[moveDealOnFullySignedAgreement] Deal moved to connected_deals');
 
     return Response.json({ ok: true });
   } catch (error) {
