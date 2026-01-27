@@ -139,13 +139,17 @@ export default function ContractVerify() {
   };
 
   const handleProceed = async () => {
-    if (verificationResult) {
-      try {
-        // Create deal in database
-        const dealData = JSON.parse(sessionStorage.getItem("newDealDraft") || "{}");
-        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+    if (verificationResult || creatingDeal) {
+      return;
+    }
+    
+    setCreatingDeal(true);
+    try {
+      // Create deal in database
+      const dealData = JSON.parse(sessionStorage.getItem("newDealDraft") || "{}");
+      const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
-        const newDeal = await base44.entities.Deal.create({
+      const newDeal = await base44.entities.Deal.create({
           title: `${dealData.propertyAddress}`,
           description: dealData.specialNotes || "",
           property_address: dealData.propertyAddress,
