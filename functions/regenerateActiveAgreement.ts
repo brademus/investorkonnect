@@ -129,23 +129,32 @@ Deno.serve(async (req) => {
     // Generate new agreement with current terms - normalize fields
     console.log('[regenerateActiveAgreement] Generating new agreement with terms:', terms);
     console.log('[regenerateActiveAgreement] Deal state:', deal.state);
-    const gen = await base44.functions.invoke('generateLegalAgreement', {
-      deal_id,
-      exhibit_a: {
-        buyer_commission_type: terms.buyer_commission_type || 'flat',
-        buyer_commission_percentage: terms.buyer_commission_percentage || null,
-        buyer_flat_fee: terms.buyer_flat_fee || null,
-        agreement_length_days: terms.agreement_length || 180,
-        transaction_type: deal.transaction_type || 'ASSIGNMENT'
-      }
-    });
+    
+    let gen;
+    try {
+      gen = await base44.functions.invoke('generateLegalAgreement', {
+        deal_id,
+        exhibit_a: {
+          buyer_commission_type: terms.buyer_commission_type || 'flat',
+          buyer_commission_percentage: terms.buyer_commission_percentage || null,
+          buyer_flat_fee: terms.buyer_flat_fee || null,
+          agreement_length_days: terms.agreement_length || 180,
+          transaction_type: deal.transaction_type || 'ASSIGNMENT'
+        }
+      });
+    } catch (invokeError) {
+      console.error('[regenerateActiveAgreement] generateLegalAgreement invoke failed:', invokeError);
+      console.error('[regenerateActiveAgreement] Error status:', invokeError?.response?.status);
+      console.error('[regenerateActiveAgreement] Error data:', invokeError?.response?.data);
+      throw invokeError;
+    }
 
     console.log('[regenerateActiveAgreement] generateLegalAgreement response:', JSON.stringify(gen.data));
 
     if (gen.data?.error) {
       console.error('[regenerateActiveAgreement] Error from generateLegalAgreement:', gen.data.error);
       console.error('[regenerateActiveAgreement] Full error details:', gen.data);
-      return Response.json({ error: gen.data.error, details: gen.data }, { status: 500 });
+      return Response.json({ error: gen.data.error, details: gen.data }, { status: 400 });
     }
     
     if (!gen.data) {
