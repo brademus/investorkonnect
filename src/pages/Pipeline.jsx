@@ -27,9 +27,6 @@ import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
-import { useNormalizedDeals } from "@/components/hooks/useNormalizedDeals";
-import { useRealtimeSubscriptions } from "@/components/hooks/useRealtimeSubscriptions";
-import { usePrivacy } from "@/components/hooks/usePrivacy";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -45,30 +42,22 @@ function PipelineContent() {
   const [allowExtras, setAllowExtras] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
 
-  // CRITICAL: Redirect to onboarding if not complete - but only if TRULY loading is done
+  // CRITICAL: Redirect to onboarding if not complete
   useEffect(() => {
     if (loading) return;
-    
-    // If no profile but loading is false, only redirect if we've waited long enough (avoid false logout)
     if (!profile) {
-      const timer = setTimeout(() => {
-        if (!profile) navigate(createPageUrl("Home"), { replace: true });
-      }, 500);
-      return () => clearTimeout(timer);
+      navigate(createPageUrl("Home"), { replace: true });
+      return;
     }
-    
-    if (!onboarded && profile) {
+    if (!onboarded) {
       const role = profile.user_role;
-      const timer = setTimeout(() => {
-        if (role === 'investor') {
-          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-        } else if (role === 'agent') {
-          navigate(createPageUrl("AgentOnboarding"), { replace: true });
-        } else {
-          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-        }
-      }, 300);
-      return () => clearTimeout(timer);
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      } else {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      }
     }
   }, [loading, profile, onboarded, navigate]);
 
@@ -221,33 +210,134 @@ function PipelineContent() {
   const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete) : true;
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
-  // Use new centralized data normalization service
-  const { deals: uniqueDealsData, rooms, isLoading: loadingDeals, refetch: refetchDeals } = useNormalizedDeals(
-    profile?.id,
-    profile?.user_role
-  );
+  // 2. Load Active Deals via Server-Side Access Control
+    const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
+      queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
+      staleTime: Infinity,
+      gcTime: 30 * 60_000,
+     initialData: () => {
+       try {
+         if (!dealsCacheKey) return undefined;
+         const cached = JSON.parse(sessionStorage.getItem(dealsCacheKey) || '[]');
+         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+       } catch { return undefined; }
+     },
+     refetchOnMount: 'stale',
+     queryFn: async () => {
+       if (!profile?.id) return [];
 
-  // Disable real-time subscription refetches - they cause constant flicker
-  // Subscriptions managed but NOT triggering refetches (causing performance issues)
+       // PRODUCTION: Server-side access control enforces role-based redaction
+       const response = await base44.functions.invoke('getPipelineDealsForUser');
+       const deals = response.data?.deals || [];
 
-  // Load recent activity
+       // Filter out archived and deals with invalid addresses
+       return deals
+         .filter(d => d.status !== 'archived')
+         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+     },
+     enabled: !!profile?.id,
+     refetchOnWindowFocus: false,
+
+   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(dealsData) && dealsCacheKey) {
+        sessionStorage.setItem(dealsCacheKey, JSON.stringify(dealsData));
+      }
+    } catch (_) {}
+  }, [dealsData, dealsCacheKey]);
+
+  const uniqueDealsData = useMemo(() => {
+    if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
+
+    const normalize = (v) => (v ?? '').toString().trim().toLowerCase();
+    const toDate = (d) => new Date(d || 0).getTime();
+
+    // Step 1: dedupe by exact id first (keep the most recently updated)
+    const byId = new Map();
+    for (const d of dealsData) {
+      const id = d?.id || d?.deal_id;
+      if (!id) continue;
+      const prev = byId.get(id);
+      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
+        byId.set(id, d);
+      }
+    }
+
+    // Step 2: dedupe by natural signature (address/title + city + state + zip + price)
+    const makeSig = (d) => {
+      const addr = normalize(d.property_address || d.deal_title || d.title);
+      const city = normalize(d.city);
+      const state = normalize(d.state);
+      const zip = normalize(d.zip);
+      const price = d.purchase_price ?? d.budget ?? '';
+      return `${addr}|${city}|${state}|${zip}|${price}`;
+    };
+
+    const bySig = new Map();
+    for (const d of byId.values()) {
+      const sig = makeSig(d);
+      const prev = bySig.get(sig);
+      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
+        bySig.set(sig, d);
+      }
+    }
+
+    return Array.from(bySig.values());
+  }, [dealsData]);
+
+  // Load recent activity/notifications
   const { data: activities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['activities', profile?.id],
-    staleTime: 10 * 60_000,  // 10 minutes
-    gcTime: 30 * 60_000,     // 30 minutes
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchInterval: false,
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
+      // Get all deals for this user
       const dealIds = uniqueDealsData.map(d => d.id);
       if (dealIds.length === 0) return [];
+      
+      // Get activities for these deals
       const allActivities = await base44.entities.Activity.list('-created_date', 20);
       return allActivities.filter(a => dealIds.includes(a.deal_id));
     },
-    enabled: !!profile?.id && uniqueDealsData.length > 0
+    enabled: !!profile?.id && dealsData.length > 0,
+    refetchOnWindowFocus: false,
+    refetchInterval: 0 // Disable polling to avoid UI reshuffles
   });
+
+  // 3. Load Rooms (to link agents/status)
+    const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
+      queryKey: ['rooms', profile?.id],
+      staleTime: Infinity,
+      gcTime: 30 * 60_000,
+     initialData: () => {
+       try {
+         if (!roomsCacheKey) return undefined;
+         const cached = JSON.parse(sessionStorage.getItem(roomsCacheKey) || '[]');
+         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
+       } catch { return undefined; }
+     },
+     refetchOnMount: 'stale',
+     queryFn: async () => {
+       if (!profile?.id) return [];
+       const res = await base44.functions.invoke('listMyRoomsEnriched');
+       return res.data?.rooms || [];
+     },
+     enabled: !!profile?.id,
+     refetchOnWindowFocus: false,
+
+   });
+
+  useEffect(() => {
+    try {
+      if (Array.isArray(rooms) && roomsCacheKey) {
+        sessionStorage.setItem(roomsCacheKey, JSON.stringify(rooms));
+      }
+    } catch (_) {}
+  }, [rooms, roomsCacheKey]);
 
   // Force refresh after DocuSign return
   useEffect(() => {
@@ -269,11 +359,65 @@ function PipelineContent() {
             }
           } catch (_) {}
         }
-        // Only refetch on explicit sign event, not continuous polling
+        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+        queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
         refetchDeals();
+        refetchRooms();
       })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
+
+  // Realtime: instantly refresh agent dashboard when investor signs or room updates
+  useEffect(() => {
+    if (!profile?.id || !isAgent) return;
+    const unsubRoom = base44.entities.Room.subscribe((event) => {
+      const r = event?.data;
+      if (!r || r.agentId !== profile.id) return;
+      if (event.type === 'create' || event.type === 'update') {
+        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status);
+        const st = r.agreement_status;
+        const rs = r.request_status;
+        if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted' || rs === 'requested') {
+          try { 
+            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+            queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
+            refetchDeals();
+            refetchRooms();
+          } catch (_) {}
+        }
+      }
+    });
+    return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
+  }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
+
+  // Real-time: refresh deals when new ones are created or updated
+  useEffect(() => {
+    if (!profile?.id) return;
+    const unsubDeal = base44.entities.Deal.subscribe((event) => {
+      if (event?.type === 'create' || event?.type === 'update') {
+        console.log('[Pipeline] Deal changed, refreshing...', event.type);
+        try { 
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+          refetchDeals();
+        } catch (_) {}
+      }
+    });
+    return () => { try { unsubDeal && unsubDeal(); } catch (_) {} };
+  }, [profile?.id, profile?.user_role, queryClient, refetchDeals]);
+
+  // Real-time: refresh counter offers when they change
+  useEffect(() => {
+    if (!profile?.id || !isInvestor) return;
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      console.log('[Pipeline] Counter offer event:', event.type);
+      try { 
+        queryClient.invalidateQueries({ queryKey: ['counterOffers'] });
+        refetchCounters();
+      } catch (_) {}
+    });
+    return () => { try { unsubCounter && unsubCounter(); } catch (_) {} };
+  }, [profile?.id, isInvestor, queryClient]);
 
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
@@ -292,62 +436,62 @@ function PipelineContent() {
   });
 
   // 4b. Load Deal Appointments for visible deals
-    const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
-      queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
-      staleTime: 60_000,
-      gcTime: 5 * 60_000,
-      placeholderData: (prev) => prev,
-      queryFn: async () => {
-        if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
-        const items = await base44.entities.DealAppointments.list('-updated_date', 500);
-        const idSet = new Set(uniqueDealsData.map(d => d.id));
-        return items.filter(a => idSet.has(a.dealId));
-      },
-      enabled: allowExtras && uniqueDealsData.length > 0,
-      refetchOnWindowFocus: false,
-      refetchInterval: 0
-    });
+  const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
+    queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
+    staleTime: 60_000,
+    gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
+      const items = await base44.entities.DealAppointments.list('-updated_date', 500);
+      const idSet = new Set(uniqueDealsData.map(d => d.id));
+      return items.filter(a => idSet.has(a.dealId));
+    },
+    enabled: allowExtras && dealsData.length > 0,
+    refetchOnWindowFocus: false,
+    refetchInterval: 0
+  });
 
   // 4c. Load Counter Offers for all deals (investor-only)
-    const { data: counterOffers = [], isLoading: loadingCounters, refetch: refetchCounters } = useQuery({
-      queryKey: ['counterOffers', uniqueDealsData.map(d => d.id)],
-      staleTime: 30_000,
-      gcTime: 5 * 60_000,
-      placeholderData: (prev) => prev,
-      queryFn: async () => {
-        if (!uniqueDealsData || uniqueDealsData.length === 0 || !isInvestor) return [];
-        const items = await base44.entities.CounterOffer.filter({ status: 'pending' }, '-created_date', 500);
-        const idSet = new Set(uniqueDealsData.map(d => d.id));
-        return items.filter(c => idSet.has(c.deal_id));
-      },
-      enabled: allowExtras && uniqueDealsData.length > 0 && isInvestor,
-      refetchOnWindowFocus: false,
-      refetchInterval: 0
-    });
+  const { data: counterOffers = [], isLoading: loadingCounters, refetch: refetchCounters } = useQuery({
+    queryKey: ['counterOffers', uniqueDealsData.map(d => d.id)],
+    staleTime: 30_000,
+    gcTime: 5 * 60_000,
+    placeholderData: (prev) => prev,
+    queryFn: async () => {
+      if (!uniqueDealsData || uniqueDealsData.length === 0 || !isInvestor) return [];
+      const items = await base44.entities.CounterOffer.filter({ status: 'pending' }, '-created_date', 500);
+      const idSet = new Set(uniqueDealsData.map(d => d.id));
+      return items.filter(c => idSet.has(c.deal_id));
+    },
+    enabled: allowExtras && dealsData.length > 0 && isInvestor,
+    refetchOnWindowFocus: false,
+    refetchInterval: 0
+  });
 
 
 
   
 
   // 5. Merge Data (no automatic dedup - user clicks button if needed)
-    const deals = useMemo(() => {
-      // Index rooms by deal_id
-      const roomMap = new Map();
-      const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
-      (rooms || []).forEach(r => {
-        if (!r?.deal_id) return;
-        const current = roomMap.get(r.deal_id);
-        if (!current || rank(r) > rank(current)) {
-          roomMap.set(r.deal_id, r);
-        }
-      });
+  const deals = useMemo(() => {
+    // Index rooms by deal_id
+    const roomMap = new Map();
+    const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
+    rooms.forEach(r => {
+      if (!r?.deal_id) return;
+      const current = roomMap.get(r.deal_id);
+      if (!current || rank(r) > rank(current)) {
+        roomMap.set(r.deal_id, r);
+      }
+    });
 
-      // Index appointments by dealId
-      const apptMap = new Map();
-      (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
+    // Index appointments by dealId
+    const apptMap = new Map();
+    (appointments || []).forEach(a => { if (a?.dealId) apptMap.set(a.dealId, a); });
 
-      // Stable map to avoid reshuffles
-      const mappedDeals = (uniqueDealsData || []).map(deal => {
+    // Stable map to avoid reshuffles
+    const mappedDeals = uniqueDealsData.map(deal => {
       const room = roomMap.get(deal.id);
       const appt = apptMap.get(deal.id);
       
@@ -441,7 +585,7 @@ function PipelineContent() {
       // Agents see deals that have a room request (requested/accepted/signed) or are fully signed
       return d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed' || d.is_fully_signed === true;
     });
-    }, [uniqueDealsData, rooms, appointments]);
+  }, [dealsData, rooms, appointments]);
 
   const handleDealClick = async (deal) => {
     // Prefetch deal details and agreement for instant hydration

@@ -27,9 +27,6 @@ import { getCounterpartyDisplayName } from "@/components/utils/counterpartyDispl
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
 import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard";
 import { getCachedDeal, setCachedDeal } from "@/components/utils/dealCache";
-import { useRealtimeSubscriptions } from "@/components/hooks/useRealtimeSubscriptions";
-import { usePrivacy } from "@/components/hooks/usePrivacy";
-import { useMessages as useMessagesHook } from "@/components/hooks/useMessages";
 import { 
   Menu, Send, Loader2, ArrowLeft, FileText, Shield, Search, Info, User, Plus, Image, CheckCircle, CheckCircle2, Clock, Download
 } from "lucide-react";
@@ -97,7 +94,85 @@ function useMyRooms() {
   };
 }
 
-// Replaced with useMessagesHook from new service layer - no polling, pure subscriptions
+function useMessages(roomId, authUser, currentProfile) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    // Jump instantly to bottom to avoid top-then-bottom flicker
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+  };
+
+  useEffect(() => { scrollToBottom(); }, [items.length]);
+
+  // Only show loading on initial room load
+  useEffect(() => {
+    setLoading(!initialLoadDone);
+    setInitialLoadDone(false);
+  }, [roomId]);
+
+  useEffect(() => {
+    if (!roomId) return;
+    let cancelled = false;
+
+    const fetchMessages = async () => {
+      try {
+        const serverItems = await base44.entities.Message.filter(
+          { room_id: roomId },
+          'created_date' // Sort ascending (oldest first)
+        );
+
+        if (!cancelled) {
+          setItems(prev => {
+            // 1) Carry over optimistic messages and lock their side
+            const optimistic = prev.filter(m => m._isOptimistic).map(m => ({ ...m, _isMe: true }));
+
+            // 2) Stabilize server items with _isMe computed ONCE
+            const stableServer = serverItems.map(m => ({ ...m, _isMe: isMessageFromMe(m, authUser, currentProfile) }));
+
+            // 3) Drop any optimistic that clearly matches a server message
+            const remainingOptimistic = optimistic.filter(opt => !stableServer.some(real => {
+              const sameSender = (real.sender_profile_id && opt.sender_profile_id && real.sender_profile_id === opt.sender_profile_id) ||
+                                 (real.sender_user_id && opt.sender_user_id && real.sender_user_id === opt.sender_user_id);
+              const sameBody = real.body === opt.body;
+              const closeTime = Math.abs(new Date(real.created_date) - new Date(opt.created_date)) < 8000;
+              return sameSender && sameBody && closeTime;
+            }));
+
+            // 4) Merge and dedupe by id fallback signature
+            const merged = [...stableServer, ...remainingOptimistic];
+            const seen = new Set();
+            const deduped = merged.filter(m => {
+              const key = m.id || `${m.sender_profile_id||m.sender_user_id}-${m.created_date}-${m.body?.slice(0,20)}`;
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
+
+            // 5) Final stable sort
+            return deduped.sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch messages:', error);
+      }
+      finally { 
+        if (!cancelled) {
+          setLoading(false);
+          setInitialLoadDone(true);
+        }
+      }
+    };
+
+    fetchMessages();
+    const interval = setInterval(fetchMessages, 15000); // Poll every 15 seconds to reduce rate limit errors
+    return () => { cancelled = true; clearInterval(interval); };
+  }, [roomId, authUser?.id, currentProfile?.id, currentProfile?.user_id, currentProfile?.email]);
+
+  return { items, loading, setItems, messagesEndRef };
+}
 
 // Memoized sidebar header to prevent flickering
 const SidebarHeader = React.memo(({ onSearchChange, searchValue }) => {
@@ -235,16 +310,8 @@ export default function Room() {
   const roomId = params.get("roomId");
   const { profile, user } = useCurrentProfile();
   const { rooms } = useMyRooms();
+  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
   const queryClient = useQueryClient();
-  
-  // New service hooks
-  const privacy = usePrivacy(profile?.user_role);
-  const { messages } = useMessagesHook(roomId);
-  const [subscriptionUpdate, setSubscriptionUpdate] = useState(0);
-  useRealtimeSubscriptions(profile?.id, profile?.user_role, (update) => {
-    setSubscriptionUpdate(t => t + 1);
-  });
-  
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
@@ -357,14 +424,18 @@ export default function Room() {
         // Hard sanitizer: if anything slips through, null it out for agents until fully signed
         useEffect(() => {
           if (profile?.user_role !== 'agent') return;
-          // Privacy sanitization now centralized via usePrivacy hook
-             if (currentRoom && !currentRoom.is_fully_signed && currentRoom.property_address) {
-               const visibleAddr = privacy.getVisibleAddress(currentRoom, currentRoom.is_fully_signed);
-               setCurrentRoom(prev => prev ? {
-                 ...prev,
-                 property_address: visibleAddr === null ? null : prev.property_address
-               } : prev);
-             }
+          // Sanitize currentRoom
+          if (currentRoom && !currentRoom.is_fully_signed && currentRoom.property_address) {
+            setCurrentRoom(prev => prev ? {
+              ...prev,
+              property_address: null,
+              title: (prev.title && /,/.test(prev.title)) ? prev.title : `${prev.city || 'City'}, ${prev.state || 'State'}`
+            } : prev);
+          }
+          // Sanitize deal snapshot
+          if (deal && !deal.is_fully_signed && deal.property_address) {
+            setDeal(prev => prev ? { ...prev, property_address: null } : prev);
+          }
         }, [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed, currentRoom?.property_address, deal?.property_address]);
   
   const refreshRoomState = async () => {
@@ -518,79 +589,92 @@ export default function Room() {
     }
   }, [location.search, roomId, currentRoom?.deal_id]);
 
-  // Fetch current room with instant UI + parallel background fetches - NO FLICKER
+  // Fetch current room with server-side access control
   useEffect(() => {
     if (!roomId) return;
     
     const fetchCurrentRoom = async () => {
       const rid = roomId;
       const thisReq = ++requestSeqRef.current;
-      const isStale = () => roomId !== rid || requestSeqRef.current !== thisReq;
-      
+      const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
       if (lastFetchKeyRef.current !== `${roomId}|${profile?.user_role}`) {
         setRoomLoading(true);
       }
       
       try {
-        // 1. GET ROOM INSTANTLY (from cache or DB)
+        // First, try to get enriched room data from our rooms list
         const enrichedRoom = rooms.find(r => r.id === roomId);
+        
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
         if (!rawRoom) {
           setRoomLoading(false);
           return;
         }
-        
-        // Build complete initial snapshot from cached data (NO second update)
-        let initialRoom = { ...rawRoom };
+
+        // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
-          if (cached && cached.id === rawRoom.deal_id) {
-            const visibleDeal = shouldMaskAddress(profile, rawRoom, cached) ? { ...cached, property_address: null } : cached;
-            setDeal(visibleDeal);
-            initialRoom.title = profile?.user_role === 'agent' && !cached.is_fully_signed ? `${cached.city || 'City'}, ${cached.state || 'State'}` : (cached.title || rawRoom.title);
-            initialRoom.property_address = visibleDeal.property_address;
-            initialRoom.city = cached.city || rawRoom.city;
-            initialRoom.state = cached.state || rawRoom.state;
-            initialRoom.county = cached.county || rawRoom.county;
-            initialRoom.zip = cached.zip || rawRoom.zip;
-            initialRoom.budget = cached.purchase_price || rawRoom.budget;
-            initialRoom.is_fully_signed = cached.is_fully_signed || rawRoom.is_fully_signed;
+          if (cached) {
+            // Ensure cached belongs to this deal id (guard against residual cache)
+            if (cached.id !== rawRoom.deal_id) {
+              // ignore wrong cached snapshot
+            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
+              setDeal({ ...cached, property_address: null });
+            } else {
+              setDeal(cached);
+            }
           }
-        }
-        
-        // Set room UI once with cached data
-        setCurrentRoom(initialRoom);
 
-        // 2. FIRE ALL BACKGROUND REQUESTS IN PARALLEL (non-blocking, don't update unless needed)
-        if (rawRoom.deal_id) {
-          Promise.all([
-            base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null })),
-            base44.entities.DealAppointments.filter({ dealId: rawRoom.deal_id }).catch(() => []),
-            base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id }).catch(() => ({ data: null }))
-          ]).then(([dealRes, apptRows, agRes]) => {
-            if (isStale()) return;
+          // Use server-side access-controlled deal fetch
+          try {
+            const response = await base44.functions.invoke('getDealDetailsForUser', {
+              dealId: rawRoom.deal_id
+            });
+            const dealData = response.data;
             
-            const dealData = dealRes?.data;
-            const cached = getCachedDeal(rawRoom.deal_id);
-            
-            // Only update if data changed
-            if (dealData && (!cached || JSON.stringify(dealData) !== JSON.stringify(cached))) {
+            if (dealData) {
               setDeal(dealData);
               setCachedDeal(dealData.id, dealData);
+              
+              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
+                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
+                : dealData.title;
+              
+              // Ensure we still match current selection
+              if (rid !== roomId) return;
+              setCurrentRoom({
+                ...rawRoom,
+                title: displayTitle,
+                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
+                city: dealData.city,
+                state: dealData.state,
+                county: dealData.county,
+                zip: dealData.zip,
+                budget: dealData.purchase_price,
+                pipeline_stage: dealData.pipeline_stage,
+                closing_date: dealData.key_dates?.closing_date,
+                deal_assigned_agent_id: dealData.agent_id,
+                is_fully_signed: dealData.is_fully_signed,
+                property_type: dealData.property_type,
+                property_details: dealData.property_details,
+                proposed_terms: dealData.proposed_terms,
+                photos: rawRoom?.photos || [],
+                files: rawRoom?.files || [],
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
+              });
+            } else {
+              setCurrentRoom(rawRoom);
             }
-            
-            if (Array.isArray(apptRows) && apptRows[0]) {
-              setDealAppts(apptRows[0]);
-            }
-            
-            if (agRes?.data?.agreement) {
-              setAgreement(agRes.data.agreement);
-            }
-          }).catch(() => {});
+          } catch (error) {
+            console.error('Failed to fetch deal:', error);
+            setCurrentRoom(rawRoom);
+          }
+        } else {
+          setCurrentRoom(rawRoom);
         }
       } catch (error) {
-        console.error('[Room] Fetch error:', error);
+        console.error('Failed to fetch room:', error);
       } finally {
         setRoomLoading(false);
       }
@@ -627,13 +711,85 @@ export default function Room() {
     };
   }, [currentRoom?.deal_id]);
 
-  // Subscriptions consolidated via useRealtimeSubscriptions hook
-  // Removes 3 separate useEffect blocks → single consolidated manager
+  // Realtime updates for Room and Deal to keep board instantly fresh
   useEffect(() => {
-    if (subscriptionUpdate > 0) {
-      refreshRoomState();
+    if (!roomId && !currentRoom?.deal_id) return;
+    const unsubscribers = [];
+    const freeze = showBoard && activeTab === 'details';
+
+    if (roomId) {
+      const unsubRoom = base44.entities.Room.subscribe((event) => {
+        if (event.id === roomId) {
+          setCurrentRoom((prev) => {
+            if (freeze) return prev || { ...(event.data || {}), id: roomId };
+            if (!prev || prev.id !== roomId) return { ...(event.data || {}), id: roomId };
+            return { ...prev, ...event.data };
+          });
+        }
+      });
+      unsubscribers.push(unsubRoom);
     }
-  }, [subscriptionUpdate]); 
+
+    if (currentRoom?.deal_id) {
+      const dealId = currentRoom.deal_id;
+      const unsubDeal = base44.entities.Deal.subscribe((event) => {
+        if (event.id === dealId) {
+          setDeal((prev) => {
+            if (freeze) return prev || { ...(event.data || {}), id: dealId };
+            if (!prev || prev.id !== dealId) return { ...(event.data || {}), id: dealId };
+            return { ...prev, ...event.data };
+          });
+        }
+      });
+      unsubscribers.push(unsubDeal);
+    }
+
+    return () => {
+      unsubscribers.forEach((u) => {
+        try { u(); } catch (_) {}
+      });
+    };
+  }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
+
+  // Real-time agreement refresh on counter offer changes
+  useEffect(() => {
+    if (!currentRoom?.deal_id) return;
+    
+    const unsubscribers = [];
+    const dealId = currentRoom.deal_id;
+
+    // Subscribe to counter offer changes
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        // Reload both agreement AND deal when counter offer changes
+        (async () => {
+          try {
+            const [agRes, dealRes] = await Promise.all([
+              base44.functions.invoke('getLegalAgreement', { deal_id: dealId }),
+              base44.functions.invoke('getDealDetailsForUser', { dealId })
+            ]);
+            if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
+            if (dealRes?.data) {
+              setDeal(dealRes.data);
+              setCachedDeal(dealId, dealRes.data);
+              // Update currentRoom with latest terms
+              setCurrentRoom(prev => prev ? { 
+                ...prev, 
+                proposed_terms: dealRes.data.proposed_terms 
+              } : prev);
+            }
+          } catch (_) {}
+        })();
+      }
+    });
+    unsubscribers.push(unsubCounter);
+
+    return () => {
+      unsubscribers.forEach((u) => {
+        try { u(); } catch (_) {}
+      });
+    };
+  }, [currentRoom?.deal_id, activeTab]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
@@ -2542,7 +2698,14 @@ ${dealContext}`;
 
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto space-y-4 hidden">
-              {!messages || messages.length === 0 ? (
+              {loading ? (
+                <div className="flex items-center justify-center h-full">
+                  <div className="text-center">
+                    <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
+                    <p className="text-sm text-[#808080]">Loading messages...</p>
+                  </div>
+                </div>
+              ) : messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
