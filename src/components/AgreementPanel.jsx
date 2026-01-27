@@ -148,8 +148,11 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     try {
       const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
       if (res.data?.error) {
-        console.error('[AgreementPanel] Generation error:', res.data.error);
-        toast.error(res.data.error);
+        console.error('[AgreementPanel] Generation error:', res.data);
+        const errorMsg = res.data.details?.missing_placeholders 
+          ? `Missing: ${res.data.details.missing_placeholders.join(', ')}`
+          : res.data.error;
+        toast.error(errorMsg);
       } else {
         toast.success('Agreement generated');
         await loadState();
