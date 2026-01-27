@@ -126,34 +126,74 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'role must be investor or agent' }, { status: 400 });
     }
     
-    // Load agreement - check both LegalAgreement and AgreementVersion
+    // Load agreement with backwards compatibility
     let agreement = null;
     let agreementType = null;
     
-    // Try LegalAgreement first
-    const legacyAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
-    if (legacyAgreements && legacyAgreements.length > 0) {
-      agreement = legacyAgreements[0];
+    // 1) Primary path: agreement_id is a LegalAgreement.id
+    const legalAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    if (legalAgreements && legalAgreements.length > 0) {
+      agreement = legalAgreements[0];
       agreementType = 'LegalAgreement';
-      console.log('[docusignCreateSigningSession] Found LegalAgreement');
+      console.log('[DocuSign] Found LegalAgreement by ID');
     } else {
-      // Try AgreementVersion
-      const versionAgreements = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
-      if (versionAgreements && versionAgreements.length > 0) {
-        agreement = versionAgreements[0];
-        agreementType = 'AgreementVersion';
-        console.log('[docusignCreateSigningSession] Found AgreementVersion');
+      // 2) Back-compat: check if agreement_id is an AgreementVersion (legacy)
+      console.log('[DocuSign] Not found as LegalAgreement, checking legacy AgreementVersion...');
+      try {
+        const avRecords = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
+        if (avRecords && avRecords.length > 0) {
+          const av = avRecords[0];
+          console.log('[DocuSign] Found AgreementVersion, resolving to active LegalAgreement for deal:', av.deal_id);
+          
+          // Get deal
+          const dealRecords = await base44.asServiceRole.entities.Deal.filter({ id: av.deal_id });
+          const deal = dealRecords?.[0];
+          
+          // Resolve to active LegalAgreement for this deal
+          if (deal?.current_legal_agreement_id) {
+            const currentLA = await base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id });
+            const candidate = currentLA?.[0];
+            
+            if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
+              // Fall back to latest non-superseded
+              console.log('[DocuSign] Current pointer is superseded, finding latest active');
+              const allLA = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: av.deal_id }, '-created_date', 10);
+              agreement = allLA?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
+            } else {
+              agreement = candidate;
+            }
+          } else {
+            // No pointer, find latest non-superseded
+            const allLA = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: av.deal_id }, '-created_date', 10);
+            agreement = allLA?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
+          }
+          
+          if (agreement) {
+            agreementType = 'LegalAgreement';
+            console.log('[DocuSign] Resolved legacy AgreementVersion to LegalAgreement:', agreement.id);
+          }
+        }
+      } catch (e) {
+        console.warn('[DocuSign] Legacy resolution failed:', e?.message);
       }
     }
     
     if (!agreement) {
-      console.error('[docusignCreateSigningSession] Agreement not found:', agreement_id);
+      console.error('[DocuSign] Agreement not found (tried LegalAgreement and legacy paths)');
       return Response.json({ error: 'Agreement not found. Please regenerate the agreement.' }, { status: 404 });
     }
+    
+    // Safety: never sign a superseded/voided agreement
+    if (agreement.status === 'superseded' || agreement.status === 'voided') {
+      return Response.json({ 
+        error: 'This agreement has been superseded. Please regenerate the agreement from the Agreement tab.',
+        code: 'AGREEMENT_SUPERSEDED'
+      }, { status: 400 });
+    }
 
-    // GATING: Check DB immediately - if agent trying to sign, investor must have signed first
-    // Refresh agreement from DB to get latest signature status
-    const freshAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    // GATING: If agent trying to sign, investor must have signed first
+    // Force fresh fetch to get latest signature status
+    const freshAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id });
     const freshAgreement = freshAgreements?.[0];
     
     if (freshAgreement) {
@@ -194,22 +234,33 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] Stored agreement.docusign_pdf_sha256:', agreement.docusign_pdf_sha256 || 'none');
     console.log('[DocuSign] Stored agreement.docusign_last_sent_sha256:', agreement.docusign_last_sent_sha256 || 'none');
     
-    // Validate redirect_url (flexible origin matching for dev/prod)
+    // Validate and enrich redirect_url to ensure deal context
     const reqUrl = new URL(req.url);
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
     
-    // Build redirect with deal context preserved
     let validatedRedirect = redirect_url;
     if (!validatedRedirect) {
-      // Default: return to Room with agreement tab if available
-      validatedRedirect = `/Room?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+      // Default: return to MyAgreement with agreement tab
+      validatedRedirect = `/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
     }
     
-    // Allow relative URLs
+    // Ensure dealId, tab, and role are always present in redirect URL
     if (validatedRedirect.startsWith('/')) {
       const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
       validatedRedirect = `${origin}${validatedRedirect}`;
     }
+    
+    const redirectURL = new URL(validatedRedirect);
+    if (!redirectURL.searchParams.has('dealId') && agreement.deal_id) {
+      redirectURL.searchParams.set('dealId', agreement.deal_id);
+    }
+    if (!redirectURL.searchParams.has('tab')) {
+      redirectURL.searchParams.set('tab', 'agreement');
+    }
+    if (!redirectURL.searchParams.has('role')) {
+      redirectURL.searchParams.set('role', role);
+    }
+    validatedRedirect = redirectURL.toString();
     
     console.log('[DocuSign] Redirect validation:', { 
       redirect_url, 
@@ -367,9 +418,14 @@ Deno.serve(async (req) => {
     
     console.log('[DocuSign] Signing token created');
     
-    // Build DocuSign return URL
+    // Build DocuSign return URL with deal context
     const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
-    const docusignReturnUrl = `${origin}/DocuSignReturn?token=${tokenValue}`;
+    const returnURL = new URL(`${origin}/DocuSignReturn`);
+    returnURL.searchParams.set('token', tokenValue);
+    if (agreement.deal_id) returnURL.searchParams.set('dealId', agreement.deal_id);
+    returnURL.searchParams.set('tab', 'agreement');
+    returnURL.searchParams.set('role', role);
+    const docusignReturnUrl = returnURL.toString();
     
     // Get recipient details
     const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
