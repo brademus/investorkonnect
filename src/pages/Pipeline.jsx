@@ -202,13 +202,12 @@ function PipelineContent() {
   // Setup completion gating (must be 4/4)
   const onboardingComplete = Boolean(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version);
   const ndaComplete = !!profile?.nda_accepted;
-  const subscriptionComplete = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
   const brokerageComplete = Boolean(profile?.broker || profile?.agent?.brokerage);
   const identityComplete = Boolean(
     (identity && String(identity.verificationStatus || '').toUpperCase() === 'VERIFIED') ||
     (profile?.identity_status === 'approved' || profile?.identity_status === 'verified')
   );
-  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete && subscriptionComplete) : true;
+  const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete) : true;
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
   // 2. Load Active Deals via Server-Side Access Control
@@ -1075,7 +1074,7 @@ function PipelineContent() {
                 </div>
               </div>
               <div className="flex items-center gap-3 ml-4 sm:ml-6">
-                {(isInvestor && onboardingComplete && subscriptionComplete && ndaComplete) && (
+                {(isInvestor && onboardingComplete && ndaComplete) && (
                   <Button 
                     onClick={() => {
                       try { sessionStorage.removeItem('newDealDraft'); } catch (_) {}
