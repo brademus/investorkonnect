@@ -99,8 +99,9 @@ Deno.serve(async (req) => {
       agent_id: agreement.agent_recipient_id
     });
 
-    const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
-    const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+    // Compare as strings to avoid type mismatches (DocuSign might return number, DB stores string)
+    const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+    const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
 
     console.log('[docusignSyncEnvelope] Found signers:', {
       investor: { found: !!investorSigner, status: investorSigner?.status, email: investorSigner?.email },
