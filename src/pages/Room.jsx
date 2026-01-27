@@ -518,7 +518,7 @@ export default function Room() {
     }
   }, [location.search, roomId, currentRoom?.deal_id]);
 
-  // Fetch current room with instant UI + parallel background fetches
+  // Fetch current room with instant UI + parallel background fetches - NO FLICKER
   useEffect(() => {
     if (!roomId) return;
     
@@ -541,18 +541,28 @@ export default function Room() {
           return;
         }
         
-        // Set room UI immediately (no deal needed)
-        setCurrentRoom(rawRoom);
-
-        // 2. HYDRATE CACHED DEAL IF AVAILABLE
+        // Build complete initial snapshot from cached data (NO second update)
+        let initialRoom = { ...rawRoom };
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
           if (cached && cached.id === rawRoom.deal_id) {
-            setDeal(shouldMaskAddress(profile, rawRoom, cached) ? { ...cached, property_address: null } : cached);
+            const visibleDeal = shouldMaskAddress(profile, rawRoom, cached) ? { ...cached, property_address: null } : cached;
+            setDeal(visibleDeal);
+            initialRoom.title = profile?.user_role === 'agent' && !cached.is_fully_signed ? `${cached.city || 'City'}, ${cached.state || 'State'}` : (cached.title || rawRoom.title);
+            initialRoom.property_address = visibleDeal.property_address;
+            initialRoom.city = cached.city || rawRoom.city;
+            initialRoom.state = cached.state || rawRoom.state;
+            initialRoom.county = cached.county || rawRoom.county;
+            initialRoom.zip = cached.zip || rawRoom.zip;
+            initialRoom.budget = cached.purchase_price || rawRoom.budget;
+            initialRoom.is_fully_signed = cached.is_fully_signed || rawRoom.is_fully_signed;
           }
         }
+        
+        // Set room UI once with cached data
+        setCurrentRoom(initialRoom);
 
-        // 3. FIRE ALL BACKGROUND REQUESTS IN PARALLEL (non-blocking)
+        // 2. FIRE ALL BACKGROUND REQUESTS IN PARALLEL (non-blocking, don't update unless needed)
         if (rawRoom.deal_id) {
           Promise.all([
             base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null })),
@@ -562,31 +572,12 @@ export default function Room() {
             if (isStale()) return;
             
             const dealData = dealRes?.data;
-            if (dealData) {
+            const cached = getCachedDeal(rawRoom.deal_id);
+            
+            // Only update if data changed
+            if (dealData && (!cached || JSON.stringify(dealData) !== JSON.stringify(cached))) {
               setDeal(dealData);
               setCachedDeal(dealData.id, dealData);
-              
-              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
-                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
-                : dealData.title;
-              
-              setCurrentRoom(prev => ({
-                ...prev,
-                title: displayTitle,
-                property_address: shouldMaskAddress(profile, prev, dealData) ? null : dealData.property_address,
-                city: dealData.city,
-                state: dealData.state,
-                county: dealData.county,
-                zip: dealData.zip,
-                budget: dealData.purchase_price,
-                pipeline_stage: dealData.pipeline_stage,
-                closing_date: dealData.key_dates?.closing_date,
-                deal_assigned_agent_id: dealData.agent_id,
-                is_fully_signed: dealData.is_fully_signed,
-                property_type: dealData.property_type,
-                property_details: dealData.property_details,
-                proposed_terms: dealData.proposed_terms,
-              }));
             }
             
             if (Array.isArray(apptRows) && apptRows[0]) {
