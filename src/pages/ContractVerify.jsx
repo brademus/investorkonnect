@@ -164,7 +164,7 @@ export default function ContractVerify() {
             sqft: dealData.sqft ? Number(dealData.sqft) : null,
             year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
             number_of_stories: dealData.numberOfStories || null,
-            has_basement: dealData.hasBasement === "yes" ? true : null,
+            has_basement: dealData.hasBasement || null,
           },
           seller_info: {
             seller_name: dealData.sellerName,
