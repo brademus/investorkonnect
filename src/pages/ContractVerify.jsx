@@ -185,23 +185,23 @@ export default function ContractVerify() {
 
           {!verificationResult ? (
              <div className="space-y-6">
-               <label className="border-2 border-dashed border-[#1F1F1F] rounded-xl p-12 text-center cursor-pointer hover:border-[#E3C567]/50 hover:bg-[#141414] transition">
-                 <input
-                   type="file"
-                   accept=".pdf"
-                   onChange={handleFileSelect}
-                   className="hidden"
-                 />
-                 <div>
-                   <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                     <FileText className="w-8 h-8 text-[#E3C567]" />
-                   </div>
-                   <p className="text-[#FAFAFA] font-semibold mb-2">
-                     {file ? file.name : "Upload Your Contract"}
-                   </p>
-                   <p className="text-sm text-[#808080]">PDF format • Maximum 10MB</p>
-                 </div>
-               </label>
+                <div className="border-2 border-dashed border-[#1F1F1F] rounded-xl p-12 text-center cursor-pointer hover:border-[#E3C567]/50 hover:bg-[#141414] transition" onClick={() => document.querySelector('input[type="file"]')?.click()}>
+                  <input
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <div>
+                    <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <FileText className="w-8 h-8 text-[#E3C567]" />
+                    </div>
+                    <p className="text-[#FAFAFA] font-semibold mb-2">
+                      {file ? file.name : "Upload Your Contract"}
+                    </p>
+                    <p className="text-sm text-[#808080]">PDF format • Maximum 10MB</p>
+                  </div>
+                </div>
 
               <Button
                 onClick={handleVerify}
