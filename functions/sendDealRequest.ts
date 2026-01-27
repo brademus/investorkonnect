@@ -64,11 +64,6 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid agent' }, { status: 400 });
     }
 
-    // Update Deal with agent_id so it appears in agent's pipeline
-    await base44.asServiceRole.entities.Deal.update(deal_id, {
-      agent_id: agent_profile_id
-    });
-
     // Create room with status=requested
     const room = await base44.asServiceRole.entities.Room.create({
       deal_id,
@@ -82,8 +77,7 @@ Deno.serve(async (req) => {
       county: deal.county,
       zip: deal.zip,
       budget: deal.purchase_price,
-      closing_date: deal.key_dates?.closing_date,
-      proposed_terms: deal.proposed_terms
+      closing_date: deal.key_dates?.closing_date
     });
 
     // Log activity

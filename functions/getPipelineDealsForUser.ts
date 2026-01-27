@@ -58,35 +58,40 @@ Deno.serve(async (req) => {
       deals = merged.filter(d => d && !seen.has(d.id) && seen.add(d.id));
       console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see deals they're assigned to via agent_id OR where they have a room
+      // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
       const roomDealIds = agentRooms.map(r => r.deal_id).filter(Boolean);
       
       console.log('[getPipelineDealsForUser] Agent data:', {
-        profileId: profile.id,
         agentDeals: agentDeals.length,
         agentRooms: agentRooms.length,
         roomDealIds: roomDealIds,
-        rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status, agreement_status: r.agreement_status }))
+        rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status }))
       });
       
-      // Merge all sources
+      // Merge deals from both sources + fallback by created_by
+      let byCreator = [];
+      try {
+        byCreator = await base44.asServiceRole.entities.Deal.filter({ created_by: user.email });
+      } catch (_) {}
+
       const allDealIds = new Set([
         ...agentDeals.map(d => d.id),
-        ...roomDealIds
+        ...roomDealIds,
+        ...byCreator.map(d => d.id)
       ]);
       
-      console.log('[getPipelineDealsForUser] All unique deal IDs:', Array.from(allDealIds));
+      console.log('[getPipelineDealsForUser] All deal IDs to fetch:', Array.from(allDealIds));
       
       deals = await Promise.all(
         Array.from(allDealIds).map(id => 
-          base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)
+          base44.entities.Deal.filter({ id }).then(arr => arr[0])
         )
       );
       deals = deals.filter(Boolean);
       
-      console.log('[getPipelineDealsForUser] Final agent deals before filtering:', deals.length);
+      console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
     }
 
     // If no deals found, try a broad fallback: any rooms for this profile, then load those deals
@@ -106,66 +111,33 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Fetch all LegalAgreements and AgreementVersions for these deals
+    // Fetch all LegalAgreements for these deals (BEFORE mapping)
     const dealIds = deals.map(d => d.id);
     let agreementsMap = new Map();
     if (dealIds.length > 0) {
       try {
-        // Load LegalAgreements
         const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({
           deal_id: { $in: dealIds }
         });
         allAgreements.forEach(a => agreementsMap.set(a.deal_id, a));
-        console.log('[getPipelineDealsForUser] Loaded LegalAgreements:', allAgreements.length);
-        
-        // Also load AgreementVersions (newer system)
-        const allVersions = await base44.asServiceRole.entities.AgreementVersion.filter({
-          deal_id: { $in: dealIds }
-        }, '-version', 100);
-        
-        // For each deal, use the latest version if it exists and has investor_signed_at
-        allVersions.forEach(v => {
-          const existing = agreementsMap.get(v.deal_id);
-          // Prefer version with investor_signed_at, or if no existing agreement
-          if (!existing || (v.investor_signed_at && !existing.investor_signed_at)) {
-            agreementsMap.set(v.deal_id, v);
-          }
-        });
-        console.log('[getPipelineDealsForUser] Loaded AgreementVersions:', allVersions.length);
+        console.log('[getPipelineDealsForUser] Loaded agreements:', allAgreements.length);
       } catch (e) {
         console.error('Error fetching agreements:', e);
       }
     }
 
-    // Agents should see deals after the INVESTOR has signed
+    // Agents should not see deals until the INVESTOR has signed on DocuSign
+    // If LegalAgreement hasn't synced yet, allow only when Room shows agreement_status ≥ investor_signed
     if (isAgent && deals.length > 0) {
-      console.log('[getPipelineDealsForUser] Filtering deals for agent visibility...');
+      const allowedStatuses = new Set(['investor_signed', 'agent_signed', 'fully_signed', 'attorney_review_pending']);
       deals = deals.filter(d => {
-        const roomForDeal = (agentRooms || []).find(r => r.deal_id === d.id);
-        
-        // Check LegalAgreement for investor_signed_at
         const ag = agreementsMap.get(d.id);
-        if (ag && ag.investor_signed_at) {
-          console.log('[getPipelineDealsForUser] ✓ Deal', d.id, 'allowed: LegalAgreement investor_signed_at =', ag.investor_signed_at);
-          return true;
-        }
-        
-        // Check Room agreement_status
-        if (roomForDeal) {
-          const roomStatus = roomForDeal.agreement_status;
-          console.log('[getPipelineDealsForUser] Deal', d.id, 'room status:', roomStatus, 'request_status:', roomForDeal.request_status);
-          
-          if (roomStatus === 'investor_signed' || roomStatus === 'agent_signed' || roomStatus === 'fully_signed') {
-            console.log('[getPipelineDealsForUser] ✓ Deal', d.id, 'allowed: Room agreement_status =', roomStatus);
-            return true;
-          }
-        }
-        
-        console.log('[getPipelineDealsForUser] ✗ Deal', d.id, 'filtered out: no investor signature found');
-        return false;
+        if (ag && allowedStatuses.has(ag.status)) return true;
+        const hasRoomSignal = (agentRooms || []).some(r => r.deal_id === d.id && (
+          r.agreement_status === 'investor_signed' || r.agreement_status === 'agent_signed' || r.agreement_status === 'fully_signed'
+        ));
+        return hasRoomSignal;
       });
-      
-      console.log('[getPipelineDealsForUser] Agent deals after investor-signed filter:', deals.length);
     }
 
     // Apply role-based redaction
