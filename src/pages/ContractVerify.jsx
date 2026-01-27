@@ -139,7 +139,7 @@ export default function ContractVerify() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="text-[#808080]">Loading...</div>
       </div>
     );
