@@ -120,10 +120,20 @@ Deno.serve(async (req) => {
     
     if (investorCompleted && !agreement.investor_signed_at) {
       updates.investor_signed_at = investorSigner.signedDateTime || now;
+      console.log('[docusignSyncEnvelope] ✓ Setting investor_signed_at');
     }
-    
+
     if (agentCompleted && !agreement.agent_signed_at) {
       updates.agent_signed_at = agentSigner.signedDateTime || now;
+      console.log('[docusignSyncEnvelope] ✓ Setting agent_signed_at');
+    }
+
+    if (!investorCompleted && agreement.investor_signed_at) {
+      console.log('[docusignSyncEnvelope] Note: investor already signed in DB, DocuSign shows:', investorSigner?.status);
+    }
+
+    if (!agentCompleted && agreement.agent_signed_at) {
+      console.log('[docusignSyncEnvelope] Note: agent already signed in DB, DocuSign shows:', agentSigner?.status);
     }
     
     // Update status
