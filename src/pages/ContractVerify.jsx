@@ -171,21 +171,20 @@ export default function ContractVerify() {
   }
 
   return (
-    <div className="min-h-screen bg-black px-4 py-8">
-      <div className="max-w-2xl mx-auto">
-        <button
-          onClick={() => navigate(createPageUrl("NewDeal"))}
-          className="flex items-center gap-2 text-[#E3C567] hover:text-[#EDD89F] mb-8"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          Back to Deal Form
-        </button>
+    <div className="min-h-screen bg-transparent py-8 px-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="mb-8">
+          <button
+            onClick={() => navigate(createPageUrl("NewDeal"))}
+            className="text-[#808080] hover:text-[#E3C567] text-sm flex items-center gap-2 mb-4"
+          >
+            <ArrowLeft className="w-4 h-4" /> Back to Deal Builder
+          </button>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Verify Your Contract</h1>
+          <p className="text-sm text-[#808080]">Upload your contract to verify details match your deal</p>
+        </div>
 
-        <Card className="bg-[#0D0D0D] border-[#1F1F1F] p-8 mb-8">
-          <h1 className="text-3xl font-bold text-[#FAFAFA] mb-2">Verify Contract</h1>
-          <p className="text-[#808080] mb-8">
-            Upload your purchase contract so we can verify the information matches your deal details.
-          </p>
+        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-8">
 
           {!verificationResult ? (
              <div className="space-y-6">
