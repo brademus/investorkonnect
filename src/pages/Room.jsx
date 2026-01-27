@@ -518,50 +518,50 @@ export default function Room() {
     }
   }, [location.search, roomId, currentRoom?.deal_id]);
 
-  // Fetch current room with server-side access control
+  // Fetch current room with instant UI + parallel background fetches
   useEffect(() => {
     if (!roomId) return;
     
     const fetchCurrentRoom = async () => {
       const rid = roomId;
       const thisReq = ++requestSeqRef.current;
-      const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
+      const isStale = () => roomId !== rid || requestSeqRef.current !== thisReq;
+      
       if (lastFetchKeyRef.current !== `${roomId}|${profile?.user_role}`) {
         setRoomLoading(true);
       }
       
       try {
-        // First, try to get enriched room data from our rooms list
+        // 1. GET ROOM INSTANTLY (from cache or DB)
         const enrichedRoom = rooms.find(r => r.id === roomId);
-        
         const rawRoom = enrichedRoom || (await base44.entities.Room.filter({ id: roomId }))?.[0];
         
         if (!rawRoom) {
           setRoomLoading(false);
           return;
         }
+        
+        // Set room UI immediately (no deal needed)
+        setCurrentRoom(rawRoom);
 
-        // Optimistic hydrate from cache (instant UI) while fetching securely
+        // 2. HYDRATE CACHED DEAL IF AVAILABLE
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
-          if (cached) {
-            // Ensure cached belongs to this deal id (guard against residual cache)
-            if (cached.id !== rawRoom.deal_id) {
-              // ignore wrong cached snapshot
-            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
-              setDeal({ ...cached, property_address: null });
-            } else {
-              setDeal(cached);
-            }
+          if (cached && cached.id === rawRoom.deal_id) {
+            setDeal(shouldMaskAddress(profile, rawRoom, cached) ? { ...cached, property_address: null } : cached);
           }
+        }
 
-          // Use server-side access-controlled deal fetch
-          try {
-            const response = await base44.functions.invoke('getDealDetailsForUser', {
-              dealId: rawRoom.deal_id
-            });
-            const dealData = response.data;
+        // 3. FIRE ALL BACKGROUND REQUESTS IN PARALLEL (non-blocking)
+        if (rawRoom.deal_id) {
+          Promise.all([
+            base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null })),
+            base44.entities.DealAppointments.filter({ dealId: rawRoom.deal_id }).catch(() => []),
+            base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id }).catch(() => ({ data: null }))
+          ]).then(([dealRes, apptRows, agRes]) => {
+            if (isStale()) return;
             
+            const dealData = dealRes?.data;
             if (dealData) {
               setDeal(dealData);
               setCachedDeal(dealData.id, dealData);
@@ -570,12 +570,10 @@ export default function Room() {
                 ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
                 : dealData.title;
               
-              // Ensure we still match current selection
-              if (rid !== roomId) return;
-              setCurrentRoom({
-                ...rawRoom,
+              setCurrentRoom(prev => ({
+                ...prev,
                 title: displayTitle,
-                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
+                property_address: shouldMaskAddress(profile, prev, dealData) ? null : dealData.property_address,
                 city: dealData.city,
                 state: dealData.state,
                 county: dealData.county,
@@ -588,22 +586,20 @@ export default function Room() {
                 property_type: dealData.property_type,
                 property_details: dealData.property_details,
                 proposed_terms: dealData.proposed_terms,
-                photos: rawRoom?.photos || [],
-                files: rawRoom?.files || [],
-                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
-              });
-            } else {
-              setCurrentRoom(rawRoom);
+              }));
             }
-          } catch (error) {
-            console.error('Failed to fetch deal:', error);
-            setCurrentRoom(rawRoom);
-          }
-        } else {
-          setCurrentRoom(rawRoom);
+            
+            if (Array.isArray(apptRows) && apptRows[0]) {
+              setDealAppts(apptRows[0]);
+            }
+            
+            if (agRes?.data?.agreement) {
+              setAgreement(agRes.data.agreement);
+            }
+          }).catch(() => {});
         }
       } catch (error) {
-        console.error('Failed to fetch room:', error);
+        console.error('[Room] Fetch error:', error);
       } finally {
         setRoomLoading(false);
       }
