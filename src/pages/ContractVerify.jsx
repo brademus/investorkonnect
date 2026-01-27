@@ -328,9 +328,17 @@ export default function ContractVerify() {
 
               <Button
                 onClick={handleProceed}
-                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11"
+                disabled={creatingDeal}
+                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 disabled:opacity-50"
               >
-                Create Deal
+                {creatingDeal ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Creating Deal...
+                  </>
+                ) : (
+                  "Create Deal"
+                )}
               </Button>
             </div>
           )}
