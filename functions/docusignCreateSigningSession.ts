@@ -409,8 +409,17 @@ Deno.serve(async (req) => {
       const envStatus = await statusResponse.json();
       console.log('[DocuSign] Envelope status check:', envStatus.status);
 
-      // Only block if truly terminal - allow 'sent' and 'delivered' which are active states
-      if (['completed', 'voided', 'declined'].includes(envStatus.status)) {
+      // FIX 4: If envelope is completed, return 200 with already_signed flag instead of 400 error
+      if (envStatus.status === 'completed') {
+        console.log('[DocuSign] Envelope already completed - synced above, signaling UI to refresh');
+        return Response.json({
+          already_signed: true,
+          message: 'Agreement is already completed. Refreshing status.'
+        });
+      }
+
+      // Only block voided/declined
+      if (['voided', 'declined'].includes(envStatus.status)) {
         console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
         return Response.json({ 
           error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
