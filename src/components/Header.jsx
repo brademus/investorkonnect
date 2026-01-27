@@ -33,18 +33,6 @@ export function Header({ profile }) {
       icon: Home,
       href: createPageUrl("Pipeline"),
       show: true
-    },
-    {
-      label: 'Documents',
-      icon: FileText,
-      href: createPageUrl(isInvestor ? "InvestorDocuments" : "AgentDocuments"),
-      show: true
-    },
-    {
-      label: 'Subscription',
-      icon: CreditCard,
-      href: createPageUrl("Pricing"),
-      show: isInvestor
     }
   ];
 
