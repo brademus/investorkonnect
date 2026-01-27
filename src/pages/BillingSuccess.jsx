@@ -56,10 +56,10 @@ export default function BillingSuccess() {
 
         <div className="space-y-3">
           <Button
-            onClick={() => navigate(createPageUrl("Pipeline"))}
+            onClick={() => navigate(createPageUrl("IdentityVerification"))}
             className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-12 rounded-full flex items-center justify-center gap-2"
           >
-            Go to Pipeline
+            Continue to Verification
             <ArrowRight className="w-4 h-4" />
           </Button>
         </div>
