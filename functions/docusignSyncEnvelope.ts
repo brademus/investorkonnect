@@ -99,9 +99,19 @@ Deno.serve(async (req) => {
       agent_id: agreement.agent_recipient_id
     });
 
-    // Compare as strings to avoid type mismatches (DocuSign might return number, DB stores string)
-    const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-    const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+    // Primary: try exact match
+    let investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+    let agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+
+    // Fallback: if no exact match, match by email
+    if (!investorSigner) {
+      console.log('[docusignSyncEnvelope] No investor recipient ID match, trying email fallback');
+      investorSigner = signers.find(s => s.email?.toLowerCase() === agreement.investor_user_id);
+    }
+    if (!agentSigner) {
+      console.log('[docusignSyncEnvelope] No agent recipient ID match, trying email fallback');
+      agentSigner = signers.find(s => s.email?.toLowerCase() === agreement.agent_user_id);
+    }
 
     console.log('[docusignSyncEnvelope] Found signers:', {
       investor: { found: !!investorSigner, status: investorSigner?.status, email: investorSigner?.email },
