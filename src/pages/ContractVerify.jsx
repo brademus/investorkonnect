@@ -205,9 +205,6 @@ export default function ContractVerify() {
       } finally {
         setCreatingDeal(false);
       }
-    } finally {
-      setCreatingDeal(false);
-    }
   };
 
   if (loading) {
