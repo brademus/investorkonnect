@@ -219,6 +219,14 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const handleSendCounter = async () => {
     if (!counterAmount || !dealId) return;
     
+    // Rate limit protection: 2 second cooldown
+    const now = Date.now();
+    if (now - lastCounterTime < 2000) {
+      toast.error('Please wait a moment before sending another counter');
+      return;
+    }
+    
+    setLastCounterTime(now);
     setBusy(true);
     
     try {
