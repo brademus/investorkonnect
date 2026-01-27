@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { base44 } from '@/api/base44Client';
 
 /**
@@ -7,15 +7,14 @@ import { base44 } from '@/api/base44Client';
  * Eliminates redundant deduplication logic and provides derived views
  */
 export function useNormalizedDeals(profileId, userRole, enabled = true) {
-  // Fetch raw deals - VERY aggressive cache: return cached immediately, NEVER auto-refetch
+  // Fetch raw deals - cache immediately, never auto-refetch
   const { data: rawDeals = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['normalizedDeals', profileId, userRole],
-    staleTime: Infinity,              // NEVER stale - use cache forever
-    gcTime: 24 * 60 * 60 * 1000,      // Keep in memory 24 hours
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!profileId) return [];
       const response = await base44.functions.invoke('getPipelineDealsForUser');
@@ -24,15 +23,14 @@ export function useNormalizedDeals(profileId, userRole, enabled = true) {
     enabled: enabled && !!profileId,
   });
 
-  // Fetch raw rooms - VERY aggressive cache: return cached immediately, NEVER auto-refetch
+  // Fetch raw rooms - cache immediately, never auto-refetch
   const { data: rawRooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['normalizedRooms', profileId],
-    staleTime: Infinity,              // NEVER stale - use cache forever
-    gcTime: 24 * 60 * 60 * 1000,      // Keep in memory 24 hours
+    staleTime: Infinity,
+    gcTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchInterval: false,
-    placeholderData: keepPreviousData,
     queryFn: async () => {
       if (!profileId) return [];
       const res = await base44.functions.invoke('listMyRoomsEnriched');
