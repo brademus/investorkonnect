@@ -363,15 +363,19 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     sellerCompValue = `Net: $${(exhibit_a.net_target || 0).toLocaleString()}`;
   }
   
-  // Buyer compensation
+  // Buyer compensation - normalize from percentage/flat_fee fields
   let buyerCompType = 'Commission Percentage';
   let buyerCompValue = '3%';
+  let buyerCompAmount = 0;
+  
   if (exhibit_a.buyer_commission_type === 'flat') {
     buyerCompType = 'Flat Fee';
-    buyerCompValue = `$${(exhibit_a.buyer_commission_amount || 5000).toLocaleString()}`;
+    buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
+    buyerCompValue = `$${buyerCompAmount.toLocaleString()}`;
   } else if (exhibit_a.buyer_commission_type === 'percentage') {
     buyerCompType = 'Commission Percentage';
-    buyerCompValue = `${exhibit_a.buyer_commission_amount || 3}%`;
+    buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
+    buyerCompValue = `${buyerCompAmount}%`;
   }
   
   return {
@@ -553,31 +557,29 @@ Deno.serve(async (req) => {
     });
     const renderInputHash = await sha256(inputData);
     
-    // Check for existing agreement with same hash
+    // Check for existing agreement to void
     let toVoidEnvelopeId = null;
-    const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id });
+    let existingAgreementId = null;
+    const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1);
     if (existing.length > 0) {
       const existingAgreement = existing[0];
+      existingAgreementId = existingAgreement.id;
       toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
-      // Server-side guard: block regeneration once agent has signed
-      if (existingAgreement.agent_signed_at) {
-        return Response.json({ 
-          error: 'Agreement is locked: the agent has already signed. Regeneration is not allowed.',
-          code: 'AGENT_ALREADY_SIGNED'
-        }, { status: 400 });
-      }
-      // Force regeneration if version changed (signature normalization update)
+      
+      // Check for identical inputs - skip regeneration
       if (existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 
-          existingAgreement.agreement_version === '2.1-normalized-signatures') {
-        console.log('Returning existing agreement (unchanged inputs)');
+          existingAgreement.docusign_envelope_id &&
+          existingAgreement.status !== 'superseded' &&
+          existingAgreement.status !== 'voided') {
+        console.log('[generateLegalAgreement] Returning existing agreement (identical inputs)');
         return Response.json({ 
           success: true, 
           agreement: existingAgreement, 
           regenerated: false 
         });
       }
-      console.log('Regenerating due to version update or input changes');
+      console.log('[generateLegalAgreement] Regenerating - inputs changed or version updated');
     }
     
     // Fetch template PDF
@@ -1067,7 +1069,10 @@ Deno.serve(async (req) => {
       selected_rule_id: stateCode + '_TEMPLATE',
       selected_clause_ids: {},
       deep_dive_module_ids: [],
-      exhibit_a_terms: exhibit_a,
+      exhibit_a_terms: {
+        ...exhibit_a,
+        buyer_commission_amount: buyerCompAmount // Derived field for compatibility
+      },
       rendered_markdown_full: templateText.substring(0, 10000),
       missing_placeholders: [],
       docusign_envelope_id: envelopeId,
@@ -1088,50 +1093,37 @@ Deno.serve(async (req) => {
       }]
     };
     
-    let agreement;
-    if (existing.length > 0) {
-      // Regeneration: force re-sign by clearing all signing state and resetting status
-      agreement = await base44.asServiceRole.entities.LegalAgreement.update(existing[0].id, {
-        ...agreementData,
-        investor_signed_at: null,
-        agent_signed_at: null,
-        investor_signed: false,
-        agent_signed: false,
-        is_fully_signed: false,
-        signed_pdf_url: null,
-        signed_pdf_sha256: null,
-        investor_ip: null,
-        agent_ip: null,
-        status: 'sent',
-        docusign_status: 'sent'
+    // ALWAYS create a NEW agreement (never update in-place)
+    if (existingAgreementId) {
+      // Mark old agreement as superseded
+      await base44.asServiceRole.entities.LegalAgreement.update(existingAgreementId, {
+        status: 'superseded',
+        docusign_status: 'voided'
       });
-    } else {
-      agreement = await base44.asServiceRole.entities.LegalAgreement.create({
-        ...agreementData,
-        investor_signed_at: null,
-        agent_signed_at: null,
-        investor_signed: false,
-        agent_signed: false,
-        is_fully_signed: false,
-        signed_pdf_url: null,
-        signed_pdf_sha256: null,
-        investor_ip: null,
-        agent_ip: null
-      });
+      console.log('[generateLegalAgreement] ✓ Old agreement marked superseded:', existingAgreementId);
     }
     
-    // Ensure new envelope and recipient IDs are saved and old ones cannot be used
-    try {
-      await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
-        docusign_envelope_id: envelopeId,
-        investor_recipient_id: '1',
-        agent_recipient_id: '2',
-        investor_signing_url: null,
-        agent_signing_url: null
-      });
-    } catch (e) {
-      console.warn('[DocuSign] Warning: failed to persist new envelope metadata', e?.message || e);
-    }
+    // Create NEW agreement
+    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
+      ...agreementData,
+      investor_signed_at: null,
+      agent_signed_at: null,
+      investor_signed: false,
+      agent_signed: false,
+      is_fully_signed: false,
+      signed_pdf_url: null,
+      signed_pdf_sha256: null,
+      investor_ip: null,
+      agent_ip: null,
+      supersedes_agreement_id: existingAgreementId || null
+    });
+    
+    console.log('[generateLegalAgreement] ✓ NEW agreement created:', agreement.id);
+    
+    // Update Deal pointer to new agreement
+    await base44.asServiceRole.entities.Deal.update(deal_id, {
+      current_legal_agreement_id: agreement.id
+    });
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     

@@ -126,15 +126,16 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Old agreement marked superseded');
     }
 
-    // Generate new agreement with current terms
-    console.log('[regenerateActiveAgreement] Generating new agreement...');
+    // Generate new agreement with current terms - normalize fields
+    console.log('[regenerateActiveAgreement] Generating new agreement with terms:', terms);
     const gen = await base44.functions.invoke('generateLegalAgreement', {
       deal_id,
       exhibit_a: {
-        buyer_commission_type: terms.buyer_commission_type,
-        buyer_commission_percentage: terms.buyer_commission_percentage || 0,
-        buyer_flat_fee: terms.buyer_flat_fee || 0,
-        agreement_length_days: terms.agreement_length || 180
+        buyer_commission_type: terms.buyer_commission_type || 'flat',
+        buyer_commission_percentage: terms.buyer_commission_percentage || null,
+        buyer_flat_fee: terms.buyer_flat_fee || null,
+        agreement_length_days: terms.agreement_length || 180,
+        transaction_type: deal.transaction_type || 'ASSIGNMENT'
       }
     });
 

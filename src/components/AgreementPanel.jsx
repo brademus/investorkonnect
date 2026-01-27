@@ -384,15 +384,15 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                   <div>
                     <div className="text-xs text-[#808080] mb-1">Commission Type</div>
                     <div className="text-[#FAFAFA] font-semibold capitalize text-lg">
-                      {pendingCounter.terms_delta?.buyer_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'}
+                      {(pendingCounter.terms_delta?.buyer_commission_type || pendingCounter.terms?.buyer_commission_type) === 'percentage' ? 'Percentage' : 'Flat Fee'}
                     </div>
                   </div>
                   <div>
                     <div className="text-xs text-[#808080] mb-1">Amount</div>
                     <div className="text-[#E3C567] font-bold text-lg">
-                      {pendingCounter.terms_delta?.buyer_commission_type === 'percentage'
-                        ? `${pendingCounter.terms_delta?.buyer_commission_percentage || 0}%`
-                        : `$${(pendingCounter.terms_delta?.buyer_flat_fee || 0).toLocaleString()}`}
+                      {(pendingCounter.terms_delta?.buyer_commission_type || pendingCounter.terms?.buyer_commission_type) === 'percentage'
+                        ? `${pendingCounter.terms_delta?.buyer_commission_percentage || pendingCounter.terms?.buyer_commission_percentage || 0}%`
+                        : `$${(pendingCounter.terms_delta?.buyer_flat_fee || pendingCounter.terms?.buyer_flat_fee || 0).toLocaleString()}`}
                     </div>
                   </div>
                 </div>
@@ -421,11 +421,12 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
                   <Button
                     className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold py-2"
                     onClick={() => {
-                      const type = pendingCounter.terms_delta?.buyer_commission_type || 'flat';
+                      const td = pendingCounter.terms_delta || pendingCounter.terms;
+                      const type = td?.buyer_commission_type || 'flat';
                       setCounterType(type);
                       const amt = type === 'percentage'
-                        ? pendingCounter.terms_delta?.buyer_commission_percentage || 0
-                        : pendingCounter.terms_delta?.buyer_flat_fee || 0;
+                        ? (td?.buyer_commission_percentage || 0)
+                        : (td?.buyer_flat_fee || 0);
                       setCounterAmount(String(amt));
                       setCounterModal(true);
                     }}
