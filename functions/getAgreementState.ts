@@ -46,14 +46,28 @@ Deno.serve(async (req) => {
         base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id })
       );
       agreement = a?.[0] || null;
+      console.log('[getAgreementState] Current agreement by ID:', {
+        id: agreement?.id,
+        status: agreement?.status,
+        investor_signed_at: agreement?.investor_signed_at,
+        agent_signed_at: agreement?.agent_signed_at,
+        docusign_status: agreement?.docusign_status
+      });
     }
     
-    // Fallback: latest LegalAgreement for this deal
+    // Fallback: latest non-superseded LegalAgreement for this deal
     if (!agreement) {
-      const a = await withRetry(async () => 
-        base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 1)
+      const allAgreements = await withRetry(async () => 
+        base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
       );
-      agreement = a?.[0] || null;
+      // Prefer non-superseded agreements
+      agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || allAgreements?.[0] || null;
+      console.log('[getAgreementState] Fallback to latest non-superseded:', {
+        id: agreement?.id,
+        status: agreement?.status,
+        investor_signed_at: agreement?.investor_signed_at,
+        agent_signed_at: agreement?.agent_signed_at
+      });
     }
 
     // Get pending counter (latest first)
