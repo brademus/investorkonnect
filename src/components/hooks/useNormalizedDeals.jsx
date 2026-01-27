@@ -7,11 +7,14 @@ import { base44 } from '@/api/base44Client';
  * Eliminates redundant deduplication logic and provides derived views
  */
 export function useNormalizedDeals(profileId, userRole, enabled = true) {
-  // Fetch raw deals
+  // Fetch raw deals - VERY aggressive cache: only refetch on manual request
   const { data: rawDeals = [], isLoading: loadingDeals, refetch: refetchDeals } = useQuery({
     queryKey: ['normalizedDeals', profileId, userRole],
-    staleTime: Infinity,
-    gcTime: 30 * 60_000,
+    staleTime: 24 * 60 * 60 * 1000,  // 24 hours
+    gcTime: 24 * 60 * 60 * 1000,      // 24 hours
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
     queryFn: async () => {
       if (!profileId) return [];
       const response = await base44.functions.invoke('getPipelineDealsForUser');
@@ -20,11 +23,14 @@ export function useNormalizedDeals(profileId, userRole, enabled = true) {
     enabled: enabled && !!profileId,
   });
 
-  // Fetch raw rooms
+  // Fetch raw rooms - VERY aggressive cache: only refetch on manual request
   const { data: rawRooms = [], isLoading: loadingRooms, refetch: refetchRooms } = useQuery({
     queryKey: ['normalizedRooms', profileId],
-    staleTime: Infinity,
-    gcTime: 30 * 60_000,
+    staleTime: 24 * 60 * 60 * 1000,   // 24 hours
+    gcTime: 24 * 60 * 60 * 1000,       // 24 hours
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchInterval: false,
     queryFn: async () => {
       if (!profileId) return [];
       const res = await base44.functions.invoke('listMyRoomsEnriched');
