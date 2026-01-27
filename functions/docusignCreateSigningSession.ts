@@ -356,19 +356,42 @@ Deno.serve(async (req) => {
         // Compare as strings to avoid type mismatches
         const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
         const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-        
+
         console.log('[DocuSign] DocuSign status sync:', {
           investor: investorSigner?.status,
           agent: agentSigner?.status
         });
-        
-        // Update DB if DocuSign shows investor signed but DB doesn't
-        if (investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed') && !agreement.investor_signed_at) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-            investor_signed_at: investorSigner.signedDateTime || new Date().toISOString(),
-            status: 'investor_signed'
-          });
-          console.log('[DocuSign] ✓ Synced investor signature from DocuSign to DB');
+
+        // FIX 3: Sync BOTH investor_signed_at and agent_signed_at from DocuSign
+        const now = new Date().toISOString();
+        const investorCompleted = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
+        const agentCompleted = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
+
+        const updates = {};
+
+        if (investorCompleted && !agreement.investor_signed_at) {
+          updates.investor_signed_at = investorSigner.signedDateTime || now;
+          console.log('[DocuSign] ✓ Found investor completed signature');
+        }
+
+        if (agentCompleted && !agreement.agent_signed_at) {
+          updates.agent_signed_at = agentSigner.signedDateTime || now;
+          console.log('[DocuSign] ✓ Found agent completed signature');
+        }
+
+        // Update status based on which signatures exist (check both DB and synced values)
+        if (updates.investor_signed_at || updates.agent_signed_at) {
+          const invSigned = !!(updates.investor_signed_at || agreement.investor_signed_at);
+          const agSigned = !!(updates.agent_signed_at || agreement.agent_signed_at);
+
+          updates.status = invSigned && agSigned
+            ? 'fully_signed'
+            : invSigned
+              ? 'investor_signed'
+              : 'agent_signed';
+
+          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, updates);
+          console.log('[DocuSign] ✓ Updated agreement with signature completion:', updates.status);
         }
       }
     } catch (syncError) {
