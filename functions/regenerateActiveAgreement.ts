@@ -140,7 +140,13 @@ Deno.serve(async (req) => {
     });
 
     if (gen.data?.error) {
+      console.error('[regenerateActiveAgreement] Error from generateLegalAgreement:', gen.data.error);
       return Response.json({ error: gen.data.error }, { status: 500 });
+    }
+    
+    if (!gen.data) {
+      console.error('[regenerateActiveAgreement] No data returned from generateLegalAgreement');
+      return Response.json({ error: 'Agreement generation returned no data' }, { status: 500 });
     }
 
     const newAgreement = gen.data?.agreement;
