@@ -192,8 +192,8 @@ export default function ContractVerify() {
         });
 
         sessionStorage.removeItem("newDealDraft");
-        navigate(`${createPageUrl("ContractVerify")}?dealId=${newDeal.id}`);
         toast.success("Deal created successfully!");
+        navigate(createPageUrl("Pipeline"));
       } catch (error) {
         console.error("Error creating deal:", error);
         toast.error("Failed to create deal");
