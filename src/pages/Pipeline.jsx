@@ -376,28 +376,36 @@ function PipelineContent() {
       const r = event?.data;
       if (!r || r.agentId !== profile.id) return;
       if (event.type === 'create' || event.type === 'update') {
+        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status);
         const st = r.agreement_status;
         const rs = r.request_status;
         if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted' || rs === 'requested') {
-          try { queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); } catch (_) {}
-          try { queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] }); } catch (_) {}
+          try { 
+            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+            queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
+            refetchDeals();
+            refetchRooms();
+          } catch (_) {}
         }
       }
     });
     return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
-  }, [profile?.id, profile?.user_role, isAgent]);
+  }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
 
-  // Real-time: refresh deals when new ones are created
+  // Real-time: refresh deals when new ones are created or updated
   useEffect(() => {
     if (!profile?.id) return;
     const unsubDeal = base44.entities.Deal.subscribe((event) => {
-      if (event?.type === 'create') {
-        console.log('[Pipeline] New deal created, refreshing...');
-        try { queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); } catch (_) {}
+      if (event?.type === 'create' || event?.type === 'update') {
+        console.log('[Pipeline] Deal changed, refreshing...', event.type);
+        try { 
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+          refetchDeals();
+        } catch (_) {}
       }
     });
     return () => { try { unsubDeal && unsubDeal(); } catch (_) {} };
-  }, [profile?.id, profile?.user_role, queryClient]);
+  }, [profile?.id, profile?.user_role, queryClient, refetchDeals]);
 
   // Real-time: refresh counter offers when they change
   useEffect(() => {

@@ -5,7 +5,6 @@ import AgentLanding from './pages/AgentLanding';
 import AgentMatching from './pages/AgentMatching';
 import AgentOnboarding from './pages/AgentOnboarding';
 import Agents from './pages/Agents';
-import BillingSuccess from './pages/BillingSuccess';
 import Contact from './pages/Contact';
 import ContractVerify from './pages/ContractVerify';
 import DocuSignReturn from './pages/DocuSignReturn';
@@ -19,7 +18,6 @@ import InvestorOnboarding from './pages/InvestorOnboarding';
 import InvestorProfile from './pages/InvestorProfile';
 import Investors from './pages/Investors';
 import Logout from './pages/Logout';
-import MyAgreement from './pages/MyAgreement';
 import NDA from './pages/NDA';
 import NewDeal from './pages/NewDeal';
 import NotFound from './pages/NotFound';
@@ -31,6 +29,8 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import Terms from './pages/Terms';
+import MyAgreement from './pages/MyAgreement';
+import BillingSuccess from './pages/BillingSuccess';
 import __Layout from './Layout.jsx';
 
 
@@ -42,7 +42,6 @@ export const PAGES = {
     "AgentMatching": AgentMatching,
     "AgentOnboarding": AgentOnboarding,
     "Agents": Agents,
-    "BillingSuccess": BillingSuccess,
     "Contact": Contact,
     "ContractVerify": ContractVerify,
     "DocuSignReturn": DocuSignReturn,
@@ -56,7 +55,6 @@ export const PAGES = {
     "InvestorProfile": InvestorProfile,
     "Investors": Investors,
     "Logout": Logout,
-    "MyAgreement": MyAgreement,
     "NDA": NDA,
     "NewDeal": NewDeal,
     "NotFound": NotFound,
@@ -68,6 +66,8 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "Terms": Terms,
+    "MyAgreement": MyAgreement,
+    "BillingSuccess": BillingSuccess,
 }
 
 export const pagesConfig = {
