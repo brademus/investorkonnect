@@ -784,12 +784,15 @@ function PipelineContent() {
     const m = new Map();
     PIPELINE_STAGES.forEach(s => m.set(s.id, []));
     deals.forEach(d => {
-      // Agents: show once a request exists (requested/accepted/signed) or any signed status
+      // Agents: show deals if there's a room request OR if investor has signed (even if room status not synced)
       if (isAgent) {
         const st = d.agreement_status;
-        const allowed = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending' || d.agent_request_status === 'signed';
+        const rs = d.agent_request_status;
+        const hasRequest = rs === 'requested' || rs === 'accepted' || rs === 'signed';
+        const hasSigning = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending';
+        const allowed = hasRequest || hasSigning;
         if (!allowed) return;
-        if (d.agent_request_status === 'rejected') return;
+        if (rs === 'rejected') return;
       }
       const arr = m.get(d.pipeline_stage) || [];
       arr.push(d);
