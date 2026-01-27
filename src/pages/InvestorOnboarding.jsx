@@ -74,10 +74,14 @@ export default function InvestorOnboarding() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!checking && onboarded) {
-      // Already onboarded, check next step (KYC before pricing)
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      // Already onboarded, check next step
+      if (!isPaidSubscriber) {
+        navigate(createPageUrl("Pricing"), { replace: true });
+      } else {
+        navigate(createPageUrl("IdentityVerification"), { replace: true });
+      }
     }
-  }, [checking, onboarded, navigate]);
+  }, [checking, onboarded, isPaidSubscriber, navigate]);
 
   // Load existing data
   useEffect(() => {
@@ -151,11 +155,11 @@ export default function InvestorOnboarding() {
       });
 
       await refresh();
-      toast.success("Profile saved! Verifying your identity next.");
+      toast.success("Profile saved! Let's choose your plan.");
       
-      // Navigate to IdentityVerification (must verify before pricing)
+      // Navigate to Pricing (next step for investors)
       await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.href = createPageUrl("IdentityVerification");
+      window.location.href = createPageUrl("Pricing");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);

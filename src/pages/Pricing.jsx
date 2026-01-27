@@ -38,7 +38,6 @@ export default function Pricing() {
   const getBlockingStep = () => {
     if (role === 'investor' && !onboarded) return 'onboarding';
     if (role === 'agent' && !onboarded) return 'agent-onboarding';
-    if (role === 'investor' && onboarded && kycStatus !== 'approved') return 'kyc-required';
     return null;
   };
 
@@ -145,8 +144,6 @@ export default function Pricing() {
         return { icon: Lock, text: "Complete your investor profile to unlock subscriptions", buttonText: "Complete Profile", onClick: () => navigate(createPageUrl("InvestorOnboarding")) };
       case 'agent-onboarding':
         return { icon: Lock, text: "Complete your agent profile to unlock subscriptions", buttonText: "Complete Profile", onClick: () => navigate(createPageUrl("AgentOnboarding")) };
-      case 'kyc-required':
-        return { icon: Lock, text: "Complete identity verification to subscribe", buttonText: "Verify Identity", onClick: () => navigate(createPageUrl("IdentityVerification")) };
       default:
         return null;
     }
@@ -352,13 +349,13 @@ export default function Pricing() {
                       <Check className="w-4 h-4" />
                       Your Current Plan
                     </button>
-                  ) : !loading && role === 'investor' && (!onboarded || kycStatus !== 'approved') && tier.planId !== 'enterprise' ? (
+                  ) : !loading && (role === 'investor' || role === 'agent') && !onboarded && tier.planId !== 'enterprise' ? (
                     <button
                       className="w-full h-12 rounded-xl font-bold text-[16px] bg-[#1F1F1F] text-[#808080] cursor-not-allowed flex items-center justify-center gap-2"
                       disabled
                     >
                       <Lock className="w-4 h-4" />
-                      {!onboarded ? 'Complete Setup Required' : 'Complete Verification'}
+                      Complete Setup Required
                     </button>
                   ) : isPro ? (
                     <button
