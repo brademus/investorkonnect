@@ -27,6 +27,9 @@ import HelpPanel from "@/components/HelpPanel";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { getAgreementStatusLabel } from "@/components/utils/agreementStatus";
 import { getPriceAndComp } from "@/components/utils/dealCompDisplay";
+import { useNormalizedDeals } from "@/components/hooks/useNormalizedDeals";
+import { useRealtimeSubscriptions } from "@/components/hooks/useRealtimeSubscriptions";
+import { usePrivacy } from "@/components/hooks/usePrivacy";
 
 function PipelineContent() {
   const navigate = useNavigate();
@@ -210,84 +213,19 @@ function PipelineContent() {
   const investorSetupComplete = isInvestor ? (onboardingComplete && ndaComplete) : true;
   const agentSetupComplete = isAgent ? (onboardingComplete && brokerageComplete && ndaComplete && identityComplete) : true;
 
-  // 2. Load Active Deals via Server-Side Access Control
-    const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
-      queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-      staleTime: Infinity,
-      gcTime: 30 * 60_000,
-     initialData: () => {
-       try {
-         if (!dealsCacheKey) return undefined;
-         const cached = JSON.parse(sessionStorage.getItem(dealsCacheKey) || '[]');
-         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
-       } catch { return undefined; }
-     },
-     refetchOnMount: 'stale',
-     queryFn: async () => {
-       if (!profile?.id) return [];
+  // Use new centralized data normalization service
+  const { deals: uniqueDealsData, rooms, isLoading: loadingDeals, refetch: refetchDeals } = useNormalizedDeals(
+    profile?.id,
+    profile?.user_role
+  );
 
-       // PRODUCTION: Server-side access control enforces role-based redaction
-       const response = await base44.functions.invoke('getPipelineDealsForUser');
-       const deals = response.data?.deals || [];
+  // Consolidated subscription management
+  const [subscriptionUpdate, setSubscriptionUpdate] = useState(0);
+  useRealtimeSubscriptions(profile?.id, profile?.user_role, (update) => {
+    setSubscriptionUpdate(t => t + 1);
+  });
 
-       // Filter out archived and deals with invalid addresses
-       return deals
-         .filter(d => d.status !== 'archived')
-         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-     },
-     enabled: !!profile?.id,
-     refetchOnWindowFocus: false,
-
-   });
-
-  useEffect(() => {
-    try {
-      if (Array.isArray(dealsData) && dealsCacheKey) {
-        sessionStorage.setItem(dealsCacheKey, JSON.stringify(dealsData));
-      }
-    } catch (_) {}
-  }, [dealsData, dealsCacheKey]);
-
-  const uniqueDealsData = useMemo(() => {
-    if (!Array.isArray(dealsData) || dealsData.length === 0) return [];
-
-    const normalize = (v) => (v ?? '').toString().trim().toLowerCase();
-    const toDate = (d) => new Date(d || 0).getTime();
-
-    // Step 1: dedupe by exact id first (keep the most recently updated)
-    const byId = new Map();
-    for (const d of dealsData) {
-      const id = d?.id || d?.deal_id;
-      if (!id) continue;
-      const prev = byId.get(id);
-      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
-        byId.set(id, d);
-      }
-    }
-
-    // Step 2: dedupe by natural signature (address/title + city + state + zip + price)
-    const makeSig = (d) => {
-      const addr = normalize(d.property_address || d.deal_title || d.title);
-      const city = normalize(d.city);
-      const state = normalize(d.state);
-      const zip = normalize(d.zip);
-      const price = d.purchase_price ?? d.budget ?? '';
-      return `${addr}|${city}|${state}|${zip}|${price}`;
-    };
-
-    const bySig = new Map();
-    for (const d of byId.values()) {
-      const sig = makeSig(d);
-      const prev = bySig.get(sig);
-      if (!prev || toDate(d.updated_date || d.created_date) > toDate(prev.updated_date || prev.created_date)) {
-        bySig.set(sig, d);
-      }
-    }
-
-    return Array.from(bySig.values());
-  }, [dealsData]);
-
-  // Load recent activity/notifications
+  // Load recent activity
   const { data: activities = [], isLoading: loadingActivities } = useQuery({
     queryKey: ['activities', profile?.id],
     staleTime: 60_000,
@@ -295,49 +233,15 @@ function PipelineContent() {
     placeholderData: (prev) => prev,
     queryFn: async () => {
       if (!profile?.id) return [];
-      // Get all deals for this user
       const dealIds = uniqueDealsData.map(d => d.id);
       if (dealIds.length === 0) return [];
-      
-      // Get activities for these deals
       const allActivities = await base44.entities.Activity.list('-created_date', 20);
       return allActivities.filter(a => dealIds.includes(a.deal_id));
     },
-    enabled: !!profile?.id && dealsData.length > 0,
+    enabled: !!profile?.id && uniqueDealsData.length > 0,
     refetchOnWindowFocus: false,
-    refetchInterval: 0 // Disable polling to avoid UI reshuffles
+    refetchInterval: 0
   });
-
-  // 3. Load Rooms (to link agents/status)
-    const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
-      queryKey: ['rooms', profile?.id],
-      staleTime: Infinity,
-      gcTime: 30 * 60_000,
-     initialData: () => {
-       try {
-         if (!roomsCacheKey) return undefined;
-         const cached = JSON.parse(sessionStorage.getItem(roomsCacheKey) || '[]');
-         return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
-       } catch { return undefined; }
-     },
-     refetchOnMount: 'stale',
-     queryFn: async () => {
-       if (!profile?.id) return [];
-       const res = await base44.functions.invoke('listMyRoomsEnriched');
-       return res.data?.rooms || [];
-     },
-     enabled: !!profile?.id,
-     refetchOnWindowFocus: false,
-
-   });
-
-  useEffect(() => {
-    try {
-      if (Array.isArray(rooms) && roomsCacheKey) {
-        sessionStorage.setItem(roomsCacheKey, JSON.stringify(rooms));
-      }
-    } catch (_) {}
-  }, [rooms, roomsCacheKey]);
 
   // Force refresh after DocuSign return
   useEffect(() => {
@@ -368,56 +272,13 @@ function PipelineContent() {
     }
   }, [location.search, profile?.id, profile?.user_role]);
 
-  // Realtime: instantly refresh agent dashboard when investor signs or room updates
+  // Subscriptions consolidated via useRealtimeSubscriptions hook
+  // Replaces 3 separate subscription useEffect blocks
   useEffect(() => {
-    if (!profile?.id || !isAgent) return;
-    const unsubRoom = base44.entities.Room.subscribe((event) => {
-      const r = event?.data;
-      if (!r || r.agentId !== profile.id) return;
-      if (event.type === 'create' || event.type === 'update') {
-        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status);
-        const st = r.agreement_status;
-        const rs = r.request_status;
-        if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted' || rs === 'requested') {
-          try { 
-            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
-            queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
-            refetchDeals();
-            refetchRooms();
-          } catch (_) {}
-        }
-      }
-    });
-    return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
-  }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
-
-  // Real-time: refresh deals when new ones are created or updated
-  useEffect(() => {
-    if (!profile?.id) return;
-    const unsubDeal = base44.entities.Deal.subscribe((event) => {
-      if (event?.type === 'create' || event?.type === 'update') {
-        console.log('[Pipeline] Deal changed, refreshing...', event.type);
-        try { 
-          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
-          refetchDeals();
-        } catch (_) {}
-      }
-    });
-    return () => { try { unsubDeal && unsubDeal(); } catch (_) {} };
-  }, [profile?.id, profile?.user_role, queryClient, refetchDeals]);
-
-  // Real-time: refresh counter offers when they change
-  useEffect(() => {
-    if (!profile?.id || !isInvestor) return;
-    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
-      console.log('[Pipeline] Counter offer event:', event.type);
-      try { 
-        queryClient.invalidateQueries({ queryKey: ['counterOffers'] });
-        refetchCounters();
-      } catch (_) {}
-    });
-    return () => { try { unsubCounter && unsubCounter(); } catch (_) {} };
-  }, [profile?.id, isInvestor, queryClient]);
+    if (subscriptionUpdate > 0) {
+      refetchDeals();
+    }
+  }, [subscriptionUpdate]);
 
   // 4. Load Pending Requests (for agents)
   const { data: pendingRequests = [], isLoading: loadingRequests, isFetching: fetchingRequests } = useQuery({
