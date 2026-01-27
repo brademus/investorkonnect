@@ -30,11 +30,18 @@ export default function DocuSignReturn() {
 
           // Deterministic routing: always return to deal context
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement&dealId=${dealId || ''}&signed=1`);
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement&signed=1`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement&signed=1`);
+            // Check if investor already signed - if so, go to Pipeline instead of MyAgreement
+            const agreementRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+            const agreement = agreementRes?.data?.agreement;
+            if (agreement?.investor_signed_at) {
+              navigate(createPageUrl("Pipeline"), { replace: true });
+            } else {
+              navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&signed=1`, { replace: true });
+            }
           } else {
-            navigate(createPageUrl("Pipeline"));
+            navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else if (event === 'decline' || event === 'cancel') {
           setMessage("Signature cancelled");
