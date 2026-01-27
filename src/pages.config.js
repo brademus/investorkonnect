@@ -20,6 +20,7 @@ import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import Terms from './pages/Terms';
 import PipelineStage from './pages/PipelineStage';
+import roomRefactored from './pages/Room_Refactored';
 import __Layout from './Layout.jsx';
 
 
@@ -46,6 +47,7 @@ export const PAGES = {
     "Room": Room,
     "Terms": Terms,
     "PipelineStage": PipelineStage,
+    "Room_Refactored": roomRefactored,
 }
 
 export const pagesConfig = {
