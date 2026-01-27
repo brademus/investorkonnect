@@ -297,38 +297,38 @@ function PipelineContent() {
   });
 
   // 4b. Load Deal Appointments for visible deals
-  const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
-    queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
-    staleTime: 60_000,
-    gcTime: 5 * 60_000,
-    placeholderData: (prev) => prev,
-    queryFn: async () => {
-      if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
-      const items = await base44.entities.DealAppointments.list('-updated_date', 500);
-      const idSet = new Set(uniqueDealsData.map(d => d.id));
-      return items.filter(a => idSet.has(a.dealId));
-    },
-    enabled: allowExtras && dealsData.length > 0,
-    refetchOnWindowFocus: false,
-    refetchInterval: 0
-  });
+    const { data: appointments = [], isLoading: loadingAppointments } = useQuery({
+      queryKey: ['dealAppointments', uniqueDealsData.map(d => d.id)],
+      staleTime: 60_000,
+      gcTime: 5 * 60_000,
+      placeholderData: (prev) => prev,
+      queryFn: async () => {
+        if (!uniqueDealsData || uniqueDealsData.length === 0) return [];
+        const items = await base44.entities.DealAppointments.list('-updated_date', 500);
+        const idSet = new Set(uniqueDealsData.map(d => d.id));
+        return items.filter(a => idSet.has(a.dealId));
+      },
+      enabled: allowExtras && uniqueDealsData.length > 0,
+      refetchOnWindowFocus: false,
+      refetchInterval: 0
+    });
 
   // 4c. Load Counter Offers for all deals (investor-only)
-  const { data: counterOffers = [], isLoading: loadingCounters, refetch: refetchCounters } = useQuery({
-    queryKey: ['counterOffers', uniqueDealsData.map(d => d.id)],
-    staleTime: 30_000,
-    gcTime: 5 * 60_000,
-    placeholderData: (prev) => prev,
-    queryFn: async () => {
-      if (!uniqueDealsData || uniqueDealsData.length === 0 || !isInvestor) return [];
-      const items = await base44.entities.CounterOffer.filter({ status: 'pending' }, '-created_date', 500);
-      const idSet = new Set(uniqueDealsData.map(d => d.id));
-      return items.filter(c => idSet.has(c.deal_id));
-    },
-    enabled: allowExtras && dealsData.length > 0 && isInvestor,
-    refetchOnWindowFocus: false,
-    refetchInterval: 0
-  });
+    const { data: counterOffers = [], isLoading: loadingCounters, refetch: refetchCounters } = useQuery({
+      queryKey: ['counterOffers', uniqueDealsData.map(d => d.id)],
+      staleTime: 30_000,
+      gcTime: 5 * 60_000,
+      placeholderData: (prev) => prev,
+      queryFn: async () => {
+        if (!uniqueDealsData || uniqueDealsData.length === 0 || !isInvestor) return [];
+        const items = await base44.entities.CounterOffer.filter({ status: 'pending' }, '-created_date', 500);
+        const idSet = new Set(uniqueDealsData.map(d => d.id));
+        return items.filter(c => idSet.has(c.deal_id));
+      },
+      enabled: allowExtras && uniqueDealsData.length > 0 && isInvestor,
+      refetchOnWindowFocus: false,
+      refetchInterval: 0
+    });
 
 
 
