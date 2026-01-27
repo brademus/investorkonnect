@@ -68,19 +68,20 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   };
 
   useEffect(() => {
-    loadState();
+    loadState(true); // Force refresh on mount
 
-    // Reload after DocuSign return
+    // Reload after DocuSign return with force refresh
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1') {
       window.history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[&?]signed=1/g, ''));
       
-      setTimeout(() => loadState(), 2000);
-      setTimeout(() => loadState(), 4000);
-      setTimeout(() => loadState(), 7000);
+      setTimeout(() => loadState(true), 1000);
+      setTimeout(() => loadState(true), 3000);
+      setTimeout(() => loadState(true), 6000);
+      setTimeout(() => loadState(true), 10000);
     }
 
-    const handleFocus = () => loadState();
+    const handleFocus = () => loadState(true); // Force refresh on focus
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [dealId]);
