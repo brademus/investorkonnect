@@ -33,6 +33,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   
   // Regenerate confirm modal
   const [regenerateModal, setRegenerateModal] = useState(false);
+  const [lastCounterTime, setLastCounterTime] = useState(0);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
