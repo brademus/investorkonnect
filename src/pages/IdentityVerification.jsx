@@ -30,10 +30,26 @@ export default function IdentityVerification() {
 
   // Check if user should be here - redirect to proper step if needed
   useEffect(() => {
-    if (!loading && !profile) {
+    if (loading) return; // Wait for loading to complete
+    
+    if (!profile) {
+      console.log('[IdentityVerification] No profile found after loading, redirecting to PostAuth');
       navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
     }
-  }, [loading, profile, navigate]);
+    
+    if (!onboarded) {
+      console.log('[IdentityVerification] User not onboarded, redirecting to proper onboarding');
+      const role = profile.user_role;
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      } else {
+        navigate(createPageUrl("PostAuth"), { replace: true });
+      }
+    }
+  }, [loading, profile, onboarded, navigate]);
 
   const handleStartVerification = async () => {
     setVerifying(true);
