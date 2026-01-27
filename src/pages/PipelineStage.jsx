@@ -55,8 +55,8 @@ export default function PipelineStage() {
   const stageDealIds = useMemo(() => {
     return dealsData
       .filter(d => {
-        const dealStage = d.pipeline_stage === 'canceled' ? 'completed' : d.pipeline_stage;
-        const matchesStage = dealStage === stageId;
+        const normalizedDealStage = normalizeStage(d.pipeline_stage);
+        const matchesStage = normalizedDealStage === stageId;
         
         // Agents only see deals with room requests
         if (isAgent) {
