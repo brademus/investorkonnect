@@ -220,21 +220,25 @@ function NDAContent() {
           )}
 
           <div className="bg-[#141414] rounded-xl p-5 max-h-64 overflow-y-auto border border-[#1F1F1F] mb-5">
-            <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Non-Disclosure Agreement v1.0</h3>
+            <h3 className="text-base font-bold text-[#E3C567] mb-3">Investor Konnect Terms & Conditions / NDA v1.0</h3>
             
             <div className="prose prose-sm text-[#FAFAFA] space-y-4">
-              <p>
-                This Non-Disclosure Agreement ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
+              <p className="text-[#F59E0B] font-semibold">
+                [PLACEHOLDER - Michel will provide final NDA and Terms & Conditions text]
               </p>
               
-              <h4 className="font-semibold text-[#111827]">1. Confidential Information</h4>
+              <p>
+                This Non-Disclosure Agreement and Terms & Conditions ("Agreement") is entered into by and between Investor Konnect ("Platform") and you ("User").
+              </p>
+              
+              <h4 className="font-semibold text-[#E3C567]">1. Confidential Information</h4>
               <p>
                 "Confidential Information" means all deal information, property details, investment strategies, financial information, 
                 agent contact details, and any other information shared through the Platform that is marked as confidential or would 
                 reasonably be considered confidential.
               </p>
               
-              <h4 className="font-semibold text-[#111827]">2. Obligations</h4>
+              <h4 className="font-semibold text-[#E3C567]">2. Obligations</h4>
               <p>User agrees to:</p>
               <ul className="list-disc pl-6 space-y-2">
                 <li>Maintain confidentiality of all Confidential Information</li>
@@ -244,19 +248,19 @@ function NDAContent() {
                 <li>Return or destroy Confidential Information upon request</li>
               </ul>
               
-              <h4 className="font-semibold text-[#111827]">3. Term</h4>
+              <h4 className="font-semibold text-[#E3C567]">3. Term</h4>
               <p>
                 This Agreement remains in effect for 5 years from the date of acceptance or until Confidential Information 
                 becomes publicly available through no fault of User.
               </p>
               
-              <h4 className="font-semibold text-[#111827]">4. Remedies</h4>
+              <h4 className="font-semibold text-[#E3C567]">4. Remedies</h4>
               <p>
                 User acknowledges that breach of this Agreement may cause irreparable harm to Platform and other users. 
                 Platform may seek injunctive relief, monetary damages, and attorney fees for any breach.
               </p>
               
-              <h4 className="font-semibold text-[#111827]">5. Governing Law</h4>
+              <h4 className="font-semibold text-[#E3C567]">5. Governing Law</h4>
               <p>
                 This Agreement is governed by the laws of the State of Delaware, without regard to conflict of law principles.
               </p>

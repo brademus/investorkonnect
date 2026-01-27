@@ -175,6 +175,8 @@ export default function AgentOnboarding() {
       }
 
       // Build the complete update data
+      const licensedStates = formData.markets.length > 0 ? formData.markets : [formData.license_state];
+      
       const updateData = {
           full_name: formData.full_name,
           phone: formData.phone,
@@ -183,7 +185,7 @@ export default function AgentOnboarding() {
           broker: formData.brokerage,
           license_number: formData.license_number,
           license_state: formData.license_state,
-          markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
+          markets: licensedStates,
           target_state: formData.license_state || formData.markets[0] || '',
           onboarding_step: 'basic_complete',
           onboarding_completed_at: new Date().toISOString(),
@@ -192,8 +194,9 @@ export default function AgentOnboarding() {
             ...(profileToUpdate.agent || {}),
             license_number: formData.license_number,
             license_state: formData.license_state,
+            licensed_states: licensedStates,
             main_county: formData.main_county,
-            markets: formData.markets.length > 0 ? formData.markets : [formData.license_state],
+            markets: licensedStates,
             experience_years: parseInt(formData.experience_years) || 0,
             bio: formData.bio,
             investor_friendly: true,
@@ -329,8 +332,8 @@ export default function AgentOnboarding() {
       
       <div className="space-y-7">
         <div>
-          <Label className="text-[#FAFAFA] text-[19px] font-medium">Additional Markets You Serve</Label>
-          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you're licensed or serve clients</p>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">All States Where You're Licensed *</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select all states where you hold an active real estate license</p>
           <div className="grid grid-cols-3 gap-3 max-h-48 overflow-y-auto p-4 border border-[#1F1F1F] rounded-lg bg-[#0A0A0A]">
             {US_STATES.map((state) => (
               <div key={state} className="flex items-center gap-3">

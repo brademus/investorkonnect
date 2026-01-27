@@ -164,6 +164,9 @@ Deno.serve(async (req) => {
     
     console.log('✅ Creating checkout session');
     
+    // Check for discount code in URL
+    const discountCode = url.searchParams.get('discount') || url.searchParams.get('code');
+    
     const sessionParams = {
       mode: 'subscription',
       line_items: [{
@@ -174,6 +177,14 @@ Deno.serve(async (req) => {
       cancel_url: cancel,
       allow_promotion_codes: true
     };
+    
+    // Apply discount code if provided
+    if (discountCode) {
+      console.log('🎟️ Applying discount code:', discountCode);
+      sessionParams.discounts = [{
+        coupon: discountCode
+      }];
+    }
     
     // Add customer if we have one
     if (customerId) {
