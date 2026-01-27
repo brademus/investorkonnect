@@ -352,9 +352,10 @@ Deno.serve(async (req) => {
       if (recipientsResponse.ok) {
         const recipients = await recipientsResponse.json();
         const signers = recipients.signers || [];
-        
-        const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
-        const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
+
+        // Compare as strings to avoid type mismatches
+        const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+        const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
         
         console.log('[DocuSign] DocuSign status sync:', {
           investor: investorSigner?.status,
