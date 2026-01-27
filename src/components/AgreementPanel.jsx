@@ -148,6 +148,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     try {
       const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
       if (res.data?.error) {
+        console.error('[AgreementPanel] Generation error:', res.data.error);
         toast.error(res.data.error);
       } else {
         toast.success('Agreement generated');
@@ -155,7 +156,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
         if (onUpdate) onUpdate();
       }
     } catch (error) {
-      toast.error('Failed to generate');
+      console.error('[AgreementPanel] Generation exception:', error);
+      toast.error(error?.message || 'Failed to generate agreement');
     } finally {
       setBusy(false);
     }
