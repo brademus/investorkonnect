@@ -20,15 +20,17 @@ Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    
+
     if (!user) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    
-    const { deal_id } = await req.json();
+
+    const { deal_id, force_refresh } = await req.json();
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
+
+    console.log('[getAgreementState] Loading for deal:', deal_id, 'force_refresh:', force_refresh);
     
     // Load deal
     const deal = await withRetry(async () => {
