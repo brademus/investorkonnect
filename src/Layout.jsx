@@ -120,32 +120,24 @@ function LayoutContent({ children }) {
       {/* Top nav - fixed, minimal, Airbnb-like */}
       {showNav && !isNoNavPage && (
         <header className="hidden md:block fixed inset-x-0 top-0 z-30 border-b border-[#1F1F1F] bg-[#0D0D0D]/80 backdrop-blur-sm">
-          <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
-            {/* Left: logo + brand */}
-            <img 
-              src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
-              alt="Investor Konnect"
-              className="h-8 w-8 object-contain cursor-pointer"
-                                  onClick={() => navigate(createPageUrl("Pipeline"))}
-            />
-            <Link to={createPageUrl("Pipeline")} className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
-              Investor Konnect
-            </Link>
+            <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:h-16 sm:px-6 lg:max-w-7xl lg:px-8">
+              {/* Left: Empty spacer for balance */}
+              <div className="flex-1"></div>
 
+              {/* Center: logo + brand */}
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate(createPageUrl("Pipeline"))}>
+                <img 
+                  src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/690691338bcf93e1da3d088b/2fa135de5_IMG_0319.jpeg"
+                  alt="Investor Konnect"
+                  className="h-8 w-8 object-contain"
+                />
+                <span className="text-base font-light tracking-wide text-[#E3C567] hover:text-[#EDD89F] transition-colors">
+                  Investor Konnect
+                </span>
+              </div>
 
-            {/* Center nav – simple, small text links */}
-            <nav className="hidden items-center gap-6 text-xs font-medium text-[#808080] md:flex">
-              {location.pathname !== createPageUrl("Pipeline") && (
-                <Link to={createPageUrl("Pipeline")} className="hover:text-[#E3C567]">Pipeline</Link>
-              )}
-              <Link to={createPageUrl("HowItWorks")} className="hover:text-[#E3C567]">How it works</Link>
-              <Link to={createPageUrl("Pricing")} className="hover:text-[#E3C567]">Pricing</Link>
-              <Link to={createPageUrl("Investors")} className="hover:text-[#E3C567]">For investors</Link>
-              <Link to={createPageUrl("Agents")} className="hover:text-[#E3C567]">For agents</Link>
-            </nav>
-
-            {/* Right: Auth / profile */}
-            <div className="flex items-center gap-2">
+              {/* Right: Auth / profile */}
+              <div className="flex items-center gap-2 flex-1 justify-end">
               {currentNav.map((item) => (
                 <Link
                   key={item.name}
