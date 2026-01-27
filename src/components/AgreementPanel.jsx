@@ -76,14 +76,17 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     if (params.get('signed') === '1') {
       window.history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[&?]signed=1/g, ''));
       
-      setTimeout(() => loadState(true), 1000);
+      // Aggressive refresh to catch newly signed agreements
+      loadState(true);
+      setTimeout(() => loadState(true), 500);
+      setTimeout(() => loadState(true), 1500);
       setTimeout(() => loadState(true), 3000);
-      setTimeout(() => loadState(true), 6000);
+      setTimeout(() => loadState(true), 5000);
       setTimeout(() => {
         loadState(true);
         // Also notify parent to refresh deal data (Pipeline, Room, etc.)
         if (onUpdate) onUpdate();
-      }, 10000);
+      }, 8000);
     }
 
     const handleFocus = () => loadState(true); // Force refresh on focus
