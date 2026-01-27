@@ -28,13 +28,13 @@ export default function DocuSignReturn() {
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // Deterministic routing: ALWAYS return to deal context (NEVER random Pipeline)
+          // ALWAYS redirect to Room if available - never use MyAgreement (it was causing crashes)
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1&refresh=1`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement&signed=1`, { replace: true });
+            // Fallback: still redirect to Pipeline, never MyAgreement
+            navigate(createPageUrl("Pipeline"), { replace: true });
           } else {
-            // Last-resort fallback only
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else if (event === 'decline' || event === 'cancel') {
