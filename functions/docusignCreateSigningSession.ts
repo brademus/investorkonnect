@@ -427,21 +427,40 @@ Deno.serve(async (req) => {
     returnURL.searchParams.set('role', role);
     const docusignReturnUrl = returnURL.toString();
     
-    // Get recipient details
+    // Get recipient details based on role
     const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
     const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
+    
+    // Validate recipientId and clientUserId for current role
+    if (!recipientId) {
+      console.error(`[DocuSign] ❌ Missing ${role}_recipient_id for role ${role}`);
+      return Response.json({ 
+        error: `Missing recipient ID for ${role}. Please regenerate the agreement.`,
+        debug: { role, has_recipient_id: false }
+      }, { status: 400 });
+    }
+    
+    if (!clientUserId) {
+      console.error(`[DocuSign] ❌ Missing ${role}_client_user_id for role ${role}`);
+      return Response.json({ 
+        error: `Missing client user ID for ${role}. Please regenerate the agreement.`,
+        debug: { role, has_client_user_id: false }
+      }, { status: 400 });
+    }
     
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
     const profile = profiles[0];
     
     // Create recipient view for embedded signing
+    // CRITICAL: Must include recipientId so DocuSign knows which recipient to show
     const recipientViewRequest = {
       returnUrl: docusignReturnUrl,
       authenticationMethod: 'none',
       email: profile?.email || user.email,
       userName: profile?.full_name || profile?.email || user.email,
-      clientUserId: clientUserId,
+      recipientId: String(recipientId),
+      clientUserId: String(clientUserId),
       frameAncestors: [origin],
       messageOrigins: [origin]
     };
