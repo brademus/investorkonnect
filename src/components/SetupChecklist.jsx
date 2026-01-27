@@ -41,20 +41,7 @@ export function SetupChecklist({ profile, onRefresh }) {
     link: isAgent ? 'AgentOnboarding' : 'InvestorOnboarding'
   });
 
-  // Step 2: Subscription (Investors only)
-  if (isInvestor) {
-    steps.push({
-      id: 'subscription',
-      title: 'Subscription',
-      description: 'Choose your plan',
-      completed: subscriptionComplete,
-      icon: CreditCard,
-      link: 'Pricing'
-    });
-  }
-
-  // Step 3: Identity Verification (both roles - but only after onboarding AND subscription for investors)
-  const canVerifyIdentity = isAgent ? onboardingComplete : (onboardingComplete && subscriptionComplete);
+  // Step 2: Identity Verification (both roles)
   steps.push({
     id: 'identity',
     title: 'Identity',
@@ -62,10 +49,10 @@ export function SetupChecklist({ profile, onRefresh }) {
     completed: kycComplete,
     icon: Shield,
     link: 'IdentityVerification',
-    locked: !canVerifyIdentity
+    locked: !onboardingComplete
   });
 
-  // Step 4: NDA (both roles - only after identity verified)
+  // Step 3: NDA (both roles - only after identity verified)
   steps.push({
     id: 'nda',
     title: 'Sign NDA',
