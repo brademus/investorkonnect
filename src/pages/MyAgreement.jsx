@@ -50,29 +50,53 @@ export default function MyAgreement() {
     })();
   }, [dealId]);
 
-  // After signing, create room and redirect to Pipeline
+  // After signing, ensure room exists and redirect to Pipeline
   useEffect(() => {
     if (!dealId || !signedFlag || !profile?.id) return;
     
     (async () => {
       try {
-        await new Promise(r => setTimeout(r, 1000));
+        console.log('[MyAgreement] Post-sign flow triggered for deal:', dealId);
         
+        // Wait for DocuSign webhook to process
+        await new Promise(r => setTimeout(r, 2000));
+        
+        // Ensure agent_id is set on Deal (should already be set from AgentMatching)
         const agentProfileId = deal?.agent_id || sessionStorage.getItem('selectedAgentId');
+        console.log('[MyAgreement] Agent profile ID:', agentProfileId);
+        
         if (agentProfileId) {
-          await base44.functions.invoke('sendDealRequest', { 
-            deal_id: dealId, 
-            agent_profile_id: agentProfileId 
-          }).catch(() => {});
+          // Ensure Deal has agent_id
+          await base44.entities.Deal.update(dealId, { agent_id: agentProfileId }).catch(() => {});
+          
+          // Ensure Room exists with proper status
+          const existingRooms = await base44.entities.Room.filter({ deal_id: dealId });
+          console.log('[MyAgreement] Existing rooms:', existingRooms.length);
+          
+          if (existingRooms.length === 0) {
+            console.log('[MyAgreement] Creating new room');
+            await base44.functions.invoke('sendDealRequest', { 
+              deal_id: dealId, 
+              agent_profile_id: agentProfileId 
+            });
+          } else {
+            console.log('[MyAgreement] Room already exists');
+            // Update existing room to ensure it has agreement_status
+            const room = existingRooms[0];
+            await base44.entities.Room.update(room.id, {
+              agreement_status: 'investor_signed'
+            }).catch(() => {});
+          }
         }
         
         toast.success('Agreement signed successfully');
         navigate(createPageUrl('Pipeline'));
-      } catch (_) {
+      } catch (e) {
+        console.error('[MyAgreement] Post-sign error:', e);
         navigate(createPageUrl('Pipeline'));
       }
     })();
-  }, [dealId, signedFlag, profile?.id]);
+  }, [dealId, signedFlag, profile?.id, deal?.agent_id]);
 
   const isInvestor = useMemo(() => profile?.user_role === 'investor', [profile?.user_role]);
 

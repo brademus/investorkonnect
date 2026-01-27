@@ -149,10 +149,12 @@ Deno.serve(async (req) => {
           
           if (investorSigned && !version.investor_signed_at) {
             updates.investor_signed_at = new Date().toISOString();
+            console.log('[DocuSign Webhook] ✓ Investor signed - setting investor_signed_at');
           }
           
           if (agentSigned && !version.agent_signed_at) {
             updates.agent_signed_at = new Date().toISOString();
+            console.log('[DocuSign Webhook] ✓ Agent signed - setting agent_signed_at');
           }
           
           if (investorSigned && agentSigned) {
@@ -255,10 +257,12 @@ Deno.serve(async (req) => {
         
         if (investorSigned && !agreement.investor_signed_at) {
           updates.investor_signed_at = new Date().toISOString();
+          console.log('[DocuSign Webhook] ✓ Investor signed LegalAgreement - setting investor_signed_at');
         }
         
         if (agentSigned && !agreement.agent_signed_at) {
           updates.agent_signed_at = new Date().toISOString();
+          console.log('[DocuSign Webhook] ✓ Agent signed LegalAgreement - setting agent_signed_at');
         }
         
         // Determine status
