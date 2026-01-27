@@ -126,13 +126,8 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Agents see deals they have a Room for, regardless of agreement status
-    // This allows agents to see freshly-sent deals immediately
-    if (isAgent && deals.length > 0) {
-      deals = deals.filter(d => {
-        return (agentRooms || []).some(r => r.deal_id === d.id);
-      });
-    }
+    // Agents see deals regardless of signing status
+    // (remove any restrictive gates to allow newly-sent deals to show immediately)
 
     // Apply role-based redaction
     const redactedDeals = deals.map(deal => {
