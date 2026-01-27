@@ -46,7 +46,7 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true });
     }
 
-    // Create Room with 'requested' status
+    // Create Room with 'requested' status - populate all fields from deal
     const room = await base44.asServiceRole.entities.Room.create({
       deal_id: dealId,
       investorId: deal.investor_id,
@@ -60,7 +60,11 @@ Deno.serve(async (req) => {
       county: deal.county,
       zip: deal.zip,
       budget: deal.purchase_price,
-      closing_date: deal.key_dates?.closing_date
+      closing_date: deal.key_dates?.closing_date,
+      contract_url: deal.contract_url,
+      contract_document: deal.contract_document,
+      proposed_terms: deal.proposed_terms,
+      agreement_status: 'draft'
     });
 
     console.log('[autoSendDealOnSignature] Room created:', room.id);
