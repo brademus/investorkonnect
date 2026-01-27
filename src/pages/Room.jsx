@@ -2555,14 +2555,7 @@ ${dealContext}`;
 
               {/* Messages Container */}
               <div className="flex-1 overflow-y-auto space-y-4 hidden">
-              {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
-                    <p className="text-sm text-[#808080]">Loading messages...</p>
-                  </div>
-                </div>
-              ) : messages.length === 0 ? (
+              {!messages || messages.length === 0 ? (
                 <div className="flex items-center justify-center h-full">
                   <div className="text-center">
                     <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
