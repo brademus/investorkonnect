@@ -177,7 +177,7 @@ export default function ContractVerify() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Deal Builder
           </button>
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Verify Your Contract</h1>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2 font-sans">Verify Your Contract</h1>
           <p className="text-sm text-[#808080]">Upload your contract to verify details match your deal</p>
         </div>
 
