@@ -19,6 +19,9 @@ export default function ContractVerify() {
   const [verificationResult, setVerificationResult] = useState(null);
   const [loading, setLoading] = useState(true);
   const [creatingDeal, setCreatingDeal] = useState(false);
+  const [agents, setAgents] = useState([]);
+  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [loadingAgents, setLoadingAgents] = useState(false);
 
   // Get deal data from sessionStorage
   useEffect(() => {
