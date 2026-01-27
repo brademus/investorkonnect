@@ -94,11 +94,23 @@ Deno.serve(async (req) => {
     })));
     
     // Determine new status
+    console.log('[docusignSyncEnvelope] Looking for:', {
+      investor_id: agreement.investor_recipient_id,
+      agent_id: agreement.agent_recipient_id
+    });
+
     const investorSigner = signers.find(s => s.recipientId === agreement.investor_recipient_id);
     const agentSigner = signers.find(s => s.recipientId === agreement.agent_recipient_id);
-    
+
+    console.log('[docusignSyncEnvelope] Found signers:', {
+      investor: { found: !!investorSigner, status: investorSigner?.status, email: investorSigner?.email },
+      agent: { found: !!agentSigner, status: agentSigner?.status, email: agentSigner?.email }
+    });
+
     const investorCompleted = investorSigner?.status === 'completed';
     const agentCompleted = agentSigner?.status === 'completed';
+
+    console.log('[docusignSyncEnvelope] Completion status:', { investorCompleted, agentCompleted });
     
     const updates = {
       docusign_status: envelope.status
