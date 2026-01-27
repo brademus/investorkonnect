@@ -74,14 +74,10 @@ export default function InvestorOnboarding() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!checking && onboarded) {
-      // Already onboarded, check next step
-      if (!isPaidSubscriber) {
-        navigate(createPageUrl("Pricing"), { replace: true });
-      } else {
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }
+      // Already onboarded, go to verification
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
-  }, [checking, onboarded, isPaidSubscriber, navigate]);
+  }, [checking, onboarded, navigate]);
 
   // Load existing data
   useEffect(() => {
@@ -155,11 +151,11 @@ export default function InvestorOnboarding() {
       });
 
       await refresh();
-      toast.success("Profile saved! Let's choose your plan.");
+      toast.success("Profile saved! Redirecting to identity verification...");
       
-      // Navigate to Pricing (next step for investors)
+      // Navigate to Identity Verification (next step for investors)
       await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.href = createPageUrl("Pricing");
+      window.location.href = createPageUrl("IdentityVerification");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
@@ -272,7 +268,7 @@ export default function InvestorOnboarding() {
         <div className="bg-[#E3C567]/20 border border-[#E3C567]/30 rounded-xl p-5 mt-6">
           <h4 className="font-semibold text-[#E3C567] mb-2">🎉 You're almost done!</h4>
           <p className="text-sm text-[#E3C567]">
-            Next, you'll choose a subscription plan to unlock agent matching and deal rooms.
+            Next, you'll verify your identity to ensure platform security.
           </p>
         </div>
       </div>
@@ -330,7 +326,7 @@ export default function InvestorOnboarding() {
               {saving ? (
                 <><LoadingAnimation className="w-4 h-4 mr-2 inline text-black" />Saving...</>
               ) : step === TOTAL_STEPS ? (
-                'Continue to Pricing →'
+                'Continue to Verification →'
               ) : (
                 'Continue →'
               )}
