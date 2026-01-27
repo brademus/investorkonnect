@@ -524,41 +524,46 @@ function PipelineContent() {
         counterpartyName = agentName;
       }
 
+      // If deal is fully signed but not in correct stage, update it
+      if (isFullySigned && normalizeStage(deal.pipeline_stage || 'new_deals') !== 'connected_deals') {
+        base44.entities.Deal.update(deal.id, { pipeline_stage: 'connected_deals' }).catch(() => {});
+      }
+
       return {
-        // IDs
-        id: deal.id,
-        deal_id: deal.id,
-        room_id: room?.id || null,
+          // IDs
+          id: deal.id,
+          deal_id: deal.id,
+          room_id: room?.id || null,
 
-        // Content - Prefer Deal Entity (User Uploaded Data)
-         title: deal.title || 'Untitled Deal',
-         property_address: deal.property_address || deal.deal_title || 'Address Pending',
-         city: deal.city,
-         state: deal.state,
-         budget: deal.purchase_price, 
-         seller_name: deal.seller_info?.seller_name,
+          // Content - Prefer Deal Entity (User Uploaded Data)
+           title: deal.title || 'Untitled Deal',
+           property_address: deal.property_address || deal.deal_title || 'Address Pending',
+           city: deal.city,
+           state: deal.state,
+           budget: deal.purchase_price, 
+           seller_name: deal.seller_info?.seller_name,
 
-         // Status & Agent  
-         // Auto-move to connected_deals if agreement is fully signed, otherwise use deal's pipeline_stage
-         pipeline_stage: isFullySigned ? 'connected_deals' : normalizeStage(deal.pipeline_stage || 'new_deals'),
-         raw_pipeline_stage: deal.pipeline_stage,
-         customer_name: counterpartyName,
-         agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
-         agent_request_status: room?.request_status || null,
-         agreement_status: room?.agreement_status || deal.agreement_status || null,
+           // Status & Agent  
+           // Auto-move to connected_deals if agreement is fully signed, otherwise use deal's pipeline_stage
+           pipeline_stage: isFullySigned ? 'connected_deals' : normalizeStage(deal.pipeline_stage || 'new_deals'),
+           raw_pipeline_stage: deal.pipeline_stage,
+           customer_name: counterpartyName,
+           agent_id: deal.agent_id || room?.agentId || room?.counterparty_profile_id, 
+           agent_request_status: room?.request_status || null,
+           agreement_status: room?.agreement_status || deal.agreement_status || null,
 
-         // Dates
-         created_date: deal.created_date,
-         updated_date: deal.updated_date,
-         closing_date: deal.key_dates?.closing_date,
-         walkthrough_date: appt?.walkthrough?.datetime || null,
-         walkthrough_status: appt?.walkthrough?.status || null,
+           // Dates
+           created_date: deal.created_date,
+           updated_date: deal.updated_date,
+           closing_date: deal.key_dates?.closing_date,
+           walkthrough_date: appt?.walkthrough?.datetime || null,
+           walkthrough_status: appt?.walkthrough?.status || null,
 
-        // Privacy flags
-        is_fully_signed: (room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed' || deal.is_fully_signed === true),
+          // Privacy flags
+          is_fully_signed: (room?.agreement_status === 'fully_signed' || room?.request_status === 'signed' || room?.internal_agreement_status === 'both_signed' || deal.is_fully_signed === true),
 
-        is_orphan: !hasAgentAccepted && !hasAgentPending
-      };
+          is_orphan: !hasAgentAccepted && !hasAgentPending
+        };
     });
 
     // Deduplicate mapped deals by natural signature, prefer fully-signed and most recent
