@@ -104,8 +104,8 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     // Subscribe to LegalAgreement only
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        console.log('[AgreementPanel] Agreement event:', event.type);
-        loadState();
+        console.log('[AgreementPanel] Agreement event:', event.type, 'Agreement ID:', event?.data?.id);
+        loadState(true); // Force fresh data on real-time updates
       }
     });
     unsubs.push(unsubAgreement);
