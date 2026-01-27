@@ -89,7 +89,6 @@ export function useNormalizedDeals(profileId, userRole, enabled = true) {
   return {
     deals: normalizedData.deals,
     rooms: normalizedData.rawRooms,
-    roomMap: normalizedData.roomMap,
     isLoading: loadingDeals || loadingRooms,
     refetch: () => {
       refetchDeals();
