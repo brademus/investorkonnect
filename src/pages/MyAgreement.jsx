@@ -33,7 +33,7 @@ export default function MyAgreement() {
     })();
   }, [roomId, dealIdParam]);
 
-  // Load full deal details
+  // Load full deal details and check if already signed
   useEffect(() => {
     (async () => {
       if (!dealId) return;
@@ -42,13 +42,22 @@ export default function MyAgreement() {
         const res = await base44.functions.invoke('getDealDetailsForUser', { dealId });
         const dataDeal = res?.data?.deal || res?.data || null;
         setDeal(dataDeal);
+        
+        // If investor already signed, redirect to Pipeline immediately
+        const agreementRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+        const agreement = agreementRes?.data?.agreement;
+        if (agreement?.investor_signed_at) {
+          console.log('[MyAgreement] Agreement already signed, redirecting...');
+          navigate(createPageUrl('Pipeline'), { replace: true });
+          return;
+        }
       } catch (e) {
         toast.error('Failed to load agreement context');
       } finally {
         setLoading(false);
       }
     })();
-  }, [dealId]);
+  }, [dealId, navigate]);
 
   // After signing, redirect to Pipeline immediately
   useEffect(() => {
