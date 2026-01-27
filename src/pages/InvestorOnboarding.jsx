@@ -151,11 +151,11 @@ export default function InvestorOnboarding() {
       });
 
       await refresh();
-      toast.success("Profile saved! Let's choose your plan.");
+      toast.success("Profile saved! Verifying your identity next.");
       
-      // Navigate to Pricing (next step for investors)
+      // Navigate to IdentityVerification (must verify before pricing)
       await new Promise(resolve => setTimeout(resolve, 300));
-      window.location.href = createPageUrl("Pricing");
+      window.location.href = createPageUrl("IdentityVerification");
     } catch (error) {
       toast.error("Failed to save. Please try again.");
       setSaving(false);
