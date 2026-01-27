@@ -2,9 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Loader2, Calendar as CalendarIcon, Clock, MapPin, Edit, CheckCircle2, ChevronDown, ChevronUp } from 'lucide-react';
-import AgentScheduleModal from './AgentScheduleModal';
-import MarkCompleteModal from './MarkCompleteModal';
-import RescheduleModal from './RescheduleModal';
+
 
 function StatusPill({ status }) {
   const map = {
@@ -186,33 +184,7 @@ export default function DealAppointmentsCard({ dealId, userRole }) {
         </>
       )}
 
-      {/* Modals */}
-      {opening.mode === 'schedule' && (
-        <AgentScheduleModal
-          open
-          onClose={onCloseModal}
-          dealId={dealId}
-          eventType={opening.type}
-          initial={opening.type === 'WALKTHROUGH' ? data?.walkthrough : data?.inspection}
-        />
-      )}
-      {opening.mode === 'complete' && (
-        <MarkCompleteModal
-          open
-          onClose={onCloseModal}
-          dealId={dealId}
-          eventType={opening.type}
-          current={opening.type === 'WALKTHROUGH' ? data?.walkthrough : data?.inspection}
-        />
-      )}
-      {opening.mode === 'reschedule' && (
-        <RescheduleModal
-          open
-          onClose={(changed) => { onCloseModal(changed); }}
-          dealId={dealId}
-          eventType={opening.type}
-        />
-      )}
+
     </div>
   );
 }
