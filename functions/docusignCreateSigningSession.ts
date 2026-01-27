@@ -240,8 +240,12 @@ Deno.serve(async (req) => {
     
     let validatedRedirect = redirect_url;
     if (!validatedRedirect) {
-      // Default: return to MyAgreement with agreement tab
-      validatedRedirect = `/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+      // Default: return to Room if available, otherwise Pipeline
+      if (room_id) {
+        validatedRedirect = `/Room?roomId=${room_id}&dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+      } else {
+        validatedRedirect = `/Pipeline`;
+      }
     }
     
     // Ensure dealId, tab, and role are always present in redirect URL
