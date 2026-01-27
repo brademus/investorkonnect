@@ -45,22 +45,30 @@ function PipelineContent() {
   const [allowExtras, setAllowExtras] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
 
-  // CRITICAL: Redirect to onboarding if not complete
+  // CRITICAL: Redirect to onboarding if not complete - but only if TRULY loading is done
   useEffect(() => {
     if (loading) return;
+    
+    // If no profile but loading is false, only redirect if we've waited long enough (avoid false logout)
     if (!profile) {
-      navigate(createPageUrl("Home"), { replace: true });
-      return;
+      const timer = setTimeout(() => {
+        if (!profile) navigate(createPageUrl("Home"), { replace: true });
+      }, 500);
+      return () => clearTimeout(timer);
     }
-    if (!onboarded) {
+    
+    if (!onboarded && profile) {
       const role = profile.user_role;
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      } else {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      }
+      const timer = setTimeout(() => {
+        if (role === 'investor') {
+          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+        } else if (role === 'agent') {
+          navigate(createPageUrl("AgentOnboarding"), { replace: true });
+        } else {
+          navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [loading, profile, onboarded, navigate]);
 
