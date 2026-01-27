@@ -267,7 +267,6 @@ function PipelineContent() {
         queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
         queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
         refetchDeals();
-        refetchRooms();
       })();
     }
   }, [location.search, profile?.id, profile?.user_role]);
