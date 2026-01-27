@@ -50,12 +50,8 @@ export default function BillingSuccess() {
           Welcome!
         </h1>
 
-        <p className="text-lg text-[#FAFAFA] mb-2">
+        <p className="text-lg text-[#FAFAFA] mb-8">
           Your subscription is active
-        </p>
-
-        <p className="text-sm text-[#808080] mb-8">
-          {loading ? "Confirming your subscription..." : "You now have full access to all features. Your 14-day trial has started."}
         </p>
 
         <div className="space-y-3">
