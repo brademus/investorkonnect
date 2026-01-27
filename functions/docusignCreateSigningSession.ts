@@ -114,9 +114,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { agreement_id, role, redirect_url } = await req.json();
+    const { agreement_id, role, redirect_url, room_id } = await req.json();
     
-    console.log('[docusignCreateSigningSession] START:', { agreement_id, role, redirect_url });
+    console.log('[docusignCreateSigningSession] START:', { agreement_id, role, redirect_url, room_id });
     
     if (!agreement_id || !role) {
       return Response.json({ error: 'agreement_id and role required' }, { status: 400 });
