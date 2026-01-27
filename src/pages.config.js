@@ -21,6 +21,7 @@ import Terms from './pages/Terms';
 import Pricing from './pages/Pricing';
 import InvestorOnboarding from './pages/InvestorOnboarding';
 import BillingSuccess from './pages/BillingSuccess';
+import ContractVerify from './pages/ContractVerify';
 import __Layout from './Layout.jsx';
 
 
@@ -48,6 +49,7 @@ export const PAGES = {
     "Pricing": Pricing,
     "InvestorOnboarding": InvestorOnboarding,
     "BillingSuccess": BillingSuccess,
+    "ContractVerify": ContractVerify,
 }
 
 export const pagesConfig = {
