@@ -258,7 +258,6 @@ Deno.serve(async (req) => {
       success_url: success,
       cancel_url: cancel,
       allow_promotion_codes: true,
-      customer_email: userEmail,
       subscription_data: {
         trial_period_days: 14,
         metadata: {
@@ -272,10 +271,13 @@ Deno.serve(async (req) => {
       }
     };
     
-    // Use customer ID if available
+    // Use customer ID if available, otherwise use customer_email (only if populated)
     if (customerId) {
       sessionParams.customer = customerId;
       console.log('✅ Using Stripe customer ID:', customerId);
+    } else if (userEmail && userEmail.trim()) {
+      sessionParams.customer_email = userEmail;
+      console.log('✅ Using customer_email:', userEmail);
     }
     
     const session = await stripe.checkout.sessions.create(sessionParams);
