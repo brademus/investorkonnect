@@ -102,36 +102,21 @@ Deno.serve(async (req) => {
           kyc_status: profile.kyc_status
         });
         
-        // Check if investor role
-        if (profile.user_role === 'investor') {
-          // For investors, check FULL readiness
-          
-          // 1. Check onboarding
-          if (!profile.onboarding_completed_at || !profile.user_role) {
-            console.log('❌ Onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete your investor profile first',
-              redirect: `${base}/onboarding/investor`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Investor ready for checkout - onboarding verified');
-        } else {
-          // For non-investors (agents, etc.), just check basic onboarding
-          if (!profile.onboarding_completed_at) {
-            console.log('❌ Basic onboarding not completed');
-            return Response.json({ 
-              ok: false, 
-              reason: 'ONBOARDING_REQUIRED',
-              message: 'Please complete onboarding before subscribing',
-              redirect: `${base}/onboarding`
-            }, { status: 403 });
-          }
-          
-          console.log('✅ Non-investor user ready');
+        // Check if onboarded using same logic as Pipeline
+        const hasLegacyProfile = !!(profile?.full_name && profile?.phone && (profile?.company || profile?.investor?.company_name));
+        const onboarded = !!(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version || hasLegacyProfile);
+        
+        if (!onboarded) {
+          console.log('❌ Onboarding not completed');
+          return Response.json({ 
+            ok: false, 
+            reason: 'ONBOARDING_REQUIRED',
+            message: 'Please complete your profile first',
+            redirect: `${base}/onboarding`
+          }, { status: 403 });
         }
+        
+        console.log('✅ User onboarded, proceeding with checkout');
         
       } catch (gateError) {
         console.error('❌ Gating check failed:', gateError);
