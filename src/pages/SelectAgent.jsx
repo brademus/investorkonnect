@@ -117,10 +117,21 @@ export default function SelectAgent() {
         agent_id: selectedAgentId,
       });
 
-      // Generate legal agreement and send to DocuSign for investor signing
+      // Generate legal agreement (agent is already set on the deal)
       const agreementRes = await base44.functions.invoke("generateLegalAgreement", {
         deal_id: newDeal.id,
-        agent_profile_id: selectedAgentId,
+        exhibit_a: {
+          transaction_type: "ASSIGNMENT",
+          compensation_model: "FLAT_FEE",
+          flat_fee_amount: Number(dealData.sellerFlatFee) || 5000,
+          commission_percentage: Number(dealData.sellerCommissionPercentage) || 3,
+          buyer_commission_type: dealData.buyerCommissionType,
+          buyer_commission_percentage: Number(dealData.buyerCommissionPercentage) || 3,
+          buyer_flat_fee: Number(dealData.buyerFlatFee) || 5000,
+          agreement_length_days: Number(dealData.agreementLength) || 180,
+          termination_notice_days: 30,
+          exclusive_agreement: false
+        }
       });
 
       // Get DocuSign signing URL for investor
