@@ -136,7 +136,7 @@ export default function SelectAgent() {
 
       // Get DocuSign signing URL for investor
       const signingRes = await base44.functions.invoke("docusignCreateSigningSession", {
-        agreement_id: agreementRes.data.agreement_id,
+        agreement_id: agreementRes.data.agreement.id,
         role: "investor",
       });
 
