@@ -271,16 +271,37 @@ Deno.serve(async (req) => {
     // SYNC FIRST to ensure DB is up-to-date with DocuSign
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
 
+    // PHASE 7: Check if already signed - return success response instead of error
+    const investorAlreadySigned = !!agreement.investor_signed_at;
+    const agentAlreadySigned = !!agreement.agent_signed_at;
+
+    if (role === 'investor' && investorAlreadySigned) {
+      console.log('[DocuSign] Investor already signed');
+      return Response.json({ 
+        already_signed: true,
+        message: 'You have already signed this agreement'
+      }, { status: 200 });
+    }
+
+    if (role === 'agent' && agentAlreadySigned) {
+      console.log('[DocuSign] Agent already signed');
+      return Response.json({ 
+        already_signed: true,
+        message: 'You have already signed this agreement'
+      }, { status: 200 });
+    }
+
     // GATING: Now that DB is synced, check if agent can sign
-    if (role === 'agent' && !agreement.investor_signed_at) {
+    if (role === 'agent' && !investorAlreadySigned) {
       console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
       console.error('[DocuSign] Agreement status:', agreement.status);
       return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it.'
-      }, { status: 400 });
+        error: 'The investor must sign this agreement first before you can sign it.',
+        investor_signed: false
+      }, { status: 403 });
     }
 
-    if (role === 'agent' && agreement.investor_signed_at) {
+    if (role === 'agent' && investorAlreadySigned) {
       console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
     }
 
@@ -315,35 +336,40 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
     }
     
-    // Validate and enrich redirect_url to ensure deal context
+    // PHASE 7: Validate and enrich redirect_url - always return to deal context
     const reqUrl = new URL(req.url);
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
+    const baseAppUrl = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     
     let validatedRedirect = redirect_url;
-    if (!validatedRedirect) {
-      // Default: return to MyAgreement agreement tab
+    
+    // If no redirect or missing deal context, construct one
+    if (!validatedRedirect || (!validatedRedirect.includes('roomId=') && !validatedRedirect.includes('dealId='))) {
       if (room_id) {
-        validatedRedirect = `/Room?roomId=${room_id}&dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+        validatedRedirect = `${baseAppUrl}/Room?roomId=${room_id}&dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+      } else if (agreement.deal_id) {
+        validatedRedirect = `${baseAppUrl}/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
       } else {
-        validatedRedirect = `/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
+        // Last resort fallback (should never happen)
+        validatedRedirect = `${baseAppUrl}/Pipeline?signed=1`;
       }
     }
     
-    // Ensure dealId, tab, and role are always present in redirect URL
+    // Ensure fully qualified URL
     if (validatedRedirect.startsWith('/')) {
-      const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
-      validatedRedirect = `${origin}${validatedRedirect}`;
+      validatedRedirect = `${baseAppUrl}${validatedRedirect}`;
     }
     
+    // Ensure signed=1 is present
     const redirectURL = new URL(validatedRedirect);
+    if (!redirectURL.searchParams.has('signed')) {
+      redirectURL.searchParams.set('signed', '1');
+    }
     if (!redirectURL.searchParams.has('dealId') && agreement.deal_id) {
       redirectURL.searchParams.set('dealId', agreement.deal_id);
     }
     if (!redirectURL.searchParams.has('tab')) {
       redirectURL.searchParams.set('tab', 'agreement');
-    }
-    if (!redirectURL.searchParams.has('role')) {
-      redirectURL.searchParams.set('role', role);
     }
     validatedRedirect = redirectURL.toString();
     
