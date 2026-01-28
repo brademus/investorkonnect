@@ -223,16 +223,15 @@ export default function SelectAgent() {
             {agents.map((agent) => {
               const isSelected = selectedAgentIds.includes(agent.id);
               return (
-                <button
+                <div
                   key={agent.id}
-                  onClick={() => toggleAgent(agent.id)}
                   className={`w-full text-left bg-[#0D0D0D] border-2 rounded-2xl p-6 transition-all ${
                     isSelected
                       ? "border-[#E3C567] bg-[#141414] shadow-lg shadow-[#E3C567]/20"
                       : "border-[#1F1F1F] hover:border-[#E3C567]/50"
                   }`}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
                         {agent.full_name || "Unnamed Agent"}
@@ -260,7 +259,33 @@ export default function SelectAgent() {
                       <CheckCircle2 className="w-6 h-6 text-[#E3C567] flex-shrink-0 ml-4" />
                     )}
                   </div>
-                </button>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`${createPageUrl("AgentProfile")}?profileId=${agent.id}`);
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full"
+                    >
+                      View Profile
+                    </Button>
+                    <Button
+                      onClick={() => toggleAgent(agent.id)}
+                      size="sm"
+                      className={`rounded-full ${
+                        isSelected
+                          ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                          : "bg-[#1F1F1F] hover:bg-[#333] text-[#FAFAFA]"
+                      }`}
+                    >
+                      {isSelected ? 'Selected' : 'Select Agent'}
+                    </Button>
+                  </div>
+                </div>
               );
             })}
 

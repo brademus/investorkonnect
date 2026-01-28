@@ -1480,13 +1480,15 @@ ${dealContext}`;
           
           {/* Action Buttons */}
           <div className="flex items-center gap-3">
-            {false && (
+            {/* PHASE 5: Show Agent Profile button for investors when fully signed */}
+            {isInvestor && isWorkingTogether && (
               <Button
                 onClick={() => {
-                  const agentId = roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
-                  navigate(`${createPageUrl("AgentProfile")}?id=${agentId}${currentRoom?.deal_id ? `&dealId=${currentRoom.deal_id}` : ''}${roomId ? `&roomId=${roomId}` : ''}`);
+                  const agentId = deal?.locked_agent_id || roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
+                  navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
                 }}
-                className="bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA] rounded-full font-semibold border border-[#333] hover:border-[#E3C567]"
+                variant="outline"
+                className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full font-semibold hover:border-[#E3C567]"
               >
                 <User className="w-4 h-4 mr-2" />
                 Agent Profile
@@ -2834,7 +2836,7 @@ ${dealContext}`;
                 </div>
               )}
 
-              {/* PHASE 4: Window B for Investor - Agreement status */}
+              {/* PHASE 4/5: Window B for Investor - Agreement status + View Profile */}
               {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
@@ -2862,7 +2864,7 @@ ${dealContext}`;
                             return 'Review and sign agreement';
                           })()}
                         </h3>
-                        <p className="text-sm text-[#FAFAFA]/80">
+                        <p className="text-sm text-[#FAFAFA]/80 mb-2">
                           {pendingCounter?.from_role === 'agent' 
                             ? 'Review the agent\'s counter offer in My Agreement tab.'
                             : requiresRegenerate
@@ -2871,6 +2873,20 @@ ${dealContext}`;
                             ? 'Your signature is recorded. Waiting for agent to sign.'
                             : 'Open My Agreement to review and sign.'}
                         </p>
+                        {/* PHASE 5: View Profile button in Window A */}
+                        {currentRoom?.agentId && (
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`${createPageUrl("AgentProfile")}?profileId=${currentRoom.agentId}`);
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full mt-2"
+                          >
+                            View Agent Profile
+                          </Button>
+                        )}
                       </div>
                     </div>
                     <Button

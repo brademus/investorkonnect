@@ -72,6 +72,7 @@ import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import Terms from './pages/Terms';
+import AgentProfile from './pages/AgentProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -101,6 +102,7 @@ export const PAGES = {
     "Room": Room,
     "SelectAgent": SelectAgent,
     "Terms": Terms,
+    "AgentProfile": AgentProfile,
 }
 
 export const pagesConfig = {
