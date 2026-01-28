@@ -564,6 +564,8 @@ function PipelineContent() {
           id: deal.id,
           deal_id: deal.id,
           room_id: room?.id || null,
+          locked_room_id: deal.locked_room_id || null,
+          locked_agent_id: deal.locked_agent_id || null,
 
           // Content - Prefer Deal Entity (User Uploaded Data)
            title: deal.title || 'Untitled Deal',

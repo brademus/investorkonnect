@@ -177,6 +177,9 @@ Deno.serve(async (req) => {
         key_dates: deal.key_dates,
         investor_id: deal.investor_id,
         agent_id: deal.agent_id,
+        locked_room_id: locked_room_id,
+        locked_agent_id: locked_agent_id,
+        connected_at: deal.connected_at,
         is_fully_signed: isFullySigned,
         proposed_terms: deal.proposed_terms
       };
