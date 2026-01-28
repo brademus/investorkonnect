@@ -151,19 +151,25 @@ Deno.serve(async (req) => {
     
     if (userId && userEmail) {
       const base44 = createClientFromRequest(req);
-      // Query by email (already guaranteed to be correct from auth flow above)
-      const profiles = await base44.entities.Profile.filter({ email: userEmail.toLowerCase().trim() });
+      const emailLower = userEmail.toLowerCase().trim();
+      
+      console.log('🔄 Looking up profile by email:', emailLower);
+      
+      // Always fetch fresh from DB to get latest stripe_customer_id
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ email: emailLower });
       
       if (profiles.length > 0) {
         const profile = profiles[0];
+        console.log('📋 Profile found, stripe_customer_id:', profile.stripe_customer_id || 'none');
         
         if (profile.stripe_customer_id) {
           customerId = profile.stripe_customer_id;
           console.log('✅ Using existing Stripe customer:', customerId);
         } else {
           // Create new Stripe customer
+          console.log('🆕 Creating new Stripe customer for:', emailLower);
           const customer = await stripe.customers.create({
-            email: userEmail,
+            email: emailLower,
             metadata: {
               user_id: userId,
               app: 'agentvault'
@@ -177,7 +183,10 @@ Deno.serve(async (req) => {
           await base44.asServiceRole.entities.Profile.update(profile.id, {
             stripe_customer_id: customerId
           });
+          console.log('💾 Saved stripe_customer_id to profile');
         }
+      } else {
+        console.log('⚠️ No profile found for email:', emailLower);
       }
     }
     
