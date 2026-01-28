@@ -151,7 +151,8 @@ Deno.serve(async (req) => {
     
     if (userId && userEmail) {
       const base44 = createClientFromRequest(req);
-      const profiles = await base44.entities.Profile.filter({ user_id: userId });
+      // Query by email (already guaranteed to be correct from auth flow above)
+      const profiles = await base44.entities.Profile.filter({ email: userEmail.toLowerCase().trim() });
       
       if (profiles.length > 0) {
         const profile = profiles[0];
