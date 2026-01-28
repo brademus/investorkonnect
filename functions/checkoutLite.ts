@@ -262,6 +262,23 @@ Deno.serve(async (req) => {
           redirect: `${base}/role`
         }, { status: 403 });
       }
+    } else {
+      console.log('⚠️ No userId available, cannot create customer');
+      return Response.json({ 
+        ok: false, 
+        reason: 'NO_USER_ID',
+        message: 'Authentication error. Please sign in again.' 
+      }, { status: 401 });
+    }
+    
+    // Verify customerId was set
+    if (!customerId) {
+      console.error('❌ CRITICAL: customerId is null after profile processing');
+      return Response.json({ 
+        ok: false, 
+        reason: 'NO_CUSTOMER_ID',
+        message: 'Failed to create Stripe customer. Please refresh and try again.' 
+      }, { status: 500 });
     }
     
     // Create checkout session
@@ -286,15 +303,6 @@ Deno.serve(async (req) => {
         plan: plan
       }
     };
-    
-    // Use customer ID (required)
-    if (!customerId) {
-      return Response.json({ 
-        ok: false, 
-        reason: 'NO_CUSTOMER_ID',
-        message: 'Failed to create or retrieve Stripe customer. Please try again.' 
-      }, { status: 500 });
-    }
     
     sessionParams.customer = customerId;
     console.log('✅ Using Stripe customer ID:', customerId);
