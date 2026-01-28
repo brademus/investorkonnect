@@ -133,8 +133,8 @@ export default function SelectAgent() {
       toast.success("Agent selected! Redirecting to sign agreement...");
 
       // Redirect to DocuSign
-      if (signingRes.data?.investor_signing_url) {
-        window.location.href = signingRes.data.investor_signing_url;
+      if (signingRes.data?.signing_url) {
+        window.location.href = signingRes.data.signing_url;
       } else {
         navigate(createPageUrl("Pipeline"));
       }
