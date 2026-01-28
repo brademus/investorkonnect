@@ -173,24 +173,10 @@ Deno.serve(async (req) => {
           });
           
           if (subscriptions.data.length > 0) {
-            console.log('⚠️  Customer already has active subscription, creating new customer instead');
-            // Create new Stripe customer to avoid conflict
-            const customer = await stripe.customers.create({
-              email: emailLower,
-              metadata: {
-                user_id: userId,
-                app: 'agentvault',
-                previous_customer_id: existingCustomerId
-              }
-            });
-            
-            customerId = customer.id;
-            console.log('✅ Created new Stripe customer (old had active sub):', customerId);
-            
-            // Save new customer ID to profile
-            await base44.asServiceRole.entities.Profile.update(profile.id, {
-              stripe_customer_id: customerId
-            });
+            console.log('⚠️  Customer already has active subscription');
+            // Don't use a customer ID - let Stripe treat as independent checkout
+            customerId = null;
+            console.log('🔄 Using customer_email only (no customer ID) to avoid conflict');
           } else {
             customerId = existingCustomerId;
             console.log('✅ Using existing Stripe customer (no active subs):', customerId);
