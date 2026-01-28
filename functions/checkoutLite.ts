@@ -215,6 +215,7 @@ Deno.serve(async (req) => {
       success_url: success,
       cancel_url: cancel,
       allow_promotion_codes: true,
+      customer_email: userEmail,
       subscription_data: {
         trial_period_days: 14,
         metadata: {
