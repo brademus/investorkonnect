@@ -9,11 +9,13 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const { deal_id, from_role, terms_delta } = await req.json();
+    const { deal_id, room_id, from_role, terms_delta } = await req.json();
     
     if (!deal_id || !from_role || !terms_delta) {
       return Response.json({ error: 'deal_id, from_role, and terms_delta required' }, { status: 400 });
     }
+    
+    console.log('[createCounterOffer] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY');
     
     if (!['investor', 'agent'].includes(from_role)) {
       return Response.json({ error: 'from_role must be investor or agent' }, { status: 400 });
@@ -46,11 +48,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
     }
     
-    // Supersede any existing pending counter for this deal
-    const existingPending = await base44.asServiceRole.entities.CounterOffer.filter({ 
-      deal_id, 
-      status: 'pending' 
-    });
+    // Supersede any existing pending counter (room-scoped or legacy)
+    const filterQuery = room_id 
+      ? { room_id, status: 'pending' }
+      : { deal_id, status: 'pending' };
+    
+    const existingPending = await base44.asServiceRole.entities.CounterOffer.filter(filterQuery);
     
     for (const existing of existingPending) {
       await base44.asServiceRole.entities.CounterOffer.update(existing.id, {
@@ -66,6 +69,7 @@ Deno.serve(async (req) => {
     
     const newCounter = await base44.asServiceRole.entities.CounterOffer.create({
       deal_id,
+      room_id: room_id || null, // Room-scoped or legacy null
       from_role,
       to_role: toRole,
       status: 'pending',
