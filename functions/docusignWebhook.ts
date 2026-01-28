@@ -291,6 +291,52 @@ Deno.serve(async (req) => {
           }
         } else if (investorSigned) {
           updates.status = 'investor_signed';
+          
+          // Auto-create room when investor signs so agent sees the deal in their pipeline
+          try {
+            const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+            if (dealArr && dealArr.length > 0) {
+              const deal = dealArr[0];
+              if (deal.investor_id && deal.agent_id) {
+                // Check if room already exists
+                const existingRooms = await base44.asServiceRole.entities.Room.filter({
+                  deal_id: agreement.deal_id,
+                  investorId: deal.investor_id,
+                  agentId: deal.agent_id
+                });
+                
+                if (existingRooms.length === 0) {
+                  // Create room with 'accepted' status so agent sees it immediately
+                  await base44.asServiceRole.entities.Room.create({
+                    deal_id: agreement.deal_id,
+                    investorId: deal.investor_id,
+                    agentId: deal.agent_id,
+                    request_status: 'accepted',
+                    agreement_status: 'investor_signed',
+                    title: deal.title,
+                    property_address: deal.property_address,
+                    city: deal.city,
+                    state: deal.state,
+                    county: deal.county,
+                    zip: deal.zip,
+                    budget: deal.purchase_price,
+                    ndaAcceptedInvestor: false,
+                    ndaAcceptedAgent: false
+                  });
+                  console.log('[DocuSign Webhook] Created room for investor-signed deal:', agreement.deal_id);
+                } else {
+                  // Update existing room status
+                  await base44.asServiceRole.entities.Room.update(existingRooms[0].id, {
+                    request_status: 'accepted',
+                    agreement_status: 'investor_signed'
+                  });
+                  console.log('[DocuSign Webhook] Updated room status for investor-signed deal:', agreement.deal_id);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('[DocuSign Webhook] Failed to auto-create/update room:', e?.message || e);
+          }
         } else if (agentSigned) {
           updates.status = 'agent_signed';
         }
