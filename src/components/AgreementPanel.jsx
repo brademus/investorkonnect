@@ -75,11 +75,13 @@ export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
   useEffect(() => {
     loadState(true); // Force refresh on mount
 
-    // Reload after DocuSign return with force refresh
+    // PHASE 7: Reload after DocuSign return with force refresh + redirect handling
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1') {
-      window.history.replaceState({}, '', window.location.pathname + window.location.search.replace(/[&?]signed=1/g, ''));
-      
+      // Clean URL to prevent repeat triggers
+      const cleanUrl = window.location.pathname + window.location.search.replace(/[&?]signed=1/g, '');
+      window.history.replaceState({}, '', cleanUrl);
+
       // Sync envelope status from DocuSign first
       const syncEnvelope = async () => {
         try {
@@ -89,7 +91,7 @@ export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
           console.error('[AgreementPanel] Sync error:', e);
         }
       };
-      
+
       // Aggressive refresh with envelope sync
       syncEnvelope();
       setTimeout(() => loadState(true), 300);

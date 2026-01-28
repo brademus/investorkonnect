@@ -29,8 +29,15 @@ Deno.serve(async (req) => {
       ? await base44.asServiceRole.entities.Room.filter({ investorId: profile.id })
       : await base44.asServiceRole.entities.Room.filter({ agentId: profile.id });
 
-    // PHASE 3: Filter out expired rooms (agents who lost to another agent)
-    rooms = (rooms || []).filter(r => r.request_status !== 'expired');
+    // PHASE 3/7: Filter out expired rooms (agents who lost to another agent)
+    // PHASE 6/7: For agents, also exclude deals locked to a different agent
+    const isAgent = userRole === 'agent';
+    
+    rooms = (rooms || []).filter(r => {
+      // Exclude expired rooms
+      if (r.request_status === 'expired') return false;
+      return true;
+    });
 
     // Get all unique deal IDs
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
@@ -338,10 +345,24 @@ Deno.serve(async (req) => {
       return enriched;
     });
 
-    // Filter out orphaned rooms (no valid counterparty)
-    const validRooms = enrichedRooms.filter(r => 
-      r.counterparty_name && r.counterparty_name !== 'Unknown'
-    );
+    // PHASE 6/7: Filter out expired rooms AND rooms where deal is locked to a different agent
+    const validRooms = enrichedRooms.filter(r => {
+      // Exclude orphaned rooms (no counterparty)
+      if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
+      
+      // Exclude expired rooms
+      if (r.request_status === 'expired') return false;
+      
+      // PHASE 6/7: For agents, exclude rooms where deal is locked to a different agent
+      if (isAgent) {
+        const deal = dealMap.get(r.deal_id);
+        if (deal?.locked_agent_id && deal.locked_agent_id !== profile.id) {
+          return false;
+        }
+      }
+      
+      return true;
+    });
 
     return Response.json({ 
       rooms: validRooms,

@@ -146,8 +146,19 @@ Deno.serve(async (req) => {
     // Agents see deals regardless of signing status
     // (remove any restrictive gates to allow newly-sent deals to show immediately)
 
+    // PHASE 6/7: Agent filtering - exclude deals locked to other agents
+    const agentFilteredDeals = isAgent 
+      ? deals.filter(deal => {
+          // Exclude deals locked to a different agent
+          if (deal.locked_agent_id && deal.locked_agent_id !== profile.id) {
+            return false;
+          }
+          return true;
+        })
+      : deals;
+
     // Apply role-based redaction
-    const redactedDeals = deals.map(deal => {
+    const redactedDeals = agentFilteredDeals.map(deal => {
       // Get room for this deal to check signature status
       const rooms = isAgent 
         ? agentRooms?.filter(r => r.deal_id === deal.id) || []
