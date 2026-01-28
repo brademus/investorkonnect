@@ -116,17 +116,18 @@ export default function Pricing() {
       toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
 
       // Add small delay to ensure toast is visible
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
 
       // Redirect to Stripe
+      console.log('[Pricing] Redirecting to:', response.data.url);
       window.location.href = response.data.url;
 
-      // Fallback: If redirect doesn't happen in 3 seconds, show error
+      // Fallback: If redirect doesn't happen in 5 seconds, show error
       setTimeout(() => {
         toast.dismiss(toastId + '-redirect');
         toast.error("Redirect failed. Please try again or contact support.");
         setCheckoutLoading(false);
-      }, 3000);
+      }, 5000);
 
     } catch (error) {
       toast.dismiss(toastId);

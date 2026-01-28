@@ -110,8 +110,8 @@ export function useCurrentProfile() {
 
         // 4. KYC / Identity Verification
         // Placeholder for production: verify profile.full_name matches Stripe verified name
-        const kycStatus = isAdmin ? 'approved' : (profile?.kyc_status || 'unverified');
-        const kycVerified = isAdmin || kycStatus === 'approved' || !!profile?.identity_verified;
+        const kycStatus = isAdmin ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
+        const kycVerified = isAdmin || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
         const needsKyc = !isAdmin && onboarded && (role === 'agent' || isPaidSubscriber) && !kycVerified;
 
         // 5. NDA
