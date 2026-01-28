@@ -109,13 +109,22 @@ function PipelineContent() {
       try {
         const { data } = await base44.functions.invoke('getIdentityStatus');
         setIdentity(data?.identity || null);
-      } catch (_) {
-        // noop
+      } catch (e) {
+        console.warn('[Pipeline] getIdentityStatus failed:', e);
+        // Fallback: use profile data directly
+        const fallbackIdentity = {
+          verificationStatus: profile.identity_status === 'approved' || profile.identity_status === 'verified' 
+            ? 'VERIFIED' 
+            : profile.identity_status === 'pending' 
+            ? 'PROCESSING' 
+            : 'NOT_STARTED'
+        };
+        setIdentity(fallbackIdentity);
       } finally {
         setIdentityLoaded(true);
       }
     })();
-  }, [profile?.id]);
+  }, [profile?.id, profile?.identity_status]);
 
   // Auto-refresh identity while under review so the banner updates and hides when done
   useEffect(() => {
@@ -133,11 +142,20 @@ function PipelineContent() {
           await refresh();
           clearInterval(interval);
         }
-      } catch (_) { /* noop */ }
+      } catch (e) {
+        // Fallback: check profile directly
+        const updatedProfiles = await base44.entities.Profile.filter({ id: profile.id });
+        const updatedProfile = updatedProfiles[0];
+        if (updatedProfile?.identity_status === 'approved' || updatedProfile?.identity_status === 'verified') {
+          setIdentity({ verificationStatus: 'VERIFIED' });
+          await refresh();
+          clearInterval(interval);
+        }
+      }
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [profile?.id, identity?.verificationStatus, profile?.identity_status]);
+  }, [profile?.id, identity?.verificationStatus, profile?.identity_status, refresh]);
 
   // Backfill identity_status immediately once VERIFIED, then refresh profile
   useEffect(() => {
