@@ -159,7 +159,13 @@ Deno.serve(async (req) => {
       console.log('🔄 Looking up profile by email:', emailLower);
       
       // Always fetch fresh from DB to get latest stripe_customer_id
-      const profiles = await base44.asServiceRole.entities.Profile.filter({ email: emailLower });
+      let profiles = await base44.asServiceRole.entities.Profile.filter({ email: emailLower });
+      
+      // Fallback to user_id lookup if email lookup fails
+      if (!profiles || profiles.length === 0) {
+        console.log('⚠️ Email lookup failed, trying user_id lookup:', userId);
+        profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+      }
       
       if (profiles.length > 0) {
         const profile = profiles[0];
