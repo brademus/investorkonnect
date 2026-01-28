@@ -1,6 +1,8 @@
+
 import { base44 } from '@/api/base44Client';
 
-// Typed wrappers for all Base44 functions used by the frontend.
+// Minimal function wrappers - most are called directly via base44.functions.invoke()
+// Only keep this file for legacy compatibility
 export const adminNdaSet = base44.functions.adminNdaSet;
 export const adminSetup = base44.functions.adminSetup;
 export const billingPortal = base44.functions.billingPortal;
