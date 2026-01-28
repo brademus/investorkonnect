@@ -72,6 +72,11 @@ export default function SelectAgent() {
 
     setProceeding(true);
     try {
+      // Get current user to set investor_id
+      const user = await base44.auth.me();
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      const currentProfile = profiles[0];
+      
       const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
       // Create deal in database
@@ -114,6 +119,7 @@ export default function SelectAgent() {
         },
         status: "draft",
         pipeline_stage: "new_listings",
+        investor_id: currentProfile?.id,
         agent_id: selectedAgentId,
       });
 
