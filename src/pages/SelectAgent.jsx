@@ -10,7 +10,7 @@ export default function SelectAgent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [agents, setAgents] = useState([]);
-  const [selectedAgentId, setSelectedAgentId] = useState("");
+  const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [proceeding, setProceeding] = useState(false);
   const [dealData, setDealData] = useState(null);
@@ -65,8 +65,22 @@ export default function SelectAgent() {
     loadAgents();
   }, [dealData]);
 
+  const toggleAgent = (agentId) => {
+    setSelectedAgentIds(prev => {
+      if (prev.includes(agentId)) {
+        return prev.filter(id => id !== agentId);
+      } else {
+        if (prev.length >= 3) {
+          toast.error("You can select up to 3 agents.");
+          return prev;
+        }
+        return [...prev, agentId];
+      }
+    });
+  };
+
   const handleProceed = async () => {
-    if (!selectedAgentId || proceeding) {
+    if (selectedAgentIds.length === 0 || proceeding) {
       return;
     }
 
@@ -79,7 +93,7 @@ export default function SelectAgent() {
       
       const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
-      // Create deal in database
+      // Create ONE deal (temporarily set first agent as agent_id for backward compatibility)
       const newDeal = await base44.entities.Deal.create({
         title: `${dealData.propertyAddress}`,
         description: dealData.specialNotes || "",
@@ -120,62 +134,42 @@ export default function SelectAgent() {
         status: "draft",
         pipeline_stage: "new_listings",
         investor_id: currentProfile?.id,
-        agent_id: selectedAgentId,
+        agent_id: selectedAgentIds[0], // Temporary: set first agent for backward compatibility
       });
 
-      // Create Room immediately so agent sees the deal in their pipeline
-      const newRoom = await base44.entities.Room.create({
-        deal_id: newDeal.id,
-        investorId: currentProfile?.id,
-        agentId: selectedAgentId,
-        request_status: 'requested',
-        agreement_status: 'draft',
-        title: newDeal.title,
-        property_address: newDeal.property_address,
-        city: newDeal.city,
-        state: newDeal.state,
-        county: newDeal.county,
-        zip: newDeal.zip,
-        budget: newDeal.purchase_price,
-        proposed_terms: newDeal.proposed_terms,
-        ndaAcceptedInvestor: false,
-        ndaAcceptedAgent: false
-      });
-      
-      console.log('[SelectAgent] Created room:', newRoom.id, 'for deal:', newDeal.id);
+      console.log('[SelectAgent] Created deal:', newDeal.id);
 
-      // Generate legal agreement (agent is already set on the deal)
-      const agreementRes = await base44.functions.invoke("generateLegalAgreement", {
-        deal_id: newDeal.id,
-        exhibit_a: {
-          transaction_type: "ASSIGNMENT",
-          compensation_model: "FLAT_FEE",
-          flat_fee_amount: Number(dealData.sellerFlatFee) || 5000,
-          commission_percentage: Number(dealData.sellerCommissionPercentage) || 3,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: Number(dealData.buyerCommissionPercentage) || 3,
-          buyer_flat_fee: Number(dealData.buyerFlatFee) || 5000,
-          agreement_length_days: Number(dealData.agreementLength) || 180,
-          termination_notice_days: 30,
-          exclusive_agreement: false
-        }
-      });
+      // Create ONE Room per selected agent (parallel)
+      const roomPromises = selectedAgentIds.map(agentId => 
+        base44.entities.Room.create({
+          deal_id: newDeal.id,
+          investorId: currentProfile?.id,
+          agentId: agentId,
+          request_status: 'requested',
+          agreement_status: 'draft',
+          title: newDeal.title,
+          property_address: newDeal.property_address,
+          city: newDeal.city,
+          state: newDeal.state,
+          county: newDeal.county,
+          zip: newDeal.zip,
+          budget: newDeal.purchase_price,
+          proposed_terms: newDeal.proposed_terms,
+          ndaAcceptedInvestor: false,
+          ndaAcceptedAgent: false
+        })
+      );
 
-      // Get DocuSign signing URL for investor
-      const signingRes = await base44.functions.invoke("docusignCreateSigningSession", {
-        agreement_id: agreementRes.data.agreement.id,
-        role: "investor",
-      });
+      const createdRooms = await Promise.all(roomPromises);
+      console.log('[SelectAgent] Created rooms:', createdRooms.map(r => r.id));
 
+      // DO NOT generate agreement or signing yet (Phase 1 scope)
+      // Just navigate to the first room
       sessionStorage.removeItem("newDealDraft");
-      toast.success("Agent selected! Redirecting to sign agreement...");
-
-      // Redirect to DocuSign
-      if (signingRes.data?.signing_url) {
-        window.location.href = signingRes.data.signing_url;
-      } else {
-        navigate(createPageUrl("Pipeline"));
-      }
+      toast.success(`Deal sent to ${selectedAgentIds.length} agent(s)!`);
+      
+      // Navigate to first room
+      navigate(`${createPageUrl("Room")}?roomId=${createdRooms[0].id}&dealId=${newDeal.id}`);
     } catch (error) {
       console.error("Error creating deal:", error);
       toast.error("Failed to create deal");
@@ -202,8 +196,8 @@ export default function SelectAgent() {
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Select Your Agent</h1>
-          <p className="text-sm text-[#808080]">Choose an agent to represent this deal in {dealData.state}</p>
+          <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Select Your Agents</h1>
+          <p className="text-sm text-[#808080]">Choose up to 3 agents to send this deal to ({selectedAgentIds.length}/3 selected)</p>
         </div>
 
         {loading ? (
@@ -226,59 +220,62 @@ export default function SelectAgent() {
           </div>
         ) : (
           <div className="space-y-4">
-            {agents.map((agent) => (
-              <button
-                key={agent.id}
-                onClick={() => setSelectedAgentId(agent.id)}
-                className={`w-full text-left bg-[#0D0D0D] border-2 rounded-2xl p-6 transition-all ${
-                  selectedAgentId === agent.id
-                    ? "border-[#E3C567] bg-[#141414] shadow-lg shadow-[#E3C567]/20"
-                    : "border-[#1F1F1F] hover:border-[#E3C567]/50"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
-                      {agent.full_name || "Unnamed Agent"}
-                    </h3>
-                    <p className="text-sm text-[#808080] mb-3">{agent.email}</p>
-                    <div className="flex flex-wrap gap-2">
-                      {agent.agent?.agent_friendly && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#34D399]/20 text-[#34D399] text-xs font-medium">
-                          ✓ Investor Friendly
-                        </span>
-                      )}
-                      {agent.agent?.license_number && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#60A5FA]/20 text-[#60A5FA] text-xs font-medium">
-                          Licensed
-                        </span>
-                      )}
-                      {agent.agent?.investor_experience_years && (
-                        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium">
-                          {agent.agent.investor_experience_years}+ years
-                        </span>
-                      )}
+            {agents.map((agent) => {
+              const isSelected = selectedAgentIds.includes(agent.id);
+              return (
+                <button
+                  key={agent.id}
+                  onClick={() => toggleAgent(agent.id)}
+                  className={`w-full text-left bg-[#0D0D0D] border-2 rounded-2xl p-6 transition-all ${
+                    isSelected
+                      ? "border-[#E3C567] bg-[#141414] shadow-lg shadow-[#E3C567]/20"
+                      : "border-[#1F1F1F] hover:border-[#E3C567]/50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-[#FAFAFA] mb-1">
+                        {agent.full_name || "Unnamed Agent"}
+                      </h3>
+                      <p className="text-sm text-[#808080] mb-3">{agent.email}</p>
+                      <div className="flex flex-wrap gap-2">
+                        {agent.agent?.agent_friendly && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#34D399]/20 text-[#34D399] text-xs font-medium">
+                            ✓ Investor Friendly
+                          </span>
+                        )}
+                        {agent.agent?.license_number && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#60A5FA]/20 text-[#60A5FA] text-xs font-medium">
+                            Licensed
+                          </span>
+                        )}
+                        {agent.agent?.investor_experience_years && (
+                          <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium">
+                            {agent.agent.investor_experience_years}+ years
+                          </span>
+                        )}
+                      </div>
                     </div>
+                    {isSelected && (
+                      <CheckCircle2 className="w-6 h-6 text-[#E3C567] flex-shrink-0 ml-4" />
+                    )}
                   </div>
-                  {selectedAgentId === agent.id && (
-                    <CheckCircle2 className="w-6 h-6 text-[#E3C567] flex-shrink-0 ml-4" />
-                  )}
-                </div>
-              </button>
-            ))}
+                </button>
+              );
+            })}
 
             <Button
               onClick={handleProceed}
-              disabled={proceeding || !selectedAgentId}
+              disabled={proceeding || selectedAgentIds.length === 0}
               className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 py-6 font-semibold text-base h-auto disabled:opacity-50 mt-6"
             >
               {proceeding ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Deal & Signing...
+                  Creating Deal & Rooms...
                 </>
               ) : (
-                "Proceed to Signing"
+                `Send Deal to ${selectedAgentIds.length} Agent${selectedAgentIds.length !== 1 ? 's' : ''}`
               )}
             </Button>
           </div>
