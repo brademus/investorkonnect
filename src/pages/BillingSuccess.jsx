@@ -15,15 +15,32 @@ export default function BillingSuccess() {
 
   useEffect(() => {
     const confirmSubscription = async () => {
+      if (!sessionId) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        // Wait longer for Stripe webhook to process and update the profile
-        await new Promise(resolve => setTimeout(resolve, 4000));
-        
-        // Refresh profile to get updated subscription status
-        if (refresh) {
-          await refresh();
+        // Poll until subscription_status is actually 'active' or 'trialing'
+        let attempts = 0;
+        let subscriptionConfirmed = false;
+
+        while (attempts < 15 && !subscriptionConfirmed) {
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          if (refresh) {
+            await refresh();
+          }
+          
+          // Check if subscription is now active
+          if (profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing') {
+            subscriptionConfirmed = true;
+            break;
+          }
+          
+          attempts++;
         }
-        
+
         setLoading(false);
       } catch (error) {
         console.error("Failed to confirm subscription:", error);
@@ -32,7 +49,7 @@ export default function BillingSuccess() {
     };
 
     confirmSubscription();
-  }, [refresh]);
+  }, [refresh, sessionId, profile?.subscription_status]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
