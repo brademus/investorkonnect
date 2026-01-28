@@ -292,7 +292,7 @@ Deno.serve(async (req) => {
         } else if (investorSigned) {
           updates.status = 'investor_signed';
           
-          // Auto-create room when investor signs so agent sees the deal in their pipeline
+          // Auto-create/update room when investor signs so agent sees the deal in their pipeline
           try {
             const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
             if (dealArr && dealArr.length > 0) {
@@ -323,14 +323,14 @@ Deno.serve(async (req) => {
                     ndaAcceptedInvestor: false,
                     ndaAcceptedAgent: false
                   });
-                  console.log('[DocuSign Webhook] Created room for investor-signed deal:', agreement.deal_id);
+                  console.log('[DocuSign Webhook] ✓ Created room for investor-signed deal:', agreement.deal_id);
                 } else {
-                  // Update existing room status
+                  // Update existing room status immediately
                   await base44.asServiceRole.entities.Room.update(existingRooms[0].id, {
                     request_status: 'accepted',
                     agreement_status: 'investor_signed'
                   });
-                  console.log('[DocuSign Webhook] Updated room status for investor-signed deal:', agreement.deal_id);
+                  console.log('[DocuSign Webhook] ✓ Updated room status to investor_signed for deal:', agreement.deal_id);
                 }
               }
             }
@@ -372,15 +372,22 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Update Room agreement_status to match final agreement status
+    // Update ALL Rooms for this deal to ensure status is synced
     try {
       const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: agreement.deal_id });
       if (rooms && rooms.length > 0) {
+        const finalStatus = updates.status || agreement.status;
         for (const room of rooms) {
-          await base44.asServiceRole.entities.Room.update(room.id, { 
-            agreement_status: updates.status || agreement.status 
-          });
+          const roomUpdates = { agreement_status: finalStatus };
+          
+          // If fully signed, update request_status too
+          if (finalStatus === 'fully_signed' || finalStatus === 'attorney_review_pending') {
+            roomUpdates.request_status = 'signed';
+          }
+          
+          await base44.asServiceRole.entities.Room.update(room.id, roomUpdates);
         }
+        console.log('[DocuSign Webhook] ✓ Updated', rooms.length, 'room(s) with status:', finalStatus);
       }
     } catch (e) {
       console.warn('[DocuSign Webhook] Warning: failed to update Room agreement_status', e?.message || e);
