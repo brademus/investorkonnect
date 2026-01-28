@@ -16,8 +16,8 @@ export default function BillingSuccess() {
   useEffect(() => {
     const confirmSubscription = async () => {
       try {
-        // Wait a moment for Stripe webhook to process
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        // Wait longer for Stripe webhook to process and update the profile
+        await new Promise(resolve => setTimeout(resolve, 4000));
         
         // Refresh profile to get updated subscription status
         if (refresh) {
