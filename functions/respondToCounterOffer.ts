@@ -43,11 +43,13 @@ Deno.serve(async (req) => {
       return counters[0];
     });
     
+    const room_id = counter.room_id || null;
     console.log('[respondToCounterOffer] Counter loaded:', { 
       id: counter.id, 
       status: counter.status, 
       from_role: counter.from_role, 
-      to_role: counter.to_role 
+      to_role: counter.to_role,
+      room_id: room_id || 'legacy'
     });
     
     if (counter.status !== 'pending') {
@@ -117,10 +119,11 @@ Deno.serve(async (req) => {
       
       console.log('[respondToCounterOffer] Old counter marked superseded');
       
-      // Create new counter with flipped roles
+      // Create new counter with flipped roles (room-scoped or legacy)
       const newCounter = await withRetry(async () => {
         return await base44.asServiceRole.entities.CounterOffer.create({
           deal_id: counter.deal_id,
+          room_id: room_id || null, // Preserve room-scoped or legacy
           from_role: userRole,
           to_role: counter.from_role,
           status: 'pending',
@@ -161,16 +164,31 @@ Deno.serve(async (req) => {
       
       console.log('[respondToCounterOffer] Counter marked accepted');
       
-      // Update deal with accepted terms + set regeneration flag
+      // Update deal with accepted terms (still deal-level)
       await withRetry(async () => {
         await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-          proposed_terms: acceptedTerms,
-          requires_regenerate: true,
-          requires_regenerate_reason: `${userRole} accepted counter at ${now}`
+          proposed_terms: acceptedTerms
         });
       });
+      console.log('[respondToCounterOffer] ✓ Deal terms updated:', acceptedTerms);
       
-      console.log('[respondToCounterOffer] ✓ Deal terms updated + regenerate flag set:', acceptedTerms);
+      // Set regeneration flag (room-scoped or legacy)
+      if (room_id) {
+        await withRetry(async () => {
+          await base44.asServiceRole.entities.Room.update(room_id, {
+            requires_regenerate: true
+          });
+        });
+        console.log('[respondToCounterOffer] ✓ Room regenerate flag set');
+      } else {
+        await withRetry(async () => {
+          await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+            requires_regenerate: true,
+            requires_regenerate_reason: `${userRole} accepted counter at ${now}`
+          });
+        });
+        console.log('[respondToCounterOffer] ✓ Deal regenerate flag set (legacy)');
+      }
       
       return Response.json({ 
         success: true, 
