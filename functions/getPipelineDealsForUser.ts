@@ -52,10 +52,17 @@ Deno.serve(async (req) => {
       try {
         byCreator = await base44.asServiceRole.entities.Deal.filter({ created_by: user.email });
       } catch (_) {}
-      const merged = [...byInvestorId, ...byRooms.filter(Boolean), ...byCreator];
-      // de-dupe by id
-      const seen = new Set();
-      deals = merged.filter(d => d && !seen.has(d.id) && seen.add(d.id));
+      
+      // Merge and deduplicate by ID (keep most recently updated)
+      const dealMap = new Map();
+      [...byInvestorId, ...byRooms.filter(Boolean), ...byCreator].forEach(d => {
+        if (!d?.id) return;
+        const existing = dealMap.get(d.id);
+        if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
+          dealMap.set(d.id, d);
+        }
+      });
+      deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
@@ -84,12 +91,22 @@ Deno.serve(async (req) => {
       
       console.log('[getPipelineDealsForUser] All deal IDs to fetch:', Array.from(allDealIds));
       
-      deals = await Promise.all(
+      // Fetch and deduplicate by ID (keep most recently updated)
+      const dealMap = new Map();
+      const fetchedDeals = await Promise.all(
         Array.from(allDealIds).map(id => 
-          base44.entities.Deal.filter({ id }).then(arr => arr[0])
+          base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)
         )
       );
-      deals = deals.filter(Boolean);
+      
+      [...agentDeals, ...fetchedDeals.filter(Boolean), ...byCreator].forEach(d => {
+        if (!d?.id) return;
+        const existing = dealMap.get(d.id);
+        if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
+          dealMap.set(d.id, d);
+        }
+      });
+      deals = Array.from(dealMap.values());
       
       console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
     }

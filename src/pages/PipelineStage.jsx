@@ -51,26 +51,29 @@ export default function PipelineStage() {
     refetchOnWindowFocus: false,
   });
 
-  // Filter deals by stage
-  const stageDealIds = useMemo(() => {
-    return dealsData
-      .filter(d => {
-        const normalizedDealStage = normalizeStage(d.pipeline_stage);
-        const matchesStage = normalizedDealStage === stageId;
-        
-        // Agents only see deals with room requests
-        if (isAgent) {
-          const room = rooms.find(r => r.deal_id === d.id);
-          return matchesStage && (room?.request_status === 'requested' || room?.request_status === 'accepted' || room?.request_status === 'signed');
-        }
-        return matchesStage;
-      })
-      .map(d => d.id);
-  }, [dealsData, rooms, stageId, isAgent]);
-
+  // Deduplicate and filter deals by stage
   const deals = useMemo(() => {
-    return dealsData.filter(d => stageDealIds.includes(d.id));
-  }, [dealsData, stageDealIds]);
+    // First deduplicate by ID
+    const seenIds = new Set();
+    const uniqueDeals = dealsData.filter(d => {
+      if (!d?.id || seenIds.has(d.id)) return false;
+      seenIds.add(d.id);
+      return true;
+    });
+
+    // Then filter by stage
+    return uniqueDeals.filter(d => {
+      const normalizedDealStage = normalizeStage(d.pipeline_stage);
+      const matchesStage = normalizedDealStage === stageId;
+      
+      // Agents only see deals with room requests
+      if (isAgent) {
+        const room = rooms.find(r => r.deal_id === d.id);
+        return matchesStage && (room?.request_status === 'requested' || room?.request_status === 'accepted' || room?.request_status === 'signed');
+      }
+      return matchesStage;
+    });
+  }, [dealsData, rooms, stageId, isAgent]);
 
   const handleDealClick = async (deal) => {
     if (deal?.id) {
