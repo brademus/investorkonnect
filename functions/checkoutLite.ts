@@ -244,8 +244,14 @@ Deno.serve(async (req) => {
         }
       } else {
         console.log('⚠️ No profile found for user_id:', userId);
+        return Response.json({ 
+          ok: false, 
+          reason: 'PROFILE_NOT_FOUND',
+          message: 'Profile not found. Please complete setup first.',
+          redirect: `${base}/role`
+        }, { status: 403 });
       }
-    }
+      }
     
     // Create checkout session
     const sessionParams: any = {
