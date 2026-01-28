@@ -213,7 +213,7 @@ function PipelineContent() {
   // 2. Load Active Deals via Server-Side Access Control
     const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
       queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-      staleTime: Infinity,
+      staleTime: 30_000, // Refresh every 30 seconds
       gcTime: 30 * 60_000,
      initialData: () => {
        try {
@@ -222,7 +222,7 @@ function PipelineContent() {
          return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
        } catch { return undefined; }
      },
-     refetchOnMount: 'stale',
+     refetchOnMount: true,
      queryFn: async () => {
        if (!profile?.id) return [];
 
@@ -230,13 +230,23 @@ function PipelineContent() {
        const response = await base44.functions.invoke('getPipelineDealsForUser');
        const deals = response.data?.deals || [];
 
-       // Filter out archived and deals with invalid addresses
-       return deals
-         .filter(d => d.status !== 'archived')
+       // Deduplicate by ID on client side as well
+       const dealsMap = new Map();
+       deals
+         .filter(d => d?.status !== 'archived')
+         .forEach(d => {
+           if (!d?.id) return;
+           const existing = dealsMap.get(d.id);
+           if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
+             dealsMap.set(d.id, d);
+           }
+         });
+
+       return Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
      },
      enabled: !!profile?.id,
-     refetchOnWindowFocus: false,
+     refetchOnWindowFocus: true,
 
    });
 

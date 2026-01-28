@@ -24,17 +24,30 @@ export default function PipelineStage() {
   // Load deals for this stage
   const { data: dealsData = [], isLoading: loadingDeals } = useQuery({
     queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-    staleTime: Infinity,
+    staleTime: 30_000, // Refresh every 30 seconds instead of infinity
     gcTime: 30 * 60_000,
     queryFn: async () => {
       if (!profile?.id) return [];
       const response = await base44.functions.invoke('getPipelineDealsForUser');
-      return (response.data?.deals || [])
-        .filter(d => d.status !== 'archived')
+      const deals = response.data?.deals || [];
+      
+      // Deduplicate by ID on the client side as well
+      const dealsMap = new Map();
+      deals
+        .filter(d => d?.status !== 'archived')
+        .forEach(d => {
+          if (!d?.id) return;
+          const existing = dealsMap.get(d.id);
+          if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
+            dealsMap.set(d.id, d);
+          }
+        });
+      
+      return Array.from(dealsMap.values())
         .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
     },
     enabled: !!profile?.id,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true, // Enable refetch on window focus
   });
 
   // Load rooms
