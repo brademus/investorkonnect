@@ -52,10 +52,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { deal_id } = await req.json();
+    const { deal_id, room_id } = await req.json();
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
+    
+    console.log('[regenerateActiveAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY');
 
     // Verify investor
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -79,14 +81,37 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missing buyer commission terms in deal' }, { status: 400 });
     }
 
-    // Identify current active agreement to void
+    // Identify current active agreement to void (room-scoped or legacy)
     let currentAgreement = null;
-    if (deal.current_legal_agreement_id) {
-      const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id });
-      currentAgreement = a?.[0] || null;
+    let room = null;
+    
+    if (room_id) {
+      // ROOM-SCOPED
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      room = rooms?.[0] || null;
+      
+      if (!room) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
+      }
+      
+      if (room.current_legal_agreement_id) {
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: room.current_legal_agreement_id });
+        currentAgreement = a?.[0] || null;
+      } else {
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 1);
+        currentAgreement = a?.[0] || null;
+      }
+      console.log('[regenerateActiveAgreement] Room-scoped current agreement:', currentAgreement?.id);
     } else {
-      const a = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 1);
-      currentAgreement = a?.[0] || null;
+      // LEGACY
+      if (deal.current_legal_agreement_id) {
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id });
+        currentAgreement = a?.[0] || null;
+      } else {
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 1);
+        currentAgreement = a?.[0] || null;
+      }
+      console.log('[regenerateActiveAgreement] Legacy current agreement:', currentAgreement?.id);
     }
 
     // Void old DocuSign envelope if exists
@@ -134,6 +159,7 @@ Deno.serve(async (req) => {
     try {
       gen = await base44.functions.invoke('generateLegalAgreement', {
         deal_id,
+        room_id: room_id || null, // Pass room_id for room-scoped mode
         exhibit_a: {
           buyer_commission_type: terms.buyer_commission_type || 'flat',
           buyer_commission_percentage: terms.buyer_commission_percentage || null,
@@ -169,14 +195,21 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] ✓ New agreement created:', newAgreement.id);
 
-    // Update deal with new agreement pointer and clear regenerate flag
-    await base44.asServiceRole.entities.Deal.update(deal_id, {
-      current_legal_agreement_id: newAgreement.id,
-      requires_regenerate: false,
-      requires_regenerate_reason: null
-    });
-
-    console.log('[regenerateActiveAgreement] ✓ Deal updated with new agreement pointer');
+    // Update pointers and clear regenerate flag (room-scoped or legacy)
+    if (room_id && room) {
+      await base44.asServiceRole.entities.Room.update(room_id, {
+        current_legal_agreement_id: newAgreement.id,
+        requires_regenerate: false
+      });
+      console.log('[regenerateActiveAgreement] ✓ Room updated with new agreement pointer');
+    } else {
+      await base44.asServiceRole.entities.Deal.update(deal_id, {
+        current_legal_agreement_id: newAgreement.id,
+        requires_regenerate: false,
+        requires_regenerate_reason: null
+      });
+      console.log('[regenerateActiveAgreement] ✓ Deal updated with new agreement pointer (legacy)');
+    }
 
     return Response.json({ 
       success: true, 
