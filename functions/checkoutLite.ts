@@ -81,6 +81,8 @@ Deno.serve(async (req) => {
         userId = user.id;
         userEmail = user.email;
         console.log('✅ User authenticated:', userEmail);
+        console.log('🔍 DEBUG - User ID:', userId);
+        console.log('🔍 DEBUG - User object:', JSON.stringify(user, null, 2));
         
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
