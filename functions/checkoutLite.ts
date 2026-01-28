@@ -57,8 +57,8 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
-    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
+    // COMPREHENSIVE GATE: Check auth + onboarding
+    const enableGating = (Deno.env.get('ENABLE_SUBSCRIPTION_GATING') || 'true') !== 'false';
     
     let userId = null;
     let userEmail = null;
