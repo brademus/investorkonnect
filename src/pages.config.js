@@ -21,8 +21,8 @@ import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
-import Terms from './pages/Terms';
 import SelectAgent from './pages/SelectAgent';
+import Terms from './pages/Terms';
 import __Layout from './Layout.jsx';
 
 
@@ -50,8 +50,8 @@ export const PAGES = {
     "Privacy": Privacy,
     "RoleLanding": RoleLanding,
     "Room": Room,
-    "Terms": Terms,
     "SelectAgent": SelectAgent,
+    "Terms": Terms,
 }
 
 export const pagesConfig = {

@@ -226,32 +226,9 @@ export default function ContractVerify() {
           ) : (
             <div className="space-y-6">
               <div className="bg-[#141414] border border-[#34D399]/30 rounded-lg p-6">
-                <div className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-[#34D399] flex-shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-[#34D399] mb-3">Verification Results</h3>
-                    {verificationResult.matches.length > 0 && (
-                      <div className="space-y-2 mb-4">
-                        {verificationResult.matches.map((match, idx) => (
-                          <div key={idx} className="flex items-center gap-2 text-[#34D399] text-sm">
-                            <div className="w-1.5 h-1.5 bg-[#34D399] rounded-full"></div>
-                            {match}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    {verificationResult.mismatches.length > 0 && (
-                      <div className="space-y-2 pt-4 border-t border-[#1F1F1F]">
-                        <p className="text-yellow-500 text-sm font-medium mb-2">Items to review:</p>
-                        {verificationResult.mismatches.map((mismatch, idx) => (
-                          <div key={idx} className="flex items-start gap-2 text-yellow-500/80 text-sm">
-                            <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
-                            {mismatch}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="w-6 h-6 text-[#34D399]" />
+                  <h3 className="font-semibold text-[#34D399] text-lg">Contract Verified</h3>
                 </div>
               </div>
 
