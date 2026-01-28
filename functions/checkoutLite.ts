@@ -163,8 +163,38 @@ Deno.serve(async (req) => {
         console.log('📋 Profile found, stripe_customer_id:', profile.stripe_customer_id || 'none');
         
         if (profile.stripe_customer_id) {
-          customerId = profile.stripe_customer_id;
-          console.log('✅ Using existing Stripe customer:', customerId);
+          // Check if existing customer has an active subscription
+          const existingCustomerId = profile.stripe_customer_id;
+          console.log('🔍 Checking for active subscriptions on:', existingCustomerId);
+          
+          const subscriptions = await stripe.subscriptions.list({
+            customer: existingCustomerId,
+            status: 'active'
+          });
+          
+          if (subscriptions.data.length > 0) {
+            console.log('⚠️  Customer already has active subscription, creating new customer instead');
+            // Create new Stripe customer to avoid conflict
+            const customer = await stripe.customers.create({
+              email: emailLower,
+              metadata: {
+                user_id: userId,
+                app: 'agentvault',
+                previous_customer_id: existingCustomerId
+              }
+            });
+            
+            customerId = customer.id;
+            console.log('✅ Created new Stripe customer (old had active sub):', customerId);
+            
+            // Save new customer ID to profile
+            await base44.asServiceRole.entities.Profile.update(profile.id, {
+              stripe_customer_id: customerId
+            });
+          } else {
+            customerId = existingCustomerId;
+            console.log('✅ Using existing Stripe customer (no active subs):', customerId);
+          }
         } else {
           // Create new Stripe customer
           console.log('🆕 Creating new Stripe customer for:', emailLower);
