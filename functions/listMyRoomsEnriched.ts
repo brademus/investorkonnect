@@ -50,9 +50,15 @@ Deno.serve(async (req) => {
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
 
     // Fetch negotiations for these deals to surface counter/regen state
-    const negotiations = dealIds.length > 0
-      ? await base44.asServiceRole.entities.DealNegotiation.filter({ deal_id: { $in: dealIds } })
-      : [];
+    let negotiations = [];
+    try {
+      if (dealIds.length > 0) {
+        negotiations = await base44.asServiceRole.entities.DealNegotiation.filter({ deal_id: { $in: dealIds } });
+      }
+    } catch (e) {
+      // DealNegotiation entity may not exist - continue without it
+      console.log('[listMyRoomsEnriched] DealNegotiation not found, continuing without negotiation data');
+    }
 
     // Choose latest negotiation per deal
     const negotiationMap = new Map();
@@ -110,9 +116,15 @@ Deno.serve(async (req) => {
       : [];
 
     // Fetch RoomMessage entity attachments as legacy fallback
-    const roomMessages = roomIds.length > 0
-      ? await base44.asServiceRole.entities.RoomMessage.filter({ roomId: { $in: roomIds } })
-      : [];
+    let roomMessages = [];
+    try {
+      if (roomIds.length > 0) {
+        roomMessages = await base44.asServiceRole.entities.RoomMessage.filter({ roomId: { $in: roomIds } });
+      }
+    } catch (e) {
+      // RoomMessage entity may not exist - continue without it
+      console.log('[listMyRoomsEnriched] RoomMessage not found, continuing without legacy message data');
+    }
 
     // Build sender profile map for message attachments
     const senderProfileIds = [
