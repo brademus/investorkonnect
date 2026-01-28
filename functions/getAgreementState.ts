@@ -16,6 +16,119 @@ async function withRetry(fn, maxAttempts = 3) {
   }
 }
 
+async function getDocuSignConnection(base44) {
+  const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
+  if (!connections || connections.length === 0) {
+    return null;
+  }
+  
+  let connection = connections[0];
+  const now = new Date();
+  const expiresAt = new Date(connection.expires_at);
+  
+  if (now >= expiresAt && connection.refresh_token) {
+    console.log('[getAgreementState] Token expired, refreshing...');
+    
+    const tokenUrl = connection.base_uri.includes('demo') 
+      ? 'https://account-d.docusign.com/oauth/token'
+      : 'https://account.docusign.com/oauth/token';
+    
+    const refreshResponse = await fetch(tokenUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'refresh_token',
+        refresh_token: connection.refresh_token,
+        client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
+        client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
+      })
+    });
+    
+    if (!refreshResponse.ok) {
+      console.error('[getAgreementState] Token refresh failed');
+      return null;
+    }
+    
+    const tokenData = await refreshResponse.json();
+    const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
+    
+    await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
+      access_token: tokenData.access_token,
+      refresh_token: tokenData.refresh_token || connection.refresh_token,
+      expires_at: newExpiresAt
+    });
+    
+    connection.access_token = tokenData.access_token;
+    connection.expires_at = newExpiresAt;
+  } else if (now >= expiresAt) {
+    return null;
+  }
+  
+  return connection;
+}
+
+async function syncDocuSignStatus(base44, agreement) {
+  if (!agreement?.docusign_envelope_id) return agreement;
+  
+  const connection = await getDocuSignConnection(base44);
+  if (!connection) {
+    console.log('[getAgreementState] No DocuSign connection, skipping sync');
+    return agreement;
+  }
+  
+  try {
+    const recipientsUrl = `${connection.base_uri}/restapi/v2.1/accounts/${connection.account_id}/envelopes/${agreement.docusign_envelope_id}/recipients`;
+    const recipientsResponse = await fetch(recipientsUrl, {
+      headers: { 'Authorization': `Bearer ${connection.access_token}` }
+    });
+    
+    if (!recipientsResponse.ok) {
+      console.log('[getAgreementState] Failed to fetch DocuSign recipients');
+      return agreement;
+    }
+    
+    const recipients = await recipientsResponse.json();
+    const signers = recipients.signers || [];
+    
+    const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+    const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+    
+    const now = new Date().toISOString();
+    const updates = {};
+    
+    const investorCompleted = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
+    const agentCompleted = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
+    
+    if (investorCompleted && !agreement.investor_signed_at) {
+      updates.investor_signed_at = investorSigner.signedDateTime || now;
+      console.log('[getAgreementState] ✓ Syncing investor signature to DB');
+    }
+    if (agentCompleted && !agreement.agent_signed_at) {
+      updates.agent_signed_at = agentSigner.signedDateTime || now;
+      console.log('[getAgreementState] ✓ Syncing agent signature to DB');
+    }
+    
+    if (Object.keys(updates).length) {
+      const invSigned = !!(updates.investor_signed_at || agreement.investor_signed_at);
+      const agSigned = !!(updates.agent_signed_at || agreement.agent_signed_at);
+      
+      updates.status = invSigned && agSigned ? 'fully_signed' : invSigned ? 'investor_signed' : 'agent_signed';
+      
+      await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
+      console.log('[getAgreementState] ✓ DB updated with status:', updates.status);
+      
+      // Return fresh data
+      const fresh = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id });
+      return fresh?.[0] || agreement;
+    }
+    
+    return agreement;
+  } catch (error) {
+    console.error('[getAgreementState] DocuSign sync error:', error.message);
+    return agreement;
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -82,6 +195,12 @@ Deno.serve(async (req) => {
         investor_signed_at: agreement?.investor_signed_at,
         agent_signed_at: agreement?.agent_signed_at
       });
+    }
+
+    // SYNC with DocuSign BEFORE returning data
+    if (agreement && force_refresh) {
+      console.log('[getAgreementState] Force refresh - syncing with DocuSign');
+      agreement = await syncDocuSignStatus(base44, agreement);
     }
 
     // Get pending counter (latest first)
