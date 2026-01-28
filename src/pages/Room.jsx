@@ -1011,31 +1011,30 @@ export default function Room() {
     (currentRoom?.counterparty_role === 'agent' ? currentRoom?.counterparty_profile?.id : null) ||
     null;
 
-  // Enforce exclusivity: redirect if trying to access non-active room for same deal
+  // PHASE 3: Enforce lock-in - redirect to locked room if exists
   useEffect(() => {
     if (!currentRoom || !profile) return;
 
     const dealId = currentRoom.deal_id;
-    if (!dealId || profile.user_role !== 'investor') return;
+    if (!dealId) return;
 
-    // Check if there's another room for this deal that's accepted/signed
-    const checkExclusivity = async () => {
+    // Check lock-in for both investors and agents
+    const checkLockIn = async () => {
       try {
-        const allRooms = await base44.entities.Room.filter({ deal_id: dealId });
-        const activeRoom = allRooms.find(r => 
-        r.request_status === 'accepted' && r.id !== roomId
-        );
-
-        if (activeRoom) {
-          toast.error("Redirecting to active deal room");
-          navigate(`${createPageUrl("Room")}?roomId=${activeRoom.id}`, { replace: true });
+        const dealArr = await base44.entities.Deal.filter({ id: dealId });
+        const deal = dealArr?.[0];
+        
+        if (deal?.locked_room_id && deal.locked_room_id !== roomId) {
+          console.log('[Room] Deal is locked to another room, redirecting...');
+          toast.error("This deal is now exclusive to another agent");
+          navigate(`${createPageUrl("Room")}?roomId=${deal.locked_room_id}`, { replace: true });
         }
       } catch (error) {
-        console.error("Failed to check exclusivity:", error);
+        console.error("Failed to check lock-in:", error);
       }
     };
 
-    checkExclusivity();
+    checkLockIn();
   }, [currentRoom, profile, roomId, navigate]);
 
   const send = async () => {

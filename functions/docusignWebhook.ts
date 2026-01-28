@@ -55,6 +55,68 @@ function calculateNJReviewEnd() {
 }
 
 /**
+ * PHASE 3: Lock-in enforcement
+ * When a room's agreement becomes fully signed, lock the deal to that agent
+ * and expire all other pending invites.
+ */
+async function enforceDealLockIn(base44, dealId, roomId) {
+  try {
+    console.log('[Lock-in] Checking lock-in for deal:', dealId, 'room:', roomId);
+    
+    const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: dealId });
+    if (!dealArr || dealArr.length === 0) {
+      console.log('[Lock-in] Deal not found');
+      return;
+    }
+    const deal = dealArr[0];
+
+    // Idempotent: if already locked, do nothing
+    if (deal.locked_room_id) {
+      console.log('[Lock-in] Deal already locked to room:', deal.locked_room_id);
+      return;
+    }
+
+    const roomArr = await base44.asServiceRole.entities.Room.filter({ id: roomId });
+    if (!roomArr || roomArr.length === 0) {
+      console.log('[Lock-in] Room not found');
+      return;
+    }
+    const room = roomArr[0];
+
+    // Lock the deal to this room
+    const now = new Date().toISOString();
+    await base44.asServiceRole.entities.Deal.update(dealId, {
+      locked_room_id: roomId,
+      locked_agent_id: room.agentId,
+      agent_id: room.agentId, // Compatibility: set main agent_id
+      connected_at: now
+    });
+    console.log('[Lock-in] ✓ Deal locked to room:', roomId, 'agent:', room.agentId);
+
+    // Mark winning room as locked
+    await base44.asServiceRole.entities.Room.update(roomId, {
+      request_status: 'locked'
+    });
+    console.log('[Lock-in] ✓ Winning room marked locked');
+
+    // Expire all other rooms for this deal
+    const allRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
+    const losers = (allRooms || []).filter(r => r.id !== roomId);
+
+    for (const loser of losers) {
+      await base44.asServiceRole.entities.Room.update(loser.id, {
+        request_status: 'expired'
+      });
+      console.log('[Lock-in] ✓ Expired room:', loser.id);
+    }
+
+    console.log('[Lock-in] ✓ Lock-in complete. Expired', losers.length, 'other rooms');
+  } catch (error) {
+    console.error('[Lock-in] Error enforcing lock-in:', error);
+  }
+}
+
+/**
  * POST /api/docusign/webhook
  * Handle DocuSign Connect webhook events
  */
@@ -288,6 +350,11 @@ Deno.serve(async (req) => {
             console.log('[DocuSign Webhook] Signed PDF uploaded:', uploadResponse.file_url);
           } catch (error) {
             console.error('[DocuSign Webhook] Failed to download/upload signed PDF:', error);
+          }
+
+          // PHASE 3: Enforce lock-in when agreement becomes fully signed
+          if (agreement.room_id) {
+            await enforceDealLockIn(base44, agreement.deal_id, agreement.room_id);
           }
         } else if (investorSigned) {
           updates.status = 'investor_signed';

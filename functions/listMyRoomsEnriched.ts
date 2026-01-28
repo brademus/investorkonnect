@@ -25,9 +25,12 @@ Deno.serve(async (req) => {
     const userRole = profile.user_role || profile.role;
 
     // Get all rooms for this user
-    const rooms = userRole === 'investor'
+    let rooms = userRole === 'investor'
       ? await base44.asServiceRole.entities.Room.filter({ investorId: profile.id })
       : await base44.asServiceRole.entities.Room.filter({ agentId: profile.id });
+
+    // PHASE 3: Filter out expired rooms (agents who lost to another agent)
+    rooms = (rooms || []).filter(r => r.request_status !== 'expired');
 
     // Get all unique deal IDs
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];

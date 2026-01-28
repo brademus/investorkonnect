@@ -627,6 +627,28 @@ function PipelineContent() {
       base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id }).catch(() => {});
     }
 
+    // PHASE 3: If deal is locked, always navigate to the locked room
+    if (deal?.locked_room_id) {
+      console.log('[Pipeline] Deal is locked, navigating to locked room:', deal.locked_room_id);
+      if (isAgent) {
+        const masked = {
+          id: deal.deal_id,
+          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
+          property_address: null,
+          city: deal.city,
+          state: deal.state,
+          purchase_price: deal.budget,
+          pipeline_stage: deal.pipeline_stage,
+          key_dates: { closing_date: deal.closing_date },
+          agent_id: deal.agent_id,
+          is_fully_signed: false,
+        };
+        setCachedDeal(deal.deal_id, masked);
+      }
+      navigate(`${createPageUrl("Room")}?roomId=${deal.locked_room_id}&tab=agreement`);
+      return;
+    }
+
     // If a room ID is already on the card, open it
     if (deal?.room_id) {
       // Mask address immediately by priming cache with a masked snapshot when agent opens
