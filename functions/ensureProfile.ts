@@ -264,9 +264,27 @@ export async function syncAllProfiles(base44) {
   }
 }
 
-// Deno serve handler (library file, not a request handler)
-Deno.serve(() => {
-  return Response.json({ 
-    error: 'This is a library function. Use /functions/profileHealthCheck to test.' 
-  }, { status: 400 });
+// HTTP Handler for direct invocation (e.g. from PostAuth)
+Deno.serve(async (req) => {
+  try {
+    const base44 = createClientFromRequest(req);
+    const user = await base44.auth.me();
+    
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const profile = await ensureProfile(base44, user);
+    
+    return Response.json({ 
+      ok: true, 
+      profile: profile 
+    });
+  } catch (error) {
+    console.error('ensureProfile endpoint error:', error);
+    return Response.json({ 
+      ok: false, 
+      error: error.message 
+    }, { status: 500 });
+  }
 });

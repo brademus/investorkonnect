@@ -305,7 +305,38 @@ export default function Room() {
   const location = useLocation();
   const [params] = useSearchParams();
   const roomId = params.get("roomId");
-  const { profile, user } = useCurrentProfile();
+  const { profile, user, onboarded, hasNDA, isPaidSubscriber, kycVerified, loading } = useCurrentProfile();
+
+  // Strict Gating for Deal Room Access
+  useEffect(() => {
+    if (loading) return;
+    if (!profile) {
+      navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
+    }
+    
+    // Redirect if not fully setup (same logic as Pipeline)
+    if (!onboarded) {
+      navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
+    }
+    
+    if (profile.user_role === 'investor' && !isPaidSubscriber) {
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+
+    // Agent must be KYC verified
+    if (profile.user_role === 'agent' && !kycVerified) {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      return;
+    }
+
+    if (!hasNDA) {
+      navigate(createPageUrl("NDA"), { replace: true });
+      return;
+    }
+  }, [loading, profile, onboarded, hasNDA, isPaidSubscriber, kycVerified, navigate]);
   const { rooms } = useMyRooms();
   const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
   const queryClient = useQueryClient();

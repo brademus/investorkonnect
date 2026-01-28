@@ -55,9 +55,36 @@ function PipelineContent() {
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       } else if (role === 'agent') {
         navigate(createPageUrl("AgentOnboarding"), { replace: true });
-      } else {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       }
+      return;
+    }
+
+    // Strict gating for Pipeline access
+    const role = profile.user_role;
+
+    // 1. Subscription (Investors)
+    const isPaidSubscriber = profile?.role === 'admin' || profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
+    if (role === 'investor' && !isPaidSubscriber) {
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+
+    // 2. KYC (Agents + Investors sometimes)
+    const kycStatus = profile?.role === 'admin' ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
+    const isKycVerified = profile?.role === 'admin' || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
+
+    // Only force KYC redirect if it's strictly required and missing
+    // Agents: always required. Investors: required if marked as needed.
+    if (role === 'agent' && !isKycVerified) {
+       navigate(createPageUrl("IdentityVerification"), { replace: true });
+       return;
+    }
+
+    // 3. NDA (Everyone)
+    const hasNDA = profile?.role === 'admin' || !!profile?.nda_accepted;
+    if (!hasNDA) {
+      navigate(createPageUrl("NDA"), { replace: true });
+      return;
     }
   }, [loading, profile, onboarded, navigate]);
 
