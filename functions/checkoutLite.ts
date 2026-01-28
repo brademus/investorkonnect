@@ -203,8 +203,10 @@ Deno.serve(async (req) => {
     // Add customer or email based on what we have
     if (customerId) {
       sessionParams.customer = customerId;
+      console.log('✅ Using Stripe customer ID:', customerId);
     } else if (userEmail && userEmail.trim()) {
       sessionParams.customer_email = userEmail;
+      console.log('✅ Using customer email:', userEmail);
     }
     
     const session = await stripe.checkout.sessions.create(sessionParams);
