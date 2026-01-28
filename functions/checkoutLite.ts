@@ -152,24 +152,17 @@ Deno.serve(async (req) => {
     // Create or get Stripe customer
     let customerId = null;
     
-    if (userId && userEmail) {
+    if (userId) {
       const base44 = createClientFromRequest(req);
-      const emailLower = userEmail.toLowerCase().trim();
-      
-      console.log('🔄 Looking up profile by email:', emailLower);
-      
-      // Always fetch fresh from DB to get latest stripe_customer_id
-      let profiles = await base44.asServiceRole.entities.Profile.filter({ email: emailLower });
-      
-      // Fallback to user_id lookup if email lookup fails
-      if (!profiles || profiles.length === 0) {
-        console.log('⚠️ Email lookup failed, trying user_id lookup:', userId);
-        profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
-      }
-      
+
+      console.log('🔄 Looking up profile by user_id:', userId);
+
+      // Always lookup by user_id (the unique identifier we control)
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: userId });
+
       if (profiles.length > 0) {
         const profile = profiles[0];
-        console.log('📋 Profile found, stripe_customer_id:', profile.stripe_customer_id || 'none');
+        console.log('📋 Profile found, id:', profile.id, 'stripe_customer_id:', profile.stripe_customer_id || 'none');
 
         if (profile.stripe_customer_id) {
           const existingCustomerId = profile.stripe_customer_id;
@@ -230,14 +223,17 @@ Deno.serve(async (req) => {
           console.log('✅ Using existing Stripe customer:', customerId);
 
         } else {
-          // Create new Stripe customer (no email needed)
-          console.log('🆕 Creating new Stripe customer');
+          // Create new Stripe customer (use profile.id as idempotency key for uniqueness)
+          console.log('🆕 Creating new Stripe customer for profile:', profile.id);
           try {
             const customer = await stripe.customers.create({
               metadata: {
                 user_id: userId,
+                profile_id: profile.id,
                 app: 'agentvault'
               }
+            }, {
+              idempotencyKey: `profile-${profile.id}`
             });
 
             customerId = customer.id;
@@ -258,7 +254,7 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        console.log('⚠️ No profile found for user_id:', userId);
+        console.log('❌ No profile found for user_id:', userId);
         return Response.json({ 
           ok: false, 
           reason: 'PROFILE_NOT_FOUND',
@@ -266,7 +262,7 @@ Deno.serve(async (req) => {
           redirect: `${base}/role`
         }, { status: 403 });
       }
-      }
+    }
     
     // Create checkout session
     const sessionParams: any = {
