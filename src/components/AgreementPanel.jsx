@@ -18,7 +18,7 @@ import { toast } from 'sonner';
  * Clean state machine based on Deal.requires_regenerate flag
  */
 
-export default function AgreementPanel({ dealId, profile, onUpdate }) {
+export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
   const [agreement, setAgreement] = useState(null);
   const [pendingCounter, setPendingCounter] = useState(null);
   const [dealTerms, setDealTerms] = useState(null);
@@ -45,7 +45,11 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     try {
       // Add cache buster to force fresh data if requested
       const timestamp = forceRefresh ? `&_t=${Date.now()}` : '';
-      const res = await base44.functions.invoke('getAgreementState', { deal_id: dealId, force_refresh: forceRefresh });
+      const res = await base44.functions.invoke('getAgreementState', { 
+        deal_id: dealId, 
+        room_id: roomId || null, // Room-scoped or legacy
+        force_refresh: forceRefresh 
+      });
       if (res.data) {
         setAgreement(res.data.agreement || null);
         setPendingCounter(res.data.pending_counter || null);
@@ -167,7 +171,10 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
   const handleGenerate = async () => {
     setBusy(true);
     try {
-      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
+      const res = await base44.functions.invoke('regenerateActiveAgreement', { 
+        deal_id: dealId,
+        room_id: roomId || null
+      });
       if (res.data?.error) {
         console.error('[AgreementPanel] Generation error:', res.data);
         const errorMsg = res.data.details?.missing_placeholders 
@@ -263,6 +270,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
       
       const res = await base44.functions.invoke('createCounterOffer', {
         deal_id: dealId,
+        room_id: roomId || null, // Room-scoped or legacy
         from_role: isAgent ? 'agent' : 'investor',
         terms_delta
       });
@@ -337,8 +345,11 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
     setBusy(true);
     
     try {
-      console.log('[AgreementPanel] Regenerating agreement for deal:', dealId);
-      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId });
+      console.log('[AgreementPanel] Regenerating agreement for deal:', dealId, 'room:', roomId || 'legacy');
+      const res = await base44.functions.invoke('regenerateActiveAgreement', { 
+        deal_id: dealId,
+        room_id: roomId || null
+      });
       
       if (res.data?.error) {
         toast.error(res.data.error);
