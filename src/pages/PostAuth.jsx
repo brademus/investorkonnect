@@ -146,11 +146,8 @@ export default function PostAuth() {
           }
         } else {
           // Fully onboarded - go to Pipeline (main dashboard)
-          // Use hard redirect once to break any router state loops
-          if (!navigated) {
-            setNavigated(true);
-            window.location.href = createPageUrl("Pipeline");
-          }
+          console.log('[PostAuth] User fully onboarded, redirecting to Pipeline');
+          navigate(createPageUrl("Pipeline"), { replace: true });
         }
 
       } catch (error) {

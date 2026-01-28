@@ -96,10 +96,10 @@ function AccountProfileContent() {
       console.log('[AccountProfile] ✅ Profile updated successfully!');
       toast.success("Profile updated successfully!");
 
-      // Go back to Dashboard
+      // Go back to Pipeline
       setTimeout(() => {
         navigate(createPageUrl("Pipeline"));
-      }, 500)
+      }, 500);
 
     } catch (error) {
       console.error("[AccountProfile] ❌ Save error:", error);
