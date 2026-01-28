@@ -145,8 +145,38 @@ export default function PostAuth() {
             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
           }
         } else {
-          // Fully onboarded - go to Pipeline (main dashboard)
-          console.log('[PostAuth] User fully onboarded, redirecting to Pipeline');
+          // 4. Post-Onboarding Gates (Subscription -> KYC -> NDA)
+          
+          // Gate A: Subscription (Investors only)
+          const subscriptionStatus = profile?.subscription_status || 'none';
+          const isPaidSubscriber = profile?.role === 'admin' || subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+          if (role === 'investor' && !isPaidSubscriber) {
+            console.log('[PostAuth] Investor missing subscription, redirecting to Pricing');
+            navigate(createPageUrl("Pricing"), { replace: true });
+            return;
+          }
+
+          // Gate B: KYC / Identity
+          // Admin always verified; otherwise check flags
+          const kycStatus = profile?.role === 'admin' ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
+          const isKycVerified = profile?.role === 'admin' || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
+          
+          if (!isKycVerified) {
+            console.log('[PostAuth] Identity not verified, redirecting to IdentityVerification');
+            navigate(createPageUrl("IdentityVerification"), { replace: true });
+            return;
+          }
+
+          // Gate C: NDA
+          const hasNDA = profile?.role === 'admin' || !!profile?.nda_accepted;
+          if (!hasNDA) {
+            console.log('[PostAuth] NDA not accepted, redirecting to NDA');
+            navigate(createPageUrl("NDA"), { replace: true });
+            return;
+          }
+
+          // Fully cleared - go to Pipeline (main dashboard)
+          console.log('[PostAuth] User fully cleared, redirecting to Pipeline');
           navigate(createPageUrl("Pipeline"), { replace: true });
         }
 
