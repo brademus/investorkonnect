@@ -36,17 +36,41 @@ export default function IdentityVerification() {
     }
   }, [loading, profile, onboarded, kycVerified]);
 
-  // Only redirect if critical issues - otherwise stay on page
+  // Redirect incomplete users back to proper step
   useEffect(() => {
     if (loading) return; // Wait for loading to complete
     
-    // Only redirect if truly no profile AND we're done loading
-    // This prevents redirect loops on page refresh
-    if (!loading && !profile) {
-      console.log('[IdentityVerification] No profile found after loading, redirecting to PostAuth');
+    if (!profile) {
+      console.log('[IdentityVerification] No profile found, redirecting to PostAuth');
       navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
     }
-  }, [loading, profile, navigate]);
+
+    const role = profile.user_role;
+    
+    if (!onboarded) {
+      console.log('[IdentityVerification] Not onboarded, redirecting to onboarding');
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+      return;
+    }
+
+    // Investor-specific subscription check
+    if (role === 'investor' && !profile.subscription_status) {
+      console.log('[IdentityVerification] No subscription, redirecting to Pricing');
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+    
+    if (role === 'investor' && profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing') {
+      console.log('[IdentityVerification] Invalid subscription status, redirecting to Pricing');
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+  }, [loading, profile, onboarded, navigate]);
 
   const handleStartVerification = async () => {
     setVerifying(true);
