@@ -988,10 +988,10 @@ Deno.serve(async (req) => {
     
     const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
     
-    // Retry logic for rate limits with exponential backoff + jitter
+    // Simplified retry - 3 attempts max with 2s delays
     let createResponse;
     let retries = 0;
-    const maxRetries = 12;
+    const maxRetries = 3;
     
     while (retries <= maxRetries) {
       try {
@@ -1004,71 +1004,34 @@ Deno.serve(async (req) => {
           body: JSON.stringify(envelopeDefinition)
         });
         
-        if (createResponse.status === 429) {
-          // Rate limit - wait and retry with exponential backoff + jitter
-          if (retries < maxRetries) {
-            const baseDelay = 1500;
-            const exponentialDelay = baseDelay * Math.pow(2, retries);
-            const jitter = Math.random() * 1000; // Add 0-1s random jitter to prevent thundering herd
-            const waitMs = exponentialDelay + jitter;
-            console.log(`[DocuSign] Rate limited (429), waiting ${Math.round(waitMs)}ms before retry ${retries + 1}/${maxRetries}`);
-            await new Promise(resolve => setTimeout(resolve, waitMs));
-            retries++;
-            continue;
-          } else {
-            // Should never reach here with 12 retries, but just in case
-            console.error('[DocuSign] Exhausted all retries after rate limiting');
-            throw new Error('Service temporarily busy. Please try again in a moment.');
-          }
+        // Rate limit - simple 2s wait between retries
+        if (createResponse.status === 429 && retries < maxRetries) {
+          console.log(`[DocuSign] Rate limited, retry ${retries + 1}/${maxRetries} in 2s`);
+          await new Promise(r => setTimeout(r, 2000));
+          retries++;
+          continue;
         }
         
         if (!createResponse.ok) {
           const errorText = await createResponse.text();
-          
-          // Check if it's a rate limit error in the response body
-          if (errorText.includes('HOURLY_APIINVOCATION_LIMIT_EXCEEDED') || 
-              errorText.includes('API_RATE_LIMIT_EXCEEDED') ||
-              errorText.includes('MINUTELY_APIINVOCATION_LIMIT_EXCEEDED') ||
-              errorText.toLowerCase().includes('rate limit') ||
-              errorText.toLowerCase().includes('too many requests')) {
-            if (retries < maxRetries) {
-              const baseDelay = 1500;
-              const exponentialDelay = baseDelay * Math.pow(2, retries);
-              const jitter = Math.random() * 1000;
-              const waitMs = exponentialDelay + jitter;
-              console.log(`[DocuSign] Rate limit in response, waiting ${Math.round(waitMs)}ms before retry ${retries + 1}/${maxRetries}`);
-              await new Promise(resolve => setTimeout(resolve, waitMs));
-              retries++;
-              continue;
-            }
-            console.error('[DocuSign] Exhausted all retries for rate limit');
-            throw new Error('Service temporarily busy. Please try again in a moment.');
-          }
-          
           console.error('[DocuSign] Envelope creation failed:', errorText);
-          throw new Error('Failed to create DocuSign envelope: ' + errorText);
+          throw new Error('DocuSign envelope creation failed');
         }
         
-        break; // Success, exit retry loop
+        break; // Success
       } catch (err) {
-        const isRateLimit = err.message.toLowerCase().includes('rate') || 
-                           err.message.includes('HOURLY') || 
-                           err.message.includes('MINUTELY') ||
-                           err.message.includes('429') ||
-                           err.message.toLowerCase().includes('too many');
-        
-        if (retries < maxRetries && isRateLimit) {
-          const baseDelay = 1500;
-          const exponentialDelay = baseDelay * Math.pow(2, retries);
-          const jitter = Math.random() * 1000;
-          const waitMs = exponentialDelay + jitter;
-          console.log(`[DocuSign] Error retry ${retries + 1}/${maxRetries}, waiting ${Math.round(waitMs)}ms: ${err.message}`);
-          await new Promise(resolve => setTimeout(resolve, waitMs));
+        if (retries < maxRetries && (err.message.includes('rate') || err.message.includes('429'))) {
+          console.log(`[DocuSign] Error retry ${retries + 1}/${maxRetries}: ${err.message}`);
+          await new Promise(r => setTimeout(r, 2000));
           retries++;
           continue;
         }
         throw err;
       }
+    }
+    
+    if (!createResponse) {
+      throw new Error('Failed to create envelope after retries');
     }
     
     const envelope = await createResponse.json();

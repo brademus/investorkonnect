@@ -151,46 +151,33 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Old agreement marked superseded');
     }
 
-    // Generate new agreement with current terms - normalize fields
-    console.log('[regenerateActiveAgreement] Generating new agreement with terms:', terms);
-    console.log('[regenerateActiveAgreement] Deal state:', deal.state);
+    // Call generateLegalAgreement with simplified error handling
+    console.log('[regenerateActiveAgreement] Generating with terms:', terms);
     
-    let gen;
-    try {
-      gen = await base44.functions.invoke('generateLegalAgreement', {
-        deal_id,
-        room_id: room_id || null, // Pass room_id for room-scoped mode
-        exhibit_a: {
-          buyer_commission_type: terms.buyer_commission_type || 'flat',
-          buyer_commission_percentage: terms.buyer_commission_percentage || null,
-          buyer_flat_fee: terms.buyer_flat_fee || null,
-          agreement_length_days: terms.agreement_length || 180,
-          transaction_type: deal.transaction_type || 'ASSIGNMENT'
-        }
-      });
-    } catch (invokeError) {
-      console.error('[regenerateActiveAgreement] generateLegalAgreement invoke failed:', invokeError);
-      console.error('[regenerateActiveAgreement] Error status:', invokeError?.response?.status);
-      console.error('[regenerateActiveAgreement] Error data:', invokeError?.response?.data);
-      throw invokeError;
-    }
-
-    console.log('[regenerateActiveAgreement] generateLegalAgreement response:', JSON.stringify(gen.data));
+    const gen = await base44.functions.invoke('generateLegalAgreement', {
+      deal_id,
+      room_id: room_id || null,
+      exhibit_a: {
+        buyer_commission_type: terms.buyer_commission_type || 'flat',
+        buyer_commission_percentage: terms.buyer_commission_percentage || null,
+        buyer_flat_fee: terms.buyer_flat_fee || null,
+        agreement_length_days: terms.agreement_length || 180,
+        transaction_type: deal.transaction_type || 'ASSIGNMENT'
+      }
+    });
 
     if (gen.data?.error) {
-      console.error('[regenerateActiveAgreement] Error from generateLegalAgreement:', gen.data.error);
-      console.error('[regenerateActiveAgreement] Full error details:', gen.data);
-      return Response.json({ error: gen.data.error, details: gen.data }, { status: 400 });
+      return Response.json({ 
+        error: gen.data.error, 
+        details: gen.data 
+      }, { status: 400 });
     }
     
-    if (!gen.data) {
-      console.error('[regenerateActiveAgreement] No data returned from generateLegalAgreement');
-      return Response.json({ error: 'Agreement generation returned no data' }, { status: 500 });
-    }
-
     const newAgreement = gen.data?.agreement;
     if (!newAgreement?.id) {
-      return Response.json({ error: 'Agreement generation failed' }, { status: 500 });
+      return Response.json({ 
+        error: 'Generation failed - no agreement returned' 
+      }, { status: 500 });
     }
 
     console.log('[regenerateActiveAgreement] ✓ New agreement created:', newAgreement.id);

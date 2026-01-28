@@ -75,40 +75,27 @@ export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
   useEffect(() => {
     loadState(true); // Force refresh on mount
 
-    // PHASE 7: Reload after DocuSign return with force refresh + redirect handling
+    // Simplified post-sign reload - single sync after 1 second
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1') {
       // Clean URL to prevent repeat triggers
       const cleanUrl = window.location.pathname + window.location.search.replace(/[&?]signed=1/g, '');
       window.history.replaceState({}, '', cleanUrl);
 
-      // Sync envelope status from DocuSign first
-      const syncEnvelope = async () => {
+      // Single sync+reload after 1s (DocuSign takes ~500ms to finalize)
+      setTimeout(async () => {
         try {
           await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
-          console.log('[AgreementPanel] Synced DocuSign envelope');
-        } catch (e) {
-          console.error('[AgreementPanel] Sync error:', e);
-        }
-      };
-
-      // Aggressive refresh with envelope sync
-      syncEnvelope();
-      setTimeout(() => loadState(true), 300);
-      setTimeout(() => syncEnvelope(), 800);
-      setTimeout(() => loadState(true), 1200);
-      setTimeout(() => syncEnvelope(), 2500);
-      setTimeout(() => loadState(true), 3000);
-      setTimeout(() => {
-        syncEnvelope();
-        setTimeout(() => {
-          loadState(true);
+          await loadState(true);
           if (onUpdate) onUpdate();
-        }, 500);
-      }, 5000);
+        } catch (e) {
+          console.error('[AgreementPanel] Post-sign sync error:', e);
+          await loadState(true);
+        }
+      }, 1000);
     }
 
-    const handleFocus = () => loadState(true); // Force refresh on focus
+    const handleFocus = () => loadState(true);
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [dealId]);
@@ -172,25 +159,29 @@ export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
   // Actions
   const handleGenerate = async () => {
     setBusy(true);
+    toast.loading('Generating agreement...', { id: 'generate' });
+    
     try {
       const res = await base44.functions.invoke('regenerateActiveAgreement', { 
         deal_id: dealId,
         room_id: roomId || null
       });
+      
+      toast.dismiss('generate');
+      
       if (res.data?.error) {
-        console.error('[AgreementPanel] Generation error:', res.data);
         const errorMsg = res.data.details?.missing_placeholders 
-          ? `Missing: ${res.data.details.missing_placeholders.join(', ')}`
+          ? `Missing fields: ${res.data.details.missing_placeholders.join(', ')}`
           : res.data.error;
         toast.error(errorMsg);
       } else {
-        toast.success('Agreement generated');
-        await loadState();
+        toast.success('Agreement ready to sign');
+        await loadState(true);
         if (onUpdate) onUpdate();
       }
     } catch (error) {
-      console.error('[AgreementPanel] Generation exception:', error);
-      toast.error(error?.message || 'Failed to generate agreement');
+      toast.dismiss('generate');
+      toast.error(error?.message || 'Generation failed');
     } finally {
       setBusy(false);
     }
@@ -346,40 +337,42 @@ export default function AgreementPanel({ dealId, roomId, profile, onUpdate }) {
 
   const handleRegenerateAndSign = async () => {
     setBusy(true);
+    toast.loading('Regenerating agreement...', { id: 'regen' });
     
     try {
-      console.log('[AgreementPanel] Regenerating agreement for deal:', dealId, 'room:', roomId || 'legacy');
       const res = await base44.functions.invoke('regenerateActiveAgreement', { 
         deal_id: dealId,
         room_id: roomId || null
       });
       
+      toast.dismiss('regen');
+      
       if (res.data?.error) {
         toast.error(res.data.error);
-        setBusy(false);
         setRegenerateModal(false);
+        setBusy(false);
         return;
       }
       
       const newAgreement = res.data?.agreement;
       if (!newAgreement?.id) {
-        toast.error('No agreement returned from regeneration');
-        setBusy(false);
+        toast.error('Generation failed');
         setRegenerateModal(false);
+        setBusy(false);
         return;
       }
       
-      toast.success('Agreement regenerated - opening signing...');
-      await new Promise(r => setTimeout(r, 1000));
-      await loadState();
+      toast.success('Opening signature...');
       setRegenerateModal(false);
+      await loadState(true);
       
-      // Auto-open signing for investor with NEW agreement ID
-      setTimeout(() => handleSign('investor', newAgreement.id), 500);
+      // Auto-open signing immediately
+      setTimeout(() => handleSign('investor', newAgreement.id), 300);
     } catch (error) {
-      toast.error('Regeneration failed');
-      setBusy(false);
+      toast.dismiss('regen');
+      toast.error('Failed to regenerate');
       setRegenerateModal(false);
+      setBusy(false);
     }
   };
 

@@ -206,23 +206,24 @@ Deno.serve(async (req) => {
       });
       console.log('[respondToCounterOffer] ✓ Deal terms updated:', acceptedTerms);
       
-      // Set regeneration flag (room-scoped or legacy)
+      // Set regeneration flag (room-scoped or legacy) - parallel updates
+      const updates = [];
       if (room_id) {
-        await withRetry(async () => {
-          await base44.asServiceRole.entities.Room.update(room_id, {
+        updates.push(
+          base44.asServiceRole.entities.Room.update(room_id, {
             requires_regenerate: true
-          });
-        });
-        console.log('[respondToCounterOffer] ✓ Room regenerate flag set');
-      } else {
-        await withRetry(async () => {
-          await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-            requires_regenerate: true,
-            requires_regenerate_reason: `${userRole} accepted counter at ${now}`
-          });
-        });
-        console.log('[respondToCounterOffer] ✓ Deal regenerate flag set (legacy)');
+          })
+        );
       }
+      updates.push(
+        base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+          requires_regenerate: true,
+          requires_regenerate_reason: `${userRole} accepted counter at ${now}`
+        })
+      );
+      
+      await Promise.all(updates);
+      console.log('[respondToCounterOffer] ✓ Regenerate flags set');
       
       return Response.json({ 
         success: true, 

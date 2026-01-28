@@ -249,10 +249,14 @@ Deno.serve(async (req) => {
       }
     }
 
-    // SYNC with DocuSign BEFORE returning data
-    if (agreement && force_refresh) {
+    // SYNC with DocuSign only if agreement exists and force_refresh requested
+    if (agreement?.docusign_envelope_id && force_refresh) {
       console.log('[getAgreementState] Force refresh - syncing with DocuSign');
-      agreement = await syncDocuSignStatus(base44, agreement);
+      try {
+        agreement = await syncDocuSignStatus(base44, agreement);
+      } catch (e) {
+        console.error('[getAgreementState] Sync error (non-fatal):', e.message);
+      }
     }
 
     // Get pending counter (room-scoped or legacy)
