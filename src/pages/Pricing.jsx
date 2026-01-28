@@ -71,8 +71,8 @@ export default function Pricing() {
       return;
     }
 
-    // Check if user has completed onboarding (for both investor and agent)
-    if ((role === 'investor' || role === 'agent') && !onboarded) {
+    // Check if user has completed onboarding
+    if (!onboarded) {
       const onboardingPage = role === 'agent' ? 'AgentOnboarding' : 'InvestorOnboarding';
       toast.error(`Please complete your ${role} profile first`);
       navigate(createPageUrl(onboardingPage));

@@ -32,7 +32,7 @@ export default function IdentityVerification() {
   useEffect(() => {
     if (!loading && profile && onboarded && !kycVerified && !verifying && status === 'pending') {
       console.log('[IdentityVerification] Auto-starting verification flow');
-      handleStartVerification();
+      setTimeout(() => handleStartVerification(), 500); // Small delay to prevent race conditions
     }
   }, [loading, profile, onboarded, kycVerified]);
 

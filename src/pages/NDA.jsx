@@ -70,13 +70,25 @@ function NDAContent() {
       return;
     }
     
+    const role = profile.user_role;
+    
     if (!onboarded) {
-      const role = profile.user_role;
       if (role === 'investor') {
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       } else if (role === 'agent') {
         navigate(createPageUrl("AgentOnboarding"), { replace: true });
       }
+      return;
+    }
+    
+    // Investor-specific subscription check
+    if (role === 'investor' && !profile.subscription_status) {
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+    
+    if (role === 'investor' && profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing') {
+      navigate(createPageUrl("Pricing"), { replace: true });
       return;
     }
     
