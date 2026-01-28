@@ -51,6 +51,7 @@ import AccountProfile from './pages/AccountProfile';
 import Admin from './pages/Admin';
 import AgentLanding from './pages/AgentLanding';
 import AgentOnboarding from './pages/AgentOnboarding';
+import AgentProfile from './pages/AgentProfile';
 import BillingSuccess from './pages/BillingSuccess';
 import ContractVerify from './pages/ContractVerify';
 import DocuSignReturn from './pages/DocuSignReturn';
@@ -72,7 +73,6 @@ import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import Terms from './pages/Terms';
-import AgentProfile from './pages/AgentProfile';
 import __Layout from './Layout.jsx';
 
 
@@ -81,6 +81,7 @@ export const PAGES = {
     "Admin": Admin,
     "AgentLanding": AgentLanding,
     "AgentOnboarding": AgentOnboarding,
+    "AgentProfile": AgentProfile,
     "BillingSuccess": BillingSuccess,
     "ContractVerify": ContractVerify,
     "DocuSignReturn": DocuSignReturn,
@@ -102,7 +103,6 @@ export const PAGES = {
     "Room": Room,
     "SelectAgent": SelectAgent,
     "Terms": Terms,
-    "AgentProfile": AgentProfile,
 }
 
 export const pagesConfig = {

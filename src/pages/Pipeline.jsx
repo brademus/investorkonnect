@@ -46,7 +46,7 @@ function PipelineContent() {
   useEffect(() => {
     if (loading) return;
     if (!profile) {
-      navigate(createPageUrl("Home"), { replace: true });
+      navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
     if (!onboarded) {

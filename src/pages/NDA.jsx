@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { ndaAccept } from "@/components/functions";
+
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Shield, Lock, FileText, Loader2, CheckCircle, ArrowRight, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { devLog } from "@/components/devLogger";
-import { DEMO_MODE } from "@/components/config/demo";
+
 
 /**
  * STEP 6: NDA ACCEPTANCE
