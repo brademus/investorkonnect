@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate, useSearchParams, Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
-import { listMyRooms, roomUpdate } from "@/components/functions";
+
 import { createPageUrl } from "@/components/utils";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Logo } from "@/components/Logo";
@@ -100,12 +100,9 @@ function useMessages(roomId, authUser, currentProfile) {
   const [initialLoadDone, setInitialLoadDone] = useState(false);
   const messagesEndRef = useRef(null);
 
-  const scrollToBottom = () => {
-    // Jump instantly to bottom to avoid top-then-bottom flicker
+  useEffect(() => { 
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-  };
-
-  useEffect(() => { scrollToBottom(); }, [items.length]);
+  }, [items.length]);
 
   // Only show loading on initial room load
   useEffect(() => {
@@ -340,9 +337,7 @@ export default function Room() {
   const [deal, setDeal] = useState(null);
   const [agreement, setAgreement] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
-  const [investorTasks, setInvestorTasks] = useState([]);
-  const [agentTasks, setAgentTasks] = useState([]);
-  const [generatingTasks, setGeneratingTasks] = useState(false);
+
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   const requestSeqRef = useRef(0);
   const [dealAppts, setDealAppts] = useState(null);
@@ -898,17 +893,6 @@ export default function Room() {
     })();
   }, [messages, roomId, currentRoom?.id]);
 
-  // Also warm cache on mount if we already navigated with cached deal
-  useEffect(() => {
-    if (currentRoom?.deal_id && !deal) {
-      const cached = getCachedDeal(currentRoom.deal_id);
-      if (cached) {
-        const mask = shouldMaskAddress(profile, currentRoom, cached) || isAgentView;
-        setDeal(mask ? { ...cached, property_address: null } : cached);
-      }
-    }
-  }, [currentRoom?.deal_id]);
-
   // PHASE 4/7: Load room states for multi-agent mode + real-time updates
   useEffect(() => {
     if (!multiAgentMode || invitedRooms.length === 0 || !currentRoom?.deal_id) {
@@ -1235,101 +1219,9 @@ export default function Room() {
     }
   };
 
-  // Removed - old lock-in logic replaced by request/accept/sign flow
 
-  const generateTasks = async () => {
-    if (!roomId || generatingTasks) return;
-    
-    setGeneratingTasks(true);
-    try {
-      // Get recent chat messages for context
-      const recentMessages = messages.slice(-20).map(m => 
-        `${m.sender_profile_id === profile?.id ? 'You' : 'Other'}: ${m.body}`
-      ).join('\n');
-      
-      const dealContext = `
-Property: ${currentRoom?.property_address || 'N/A'}
-Price: $${(currentRoom?.budget || 0).toLocaleString()}
-Stage: ${currentRoom?.pipeline_stage || 'new_deal_under_contract'}
-Closing Date: ${currentRoom?.closing_date || 'TBD'}
-Agent Locked: ${currentRoom?.deal_assigned_agent_id === roomAgentProfileId ? 'Yes' : 'No'}
 
-Recent conversation:
-${recentMessages || 'No messages yet'}
-`;
 
-      const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-      
-      const investorPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable next steps for the INVESTOR. Be specific and realistic. 
-Use RELATIVE dates only (e.g., "Today", "Tomorrow", "This Week", "Next Monday", "By end of week") - DO NOT use specific calendar dates.
-Today's date is ${today}.
-Return as JSON array of objects with "label" and "due" fields.
-
-${dealContext}`;
-
-      const agentPrompt = `Based on this real estate deal and conversation, generate 3-4 actionable tasks for the AGENT working this deal today. Be specific and realistic.
-Use RELATIVE dates only (e.g., "Today", "Tomorrow", "This Week", "Next Monday", "By end of week") - DO NOT use specific calendar dates.
-Today's date is ${today}.
-Return as JSON array of objects with "label" and "due" fields.
-
-${dealContext}`;
-
-      const [investorResponse, agentResponse] = await Promise.all([
-        base44.integrations.Core.InvokeLLM({
-          prompt: investorPrompt,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              tasks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    label: { type: "string" },
-                    due: { type: "string" }
-                  }
-                }
-              }
-            }
-          }
-        }),
-        base44.integrations.Core.InvokeLLM({
-          prompt: agentPrompt,
-          response_json_schema: {
-            type: "object",
-            properties: {
-              tasks: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    label: { type: "string" },
-                    due: { type: "string" }
-                  }
-                }
-              }
-            }
-          }
-        })
-      ]);
-
-      setInvestorTasks(investorResponse.tasks || []);
-      setAgentTasks(agentResponse.tasks || []);
-      toast.success('Tasks updated based on conversation');
-    } catch (error) {
-      console.error('Failed to generate tasks:', error);
-      toast.error('Failed to generate tasks');
-    } finally {
-      setGeneratingTasks(false);
-    }
-  };
-
-  // Generate tasks on first load if we have messages
-  useEffect(() => {
-    if (messages.length > 0 && investorTasks.length === 0 && agentTasks.length === 0 && !generatingTasks) {
-      generateTasks();
-    }
-  }, [messages.length]);
 
   // PHASE 7: Memoize filtered rooms - exclude expired and locked-to-other-agent
   const filteredRooms = useMemo(() => {
@@ -3058,86 +2950,7 @@ ${dealContext}`;
               </>
               )}
 
-              {/* Messages Container */}
-              <div className="flex-1 overflow-y-auto space-y-4 hidden">
-              {loading ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <LoadingAnimation className="w-64 h-64 mx-auto mb-3" />
-                    <p className="text-sm text-[#808080]">Loading messages...</p>
-                  </div>
-                </div>
-              ) : messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full">
-                  <div className="text-center">
-                    <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Send className="w-8 h-8 text-[#E3C567]" />
-                    </div>
-                    <p className="text-[#808080]">No messages yet. Say hello!</p>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  {messages.map((m) => {
-                   const isMe = (m._isMe === true) || isMessageFromMe(m, user, profile);
-                   const isFileMessage = m.metadata?.type === 'file' || m.metadata?.type === 'photo';
 
-                    return (
-                      <div
-                        key={m.id}
-                        className={`flex ${isMe ? "justify-end" : "justify-start"}`}
-                      >
-                        <div className="max-w-[70%]">
-                          <div
-                            className={`px-5 py-3.5 shadow-sm ${
-                              isMe
-                                ? "bg-[#E3C567] text-black rounded-2xl rounded-br-md"
-                                : "bg-[#0D0D0D] text-[#FAFAFA] rounded-2xl rounded-bl-md border border-[#1F1F1F]"
-                            }`}
-                          >
-                            {(
-                              m.metadata?.type === 'photo' ||
-                              (m.metadata?.type === 'file' && (m.metadata?.file_type || '').startsWith('image/'))
-                            ) ? (
-                              <div>
-                                <img 
-                                  src={m.metadata.file_url} 
-                                  alt={m.metadata.file_name}
-                                  className="rounded-lg max-w-full h-auto max-h-64 mb-2 cursor-pointer"
-                                  onClick={() => window.open(m.metadata.file_url, '_blank')}
-                                />
-                                <p className="text-sm opacity-90">{m.body}</p>
-                              </div>
-                            ) : isFileMessage && m.metadata?.type === 'file' ? (
-                              <div>
-                                <p className="text-[15px] mb-2">{m.body}</p>
-                                <a
-                                  href={m.metadata.file_url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className={`text-sm underline ${isMe ? 'text-black' : 'text-[#E3C567]'} hover:opacity-80`}
-                                >
-                                  Download →
-                                </a>
-                              </div>
-                            ) : (
-                              <p className="text-[15px] whitespace-pre-wrap leading-relaxed">{m.body}</p>
-                            )}
-                          </div>
-                          <p className={`text-xs text-[#808080] mt-1.5 ${isMe ? 'text-right' : 'text-left'}`}>
-                            {new Date(m.created_date).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <div ref={messagesEndRef} />
-                </>
-              )}
-          </div>
         </div>
       )}
     </div>
