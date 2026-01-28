@@ -86,31 +86,38 @@ export default function ContractVerify() {
       - Closing Date: ${dealData.closingDate}
 
       YOUR TASK:
-      1. Extract the following information from the contract PDF:
-      - property_address (full street address)
-      - city
-      - state (2-letter code)
-      - zip (5-digit code)
-      - purchase_price (number only, no symbols)
-      - seller_name (full legal name)
-      - earnest_money (number only)
-      - closing_date (YYYY-MM-DD format)
+      1. Carefully read through the ENTIRE contract PDF - contracts vary widely in format, layout, and structure.
 
-      2. Compare each extracted field with the user-provided deal data.
+      2. Extract the following information wherever it appears in the document:
+      - property_address: Look for property address, subject property, premises, or legal description sections
+      - city: May be part of address or listed separately
+      - state: 2-letter abbreviation (e.g., AZ, TX, FL)
+      - zip: 5-digit postal code
+      - purchase_price: May be labeled as "purchase price", "sales price", "offer amount", or similar
+      - seller_name: May be in seller section, grantor, or signatures
+      - earnest_money: May be labeled as "earnest money", "deposit", "good faith deposit", "EMD"
+      - closing_date: May be "closing date", "settlement date", "COE", or similar
 
-      3. For each field, determine if it's a MATCH or MISMATCH:
-      - MATCH: The contract data matches the deal data (allow minor formatting differences)
-      - MISMATCH: The values are clearly different
+      3. For each field, compare the extracted value with the user-provided data and determine:
+      - MATCH: Values are the same (be flexible with formatting)
+      - MISMATCH: Values are clearly different and incompatible
+      - NOT_FOUND: Field not found in contract
 
-      4. Return the results in the specified JSON format.
+      MATCHING RULES (Be Flexible):
+      - Addresses: Ignore formatting differences ("Street" = "St", "Avenue" = "Ave", "123 Main St" = "123 Main Street")
+      - Cities: Case-insensitive, trim spaces
+      - States: Match any valid form (e.g., "AZ" = "Arizona" = "az")
+      - ZIP: Match first 5 digits only (ignore ZIP+4)
+      - Prices: Ignore all formatting ($, commas, spaces - just compare numbers)
+      - Names: Case-insensitive, ignore middle initials, extra spaces, and suffixes (Jr, Sr, III)
+      - Dates: Parse any common format (MM/DD/YYYY, YYYY-MM-DD, "January 15, 2026", etc.) and compare the actual dates
 
       IMPORTANT:
-      - Be thorough in reading the contract
-      - For addresses, ignore minor formatting (e.g., "Street" vs "St")
-      - For dates, parse flexibly (e.g., "01/15/2026" = "2026-01-15")
-      - For prices, ignore commas and $ symbols
-      - For names, ignore case and extra spaces
-      - If a field is not found in the contract, mark it as "not_found"`;
+      - Real estate contracts vary widely - some are state-specific forms, some are custom, some are handwritten
+      - Search the ENTIRE document thoroughly - fields may be anywhere
+      - If you find multiple possible matches for a field, use the most prominent one
+      - Be generous with matches - only mark as MISMATCH if truly incompatible
+      - Provide helpful notes explaining your reasoning`;
 
       const aiResult = await base44.integrations.Core.InvokeLLM({
         prompt: verificationPrompt,
