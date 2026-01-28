@@ -203,16 +203,14 @@ Deno.serve(async (req) => {
       }
     };
     
-    // Always pass customer email for pre-fill
-    if (userEmail && userEmail.trim()) {
-      sessionParams.customer_email = userEmail;
-      console.log('✅ Pre-filling email:', userEmail);
-    }
-    
-    // Use customer ID if available (existing customer)
+    // Use customer ID if available (locks in customer for existing subscriptions)
     if (customerId) {
       sessionParams.customer = customerId;
-      console.log('✅ Using Stripe customer ID:', customerId);
+      console.log('✅ Using existing Stripe customer ID:', customerId);
+    } else if (userEmail && userEmail.trim()) {
+      // Only use customer_email for new customers
+      sessionParams.customer_email = userEmail;
+      console.log('✅ Pre-filling email for new customer:', userEmail);
     }
     
     const session = await stripe.checkout.sessions.create(sessionParams);
