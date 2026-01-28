@@ -316,6 +316,14 @@ Deno.serve(async (req) => {
         
         is_fully_signed: isFullySigned,
         
+        // Include agreement signing status for badges
+        agreement: la ? {
+          status: la.status,
+          investor_signed_at: la.investor_signed_at,
+          agent_signed_at: la.agent_signed_at,
+          docusign_status: la.docusign_status
+        } : null,
+        
         // Legacy fields for compatibility
         title: deal?.title || room.title,
         property_address: (userRole === 'investor' || isFullySigned) 
