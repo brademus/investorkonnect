@@ -104,14 +104,10 @@ function PipelineContent() {
     (async () => {
       if (!loading && profile && !triedEnsureProfileRef.current) {
         triedEnsureProfileRef.current = true;
-        try {
-          await refresh();
-        } catch (e) {
-          console.warn('profile refresh failed', e);
-        }
+        // Removed refresh() call - it causes loading loops
       }
     })();
-  }, [loading, profile, refresh]);
+  }, [loading, profile]);
 
   // One-time self-dedup to clean up any duplicates for this user
   useEffect(() => {
@@ -120,13 +116,13 @@ function PipelineContent() {
         dedupRef.current = true;
         try {
           await base44.functions.invoke('dedupeProfileByEmail');
-          await refresh();
+          // Removed refresh() call - profile is already loaded
         } catch (e) {
           console.warn('profileDedupSelf failed', e);
         }
       }
     })();
-  }, [loading, profile, refresh]);
+  }, [loading, profile]);
 
   // Load identity status once for setup gating
   useEffect(() => {
@@ -165,7 +161,7 @@ function PipelineContent() {
         setIdentity(data?.identity || null);
         if (status === 'VERIFIED') {
           try { if (profile?.id) { await base44.entities.Profile.update(profile.id, { identity_status: 'approved', identity_verified_at: new Date().toISOString() }); } } catch (_) {}
-          await refresh();
+          setIdentity({ verificationStatus: 'VERIFIED' });
           clearInterval(interval);
         }
       } catch (e) {
@@ -174,7 +170,6 @@ function PipelineContent() {
         const updatedProfile = updatedProfiles[0];
         if (updatedProfile?.identity_status === 'approved' || updatedProfile?.identity_status === 'verified') {
           setIdentity({ verificationStatus: 'VERIFIED' });
-          await refresh();
           clearInterval(interval);
         }
       }
@@ -183,7 +178,7 @@ function PipelineContent() {
     return () => clearInterval(interval);
   }, [profile?.id, identity?.verificationStatus, profile?.identity_status, refresh]);
 
-  // Backfill identity_status immediately once VERIFIED, then refresh profile
+  // Backfill identity_status immediately once VERIFIED
   useEffect(() => {
     if (!profile?.id) return;
     const status = String(identity?.verificationStatus || '').toUpperCase();
@@ -194,11 +189,11 @@ function PipelineContent() {
             identity_status: 'approved',
             identity_verified_at: new Date().toISOString(),
           });
-          await refresh();
+          // Profile will update via realtime subscription
         } catch (_) {}
       })();
     }
-  }, [profile?.id, profile?.identity_status, identity?.verificationStatus, refresh]);
+  }, [profile?.id, profile?.identity_status, identity?.verificationStatus]);
 
   // Manual dedup handler (kept for logic, no UI trigger) 
   const handleDedup = async () => {
