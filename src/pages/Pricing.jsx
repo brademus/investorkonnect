@@ -59,6 +59,10 @@ export default function Pricing() {
   const handleGetStarted = async (plan) => {
     console.log('[Pricing] handleGetStarted called with plan:', plan);
     
+    // Check if force_new override is in URL
+    const urlParams = new URLSearchParams(window.location.search);
+    const forceNew = urlParams.get('force_new') === '1';
+    
     if (loading) {
       toast.info("Loading your account...");
       return;
@@ -92,8 +96,8 @@ export default function Pricing() {
     toast.loading("Opening checkout...", { id: toastId });
 
     try {
-      console.log('[Pricing] Calling checkoutLite with plan:', plan);
-      const response = await base44.functions.invoke('checkoutLite', { plan });
+      console.log('[Pricing] Calling checkoutLite with plan:', plan, 'force_new:', forceNew);
+      const response = await base44.functions.invoke('checkoutLite', { plan, force_new: forceNew });
 
       // Validate response
       if (!response || !response.data) {
@@ -119,16 +123,19 @@ export default function Pricing() {
         return;
       }
 
-      // Show redirecting message
+      // Show appropriate redirecting message
+      const message = response.data.kind === 'portal' 
+        ? "Opening billing portal..."
+        : "Redirecting to Stripe...";
       toast.dismiss(toastId);
-      toast.loading("Redirecting to Stripe...", { id: toastId + '-redirect' });
+      toast.loading(message, { id: toastId + '-redirect' });
 
       // Add small delay to ensure toast is visible
       await new Promise(resolve => setTimeout(resolve, 300));
 
-      // Redirect to Stripe
-      console.log('[Pricing] Redirecting to:', response.data.url);
-      window.location.href = response.data.url;
+      // Redirect to Stripe (checkout) or Billing Portal
+      console.log('[Pricing] Redirecting to:', response.data.kind, response.data.url);
+      window.location.assign(response.data.url);
 
       // Fallback: If redirect doesn't happen in 5 seconds, show error
       setTimeout(() => {
