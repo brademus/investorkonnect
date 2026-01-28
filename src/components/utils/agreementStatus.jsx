@@ -60,9 +60,17 @@ function needsRegeneration(input) {
 export function getAgreementStatusLabel({ room, agreement, negotiation, role }) {
   const userRole = role === 'agent' ? 'agent' : role === 'investor' ? 'investor' : 'member';
 
-  // Pull basic status flags
-  const agreementStatus = (room?.agreement_status || agreement?.status || '').toLowerCase();
+  // Pull basic status flags - prioritize agreement entity over room field
+  const agreementStatus = (agreement?.status || room?.agreement_status || '').toLowerCase();
   const isFullySigned = !!(room?.is_fully_signed || agreementStatus === 'fully_signed');
+  
+  // Check if investor has signed (from agreement or room data)
+  const investorHasSigned = !!(
+    agreement?.investor_signed_at || 
+    room?.agreement?.investor_signed_at ||
+    room?.investor_signed_at || 
+    agreementStatus === 'investor_signed'
+  );
 
   // Optional negotiation/counter info (if present in provided objects)
   const negStatus = (
@@ -141,7 +149,7 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
   }
 
   // S1 — WAITING_FOR_AGENT_SIGNATURE (investor signed current version)
-  if (agreementStatus === 'investor_signed') {
+  if (investorHasSigned && !isFullySigned) {
     return {
       state: 'S1',
       label: userRole === 'investor' ? 'Waiting for agent' : 'Review & sign',
@@ -149,15 +157,8 @@ export function getAgreementStatusLabel({ room, agreement, negotiation, role }) 
     };
   }
 
-  // Initial states (sent/draft)
+  // Initial states (sent/draft) - but check for signatures first
   if (agreementStatus === 'sent' || agreementStatus === 'draft') {
-    const investorHasSigned = (
-      (room?.agreement_status || '').toLowerCase() === 'investor_signed' ||
-      agreementStatus === 'investor_signed' ||
-      !!agreement?.investor_signed_at ||
-      !!room?.investor_signed_at
-    );
-
     if (userRole === 'investor') {
       return { state: investorHasSigned ? 'S1' : 'S0', label: investorHasSigned ? 'Waiting for agent' : 'Sign contract', className: pickBadgeClasses(investorHasSigned ? 'amber' : 'blue') };
     }
