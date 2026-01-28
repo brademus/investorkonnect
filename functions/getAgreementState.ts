@@ -138,12 +138,12 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { deal_id, force_refresh } = await req.json();
+    const { deal_id, room_id, force_refresh } = await req.json();
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
 
-    console.log('[getAgreementState] Loading for deal:', deal_id, 'force_refresh:', force_refresh);
+    console.log('[getAgreementState] Loading for deal:', deal_id, 'room_id:', room_id || 'legacy', 'force_refresh:', force_refresh);
     
     // Load deal
     const deal = await withRetry(async () => {
@@ -152,49 +152,101 @@ Deno.serve(async (req) => {
       return deals[0];
     });
 
-    // Get active LegalAgreement (single source of truth with backwards compatibility)
+    // Get active LegalAgreement (room-scoped or legacy deal-scoped)
     let agreement = null;
+    let room = null;
     
-    // Resolution order:
-    // 1) Use deal.current_legal_agreement_id if set and not superseded
-    if (deal.current_legal_agreement_id) {
-      const a = await withRetry(async () => 
-        base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id })
-      );
-      const candidate = a?.[0] || null;
+    if (room_id) {
+      // ROOM-SCOPED MODE
+      console.log('[getAgreementState] Room-scoped mode');
       
-      // If superseded/voided, fall back to latest non-superseded
-      if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
-        console.log('[getAgreementState] Current pointer is superseded, finding latest active');
-        const allAgreements = await withRetry(async () => 
-          base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
-        );
-        agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
-      } else {
-        agreement = candidate;
+      // Load room
+      const rooms = await withRetry(async () => 
+        base44.asServiceRole.entities.Room.filter({ id: room_id })
+      );
+      room = rooms?.[0] || null;
+      
+      if (!room) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
       }
       
-      console.log('[getAgreementState] Resolved agreement by ID:', {
-        id: agreement?.id,
-        status: agreement?.status,
-        investor_signed_at: agreement?.investor_signed_at,
-        agent_signed_at: agreement?.agent_signed_at,
-        docusign_status: agreement?.docusign_status
-      });
-    }
-    
-    // 2) Fallback: latest non-superseded LegalAgreement for this deal (legacy compatibility)
-    if (!agreement) {
-      const allAgreements = await withRetry(async () => 
-        base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
-      );
-      agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || allAgreements?.[0] || null;
-      console.log('[getAgreementState] Fallback to latest non-superseded:', {
+      // 1) Use Room.current_legal_agreement_id if set
+      if (room.current_legal_agreement_id) {
+        const a = await withRetry(async () => 
+          base44.asServiceRole.entities.LegalAgreement.filter({ id: room.current_legal_agreement_id })
+        );
+        const candidate = a?.[0] || null;
+        
+        // If superseded/voided, fall back to latest non-superseded for this room
+        if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
+          console.log('[getAgreementState] Room pointer is superseded, finding latest active for room');
+          const allAgreements = await withRetry(async () => 
+            base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 10)
+          );
+          agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
+        } else {
+          agreement = candidate;
+        }
+      }
+      
+      // 2) Fallback: latest non-superseded for this room
+      if (!agreement) {
+        const allAgreements = await withRetry(async () => 
+          base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 10)
+        );
+        agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || allAgreements?.[0] || null;
+      }
+      
+      console.log('[getAgreementState] Room-scoped agreement:', {
         id: agreement?.id,
         status: agreement?.status,
         investor_signed_at: agreement?.investor_signed_at,
         agent_signed_at: agreement?.agent_signed_at
       });
+    } else {
+      // LEGACY DEAL-SCOPED MODE
+      console.log('[getAgreementState] Legacy deal-scoped mode');
+      
+      // 1) Use deal.current_legal_agreement_id if set and not superseded
+      if (deal.current_legal_agreement_id) {
+        const a = await withRetry(async () => 
+          base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id })
+        );
+        const candidate = a?.[0] || null;
+        
+        // If superseded/voided, fall back to latest non-superseded
+        if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
+          console.log('[getAgreementState] Current pointer is superseded, finding latest active');
+          const allAgreements = await withRetry(async () => 
+            base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
+          );
+          agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
+        } else {
+          agreement = candidate;
+        }
+        
+        console.log('[getAgreementState] Resolved agreement by ID:', {
+          id: agreement?.id,
+          status: agreement?.status,
+          investor_signed_at: agreement?.investor_signed_at,
+          agent_signed_at: agreement?.agent_signed_at,
+          docusign_status: agreement?.docusign_status
+        });
+      }
+      
+      // 2) Fallback: latest non-superseded LegalAgreement for this deal (legacy compatibility)
+      if (!agreement) {
+        const allAgreements = await withRetry(async () => 
+          base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10)
+        );
+        agreement = allAgreements?.find(a => a.status !== 'superseded' && a.status !== 'voided') || allAgreements?.[0] || null;
+        console.log('[getAgreementState] Fallback to latest non-superseded:', {
+          id: agreement?.id,
+          status: agreement?.status,
+          investor_signed_at: agreement?.investor_signed_at,
+          agent_signed_at: agreement?.agent_signed_at
+        });
+      }
     }
 
     // SYNC with DocuSign BEFORE returning data
@@ -203,15 +255,22 @@ Deno.serve(async (req) => {
       agreement = await syncDocuSignStatus(base44, agreement);
     }
 
-    // Get pending counter (latest first)
+    // Get pending counter (room-scoped or legacy)
     let pending_counter = null;
     try {
-      const counters = await withRetry(async () => {
-        return await base44.asServiceRole.entities.CounterOffer.filter({
-          deal_id,
-          status: 'pending'
-        }, '-created_date', 1);
-      });
+      const counters = room_id
+        ? await withRetry(async () => {
+            return await base44.asServiceRole.entities.CounterOffer.filter({
+              room_id,
+              status: 'pending'
+            }, '-created_date', 1);
+          })
+        : await withRetry(async () => {
+            return await base44.asServiceRole.entities.CounterOffer.filter({
+              deal_id,
+              status: 'pending'
+            }, '-created_date', 1);
+          });
 
       pending_counter = counters?.[0] || null;
       
@@ -230,13 +289,18 @@ Deno.serve(async (req) => {
     const investor_signed = !!agreement?.investor_signed_at;
     const agent_signed = !!agreement?.agent_signed_at;
     const fully_signed = investor_signed && agent_signed;
+    
+    // Determine requires_regenerate: room-scoped or legacy
+    const requiresRegenerate = room_id && room
+      ? !!room.requires_regenerate
+      : !!deal.requires_regenerate;
 
     return Response.json({
       success: true,
       agreement,
       pending_counter,
       deal_terms: deal.proposed_terms || {},
-      requires_regenerate: !!deal.requires_regenerate,
+      requires_regenerate: requiresRegenerate,
       // Helper flags
       investor_signed,
       agent_signed,
