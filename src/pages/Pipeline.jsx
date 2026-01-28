@@ -385,7 +385,7 @@ function PipelineContent() {
       const r = event?.data;
       if (!r || r.agentId !== profile.id) return;
       if (event.type === 'create' || event.type === 'update') {
-        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status);
+        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status, r.agreement_status);
         const st = r.agreement_status;
         const rs = r.request_status;
         if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted' || rs === 'requested') {
@@ -398,7 +398,27 @@ function PipelineContent() {
         }
       }
     });
-    return () => { try { unsubRoom && unsubRoom(); } catch (_) {} };
+    
+    // Also subscribe to LegalAgreement changes to catch investor signatures
+    const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
+      if (event.type === 'create' || event.type === 'update') {
+        const ag = event?.data;
+        if (ag?.investor_signed_at || ag?.status === 'investor_signed') {
+          console.log('[Pipeline] Agreement signed by investor, refreshing...');
+          try {
+            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+            queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
+            refetchDeals();
+            refetchRooms();
+          } catch (_) {}
+        }
+      }
+    });
+    
+    return () => { 
+      try { unsubRoom && unsubRoom(); } catch (_) {} 
+      try { unsubAgreement && unsubAgreement(); } catch (_) {}
+    };
   }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
 
   // Real-time: refresh deals when new ones are created or updated
