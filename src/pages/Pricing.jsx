@@ -35,6 +35,14 @@ export default function Pricing() {
     document.title = "Pricing - Investor Konnect";
   }, []);
 
+  // Redirect if already has active subscription
+  useEffect(() => {
+    if (!loading && isPaidSubscriber) {
+      console.log('✅ User has active subscription, redirecting to IdentityVerification');
+      navigate(createPageUrl("IdentityVerification"));
+    }
+  }, [loading, isPaidSubscriber, navigate]);
+
   const getBlockingStep = () => {
     if (role === 'investor' && !onboarded) return 'onboarding';
     if (role === 'agent' && !onboarded) return 'agent-onboarding';
