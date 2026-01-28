@@ -429,9 +429,12 @@ Deno.serve(async (req) => {
     
     const body = await req.json();
     const deal_id = body.deal_id;
+    const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
     const exhibit_a = body.exhibit_a || {};
     
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
+    
+    console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)');
     
     // Load investor profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -447,30 +450,50 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
-    // Find agent
+    // Resolve agent from Room (if room_id provided) or fallback to Deal.agent_id (legacy)
     let agentProfile = null;
-    if (deal.agent_id) {
-      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
-      if (agentProfiles && agentProfiles.length > 0) {
-        agentProfile = agentProfiles[0];
-      }
-    }
+    let room = null;
     
-    if (!agentProfile) {
-      const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
-      const dealRoom = rooms.find(r => r.agentId);
-      
-      if (!dealRoom || !dealRoom.agentId) {
-        return Response.json({ 
-          error: 'No agent selected for this deal. Please select an agent to work with.'
-        }, { status: 400 });
+    if (room_id) {
+      // ROOM-SCOPED: Get agent from Room
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      if (!rooms || rooms.length === 0) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
       }
+      room = rooms[0];
       
-      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: dealRoom.agentId });
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
-        return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+        return Response.json({ error: 'Agent profile not found for this room' }, { status: 404 });
       }
       agentProfile = agentProfiles[0];
+      console.log('[generateLegalAgreement] Resolved agent from room:', agentProfile.id);
+    } else {
+      // LEGACY: Get agent from Deal.agent_id or first room
+      if (deal.agent_id) {
+        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
+        if (agentProfiles && agentProfiles.length > 0) {
+          agentProfile = agentProfiles[0];
+        }
+      }
+      
+      if (!agentProfile) {
+        const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
+        const dealRoom = rooms.find(r => r.agentId);
+        
+        if (!dealRoom || !dealRoom.agentId) {
+          return Response.json({ 
+            error: 'No agent selected for this deal. Please select an agent to work with.'
+          }, { status: 400 });
+        }
+        
+        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: dealRoom.agentId });
+        if (!agentProfiles || agentProfiles.length === 0) {
+          return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+        }
+        agentProfile = agentProfiles[0];
+      }
+      console.log('[generateLegalAgreement] Resolved agent (legacy):', agentProfile.id);
     }
     
     // Validate required fields with detailed info
@@ -565,10 +588,14 @@ Deno.serve(async (req) => {
     });
     const renderInputHash = await sha256(inputData);
     
-    // Check for existing agreement to void
+    // Check for existing agreement to void (room-scoped or legacy)
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
-    const existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1);
+    
+    const existing = room_id
+      ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
+      : await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1);
+    
     if (existing.length > 0) {
       const existingAgreement = existing[0];
       existingAgreementId = existingAgreement.id;
@@ -1053,6 +1080,7 @@ Deno.serve(async (req) => {
     // Save agreement with envelope details
     const agreementData = {
       deal_id: deal_id,
+      room_id: room_id || null, // Room-scoped or legacy null
       investor_user_id: user.id,
       agent_user_id: agentProfile.user_id,
       investor_profile_id: profile.id,
@@ -1128,10 +1156,18 @@ Deno.serve(async (req) => {
     
     console.log('[generateLegalAgreement] ✓ NEW agreement created:', agreement.id);
     
-    // Update Deal pointer to new agreement
-    await base44.asServiceRole.entities.Deal.update(deal_id, {
-      current_legal_agreement_id: agreement.id
-    });
+    // Update pointers (room-scoped or legacy)
+    if (room_id) {
+      await base44.asServiceRole.entities.Room.update(room_id, {
+        current_legal_agreement_id: agreement.id
+      });
+      console.log('[generateLegalAgreement] ✓ Room pointer updated');
+    } else {
+      await base44.asServiceRole.entities.Deal.update(deal_id, {
+        current_legal_agreement_id: agreement.id
+      });
+      console.log('[generateLegalAgreement] ✓ Deal pointer updated (legacy)');
+    }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
