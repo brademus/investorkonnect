@@ -72,124 +72,109 @@ export default function ContractVerify() {
       setUploading(false);
       setVerifying(true);
 
-      // Verify with AI
-      const extractedData = await base44.integrations.Core.ExtractDataFromUploadedFile({
-        file_url: file_url,
-        json_schema: {
+      // Use AI with vision to verify contract against deal data
+      const verificationPrompt = `You are verifying a real estate purchase contract PDF against deal information provided by the user.
+
+      DEAL INFORMATION PROVIDED BY USER:
+      - Property Address: ${dealData.propertyAddress}
+      - City: ${dealData.city}
+      - State: ${dealData.state}
+      - ZIP: ${dealData.zip}
+      - Purchase Price: $${dealData.purchasePrice}
+      - Seller Name: ${dealData.sellerName}
+      - Earnest Money: $${dealData.earnestMoney}
+      - Closing Date: ${dealData.closingDate}
+
+      YOUR TASK:
+      1. Extract the following information from the contract PDF:
+      - property_address (full street address)
+      - city
+      - state (2-letter code)
+      - zip (5-digit code)
+      - purchase_price (number only, no symbols)
+      - seller_name (full legal name)
+      - earnest_money (number only)
+      - closing_date (YYYY-MM-DD format)
+
+      2. Compare each extracted field with the user-provided deal data.
+
+      3. For each field, determine if it's a MATCH or MISMATCH:
+      - MATCH: The contract data matches the deal data (allow minor formatting differences)
+      - MISMATCH: The values are clearly different
+
+      4. Return the results in the specified JSON format.
+
+      IMPORTANT:
+      - Be thorough in reading the contract
+      - For addresses, ignore minor formatting (e.g., "Street" vs "St")
+      - For dates, parse flexibly (e.g., "01/15/2026" = "2026-01-15")
+      - For prices, ignore commas and $ symbols
+      - For names, ignore case and extra spaces
+      - If a field is not found in the contract, mark it as "not_found"`;
+
+      const aiResult = await base44.integrations.Core.InvokeLLM({
+        prompt: verificationPrompt,
+        file_urls: [file_url],
+        response_json_schema: {
           type: "object",
           properties: {
-            property_address: { type: "string" },
-            city: { type: "string" },
-            state: { type: "string" },
-            zip: { type: "string" },
-            purchase_price: { type: "number" },
-            seller_name: { type: "string" },
-            earnest_money: { type: "number" },
-            closing_date: { type: "string" },
-          },
-        },
+            extracted: {
+              type: "object",
+              properties: {
+                property_address: { type: "string" },
+                city: { type: "string" },
+                state: { type: "string" },
+                zip: { type: "string" },
+                purchase_price: { type: "number" },
+                seller_name: { type: "string" },
+                earnest_money: { type: "number" },
+                closing_date: { type: "string" }
+              }
+            },
+            verification: {
+              type: "array",
+              items: {
+                type: "object",
+                properties: {
+                  field: { type: "string" },
+                  status: { type: "string", enum: ["match", "mismatch", "not_found"] },
+                  contract_value: { type: "string" },
+                  deal_value: { type: "string" },
+                  note: { type: "string" }
+                }
+              }
+            }
+          }
+        }
       });
 
       setVerifying(false);
 
-      if (extractedData.status === "success") {
-        const extracted = extractedData.output;
+      if (aiResult) {
         const matches = [];
         const mismatches = [];
 
-        // Normalize for comparison
-        const normalize = (str) => String(str || '').toLowerCase().trim();
-        const normalizePrice = (val) => {
-          const num = String(val || '').replace(/[$,\s]/g, '');
-          return Number(num) || 0;
-        };
-
-        // Check property address
-        if (normalize(extracted.property_address) === normalize(dealData.propertyAddress)) {
-          matches.push("Property Address");
-        } else {
-          mismatches.push({
-            field: "Property Address",
-            contract: extracted.property_address || 'Not found',
-            deal: dealData.propertyAddress || 'Not provided'
-          });
-        }
-
-        // Check city
-        if (normalize(extracted.city) === normalize(dealData.city)) {
-          matches.push("City");
-        } else {
-          mismatches.push({
-            field: "City",
-            contract: extracted.city || 'Not found',
-            deal: dealData.city || 'Not provided'
-          });
-        }
-
-        // Check state
-        if (normalize(extracted.state) === normalize(dealData.state)) {
-          matches.push("State");
-        } else {
-          mismatches.push({
-            field: "State",
-            contract: extracted.state || 'Not found',
-            deal: dealData.state || 'Not provided'
-          });
-        }
-
-        // Check ZIP
-        if (normalize(extracted.zip) === normalize(dealData.zip)) {
-          matches.push("ZIP Code");
-        } else if (extracted.zip || dealData.zip) {
-          mismatches.push({
-            field: "ZIP Code",
-            contract: extracted.zip || 'Not found',
-            deal: dealData.zip || 'Not provided'
-          });
-        }
-
-        // Check purchase price
-        const extractedPrice = normalizePrice(extracted.purchase_price);
-        const dealPrice = normalizePrice(dealData.purchasePrice);
-        if (extractedPrice === dealPrice) {
-          matches.push("Purchase Price");
-        } else {
-          mismatches.push({
-            field: "Purchase Price",
-            contract: extractedPrice ? `$${extractedPrice.toLocaleString()}` : 'Not found',
-            deal: dealPrice ? `$${dealPrice.toLocaleString()}` : 'Not provided'
-          });
-        }
-
-        // Check seller name
-        if (normalize(extracted.seller_name) === normalize(dealData.sellerName)) {
-          matches.push("Seller Name");
-        } else {
-          mismatches.push({
-            field: "Seller Name",
-            contract: extracted.seller_name || 'Not found',
-            deal: dealData.sellerName || 'Not provided'
-          });
-        }
-
-        // Check closing date
-        if (extracted.closing_date && dealData.closingDate) {
-          const extractedDate = new Date(extracted.closing_date).toDateString();
-          const dealDate = new Date(dealData.closingDate).toDateString();
-          if (extractedDate === dealDate) {
-            matches.push("Closing Date");
-          } else {
+        aiResult.verification.forEach((item) => {
+          if (item.status === "match") {
+            matches.push(item.field);
+          } else if (item.status === "mismatch" || item.status === "not_found") {
             mismatches.push({
-              field: "Closing Date",
-              contract: new Date(extracted.closing_date).toLocaleDateString(),
-              deal: new Date(dealData.closingDate).toLocaleDateString()
+              field: item.field,
+              contract: item.contract_value,
+              deal: item.deal_value,
+              note: item.note
             });
           }
-        }
+        });
 
-        setVerificationResult({ matches, mismatches, extracted, file_url });
+        setVerificationResult({ 
+          matches, 
+          mismatches, 
+          extracted: aiResult.extracted, 
+          file_url 
+        });
       } else {
-        toast.error("Failed to extract contract data");
+        toast.error("Failed to verify contract");
       }
     } catch (error) {
       console.error("Error:", error);
