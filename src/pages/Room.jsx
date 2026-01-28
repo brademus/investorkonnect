@@ -436,8 +436,10 @@ export default function Room() {
         }, [rooms, currentRoom?.deal_id]);
 
         const invitedRooms = useMemo(() => {
+          // PHASE 7: Filter to active invites only (exclude expired, rejected)
           return roomsForDeal.filter(r => 
             r.request_status !== 'expired' && 
+            r.request_status !== 'rejected' &&
             ['requested', 'accepted', 'locked'].includes(r.request_status)
           );
         }, [roomsForDeal]);
@@ -774,7 +776,7 @@ export default function Room() {
     };
   }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
 
-  // Real-time agreement refresh on counter offer changes
+  // PHASE 7: Real-time agreement, counter, and lock-in updates
   useEffect(() => {
     if (!currentRoom?.deal_id) return;
     
@@ -784,18 +786,17 @@ export default function Room() {
     // Subscribe to counter offer changes
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        // Reload both agreement AND deal when counter offer changes
+        console.log('[Room] Counter offer updated, refreshing state...');
         (async () => {
           try {
             const [agRes, dealRes] = await Promise.all([
-              base44.functions.invoke('getLegalAgreement', { deal_id: dealId }),
+              base44.functions.invoke('getAgreementState', { deal_id: dealId, room_id: roomId }),
               base44.functions.invoke('getDealDetailsForUser', { dealId })
             ]);
             if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
             if (dealRes?.data) {
               setDeal(dealRes.data);
               setCachedDeal(dealId, dealRes.data);
-              // Update currentRoom with latest terms
               setCurrentRoom(prev => prev ? { 
                 ...prev, 
                 proposed_terms: dealRes.data.proposed_terms 
@@ -807,12 +808,31 @@ export default function Room() {
     });
     unsubscribers.push(unsubCounter);
 
+    // PHASE 7: Subscribe to LegalAgreement for real-time signature updates
+    const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        console.log('[Room] Agreement updated, refreshing state...');
+        (async () => {
+          try {
+            const agRes = await base44.functions.invoke('getAgreementState', { 
+              deal_id: dealId, 
+              room_id: roomId 
+            });
+            if (agRes?.data?.agreement) {
+              setAgreement(agRes.data.agreement);
+            }
+          } catch (_) {}
+        })();
+      }
+    });
+    unsubscribers.push(unsubAgreement);
+
     return () => {
       unsubscribers.forEach((u) => {
         try { u(); } catch (_) {}
       });
     };
-  }, [currentRoom?.deal_id, activeTab]); 
+  }, [currentRoom?.deal_id, roomId, activeTab]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
@@ -889,7 +909,7 @@ export default function Room() {
     }
   }, [currentRoom?.deal_id]);
 
-  // PHASE 4: Load room states for multi-agent mode
+  // PHASE 4/7: Load room states for multi-agent mode + real-time updates
   useEffect(() => {
     if (!multiAgentMode || invitedRooms.length === 0 || !currentRoom?.deal_id) {
       setRoomStates({});
@@ -918,6 +938,43 @@ export default function Room() {
     };
 
     loadStates();
+
+    // PHASE 7: Real-time updates for multi-agent board
+    const unsubscribers = [];
+
+    // Subscribe to counter offers for all invited rooms
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id === currentRoom.deal_id) {
+        console.log('[Room] Multi-agent: Counter updated, reloading states...');
+        loadStates();
+      }
+    });
+    unsubscribers.push(unsubCounter);
+
+    // Subscribe to agreement updates for all invited rooms
+    const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
+      if (event?.data?.deal_id === currentRoom.deal_id) {
+        console.log('[Room] Multi-agent: Agreement updated, reloading states...');
+        loadStates();
+      }
+    });
+    unsubscribers.push(unsubAgreement);
+
+    // Subscribe to Deal for lock-in detection
+    const unsubDeal = base44.entities.Deal.subscribe((event) => {
+      if (event?.id === currentRoom.deal_id && event?.data?.locked_room_id) {
+        console.log('[Room] Multi-agent: Deal locked, exiting multi-agent mode...');
+        // Reload to exit multi-agent mode
+        window.location.reload();
+      }
+    });
+    unsubscribers.push(unsubDeal);
+
+    return () => {
+      unsubscribers.forEach(u => {
+        try { u(); } catch (_) {}
+      });
+    };
   }, [multiAgentMode, invitedRooms.length, currentRoom?.deal_id]);
 
 
@@ -1274,8 +1331,7 @@ ${dealContext}`;
     }
   }, [messages.length]);
 
-  // Memoize filtered rooms to prevent unnecessary recalculations
-  // Final no-dupe guarantee: we dedupe again here by deal_id and by signature
+  // PHASE 7: Memoize filtered rooms - exclude expired and locked-to-other-agent
   const filteredRooms = useMemo(() => {
     try {
       const isAgent = profile?.user_role === 'agent';
@@ -1290,10 +1346,19 @@ ${dealContext}`;
         const did = normId(r.deal_id);
         if (!did) return;
 
+        // PHASE 7: Exclude expired rooms
+        if (r.request_status === 'expired') return;
+
+        // PHASE 7: For agents, exclude rooms where deal is locked to a different agent
+        if (isAgent && r.deal_summary?.locked_agent_id && r.deal_summary.locked_agent_id !== myId) {
+          console.log('[Room] Filtering out room - deal locked to different agent:', r.id);
+          return;
+        }
+
         // Role-specific visibility
         if (isAgent) {
           if (myId && r.agentId && r.agentId !== myId) return;
-          const ok = !r.request_status || ['requested', 'accepted', 'signed'].includes(r.request_status);
+          const ok = !r.request_status || ['requested', 'accepted', 'signed', 'locked'].includes(r.request_status);
           if (!ok) return;
         } else if (myId) {
           if (r.investorId && r.investorId !== myId) return;

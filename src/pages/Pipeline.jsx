@@ -611,13 +611,26 @@ function PipelineContent() {
     }
     const dedupMappedDeals = Array.from(bySig2.values());
 
-    // Agents: show deals if accepted/signed/requested OR fully signed
+    // PHASE 7: Agents filter - exclude expired and locked-to-other-agent
     return dedupMappedDeals.filter(d => {
       if (!isAgent) return true;
-      // Agents see deals that have a room request (requested/accepted/signed) or are fully signed
-      return d.agent_request_status === 'requested' || d.agent_request_status === 'accepted' || d.agent_request_status === 'signed' || d.is_fully_signed === true;
+      
+      // Exclude deals locked to a different agent
+      if (d.locked_agent_id && d.locked_agent_id !== profile.id) {
+        return false;
+      }
+      
+      // Exclude expired rooms
+      if (d.agent_request_status === 'expired') return false;
+      
+      // Show deals with active room request or fully signed
+      return d.agent_request_status === 'requested' || 
+             d.agent_request_status === 'accepted' || 
+             d.agent_request_status === 'signed' || 
+             d.agent_request_status === 'locked' ||
+             d.is_fully_signed === true;
     });
-  }, [dealsData, rooms, appointments]);
+  }, [dealsData, rooms, appointments, profile?.id, isAgent]);
 
   const handleDealClick = async (deal) => {
     // Prefetch deal details and agreement for instant hydration
@@ -839,15 +852,21 @@ function PipelineContent() {
     const m = new Map();
     PIPELINE_STAGES.filter(s => s.id !== 'canceled').forEach(s => m.set(s.id, []));
     deals.forEach(d => {
-      // Agents: show deals if there's a room request OR if investor has signed (even if room status not synced)
+      // PHASE 7: Agents - exclude expired and locked-to-other-agent deals
       if (isAgent) {
         const st = d.agreement_status;
         const rs = d.agent_request_status;
-        const hasRequest = rs === 'requested' || rs === 'accepted' || rs === 'signed';
+        
+        // Exclude expired rooms
+        if (rs === 'expired' || rs === 'rejected') return;
+        
+        // Exclude deals locked to a different agent
+        if (d.locked_agent_id && d.locked_agent_id !== profile.id) return;
+        
+        const hasRequest = rs === 'requested' || rs === 'accepted' || rs === 'signed' || rs === 'locked';
         const hasSigning = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending';
         const allowed = hasRequest || hasSigning;
         if (!allowed) return;
-        if (rs === 'rejected') return;
       }
       const stage = d.pipeline_stage === 'canceled' ? 'completed' : d.pipeline_stage;
       const arr = m.get(stage) || [];

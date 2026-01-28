@@ -305,7 +305,7 @@ Deno.serve(async (req) => {
         counterparty_role: userRole === 'investor' ? 'agent' : 'investor',
         counterparty_avatar: counterpartyProfile?.headshotUrl,
         
-        // Deal summary (redacted for agents if not signed)
+        // PHASE 7: Deal summary with lock-in fields
         deal_summary: deal ? {
           title: deal.title,
           city: deal.city,
@@ -313,6 +313,9 @@ Deno.serve(async (req) => {
           budget: deal.purchase_price,
           pipeline_stage: deal.pipeline_stage,
           closing_date: deal.key_dates?.closing_date,
+          locked_room_id: deal.locked_room_id,
+          locked_agent_id: deal.locked_agent_id,
+          connected_at: deal.connected_at,
           // Sensitive fields only if allowed
           property_address: (userRole === 'investor' || isFullySigned) 
             ? deal.property_address 
