@@ -203,7 +203,7 @@ export default function AgreementPanel({ dealId, profile, onUpdate }) {
 
       const returnUrl = currentRoomId 
         ? `/Room?roomId=${currentRoomId}&dealId=${dealId}&tab=agreement&signed=1`
-        : `/Pipeline`;
+        : `/MyAgreement?dealId=${dealId}&tab=agreement&signed=1`;
 
       console.log('[AgreementPanel] Signing request:', { agreement_id: agreementId, role, returnUrl });
 

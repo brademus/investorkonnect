@@ -191,23 +191,9 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // GATING: If agent trying to sign, investor must have signed first
-    // Force fresh fetch to get latest signature status
-    const freshAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id });
-    const freshAgreement = freshAgreements?.[0];
-    
-    if (freshAgreement) {
-      agreement = freshAgreement; // Use fresh data
-      console.log('[DocuSign] Fresh agreement loaded:', {
-        id: agreement.id,
-        status: agreement.status,
-        investor_signed_at: agreement.investor_signed_at,
-        agent_signed_at: agreement.agent_signed_at
-      });
-    }
-    
+    // GATING: Now that DB is synced, check if agent can sign
     if (role === 'agent' && !agreement.investor_signed_at) {
-      console.error('[DocuSign] ❌ Agent cannot sign - DB shows investor has not signed yet');
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
       console.error('[DocuSign] Agreement status:', agreement.status);
       console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at);
       return Response.json({ 
@@ -219,20 +205,86 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
     }
 
-    // Use DocuSign-specific PDF (with invisible anchors)
-    const pdfUrl = agreement.docusign_pdf_url || agreement.signing_pdf_url || agreement.final_pdf_url;
-    if (!pdfUrl) {
-      console.error('[DocuSign] No DocuSign PDF URL found in agreement');
-      return Response.json({ error: 'No docusign_pdf_url found - agreement PDF not generated yet' }, { status: 400 });
+    // Sync recipient status from DocuSign FIRST before any gating checks
+    async function syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken) {
+      const envelopeId = agreement.docusign_envelope_id;
+      if (!envelopeId) return agreement;
+
+      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
+      const recipientsResponse = await fetch(recipientsUrl, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      if (!recipientsResponse.ok) return agreement;
+
+      const recipients = await recipientsResponse.json();
+      const signers = recipients.signers || [];
+
+      const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+      const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+
+      const now = new Date().toISOString();
+      const updates = {};
+
+      const investorCompleted = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
+      const agentCompleted = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
+
+      if (investorCompleted && !agreement.investor_signed_at) {
+        updates.investor_signed_at = investorSigner.signedDateTime || now;
+        console.log('[DocuSign] ✓ Syncing investor signature to DB');
+      }
+      if (agentCompleted && !agreement.agent_signed_at) {
+        updates.agent_signed_at = agentSigner.signedDateTime || now;
+        console.log('[DocuSign] ✓ Syncing agent signature to DB');
+      }
+
+      if (Object.keys(updates).length) {
+        const invSigned = !!(updates.investor_signed_at || agreement.investor_signed_at);
+        const agSigned = !!(updates.agent_signed_at || agreement.agent_signed_at);
+
+        updates.status = invSigned && agSigned ? 'fully_signed' : invSigned ? 'investor_signed' : 'agent_signed';
+
+        await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
+        console.log('[DocuSign] ✓ DB updated with status:', updates.status);
+      }
+
+      // Return fresh agreement from DB (authoritative)
+      const fresh = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id });
+      return fresh?.[0] || agreement;
     }
-    
-    console.log('[DocuSign] Using DocuSign PDF URL:', pdfUrl);
-    
-    // Download DocuSign PDF and compute current hash
-    const { base64: pdfBase64, hash: currentPdfHash } = await downloadPdfAsBase64AndHash(pdfUrl);
-    console.log('[DocuSign] Current DocuSign PDF hash:', currentPdfHash);
-    console.log('[DocuSign] Stored agreement.docusign_pdf_sha256:', agreement.docusign_pdf_sha256 || 'none');
-    console.log('[DocuSign] Stored agreement.docusign_last_sent_sha256:', agreement.docusign_last_sent_sha256 || 'none');
+
+    // Sync FIRST to ensure DB is up-to-date
+    agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
+
+    // Check envelope status for terminal states
+    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
+    const statusResponse = await fetch(statusUrl, {
+      method: 'GET',
+      headers: { 'Authorization': `Bearer ${accessToken}` }
+    });
+
+    if (statusResponse.ok) {
+      const envStatus = await statusResponse.json();
+      console.log('[DocuSign] Envelope status check:', envStatus.status);
+
+      // If envelope is completed, return 200 with already_signed flag
+      if (envStatus.status === 'completed') {
+        console.log('[DocuSign] Envelope already completed - synced above, signaling UI to refresh');
+        return Response.json({
+          already_signed: true,
+          message: 'Agreement is already completed. Refreshing status.'
+        });
+      }
+
+      // Only block voided/declined
+      if (['voided', 'declined'].includes(envStatus.status)) {
+        console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
+        return Response.json({ 
+          error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
+        }, { status: 400 });
+      }
+
+      console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
+    }
     
     // Validate and enrich redirect_url to ensure deal context
     const reqUrl = new URL(req.url);
@@ -272,164 +324,6 @@ Deno.serve(async (req) => {
       publicAppUrl,
       reqOrigin: reqUrl.origin 
     });
-    
-    // Get DocuSign connection
-    const connection = await getDocuSignConnection(base44);
-    const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
-    
-    // Decide whether to recreate envelope based on DocuSign PDF hash
-    let envelopeId = agreement.docusign_envelope_id;
-    const lastSentHash = agreement.docusign_last_sent_sha256 || agreement.docusign_envelope_pdf_hash;
-    const storedPdfHash = agreement.docusign_pdf_sha256;
-    
-    // Critical decision logic: create new envelope if PDF changed
-    // Validate envelope exists
-    if (!envelopeId) {
-      console.error('[DocuSign] ❌ Missing envelope ID. Agreement fields:', {
-        id: agreement.id,
-        status: agreement.status,
-        docusign_envelope_id: agreement.docusign_envelope_id,
-        investor_recipient_id: agreement.investor_recipient_id,
-        agent_recipient_id: agreement.agent_recipient_id
-      });
-      return Response.json({ 
-        error: 'No DocuSign envelope found. Please regenerate the agreement from the Agreement tab first.',
-        debug: { agreement_id, has_envelope: false }
-      }, { status: 400 });
-    }
-
-    // Validate recipient IDs exist
-    if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
-      console.error('[DocuSign] ❌ Missing recipient IDs. Agreement:', {
-        id: agreement.id,
-        envelope_id: envelopeId,
-        investor_recipient_id: agreement.investor_recipient_id,
-        agent_recipient_id: agreement.agent_recipient_id,
-        investor_client_user_id: agreement.investor_client_user_id,
-        agent_client_user_id: agreement.agent_client_user_id
-      });
-      return Response.json({ 
-        error: 'Missing recipient IDs. Please regenerate the agreement.',
-        debug: { 
-          agreement_id,
-          envelope_id: envelopeId,
-          has_investor_recipient: !!agreement.investor_recipient_id,
-          has_agent_recipient: !!agreement.agent_recipient_id
-        }
-      }, { status: 400 });
-    }
-
-    // Validate client user IDs exist
-    if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
-      console.error('[DocuSign] ❌ Missing client user IDs. Agreement:', {
-        id: agreement.id,
-        envelope_id: envelopeId,
-        investor_client_user_id: agreement.investor_client_user_id,
-        agent_client_user_id: agreement.agent_client_user_id
-      });
-      return Response.json({ 
-        error: 'Missing client user IDs. Please regenerate the agreement.',
-        debug: {
-          agreement_id,
-          envelope_id: envelopeId,
-          has_investor_client_id: !!agreement.investor_client_user_id,
-          has_agent_client_id: !!agreement.agent_client_user_id
-        }
-      }, { status: 400 });
-    }
-
-    console.log('[DocuSign] Using existing envelope:', envelopeId);
-    console.log('[DocuSign] Investor recipientId:', agreement.investor_recipient_id);
-    console.log('[DocuSign] Agent recipientId:', agreement.agent_recipient_id);
-
-    // Sync with DocuSign to get latest recipient statuses (don't block, just update DB)
-    try {
-      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
-      const recipientsResponse = await fetch(recipientsUrl, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-
-      if (recipientsResponse.ok) {
-        const recipients = await recipientsResponse.json();
-        const signers = recipients.signers || [];
-
-        // Compare as strings to avoid type mismatches
-        const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-        const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-
-        console.log('[DocuSign] DocuSign status sync:', {
-          investor: investorSigner?.status,
-          agent: agentSigner?.status
-        });
-
-        // Update DB if DocuSign shows investor signed but DB doesn't
-        if (investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed') && !agreement.investor_signed_at) {
-          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-            investor_signed_at: investorSigner.signedDateTime || new Date().toISOString(),
-            status: 'investor_signed'
-          });
-          console.log('[DocuSign] ✓ Synced investor signature from DocuSign to DB');
-        }
-
-        // FIX 3: Sync agent signature from DocuSign to DB if completed
-        if (agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed') && !agreement.agent_signed_at) {
-          const now = new Date().toISOString();
-          const invSigned = !!(agreement.investor_signed_at);
-          const agSigned = true;
-
-          const newStatus = invSigned && agSigned ? 'fully_signed' : 'agent_signed';
-
-          await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
-            agent_signed_at: agentSigner.signedDateTime || now,
-            status: newStatus
-          });
-          console.log('[DocuSign] ✓ Synced agent signature from DocuSign to DB, status now:', newStatus);
-        }
-      }
-    } catch (syncError) {
-      console.warn('[DocuSign] Failed to sync status (non-blocking):', syncError.message);
-    }
-
-    // Check for terminal envelope states - but allow 'sent' or 'delivered'
-    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
-    const statusResponse = await fetch(statusUrl, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-
-    if (statusResponse.ok) {
-      const envStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status check:', envStatus.status);
-
-      // FIX 4: If envelope is completed, return 200 with already_signed flag instead of 400 error
-      if (envStatus.status === 'completed') {
-        console.log('[DocuSign] Envelope already completed - synced above, signaling UI to refresh');
-        return Response.json({
-          already_signed: true,
-          message: 'Agreement is already completed. Refreshing status.'
-        });
-      }
-
-      // Only block voided/declined
-      if (['voided', 'declined'].includes(envStatus.status)) {
-        console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
-        return Response.json({ 
-          error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
-        }, { status: 400 });
-      }
-
-      console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
-    }
-
-    // Verify PDF hash hasn't changed (prevent signing stale document)
-    if (agreement.docusign_last_sent_sha256 && agreement.docusign_last_sent_sha256 !== currentPdfHash) {
-      console.error('[DocuSign] ❌ PDF hash mismatch - agreement was regenerated');
-      console.error('[DocuSign] Last sent hash:', agreement.docusign_last_sent_sha256.substring(0, 16));
-      console.error('[DocuSign] Current hash:', currentPdfHash.substring(0, 16));
-      return Response.json({ 
-        error: 'Agreement was updated after envelope creation. Please regenerate the agreement to create a new envelope.'
-      }, { status: 400 });
-    }
     
     // Create signing token
     const tokenValue = crypto.randomUUID();
