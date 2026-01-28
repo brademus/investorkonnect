@@ -123,6 +123,27 @@ export default function SelectAgent() {
         agent_id: selectedAgentId,
       });
 
+      // Create Room immediately so agent sees the deal in their pipeline
+      const newRoom = await base44.entities.Room.create({
+        deal_id: newDeal.id,
+        investorId: currentProfile?.id,
+        agentId: selectedAgentId,
+        request_status: 'requested',
+        agreement_status: 'draft',
+        title: newDeal.title,
+        property_address: newDeal.property_address,
+        city: newDeal.city,
+        state: newDeal.state,
+        county: newDeal.county,
+        zip: newDeal.zip,
+        budget: newDeal.purchase_price,
+        proposed_terms: newDeal.proposed_terms,
+        ndaAcceptedInvestor: false,
+        ndaAcceptedAgent: false
+      });
+      
+      console.log('[SelectAgent] Created room:', newRoom.id, 'for deal:', newDeal.id);
+
       // Generate legal agreement (agent is already set on the deal)
       const agreementRes = await base44.functions.invoke("generateLegalAgreement", {
         deal_id: newDeal.id,
