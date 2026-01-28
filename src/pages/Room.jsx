@@ -326,8 +326,8 @@ export default function Room() {
       return;
     }
 
-    // Agent must be KYC verified
-    if (profile.user_role === 'agent' && !kycVerified) {
+    // KYC required for everyone
+    if (!kycVerified) {
       navigate(createPageUrl("IdentityVerification"), { replace: true });
       return;
     }

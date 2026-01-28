@@ -73,9 +73,8 @@ function PipelineContent() {
     const kycStatus = profile?.role === 'admin' ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
     const isKycVerified = profile?.role === 'admin' || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
 
-    // Only force KYC redirect if it's strictly required and missing
-    // Agents: always required. Investors: required if marked as needed.
-    if (role === 'agent' && !isKycVerified) {
+    // 2. KYC (Everyone)
+    if (!isKycVerified) {
        navigate(createPageUrl("IdentityVerification"), { replace: true });
        return;
     }
