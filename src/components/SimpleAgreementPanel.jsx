@@ -17,20 +17,26 @@ import { toast } from 'sonner';
 export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
   const [busy, setBusy] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
+  const [localAgreement, setLocalAgreement] = useState(agreement);
+
+  // Sync prop changes to local state
+  React.useEffect(() => {
+    setLocalAgreement(agreement);
+  }, [agreement]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   
-  const investorSigned = !!agreement?.investor_signed_at;
-  const agentSigned = !!agreement?.agent_signed_at;
+  const investorSigned = !!localAgreement?.investor_signed_at;
+  const agentSigned = !!localAgreement?.agent_signed_at;
   const fullySigned = investorSigned && agentSigned;
   
   // Can regenerate ONLY if counter accepted or deal terms changed (flag in deal)
-  const canRegenerate = agreement && agreement.status !== 'fully_signed' && 
-                        (agreement.requires_regenerate === true);
+  const canRegenerate = localAgreement && localAgreement.status !== 'fully_signed' && 
+                        (localAgreement.requires_regenerate === true);
 
   // Show form only to investor, only if no agreement yet or regenerate needed
-  const showGenerateForm = isInvestor && (!agreement || agreement.status === 'draft' || agreement.status === 'superseded');
+  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded');
 
   // Handle generate agreement
   const handleGenerate = async () => {
@@ -91,9 +97,9 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
     <>
       <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
         <CardHeader className="border-b border-[#1F1F1F]">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-lg text-[#FAFAFA]">Agreement & Terms</CardTitle>
-            {agreement && (
+           <div className="flex items-center justify-between">
+             <CardTitle className="text-lg text-[#FAFAFA]">Agreement & Terms</CardTitle>
+             {localAgreement && (
               <Badge className="bg-transparent border-[#1F1F1F]">
                 {fullySigned ? (
                   <span className="text-green-400 flex items-center gap-1">
@@ -114,8 +120,8 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
         </CardHeader>
 
         <CardContent className="p-6 space-y-4">
-          {/* No Agreement Yet */}
-          {!agreement && (
+           {/* No Agreement Yet */}
+           {!localAgreement && (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
               <p className="text-[#808080] mb-4">No agreement yet</p>
@@ -133,7 +139,7 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
           )}
 
           {/* Agreement Exists */}
-          {agreement && (
+          {localAgreement && (
             <div className="space-y-4">
               {/* Status Grid */}
               <div className="grid grid-cols-2 gap-3">
@@ -219,9 +225,9 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
               )}
 
               {/* Download PDF */}
-              {agreement?.signed_pdf_url && (
+              {localAgreement?.signed_pdf_url && (
                 <Button
-                  onClick={() => window.open(agreement.signed_pdf_url, '_blank')}
+                  onClick={() => window.open(localAgreement.signed_pdf_url, '_blank')}
                   variant="outline"
                   className="w-full"
                 >
