@@ -226,21 +226,30 @@ Deno.serve(async (req) => {
         } else {
           // Create new Stripe customer (no email needed)
           console.log('🆕 Creating new Stripe customer');
-          const customer = await stripe.customers.create({
-            metadata: {
-              user_id: userId,
-              app: 'agentvault'
-            }
-          });
+          try {
+            const customer = await stripe.customers.create({
+              metadata: {
+                user_id: userId,
+                app: 'agentvault'
+              }
+            });
 
-          customerId = customer.id;
-          console.log('✅ Created new Stripe customer:', customerId);
+            customerId = customer.id;
+            console.log('✅ Created new Stripe customer:', customerId);
 
-          // Save customer ID to profile
-          await base44.asServiceRole.entities.Profile.update(profile.id, {
-            stripe_customer_id: customerId
-          });
-          console.log('💾 Saved stripe_customer_id to profile');
+            // Save customer ID to profile
+            await base44.asServiceRole.entities.Profile.update(profile.id, {
+              stripe_customer_id: customerId
+            });
+            console.log('💾 Saved stripe_customer_id to profile');
+          } catch (stripeErr) {
+            console.error('❌ Stripe customer creation failed:', stripeErr);
+            return Response.json({ 
+              ok: false, 
+              reason: 'STRIPE_ERROR',
+              message: `Stripe error: ${stripeErr.message}` 
+            }, { status: 500 });
+          }
         }
       } else {
         console.log('⚠️ No profile found for user_id:', userId);
