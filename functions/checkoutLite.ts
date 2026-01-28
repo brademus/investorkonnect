@@ -172,10 +172,8 @@ Deno.serve(async (req) => {
       }
     }
     
-    const session = await stripe.checkout.sessions.create({
+    const sessionParams = {
       mode: 'subscription',
-      customer: customerId || undefined,
-      customer_email: !customerId ? userEmail : undefined,
       line_items: [{
         price: price,
         quantity: 1
@@ -194,7 +192,16 @@ Deno.serve(async (req) => {
         user_id: userId || 'unknown',
         plan: plan
       }
-    });
+    };
+    
+    // Add customer or email based on what we have
+    if (customerId) {
+      sessionParams.customer = customerId;
+    } else if (userEmail && userEmail.trim()) {
+      sessionParams.customer_email = userEmail;
+    }
+    
+    const session = await stripe.checkout.sessions.create(sessionParams);
 
     console.log('✅ Stripe session created:', session.id);
     console.log('✅ Stripe URL:', session.url);
