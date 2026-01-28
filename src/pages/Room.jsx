@@ -2114,6 +2114,7 @@ ${dealContext}`;
                   {currentRoom?.deal_id ? (
                     <AgreementPanel
                       dealId={currentRoom.deal_id}
+                      roomId={roomId}
                       profile={profile}
                       onUpdate={async () => {
                         await refreshRoomState();
