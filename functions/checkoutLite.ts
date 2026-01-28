@@ -84,6 +84,12 @@ Deno.serve(async (req) => {
         
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
+        // Use profile email if it exists (more reliable than auth layer)
+        if (profiles.length > 0 && profiles[0].email) {
+          userEmail = profiles[0].email;
+          console.log('✅ Using profile email:', userEmail);
+        }
+        
         if (profiles.length === 0) {
           console.log('❌ No profile found');
           return Response.json({ 
