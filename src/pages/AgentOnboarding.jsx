@@ -77,14 +77,20 @@ export default function AgentOnboarding() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!checking && onboarded) {
+      console.log('[AgentOnboarding] Already onboarded, checking next step...');
+      console.log('[AgentOnboarding] kycVerified:', kycVerified);
+      console.log('[AgentOnboarding] identity_status:', profile?.identity_status);
+      
       // Already onboarded, check next step
       if (!kycVerified) {
+        console.log('[AgentOnboarding] Redirecting to IdentityVerification');
         navigate(createPageUrl("IdentityVerification"), { replace: true });
       } else {
+        console.log('[AgentOnboarding] Redirecting to Pipeline');
         navigate(createPageUrl("Pipeline"), { replace: true });
       }
     }
-  }, [checking, onboarded, kycVerified, navigate]);
+  }, [checking, onboarded, kycVerified, navigate, profile?.identity_status]);
 
   // Load existing data
   useEffect(() => {

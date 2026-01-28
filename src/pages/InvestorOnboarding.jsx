@@ -74,14 +74,20 @@ export default function InvestorOnboarding() {
   // Redirect if already onboarded
   useEffect(() => {
     if (!checking && onboarded) {
+      console.log('[InvestorOnboarding] Already onboarded, checking next step...');
+      console.log('[InvestorOnboarding] isPaidSubscriber:', isPaidSubscriber);
+      console.log('[InvestorOnboarding] subscription_status:', profile?.subscription_status);
+      
       // Already onboarded, check next step
       if (!isPaidSubscriber) {
+        console.log('[InvestorOnboarding] Redirecting to Pricing');
         navigate(createPageUrl("Pricing"), { replace: true });
       } else {
+        console.log('[InvestorOnboarding] Redirecting to IdentityVerification');
         navigate(createPageUrl("IdentityVerification"), { replace: true });
       }
     }
-  }, [checking, onboarded, isPaidSubscriber, navigate]);
+  }, [checking, onboarded, isPaidSubscriber, navigate, profile?.subscription_status]);
 
   // Load existing data
   useEffect(() => {
