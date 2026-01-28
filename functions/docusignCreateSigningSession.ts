@@ -191,21 +191,37 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // GATING: Now that DB is synced, check if agent can sign
-    if (role === 'agent' && !agreement.investor_signed_at) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
-      console.error('[DocuSign] Agreement status:', agreement.status);
-      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at);
+    // Get DocuSign connection and define vars EARLY
+    const connection = await getDocuSignConnection(base44);
+    const accessToken = connection.access_token;
+    const baseUri = connection.base_uri;
+    const accountId = connection.account_id;
+
+    // Validate envelope exists
+    const envelopeId = agreement.docusign_envelope_id;
+    if (!envelopeId) {
       return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+        error: 'Agreement is missing DocuSign envelope id. Please regenerate.' 
       }, { status: 400 });
     }
 
-    if (role === 'agent' && agreement.investor_signed_at) {
-      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
+    // Validate recipient IDs exist
+    if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
+      console.error('[DocuSign] ❌ Missing recipient IDs');
+      return Response.json({ 
+        error: 'Missing recipient IDs. Please regenerate the agreement.'
+      }, { status: 400 });
     }
 
-    // Sync recipient status from DocuSign FIRST before any gating checks
+    // Validate client user IDs exist
+    if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
+      console.error('[DocuSign] ❌ Missing client user IDs');
+      return Response.json({ 
+        error: 'Missing client user IDs. Please regenerate the agreement.'
+      }, { status: 400 });
+    }
+
+    // Helper: Sync recipient status from DocuSign to DB
     async function syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken) {
       const envelopeId = agreement.docusign_envelope_id;
       if (!envelopeId) return agreement;
@@ -252,8 +268,21 @@ Deno.serve(async (req) => {
       return fresh?.[0] || agreement;
     }
 
-    // Sync FIRST to ensure DB is up-to-date
+    // SYNC FIRST to ensure DB is up-to-date with DocuSign
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
+
+    // GATING: Now that DB is synced, check if agent can sign
+    if (role === 'agent' && !agreement.investor_signed_at) {
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
+      console.error('[DocuSign] Agreement status:', agreement.status);
+      return Response.json({ 
+        error: 'The investor must sign this agreement first before you can sign it.'
+      }, { status: 400 });
+    }
+
+    if (role === 'agent' && agreement.investor_signed_at) {
+      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
+    }
 
     // Check envelope status for terminal states
     const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
@@ -292,11 +321,11 @@ Deno.serve(async (req) => {
     
     let validatedRedirect = redirect_url;
     if (!validatedRedirect) {
-      // Default: return to Room if available, otherwise Pipeline
+      // Default: return to MyAgreement agreement tab
       if (room_id) {
         validatedRedirect = `/Room?roomId=${room_id}&dealId=${agreement.deal_id}&tab=agreement&signed=1`;
       } else {
-        validatedRedirect = `/Pipeline`;
+        validatedRedirect = `/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
       }
     }
     
@@ -332,7 +361,7 @@ Deno.serve(async (req) => {
     await base44.asServiceRole.entities.SigningToken.create({
       token: tokenValue,
       deal_id: agreement.deal_id,
-      agreement_id: agreement_id,
+      agreement_id: agreement.id,
       role: role,
       return_to: validatedRedirect,
       expires_at: expiresAt,
@@ -452,7 +481,7 @@ Deno.serve(async (req) => {
     // Log signing session (only update the entity type we found)
     if (agreementType === 'LegalAgreement') {
       try {
-        await base44.asServiceRole.entities.LegalAgreement.update(agreement_id, {
+        await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
           audit_log: [
             ...(agreement.audit_log || []),
             {
