@@ -42,11 +42,8 @@ function LayoutContent({ children }) {
     if (error) console.error('[Layout] Profile error:', error);
   }, [error]);
 
-  const isFetching = useIsFetching();
   const [showAppLoader, setShowAppLoader] = React.useState(true);
   React.useEffect(() => {
-    // Only show the global loader during initial auth/profile loading,
-    // not for background query refetches to avoid random loading flashes.
     if (loading) {
       setShowAppLoader(true);
     } else {
