@@ -19,7 +19,7 @@ import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import { StepGuard } from "@/components/StepGuard";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
-import AgreementPanel from "@/components/AgreementPanel";
+import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
@@ -452,23 +452,9 @@ export default function Room() {
         // Mask address for agents until fully signed
         const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
 
-        // PHASE 4: Multi-agent mode detection
-        const dealLocked = !!deal?.locked_room_id;
-        const roomsForDeal = useMemo(() => {
-          if (!currentRoom?.deal_id) return [];
-          return rooms.filter(r => r.deal_id === currentRoom.deal_id);
-        }, [rooms, currentRoom?.deal_id]);
-
-        const invitedRooms = useMemo(() => {
-          // PHASE 7: Filter to active invites only (exclude expired, rejected)
-          return roomsForDeal.filter(r => 
-            r.request_status !== 'expired' && 
-            r.request_status !== 'rejected' &&
-            ['requested', 'accepted', 'locked'].includes(r.request_status)
-          );
-        }, [roomsForDeal]);
-
-        const multiAgentMode = isInvestor && !dealLocked && invitedRooms.length > 1;
+        // Multi-agent mode disabled for simplicity
+  const multiAgentMode = false;
+  const invitedRooms = [];
 
         // Hard sanitizer: if anything slips through, null it out for agents until fully signed
         useEffect(() => {
@@ -800,63 +786,24 @@ export default function Room() {
     };
   }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
 
-  // PHASE 7: Real-time agreement, counter, and lock-in updates
+  // Real-time agreement updates
   useEffect(() => {
     if (!currentRoom?.deal_id) return;
     
-    const unsubscribers = [];
     const dealId = currentRoom.deal_id;
 
-    // Subscribe to counter offer changes
-    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
-        console.log('[Room] Counter offer updated, refreshing state...');
-        (async () => {
-          try {
-            const [agRes, dealRes] = await Promise.all([
-              base44.functions.invoke('getAgreementState', { deal_id: dealId, room_id: roomId }),
-              base44.functions.invoke('getDealDetailsForUser', { dealId })
-            ]);
-            if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
-            if (dealRes?.data) {
-              setDeal(dealRes.data);
-              setCachedDeal(dealId, dealRes.data);
-              setCurrentRoom(prev => prev ? { 
-                ...prev, 
-                proposed_terms: dealRes.data.proposed_terms 
-              } : prev);
-            }
-          } catch (_) {}
-        })();
-      }
-    });
-    unsubscribers.push(unsubCounter);
-
-    // PHASE 7: Subscribe to LegalAgreement for real-time signature updates
+    // Subscribe to LegalAgreement for real-time signature updates
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        console.log('[Room] Agreement updated, refreshing state...');
-        (async () => {
-          try {
-            const agRes = await base44.functions.invoke('getAgreementState', { 
-              deal_id: dealId, 
-              room_id: roomId 
-            });
-            if (agRes?.data?.agreement) {
-              setAgreement(agRes.data.agreement);
-            }
-          } catch (_) {}
-        })();
+        console.log('[Room] Agreement updated');
+        setAgreement(event.data);
       }
     });
-    unsubscribers.push(unsubAgreement);
 
     return () => {
-      unsubscribers.forEach((u) => {
-        try { u(); } catch (_) {}
-      });
+      try { unsubAgreement?.(); } catch (_) {}
     };
-  }, [currentRoom?.deal_id, roomId, activeTab]); 
+  }, [currentRoom?.deal_id]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
@@ -922,73 +869,7 @@ export default function Room() {
     })();
   }, [messages, roomId, currentRoom?.id]);
 
-  // PHASE 4/7: Load room states for multi-agent mode + real-time updates
-  useEffect(() => {
-    if (!multiAgentMode || invitedRooms.length === 0 || !currentRoom?.deal_id) {
-      setRoomStates({});
-      return;
-    }
-
-    const loadStates = async () => {
-      try {
-        const promises = invitedRooms.map(room => 
-          base44.functions.invoke('getAgreementState', { 
-            deal_id: currentRoom.deal_id, 
-            room_id: room.id 
-          }).then(res => ({ roomId: room.id, data: res.data }))
-          .catch(() => ({ roomId: room.id, data: null }))
-        );
-        
-        const results = await Promise.all(promises);
-        const statesMap = {};
-        results.forEach(r => {
-          if (r.data) statesMap[r.roomId] = r.data;
-        });
-        setRoomStates(statesMap);
-      } catch (error) {
-        console.error('[Room] Failed to load room states:', error);
-      }
-    };
-
-    loadStates();
-
-    // PHASE 7: Real-time updates for multi-agent board
-    const unsubscribers = [];
-
-    // Subscribe to counter offers for all invited rooms
-    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id === currentRoom.deal_id) {
-        console.log('[Room] Multi-agent: Counter updated, reloading states...');
-        loadStates();
-      }
-    });
-    unsubscribers.push(unsubCounter);
-
-    // Subscribe to agreement updates for all invited rooms
-    const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
-      if (event?.data?.deal_id === currentRoom.deal_id) {
-        console.log('[Room] Multi-agent: Agreement updated, reloading states...');
-        loadStates();
-      }
-    });
-    unsubscribers.push(unsubAgreement);
-
-    // Subscribe to Deal for lock-in detection
-    const unsubDeal = base44.entities.Deal.subscribe((event) => {
-      if (event?.id === currentRoom.deal_id && event?.data?.locked_room_id) {
-        console.log('[Room] Multi-agent: Deal locked, exiting multi-agent mode...');
-        // Reload to exit multi-agent mode
-        window.location.reload();
-      }
-    });
-    unsubscribers.push(unsubDeal);
-
-    return () => {
-      unsubscribers.forEach(u => {
-        try { u(); } catch (_) {}
-      });
-    };
-  }, [multiAgentMode, invitedRooms.length, currentRoom?.deal_id]);
+  // Multi-agent mode removed for simplicity
 
 
 
@@ -1483,36 +1364,28 @@ export default function Room() {
             {roomId && (
               <>
                 <Button
-                    onMouseEnter={prefetchDeal}
-                    onClick={async () => {
-                      // PHASE 4: Multi-agent mode - navigate to selected room
-                      if (multiAgentMode && selectedRoomId && selectedRoomId !== roomId) {
-                        navigate(`${createPageUrl("Room")}?roomId=${selectedRoomId}&tab=details`, { replace: false });
-                        return;
-                      }
-
-                      // Always open the Deal Board reliably
-                      setBoardLoading(true);
-                      const data = await prefetchDeal();
-                      if (data) {
-                        setDeal(data);
-                      } else if (currentRoom) {
-                        const snap = buildDealFromRoom(currentRoom, maskAddr);
-                        if (snap) setDeal(snap);
-                      }
-                      setActiveTab('details');
-                      setShowBoard(true);
-                      setBoardLoading(false);
-                    }}
-                    disabled={multiAgentMode && !selectedRoomId}
-                    className={`rounded-full font-semibold transition-all ${
-                         showBoard 
-                           ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
-                           : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
-                        } ${multiAgentMode && !selectedRoomId ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
+                  onMouseEnter={prefetchDeal}
+                  onClick={async () => {
+                    setBoardLoading(true);
+                    const data = await prefetchDeal();
+                    if (data) {
+                      setDeal(data);
+                    } else if (currentRoom) {
+                      const snap = buildDealFromRoom(currentRoom, maskAddr);
+                      if (snap) setDeal(snap);
+                    }
+                    setActiveTab('details');
+                    setShowBoard(true);
+                    setBoardLoading(false);
+                  }}
+                  className={`rounded-full font-semibold transition-all ${
+                       showBoard 
+                         ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
+                         : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
+                      }`}
+                >
                   <FileText className="w-4 h-4 mr-2" />
-                  {multiAgentMode && !selectedRoomId ? 'Choose Agent First' : 'Deal Board'}
+                  Deal Board
                 </Button>
                 <Button
                     onClick={() => setShowBoard(false)}
@@ -2157,17 +2030,11 @@ export default function Room() {
 
           {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {/* LegalAgreement Panel - Always render if we have deal_id; use stable deal snapshot to avoid flicker */}
                   {currentRoom?.deal_id ? (
-                    <AgreementPanel
+                    <SimpleAgreementPanel
                       dealId={currentRoom.deal_id}
-                      roomId={roomId}
+                      agreement={agreement}
                       profile={profile}
-                      onUpdate={async () => {
-                        await refreshRoomState();
-                        queryClient.invalidateQueries({ queryKey: ['rooms'] });
-                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                      }}
                     />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
@@ -2633,113 +2500,7 @@ export default function Room() {
       ) : (
         /* Messages View */
         <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              {/* PHASE 4: Multi-Agent Board for Investors */}
-              {multiAgentMode ? (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Choose Your Agent</h2>
-                    <p className="text-sm text-[#808080]">Select an agent to view deal board and agreement details</p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {invitedRooms.map(room => {
-                      const roomState = roomStates[room.id] || {};
-                      const agentProfile = room.counterparty_profile || {};
-                      const isSelected = selectedRoomId === room.id;
-
-                      // Derive status text from room state
-                      const getStatusText = () => {
-                        if (roomState.pending_counter) {
-                          const counter = roomState.pending_counter;
-                          if (counter.from_role === 'agent') {
-                            const terms = counter.terms_delta || {};
-                            const comp = terms.buyer_commission_type === 'percentage' 
-                              ? `${terms.buyer_commission_percentage}%`
-                              : `$${terms.buyer_flat_fee?.toLocaleString()}`;
-                            return `Counter received: ${comp}`;
-                          } else {
-                            return 'Waiting for agent to respond';
-                          }
-                        }
-
-                        if (roomState.requires_regenerate) {
-                          return 'Agent accepted terms — regenerate & re-sign';
-                        }
-
-                        const agreement = roomState.agreement;
-                        if (agreement?.investor_signed_at && !agreement?.agent_signed_at) {
-                          return 'Waiting for agent to sign';
-                        }
-
-                        if (!agreement?.investor_signed_at) {
-                          return 'Review and sign agreement';
-                        }
-
-                        return 'Waiting to sign';
-                      };
-
-                      return (
-                        <button
-                          key={room.id}
-                          onClick={() => setSelectedRoomId(room.id)}
-                          className={`bg-[#0D0D0D] border-2 rounded-2xl p-6 text-left transition-all hover:border-[#E3C567] ${
-                            isSelected ? 'border-[#E3C567] ring-2 ring-[#E3C567]/20' : 'border-[#1F1F1F]'
-                          }`}
-                        >
-                          {/* Agent Avatar */}
-                          <div className="flex items-center gap-4 mb-4">
-                            <div className="w-16 h-16 bg-[#E3C567]/20 rounded-full flex items-center justify-center">
-                              <User className="w-8 h-8 text-[#E3C567]" />
-                            </div>
-                            <div className="flex-1">
-                              <h3 className="text-lg font-bold text-[#FAFAFA] mb-1">
-                                {room.counterparty_name || agentProfile.full_name || 'Agent'}
-                              </h3>
-                              <div className="flex items-center gap-3 text-xs text-[#808080]">
-                                <div className="flex items-center gap-1">
-                                  <span>★</span>
-                                  <span>{agentProfile.reputationScore || '—'}</span>
-                                </div>
-                                <span>•</span>
-                                <span>{agentProfile.deals_completed || '—'} deals</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Status */}
-                          <div className="mb-4">
-                            <p className="text-sm text-[#E3C567] font-medium">
-                              {getStatusText()}
-                            </p>
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex gap-2">
-                            <Button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                navigate(`${createPageUrl("AgentProfile")}?profileId=${room.agentId || room.counterparty_id}`);
-                              }}
-                              variant="outline"
-                              size="sm"
-                              className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full"
-                            >
-                              View Profile
-                            </Button>
-                            {isSelected && (
-                              <div className="flex items-center text-xs text-[#E3C567] font-semibold">
-                                <CheckCircle2 className="w-4 h-4 mr-1" />
-                                Selected
-                              </div>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              ) : (
-                <>
+              <>
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
@@ -2829,57 +2590,14 @@ export default function Room() {
                       <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                       <div>
                         <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                          {(() => {
-                            // Get pending counter from roomStates if in multi-agent mode
-                            const pendingCounter = multiAgentMode && selectedRoomId 
-                              ? roomStates[selectedRoomId]?.pending_counter 
-                              : agreement?.pending_counter;
-                            const requiresRegenerate = multiAgentMode && selectedRoomId
-                              ? roomStates[selectedRoomId]?.requires_regenerate
-                              : deal?.requires_regenerate || currentRoom?.requires_regenerate;
-                            
-                            if (pendingCounter?.from_role === 'agent') {
-                              const terms = pendingCounter.terms_delta || {};
-                              const comp = terms.buyer_commission_type === 'percentage' 
-                                ? `${terms.buyer_commission_percentage}%`
-                                : `$${terms.buyer_flat_fee?.toLocaleString()}`;
-                              return `Agent sent a counter: ${comp}`;
-                            }
-                            if (requiresRegenerate) {
-                              return 'Agent accepted terms — regenerate & re-sign';
-                            }
-                            if (agreement?.investor_signed_at && !agreement?.agent_signed_at) {
-                              return 'Waiting for agent to agree to terms and sign';
-                            }
-                            if (pendingCounter?.from_role === 'investor') {
-                              return 'Waiting for agent to respond';
-                            }
-                            return 'Review and sign agreement';
-                          })()}
+                          {agreement?.investor_signed_at && !agreement?.agent_signed_at
+                            ? 'Waiting for agent to sign'
+                            : 'Review and sign agreement'}
                         </h3>
                         <p className="text-sm text-[#FAFAFA]/80 mb-2">
-                          {(() => {
-                            const pendingCounter = multiAgentMode && selectedRoomId 
-                              ? roomStates[selectedRoomId]?.pending_counter 
-                              : agreement?.pending_counter;
-                            const requiresRegenerate = multiAgentMode && selectedRoomId
-                              ? roomStates[selectedRoomId]?.requires_regenerate
-                              : deal?.requires_regenerate || currentRoom?.requires_regenerate;
-                            const currentAgreement = multiAgentMode && selectedRoomId
-                              ? roomStates[selectedRoomId]?.agreement
-                              : agreement;
-                            
-                            if (pendingCounter?.from_role === 'agent') {
-                              return "Review the agent's counter offer in My Agreement tab.";
-                            }
-                            if (requiresRegenerate) {
-                              return 'Generate a new agreement with the accepted terms.';
-                            }
-                            if (currentAgreement?.investor_signed_at) {
-                              return 'Your signature is recorded. Waiting for agent to sign.';
-                            }
-                            return 'Open My Agreement to review and sign.';
-                          })()}
+                          {agreement?.investor_signed_at
+                            ? 'Your signature is recorded. Waiting for agent to sign.'
+                            : 'Open My Agreement to review and sign.'}
                         </p>
                         {/* PHASE 5: View Profile button in Window A */}
                         {currentRoom?.agentId && (
