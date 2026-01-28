@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { inboxList } from '@/components/functions';
-import { DEMO_MODE } from '@/components/config/demo';
 
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Clear KYC Gating
@@ -160,32 +158,7 @@ export function useCurrentProfile() {
     return () => { mounted = false; };
   }, [refreshTrigger]);
 
-  const refresh = async () => {
-    if (DEMO_MODE) {
-      const demoProfile = JSON.parse(sessionStorage.getItem('demo_profile') || 'null');
-      if (demoProfile) {
-        const role = demoProfile.user_role || 'member';
-        const onboarded = !!(demoProfile.onboarding_completed_at || demoProfile.onboarding_step === 'basic_complete' || demoProfile.onboarding_step === 'deep_complete' || demoProfile.onboarding_version);
-        const kycVerified = demoProfile.kyc_status === 'approved' || !!demoProfile.identity_verified;
-        const isPaidSubscriber = demoProfile.subscription_status === 'active' || demoProfile.subscription_status === 'trialing';
-        setState(prev => ({
-          ...prev,
-          profile: demoProfile,
-          role,
-          onboarded,
-          needsOnboarding: !onboarded && (role === 'investor' || role === 'agent'),
-          kycVerified,
-          needsKyc: onboarded && !kycVerified,
-          isPaidSubscriber,
-          needsSubscription: role === 'investor' && onboarded && !isPaidSubscriber,
-          hasNDA: !!demoProfile.nda_accepted,
-          needsNda: onboarded && kycVerified && !demoProfile.nda_accepted,
-        }));
-        return;
-      }
-    }
-    setRefreshTrigger(prev => prev + 1);
-  };
+  const refresh = () => setRefreshTrigger(prev => prev + 1);
 
   return { ...state, refresh };
 }

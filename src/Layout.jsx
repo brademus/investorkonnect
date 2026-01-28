@@ -5,7 +5,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { WizardProvider } from "@/components/WizardContext";
 import { Toaster } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useIsFetching } from "@tanstack/react-query";
+
 import LoadingAnimation from "@/components/LoadingAnimation";
 
       import { Shield, FileText, User, Settings, ShieldCheck, MessageSquare, LogOut } from "lucide-react";
