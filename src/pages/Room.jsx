@@ -374,8 +374,6 @@ export default function Room() {
   useEffect(() => {
     setShowBoard(false);
     setActiveTab('details');
-    setInvestorTasks([]);
-    setAgentTasks([]);
     setDeal(null);
     setAgreement(null);
     setSelectedRoomId(null);
@@ -1162,8 +1160,7 @@ export default function Room() {
       _isMe: true
     };
     setItems(prev => [...prev, optimisticMessage]);
-    // Ensure we stay pinned to bottom immediately
-    setTimeout(scrollToBottom, 0);
+
     
     try {
       const response = await base44.functions.invoke('sendMessage', { 
