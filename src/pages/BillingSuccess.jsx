@@ -35,13 +35,20 @@ export default function BillingSuccess() {
           // Check if subscription is now active
           if (profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing') {
             subscriptionConfirmed = true;
+            setLoading(false);
+            // Auto-redirect to verification
+            setTimeout(() => {
+              navigate(createPageUrl("IdentityVerification"), { replace: true });
+            }, 1500);
             break;
           }
           
           attempts++;
         }
 
-        setLoading(false);
+        if (!subscriptionConfirmed) {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Failed to confirm subscription:", error);
         setLoading(false);
@@ -49,7 +56,7 @@ export default function BillingSuccess() {
     };
 
     confirmSubscription();
-  }, [refresh, sessionId, profile?.subscription_status]);
+  }, [refresh, sessionId, profile?.subscription_status, navigate]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
