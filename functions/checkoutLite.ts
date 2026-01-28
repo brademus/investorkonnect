@@ -164,11 +164,11 @@ Deno.serve(async (req) => {
       if (profiles.length > 0) {
         const profile = profiles[0];
         console.log('📋 Profile found, stripe_customer_id:', profile.stripe_customer_id || 'none');
-        
+
         if (profile.stripe_customer_id) {
           const existingCustomerId = profile.stripe_customer_id;
           console.log('🔍 Checking for active/trialing subscriptions on:', existingCustomerId);
-          
+
           // Check both active AND trialing subscriptions
           const [activeResult, trialingResult] = await Promise.all([
             stripe.subscriptions.list({
@@ -182,24 +182,24 @@ Deno.serve(async (req) => {
               limit: 1
             })
           ]);
-          
+
           const hasSub = (activeResult.data.length > 0 || trialingResult.data.length > 0);
-          
+
           console.log('📊 Subscription check:', {
             active: activeResult.data.length,
             trialing: trialingResult.data.length,
             hasSub
           });
-          
+
           if (hasSub && !forceNew) {
             // Has subscription and NOT force_new -> open Billing Portal
             console.log('🎯 Opening Billing Portal for existing subscriber');
-            
+
             const portalSession = await stripe.billingPortal.sessions.create({
               customer: existingCustomerId,
               return_url: `${base}/pricing`
             });
-            
+
             return Response.json({
               ok: true,
               url: portalSession.url,
@@ -207,36 +207,35 @@ Deno.serve(async (req) => {
               has_subscription: true
             }, { status: 200 });
           }
-          
+
           if (hasSub && forceNew && isTestMode) {
             // Test mode: force_new -> cancel existing subs
             console.log('🔄 TEST MODE: Cancelling existing subscriptions');
-            
+
             const allSubs = [...activeResult.data, ...trialingResult.data];
             for (const sub of allSubs) {
               await stripe.subscriptions.cancel(sub.id);
               console.log('✅ Cancelled subscription:', sub.id);
             }
           }
-          
+
           // Either no sub, or force_new in test mode -> proceed with checkout
           customerId = existingCustomerId;
           console.log('✅ Using existing Stripe customer:', customerId);
-          
+
         } else {
-          // Create new Stripe customer
-          console.log('🆕 Creating new Stripe customer for:', emailLower);
+          // Create new Stripe customer (no email needed)
+          console.log('🆕 Creating new Stripe customer');
           const customer = await stripe.customers.create({
-            email: emailLower,
             metadata: {
               user_id: userId,
               app: 'agentvault'
             }
           });
-          
+
           customerId = customer.id;
           console.log('✅ Created new Stripe customer:', customerId);
-          
+
           // Save customer ID to profile
           await base44.asServiceRole.entities.Profile.update(profile.id, {
             stripe_customer_id: customerId
@@ -244,7 +243,7 @@ Deno.serve(async (req) => {
           console.log('💾 Saved stripe_customer_id to profile');
         }
       } else {
-        console.log('⚠️ No profile found for email:', emailLower);
+        console.log('⚠️ No profile found for user_id:', userId);
       }
     }
     
