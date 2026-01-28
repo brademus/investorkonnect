@@ -191,6 +191,40 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // PHASE 7: Enforce Deal Lock-in
+    // If deal is locked to a different room/agent, block signing
+    try {
+      const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+      const deal = dealArr?.[0];
+      
+      if (deal?.locked_room_id) {
+        const myRoomId = room_id || agreement.room_id;
+        
+        // If we know the room context
+        if (myRoomId && myRoomId !== deal.locked_room_id) {
+          console.error(`[DocuSign] ❌ Blocked signing: Deal locked to room ${deal.locked_room_id}, attempting sign for ${myRoomId}`);
+          return Response.json({ 
+            error: 'This deal has been secured by another agent. You can no longer sign this agreement.',
+            code: 'DEAL_LOCKED_TO_OTHER'
+          }, { status: 403 });
+        }
+        
+        // If legacy agreement without room_id, check agent profile match
+        if (!myRoomId && role === 'agent') {
+          const myAgentId = agreement.agent_profile_id;
+          if (myAgentId && deal.locked_agent_id && myAgentId !== deal.locked_agent_id) {
+            console.error(`[DocuSign] ❌ Blocked signing: Deal locked to agent ${deal.locked_agent_id}, attempting sign for ${myAgentId}`);
+            return Response.json({ 
+              error: 'This deal has been secured by another agent. You can no longer sign this agreement.',
+              code: 'DEAL_LOCKED_TO_OTHER'
+            }, { status: 403 });
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('[DocuSign] Failed to check lock status (continuing):', e.message);
+    }
+
     // Get DocuSign connection and define vars EARLY
     const connection = await getDocuSignConnection(base44);
     const accessToken = connection.access_token;
