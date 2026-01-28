@@ -165,6 +165,7 @@ Deno.serve(async (req) => {
       const deal = dealMap.get(room.deal_id);
       const counterpartyId = userRole === 'investor' ? room.agentId : room.investorId;
       const counterpartyProfile = profileMap.get(counterpartyId);
+      const la = legalMap.get(room.deal_id);
       
       const isFullySigned = room.agreement_status === 'fully_signed' || 
                            room.request_status === 'signed';
@@ -177,6 +178,83 @@ Deno.serve(async (req) => {
         from_role: pending.from_role,
         last_proposed_terms: { proposed_by_role: pending.from_role }
       } : null);
+      
+      // Mirror Files tab: combine room uploads with message attachments and system documents
+      const baseFiles = Array.isArray(room.files) ? room.files : [];
+      const basePhotos = Array.isArray(room.photos) ? room.photos : [];
+      const msgFiles = messageAttachmentsByRoom.get(room.id) || [];
+      const legacyFiles = legacyAttachmentsByRoom.get(room.id) || [];
+
+      // Helper to normalize a document object to file item
+      const normalizeDoc = (doc, fallbackName, uploadedAtKey = 'uploaded_at') => {
+        if (!doc || !doc.url) return null;
+        return {
+          name: doc.name || fallbackName || 'Document',
+          url: doc.url,
+          uploaded_by: doc.uploaded_by,
+          uploaded_by_name: doc.uploaded_by_name || 'System',
+          uploaded_at: doc[uploadedAtKey] || doc.generated_at || room.updated_date || room.created_date,
+          size: doc.size,
+          type: doc.type || 'application/pdf'
+        };
+      };
+
+      // System docs on Room
+      const systemRoomDocs = [
+        normalizeDoc(room.contract_document, 'Purchase Contract'),
+        normalizeDoc(room.listing_agreement_document, 'Listing Agreement'),
+        normalizeDoc(room.internal_agreement_document, 'Internal Agreement', 'generated_at')
+      ].filter(Boolean);
+
+      // System docs on Deal (if available)
+      const systemDealDocs = [];
+      if (deal) {
+        if (deal.contract_document) systemDealDocs.push(normalizeDoc(deal.contract_document, 'Purchase Contract'));
+        const docs = deal.documents || {};
+        if (docs.purchase_contract && docs.purchase_contract.url) systemDealDocs.push(normalizeDoc(docs.purchase_contract, 'Purchase Contract'));
+        if (docs.listing_agreement && docs.listing_agreement.url) systemDealDocs.push(normalizeDoc(docs.listing_agreement, 'Listing Agreement'));
+        if (docs.operating_agreement && docs.operating_agreement.url) systemDealDocs.push(normalizeDoc(docs.operating_agreement, 'Operating Agreement'));
+        if (docs.buyer_contract && docs.buyer_contract.url) systemDealDocs.push(normalizeDoc(docs.buyer_contract, 'Buyer Contract'));
+      }
+
+      const legalDocs = [];
+      if (la) {
+        const laUrl = la.signed_pdf_url || la.final_pdf_url || la.docusign_pdf_url || la.pdf_file_url || la.signing_pdf_url;
+        if (laUrl) {
+          legalDocs.push({
+            name: 'Internal Agreement',
+            url: laUrl,
+            uploaded_by_name: 'System',
+            uploaded_at: la.agent_signed_at || la.investor_signed_at || la.updated_date || la.created_date,
+            type: 'application/pdf'
+          });
+        }
+      }
+
+      const all = [
+        ...baseFiles,
+        ...msgFiles,
+        ...legacyFiles,
+        ...systemRoomDocs,
+        ...systemDealDocs,
+        ...legalDocs,
+      ];
+
+      const isPhoto = (f) => {
+        const t = (f?.type || '').toString().toLowerCase();
+        if (t.startsWith('image/')) return true;
+        const n = (f?.name || '').toString().toLowerCase();
+        return /(\.png|\.jpg|\.jpeg|\.webp|\.gif)$/.test(n);
+      };
+
+      const files = all.filter(f => !isPhoto(f));
+      const photos = [...basePhotos, ...all.filter(isPhoto)];
+
+      // Sort newest first
+      const byDateDesc = (a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0);
+      files.sort(byDateDesc);
+      photos.sort(byDateDesc);
+      
       const enriched = {
         id: room.id,
         deal_id: room.deal_id,
@@ -208,88 +286,8 @@ Deno.serve(async (req) => {
         } : null,
         created_date: room.created_date,
         updated_date: room.updated_date,
-
-        // Mirror Files tab: combine room uploads with message attachments and system documents
-        ...(function() {
-          const baseFiles = Array.isArray(room.files) ? room.files : [];
-          const basePhotos = Array.isArray(room.photos) ? room.photos : [];
-          const msgFiles = messageAttachmentsByRoom.get(room.id) || [];
-          const legacyFiles = legacyAttachmentsByRoom.get(room.id) || [];
-
-          // Helper to normalize a document object to file item
-          const normalizeDoc = (doc, fallbackName, uploadedAtKey = 'uploaded_at') => {
-            if (!doc || !doc.url) return null;
-            return {
-              name: doc.name || fallbackName || 'Document',
-              url: doc.url,
-              uploaded_by: doc.uploaded_by,
-              uploaded_by_name: doc.uploaded_by_name || 'System',
-              uploaded_at: doc[uploadedAtKey] || doc.generated_at || room.updated_date || room.created_date,
-              size: doc.size,
-              type: doc.type || 'application/pdf'
-            };
-          };
-
-          // System docs on Room
-          const systemRoomDocs = [
-            normalizeDoc(room.contract_document, 'Purchase Contract'),
-            normalizeDoc(room.listing_agreement_document, 'Listing Agreement'),
-            normalizeDoc(room.internal_agreement_document, 'Internal Agreement', 'generated_at')
-          ].filter(Boolean);
-
-          // System docs on Deal (if available)
-          const deal = dealMap.get(room.deal_id);
-          const systemDealDocs = [];
-          if (deal) {
-            if (deal.contract_document) systemDealDocs.push(normalizeDoc(deal.contract_document, 'Purchase Contract'));
-            const docs = deal.documents || {};
-            if (docs.purchase_contract && docs.purchase_contract.url) systemDealDocs.push(normalizeDoc(docs.purchase_contract, 'Purchase Contract'));
-            if (docs.listing_agreement && docs.listing_agreement.url) systemDealDocs.push(normalizeDoc(docs.listing_agreement, 'Listing Agreement'));
-            if (docs.operating_agreement && docs.operating_agreement.url) systemDealDocs.push(normalizeDoc(docs.operating_agreement, 'Operating Agreement'));
-            if (docs.buyer_contract && docs.buyer_contract.url) systemDealDocs.push(normalizeDoc(docs.buyer_contract, 'Buyer Contract'));
-          }
-
-          const la = legalMap.get(room.deal_id);
-          const legalDocs = [];
-          if (la) {
-            const laUrl = la.signed_pdf_url || la.final_pdf_url || la.docusign_pdf_url || la.pdf_file_url || la.signing_pdf_url || la.docusign_pdf_url;
-            if (laUrl) {
-              legalDocs.push({
-                name: 'Internal Agreement',
-                url: laUrl,
-                uploaded_by_name: 'System',
-                uploaded_at: la.agent_signed_at || la.investor_signed_at || la.updated_date || la.created_date,
-                type: 'application/pdf'
-              });
-            }
-          }
-
-          const all = [
-            ...baseFiles,
-            ...msgFiles,
-            ...legacyFiles,
-            ...systemRoomDocs,
-            ...systemDealDocs,
-            ...legalDocs,
-          ];
-
-          const isPhoto = (f) => {
-            const t = (f?.type || '').toString().toLowerCase();
-            if (t.startsWith('image/')) return true;
-            const n = (f?.name || '').toString().toLowerCase();
-            return /(\.png|\.jpg|\.jpeg|\.webp|\.gif)$/.test(n);
-          };
-
-          const files = all.filter(f => !isPhoto(f));
-          const photos = [...basePhotos, ...all.filter(isPhoto)];
-
-          // Sort newest first
-          const byDateDesc = (a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0);
-          files.sort(byDateDesc);
-          photos.sort(byDateDesc);
-
-          return { files, photos };
-        })(),
+        files,
+        photos,
         
         // Counterparty info
         counterparty_id: counterpartyId,
