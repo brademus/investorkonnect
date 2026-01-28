@@ -270,14 +270,17 @@ Deno.serve(async (req) => {
       }
     };
     
-    // Use customer ID if available, otherwise use customer_email (only if populated)
-    if (customerId) {
-      sessionParams.customer = customerId;
-      console.log('✅ Using Stripe customer ID:', customerId);
-    } else if (userEmail && userEmail.trim()) {
-      sessionParams.customer_email = userEmail;
-      console.log('✅ Using customer_email:', userEmail);
+    // Use customer ID (required)
+    if (!customerId) {
+      return Response.json({ 
+        ok: false, 
+        reason: 'NO_CUSTOMER_ID',
+        message: 'Failed to create or retrieve Stripe customer. Please try again.' 
+      }, { status: 500 });
     }
+    
+    sessionParams.customer = customerId;
+    console.log('✅ Using Stripe customer ID:', customerId);
     
     const session = await stripe.checkout.sessions.create(sessionParams);
 
