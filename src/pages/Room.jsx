@@ -2910,6 +2910,14 @@ ${dealContext}`;
                       <div>
                         <h3 className="text-md font-bold text-[#60A5FA] mb-1">
                           {(() => {
+                            // Get pending counter from roomStates if in multi-agent mode
+                            const pendingCounter = multiAgentMode && selectedRoomId 
+                              ? roomStates[selectedRoomId]?.pending_counter 
+                              : agreement?.pending_counter;
+                            const requiresRegenerate = multiAgentMode && selectedRoomId
+                              ? roomStates[selectedRoomId]?.requires_regenerate
+                              : deal?.requires_regenerate || currentRoom?.requires_regenerate;
+                            
                             if (pendingCounter?.from_role === 'agent') {
                               const terms = pendingCounter.terms_delta || {};
                               const comp = terms.buyer_commission_type === 'percentage' 
@@ -2930,13 +2938,28 @@ ${dealContext}`;
                           })()}
                         </h3>
                         <p className="text-sm text-[#FAFAFA]/80 mb-2">
-                          {pendingCounter?.from_role === 'agent' 
-                            ? 'Review the agent\'s counter offer in My Agreement tab.'
-                            : requiresRegenerate
-                            ? 'Generate a new agreement with the accepted terms.'
-                            : agreement?.investor_signed_at
-                            ? 'Your signature is recorded. Waiting for agent to sign.'
-                            : 'Open My Agreement to review and sign.'}
+                          {(() => {
+                            const pendingCounter = multiAgentMode && selectedRoomId 
+                              ? roomStates[selectedRoomId]?.pending_counter 
+                              : agreement?.pending_counter;
+                            const requiresRegenerate = multiAgentMode && selectedRoomId
+                              ? roomStates[selectedRoomId]?.requires_regenerate
+                              : deal?.requires_regenerate || currentRoom?.requires_regenerate;
+                            const currentAgreement = multiAgentMode && selectedRoomId
+                              ? roomStates[selectedRoomId]?.agreement
+                              : agreement;
+                            
+                            if (pendingCounter?.from_role === 'agent') {
+                              return "Review the agent's counter offer in My Agreement tab.";
+                            }
+                            if (requiresRegenerate) {
+                              return 'Generate a new agreement with the accepted terms.';
+                            }
+                            if (currentAgreement?.investor_signed_at) {
+                              return 'Your signature is recorded. Waiting for agent to sign.';
+                            }
+                            return 'Open My Agreement to review and sign.';
+                          })()}
                         </p>
                         {/* PHASE 5: View Profile button in Window A */}
                         {currentRoom?.agentId && (

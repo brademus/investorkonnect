@@ -139,7 +139,7 @@ export default function SelectAgent() {
 
       console.log('[SelectAgent] Created deal:', newDeal.id);
 
-      // Create ONE Room per selected agent (parallel)
+      // PHASE 7: Create ONE Room per selected agent with closing_date (parallel)
       const roomPromises = selectedAgentIds.map(agentId => 
         base44.entities.Room.create({
           deal_id: newDeal.id,
@@ -154,9 +154,11 @@ export default function SelectAgent() {
           county: newDeal.county,
           zip: newDeal.zip,
           budget: newDeal.purchase_price,
+          closing_date: newDeal.key_dates?.closing_date,
           proposed_terms: newDeal.proposed_terms,
           ndaAcceptedInvestor: false,
-          ndaAcceptedAgent: false
+          ndaAcceptedAgent: false,
+          requested_at: new Date().toISOString()
         })
       );
 

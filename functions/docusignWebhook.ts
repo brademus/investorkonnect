@@ -352,9 +352,21 @@ Deno.serve(async (req) => {
             console.error('[DocuSign Webhook] Failed to download/upload signed PDF:', error);
           }
 
-          // PHASE 3: Enforce lock-in when agreement becomes fully signed
+          // PHASE 3/7: Enforce lock-in when agreement becomes fully signed
           if (agreement.room_id) {
             await enforceDealLockIn(base44, agreement.deal_id, agreement.room_id);
+          }
+          
+          // PHASE 7: Also update Room.current_legal_agreement_id
+          if (agreement.room_id && agreement.id) {
+            try {
+              await base44.asServiceRole.entities.Room.update(agreement.room_id, {
+                current_legal_agreement_id: agreement.id
+              });
+              console.log('[DocuSign Webhook] ✓ Updated Room.current_legal_agreement_id');
+            } catch (e) {
+              console.warn('[DocuSign Webhook] Failed to update Room.current_legal_agreement_id:', e?.message);
+            }
           }
         } else if (investorSigned) {
           updates.status = 'investor_signed';
