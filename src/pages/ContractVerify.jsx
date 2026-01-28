@@ -203,6 +203,11 @@ export default function ContractVerify() {
     navigate(createPageUrl("SelectAgent"));
   };
 
+  const handleFixDeal = () => {
+    // Keep the draft data and go back to fix it
+    navigate(createPageUrl("NewDeal"));
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
@@ -325,11 +330,14 @@ export default function ContractVerify() {
                   )}
 
                   {/* Show mismatches */}
-                  <div className="bg-[#141414] border border-[#F87171]/30 rounded-lg p-6">
+                  <div className="bg-[#141414] border border-[#F87171]/30 rounded-lg p-6 mb-6">
                     <div className="flex items-center gap-3 mb-4">
                       <AlertCircle className="w-6 h-6 text-[#F87171]" />
                       <h3 className="font-semibold text-[#F87171] text-lg">Mismatches Found</h3>
                     </div>
+                    <p className="text-sm text-[#808080] mb-4">
+                      Please review and fix the following mismatches before continuing.
+                    </p>
                     <div className="space-y-4">
                       {verificationResult.mismatches.map((item, i) => (
                         <div key={i} className="text-sm">
@@ -348,17 +356,40 @@ export default function ContractVerify() {
                       ))}
                     </div>
                   </div>
+
+                  {/* Action buttons for mismatch case */}
+                  <div className="flex gap-3">
+                    <Button
+                      onClick={handleFixDeal}
+                      className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
+                    >
+                      Fix Deal Details
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        setFile(null);
+                        setVerificationResult(null);
+                      }}
+                      variant="outline"
+                      className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] h-11 rounded-lg"
+                    >
+                      Upload New Contract
+                    </Button>
+                  </div>
                 </div>
               )}
 
-              <Button
-                onClick={handleProceed}
-                className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
-              >
-                Continue to Agent Selection
-              </Button>
-            </div>
-          )}
+              {/* Only show continue button if verified successfully */}
+              {verificationResult.mismatches.length === 0 && (
+                <Button
+                  onClick={handleProceed}
+                  className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
+                >
+                  Continue to Agent Selection
+                </Button>
+              )}
+              </div>
+              )}
         </div>
       </div>
     </div>
