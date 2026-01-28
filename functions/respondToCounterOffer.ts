@@ -82,6 +82,40 @@ Deno.serve(async (req) => {
       if (!deals?.length) throw new Error('Deal not found');
       return deals[0];
     });
+
+    // Room-scoped/legacy authorization after loading deal
+    if (counter.room_id) {
+      const rooms = await withRetry(async () => {
+        const rs = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
+        if (!rs?.length) throw new Error('Room not found for counter');
+        return rs;
+      });
+      const rm = rooms[0];
+      if (userRole === 'agent') {
+        if (rm.agentId !== userProfile.id || rm.request_status === 'expired') {
+          return Response.json({ error: 'Not authorized for this room' }, { status: 403 });
+        }
+      } else {
+        if (rm.investorId !== userProfile.id) {
+          return Response.json({ error: 'Not authorized for this room' }, { status: 403 });
+        }
+      }
+    } else {
+      // Legacy: ensure participation via Deal or Room
+      if (userRole === 'agent') {
+        if (deal.agent_id !== userProfile.id) {
+          const myRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: counter.deal_id, agentId: userProfile.id });
+          const hasActive = (myRooms || []).some(r => r.request_status !== 'expired');
+          if (!hasActive) {
+            return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
+          }
+        }
+      } else {
+        if (deal.investor_id !== userProfile.id) {
+          return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
+        }
+      }
+    }
     
     // DECLINE
     if (action === 'decline') {

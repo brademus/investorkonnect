@@ -40,12 +40,28 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
-    // Verify user is participant
-    if (from_role === 'investor' && deal.investor_id !== profile.id) {
-      return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
-    }
-    if (from_role === 'agent' && deal.agent_id !== profile.id) {
-      return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
+    // Verify user is participant (room-scoped aware)
+    if (from_role === 'investor') {
+      if (deal.investor_id !== profile.id) {
+        return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
+      }
+    } else if (from_role === 'agent') {
+      if (room_id) {
+        const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+        const rm = rooms?.[0];
+        if (!rm || rm.agentId !== profile.id || rm.request_status === 'expired') {
+          return Response.json({ error: 'Not authorized for this room' }, { status: 403 });
+        }
+      } else {
+        // Legacy: allow if Deal.agent_id matches OR agent has an active room for this deal
+        if (deal.agent_id !== profile.id) {
+          const myRooms = await base44.asServiceRole.entities.Room.filter({ deal_id, agentId: profile.id });
+          const hasActive = (myRooms || []).some(r => r.request_status !== 'expired');
+          if (!hasActive) {
+            return Response.json({ error: 'Not authorized for this deal' }, { status: 403 });
+          }
+        }
+      }
     }
     
     // Supersede any existing pending counter (room-scoped or legacy)
