@@ -338,7 +338,7 @@ export default function Room() {
     }
   }, [loading, profile, onboarded, hasNDA, isPaidSubscriber, kycVerified, navigate]);
   const { rooms } = useMyRooms();
-  const { items: messages, loading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
+  const { items: messages, loading: messagesLoading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
   const queryClient = useQueryClient();
   const [drawer, setDrawer] = useState(false);
   const [text, setText] = useState("");
