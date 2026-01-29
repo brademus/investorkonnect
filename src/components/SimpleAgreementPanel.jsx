@@ -398,63 +398,57 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                          </Button>
                        </div>
                       ) : counter.from_role === 'investor' && isAgent ? (
-                       counter.status === 'pending' ? (
-                         <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 text-center">
-                           <p className="text-xs text-blue-300 font-semibold">Pending Your Review</p>
-                         </div>
-                       ) : (
-                         <div className="flex gap-2 flex-col">
-                           <div className="flex gap-2">
-                             <Button
-                               size="sm"
-                               onClick={async () => {
-                                 try {
-                                   await base44.functions.invoke('respondToCounterOffer', {
-                                     counter_offer_id: counter.id,
-                                     action: 'accepted'
-                                   });
-                                   toast.success('Counter accepted');
-                                   setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                   if (onCounterReceived) onCounterReceived();
-                                 } catch (e) {
-                                   toast.error('Failed to accept counter');
-                                 }
-                               }}
-                               className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
-                             >
-                               Accept
-                             </Button>
-                             <Button
-                               size="sm"
-                               onClick={async () => {
-                                 try {
-                                   await base44.functions.invoke('respondToCounterOffer', {
-                                     counter_offer_id: counter.id,
-                                     action: 'declined'
-                                   });
-                                   toast.success('Counter declined');
-                                   setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                 } catch (e) {
-                                   toast.error('Failed to decline counter');
-                                 }
-                               }}
-                               variant="outline"
-                               size="sm"
-                               className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs"
-                             >
-                               Decline
-                             </Button>
-                           </div>
-                           <Button
-                             size="sm"
-                             onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}&respondingTo=${counter.id}`}
-                             variant="outline"
-                             className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
-                           >
-                             Counter Offer Back
-                           </Button>
-                         </div>
-                       )
+                        <div className="flex gap-2 flex-col">
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await base44.functions.invoke('respondToCounterOffer', {
+                                    counter_offer_id: counter.id,
+                                    action: 'accept'
+                                  });
+                                  toast.success('Counter accepted');
+                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                  if (onCounterReceived) onCounterReceived();
+                                } catch (e) {
+                                  toast.error('Failed to accept counter');
+                                }
+                              }}
+                              className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                            >
+                              Accept
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={async () => {
+                                try {
+                                  await base44.functions.invoke('respondToCounterOffer', {
+                                    counter_offer_id: counter.id,
+                                    action: 'decline'
+                                  });
+                                  toast.success('Counter declined');
+                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                } catch (e) {
+                                  toast.error('Failed to decline counter');
+                                }
+                              }}
+                              variant="outline"
+                              size="sm"
+                              className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs"
+                            >
+                              Decline
+                            </Button>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}&respondingTo=${counter.id}`}
+                            variant="outline"
+                            className="w-full border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
+                          >
+                            Counter Offer Back
+                          </Button>
+                        </div>
                       ) : null}
                     </div>
                   ))}
