@@ -80,8 +80,17 @@ Deno.serve(async (req) => {
         
         const user = await base44.auth.me();
         userId = user.id;
-        userEmail = user.email;
+        userEmail = user.email || user.user_metadata?.email;
         console.log('✅ User authenticated:', userEmail);
+        
+        if (!userEmail) {
+          console.log('❌ User has no email');
+          return Response.json({ 
+            ok: false, 
+            reason: 'EMAIL_REQUIRED',
+            message: 'Account email is required for checkout' 
+          }, { status: 400 });
+        }
         
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
