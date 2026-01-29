@@ -40,7 +40,24 @@ export default function DealRoom() {
         const loadedDeal = dealRes?.data?.deal || dealRes?.data;
         setDeal(loadedDeal);
 
-        // Load invites
+        // Check if investor has signed the agreement
+        try {
+          const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+          const ag = data?.agreement;
+          const investorSigned = !!ag?.investor_signed_at;
+          
+          if (!investorSigned) {
+            // Investor hasn't signed yet - redirect to MyAgreement
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`);
+            return;
+          }
+        } catch (e) {
+          // No agreement exists - redirect to MyAgreement to generate + sign
+          navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`);
+          return;
+        }
+
+        // Load invites (only after investor has signed)
         const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: dealId });
         if (invitesRes.data?.ok) {
           setInvites(invitesRes.data.invites || []);
@@ -54,7 +71,7 @@ export default function DealRoom() {
     };
 
     loadData();
-  }, [dealId, loadingProfile]);
+  }, [dealId, loadingProfile, navigate]);
 
   // Real-time updates for deal
   useEffect(() => {
