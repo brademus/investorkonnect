@@ -153,6 +153,21 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     }
   };
 
+  // Subscribe to real-time agreement updates
+  React.useEffect(() => {
+    if (!dealId) return;
+    
+    const unsubscribe = base44.entities.LegalAgreement.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        setLocalAgreement(event.data);
+      }
+    });
+
+    return () => {
+      try { unsubscribe?.(); } catch (_) {}
+    };
+  }, [dealId]);
+
   // Detect when investor has signed and trigger callback
   useEffect(() => {
     if (localAgreement?.investor_signed_at && !localAgreement?.agent_signed_at && onInvestorSigned) {
@@ -162,6 +177,23 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       }
     }
   }, [localAgreement?.investor_signed_at, onInvestorSigned]);
+
+  // Refresh agreement after signing redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('signed') === '1' && dealId && !localAgreement?.investor_signed_at) {
+      // Small delay to ensure DocuSign has synced
+      const timer = setTimeout(async () => {
+        try {
+          const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+          if (res?.data?.agreement) {
+            setLocalAgreement(res.data.agreement);
+          }
+        } catch (_) {}
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [dealId]);
 
   return (
     <>
