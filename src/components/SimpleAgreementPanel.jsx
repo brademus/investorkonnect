@@ -61,9 +61,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const agentSigned = !!localAgreement?.agent_signed_at;
   const fullySigned = investorSigned && agentSigned;
   
-  // Can regenerate ONLY if counter accepted or deal terms changed (flag in deal)
-  const canRegenerate = localAgreement && localAgreement.status !== 'fully_signed' && 
-                        (localAgreement.requires_regenerate === true);
+  // Can regenerate ONLY if counter accepted or deal terms changed (flag in room or agreement)
+  const canRegenerate = (localAgreement || true) && 
+                        (agreement?.status !== 'fully_signed' || localAgreement?.status !== 'fully_signed') && 
+                        (localAgreement?.requires_regenerate === true);
 
   // Show form only to investor, only if no agreement yet or regenerate needed
   const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded');
