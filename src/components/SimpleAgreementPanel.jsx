@@ -49,9 +49,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Sync incoming counters from Room component and trigger refresh
     React.useEffect(() => {
-      if (incomingCounters && incomingCounters.length > 0) {
+      if (incomingCounters) {
         setPendingCounters(incomingCounters);
-        // Force refresh agreement when counters arrive
+        // Force refresh agreement when counters change (arrival, acceptance, decline)
         const fetchLatest = async () => {
           try {
             const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
@@ -60,7 +60,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
             }
           } catch (_) {}
         };
-        setTimeout(fetchLatest, 500);
+        setTimeout(fetchLatest, 300);
       }
     }, [incomingCounters]);
 
