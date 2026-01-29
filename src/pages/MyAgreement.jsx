@@ -56,7 +56,7 @@ export default function MyAgreement() {
         if (agRes?.data?.agreement?.investor_signed_at) {
           const rooms = await base44.entities.Room.filter({ deal_id: dealId });
           if (rooms.length > 0) {
-            navigate(createPageUrl('Pipeline'), { replace: true });
+            navigate(`/Room?roomId=${rooms[0].id}`, { replace: true });
           }
         }
       } catch (e) {
@@ -103,12 +103,21 @@ export default function MyAgreement() {
       if (res.data?.ok) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
+        // CRITICAL: Clear rooms cache so Pipeline refetches
+        const roomsCacheKey = `roomsCache_${profile?.id}`;
+        sessionStorage.removeItem(roomsCacheKey);
         
         const inviteCount = res.data.invite_ids?.length || selectedAgentIds.length;
         toast.success(`Agreement sent to ${inviteCount} agent(s)!`);
         
-        // Navigate to deal-centric view (DealRoom)
-        navigate(`${createPageUrl('DealRoom')}?dealId=${dealId}`, { replace: true });
+        // Fetch rooms for this deal to navigate directly to Room
+        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+        if (roomsForDeal?.length > 0) {
+          navigate(`/Room?roomId=${roomsForDeal[0].id}`, { replace: true });
+        } else {
+          // Fallback: navigate to Pipeline if rooms aren't available yet
+          navigate(createPageUrl('Pipeline'), { replace: true });
+        }
       } else {
         throw new Error(res.data?.error || 'Failed to create invites');
       }
