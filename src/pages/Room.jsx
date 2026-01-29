@@ -412,6 +412,7 @@ export default function Room() {
     setAgreement(null);
     setSelectedRoomId(null);
     setRoomStates({});
+    setRoomLoading(false);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
