@@ -45,17 +45,11 @@ Deno.serve(async (req) => {
     
     console.log('[createInvitesAfterInvestorSign] Creating invites for', selectedAgentIds.length, 'agents');
     
-    // Check if invites already exist (idempotency)
+    // Get existing invites and rooms map by agent for true idempotency
     const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id });
-    if (existingInvites.length > 0) {
-      console.log('[createInvitesAfterInvestorSign] Invites already exist, skipping');
-      return Response.json({ 
-        ok: true, 
-        message: 'Invites already created',
-        invite_ids: existingInvites.map(i => i.id),
-        locked: !!deal.locked_agent_profile_id
-      });
-    }
+    const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
+    const existingInvitesByAgent = new Map(existingInvites.map(i => [i.agent_profile_id, i]));
+    const existingRoomsByAgent = new Map(existingRooms.map(r => [r.agentId, r]));
     
     // Prepare exhibit_a for agreements
     const exhibit_a = {
@@ -72,63 +66,95 @@ Deno.serve(async (req) => {
     
     const createdInvites = [];
     
-    // Create invite for each agent
+    // Create invite for each agent (true idempotency: skip if room + agreement + invite all exist)
     for (const agentId of selectedAgentIds) {
       try {
-        // 1. Create Room for this agent
-        const room = await base44.asServiceRole.entities.Room.create({
-          deal_id: deal_id,
-          investorId: profile.id,
-          agentId: agentId,
-          request_status: 'requested',
-          agreement_status: 'draft',
-          title: deal.title,
-          property_address: deal.property_address,
-          city: deal.city,
-          state: deal.state,
-          county: deal.county,
-          zip: deal.zip,
-          budget: deal.purchase_price,
-          closing_date: deal.key_dates?.closing_date,
-          proposed_terms: deal.proposed_terms,
-          requested_at: new Date().toISOString()
-        });
-        
-        console.log('[createInvitesAfterInvestorSign] Created room:', room.id, 'for agent:', agentId);
-        
-        // 2. Generate agent-specific agreement
-        const genRes = await base44.functions.invoke('generateLegalAgreement', {
-          deal_id: deal_id,
-          room_id: room.id,
-          exhibit_a
-        });
-        
-        if (!genRes.data?.success) {
-          throw new Error(genRes.data?.error || 'Failed to generate agreement');
+        // Skip if room + legal agreement + invite already exist for this agent
+        const existingInvite = existingInvitesByAgent.get(agentId);
+        if (existingInvite?.room_id && existingInvite?.legal_agreement_id) {
+          console.log('[createInvitesAfterInvestorSign] Invite already exists for agent:', agentId, ', skipping');
+          createdInvites.push(existingInvite.id);
+          continue;
+        }
+
+        // Check for existing room
+        let room = existingRoomsByAgent.get(agentId);
+        if (!room) {
+          // 1. Create Room for this agent
+          room = await base44.asServiceRole.entities.Room.create({
+            deal_id: deal_id,
+            investorId: profile.id,
+            agentId: agentId,
+            request_status: 'requested',
+            agreement_status: 'draft',
+            title: deal.title,
+            property_address: deal.property_address,
+            city: deal.city,
+            state: deal.state,
+            county: deal.county,
+            zip: deal.zip,
+            budget: deal.purchase_price,
+            closing_date: deal.key_dates?.closing_date,
+            proposed_terms: deal.proposed_terms,
+            requested_at: new Date().toISOString()
+          });
+          console.log('[createInvitesAfterInvestorSign] Created room:', room.id, 'for agent:', agentId);
+        }
+
+        // 2. Check if agreement already exists, otherwise generate
+        let agreement;
+        if (existingInvite?.legal_agreement_id) {
+          const existingAg = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+            id: existingInvite.legal_agreement_id 
+          }).then(arr => arr[0]);
+          if (existingAg) {
+            agreement = existingAg;
+            console.log('[createInvitesAfterInvestorSign] Using existing agreement:', agreement.id);
+          }
+        }
+
+        if (!agreement) {
+          const genRes = await base44.functions.invoke('generateLegalAgreement', {
+            deal_id: deal_id,
+            room_id: room.id,
+            exhibit_a
+          });
+          
+          if (!genRes.data?.success) {
+            throw new Error(genRes.data?.error || 'Failed to generate agreement');
+          }
+          
+          agreement = genRes.data.agreement;
+          console.log('[createInvitesAfterInvestorSign] Generated agreement:', agreement.id);
         }
         
-        const agreement = genRes.data.agreement;
-        console.log('[createInvitesAfterInvestorSign] Generated agreement:', agreement.id);
+        // 3. Update room with agreement ID if not already set
+        if (!room.current_legal_agreement_id) {
+          await base44.asServiceRole.entities.Room.update(room.id, {
+            current_legal_agreement_id: agreement.id,
+            agreement_status: 'sent'
+          });
+        }
         
-        // 3. Update room with agreement ID
-        await base44.asServiceRole.entities.Room.update(room.id, {
-          current_legal_agreement_id: agreement.id,
-          agreement_status: 'sent'
-        });
-        
-        // 4. Create DealInvite
-        const invite = await base44.asServiceRole.entities.DealInvite.create({
-          deal_id: deal_id,
-          investor_id: profile.id,
-          agent_profile_id: agentId,
-          room_id: room.id,
-          legal_agreement_id: agreement.id,
-          status: 'PENDING_AGENT_SIGNATURE',
-          created_at_iso: new Date().toISOString()
-        });
+        // 4. Create DealInvite if not already exists
+        let invite;
+        if (existingInvite) {
+          invite = existingInvite;
+          console.log('[createInvitesAfterInvestorSign] Invite already exists for agent:', agentId);
+        } else {
+          invite = await base44.asServiceRole.entities.DealInvite.create({
+            deal_id: deal_id,
+            investor_id: profile.id,
+            agent_profile_id: agentId,
+            room_id: room.id,
+            legal_agreement_id: agreement.id,
+            status: 'PENDING_AGENT_SIGNATURE',
+            created_at_iso: new Date().toISOString()
+          });
+          console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id);
+        }
         
         createdInvites.push(invite.id);
-        console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id);
         
       } catch (error) {
         console.error('[createInvitesAfterInvestorSign] Failed for agent', agentId, ':', error);
