@@ -652,58 +652,80 @@ export default function Room() {
           return;
         }
 
-        // Fetch all dependent data in PARALLEL upfront
         const dealId = rawRoom.deal_id;
-        const [
-          dealResponse,
-          invitesResponse,
-          appointmentsResponse,
-          agreementResponse,
-          countersResponse
-        ] = await Promise.all([
-          dealId ? base44.functions.invoke('getDealDetailsForUser', { dealId }).catch(() => ({ data: null })) : Promise.resolve({ data: null }),
-          (dealId && profile?.user_role === 'investor') ? base44.functions.invoke('getDealInvitesForInvestor', { deal_id: dealId }).catch(() => ({ data: null })) : Promise.resolve({ data: null }),
-          dealId ? base44.entities.DealAppointments.filter({ dealId }).catch(() => []) : Promise.resolve([]),
-          dealId ? base44.functions.invoke('getLegalAgreement', { deal_id: dealId }).catch(() => ({ data: null })) : Promise.resolve({ data: null }),
-          dealId ? base44.entities.CounterOffer.filter({ deal_id: dealId, status: 'pending' }).catch(() => []) : Promise.resolve([])
-        ]);
-
-        // Ensure not stale
-        if (isStale()) return;
-
-        const dealData = dealResponse?.data;
         
-        // Set all data upfront
-        if (dealData) {
-          setDeal(dealData);
-          setCachedDeal(dealId, dealData);
-        }
-
-        // Set invites if investor
-        if (invitesResponse?.data?.ok) {
-          const loadedInvites = invitesResponse.data.invites || [];
-          setInvites(loadedInvites);
-          if (loadedInvites.length === 1) {
-            setSelectedInvite(loadedInvites[0]);
+        // Load deal data
+        if (dealId) {
+          try {
+            const response = await base44.functions.invoke('getDealDetailsForUser', { dealId });
+            if (isStale()) return;
+            const dealData = response?.data;
+            if (dealData) {
+              setDeal(dealData);
+              setCachedDeal(dealId, dealData);
+            }
+          } catch (e) {
+            console.error('[Room] Deal fetch failed:', e);
           }
         }
 
-        // Set appointments
-        if (Array.isArray(appointmentsResponse) && appointmentsResponse[0]) {
-          setDealAppts(appointmentsResponse[0]);
+        // Load invites if investor
+        if (dealId && profile?.user_role === 'investor') {
+          try {
+            const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: dealId });
+            if (isStale()) return;
+            if (invitesRes.data?.ok) {
+              const loadedInvites = invitesRes.data.invites || [];
+              setInvites(loadedInvites);
+              if (loadedInvites.length === 1) {
+                setSelectedInvite(loadedInvites[0]);
+              }
+            }
+          } catch (e) {
+            console.error('[Room] Invites fetch failed:', e);
+          }
         }
 
-        // Set agreement
-        if (agreementResponse?.data?.agreement) {
-          setAgreement(agreementResponse.data.agreement);
+        // Load appointments
+        if (dealId) {
+          try {
+            const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+            if (isStale()) return;
+            if (Array.isArray(apptRows) && apptRows[0]) {
+              setDealAppts(apptRows[0]);
+            }
+          } catch (e) {
+            console.error('[Room] Appointments fetch failed:', e);
+          }
         }
 
-        // Set pending counters
-        if (Array.isArray(countersResponse)) {
-          const relevant = profile?.user_role === 'investor' 
-            ? countersResponse 
-            : (roomId ? countersResponse.filter(c => c.room_id === roomId || !c.room_id) : countersResponse);
-          setPendingCounters(relevant || []);
+        // Load agreement
+        if (dealId) {
+          try {
+            const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+            if (isStale()) return;
+            if (agRes?.data?.agreement) {
+              setAgreement(agRes.data.agreement);
+            }
+          } catch (e) {
+            console.error('[Room] Agreement fetch failed:', e);
+          }
+        }
+
+        // Load pending counters
+        if (dealId) {
+          try {
+            const countersResponse = await base44.entities.CounterOffer.filter({ deal_id: dealId, status: 'pending' });
+            if (isStale()) return;
+            if (Array.isArray(countersResponse)) {
+              const relevant = profile?.user_role === 'investor' 
+                ? countersResponse 
+                : (roomId ? countersResponse.filter(c => c.room_id === roomId || !c.room_id) : countersResponse);
+              setPendingCounters(relevant || []);
+            }
+          } catch (e) {
+            console.error('[Room] Counters fetch failed:', e);
+          }
         }
 
         // Build current room with all hydrated data
