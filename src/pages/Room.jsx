@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import LoadingAnimation from "@/components/LoadingAnimation";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import { StepGuard } from "@/components/StepGuard";
+import PendingAgentsList from "@/components/PendingAgentsList";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
@@ -368,6 +369,8 @@ export default function Room() {
   const [deal, setDeal] = useState(null);
   const [agreement, setAgreement] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
+  const [invites, setInvites] = useState([]);
+  const [selectedInvite, setSelectedInvite] = useState(null);
 
   const [agreementPanelKey, setAgreementPanelKey] = useState(0);
   const requestSeqRef = useRef(0);
@@ -647,6 +650,24 @@ export default function Room() {
           return;
         }
 
+        // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
+        if (rawRoom.deal_id && profile?.user_role === 'investor') {
+          try {
+            const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
+            if (invitesRes.data?.ok) {
+              const loadedInvites = invitesRes.data.invites || [];
+              setInvites(loadedInvites);
+              
+              // Auto-select if only one invite exists
+              if (loadedInvites.length === 1) {
+                setSelectedInvite(loadedInvites[0]);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to load invites:', e);
+          }
+        }
+
         // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
@@ -869,7 +890,8 @@ export default function Room() {
     })();
   }, [messages, roomId, currentRoom?.id]);
 
-  // Multi-agent mode removed for simplicity
+  // Multi-agent mode: Show pending agents instead of messages for investors with multiple agents
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id;
 
 
 
@@ -1364,8 +1386,12 @@ export default function Room() {
             {roomId && (
               <>
                 <Button
-                  onMouseEnter={prefetchDeal}
+                  onMouseEnter={isMultiAgentMode && !selectedInvite ? undefined : prefetchDeal}
                   onClick={async () => {
+                    if (isMultiAgentMode && !selectedInvite) {
+                      toast.error('Please select an agent first');
+                      return;
+                    }
                     setBoardLoading(true);
                     const data = await prefetchDeal();
                     if (data) {
@@ -1379,10 +1405,13 @@ export default function Room() {
                     setBoardLoading(false);
                   }}
                   className={`rounded-full font-semibold transition-all ${
-                       showBoard 
+                       (isMultiAgentMode && !selectedInvite)
+                         ? "bg-[#1F1F1F] text-[#808080]/50 cursor-not-allowed"
+                         : showBoard 
                          ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black" 
                          : "bg-[#1F1F1F] hover:bg-[#333333] text-[#FAFAFA]"
                       }`}
+                  disabled={isMultiAgentMode && !selectedInvite}
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   Deal Board
@@ -1396,7 +1425,7 @@ export default function Room() {
                         }`}
                   >
                   <Send className="w-4 h-4 mr-2" />
-                  Messages
+                  {isMultiAgentMode ? 'Pending Agents' : 'Messages'}
                 </Button>
                 {!isWorkingTogether && (
                   <span className="ml-3 text-xs bg-[#F59E0B]/20 text-[#F59E0B] border border-[#F59E0B]/30 px-3 py-1 rounded-full">
@@ -2033,7 +2062,7 @@ export default function Room() {
                   {currentRoom?.deal_id ? (
                     <SimpleAgreementPanel
                       dealId={currentRoom.deal_id}
-                      agreement={agreement}
+                      agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
                       profile={profile}
                     />
                   ) : (
@@ -2692,7 +2721,18 @@ export default function Room() {
                 </div>
               )}
 
-              <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
+              {isMultiAgentMode ? (
+                <PendingAgentsList 
+                  invites={invites} 
+                  onSelectAgent={(invite) => {
+                    setSelectedInvite(invite);
+                    toast.success('Agent selected - Deal Board is now available');
+                  }}
+                  selectedInviteId={selectedInvite?.id}
+                />
+              ) : (
+                <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
+              )}
             </>
           )
 
