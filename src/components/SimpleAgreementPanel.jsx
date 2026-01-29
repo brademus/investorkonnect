@@ -323,7 +323,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && (
+                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'agent') && (
+                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
+                    </div>
+                  )}
+
+                  {investorSigned && !agentSigned && !pendingCounters.some(c => c.from_role === 'agent') && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
