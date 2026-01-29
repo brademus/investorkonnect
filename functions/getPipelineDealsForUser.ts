@@ -40,17 +40,28 @@ Deno.serve(async (req) => {
     let agentRooms = [];
     
     if (isInvestor) {
-      // Investors: ONLY show deals that have rooms (i.e., they've signed an agreement)
-      // This prevents unsignned drafts from appearing in the pipeline
+      // Investors: show deals they have rooms for OR deals they've signed agreements for
       let investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
       const roomDealIds = Array.from(new Set(investorRooms.map(r => r.deal_id).filter(Boolean)));
+      
+      // Get deals via rooms
       const byRooms = roomDealIds.length
         ? await Promise.all(roomDealIds.map(id => base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)))
         : [];
       
+      // Get deals where investor has signed an agreement
+      const signedAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+        investor_user_id: user.id,
+        status: { $in: ['investor_signed', 'fully_signed', 'attorney_review_pending'] }
+      });
+      const signedDealIds = Array.from(new Set(signedAgreements.map(a => a.deal_id).filter(Boolean)));
+      const bySigned = signedDealIds.length
+        ? await Promise.all(signedDealIds.map(id => base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)))
+        : [];
+      
       // Merge and deduplicate by ID (keep most recently updated)
       const dealMap = new Map();
-      byRooms.filter(Boolean).forEach(d => {
+      [...byRooms.filter(Boolean), ...bySigned.filter(Boolean)].forEach(d => {
         if (!d?.id) return;
         const existing = dealMap.get(d.id);
         if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
@@ -58,7 +69,7 @@ Deno.serve(async (req) => {
         }
       });
       deals = Array.from(dealMap.values());
-      console.log('[getPipelineDealsForUser] Investor deals via rooms (signed):', byRooms.filter(Boolean).length, 'final:', deals.length);
+      console.log('[getPipelineDealsForUser] Investor deals via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
