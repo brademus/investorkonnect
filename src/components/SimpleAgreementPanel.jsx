@@ -46,7 +46,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     fetchLatest();
   }, [dealId]);
 
-  // Load and subscribe to pending counter offers
+  // Load and subscribe to pending counter offers - trigger on mount and when dealId changes
   React.useEffect(() => {
     if (!dealId || !profile?.user_role) return;
 
@@ -66,7 +66,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       }
     };
 
+    // Load immediately and force refresh
     loadInitial();
+    const pollInterval = setInterval(loadInitial, 5000);
 
     // Subscribe for real-time updates
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
@@ -89,6 +91,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     });
 
     return () => {
+      clearInterval(pollInterval);
       try { unsubscribe?.(); } catch (_) {}
     };
   }, [dealId, roomId, profile?.user_role]);
