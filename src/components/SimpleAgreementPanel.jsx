@@ -404,22 +404,26 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                 size="sm"
                                 onClick={async () => {
                                   try {
-                                    await base44.functions.invoke('respondToCounterOffer', {
+                                    const res = await base44.functions.invoke('respondToCounterOffer', {
                                       counter_offer_id: counter.id,
                                       action: 'accept'
                                     });
+                                    if (!res.data?.success) {
+                                      throw new Error(res.data?.error || 'Server returned error');
+                                    }
                                     toast.success('Counter accepted');
                                     setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
                                     if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
                                     console.error('[SimpleAgreementPanel] Accept failed:', e);
-                                    toast.error(e?.response?.data?.error || e?.message || 'Failed to accept counter');
+                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || 'Failed to accept counter';
+                                    toast.error(errMsg);
                                   }
                                 }}
-                              className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
-                            >
-                              Accept
-                            </Button>
+                                className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                              >
+                                Accept
+                              </Button>
                             <Button
                               size="sm"
                               onClick={async () => {
