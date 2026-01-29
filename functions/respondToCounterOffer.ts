@@ -184,9 +184,9 @@ Deno.serve(async (req) => {
     // ACCEPT
     if (action === 'accept') {
       console.log('[respondToCounterOffer] Processing ACCEPT');
-      
+
       const acceptedTerms = counter.terms_delta || {};
-      
+
       // Mark counter as accepted
       await withRetry(async () => {
         await base44.asServiceRole.entities.CounterOffer.update(counter_offer_id, {
@@ -195,9 +195,30 @@ Deno.serve(async (req) => {
           responded_by_role: userRole
         });
       });
-      
+
       console.log('[respondToCounterOffer] Counter marked accepted');
-      
+
+      // CRITICAL: Mark ALL other pending counters in this room as superseded
+      // This prevents multiple conflicting accepted states
+      const allCounters = await withRetry(async () => {
+        return await base44.asServiceRole.entities.CounterOffer.filter({
+          deal_id: counter.deal_id,
+          room_id: room_id || null, // Match room context exactly
+          status: 'pending'
+        });
+      });
+
+      const otherPendingCounters = (allCounters || []).filter(c => c.id !== counter_offer_id);
+      for (const otherCounter of otherPendingCounters) {
+        await withRetry(async () => {
+          await base44.asServiceRole.entities.CounterOffer.update(otherCounter.id, {
+            status: 'superseded',
+            superseded_by_counter_offer_id: counter_offer_id
+          });
+        });
+      }
+      console.log('[respondToCounterOffer] ✓ Marked', otherPendingCounters.length, 'other pending counters as superseded');
+
       // Set regeneration flag (room-scoped or legacy) - only update the specific room/deal pair
       const updates = [];
       if (room_id) {
@@ -218,10 +239,10 @@ Deno.serve(async (req) => {
           })
         );
       }
-      
+
       await Promise.all(updates);
       console.log('[respondToCounterOffer] ✓ Terms and regenerate flags updated for room/agent');
-      
+
       return Response.json({ 
         success: true, 
         action: 'accepted',
