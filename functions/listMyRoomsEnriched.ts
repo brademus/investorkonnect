@@ -73,19 +73,20 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Pending CounterOffers (latest per deal)
-    const pendingOffers = dealIds.length > 0
-      ? await base44.asServiceRole.entities.CounterOffer.filter({ deal_id: { $in: dealIds }, status: 'pending' })
+    // Pending CounterOffers (room-scoped, not deal-scoped - avoid cross-agent leakage)
+    const roomIds = rooms.map(r => r.id).filter(Boolean);
+    const pendingOffers = roomIds.length > 0
+      ? await base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: roomIds }, status: 'pending' })
       : [];
-    const pendingOfferByDealId = new Map();
+    const pendingOfferByRoomId = new Map();
     for (const o of pendingOffers) {
-      const prev = pendingOfferByDealId.get(o.deal_id);
+      const prev = pendingOfferByRoomId.get(o.room_id);
       if (!prev) {
-        pendingOfferByDealId.set(o.deal_id, o);
+        pendingOfferByRoomId.set(o.room_id, o);
       } else {
         const tA = new Date(o.updated_date || o.created_date || 0).getTime();
         const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-        if (tA >= tB) pendingOfferByDealId.set(o.deal_id, o);
+        if (tA >= tB) pendingOfferByRoomId.set(o.room_id, o);
       }
     }
 
