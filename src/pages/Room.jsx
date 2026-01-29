@@ -2107,6 +2107,8 @@ export default function Room() {
                        agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
                        profile={profile}
                        deal={deal}
+                       pendingCounters={pendingCounters}
+                       setPendingCounters={setPendingCounters}
                      />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
