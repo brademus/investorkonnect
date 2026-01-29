@@ -629,7 +629,7 @@ export default function Room() {
     }
   }, [location.search, roomId, currentRoom?.deal_id]);
 
-  // Fetch current room with server-side access control + ALL DEPENDENT DATA
+  // Fetch current room with server-side access control
   useEffect(() => {
     if (!roomId) return;
     
@@ -652,107 +652,85 @@ export default function Room() {
           return;
         }
 
-        const dealId = rawRoom.deal_id;
-        
-        // Load deal data
-        if (dealId) {
+        // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
+        if (rawRoom.deal_id && profile?.user_role === 'investor') {
           try {
-            const response = await base44.functions.invoke('getDealDetailsForUser', { dealId });
-            if (isStale()) return;
-            const dealData = response?.data;
-            if (dealData) {
-              setDeal(dealData);
-              setCachedDeal(dealId, dealData);
-            }
-          } catch (e) {
-            console.error('[Room] Deal fetch failed:', e);
-          }
-        }
-
-        // Load invites if investor
-        if (dealId && profile?.user_role === 'investor') {
-          try {
-            const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: dealId });
-            if (isStale()) return;
+            const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
             if (invitesRes.data?.ok) {
               const loadedInvites = invitesRes.data.invites || [];
               setInvites(loadedInvites);
+              
+              // Auto-select if only one invite exists
               if (loadedInvites.length === 1) {
                 setSelectedInvite(loadedInvites[0]);
               }
             }
           } catch (e) {
-            console.error('[Room] Invites fetch failed:', e);
+            console.error('Failed to load invites:', e);
           }
         }
 
-        // Load appointments
-        if (dealId) {
-          try {
-            const apptRows = await base44.entities.DealAppointments.filter({ dealId });
-            if (isStale()) return;
-            if (Array.isArray(apptRows) && apptRows[0]) {
-              setDealAppts(apptRows[0]);
+        // Optimistic hydrate from cache (instant UI) while fetching securely
+        if (rawRoom.deal_id) {
+          const cached = getCachedDeal(rawRoom.deal_id);
+          if (cached) {
+            // Ensure cached belongs to this deal id (guard against residual cache)
+            if (cached.id !== rawRoom.deal_id) {
+              // ignore wrong cached snapshot
+            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
+              setDeal({ ...cached, property_address: null });
+            } else {
+              setDeal(cached);
             }
-          } catch (e) {
-            console.error('[Room] Appointments fetch failed:', e);
           }
-        }
 
-        // Load agreement
-        if (dealId) {
+          // Use server-side access-controlled deal fetch
           try {
-            const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-            if (isStale()) return;
-            if (agRes?.data?.agreement) {
-              setAgreement(agRes.data.agreement);
+            const response = await base44.functions.invoke('getDealDetailsForUser', {
+              dealId: rawRoom.deal_id
+            });
+            const dealData = response.data;
+            
+            if (dealData) {
+              setDeal(dealData);
+              setCachedDeal(dealData.id, dealData);
+              
+              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
+                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
+                : dealData.title;
+              
+              // Ensure we still match current selection
+              if (rid !== roomId) return;
+              setCurrentRoom({
+                ...rawRoom,
+                title: displayTitle,
+                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
+                city: dealData.city,
+                state: dealData.state,
+                county: dealData.county,
+                zip: dealData.zip,
+                budget: dealData.purchase_price,
+                pipeline_stage: dealData.pipeline_stage,
+                closing_date: dealData.key_dates?.closing_date,
+                deal_assigned_agent_id: dealData.agent_id,
+                is_fully_signed: dealData.is_fully_signed,
+                property_type: dealData.property_type,
+                property_details: dealData.property_details,
+                proposed_terms: dealData.proposed_terms,
+                photos: rawRoom?.photos || [],
+                files: rawRoom?.files || [],
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
+              });
+            } else {
+              setCurrentRoom(rawRoom);
             }
-          } catch (e) {
-            console.error('[Room] Agreement fetch failed:', e);
+          } catch (error) {
+            console.error('Failed to fetch deal:', error);
+            setCurrentRoom(rawRoom);
           }
+        } else {
+          setCurrentRoom(rawRoom);
         }
-
-        // Load pending counters
-        if (dealId) {
-          try {
-            const countersResponse = await base44.entities.CounterOffer.filter({ deal_id: dealId, status: 'pending' });
-            if (isStale()) return;
-            if (Array.isArray(countersResponse)) {
-              const relevant = profile?.user_role === 'investor' 
-                ? countersResponse 
-                : (roomId ? countersResponse.filter(c => c.room_id === roomId || !c.room_id) : countersResponse);
-              setPendingCounters(relevant || []);
-            }
-          } catch (e) {
-            console.error('[Room] Counters fetch failed:', e);
-          }
-        }
-
-        // Build current room with all hydrated data
-        const displayTitle = profile?.user_role === 'agent' && dealData && !dealData.is_fully_signed
-          ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
-          : dealData?.title || rawRoom.title;
-
-        setCurrentRoom({
-          ...rawRoom,
-          title: displayTitle,
-          property_address: dealData && shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData?.property_address,
-          city: dealData?.city || rawRoom.city,
-          state: dealData?.state || rawRoom.state,
-          county: dealData?.county || rawRoom.county,
-          zip: dealData?.zip || rawRoom.zip,
-          budget: dealData?.purchase_price || rawRoom.budget,
-          pipeline_stage: dealData?.pipeline_stage || rawRoom.pipeline_stage,
-          closing_date: dealData?.key_dates?.closing_date || rawRoom.closing_date,
-          deal_assigned_agent_id: dealData?.agent_id,
-          is_fully_signed: dealData?.is_fully_signed,
-          property_type: dealData?.property_type,
-          property_details: dealData?.property_details,
-          proposed_terms: dealData?.proposed_terms || rawRoom.proposed_terms,
-          photos: rawRoom?.photos || [],
-          files: rawRoom?.files || [],
-          counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
-        });
       } catch (error) {
         console.error('Failed to fetch room:', error);
       } finally {
@@ -765,11 +743,20 @@ export default function Room() {
     });
   }, [roomId, profile?.user_role, rooms]);
   
-  // Subscribe to DealAppointments for real-time updates (already loaded upfront)
+  // Load and subscribe to DealAppointments for walkthrough display
   useEffect(() => {
     const did = currentRoom?.deal_id;
-    if (!did) return;
+    if (!did) { setDealAppts(null); return; }
+    let cancelled = false;
 
+    const load = async () => {
+      try {
+        const rows = await base44.entities.DealAppointments.filter({ dealId: did });
+        if (!cancelled) setDealAppts(rows?.[0] || null);
+      } catch (_) {}
+    };
+
+    load();
     const unsubscribe = base44.entities.DealAppointments.subscribe((event) => {
       if (event?.data?.dealId === did) {
         setDealAppts(event.data);
@@ -777,6 +764,7 @@ export default function Room() {
     });
 
     return () => {
+      cancelled = true;
       try { unsubscribe && unsubscribe(); } catch (_) {}
     };
   }, [currentRoom?.deal_id]);
