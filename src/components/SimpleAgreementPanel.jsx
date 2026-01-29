@@ -15,11 +15,11 @@ import { toast } from 'sonner';
  * - Auto-hide from other agents once one signs
  * - Call onInvestorSigned callback after investor signs
  */
-export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived, onCounterUpdate }) {
+export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived, onCounterUpdate, pendingCounters: incomingCounters, setPendingCounters: setIncomingCounters }) {
   const [busy, setBusy] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [localAgreement, setLocalAgreement] = useState(agreement);
-  const [pendingCounters, setPendingCounters] = useState([]);
+  const [pendingCounters, setPendingCounters] = useState(incomingCounters || []);
 
   // Sync prop changes to local state only if truly different (avoid flickering from stale parent data)
   React.useEffect(() => {
