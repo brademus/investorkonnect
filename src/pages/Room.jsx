@@ -832,17 +832,22 @@ export default function Room() {
     if (!currentRoom?.deal_id) return;
     
     const dealId = currentRoom.deal_id;
+    
+    // Define effective room ID: when investor has selected an agent from invites, use that room_id
+    // Otherwise, use the URL room_id (for single agent scenarios)
+    const effectiveRoomId = isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId;
+    console.log('[Room] effectiveRoomId:', effectiveRoomId, 'isMultiAgentMode:', isMultiAgentMode, 'selectedInvite:', selectedInvite?.id);
 
-    // Load pending counters immediately - STRICTLY room-scoped ONLY
+    // Load pending counters immediately - STRICTLY room-scoped ONLY to effective room
     const loadCounters = async () => {
       try {
         const allCounters = await base44.entities.CounterOffer.filter({
           deal_id: dealId,
           status: 'pending'
         });
-        // Filter ONLY counters for THIS room (strict room scoping)
-        const roomCounters = (allCounters || []).filter(c => c.room_id === roomId);
-        console.log('[Room] Loaded counters:', roomCounters.length, 'for room:', roomId);
+        // Filter ONLY counters for THIS effective room (strict room scoping)
+        const roomCounters = (allCounters || []).filter(c => c.room_id === effectiveRoomId);
+        console.log('[Room] Loaded counters:', roomCounters.length, 'for effective room:', effectiveRoomId);
         setPendingCounters(roomCounters);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
@@ -852,11 +857,11 @@ export default function Room() {
     loadCounters();
 
     // Subscribe to LegalAgreement for real-time signature updates
-    // STRICTLY prefer room-scoped agreements
+    // STRICTLY prefer room-scoped agreements for effective room
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        // ONLY update if this agreement is for THIS ROOM
-        if (event?.data?.room_id === roomId) {
+        // ONLY update if this agreement is for THIS effective ROOM
+        if (event?.data?.room_id === effectiveRoomId) {
           console.log('[Room] Room-scoped agreement updated for this agent');
           setAgreement(event.data);
         }
@@ -868,10 +873,10 @@ export default function Room() {
       }
     });
 
-    // Subscribe to CounterOffer updates - STRICTLY ROOM-SCOPED
+    // Subscribe to CounterOffer updates - STRICTLY ROOM-SCOPED to effective room
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
-      // CRITICAL: Only update state if this counter is EXPLICITLY for this room
-      if (event?.data?.deal_id === dealId && event?.data?.room_id === roomId) {
+      // CRITICAL: Only update state if this counter is EXPLICITLY for this effective room
+      if (event?.data?.deal_id === dealId && event?.data?.room_id === effectiveRoomId) {
         if (event.data.status === 'pending') {
           setPendingCounters(prev => {
             const exists = prev.some(c => c.id === event.id);
@@ -888,7 +893,7 @@ export default function Room() {
       try { unsubAgreement?.(); } catch (_) {}
       try { unsubCounter?.(); } catch (_) {}
     };
-  }, [currentRoom?.deal_id, roomId, profile?.user_role]); 
+  }, [currentRoom?.deal_id, roomId, profile?.user_role, isMultiAgentMode, selectedInvite]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
