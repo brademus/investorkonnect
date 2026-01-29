@@ -408,15 +408,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       counter_offer_id: counter.id,
                                       action: 'accept'
                                     });
-                                    if (!res.data?.success) {
-                                      throw new Error(res.data?.error || 'Server returned error');
+                                    if (res.data?.error) {
+                                      throw new Error(res.data.error);
                                     }
                                     toast.success('Counter accepted');
                                     setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
                                     if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
-                                    console.error('[SimpleAgreementPanel] Accept failed:', e);
-                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || 'Failed to accept counter';
+                                    const errMsg = e?.response?.data?.error || e?.message || 'Failed to accept counter';
                                     toast.error(errMsg);
                                   }
                                 }}
