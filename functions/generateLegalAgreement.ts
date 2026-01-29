@@ -562,7 +562,6 @@ Deno.serve(async (req) => {
     
     // Build render context - only fill agent details if room_id provided (after investor signs)
     // For initial generation (no room_id), leave agent details as TBD
-    const fillAgentDetails = !!room_id;
     const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails);
     
     // Extract buyer compensation amount for later use
