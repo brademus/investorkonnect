@@ -418,12 +418,18 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                 size="sm"
                                 onClick={async () => {
                                   try {
-                                    const res = await base44.functions.invoke('respondToCounterOffer', {
+                                    const payload = {
                                       counter_offer_id: counter.id,
                                       action: 'accept'
-                                    });
+                                    };
+                                    console.log('[SimpleAgreementPanel] Sending payload:', payload);
+                                    setDebugError(`Sending: counter_id=${counter.id}, action=accept`);
+
+                                    const res = await base44.functions.invoke('respondToCounterOffer', payload);
+
+                                    console.log('[SimpleAgreementPanel] Response:', res);
                                     if (res.data?.error) {
-                                      setDebugError(`Error: ${res.data.error}`);
+                                      setDebugError(`Backend Error: ${res.data.error}`);
                                       toast.error(res.data.error);
                                       return;
                                     }
@@ -431,9 +437,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                     setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
                                     if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
-                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e) || 'Failed to accept counter';
-                                    setDebugError(`Full Error: ${errMsg}`);
-                                    toast.error(errMsg);
+                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e);
+                                    setDebugError(`Exception: ${errMsg}`);
+                                    toast.error(errMsg || 'Failed to accept counter');
                                   }
                                 }}
                                 className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
