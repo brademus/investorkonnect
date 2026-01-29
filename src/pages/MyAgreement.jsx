@@ -137,10 +137,12 @@ export default function MyAgreement() {
       console.log('[MyAgreement] Creating invites after investor signature for', agentsToInvite.length, 'agents');
       
       // Call function to create DealInvites, rooms, and agreements for all selected agents
+      console.log('[MyAgreement] Calling createInvitesAfterInvestorSign with:', { deal_id: dealId, agents: agentsToInvite });
       const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
         deal_id: dealId
       });
 
+      console.log('[MyAgreement] Response:', res);
       if (res.data?.ok && res.data.invite_ids?.length > 0) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
