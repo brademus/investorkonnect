@@ -679,9 +679,13 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Always go to DealRoom (it will handle redirects if needed)
+    // INVESTOR: Navigate directly to Room page
     if (isInvestor) {
-      navigate(`${createPageUrl("DealRoom")}?dealId=${deal.deal_id}`);
+      if (deal?.room_id) {
+        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+        return;
+      }
+      toast.error('Room not found for this deal');
       return;
     }
 
