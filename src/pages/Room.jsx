@@ -855,9 +855,10 @@ export default function Room() {
     // Subscribe to CounterOffer updates
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
+        // Only process counters scoped to this investor-agent pair
         const matches = profile?.user_role === 'investor' 
-          ? true 
-          : (!roomId || event.data.room_id === roomId || !event.data.room_id);
+          ? (!event.data.room_id || event.data.room_id === roomId) // Investor sees counters for this room
+          : (roomId && event.data.room_id === roomId); // Agent only sees their room's counters
 
         if (matches) {
           if (event.data.status === 'pending') {
