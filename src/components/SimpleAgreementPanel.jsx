@@ -368,7 +368,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                try {
                                  await base44.functions.invoke('respondToCounterOffer', {
                                    counter_offer_id: counter.id,
-                                   action: 'accepted'
+                                   action: 'accept'
                                  });
                                  toast.success('Counter accepted');
                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
@@ -387,7 +387,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                try {
                                  await base44.functions.invoke('respondToCounterOffer', {
                                    counter_offer_id: counter.id,
-                                   action: 'declined'
+                                   action: 'decline'
                                  });
                                  toast.success('Counter declined');
                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
