@@ -63,9 +63,7 @@ Deno.serve(async (req) => {
         }
       });
       deals = Array.from(dealMap.values());
-      // FILTER: Hide draft/pending deals from investors until they sign
-      deals = deals.filter(d => d && d.status !== 'draft' && d.metadata?.pending_agreement_generation !== true);
-      console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'after filtering drafts:', deals.length);
+      console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
