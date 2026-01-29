@@ -29,11 +29,12 @@ Deno.serve(async (req) => {
       console.log('📦 Received plan from URL:', plan);
     }
     
-    // Map plan to price ID from environment variables
+    // Map plan to price ID
+    // Prioritize IDs from recent product catalog, fallback to env vars
     const priceMap = {
-      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
     const price = plan ? priceMap[plan] : null;
@@ -61,36 +62,26 @@ Deno.serve(async (req) => {
     const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
     let userId = null;
-    let userEmail = null;
+    
+    // Always get user ID for Stripe customer creation
+    const base44 = createClientFromRequest(req);
+    const isAuth = await base44.auth.isAuthenticated();
+    
+    if (!isAuth) {
+      console.log('❌ User not authenticated');
+      return Response.json({ 
+        ok: false, 
+        reason: 'AUTH_REQUIRED',
+        message: 'Please sign in to continue' 
+      }, { status: 401 });
+    }
+    
+    const user = await base44.auth.me();
+    userId = user.id;
+    console.log('✅ User authenticated:', userId);
     
     if (enableGating) {
       try {
-        const base44 = createClientFromRequest(req);
-        const isAuth = await base44.auth.isAuthenticated();
-        
-        if (!isAuth) {
-          console.log('❌ User not authenticated');
-          return Response.json({ 
-            ok: false, 
-            reason: 'AUTH_REQUIRED',
-            message: 'Please sign in to continue' 
-          }, { status: 401 });
-        }
-        
-        const user = await base44.auth.me();
-        userId = user.id;
-        userEmail = user.email || user.user_metadata?.email;
-        console.log('✅ User authenticated:', userEmail);
-        
-        if (!userEmail) {
-          console.log('❌ User has no email');
-          return Response.json({ 
-            ok: false, 
-            reason: 'EMAIL_REQUIRED',
-            message: 'Account email is required for checkout' 
-          }, { status: 400 });
-        }
-        
         const profiles = await base44.entities.Profile.filter({ user_id: user.id });
         
         if (profiles.length === 0) {
@@ -150,33 +141,30 @@ Deno.serve(async (req) => {
     // Create or get Stripe customer - ALWAYS use customer ID, never email
     let customerId = null;
 
-    if (userId) {
-      const base44 = createClientFromRequest(req);
-      const profiles = await base44.entities.Profile.filter({ user_id: userId });
+    const profiles = await base44.entities.Profile.filter({ user_id: userId });
 
-      if (profiles.length > 0) {
-        const profile = profiles[0];
+    if (profiles.length > 0) {
+      const profile = profiles[0];
 
-        if (profile.stripe_customer_id) {
-          customerId = profile.stripe_customer_id;
-          console.log('✅ Using existing Stripe customer:', customerId);
-        } else {
-          // Create new Stripe customer with just user_id metadata (no email)
-          const customer = await stripe.customers.create({
-            metadata: {
-              user_id: userId,
-              app: 'agentvault'
-            }
-          });
+      if (profile.stripe_customer_id) {
+        customerId = profile.stripe_customer_id;
+        console.log('✅ Using existing Stripe customer:', customerId);
+      } else {
+        // Create new Stripe customer with just user_id metadata (no email)
+        const customer = await stripe.customers.create({
+          metadata: {
+            user_id: userId,
+            app: 'agentvault'
+          }
+        });
 
-          customerId = customer.id;
-          console.log('✅ Created new Stripe customer:', customerId);
+        customerId = customer.id;
+        console.log('✅ Created new Stripe customer:', customerId);
 
-          // Save customer ID to profile
-          await base44.asServiceRole.entities.Profile.update(profile.id, {
-            stripe_customer_id: customerId
-          });
-        }
+        // Save customer ID to profile
+        await base44.asServiceRole.entities.Profile.update(profile.id, {
+          stripe_customer_id: customerId
+        });
       }
     }
 
