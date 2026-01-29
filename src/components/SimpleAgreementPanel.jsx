@@ -26,6 +26,23 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     setLocalAgreement(agreement);
   }, [agreement]);
 
+  // Load pending counter offers
+  React.useEffect(() => {
+    const loadCounters = async () => {
+      try {
+        const counters = await base44.entities.CounterOffer.filter({
+          deal_id: dealId,
+          room_id: roomId,
+          status: 'pending'
+        });
+        setPendingCounters(counters || []);
+      } catch (e) {
+        console.error('[SimpleAgreementPanel] Counter load error:', e);
+      }
+    };
+    if (dealId && roomId) loadCounters();
+  }, [dealId, roomId]);
+
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   
