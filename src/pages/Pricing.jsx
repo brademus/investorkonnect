@@ -36,7 +36,14 @@ export default function Pricing() {
   // Check subscription status when page loads
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!user || loading) return;
+      if (loading) {
+        return;
+      }
+      
+      if (!user) {
+        setCheckingSubscription(false);
+        return;
+      }
       
       try {
         setCheckingSubscription(true);
@@ -47,9 +54,6 @@ export default function Pricing() {
         if (response?.data?.ok) {
           const subscription = response.data.subscription;
           setSubscriptionStatus(subscription?.status || null);
-          
-          // Refresh profile after validation
-          await refresh();
           
           console.log('Subscription status:', subscription?.status);
           
@@ -74,7 +78,7 @@ export default function Pricing() {
     };
 
     checkSubscription();
-  }, [user, loading, profile?.user_role]);
+  }, [user, loading]);
 
   const handleSubscribe = async (plan) => {
     if (!user) {
