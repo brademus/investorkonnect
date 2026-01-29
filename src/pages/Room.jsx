@@ -827,16 +827,15 @@ export default function Room() {
     
     const dealId = currentRoom.deal_id;
 
-    // Load pending counters immediately
+    // Load pending counters immediately - room-scoped ONLY
     const loadCounters = async () => {
       try {
         const counters = await base44.entities.CounterOffer.filter({
           deal_id: dealId,
+          room_id: roomId,
           status: 'pending'
         });
-        // STRICTLY room-scoped: only show counters for this specific room
-        const relevant = counters.filter(c => c.room_id === roomId);
-        setPendingCounters(relevant || []);
+        setPendingCounters(counters || []);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
       }
