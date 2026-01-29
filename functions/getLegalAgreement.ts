@@ -32,11 +32,23 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get agreement using service role - STRICTLY room-scoped if room_id provided
-    const filterQuery = room_id 
-      ? { deal_id, room_id }
-      : { deal_id };
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter(filterQuery);
+    // Get agreement: prefer room-scoped if available, fallback to deal-level
+    let agreements = [];
+    if (room_id) {
+      // First try room-scoped (regenerated after counter)
+      agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id });
+      console.log('[getLegalAgreement] Room-scoped search:', agreements.length, 'found');
+      
+      // Fallback to deal-level if no room-scoped agreement exists
+      if (agreements.length === 0) {
+        agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
+        console.log('[getLegalAgreement] Fallback to deal-level:', agreements.length, 'found');
+      }
+    } else {
+      // No room_id: get deal-level agreement
+      agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
+      console.log('[getLegalAgreement] Deal-level search:', agreements.length, 'found');
+    }
     
     console.log('[getLegalAgreement] Found agreements:', agreements.length);
     
