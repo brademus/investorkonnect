@@ -333,7 +333,7 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
   return await pdfDoc.save();
 }
 
-function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
+function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails = true) {
   const effectiveDate = new Date().toLocaleDateString('en-US', { 
     month: 'long', 
     day: 'numeric', 
@@ -378,6 +378,13 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     buyerCompValue = `${buyerCompAmount}%`;
   }
   
+  // Agent details - only fill if fillAgentDetails is true
+  const agentName = fillAgentDetails ? (agentProfile.full_name || agentProfile.email || 'TBD') : 'TBD';
+  const licenseNumber = fillAgentDetails ? (agentProfile.agent?.license_number || agentProfile.license_number || 'TBD') : 'TBD';
+  const brokerageName = fillAgentDetails ? (agentProfile.agent?.brokerage || agentProfile.broker || 'TBD') : 'TBD';
+  const agentEmail = fillAgentDetails ? (agentProfile.email || 'TBD') : 'TBD';
+  const agentPhone = fillAgentDetails ? (agentProfile.phone || 'TBD') : 'TBD';
+  
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     PLATFORM_NAME: 'investor konnect',
@@ -391,11 +398,11 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a) {
     INVESTOR_ENTITY_TYPE: 'Individual',
     INVESTOR_EMAIL: profile.email || 'N/A',
     INVESTOR_PHONE: profile.phone || 'N/A',
-    AGENT_LEGAL_NAME: agentProfile.full_name || agentProfile.email || 'N/A',
-    LICENSE_NUMBER: agentProfile.agent?.license_number || agentProfile.license_number || 'N/A',
-    BROKERAGE_NAME: agentProfile.agent?.brokerage || agentProfile.broker || 'N/A',
-    AGENT_EMAIL: agentProfile.email || 'N/A',
-    AGENT_PHONE: agentProfile.phone || 'N/A',
+    AGENT_LEGAL_NAME: agentName,
+    LICENSE_NUMBER: licenseNumber,
+    BROKERAGE_NAME: brokerageName,
+    AGENT_EMAIL: agentEmail,
+    AGENT_PHONE: agentPhone,
     PROPERTY_ADDRESS: deal.property_address || 'TBD',
     CITY: deal.city || 'TBD',
     STATE: deal.state || 'N/A',
@@ -511,31 +518,31 @@ Deno.serve(async (req) => {
       details.push('Investor legal name is required');
     }
     
-    const agentName = agentProfile.full_name || agentProfile.email;
-    if (!agentName) {
-      missing.push('agent.full_name');
-      details.push('Agent legal name is required');
-    }
-    
-    const licenseNumber = agentProfile.agent?.license_number || agentProfile.license_number;
-    if (!licenseNumber) {
-      missing.push('agent.license_number');
-      details.push('Agent license number is required');
-    }
-    
-    const brokerage = agentProfile.agent?.brokerage || agentProfile.broker;
-    if (!brokerage) {
-      missing.push('agent.brokerage');
-      details.push('Agent brokerage name is required');
+    // Only validate agent fields if generating for a specific room (after investor signs)
+    if (room_id) {
+      const agentName = agentProfile.full_name || agentProfile.email;
+      if (!agentName) {
+        missing.push('agent.full_name');
+        details.push('Agent legal name is required');
+      }
+      
+      const licenseNumber = agentProfile.agent?.license_number || agentProfile.license_number;
+      if (!licenseNumber) {
+        missing.push('agent.license_number');
+        details.push('Agent license number is required');
+      }
+      
+      const brokerage = agentProfile.agent?.brokerage || agentProfile.broker;
+      if (!brokerage) {
+        missing.push('agent.brokerage');
+        details.push('Agent brokerage name is required');
+      }
     }
     
     if (missing.length > 0) {
       console.log('Validation failed. Missing:', missing);
       console.log('Deal state:', deal.state);
       console.log('Investor name:', investorName);
-      console.log('Agent name:', agentName);
-      console.log('License:', licenseNumber);
-      console.log('Brokerage:', brokerage);
       
       return Response.json({ 
         error: `Missing required fields: ${details.join(', ')}`,
@@ -551,8 +558,10 @@ Deno.serve(async (req) => {
       return Response.json({ error: `No template available for state: ${deal.state}` }, { status: 400 });
     }
     
-    // Build render context
-    const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a);
+    // Build render context - only fill agent details if room_id provided (after investor signs)
+    // For initial generation (no room_id), leave agent details as TBD
+    const fillAgentDetails = !!room_id;
+    const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails);
     
     // Extract buyer compensation amount for later use
     let buyerCompAmount = 0;
