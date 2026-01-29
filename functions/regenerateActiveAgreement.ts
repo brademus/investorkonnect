@@ -1,48 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-async function getDocuSignConnection(base44) {
-  const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
-  if (!connections || connections.length === 0) {
-    throw new Error('DocuSign not connected');
-  }
-  
-  const connection = connections[0];
-  const now = new Date();
-  const expiresAt = new Date(connection.expires_at);
-  
-  if (now >= expiresAt && connection.refresh_token) {
-    const tokenUrl = connection.base_uri.includes('demo') 
-      ? 'https://account-d.docusign.com/oauth/token'
-      : 'https://account.docusign.com/oauth/token';
-    
-    const refreshResponse = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: connection.refresh_token,
-        client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
-        client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
-      })
-    });
-    
-    if (!refreshResponse.ok) {
-      throw new Error('DocuSign token expired and refresh failed');
-    }
-    
-    const tokenData = await refreshResponse.json();
-    await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || connection.refresh_token,
-      expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
-    });
-    
-    connection.access_token = tokenData.access_token;
-  }
-  
-  return connection;
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
