@@ -679,15 +679,26 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Find any room for this deal
+    // INVESTOR: Always fetch fresh rooms to avoid stale cache
     if (isInvestor) {
-      // Get ALL rooms for this deal (investor may have multiple agents)
-      const allRoomsForDeal = rooms.filter(r => r.deal_id === deal.deal_id);
-      if (allRoomsForDeal.length > 0) {
-        // Navigate to first room (they're all for same deal, just different agents)
-        navigate(`${createPageUrl("Room")}?roomId=${allRoomsForDeal[0].id}`);
+      // Check if deal still needs signature (shouldn't appear in pipeline if draft, but check anyway)
+      if (deal.status === 'draft' || deal.metadata?.pending_agreement_generation === true) {
+        navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
         return;
       }
+
+      // CRITICAL: Fetch rooms fresh from server to avoid stale sessionStorage cache
+      try {
+        const freshRoomsForDeal = await base44.entities.Room.filter({ deal_id: deal.deal_id });
+        if (freshRoomsForDeal?.length > 0) {
+          navigate(`${createPageUrl("Room")}?roomId=${freshRoomsForDeal[0].id}`);
+          return;
+        }
+      } catch (e) {
+        console.error('[Pipeline] Failed to fetch rooms:', e);
+        // Fall through to MyAgreement fallback
+      }
+
       // No rooms found—navigate to MyAgreement to generate agreement
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
