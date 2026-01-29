@@ -577,9 +577,15 @@ export default function Room() {
         setDealAppts(apptRows[0]);
       }
 
-      // Prefetch agreement for instant Agreement tab
+      // Prefetch room-scoped agreement for instant Agreement tab
       if (agRes?.data?.agreement) {
         setAgreement(agRes.data.agreement);
+      }
+      
+      // Load room-specific agreement if it exists (priority over deal-level)
+      const roomAgRes = await base44.functions.invoke('getLegalAgreement', { deal_id: did, room_id: roomId }).catch(() => ({ data: null }));
+      if (roomAgRes?.data?.agreement) {
+        setAgreement(roomAgRes.data.agreement);
       }
 
       return freshDeal;
