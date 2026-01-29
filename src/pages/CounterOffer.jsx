@@ -59,6 +59,21 @@ export default function CounterOfferPage() {
             setAgreement(a[0] || null);
           }
         }
+        if (respondingTo) {
+          const c = await base44.entities.CounterOffer.filter({ id: respondingTo });
+          if (c[0]) {
+            setCounterToRespond(c[0]);
+            // Pre-fill form with inverse terms
+            if (c[0].terms_delta?.buyer_commission_type) {
+              setCommissionType(c[0].terms_delta.buyer_commission_type);
+              if (c[0].terms_delta.buyer_commission_type === 'percentage') {
+                setCommissionAmount(String(c[0].terms_delta.buyer_commission_percentage || ''));
+              } else {
+                setCommissionAmount(String(c[0].terms_delta.buyer_flat_fee || ''));
+              }
+            }
+          }
+        }
       } catch (e) {
         console.error('[CounterOffer] Load error:', e);
         setError('Failed to load deal');
@@ -67,7 +82,7 @@ export default function CounterOfferPage() {
       }
     };
     loadData();
-  }, [dealId, roomId]);
+  }, [dealId, roomId, respondingTo]);
 
   const handleSendCounter = async () => {
     if (!commissionAmount) {
