@@ -48,32 +48,34 @@ Deno.serve(async (req) => {
     let room = null;
     
     if (room_id) {
-      // ROOM-SCOPED
+      // ROOM-SCOPED: Look for room-specific agreement that was previously regenerated
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0] || null;
-      
+
       if (!room) {
         return Response.json({ error: 'Room not found' }, { status: 404 });
       }
-      
+
       if (room.current_legal_agreement_id) {
         const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: room.current_legal_agreement_id });
         currentAgreement = a?.[0] || null;
       } else {
-        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 1);
+        // Only look for room-scoped agreements (room_id not null)
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id }, '-created_date', 1);
         currentAgreement = a?.[0] || null;
       }
       console.log('[regenerateActiveAgreement] Room-scoped current agreement:', currentAgreement?.id);
     } else {
-      // LEGACY
+      // DEAL-LEVEL: Only for initial generation (should not regenerate at deal level)
       if (deal.current_legal_agreement_id) {
         const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id });
         currentAgreement = a?.[0] || null;
       } else {
-        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 1);
+        // Only deal-level (room_id null)
+        const a = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null }, '-created_date', 1);
         currentAgreement = a?.[0] || null;
       }
-      console.log('[regenerateActiveAgreement] Legacy current agreement:', currentAgreement?.id);
+      console.log('[regenerateActiveAgreement] Deal-level current agreement:', currentAgreement?.id);
     }
 
     // Skip voiding old DocuSign envelope - not critical for regeneration
