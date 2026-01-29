@@ -161,17 +161,27 @@ export default function MyAgreement() {
 
       setAgreement(freshAgreement);
       
-      // CRITICAL: Persist selected agents to deal metadata before creating invites
-      if (selectedAgentIds.length > 0) {
-        await base44.entities.Deal.update(dealId, {
-          metadata: {
-            ...deal?.metadata,
-            selected_agent_ids: selectedAgentIds
-          }
-        });
+      // Get selected agents from sessionStorage or deal metadata
+      let agentsToInvite = selectedAgentIds;
+      if (agentsToInvite.length === 0) {
+        const storedAgents = sessionStorage.getItem("selectedAgentIds");
+        if (storedAgents) {
+          agentsToInvite = JSON.parse(storedAgents);
+          setSelectedAgentIds(agentsToInvite);
+        } else if (deal?.metadata?.selected_agent_ids) {
+          agentsToInvite = deal.metadata.selected_agent_ids;
+          setSelectedAgentIds(agentsToInvite);
+        }
       }
       
-      console.log('[MyAgreement] Creating invites after investor signature');
+      // If no agents selected, just show success but don't create invites
+      if (agentsToInvite.length === 0) {
+        toast.info('Agreement signed. Go to Pipeline to select agents.');
+        navigate(createPageUrl('Pipeline'), { replace: true });
+        return;
+      }
+      
+      console.log('[MyAgreement] Creating invites after investor signature for', agentsToInvite.length, 'agents');
       
       // Call function to create DealInvites, rooms, and agreements for all selected agents
       const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
