@@ -24,10 +24,12 @@ export default function CounterOfferPage() {
 
   const dealId = searchParams.get('dealId');
   const roomId = searchParams.get('roomId');
+  const respondingTo = searchParams.get('respondingTo'); // Counter offer ID if responding
 
   const [deal, setDeal] = useState(null);
   const [room, setRoom] = useState(null);
   const [agreement, setAgreement] = useState(null);
+  const [counterToRespond, setCounterToRespond] = useState(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   
@@ -37,6 +39,7 @@ export default function CounterOfferPage() {
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
+  const isResponding = !!respondingTo;
 
   // Load deal and room data
   useEffect(() => {
