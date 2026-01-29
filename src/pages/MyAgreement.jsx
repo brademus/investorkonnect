@@ -97,7 +97,13 @@ export default function MyAgreement() {
     if (!dealId) return;
 
     try {
-      // Re-fetch fresh base agreement to ensure we have latest signature state
+      // Re-fetch fresh deal and base agreement to ensure we have latest data
+      const freshDeals = await base44.entities.Deal.filter({ id: dealId });
+      const freshDeal = freshDeals?.[0];
+      if (freshDeal) {
+        setDeal(freshDeal);
+      }
+
       const freshAgreements = await base44.entities.LegalAgreement.filter({ 
         deal_id: dealId, 
         room_id: null 
@@ -112,16 +118,12 @@ export default function MyAgreement() {
 
       setAgreement(freshAgreement);
       
-      // Get selected agents from sessionStorage or deal metadata
-      let agentsToInvite = selectedAgentIds;
+      // Get selected agents from sessionStorage, state, or fresh deal metadata
+      let agentsToInvite = selectedAgentIds.length > 0 ? selectedAgentIds : (freshDeal?.metadata?.selected_agent_ids || deal?.metadata?.selected_agent_ids || []);
       if (agentsToInvite.length === 0) {
         const storedAgents = sessionStorage.getItem("selectedAgentIds");
         if (storedAgents) {
           agentsToInvite = JSON.parse(storedAgents);
-          setSelectedAgentIds(agentsToInvite);
-        } else if (deal?.metadata?.selected_agent_ids) {
-          agentsToInvite = deal.metadata.selected_agent_ids;
-          setSelectedAgentIds(agentsToInvite);
         }
       }
       
