@@ -26,21 +26,46 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     setLocalAgreement(agreement);
   }, [agreement]);
 
-  // Load pending counter offers
+  // Load and subscribe to pending counter offers
   React.useEffect(() => {
     const loadCounters = async () => {
       try {
         const counters = await base44.entities.CounterOffer.filter({
           deal_id: dealId,
-          room_id: roomId,
           status: 'pending'
         });
-        setPendingCounters(counters || []);
+        // Filter by room if available, else by deal
+        const relevant = roomId 
+          ? counters.filter(c => c.room_id === roomId)
+          : counters;
+        setPendingCounters(relevant || []);
       } catch (e) {
         console.error('[SimpleAgreementPanel] Counter load error:', e);
       }
     };
-    if (dealId && roomId) loadCounters();
+
+    if (!dealId) return;
+    
+    loadCounters();
+
+    // Subscribe to counter offer changes
+    const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id === dealId && (!roomId || event.data.room_id === roomId)) {
+        if (event.data.status === 'pending') {
+          setPendingCounters(prev => {
+            const exists = prev.some(c => c.id === event.id);
+            return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+          });
+        } else {
+          // Remove if status changed (accepted/declined)
+          setPendingCounters(prev => prev.filter(c => c.id !== event.id));
+        }
+      }
+    });
+
+    return () => {
+      try { unsubscribe?.(); } catch (_) {}
+    };
   }, [dealId, roomId]);
 
   const isInvestor = profile?.user_role === 'investor';
