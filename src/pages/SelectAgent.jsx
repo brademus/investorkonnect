@@ -93,7 +93,7 @@ export default function SelectAgent() {
       
       const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
-      // Create ONE deal (temporarily set first agent as agent_id for backward compatibility)
+      // Create ONE deal with selected agents stored in metadata
       const newDeal = await base44.entities.Deal.create({
         title: `${dealData.propertyAddress}`,
         description: dealData.specialNotes || "",
@@ -131,47 +131,29 @@ export default function SelectAgent() {
           buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
         },
+        contract_document: dealData.contractUrl ? {
+          url: dealData.contractUrl,
+          name: "contract.pdf",
+          uploaded_at: new Date().toISOString()
+        } : null,
         status: "draft",
         pipeline_stage: "new_listings",
         investor_id: currentProfile?.id,
-        agent_id: selectedAgentIds[0], // Temporary: set first agent for backward compatibility
+        metadata: {
+          selected_agent_ids: selectedAgentIds,
+          pending_agreement_generation: true
+        }
       });
 
       console.log('[SelectAgent] Created deal:', newDeal.id);
 
-      // PHASE 7: Create ONE Room per selected agent with closing_date (parallel)
-      const roomPromises = selectedAgentIds.map(agentId => 
-        base44.entities.Room.create({
-          deal_id: newDeal.id,
-          investorId: currentProfile?.id,
-          agentId: agentId,
-          request_status: 'requested',
-          agreement_status: 'draft',
-          title: newDeal.title,
-          property_address: newDeal.property_address,
-          city: newDeal.city,
-          state: newDeal.state,
-          county: newDeal.county,
-          zip: newDeal.zip,
-          budget: newDeal.purchase_price,
-          closing_date: newDeal.key_dates?.closing_date,
-          proposed_terms: newDeal.proposed_terms,
-          ndaAcceptedInvestor: false,
-          ndaAcceptedAgent: false,
-          requested_at: new Date().toISOString()
-        })
-      );
-
-      const createdRooms = await Promise.all(roomPromises);
-      console.log('[SelectAgent] Created rooms:', createdRooms.map(r => r.id));
-
-      // DO NOT generate agreement or signing yet (Phase 1 scope)
-      // Just navigate to the first room
+      // Save selected agents and deal ID to sessionStorage for MyAgreement page
+      sessionStorage.setItem("pendingDealId", newDeal.id);
+      sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
       sessionStorage.removeItem("newDealDraft");
-      toast.success(`Deal sent to ${selectedAgentIds.length} agent(s)!`);
       
-      // Navigate to first room
-      navigate(`${createPageUrl("Room")}?roomId=${createdRooms[0].id}&dealId=${newDeal.id}`);
+      // Navigate to MyAgreement page to generate and sign
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${newDeal.id}`);
     } catch (error) {
       console.error("Error creating deal:", error);
       toast.error("Failed to create deal");
