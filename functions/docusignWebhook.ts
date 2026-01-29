@@ -438,10 +438,100 @@ Deno.serve(async (req) => {
           if (!agreement.room_id) {
             // This is the initial "base" agreement - create invites
             try {
-              await base44.functions.invoke('createInvitesAfterInvestorSign', { 
-                deal_id: agreement.deal_id 
-              });
-              console.log('[DocuSign Webhook] ✓ Created invites after investor signature');
+              // Get deal with selected agent IDs
+              const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+              const deal = deals[0];
+              const selectedAgentIds = deal?.metadata?.selected_agent_ids || [];
+              
+              if (selectedAgentIds.length > 0) {
+                console.log('[DocuSign Webhook] Creating invites for', selectedAgentIds.length, 'agents');
+                
+                // Check if invites already exist (idempotency)
+                const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: deal.id });
+                
+                if (existingInvites.length === 0) {
+                  // Get investor profile
+                  const profiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id });
+                  const investorProfile = profiles[0];
+                  
+                  if (investorProfile) {
+                    // Prepare exhibit_a for agreements
+                    const exhibit_a = {
+                      transaction_type: 'ASSIGNMENT',
+                      compensation_model: deal.proposed_terms?.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 'FLAT_FEE',
+                      commission_percentage: deal.proposed_terms?.seller_commission_percentage || 3,
+                      flat_fee_amount: deal.proposed_terms?.seller_flat_fee || 5000,
+                      buyer_commission_type: deal.proposed_terms?.buyer_commission_type || 'percentage',
+                      buyer_commission_percentage: deal.proposed_terms?.buyer_commission_percentage || 3,
+                      buyer_flat_fee: deal.proposed_terms?.buyer_flat_fee || 5000,
+                      agreement_length_days: deal.proposed_terms?.agreement_length || 180,
+                      exclusive_agreement: true
+                    };
+                    
+                    // Create invite for each agent
+                    for (const agentId of selectedAgentIds) {
+                      try {
+                        // 1. Create Room for this agent
+                        const room = await base44.asServiceRole.entities.Room.create({
+                          deal_id: deal.id,
+                          investorId: investorProfile.id,
+                          agentId: agentId,
+                          request_status: 'requested',
+                          agreement_status: 'draft',
+                          title: deal.title,
+                          property_address: deal.property_address,
+                          city: deal.city,
+                          state: deal.state,
+                          county: deal.county,
+                          zip: deal.zip,
+                          budget: deal.purchase_price,
+                          closing_date: deal.key_dates?.closing_date,
+                          proposed_terms: deal.proposed_terms,
+                          requested_at: new Date().toISOString()
+                        });
+                        
+                        console.log('[DocuSign Webhook] Created room:', room.id, 'for agent:', agentId);
+                        
+                        // 2. Generate agent-specific agreement
+                        const genRes = await base44.functions.invoke('generateLegalAgreement', {
+                          deal_id: deal.id,
+                          room_id: room.id,
+                          exhibit_a
+                        });
+                        
+                        if (genRes.data?.success) {
+                          const newAgreement = genRes.data.agreement;
+                          
+                          // 3. Update room with agreement ID
+                          await base44.asServiceRole.entities.Room.update(room.id, {
+                            current_legal_agreement_id: newAgreement.id,
+                            agreement_status: 'sent'
+                          });
+                          
+                          // 4. Create DealInvite
+                          await base44.asServiceRole.entities.DealInvite.create({
+                            deal_id: deal.id,
+                            investor_id: investorProfile.id,
+                            agent_profile_id: agentId,
+                            room_id: room.id,
+                            legal_agreement_id: newAgreement.id,
+                            status: 'PENDING_AGENT_SIGNATURE',
+                            created_at_iso: new Date().toISOString()
+                          });
+                          
+                          console.log('[DocuSign Webhook] Created invite for agent:', agentId);
+                        }
+                      } catch (error) {
+                        console.error('[DocuSign Webhook] Failed to create invite for agent', agentId, ':', error);
+                      }
+                    }
+                    
+                    console.log('[DocuSign Webhook] ✓ Created invites after investor signature');
+                  }
+                } else {
+                  console.log('[DocuSign Webhook] Invites already exist, skipping');
+                }
+              }
             } catch (e) {
               console.warn('[DocuSign Webhook] Failed to create invites:', e?.message || e);
             }
