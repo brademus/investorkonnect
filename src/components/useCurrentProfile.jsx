@@ -62,25 +62,14 @@ export function useCurrentProfile() {
           return;
         }
 
-        let profile = null;
-        try {
-          const meResponse = await fetch('/functions/me', {
-            method: 'POST',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' }
-          });
-          if (meResponse.ok) {
-            const meData = await meResponse.json();
-            profile = meData.profile;
-          }
-        } catch (fetchErr) {}
+        // Load profile by user_id (fastest path)
+        let profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        let profile = profiles[0] || null;
         
+        // Fallback: search by email
         if (!profile) {
           const emailLower = user.email.toLowerCase().trim();
-          let profiles = await base44.entities.Profile.filter({ email: emailLower });
-          if (!profiles || profiles.length === 0) {
-            profiles = await base44.entities.Profile.filter({ user_id: user.id });
-          }
+          profiles = await base44.entities.Profile.filter({ email: emailLower });
           profile = profiles[0] || null;
           if (profile && profile.user_id !== user.id) {
             try {
