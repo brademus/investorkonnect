@@ -437,8 +437,8 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const deal_id = body.deal_id;
     const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
-    const exhibit_a = body.exhibit_a || {};
-    
+    let exhibit_a = body.exhibit_a || {};
+
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
     
     console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)');
@@ -456,18 +456,28 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
     const deal = deals[0];
-    
+
+    // Load room (if room_id provided) to get room-scoped terms
+    let room = null;
+    if (room_id) {
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      room = rooms?.[0] || null;
+
+      // Prefer room-scoped terms over deal-level terms
+      if (room?.proposed_terms) {
+        exhibit_a = { ...exhibit_a, ...room.proposed_terms };
+        console.log('[generateLegalAgreement] Using room-scoped terms:', exhibit_a);
+      }
+    }
+
     // Resolve agent from Room (if room_id provided) or fallback to Deal.agent_id (legacy)
     let agentProfile = null;
-    let room = null;
-    
+
     if (room_id) {
-      // ROOM-SCOPED: Get agent from Room
-      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-      if (!rooms || rooms.length === 0) {
+      // ROOM-SCOPED: Get agent from Room (already loaded above)
+      if (!room) {
         return Response.json({ error: 'Room not found' }, { status: 404 });
       }
-      room = rooms[0];
       
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
