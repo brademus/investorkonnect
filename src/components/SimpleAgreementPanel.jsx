@@ -223,7 +223,7 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile, onInv
 
               {/* Agent Actions */}
               {isAgent && !fullySigned && (
-                <div>
+                <div className="space-y-3">
                   {!investorSigned && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
@@ -231,14 +231,23 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile, onInv
                   )}
 
                   {investorSigned && !agentSigned && (
-                    <Button
-                      onClick={() => handleSign('agent')}
-                      disabled={busy}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                    >
-                      {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Sign as Agent
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => handleSign('agent')}
+                        disabled={busy}
+                        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                      >
+                        {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Sign as Agent
+                      </Button>
+                      <Button
+                        onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}`}
+                        variant="outline"
+                        className="w-full border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414]"
+                      >
+                        Make Counter Offer
+                      </Button>
+                    </>
                   )}
                 </div>
               )}
