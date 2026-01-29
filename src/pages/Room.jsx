@@ -894,7 +894,7 @@ export default function Room() {
       try { unsubAgreement?.(); } catch (_) {}
       try { unsubCounter?.(); } catch (_) {}
     };
-  }, [currentRoom?.deal_id, roomId, profile?.user_role, isMultiAgentMode, selectedInvite]); 
+  }, [currentRoom?.deal_id, roomId, profile?.user_role, invites.length, selectedInvite, deal?.locked_agent_profile_id]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
