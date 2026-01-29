@@ -29,12 +29,11 @@ Deno.serve(async (req) => {
       console.log('📦 Received plan from URL:', plan);
     }
     
-    // Map plan to price ID
-    // Prioritize IDs from recent product catalog, fallback to env vars
+    // Map plan to price ID from environment variables
     const priceMap = {
-      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
     const price = plan ? priceMap[plan] : null;
@@ -58,12 +57,7 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // COMPREHENSIVE GATE: Check auth + onboarding + NDA + KYC
-    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
-    
-    let userId = null;
-    
-    // Always get user ID for Stripe customer creation
+    // ALWAYS require authentication for Stripe customer creation
     const base44 = createClientFromRequest(req);
     const isAuth = await base44.auth.isAuthenticated();
     
@@ -77,8 +71,11 @@ Deno.serve(async (req) => {
     }
     
     const user = await base44.auth.me();
-    userId = user.id;
+    const userId = user.id;
     console.log('✅ User authenticated:', userId);
+    
+    // OPTIONAL GATE: Check onboarding + NDA + KYC
+    const enableGating = Deno.env.get('ENABLE_SUBSCRIPTION_GATING') !== 'false';
     
     if (enableGating) {
       try {
@@ -140,7 +137,6 @@ Deno.serve(async (req) => {
     
     // Create or get Stripe customer - ALWAYS use customer ID, never email
     let customerId = null;
-
     const profiles = await base44.entities.Profile.filter({ user_id: userId });
 
     if (profiles.length > 0) {
@@ -166,6 +162,12 @@ Deno.serve(async (req) => {
           stripe_customer_id: customerId
         });
       }
+    } else {
+      return Response.json({ 
+        ok: false, 
+        reason: 'PROFILE_ERROR',
+        message: 'Profile not found' 
+      }, { status: 404 });
     }
 
     if (!customerId) {
