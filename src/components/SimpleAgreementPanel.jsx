@@ -52,11 +52,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
           deal_id: dealId,
           status: 'pending'
         });
-        // Filter by room if available, else by deal
-        const relevant = roomId 
-          ? counters.filter(c => c.room_id === roomId)
-          : counters;
+        // For investors: show all deal-level counters (room_id may be null)
+        // For agents: filter by room if available
+        const relevant = profile?.user_role === 'investor' 
+          ? counters // Show all deal-level counters for investors
+          : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
         setPendingCounters(relevant || []);
+        console.log('[SimpleAgreementPanel] Loaded counters:', relevant);
       } catch (e) {
         console.error('[SimpleAgreementPanel] Counter load error:', e);
       }
