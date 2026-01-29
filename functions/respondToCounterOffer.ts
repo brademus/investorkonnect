@@ -198,32 +198,29 @@ Deno.serve(async (req) => {
       
       console.log('[respondToCounterOffer] Counter marked accepted');
       
-      // Update deal with accepted terms (still deal-level)
-      await withRetry(async () => {
-        await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-          proposed_terms: acceptedTerms
-        });
-      });
-      console.log('[respondToCounterOffer] ✓ Deal terms updated:', acceptedTerms);
-      
-      // Set regeneration flag (room-scoped or legacy) - parallel updates
+      // Set regeneration flag (room-scoped or legacy) - only update the specific room/deal pair
       const updates = [];
       if (room_id) {
+        // Room-scoped: update only this room's terms
         updates.push(
           base44.asServiceRole.entities.Room.update(room_id, {
+            proposed_terms: acceptedTerms,
             requires_regenerate: true
           })
         );
+      } else {
+        // Legacy: update deal level
+        updates.push(
+          base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+            proposed_terms: acceptedTerms,
+            requires_regenerate: true,
+            requires_regenerate_reason: `${userRole} accepted counter at ${now}`
+          })
+        );
       }
-      updates.push(
-        base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-          requires_regenerate: true,
-          requires_regenerate_reason: `${userRole} accepted counter at ${now}`
-        })
-      );
       
       await Promise.all(updates);
-      console.log('[respondToCounterOffer] ✓ Regenerate flags set');
+      console.log('[respondToCounterOffer] ✓ Terms and regenerate flags updated for room/agent');
       
       return Response.json({ 
         success: true, 
