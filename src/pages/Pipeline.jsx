@@ -677,14 +677,18 @@ function PipelineContent() {
       base44.functions.invoke('getDealDetailsForUser', { dealId: deal.deal_id })
         .then((res) => { if (res?.data) setCachedDeal(deal.deal_id, res.data); })
         .catch(() => {});
-      // Warm agreement cache so Agreement tab shows instantly
-      base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id }).catch(() => {});
     }
 
-    // PHASE 3: If deal is locked, always navigate to the locked room
-    if (deal?.locked_room_id) {
-      console.log('[Pipeline] Deal is locked, navigating to locked room:', deal.locked_room_id);
-      if (isAgent) {
+    // INVESTOR: Navigate to deal-centric view (DealRoom)
+    if (isInvestor) {
+      navigate(`${createPageUrl("DealRoom")}?dealId=${deal.deal_id}`);
+      return;
+    }
+
+    // AGENT: Navigate to their specific room
+    if (isAgent) {
+      // If deal is locked, use locked room
+      if (deal?.locked_room_id) {
         const masked = {
           id: deal.deal_id,
           title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
@@ -698,15 +702,12 @@ function PipelineContent() {
           is_fully_signed: false,
         };
         setCachedDeal(deal.deal_id, masked);
+        navigate(`${createPageUrl("Room")}?roomId=${deal.locked_room_id}&tab=agreement`);
+        return;
       }
-      navigate(`${createPageUrl("Room")}?roomId=${deal.locked_room_id}&tab=agreement`);
-      return;
-    }
 
-    // If a room ID is already on the card, open it
-    if (deal?.room_id) {
-      // Mask address immediately by priming cache with a masked snapshot when agent opens
-      if (isAgent) {
+      // Find agent's room for this deal
+      if (deal?.room_id) {
         const masked = {
           id: deal.deal_id,
           title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
@@ -720,15 +721,13 @@ function PipelineContent() {
           is_fully_signed: false,
         };
         setCachedDeal(deal.deal_id, masked);
+        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}&tab=agreement`);
+        return;
       }
-      navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}&tab=agreement`);
-      return;
-    }
 
-    // Check if we already have a room for this deal in the fetched rooms list
-    const existing = rooms.find(r => r.deal_id === deal.deal_id && !r.is_orphan);
-    if (existing?.id) {
-      if (isAgent) {
+      // Check rooms list
+      const existing = rooms.find(r => r.deal_id === deal.deal_id && !r.is_orphan);
+      if (existing?.id) {
         const masked = {
           id: deal.deal_id,
           title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
@@ -742,86 +741,11 @@ function PipelineContent() {
           is_fully_signed: false,
         };
         setCachedDeal(deal.deal_id, masked);
+        navigate(`${createPageUrl("Room")}?roomId=${existing.id}&tab=agreement`);
+        return;
       }
-      navigate(`${createPageUrl("Room")}?roomId=${existing.id}&tab=agreement`);
-      return;
-    }
 
-    // If investor already signed, create/get room now and open it
-    if (!isAgent) {
-      try {
-        const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
-        const ag = data?.agreement;
-        const status = String(ag?.status || '').toLowerCase();
-        const investorSigned = status === 'investor_signed' || !!ag?.investor_signed_at;
-        if (investorSigned) {
-          const agentProfileId = deal.agent_id;
-          if (!agentProfileId) {
-            toast.info('Select an agent for this deal to open a room.');
-            return;
-          }
-          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
-          navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
-          return;
-        }
-      } catch (_) {}
-    }
-
-    // Resolve agent for room creation: agents default to themselves
-    const agentProfileId = isAgent ? (deal.agent_id || profile.id) : deal.agent_id;
-    if (!agentProfileId) {
-      toast.info('Select an agent for this deal to open a room (use the deal card menu).');
-      return;
-    }
-
-    // Investor: if already signed, open/create room; otherwise go to My Agreement
-    if (!isAgent) {
-      try {
-        const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
-        const ag = data?.agreement;
-        const status = String(ag?.status || '').toLowerCase();
-        const investorSigned = status === 'investor_signed' || !!ag?.investor_signed_at;
-        if (investorSigned) {
-          const agentProfileId = deal.agent_id;
-          if (!agentProfileId) {
-            toast.info('Select an agent for this deal to open a room.');
-            return;
-          }
-          const roomId = await getOrCreateDealRoom({ dealId: deal.deal_id, agentProfileId });
-          navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
-          return;
-        }
-      } catch (_) { /* noop */ }
-
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
-      return;
-    }
-
-    // Otherwise, create or get the room for this deal + agent
-    try {
-      const roomId = await getOrCreateDealRoom({
-        dealId: deal.deal_id,
-        agentProfileId
-      });
-      if (isAgent) {
-        const masked = {
-          id: deal.deal_id,
-          title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
-          property_address: null,
-          city: deal.city,
-          state: deal.state,
-          purchase_price: deal.budget,
-          pipeline_stage: deal.pipeline_stage,
-          key_dates: { closing_date: deal.closing_date },
-          agent_id: deal.agent_id,
-          is_fully_signed: false,
-        };
-        setCachedDeal(deal.deal_id, masked);
-      }
-      navigate(`${createPageUrl("Room")}?roomId=${roomId}&tab=agreement`);
-    } catch (error) {
-      console.error("Failed to create/find room:", error);
-      toast.error("Failed to open conversation");
+      toast.error('Room not found for this deal');
     }
   };
 
