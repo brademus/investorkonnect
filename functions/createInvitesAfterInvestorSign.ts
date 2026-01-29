@@ -65,17 +65,18 @@ Deno.serve(async (req) => {
     };
     
     const createdInvites = [];
-    
+
     // Create invite for each agent (true idempotency: skip if room + agreement + invite all exist)
     for (const agentId of selectedAgentIds) {
-      try {
-        // Skip if room + legal agreement + invite already exist for this agent
-        const existingInvite = existingInvitesByAgent.get(agentId);
-        if (existingInvite?.room_id && existingInvite?.legal_agreement_id) {
-          console.log('[createInvitesAfterInvestorSign] Invite already exists for agent:', agentId, ', skipping');
-          createdInvites.push(existingInvite.id);
-          continue;
-        }
+     try {
+       // Skip if room + legal agreement + invite already exist for this agent
+       const existingInvite = existingInvitesByAgent.get(agentId);
+       const existingRoom = existingRoomsByAgent.get(agentId);
+       if (existingInvite?.room_id && existingInvite?.legal_agreement_id && existingRoom?.id) {
+         console.log('[createInvitesAfterInvestorSign] Invite already exists for agent:', agentId, ', skipping');
+         createdInvites.push(existingInvite.id);
+         continue;
+       }
 
         // Check for existing room
         let room = existingRoomsByAgent.get(agentId);
@@ -162,22 +163,32 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Update deal status
+    // CRITICAL: Only mark deal active if at least 1 invite was successfully created
+    if (createdInvites.length === 0) {
+     console.log('[createInvitesAfterInvestorSign] No invites were created successfully');
+     return Response.json({ 
+       ok: false,
+       error: 'No invites/rooms created. Deal remains pending.',
+       invite_ids: []
+     }, { status: 400 });
+    }
+
+    // Update deal status only if we have created at least 1 invite
     await base44.asServiceRole.entities.Deal.update(deal_id, {
-      status: 'active',
-      metadata: {
-        ...deal.metadata,
-        pending_agreement_generation: false,
-        invites_created_at: new Date().toISOString()
-      }
+     status: 'active',
+     metadata: {
+       ...deal.metadata,
+       pending_agreement_generation: false,
+       invites_created_at: new Date().toISOString()
+     }
     });
-    
+
     console.log('[createInvitesAfterInvestorSign] Created', createdInvites.length, 'invites successfully');
-    
+
     return Response.json({ 
-      ok: true, 
-      invite_ids: createdInvites,
-      locked: false
+     ok: true, 
+     invite_ids: createdInvites,
+     locked: false
     });
     
   } catch (error) {
