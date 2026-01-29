@@ -88,61 +88,37 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, check if we need agent selection first
+  // After investor signs, create invites for all selected agents
   const handlePostSigningNavigation = async () => {
     if (!agreement?.investor_signed_at || !dealId) return;
 
     try {
-      // If multiple agents, show selection UI instead of auto-creating rooms
-      if (selectedAgentIds.length > 1) {
-        setLoading(false); // Show agent selection UI
-        return;
-      }
-
-      // Single agent - create room immediately
-      if (selectedAgentIds.length === 1) {
-        const agentId = selectedAgentIds[0];
-        const res = await base44.functions.invoke('generateAgreementForAgent', {
-          deal_id: dealId,
-          agent_profile_id: agentId
-        });
-
-        if (res.data?.success) {
-          sessionStorage.removeItem("pendingDealId");
-          sessionStorage.removeItem("selectedAgentIds");
-          toast.success('Agreement sent to agent!');
-          navigate(createPageUrl('Pipeline'), { replace: true });
-        } else {
-          throw new Error(res.data?.error || 'Failed to create room');
-        }
-      }
-    } catch (e) {
-      console.error('Failed to create room:', e);
-      toast.error('Signed but failed to send to agent');
-    }
-  };
-
-  // Handle selecting an agent when multiple agents are available
-  const handleSelectAgentAndProceed = async (agentId) => {
-    try {
-      const res = await base44.functions.invoke('generateAgreementForAgent', {
-        deal_id: dealId,
-        agent_profile_id: agentId
+      console.log('[MyAgreement] Creating invites after investor signature');
+      
+      // Call function to create DealInvites, rooms, and agreements for all selected agents
+      const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
+        deal_id: dealId
       });
 
-      if (res.data?.success) {
+      if (res.data?.ok) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
-        toast.success('Agreement sent to selected agent!');
-        navigate(`${createPageUrl('Room')}?roomId=${res.data.room_id}`);
+        
+        const inviteCount = res.data.invite_ids?.length || selectedAgentIds.length;
+        toast.success(`Agreement sent to ${inviteCount} agent(s)!`);
+        
+        // Navigate to deal-centric view (DealRoom)
+        navigate(`${createPageUrl('DealRoom')}?dealId=${dealId}`, { replace: true });
       } else {
-        throw new Error(res.data?.error || 'Failed to create room');
+        throw new Error(res.data?.error || 'Failed to create invites');
       }
     } catch (e) {
-      console.error('Failed:', e);
-      toast.error('Failed to send to agent');
+      console.error('Failed to create invites:', e);
+      toast.error('Signed but failed to send to agents');
     }
   };
+
+
 
   return (
     <div className="min-h-screen bg-transparent px-6 py-10">
@@ -185,29 +161,7 @@ export default function MyAgreement() {
           </div>
         )}
 
-        {/* Agent Selection - After Investor Signs (Multiple Agents) */}
-        {agreement?.investor_signed_at && !agreement?.agent_signed_at && agentProfiles.length > 1 && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-[#E3C567] mb-4">Select Your Agent</h2>
-            <p className="text-sm text-[#808080] mb-6">
-              Your agreement is signed. Choose which agent you want to work with:
-            </p>
-            <div className="space-y-3">
-              {agentProfiles.map(agent => (
-                <Button
-                  key={agent.id}
-                  onClick={() => handleSelectAgentAndProceed(agent.id)}
-                  className="w-full bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#1F1F1F] text-[#FAFAFA] p-6 rounded-xl h-auto justify-start"
-                >
-                  <div className="text-left">
-                    <p className="font-semibold text-[#FAFAFA] mb-1">{agent.full_name}</p>
-                    <p className="text-sm text-[#808080]">{agent.email}</p>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </div>
-        )}
+
 
         <SimpleAgreementPanel 
           dealId={dealId} 
