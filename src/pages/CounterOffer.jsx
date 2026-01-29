@@ -98,20 +98,36 @@ export default function CounterOfferPage() {
         buyer_flat_fee: commissionType === 'flat_fee' ? parseFloat(commissionAmount) : null,
       };
 
-      const res = await base44.functions.invoke('createCounterOffer', {
-        deal_id: dealId,
-        room_id: roomId,
-        from_role: isAgent ? 'agent' : 'investor',
-        to_role: isAgent ? 'investor' : 'agent',
-        terms_delta: counterTerms,
-      });
+      if (isResponding && respondingTo) {
+        // Responding to an existing counter - use recounter action
+        const res = await base44.functions.invoke('respondToCounterOffer', {
+          counter_offer_id: respondingTo,
+          action: 'recounter',
+          terms_delta: counterTerms,
+        });
 
-      if (res.data?.error) {
-        toast.error(res.data.error);
+        if (res.data?.error) {
+          toast.error(res.data.error);
+        } else {
+          toast.success('Counter offer sent');
+          setTimeout(() => navigate(-1), 500);
+        }
       } else {
-        toast.success('Counter offer sent');
-        // Close modal and return to room
-        setTimeout(() => navigate(-1), 500);
+        // Creating new counter - use createCounterOffer
+        const res = await base44.functions.invoke('createCounterOffer', {
+          deal_id: dealId,
+          room_id: roomId,
+          from_role: isAgent ? 'agent' : 'investor',
+          to_role: isAgent ? 'investor' : 'agent',
+          terms_delta: counterTerms,
+        });
+
+        if (res.data?.error) {
+          toast.error(res.data.error);
+        } else {
+          toast.success('Counter offer sent');
+          setTimeout(() => navigate(-1), 500);
+        }
       }
     } catch (e) {
       console.error('[CounterOffer] Send error:', e);
