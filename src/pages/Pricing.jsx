@@ -25,10 +25,8 @@ export default function Pricing() {
 
   useEffect(() => {
     if (cancelled) {
-      toast({
-        title: "Checkout cancelled",
+      toast("Checkout cancelled", {
         description: "You can subscribe anytime to continue.",
-        variant: "default",
       });
     }
   }, [cancelled]);
@@ -100,10 +98,8 @@ export default function Pricing() {
       }
     } catch (error) {
       console.error('Checkout error:', error);
-      toast({
-        title: "Checkout Failed",
+      toast.error("Checkout Failed", {
         description: error.message || "There was an error starting the checkout process.",
-        variant: "destructive",
       });
     } finally {
       setCheckoutLoading(false);
