@@ -15,7 +15,7 @@ import { toast } from 'sonner';
  * - Auto-hide from other agents once one signs
  * - Call onInvestorSigned callback after investor signs
  */
-export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived, onCounterUpdate, pendingCounters: incomingCounters, setPendingCounters: setIncomingCounters }) {
+export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, room, onInvestorSigned, onCounterReceived, onCounterUpdate, pendingCounters: incomingCounters, setPendingCounters: setIncomingCounters }) {
   const [busy, setBusy] = useState(false);
     const [confirmModal, setConfirmModal] = useState(false);
     const [localAgreement, setLocalAgreement] = useState(agreement);
@@ -23,11 +23,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     const [debugError, setDebugError] = useState(null);
 
   // Sync prop changes to local state only if truly different (avoid flickering from stale parent data)
+  // Also track room state for regenerate requirement check
+  const [localRoom, setLocalRoom] = React.useState(room);
   React.useEffect(() => {
     if (agreement && agreement.id !== localAgreement?.id) {
       setLocalAgreement(agreement);
     }
-  }, [agreement?.id]);
+    if (room && room.id !== localRoom?.id) {
+      setLocalRoom(room);
+    }
+  }, [agreement?.id, room?.id]);
 
   // Fetch latest agreement on panel load to ensure we have current signatures
   React.useEffect(() => {
@@ -74,7 +79,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // Check BOTH agreement and pass-in flag for regenerate requirement
   // CRITICAL: Check Room.requires_regenerate (NOT agreement.requires_regenerate which is never set)
   // This flag is set server-side when counter is accepted and drives regeneration requirement
-  const requiresRegenerate = room?.requires_regenerate === true;
+  const requiresRegenerate = localRoom?.requires_regenerate === true;
   const canRegenerate = !fullySigned && requiresRegenerate;
 
   // Show form only to investor, only if no agreement yet or regenerate needed
@@ -325,13 +330,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'agent') && (
+                  {investorSigned && requiresRegenerate && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
+                    </div>
+                  )}
+
+                  {investorSigned && !agentSigned && !requiresRegenerate && pendingCounters.some(c => c.from_role === 'agent') && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && !pendingCounters.some(c => c.from_role === 'agent') && !pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
+                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.from_role === 'agent') && !pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
