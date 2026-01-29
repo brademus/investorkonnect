@@ -69,12 +69,23 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
           }
         }
       }
-    });
+      });
 
-    return () => {
+      // Fetch initial counters in background (don't block on this)
+      base44.entities.CounterOffer.filter({
+      deal_id: dealId,
+      status: 'pending'
+      }).then(counters => {
+      const relevant = profile?.user_role === 'investor' 
+        ? counters 
+        : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
+      setPendingCounters(relevant || []);
+      }).catch(e => console.error('[SimpleAgreementPanel] Counter load error:', e));
+
+      return () => {
       try { unsubscribe?.(); } catch (_) {}
-    };
-  }, [dealId, roomId, profile?.user_role]);
+      };
+      }, [dealId, roomId, profile?.user_role]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
