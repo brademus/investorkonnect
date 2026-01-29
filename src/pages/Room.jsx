@@ -2131,7 +2131,7 @@ export default function Room() {
                   {currentRoom?.deal_id ? (
                      <SimpleAgreementPanel
                        dealId={currentRoom.deal_id}
-                       roomId={roomId}
+                       roomId={isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId}
                        agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
                        profile={profile}
                        deal={deal}
