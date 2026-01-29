@@ -11,7 +11,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function Pricing() {
   const { user, profile, loading, refresh } = useCurrentProfile();
-  const [loading, setLoading] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("starter");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
   const [checkingSubscription, setCheckingSubscription] = useState(true);
@@ -82,7 +82,7 @@ export default function Pricing() {
       return;
     }
 
-    setLoading(true);
+    setCheckoutLoading(true);
     try {
       console.log(`Starting checkout for plan: ${plan}`);
       
@@ -102,7 +102,7 @@ export default function Pricing() {
         variant: "destructive",
       });
     } finally {
-      setLoading(false);
+      setCheckoutLoading(false);
     }
   };
 
@@ -256,14 +256,14 @@ export default function Pricing() {
 
               <Button
                 onClick={() => handleSubscribe(plan.id)}
-                disabled={loading}
+                disabled={checkoutLoading}
                 className={`w-full ${
                   plan.popular
                     ? "bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                     : "bg-[#1F1F1F] hover:bg-[#2F2F2F] text-white"
                 } font-semibold rounded-full h-12`}
               >
-                {loading ? (
+                {checkoutLoading ? (
                   <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
