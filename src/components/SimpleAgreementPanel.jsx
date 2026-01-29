@@ -47,30 +47,22 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     fetchLatest();
   }, [dealId, roomId]);
 
-  // Sync incoming counters from Room component
+  // Sync incoming counters from Room component and trigger refresh
     React.useEffect(() => {
-      if (incomingCounters) {
+      if (incomingCounters && incomingCounters.length > 0) {
         setPendingCounters(incomingCounters);
+        // Force refresh agreement when counters arrive
+        const fetchLatest = async () => {
+          try {
+            const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
+            if (res?.data?.agreement) {
+              setLocalAgreement(res.data.agreement);
+            }
+          } catch (_) {}
+        };
+        setTimeout(fetchLatest, 500);
       }
     }, [incomingCounters]);
-
-    // Monitor room-scoped agreement for regenerate flag
-    React.useEffect(() => {
-      if (!dealId || !roomId || !localAgreement) return;
-
-      // Refresh agreement to catch regenerate flag
-      const checkRegenerateFlag = async () => {
-        try {
-          const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
-          if (res?.data?.agreement && res.data.agreement.requires_regenerate === true && !localAgreement.requires_regenerate) {
-            setLocalAgreement(res.data.agreement);
-          }
-        } catch (_) {}
-      };
-
-      const timer = setInterval(checkRegenerateFlag, 2000);
-      return () => clearInterval(timer);
-    }, [dealId, roomId, localAgreement?.id]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
