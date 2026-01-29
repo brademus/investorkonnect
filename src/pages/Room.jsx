@@ -743,20 +743,11 @@ export default function Room() {
     });
   }, [roomId, profile?.user_role, rooms]);
   
-  // Load and subscribe to DealAppointments for walkthrough display
+  // Subscribe to DealAppointments for real-time updates (already loaded upfront)
   useEffect(() => {
     const did = currentRoom?.deal_id;
-    if (!did) { setDealAppts(null); return; }
-    let cancelled = false;
+    if (!did) return;
 
-    const load = async () => {
-      try {
-        const rows = await base44.entities.DealAppointments.filter({ dealId: did });
-        if (!cancelled) setDealAppts(rows?.[0] || null);
-      } catch (_) {}
-    };
-
-    load();
     const unsubscribe = base44.entities.DealAppointments.subscribe((event) => {
       if (event?.data?.dealId === did) {
         setDealAppts(event.data);
@@ -764,7 +755,6 @@ export default function Room() {
     });
 
     return () => {
-      cancelled = true;
       try { unsubscribe && unsubscribe(); } catch (_) {}
     };
   }, [currentRoom?.deal_id]);
