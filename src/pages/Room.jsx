@@ -835,8 +835,9 @@ export default function Room() {
     
     // Define effective room ID: when investor has selected an agent from invites, use that room_id
     // Otherwise, use the URL room_id (for single agent scenarios)
-    const effectiveRoomId = isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId;
-    console.log('[Room] effectiveRoomId:', effectiveRoomId, 'isMultiAgentMode:', isMultiAgentMode, 'selectedInvite:', selectedInvite?.id);
+    const isMultiAgent = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id;
+    const effectiveRoomId = isMultiAgent && selectedInvite ? selectedInvite.room_id : roomId;
+    console.log('[Room] effectiveRoomId:', effectiveRoomId, 'isMultiAgent:', isMultiAgent, 'selectedInvite:', selectedInvite?.id);
 
     // Load pending counters immediately - STRICTLY room-scoped ONLY to effective room
     const loadCounters = async () => {
