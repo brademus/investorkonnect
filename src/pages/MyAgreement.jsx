@@ -111,6 +111,17 @@ export default function MyAgreement() {
       }
 
       setAgreement(freshAgreement);
+      
+      // CRITICAL: Persist selected agents to deal metadata before creating invites
+      if (selectedAgentIds.length > 0) {
+        await base44.entities.Deal.update(dealId, {
+          metadata: {
+            ...deal?.metadata,
+            selected_agent_ids: selectedAgentIds
+          }
+        });
+      }
+      
       console.log('[MyAgreement] Creating invites after investor signature');
       
       // Call function to create DealInvites, rooms, and agreements for all selected agents
