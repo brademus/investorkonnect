@@ -662,12 +662,18 @@ Deno.serve(async (req) => {
     for (const k of Object.keys(platformDefaults)) { if (!renderContext[k]) renderContext[k] = platformDefaults[k]; }
 
     templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
-      if (renderContext[token] !== undefined && renderContext[token] !== null && renderContext[token] !== '' && renderContext[token] !== 'N/A' && renderContext[token] !== 'TBD') {
-        console.log(`✓ Replacing ${token} with: ${renderContext[token]}`);
+      // Allow TBD for agent fields when not filling agent details (initial generation)
+      const value = renderContext[token];
+      const isTBD = value === 'TBD';
+      const isAgentField = ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME', 'AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
+      const allowTBD = isTBD && isAgentField && !fillAgentDetails;
+      
+      if (value !== undefined && value !== null && value !== '' && value !== 'N/A' && (value !== 'TBD' || allowTBD)) {
+        console.log(`✓ Replacing ${token} with: ${value}`);
         foundTokens.add(token);
-        return String(renderContext[token]);
+        return String(value);
       } else {
-        console.log(`✗ Missing token: ${token} (value: ${renderContext[token]})`);
+        console.log(`✗ Missing token: ${token} (value: ${value})`);
         missingTokens.add(token);
         return match;
       }
