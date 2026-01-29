@@ -53,13 +53,18 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile, onInv
       toast.dismiss('gen');
 
       if (res.data?.error) {
-        toast.error(res.data.error);
-      } else {
+        console.error('[SimpleAgreementPanel] Generate error:', res.data);
+        toast.error(res.data.error || 'Generation failed');
+      } else if (res.data?.agreement) {
+        setLocalAgreement(res.data.agreement);
         toast.success('Agreement ready');
+      } else {
+        toast.error('Unexpected response format');
       }
     } catch (e) {
       toast.dismiss('gen');
-      toast.error('Generation failed');
+      console.error('[SimpleAgreementPanel] Generate exception:', e);
+      toast.error(e?.response?.data?.error || e?.message || 'Generation failed');
     } finally {
       setBusy(false);
     }
