@@ -832,10 +832,8 @@ export default function Room() {
           deal_id: dealId,
           status: 'pending'
         });
-        // Filter to only counters for this specific investor-agent pair (room)
-        const relevant = profile?.user_role === 'investor' 
-          ? counters.filter(c => !c.room_id || c.room_id === roomId) // Investors see counters for this room only
-          : (roomId ? counters.filter(c => c.room_id === roomId) : []); // Agents only see their own room's counters
+        // Filter to ONLY counters for this specific room (no legacy deal-scoped counters)
+        const relevant = counters.filter(c => c.room_id === roomId);
         setPendingCounters(relevant || []);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
@@ -854,21 +852,15 @@ export default function Room() {
 
     // Subscribe to CounterOffer updates
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
-        // Only process counters scoped to this investor-agent pair
-        const matches = profile?.user_role === 'investor' 
-          ? (!event.data.room_id || event.data.room_id === roomId) // Investor sees counters for this room
-          : (roomId && event.data.room_id === roomId); // Agent only sees their room's counters
-
-        if (matches) {
-          if (event.data.status === 'pending') {
-            setPendingCounters(prev => {
-              const exists = prev.some(c => c.id === event.id);
-              return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
-            });
-          } else {
-            setPendingCounters(prev => prev.filter(c => c.id !== event.id));
-          }
+      if (event?.data?.deal_id === dealId && event?.data?.room_id === roomId) {
+        // Only process counters scoped to this specific room
+        if (event.data.status === 'pending') {
+          setPendingCounters(prev => {
+            const exists = prev.some(c => c.id === event.id);
+            return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+          });
+        } else {
+          setPendingCounters(prev => prev.filter(c => c.id !== event.id));
         }
       }
     });
