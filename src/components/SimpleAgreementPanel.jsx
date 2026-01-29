@@ -304,7 +304,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && !pendingCounters.some(c => c.from_role === 'agent') && (
+                  {investorSigned && !agentSigned && !pendingCounters.some(c => c.from_role === 'agent') && !pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
@@ -322,6 +322,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         Make Counter Offer
                       </Button>
                     </>
+                  )}
+
+                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
+                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Awaiting investor decision on counter offer</p>
+                    </div>
                   )}
                 </div>
               )}
