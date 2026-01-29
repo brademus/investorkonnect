@@ -64,10 +64,10 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Supersede any existing pending counter (batch update for performance)
+    // Supersede only existing pending counters FROM THIS SENDER (not from the other party)
     const filterQuery = room_id 
-      ? { room_id, status: 'pending' }
-      : { deal_id, status: 'pending' };
+      ? { room_id, status: 'pending', from_role }
+      : { deal_id, status: 'pending', from_role };
     
     const existingPending = await base44.asServiceRole.entities.CounterOffer.filter(filterQuery);
     
@@ -78,7 +78,7 @@ Deno.serve(async (req) => {
           responded_at: new Date().toISOString()
         })
       ));
-      console.log('[createCounterOffer] Superseded', existingPending.length, 'pending offers');
+      console.log('[createCounterOffer] Superseded', existingPending.length, 'pending offers from', from_role);
     }
     
     // Create new counter offer with original terms snapshot
