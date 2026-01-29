@@ -33,29 +33,39 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
 
-    const terms = deal.proposed_terms || {};
-    if (!terms.buyer_commission_type) {
+    // Load Room first if room-scoped to get its proposed_terms (CRITICAL)
+    let room = null;
+    if (room_id) {
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      room = rooms?.[0] || null;
+      if (!room) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
+      }
+      console.log('[regenerateActiveAgreement] Loaded room:', room.id, 'has proposed_terms:', !!room.proposed_terms);
+    }
+
+    // CRITICAL: Use room-scoped terms if available, otherwise fall back to deal terms
+    // This ensures each agent negotiates with their own isolated terms
+    const effectiveTerms = (room?.proposed_terms && Object.keys(room.proposed_terms).length > 0) 
+      ? room.proposed_terms 
+      : deal.proposed_terms || {};
+    
+    if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
-        error: 'Missing buyer commission terms in deal. Please set commission structure first.',
-        details: 'Deal needs proposed_terms with buyer_commission_type',
+        error: 'Missing buyer commission terms. Please set commission structure first.',
+        details: `Deal needs proposed_terms with buyer_commission_type. ${room_id ? 'Room scope:' + (room?.proposed_terms ? 'has terms' : 'no terms') + '.' : ''}`,
         deal_id: deal.id,
-        has_terms: !!deal.proposed_terms
+        room_id: room_id || null,
+        has_deal_terms: !!deal.proposed_terms,
+        has_room_terms: !!(room?.proposed_terms)
       }, { status: 400 });
     }
 
     // Identify current active agreement to void (room-scoped or legacy)
     let currentAgreement = null;
-    let room = null;
     
-    if (room_id) {
+    if (room_id && room) {
       // ROOM-SCOPED: Look for room-specific agreement that was previously regenerated
-      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-      room = rooms?.[0] || null;
-
-      if (!room) {
-        return Response.json({ error: 'Room not found' }, { status: 404 });
-      }
-
       if (room.current_legal_agreement_id) {
         const a = await base44.asServiceRole.entities.LegalAgreement.filter({ id: room.current_legal_agreement_id });
         currentAgreement = a?.[0] || null;
@@ -92,17 +102,17 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Old agreement marked superseded');
     }
 
-    // Call generateLegalAgreement with simplified error handling
-    console.log('[regenerateActiveAgreement] Generating with terms:', terms);
+    // Call generateLegalAgreement with effective terms (room-scoped or deal-level)
+    console.log('[regenerateActiveAgreement] Generating with effective terms:', effectiveTerms, 'for room:', room_id || 'legacy');
     
     const gen = await base44.functions.invoke('generateLegalAgreement', {
       deal_id,
       room_id: room_id || null,
       exhibit_a: {
-        buyer_commission_type: terms.buyer_commission_type || 'flat',
-        buyer_commission_percentage: terms.buyer_commission_percentage || null,
-        buyer_flat_fee: terms.buyer_flat_fee || null,
-        agreement_length_days: terms.agreement_length || 180,
+        buyer_commission_type: effectiveTerms.buyer_commission_type || 'flat',
+        buyer_commission_percentage: effectiveTerms.buyer_commission_percentage || null,
+        buyer_flat_fee: effectiveTerms.buyer_flat_fee || null,
+        agreement_length_days: effectiveTerms.agreement_length || 180,
         transaction_type: deal.transaction_type || 'ASSIGNMENT'
       }
     });
