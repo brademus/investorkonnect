@@ -2612,7 +2612,7 @@ export default function Room() {
               )}
 
               {/* PHASE 4/5: Window B for Investor - Agreement status + View Profile */}
-              {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && (
+              {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && !isMultiAgentMode && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
