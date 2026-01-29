@@ -148,32 +148,31 @@ Deno.serve(async (req) => {
     
     const stripe = new Stripe(STRIPE_SECRET_KEY);
     
-    // Create or get Stripe customer
+    // Create or get Stripe customer - ALWAYS use customer ID, never email
     let customerId = null;
-    
-    if (userId && userEmail) {
+
+    if (userId) {
       const base44 = createClientFromRequest(req);
       const profiles = await base44.entities.Profile.filter({ user_id: userId });
-      
+
       if (profiles.length > 0) {
         const profile = profiles[0];
-        
+
         if (profile.stripe_customer_id) {
           customerId = profile.stripe_customer_id;
           console.log('✅ Using existing Stripe customer:', customerId);
         } else {
-          // Create new Stripe customer
+          // Create new Stripe customer with just user_id metadata (no email)
           const customer = await stripe.customers.create({
-            email: userEmail,
             metadata: {
               user_id: userId,
               app: 'agentvault'
             }
           });
-          
+
           customerId = customer.id;
           console.log('✅ Created new Stripe customer:', customerId);
-          
+
           // Save customer ID to profile
           await base44.asServiceRole.entities.Profile.update(profile.id, {
             stripe_customer_id: customerId
@@ -181,11 +180,18 @@ Deno.serve(async (req) => {
         }
       }
     }
-    
+
+    if (!customerId) {
+      return Response.json({ 
+        ok: false, 
+        reason: 'CUSTOMER_ERROR',
+        message: 'Failed to create Stripe customer' 
+      }, { status: 500 });
+    }
+
     const session = await stripe.checkout.sessions.create({
       mode: 'subscription',
-      customer: customerId || undefined,
-      customer_email: !customerId ? userEmail : undefined,
+      customer: customerId,
       line_items: [{
         price: price,
         quantity: 1
