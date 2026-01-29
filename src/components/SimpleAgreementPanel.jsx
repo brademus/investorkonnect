@@ -21,10 +21,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const [localAgreement, setLocalAgreement] = useState(agreement);
   const [pendingCounters, setPendingCounters] = useState([]);
 
-  // Sync prop changes to local state
+  // Sync prop changes to local state only if truly different (avoid flickering from stale parent data)
   React.useEffect(() => {
-    setLocalAgreement(agreement);
-  }, [agreement]);
+    if (agreement && agreement.id !== localAgreement?.id) {
+      setLocalAgreement(agreement);
+    }
+  }, [agreement?.id]);
 
   // Fetch latest agreement on panel load to ensure we have current signatures
   React.useEffect(() => {
