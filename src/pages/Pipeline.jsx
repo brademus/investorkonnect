@@ -679,8 +679,15 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Use room_id if available, otherwise navigate to deal for room creation
+    // INVESTOR: Check for existing room first (from rooms array), then check deal.room_id, else MyAgreement
     if (isInvestor) {
+      // Check rooms array first (most up-to-date)
+      const investorRoom = rooms.find(r => r.deal_id === deal.deal_id);
+      if (investorRoom?.id) {
+        navigate(`${createPageUrl("Room")}?roomId=${investorRoom.id}`);
+        return;
+      }
+      // Fallback to deal.room_id if rooms haven't loaded yet
       if (deal?.room_id) {
         navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
         return;
