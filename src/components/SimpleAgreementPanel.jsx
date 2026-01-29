@@ -259,7 +259,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         Sign as Agent
                       </Button>
                       <Button
-                        onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}`}
+                        onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}`}
                         variant="outline"
                         className="w-full border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414]"
                       >
@@ -267,6 +267,65 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                       </Button>
                     </>
                   )}
+                </div>
+              )}
+
+              {/* Pending Counter Offers */}
+              {pendingCounters.length > 0 && (
+                <div className="space-y-3">
+                  {pendingCounters.map((counter) => (
+                    <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
+                      <p className="text-xs text-[#E3C567] mb-3 font-semibold">
+                        {counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer
+                      </p>
+                      <div className="text-sm text-[#FAFAFA] mb-3">
+                        <p>Buyer Commission: {counter.terms_delta.buyer_commission_type === 'percentage'
+                          ? `${counter.terms_delta.buyer_commission_percentage}%`
+                          : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await base44.functions.invoke('respondToCounterOffer', {
+                                counter_offer_id: counter.id,
+                                action: 'accepted'
+                              });
+                              toast.success('Counter accepted');
+                              setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                              if (onCounterReceived) onCounterReceived();
+                            } catch (e) {
+                              toast.error('Failed to accept counter');
+                            }
+                          }}
+                          className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              await base44.functions.invoke('respondToCounterOffer', {
+                                counter_offer_id: counter.id,
+                                action: 'declined'
+                              });
+                              toast.success('Counter declined');
+                              setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                            } catch (e) {
+                              toast.error('Failed to decline counter');
+                            }
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs"
+                        >
+                          Decline
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
 
