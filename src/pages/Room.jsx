@@ -850,18 +850,17 @@ export default function Room() {
     loadCounters();
 
     // Subscribe to LegalAgreement for real-time signature updates
-    // Prefer room-scoped agreements, but also listen for deal-level changes
+    // STRICTLY prefer room-scoped agreements
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        // Update if: (1) room-scoped match, OR (2) deal-level (room_id null) and we don't have room-scoped yet
-        const isRoomScoped = event?.data?.room_id === roomId;
-        const isDealLevel = !event?.data?.room_id;
-        
-        if (isRoomScoped) {
-          console.log('[Room] Room-scoped agreement updated');
+        // ONLY update if this agreement is for THIS ROOM
+        if (event?.data?.room_id === roomId) {
+          console.log('[Room] Room-scoped agreement updated for this agent');
           setAgreement(event.data);
-        } else if (isDealLevel && !agreement?.room_id) {
-          console.log('[Room] Deal-level agreement updated (no room-scoped override)');
+        }
+        // Ignore deal-level agreements if we have a room-scoped one
+        else if (!event?.data?.room_id && !agreement?.room_id) {
+          console.log('[Room] Deal-level agreement (no room-scoped override)');
           setAgreement(event.data);
         }
       }
