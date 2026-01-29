@@ -410,6 +410,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       action: 'accept'
                                     });
                                     if (res.data?.error) {
+                                      setDebugError(`Error: ${res.data.error}`);
                                       toast.error(res.data.error);
                                       return;
                                     }
@@ -417,8 +418,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                     setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
                                     if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
-                                    console.log('Full error object:', e);
                                     const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e) || 'Failed to accept counter';
+                                    setDebugError(`Full Error: ${errMsg}`);
                                     toast.error(errMsg);
                                   }
                                 }}
