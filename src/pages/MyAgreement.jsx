@@ -23,8 +23,6 @@ export default function MyAgreement() {
   const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
-  const [manualAgentIds, setManualAgentIds] = useState('');
-  const [creatingRetro, setCreatingRetro] = useState(false);
 
   // Load deal, selected agents, and agreement state
   useEffect(() => {
