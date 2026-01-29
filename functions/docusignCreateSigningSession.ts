@@ -191,6 +191,36 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // CRITICAL: ENFORCE SERVER-SIDE "REGENERATE REQUIRED" BLOCK
+    // Determine room context: from request or agreement
+    const effectiveRoomId = room_id || agreement.room_id;
+    
+    if (effectiveRoomId) {
+      // Load Room to check requires_regenerate flag
+      const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
+      const roomData = roomsCheck?.[0];
+      
+      if (roomData && roomData.requires_regenerate === true) {
+        console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true, investor must regenerate first`);
+        return Response.json({ 
+          ok: false,
+          code: 'REGENERATE_REQUIRED',
+          message: 'Investor must regenerate and re-sign before signing can continue.',
+          error: 'Agreement terms have changed. Investor must regenerate and sign the new document first before you can sign.'
+        }, { status: 400 });
+      }
+    }
+
+    // CRITICAL: Agent cannot sign if investor hasn't signed yet
+    if (role === 'agent' && !agreement.investor_signed_at) {
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
+      return Response.json({ 
+        ok: false,
+        code: 'INVESTOR_SIGNATURE_REQUIRED',
+        error: 'The investor must sign this agreement first before you can sign it.'
+      }, { status: 400 });
+    }
+
     // PHASE 7: Enforce Deal Lock-in
     // If deal is locked to a different room/agent, block signing
     try {
