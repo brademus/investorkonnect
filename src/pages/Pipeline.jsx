@@ -679,20 +679,16 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Check for existing room first (from rooms array), then check deal.room_id, else MyAgreement
+    // INVESTOR: Find any room for this deal
     if (isInvestor) {
-      // Check rooms array first (most up-to-date)
-      const investorRoom = rooms.find(r => r.deal_id === deal.deal_id);
-      if (investorRoom?.id) {
-        navigate(`${createPageUrl("Room")}?roomId=${investorRoom.id}`);
+      // Get ALL rooms for this deal (investor may have multiple agents)
+      const allRoomsForDeal = rooms.filter(r => r.deal_id === deal.deal_id);
+      if (allRoomsForDeal.length > 0) {
+        // Navigate to first room (they're all for same deal, just different agents)
+        navigate(`${createPageUrl("Room")}?roomId=${allRoomsForDeal[0].id}`);
         return;
       }
-      // Fallback to deal.room_id if rooms haven't loaded yet
-      if (deal?.room_id) {
-        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
-        return;
-      }
-      // No room yet—navigate to MyAgreement for investor to generate agreement
+      // No rooms found—navigate to MyAgreement to generate agreement
       navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
