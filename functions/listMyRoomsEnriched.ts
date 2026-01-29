@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
 
       // Base room data
       const negotiation = negotiationMap.get(room.deal_id);
-      const pending = pendingOfferByDealId.get(room.deal_id) || null;
+      const pending = pendingOfferByRoomId.get(room.id) || null;
       const derivedNegotiation = negotiation || (pending ? {
         status: pending.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR',
         from_role: pending.from_role,
