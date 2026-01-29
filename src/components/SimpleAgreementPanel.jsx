@@ -362,7 +362,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 text-center">
                           <p className="text-xs text-blue-300 font-semibold">Pending Investor Review</p>
                         </div>
-                      ) : (
+                      ) : isInvestor ? (
                         <div className="flex gap-2">
                           <Button
                             size="sm"
