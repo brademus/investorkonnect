@@ -130,6 +130,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: localAgreement.id,
         role,
+        room_id: roomId,
         redirect_url: window.location.href + '&signed=1'
       });
 
