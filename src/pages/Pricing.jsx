@@ -4,15 +4,13 @@ import { Check, Zap, Shield, Building2, ArrowRight, Sparkles, X, CreditCard, Che
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { useAuth } from "@/components/auth";
 import { base44 } from "@/api/base44Client";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function Pricing() {
-  const { user, isLoading: authLoading } = useAuth();
-  const { profile, loading: profileLoading, refresh } = useCurrentProfile();
+  const { user, profile, loading, refresh } = useCurrentProfile();
   const [loading, setLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("starter");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
@@ -38,7 +36,7 @@ export default function Pricing() {
   // Check subscription status when page loads
   useEffect(() => {
     const checkSubscription = async () => {
-      if (!user || authLoading || profileLoading) return;
+      if (!user || loading) return;
       
       try {
         setCheckingSubscription(true);
@@ -76,7 +74,7 @@ export default function Pricing() {
     };
 
     checkSubscription();
-  }, [user, authLoading, profileLoading, profile?.user_role]);
+  }, [user, loading, profile?.user_role]);
 
   const handleSubscribe = async (plan) => {
     if (!user) {
@@ -173,7 +171,7 @@ export default function Pricing() {
     },
   ];
 
-  if (authLoading || profileLoading || checkingSubscription) {
+  if (loading || checkingSubscription) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
         <div className="text-center">
