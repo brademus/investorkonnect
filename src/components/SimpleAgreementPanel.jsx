@@ -17,9 +17,10 @@ import { toast } from 'sonner';
  */
 export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived, onCounterUpdate, pendingCounters: incomingCounters, setPendingCounters: setIncomingCounters }) {
   const [busy, setBusy] = useState(false);
-  const [confirmModal, setConfirmModal] = useState(false);
-  const [localAgreement, setLocalAgreement] = useState(agreement);
-  const [pendingCounters, setPendingCounters] = useState(incomingCounters || []);
+    const [confirmModal, setConfirmModal] = useState(false);
+    const [localAgreement, setLocalAgreement] = useState(agreement);
+    const [pendingCounters, setPendingCounters] = useState(incomingCounters || []);
+    const [debugError, setDebugError] = useState(null);
 
   // Sync prop changes to local state only if truly different (avoid flickering from stale parent data)
   React.useEffect(() => {
