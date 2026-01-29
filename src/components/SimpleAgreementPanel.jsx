@@ -216,6 +216,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         </CardHeader>
 
         <CardContent className="p-6 space-y-4">
+           {/* Debug Error Display */}
+           {debugError && (
+             <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3">
+               <p className="text-xs text-red-300">{debugError}</p>
+               <button 
+                 onClick={() => setDebugError(null)}
+                 className="text-xs text-red-400 hover:text-red-300 mt-2 underline"
+               >
+                 Dismiss
+               </button>
+             </div>
+           )}
+
            {/* No Agreement Yet */}
            {!localAgreement && (
             <div className="text-center py-8">
