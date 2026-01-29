@@ -15,23 +15,28 @@ Deno.serve(async (req) => {
     }
     
     // Support both GET (query params) and POST (body params)
-    let deal_id;
+    let deal_id, room_id;
     if (req.method === 'GET') {
       const url = new URL(req.url);
       deal_id = url.searchParams.get('deal_id');
+      room_id = url.searchParams.get('room_id');
     } else {
       const body = await req.json();
       deal_id = body.deal_id;
+      room_id = body.room_id;
     }
     
-    console.log('[getLegalAgreement] Request:', { method: req.method, deal_id, user_id: user.id });
+    console.log('[getLegalAgreement] Request:', { method: req.method, deal_id, room_id, user_id: user.id });
     
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get agreement using service role
-    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id });
+    // Get agreement using service role - STRICTLY room-scoped if room_id provided
+    const filterQuery = room_id 
+      ? { deal_id, room_id }
+      : { deal_id };
+    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter(filterQuery);
     
     console.log('[getLegalAgreement] Found agreements:', agreements.length);
     
