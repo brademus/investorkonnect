@@ -94,7 +94,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     return () => {
       try { unsubscribe?.(); } catch (_) {}
     };
-  }, [dealId, roomId]);
+  }, [dealId, roomId, profile?.user_role]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
