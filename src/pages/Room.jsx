@@ -809,11 +809,29 @@ export default function Room() {
     };
   }, [roomId, currentRoom?.deal_id, showBoard, activeTab]);
 
-  // Real-time agreement updates
+  // Real-time agreement updates + load pending counters
   useEffect(() => {
     if (!currentRoom?.deal_id) return;
     
     const dealId = currentRoom.deal_id;
+
+    // Load pending counters immediately
+    const loadCounters = async () => {
+      try {
+        const counters = await base44.entities.CounterOffer.filter({
+          deal_id: dealId,
+          status: 'pending'
+        });
+        const relevant = profile?.user_role === 'investor' 
+          ? counters 
+          : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
+        setPendingCounters(relevant || []);
+      } catch (e) {
+        console.error('[Room] Counter load error:', e);
+      }
+    };
+
+    loadCounters();
 
     // Subscribe to LegalAgreement for real-time signature updates
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
@@ -823,10 +841,31 @@ export default function Room() {
       }
     });
 
+    // Subscribe to CounterOffer updates
+    const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      if (event?.data?.deal_id === dealId) {
+        const matches = profile?.user_role === 'investor' 
+          ? true 
+          : (!roomId || event.data.room_id === roomId || !event.data.room_id);
+
+        if (matches) {
+          if (event.data.status === 'pending') {
+            setPendingCounters(prev => {
+              const exists = prev.some(c => c.id === event.id);
+              return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+            });
+          } else {
+            setPendingCounters(prev => prev.filter(c => c.id !== event.id));
+          }
+        }
+      }
+    });
+
     return () => {
       try { unsubAgreement?.(); } catch (_) {}
+      try { unsubCounter?.(); } catch (_) {}
     };
-  }, [currentRoom?.deal_id]); 
+  }, [currentRoom?.deal_id, roomId, profile?.user_role]); 
 
   // Auto-sync chat attachments into Room.photos and Room.files (from message metadata)
   useEffect(() => {
