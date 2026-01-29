@@ -196,8 +196,9 @@ export default function ContractVerify() {
   };
 
   const handleFixDeal = () => {
-    // Keep the draft data and go back to fix it
-    navigate(createPageUrl("NewDeal"));
+    // Keep the draft data and go back to fix it with fromVerify flag
+    const params = dealData?.dealId ? `?dealId=${dealData.dealId}&fromVerify=1` : '?fromVerify=1';
+    navigate(createPageUrl("NewDeal") + params);
   };
 
   if (loading) {
