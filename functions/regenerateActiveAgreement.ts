@@ -119,32 +119,9 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Legacy current agreement:', currentAgreement?.id);
     }
 
-    // Void old DocuSign envelope if exists
+    // Skip voiding old DocuSign envelope - not critical for regeneration
     if (currentAgreement?.docusign_envelope_id) {
-      try {
-        console.log('[regenerateActiveAgreement] Voiding old envelope:', currentAgreement.docusign_envelope_id);
-        const connection = await getDocuSignConnection(base44);
-        const voidUrl = `${connection.base_uri}/restapi/v2.1/accounts/${connection.account_id}/envelopes/${currentAgreement.docusign_envelope_id}`;
-        const voidResp = await fetch(voidUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${connection.access_token}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ 
-            status: 'voided', 
-            voidedReason: `Regenerated with new terms at ${new Date().toISOString()}` 
-          })
-        });
-
-        if (voidResp.ok) {
-          console.log('[regenerateActiveAgreement] ✓ Old envelope voided');
-        } else {
-          console.warn('[regenerateActiveAgreement] Failed to void (continuing anyway)');
-        }
-      } catch (e) {
-        console.warn('[regenerateActiveAgreement] Void error (continuing):', e.message);
-      }
+      console.log('[regenerateActiveAgreement] Old envelope exists but skipping void (not critical)');
     }
 
     // Mark old agreement as superseded
