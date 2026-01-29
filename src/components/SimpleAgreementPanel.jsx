@@ -26,6 +26,24 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     setLocalAgreement(agreement);
   }, [agreement]);
 
+  // Fetch latest agreement on panel load to ensure we have current signatures
+  React.useEffect(() => {
+    if (!dealId) return;
+    
+    const fetchLatest = async () => {
+      try {
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+        if (res?.data?.agreement) {
+          setLocalAgreement(res.data.agreement);
+        }
+      } catch (e) {
+        console.error('[SimpleAgreementPanel] Fetch latest error:', e);
+      }
+    };
+
+    fetchLatest();
+  }, [dealId]);
+
   // Load and subscribe to pending counter offers
   React.useEffect(() => {
     const loadCounters = async () => {
