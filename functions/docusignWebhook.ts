@@ -356,6 +356,13 @@ Deno.serve(async (req) => {
           if (agreement.room_id) {
             await enforceDealLockIn(base44, agreement.deal_id, agreement.room_id);
           }
+
+          // Void all other agent agreements when this one is fully signed
+          try {
+            await base44.functions.invoke('voidOtherAgentAgreements', { agreement_id: agreement.id });
+          } catch (e) {
+            console.warn('[DocuSign Webhook] Failed to void other agreements:', e?.message);
+          }
           
           // PHASE 7: Also update Room.current_legal_agreement_id
           if (agreement.room_id && agreement.id) {
