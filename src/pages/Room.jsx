@@ -832,7 +832,7 @@ export default function Room() {
           deal_id: dealId,
           status: 'pending'
         });
-        // Filter to ONLY counters for this specific room (no legacy deal-scoped counters)
+        // STRICTLY room-scoped: only show counters for this specific room
         const relevant = counters.filter(c => c.room_id === roomId);
         setPendingCounters(relevant || []);
       } catch (e) {
