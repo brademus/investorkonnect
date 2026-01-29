@@ -75,8 +75,14 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile, onInv
     setBusy(true);
 
     try {
+      if (!localAgreement?.id) {
+        toast.error('No agreement to sign');
+        setBusy(false);
+        return;
+      }
+
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
-        agreement_id: agreement.id,
+        agreement_id: localAgreement.id,
         role,
         redirect_url: window.location.href + '&signed=1'
       });
@@ -93,11 +99,13 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile, onInv
       if (res.data?.signing_url) {
         window.location.assign(res.data.signing_url);
       } else {
-        toast.error('Failed to start signing');
+        console.error('[SimpleAgreementPanel] No signing URL:', res.data);
+        toast.error(res.data?.error || 'Failed to start signing');
         setBusy(false);
       }
     } catch (e) {
-      toast.error('Signing failed');
+      console.error('[SimpleAgreementPanel] Signing error:', e);
+      toast.error(e?.response?.data?.error || e?.message || 'Signing failed');
       setBusy(false);
     }
   };
