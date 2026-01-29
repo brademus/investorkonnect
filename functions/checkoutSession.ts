@@ -1,110 +1,125 @@
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.11.0';
 
-export default async function checkoutSession(req: Request) {
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
-
+// PUBLIC FUNCTION - handles auth redirect internally
+Deno.serve(async (req) => {
   try {
-    const body = await req.json().catch(() => ({}));
-    const sessionId = body?.session_id;
-
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    // Get base URL (remove trailing slashes)
+    const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+    
+    if (!base) {
+      return Response.json({ 
+        ok: false, 
+        error: 'Server configuration error: PUBLIC_APP_URL not set'
+      }, { status: 500 });
     }
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing Supabase env vars" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    // Parse request body
+    const { session_id } = await req.json();
+    
+    if (!session_id) {
+      return Response.json({
+        ok: false,
+        error: 'Missing session_id'
+      }, { status: 400 });
     }
-
-    if (!sessionId) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing session_id" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    // Get Stripe key
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!STRIPE_SECRET_KEY) {
+      return Response.json({ 
+        ok: false, 
+        error: 'Stripe not configured'
+      }, { status: 500 });
     }
-
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-    if (!token) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing auth token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    // Create Stripe client
+    const stripe = new Stripe(STRIPE_SECRET_KEY);
+    
+    // Initialize Base44 client
+    const base44 = createClientFromRequest(req);
+    
+    // Auth check
+    const isAuth = await base44.auth.isAuthenticated();
+    
+    if (!isAuth) {
+      return Response.json({ 
+        ok: false, 
+        error: 'Not authenticated',
+        redirect: `${base}/login`
+      }, { status: 401 });
     }
-
-    const { data: authData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !authData?.user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const user = authData.user;
-
-    // Lookup session
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription", "customer"],
+    
+    // Get user
+    const user = await base44.auth.me();
+    
+    // Retrieve session with expanded subscription
+    const session = await stripe.checkout.sessions.retrieve(session_id, {
+      expand: ['subscription', 'customer']
     });
-
-    const customerId = (session.customer as any)?.id || session.customer;
-    const subscriptionId = (session.subscription as any)?.id || session.subscription;
-    const subStatus = (session.subscription as any)?.status;
-
-    // Save to profile
-    const { data: profiles, error: profileErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .limit(1);
-
-    if (profileErr || !profiles?.length) {
-      return new Response(JSON.stringify({ ok: false, error: "Profile not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    if (!session) {
+      return Response.json({
+        ok: false,
+        error: 'Session not found'
+      }, { status: 404 });
     }
-
+    
+    // Get subscription details
+    const subscription = session.subscription;
+    const customer = session.customer;
+    
+    if (!subscription) {
+      return Response.json({
+        ok: false,
+        error: 'No subscription found in session'
+      }, { status: 400 });
+    }
+    
+    // Get profile
+    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    
+    if (profiles.length === 0) {
+      return Response.json({
+        ok: false,
+        error: 'Profile not found'
+      }, { status: 404 });
+    }
+    
     const profile = profiles[0];
-
-    await supabase
-      .from("profiles")
-      .update({
-        stripe_customer_id: customerId || profile.stripe_customer_id,
-        stripe_subscription_id: subscriptionId || profile.stripe_subscription_id,
-        subscription_status: subStatus || profile.subscription_status,
-      })
-      .eq("id", profile.id);
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        customer_id: customerId,
-        subscription_id: subscriptionId,
-        subscription_status: subStatus,
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
-  } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e?.message || "Unknown error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
+    
+    // Extract IDs safely
+    const subscriptionId = typeof subscription === 'string' ? subscription : subscription.id;
+    const subscriptionStatus = typeof subscription === 'string' ? 'active' : subscription.status;
+    const customerId = typeof customer === 'string' ? customer : customer?.id;
+    
+    console.log('✅ Subscription activated:', {
+      user_id: user.id,
+      subscription_id: subscriptionId,
+      status: subscriptionStatus,
+      customer_id: customerId
     });
+    
+    // Update profile with Stripe info
+    await base44.asServiceRole.entities.Profile.update(profile.id, {
+      stripe_subscription_id: subscriptionId,
+      subscription_status: subscriptionStatus,
+      stripe_customer_id: customerId || profile.stripe_customer_id
+    });
+    
+    return Response.json({
+      ok: true,
+      subscription: {
+        id: subscriptionId,
+        status: subscriptionStatus
+      }
+    });
+    
+  } catch (error) {
+    console.error('❌ Checkout session validation error:', error);
+    return Response.json({
+      ok: false,
+      error: error.message || 'Server error validating session'
+    }, { status: 500 });
   }
-}
+});

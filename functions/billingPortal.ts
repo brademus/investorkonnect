@@ -1,89 +1,94 @@
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+/**
+ * Billing Portal Function
+ * 
+ * Creates a Stripe Customer Portal session for subscription management
+ */
 
-export default async function billingPortal(req: Request) {
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.4';
+import Stripe from 'npm:stripe@17.5.0';
 
+const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY'), {
+  apiVersion: '2024-06-20',
+});
+
+Deno.serve(async (req) => {
   try {
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const appUrl = Deno.env.get("APP_URL") || Deno.env.get("VITE_APP_URL");
-
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    const base44 = createClientFromRequest(req);
+    
+    // Authenticate user
+    const user = await base44.auth.me();
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing Supabase env vars" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-    if (!token) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing auth token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const { data: authData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !authData?.user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const user = authData.user;
-
-    const { data: profiles, error: profileErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .limit(1);
-
-    if (profileErr || !profiles?.length) {
-      return new Response(JSON.stringify({ ok: false, error: "Profile not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
+    
+    console.log('[billingPortal] User:', user.email);
+    
+    // Get profile
+    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
-    const customerId = profile.stripe_customer_id;
-
-    if (!customerId) {
-      return new Response(JSON.stringify({ ok: false, error: "No Stripe customer found" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    if (!profile) {
+      return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
-
+    
+    // Get or create Stripe customer
+    let customerId = profile.stripe_customer_id;
+    
+    if (!customerId) {
+      console.log('[billingPortal] Creating Stripe customer...');
+      
+      const customer = await stripe.customers.create({
+        email: user.email,
+        name: profile.full_name || user.full_name,
+        metadata: {
+          user_id: user.id,
+          profile_id: profile.id,
+        },
+      });
+      
+      customerId = customer.id;
+      
+      // Save customer ID to profile
+      await base44.entities.Profile.update(profile.id, {
+        stripe_customer_id: customerId,
+      });
+      
+      console.log('[billingPortal] Created customer:', customerId);
+    }
+    
+    // Determine return URL based on role
+    const appUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'http://localhost:5173';
+    const userRole = profile.user_role || profile.role;
+    let returnPath = '/Dashboard';
+    
+    if (userRole === 'agent') {
+      returnPath = '/DashboardAgent';
+    } else if (userRole === 'investor') {
+      returnPath = '/DashboardInvestor';
+    }
+    
+    const returnUrl = `${appUrl}${returnPath}`;
+    
+    console.log('[billingPortal] Return URL:', returnUrl);
+    
+    // Create billing portal session
     const session = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${appUrl || ""}/pricing`,
+      return_url: returnUrl,
     });
-
-    return new Response(JSON.stringify({ ok: true, url: session.url }), {
-      headers: { "Content-Type": "application/json" },
+    
+    console.log('[billingPortal] Session created:', session.id);
+    
+    return Response.json({
+      ok: true,
+      url: session.url,
     });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e?.message || "Unknown error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    
+  } catch (error) {
+    console.error('[billingPortal] Error:', error);
+    return Response.json({
+      ok: false,
+      error: error.message || 'Failed to create billing portal session',
+    }, { status: 500 });
   }
-}
+});

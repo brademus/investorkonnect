@@ -1,114 +1,65 @@
-import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import { createClientFromRequest } from 'npm:@base44/sdk@0.7.1';
+import Stripe from 'npm:stripe@14.11.0';
 
-export default async function createCheckoutSession(req: Request) {
-  if (req.method !== "POST") {
-    return new Response("Method Not Allowed", { status: 405 });
-  }
-
+// Legacy function - kept for backward compatibility
+Deno.serve(async (req) => {
   try {
-    const body = await req.json().catch(() => ({}));
-    const priceId = body?.price_id;
-
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const appUrl = Deno.env.get("APP_URL") || Deno.env.get("VITE_APP_URL");
-
-    if (!stripeSecretKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    const base = String(Deno.env.get('PUBLIC_APP_URL') || '').replace(/\/+$/, '');
+    
+    if (!base) {
+      return Response.json({ ok: false, error: 'Server configuration error' }, { status: 500 });
     }
-
-    if (!supabaseUrl || !supabaseServiceRoleKey) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing Supabase env vars" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    const base44 = createClientFromRequest(req);
+    const isAuth = await base44.auth.isAuthenticated();
+    
+    if (!isAuth) {
+      return Response.json({ ok: false, error: 'Not authenticated' }, { status: 401 });
     }
-
-    if (!priceId) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing price_id" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    const user = await base44.auth.me();
+    const { plan } = await req.json();
+    
+    // Price map (same as checkoutLite)
+    const priceMap = {
+      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+    };
+    
+    const price = plan ? priceMap[plan] : null;
+    if (!price) {
+      return Response.json({ ok: false, error: 'Invalid plan' }, { status: 400 });
     }
-
-    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
-    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
-
-    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-    if (!token) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing auth token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
+    
+    const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!STRIPE_SECRET_KEY) {
+      return Response.json({ ok: false, error: 'Stripe not configured' }, { status: 500 });
     }
-
-    const { data: authData, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !authData?.user) {
-      return new Response(JSON.stringify({ ok: false, error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const user = authData.user;
-
-    const { data: profiles, error: profileErr } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("user_id", user.id)
-      .limit(1);
-
-    if (profileErr || !profiles?.length) {
-      return new Response(JSON.stringify({ ok: false, error: "Profile not found" }), {
-        status: 404,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    const profile = profiles[0];
-
-    let customerId: string | null = profile.stripe_customer_id || null;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email || user.email || undefined,
-        name: profile.full_name || undefined,
-        metadata: { user_id: user.id },
-      });
-      customerId = customer.id;
-
-      await supabase
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", profile.id);
-    }
-
-    const successUrl = `${appUrl || ""}/billing-success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${appUrl || ""}/pricing`;
-
+    
+    const stripe = new Stripe(STRIPE_SECRET_KEY);
+    
+    const success = `${base}/BillingSuccess?session_id={CHECKOUT_SESSION_ID}`;
+    const cancel = `${base}/pricing?cancelled=true`;
+    
     const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
+      mode: 'subscription',
+      customer_email: user.email,
+      line_items: [{ price, quantity: 1 }],
+      success_url: success,
+      cancel_url: cancel,
       allow_promotion_codes: true,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+      subscription_data: {
+        trial_period_days: 14,
+        metadata: { user_id: user.id, plan }
+      },
+      metadata: { user_id: user.id, plan }
     });
-
-    return new Response(JSON.stringify({ ok: true, url: session.url, session_id: session.id }), {
-      headers: { "Content-Type": "application/json" },
-    });
-  } catch (e: any) {
-    return new Response(JSON.stringify({ ok: false, error: e?.message || "Unknown error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    });
+    
+    return Response.json({ ok: true, url: session.url, session_id: session.id });
+    
+  } catch (error) {
+    console.error('❌ createCheckoutSession error:', error);
+    return Response.json({ ok: false, error: error.message || 'Server error' }, { status: 500 });
   }
-}
+});
