@@ -176,17 +176,25 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Subscribe to real-time agreement updates
   React.useEffect(() => {
-    if (!dealId) return;
-    
-    const unsubscribe = base44.entities.LegalAgreement.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
-        setLocalAgreement(prev => ({ ...prev, ...event.data }));
-      }
-    });
+   if (!dealId) return;
 
-    return () => {
-      try { unsubscribe?.(); } catch (_) {}
-    };
+   const unsubscribe = base44.entities.LegalAgreement.subscribe((event) => {
+     if (event?.data?.deal_id === dealId) {
+       setLocalAgreement(prev => {
+         // Only update if signing status actually changed (prevents flickering)
+         if (prev?.investor_signed_at === event.data.investor_signed_at && 
+             prev?.agent_signed_at === event.data.agent_signed_at &&
+             prev?.status === event.data.status) {
+           return prev;
+         }
+         return { ...prev, ...event.data };
+       });
+     }
+   });
+
+   return () => {
+     try { unsubscribe?.(); } catch (_) {}
+   };
   }, [dealId]);
 
   // Detect when investor has signed and trigger callback
