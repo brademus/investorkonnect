@@ -656,22 +656,29 @@ export default function Room() {
         }
 
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
-        if (rawRoom.deal_id && profile?.user_role === 'investor') {
-          try {
-            const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
-            if (invitesRes.data?.ok) {
-              const loadedInvites = invitesRes.data.invites || [];
-              setInvites(loadedInvites);
-              
-              // Auto-select if only one invite exists
-              if (loadedInvites.length === 1) {
-                setSelectedInvite(loadedInvites[0]);
-              }
-            }
-          } catch (e) {
-            console.error('Failed to load invites:', e);
-          }
-        }
+         if (rawRoom.deal_id && profile?.user_role === 'investor') {
+           try {
+             const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
+             let loadedInvites = [];
+
+             // Handle different response formats
+             if (invitesRes.data?.invites) {
+               loadedInvites = Array.isArray(invitesRes.data.invites) ? invitesRes.data.invites : [];
+             } else if (Array.isArray(invitesRes.data)) {
+               loadedInvites = invitesRes.data;
+             }
+
+             console.log('[Room] Loaded invites:', loadedInvites.length);
+             setInvites(loadedInvites);
+
+             // Auto-select if only one invite exists
+             if (loadedInvites.length === 1) {
+               setSelectedInvite(loadedInvites[0]);
+             }
+           } catch (e) {
+             console.error('[Room] Failed to load invites:', e);
+           }
+         }
 
         // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
