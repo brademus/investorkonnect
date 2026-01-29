@@ -486,31 +486,17 @@ Deno.serve(async (req) => {
       agentProfile = agentProfiles[0];
       console.log('[generateLegalAgreement] Resolved agent from room:', agentProfile.id);
     } else {
-      // LEGACY: Get agent from Deal.agent_id or first room
-      if (deal.agent_id) {
-        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id });
-        if (agentProfiles && agentProfiles.length > 0) {
-          agentProfile = agentProfiles[0];
-        }
-      }
-      
-      if (!agentProfile) {
-        const rooms = await base44.asServiceRole.entities.Room.filter({ deal_id: deal_id });
-        const dealRoom = rooms.find(r => r.agentId);
-        
-        if (!dealRoom || !dealRoom.agentId) {
-          return Response.json({ 
-            error: 'No agent selected for this deal. Please select an agent to work with.'
-          }, { status: 400 });
-        }
-        
-        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: dealRoom.agentId });
-        if (!agentProfiles || agentProfiles.length === 0) {
-          return Response.json({ error: 'Agent profile not found' }, { status: 404 });
-        }
-        agentProfile = agentProfiles[0];
-      }
-      console.log('[generateLegalAgreement] Resolved agent (legacy):', agentProfile.id);
+      // LEGACY/DEAL-SCOPED: No room_id means this is the initial investor-generated agreement
+      // Agent fields will be left as TBD placeholders (fillAgentDetails = false)
+      // Create a minimal agent profile with TBD values for rendering
+      agentProfile = {
+        id: 'TBD',
+        full_name: 'TBD',
+        email: 'TBD',
+        user_id: 'TBD',
+        agent: { license_number: 'TBD', brokerage: 'TBD' }
+      };
+      console.log('[generateLegalAgreement] Deal-scoped generation: agent details will be TBD placeholders');
     }
     
     // Validate required fields with detailed info
