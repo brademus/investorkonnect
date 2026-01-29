@@ -31,7 +31,7 @@ export default function DealRoom() {
 
   // Load deal and invites
   useEffect(() => {
-    if (!dealId) return;
+    if (!dealId || loadingProfile) return;
 
     const loadData = async () => {
       try {
@@ -54,7 +54,7 @@ export default function DealRoom() {
     };
 
     loadData();
-  }, [dealId]);
+  }, [dealId, loadingProfile]);
 
   // Real-time updates for deal
   useEffect(() => {
