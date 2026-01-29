@@ -401,20 +401,21 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         <div className="flex gap-2 flex-col">
                           <div className="flex gap-2">
                             <Button
-                              size="sm"
-                              onClick={async () => {
-                                try {
-                                  await base44.functions.invoke('respondToCounterOffer', {
-                                    counter_offer_id: counter.id,
-                                    action: 'accept'
-                                  });
-                                  toast.success('Counter accepted');
-                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                  if (onCounterReceived) onCounterReceived();
-                                } catch (e) {
-                                  toast.error('Failed to accept counter');
-                                }
-                              }}
+                                size="sm"
+                                onClick={async () => {
+                                  try {
+                                    await base44.functions.invoke('respondToCounterOffer', {
+                                      counter_offer_id: counter.id,
+                                      action: 'accept'
+                                    });
+                                    toast.success('Counter accepted');
+                                    setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                    if (onCounterReceived) onCounterReceived();
+                                  } catch (e) {
+                                    console.error('[SimpleAgreementPanel] Accept failed:', e);
+                                    toast.error(e?.response?.data?.error || e?.message || 'Failed to accept counter');
+                                  }
+                                }}
                               className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
                             >
                               Accept
