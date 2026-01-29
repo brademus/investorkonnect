@@ -71,9 +71,9 @@ import PostAuth from './pages/PostAuth';
 import Pricing from './pages/Pricing';
 import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
+import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import Terms from './pages/Terms';
-import Room from './pages/Room';
 import __Layout from './Layout.jsx';
 
 
@@ -102,9 +102,9 @@ export const PAGES = {
     "Pricing": Pricing,
     "Privacy": Privacy,
     "RoleLanding": RoleLanding,
+    "Room": Room,
     "SelectAgent": SelectAgent,
     "Terms": Terms,
-    "Room": Room,
 }
 
 export const pagesConfig = {

@@ -308,9 +308,12 @@ export default function Room() {
   const roomId = params.get("roomId");
   const { profile, user, onboarded, hasNDA, isPaidSubscriber, kycVerified, loading } = useCurrentProfile();
 
-  // Strict Gating for Deal Room Access
+  // Strict Gating for Deal Room Access - use ref to avoid re-gating after redirect
+  const gateCheckedRef = useRef(false);
   useEffect(() => {
-    if (loading) return;
+    if (loading || gateCheckedRef.current) return;
+    gateCheckedRef.current = true;
+    
     if (!profile) {
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
@@ -337,7 +340,7 @@ export default function Room() {
       navigate(createPageUrl("NDA"), { replace: true });
       return;
     }
-  }, [loading, profile, onboarded, hasNDA, isPaidSubscriber, kycVerified, navigate]);
+  }, [loading]);
   const { rooms } = useMyRooms();
   const { items: messages, loading: messagesLoading, setItems, messagesEndRef } = useMessages(roomId, user, profile);
   const queryClient = useQueryClient();
