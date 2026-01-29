@@ -679,9 +679,25 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Navigate to deal-centric view (DealRoom)
+    // INVESTOR: Check if they've signed first
     if (isInvestor) {
-      navigate(`${createPageUrl("DealRoom")}?dealId=${deal.deal_id}`);
+      try {
+        const { data } = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
+        const ag = data?.agreement;
+        const investorSigned = !!ag?.investor_signed_at;
+        
+        if (!investorSigned) {
+          // Not signed yet - go to MyAgreement to sign
+          navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
+          return;
+        }
+        
+        // Signed - go to DealRoom
+        navigate(`${createPageUrl("DealRoom")}?dealId=${deal.deal_id}`);
+      } catch (e) {
+        // If no agreement exists, go to MyAgreement to generate + sign
+        navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
+      }
       return;
     }
 
