@@ -861,10 +861,10 @@ export default function Room() {
       }
     });
 
-    // Subscribe to CounterOffer updates
+    // Subscribe to CounterOffer updates - STRICTLY ROOM-SCOPED
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      // CRITICAL: Only update state if this counter is EXPLICITLY for this room
       if (event?.data?.deal_id === dealId && event?.data?.room_id === roomId) {
-        // Only process counters scoped to this specific room
         if (event.data.status === 'pending') {
           setPendingCounters(prev => {
             const exists = prev.some(c => c.id === event.id);
@@ -874,6 +874,7 @@ export default function Room() {
           setPendingCounters(prev => prev.filter(c => c.id !== event.id));
         }
       }
+      // IMPORTANT: Do NOT update state if room_id doesn't match - ignore counters for other agents
     });
 
     return () => {
