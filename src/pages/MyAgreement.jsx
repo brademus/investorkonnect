@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { createPageUrl } from '@/components/utils';
+import { useQueryClient } from '@tanstack/react-query';
 import LoadingAnimation from '@/components/LoadingAnimation';
 import SimpleAgreementPanel from '@/components/SimpleAgreementPanel';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ export default function MyAgreement() {
   const [params] = useSearchParams();
   const dealId = params.get('dealId');
   const { profile, loading: loadingProfile } = useCurrentProfile();
+  const queryClient = useQueryClient();
 
   const [deal, setDeal] = useState(null);
   const [agreement, setAgreement] = useState(null);
@@ -67,14 +69,16 @@ export default function MyAgreement() {
     })();
   }, [dealId, navigate]);
 
-  // Subscribe to real-time agreement updates
+  // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
   useEffect(() => {
     if (!dealId) return;
 
     const unsub = base44.entities.LegalAgreement.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
-        setAgreement(event.data);
-      }
+      const a = event?.data;
+      if (!a) return;
+      if (a.deal_id !== dealId) return;
+      if (a.room_id != null) return; // ONLY base agreement updates
+      setAgreement(a);
     });
 
     return () => unsub?.();
@@ -90,9 +94,23 @@ export default function MyAgreement() {
 
   // After investor signs, create invites for all selected agents
   const handlePostSigningNavigation = async () => {
-    if (!agreement?.investor_signed_at || !dealId) return;
+    if (!dealId) return;
 
     try {
+      // Re-fetch fresh base agreement to ensure we have latest signature state
+      const freshAgreements = await base44.entities.LegalAgreement.filter({ 
+        deal_id: dealId, 
+        room_id: null 
+      });
+      const freshAgreement = freshAgreements?.sort((a,b) => 
+        new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
+      )?.[0];
+
+      if (!freshAgreement?.investor_signed_at) {
+        return;
+      }
+
+      setAgreement(freshAgreement);
       console.log('[MyAgreement] Creating invites after investor signature');
       
       // Call function to create DealInvites, rooms, and agreements for all selected agents
@@ -100,22 +118,22 @@ export default function MyAgreement() {
         deal_id: dealId
       });
 
-      if (res.data?.ok) {
+      if (res.data?.ok && res.data.invite_ids?.length > 0) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
-        // CRITICAL: Clear rooms cache so Pipeline refetches
-        const roomsCacheKey = `roomsCache_${profile?.id}`;
-        sessionStorage.removeItem(roomsCacheKey);
         
-        const inviteCount = res.data.invite_ids?.length || selectedAgentIds.length;
-        toast.success(`Agreement sent to ${inviteCount} agent(s)!`);
+        // Invalidate React Query caches
+        try { sessionStorage.removeItem(`roomsCache_${profile?.id}`); } catch (_) {}
+        queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
         
-        // Fetch rooms for this deal to navigate directly to Room
+        toast.success(`Agreement sent to ${res.data.invite_ids.length} agent(s)!`);
+        
+        // Server-fetch rooms fresh (not from cache)
         const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
         if (roomsForDeal?.length > 0) {
           navigate(`/Room?roomId=${roomsForDeal[0].id}`, { replace: true });
         } else {
-          // Fallback: navigate to Pipeline if rooms aren't available yet
           navigate(createPageUrl('Pipeline'), { replace: true });
         }
       } else {
