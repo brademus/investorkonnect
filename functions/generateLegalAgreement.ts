@@ -860,8 +860,136 @@ Deno.serve(async (req) => {
     const investorClientUserId = `investor-${deal_id}-${timestamp}`;
     const agentClientUserId = `agent-${deal_id}-${timestamp}`;
     
-    // Create envelope definition with both signers
+    // Create envelope definition - with or without agent based on mode
     const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal_id} - v2.2.pdf`;
+    
+    // For deal-scoped (no room_id): investor only. For room-scoped: both signers.
+    const signers = [
+      {
+        email: profile.email,
+        name: profile.full_name || profile.email,
+        recipientId: '1',
+        routingOrder: '1',
+        clientUserId: investorClientUserId,
+        tabs: {
+          signHereTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_SIGN]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true
+          }],
+          dateSignedTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_DATE]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true
+          }],
+          fullNameTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_PRINT]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true,
+            name: 'Investor Full Name',
+            value: profile.full_name || profile.email,
+            locked: true,
+            required: true,
+            tabLabel: 'investorFullName'
+          }]
+        }
+      }
+    ];
+    
+    // Only add agent if room_scoped (actual agent with valid email)
+    if (room_id && agentProfile.email && agentProfile.email !== 'TBD') {
+      signers.push({
+        email: agentProfile.email,
+        name: agentProfile.full_name || agentProfile.email,
+        recipientId: '2',
+        routingOrder: '2',
+        clientUserId: agentClientUserId,
+        tabs: {
+          signHereTabs: [{
+            documentId: '1',
+            anchorString: '[[AGENT_SIGN]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true
+          }],
+          dateSignedTabs: [{
+            documentId: '1',
+            anchorString: '[[AGENT_DATE]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true
+          }],
+          fullNameTabs: [{
+            documentId: '1',
+            anchorString: '[[AGENT_PRINT]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true,
+            name: 'Agent Full Name',
+            value: agentProfile.full_name || agentProfile.email,
+            locked: true,
+            required: true,
+            tabLabel: 'agentFullName'
+          }],
+          textTabs: [
+            {
+              documentId: '1',
+              anchorString: '[[AGENT_LICENSE]]',
+              anchorUnits: 'pixels',
+              anchorXOffset: '0',
+              anchorYOffset: '0',
+              anchorIgnoreIfNotPresent: false,
+              anchorCaseSensitive: false,
+              anchorMatchWholeWord: true,
+              name: 'License Number',
+              value: agentProfile.agent?.license_number || agentProfile.license_number || '',
+              locked: false,
+              required: true,
+              tabLabel: 'agentLicense'
+            },
+            {
+              documentId: '1',
+              anchorString: '[[AGENT_BROKERAGE]]',
+              anchorUnits: 'pixels',
+              anchorXOffset: '0',
+              anchorYOffset: '0',
+              anchorIgnoreIfNotPresent: false,
+              anchorCaseSensitive: false,
+              anchorMatchWholeWord: true,
+              name: 'Brokerage',
+              value: agentProfile.agent?.brokerage || agentProfile.broker || '',
+              locked: false,
+              required: true,
+              tabLabel: 'agentBrokerage'
+            }
+          ]
+        }
+      });
+    }
     
     const envelopeDefinition = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
@@ -871,130 +999,7 @@ Deno.serve(async (req) => {
         fileExtension: 'pdf',
         documentId: '1'
       }],
-      recipients: {
-        signers: [
-          {
-            email: profile.email,
-            name: profile.full_name || profile.email,
-            recipientId: '1',
-            routingOrder: '1',
-            clientUserId: investorClientUserId,
-            tabs: {
-              signHereTabs: [{
-                documentId: '1',
-                anchorString: '[[INVESTOR_SIGN]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true
-              }],
-              dateSignedTabs: [{
-                documentId: '1',
-                anchorString: '[[INVESTOR_DATE]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true
-              }],
-              fullNameTabs: [{
-                documentId: '1',
-                anchorString: '[[INVESTOR_PRINT]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true,
-                name: 'Investor Full Name',
-                value: profile.full_name || profile.email,
-                locked: true,
-                required: true,
-                tabLabel: 'investorFullName'
-              }]
-            }
-          },
-          {
-            email: agentProfile.email,
-            name: agentProfile.full_name || agentProfile.email,
-            recipientId: '2',
-            routingOrder: '2',
-            clientUserId: agentClientUserId,
-            tabs: {
-              signHereTabs: [{
-                documentId: '1',
-                anchorString: '[[AGENT_SIGN]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true
-              }],
-              dateSignedTabs: [{
-                documentId: '1',
-                anchorString: '[[AGENT_DATE]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true
-              }],
-              fullNameTabs: [{
-                documentId: '1',
-                anchorString: '[[AGENT_PRINT]]',
-                anchorUnits: 'pixels',
-                anchorXOffset: '0',
-                anchorYOffset: '0',
-                anchorIgnoreIfNotPresent: false,
-                anchorCaseSensitive: false,
-                anchorMatchWholeWord: true,
-                name: 'Agent Full Name',
-                value: agentProfile.full_name || agentProfile.email,
-                locked: true,
-                required: true,
-                tabLabel: 'agentFullName'
-              }],
-              textTabs: [
-                {
-                  documentId: '1',
-                  anchorString: '[[AGENT_LICENSE]]',
-                  anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '0',
-                  anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
-                  anchorMatchWholeWord: true,
-                  name: 'License Number',
-                  value: agentProfile.agent?.license_number || agentProfile.license_number || '',
-                  locked: false,
-                  required: true,
-                  tabLabel: 'agentLicense'
-                },
-                {
-                  documentId: '1',
-                  anchorString: '[[AGENT_BROKERAGE]]',
-                  anchorUnits: 'pixels',
-                  anchorXOffset: '0',
-                  anchorYOffset: '0',
-                  anchorIgnoreIfNotPresent: false,
-                  anchorCaseSensitive: false,
-                  anchorMatchWholeWord: true,
-                  name: 'Brokerage',
-                  value: agentProfile.agent?.brokerage || agentProfile.broker || '',
-                  locked: false,
-                  required: true,
-                  tabLabel: 'agentBrokerage'
-                }
-              ]
-            }
-          }
-        ]
-      },
+      recipients: { signers },
       status: 'sent'
     };
     
