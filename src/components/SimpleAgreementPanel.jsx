@@ -46,55 +46,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     fetchLatest();
   }, [dealId]);
 
-  // Load and subscribe to pending counter offers - trigger on mount and when agreement loads
+  // Sync incoming counters from Room component
   React.useEffect(() => {
-    if (!dealId || !profile?.user_role) return;
-
-    // Fetch initial counters first
-    const loadInitial = async () => {
-      try {
-        const counters = await base44.entities.CounterOffer.filter({
-          deal_id: dealId,
-          status: 'pending'
-        });
-        const relevant = profile.user_role === 'investor' 
-          ? counters 
-          : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
-        setPendingCounters(relevant || []);
-      } catch (e) {
-        console.error('[SimpleAgreementPanel] Counter load error:', e);
-      }
-    };
-
-    // Load immediately
-    loadInitial();
-    const pollInterval = setInterval(loadInitial, 5000);
-
-    // Subscribe for real-time updates
-    const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id === dealId) {
-        const matches = profile.user_role === 'investor' 
-          ? true 
-          : (!roomId || event.data.room_id === roomId || !event.data.room_id);
-
-        if (matches) {
-          if (event.data.status === 'pending') {
-            setPendingCounters(prev => {
-              const exists = prev.some(c => c.id === event.id);
-              return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
-            });
-          } else {
-            setPendingCounters(prev => prev.filter(c => c.id !== event.id));
-          }
-        }
-      }
-    });
-
-    return () => {
-      clearInterval(pollInterval);
-      try { unsubscribe?.(); } catch (_) {}
-    };
-  }, [dealId, roomId, profile?.user_role, agreement?.id]);
+    if (incomingCounters) {
+      setPendingCounters(incomingCounters);
+    }
+  }, [incomingCounters]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
