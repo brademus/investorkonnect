@@ -177,7 +177,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     
     const unsubscribe = base44.entities.LegalAgreement.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
-        setLocalAgreement(event.data);
+        setLocalAgreement(prev => ({ ...prev, ...event.data }));
       }
     });
 
