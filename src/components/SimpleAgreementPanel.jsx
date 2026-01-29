@@ -13,8 +13,9 @@ import { toast } from 'sonner';
  * - Sign agreement
  * - Show status badges
  * - Auto-hide from other agents once one signs
+ * - Call onInvestorSigned callback after investor signs
  */
-export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
+export default function SimpleAgreementPanel({ dealId, agreement, profile, onInvestorSigned }) {
   const [busy, setBusy] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [localAgreement, setLocalAgreement] = useState(agreement);
@@ -72,12 +73,15 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: agreement.id,
         role,
-        redirect_url: window.location.href
+        redirect_url: window.location.href + '&signed=1'
       });
 
       if (res.data?.already_signed) {
         toast.success('Already signed');
         setBusy(false);
+        if (role === 'investor' && onInvestorSigned) {
+          onInvestorSigned();
+        }
         return;
       }
 
@@ -92,6 +96,16 @@ export default function SimpleAgreementPanel({ dealId, agreement, profile }) {
       setBusy(false);
     }
   };
+
+  // Detect when investor has signed and trigger callback
+  useEffect(() => {
+    if (localAgreement?.investor_signed_at && !localAgreement?.agent_signed_at && onInvestorSigned) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('signed') === '1') {
+        onInvestorSigned();
+      }
+    }
+  }, [localAgreement?.investor_signed_at, onInvestorSigned]);
 
   return (
     <>
