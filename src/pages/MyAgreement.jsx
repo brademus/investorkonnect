@@ -23,6 +23,8 @@ export default function MyAgreement() {
   const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
+  const [manualAgentIds, setManualAgentIds] = useState('');
+  const [creatingRetro, setCreatingRetro] = useState(false);
 
   // Load deal, selected agents, and agreement state
   useEffect(() => {
@@ -83,6 +85,53 @@ export default function MyAgreement() {
 
     return () => unsub?.();
   }, [dealId]);
+
+  // Retroactively create invites if agreement is signed but rooms don't exist
+  const handleRetroactiveInvites = async () => {
+    if (!manualAgentIds.trim()) {
+      toast.error('Please enter agent IDs separated by commas');
+      return;
+    }
+
+    setCreatingRetro(true);
+    try {
+      const agentIdList = manualAgentIds.split(',').map(id => id.trim()).filter(Boolean);
+      if (agentIdList.length === 0) {
+        toast.error('No valid agent IDs provided');
+        setCreatingRetro(false);
+        return;
+      }
+
+      const res = await base44.functions.invoke('retroactiveCreateInvites', {
+        deal_id: dealId,
+        agent_ids: agentIdList
+      });
+
+      if (res.data?.ok) {
+        toast.success(res.data.message || `Created ${res.data.invite_ids.length} invite(s)!`);
+        
+        // Invalidate caches and navigate to room
+        try { sessionStorage.removeItem(`roomsCache_${profile?.id}`); } catch (_) {}
+        queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+        
+        // Fetch and navigate to first room
+        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+        if (roomsForDeal?.length > 0) {
+          navigate(`/Room?roomId=${roomsForDeal[0].id}`, { replace: true });
+        } else {
+          navigate(createPageUrl('Pipeline'), { replace: true });
+        }
+      } else {
+        throw new Error(res.data?.error || 'Failed to create invites');
+      }
+    } catch (e) {
+      console.error('Retroactive invite creation failed:', e);
+      toast.error(e.message || 'Failed to create invites');
+    } finally {
+      setCreatingRetro(false);
+    }
+  };
 
   if (loadingProfile || loading || !deal) {
     return (
@@ -207,6 +256,32 @@ export default function MyAgreement() {
           profile={profile}
           onInvestorSigned={handlePostSigningNavigation}
         />
+
+        {/* Manual recovery for deals that were signed but invites weren't created */}
+        {agreement?.investor_signed_at && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-[#E3C567] mb-4">Send to Agents</h2>
+            <p className="text-sm text-[#808080] mb-4">
+              If you already selected agents but they weren't invited, enter their IDs below to create rooms and send agreements.
+            </p>
+            <div className="flex flex-col gap-3">
+              <input
+                type="text"
+                placeholder="Agent IDs (comma-separated, e.g., prof_123, prof_456)"
+                value={manualAgentIds}
+                onChange={(e) => setManualAgentIds(e.target.value)}
+                className="bg-[#141414] border border-[#1F1F1F] rounded-lg px-4 py-2 text-[#FAFAFA] placeholder-[#666] text-sm"
+              />
+              <Button
+                onClick={handleRetroactiveInvites}
+                disabled={creatingRetro}
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full disabled:opacity-60"
+              >
+                {creatingRetro ? 'Creating...' : 'Create Invites'}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Deal Summary */}
         {deal && (
