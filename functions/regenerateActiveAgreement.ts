@@ -78,7 +78,12 @@ Deno.serve(async (req) => {
 
     const terms = deal.proposed_terms || {};
     if (!terms.buyer_commission_type) {
-      return Response.json({ error: 'Missing buyer commission terms in deal' }, { status: 400 });
+      return Response.json({ 
+        error: 'Missing buyer commission terms in deal. Please set commission structure first.',
+        details: 'Deal needs proposed_terms with buyer_commission_type',
+        deal_id: deal.id,
+        has_terms: !!deal.proposed_terms
+      }, { status: 400 });
     }
 
     // Identify current active agreement to void (room-scoped or legacy)
