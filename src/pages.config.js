@@ -73,6 +73,7 @@ import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
 import Terms from './pages/Terms';
+import DealRoom from './pages/DealRoom';
 import __Layout from './Layout.jsx';
 
 
@@ -103,6 +104,7 @@ export const PAGES = {
     "Room": Room,
     "SelectAgent": SelectAgent,
     "Terms": Terms,
+    "DealRoom": DealRoom,
 }
 
 export const pagesConfig = {

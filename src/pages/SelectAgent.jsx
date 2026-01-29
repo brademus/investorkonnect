@@ -281,10 +281,10 @@ export default function SelectAgent() {
               {proceeding ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Deal & Rooms...
+                  Creating Deal...
                 </>
               ) : (
-                `Send Deal to ${selectedAgentIds.length} Agent${selectedAgentIds.length !== 1 ? 's' : ''}`
+                `Continue with ${selectedAgentIds.length} Agent${selectedAgentIds.length !== 1 ? 's' : ''}`
               )}
             </Button>
           </div>
