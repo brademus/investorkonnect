@@ -40,22 +40,17 @@ Deno.serve(async (req) => {
     let agentRooms = [];
     
     if (isInvestor) {
-      // Investors: include deals by investor_id, plus deals tied via Rooms, plus fallback by created_by
-      const byInvestorId = await base44.entities.Deal.filter({ investor_id: profile.id });
+      // Investors: ONLY show deals that have rooms (i.e., they've signed an agreement)
+      // This prevents unsignned drafts from appearing in the pipeline
       let investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
       const roomDealIds = Array.from(new Set(investorRooms.map(r => r.deal_id).filter(Boolean)));
       const byRooms = roomDealIds.length
         ? await Promise.all(roomDealIds.map(id => base44.entities.Deal.filter({ id }).then(arr => arr[0]).catch(() => null)))
         : [];
-      // Fallback: include deals created by this user (in case of profile dedup migrations)
-      let byCreator = [];
-      try {
-        byCreator = await base44.asServiceRole.entities.Deal.filter({ created_by: user.email });
-      } catch (_) {}
       
       // Merge and deduplicate by ID (keep most recently updated)
       const dealMap = new Map();
-      [...byInvestorId, ...byRooms.filter(Boolean), ...byCreator].forEach(d => {
+      byRooms.filter(Boolean).forEach(d => {
         if (!d?.id) return;
         const existing = dealMap.get(d.id);
         if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
@@ -63,7 +58,7 @@ Deno.serve(async (req) => {
         }
       });
       deals = Array.from(dealMap.values());
-      console.log('[getPipelineDealsForUser] Investor deals via investor_id:', byInvestorId.length, 'via rooms:', byRooms.filter(Boolean).length, 'via created_by:', byCreator.length, 'final:', deals.length);
+      console.log('[getPipelineDealsForUser] Investor deals via rooms (signed):', byRooms.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
