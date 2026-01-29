@@ -1027,7 +1027,15 @@ Deno.serve(async (req) => {
         if (!createResponse.ok) {
           const errorText = await createResponse.text();
           console.error('[DocuSign] Envelope creation failed:', errorText);
-          throw new Error('DocuSign envelope creation failed');
+          // Try to parse JSON error response
+          let docuSignError = 'DocuSign envelope creation failed';
+          try {
+            const errJson = JSON.parse(errorText);
+            docuSignError = errJson.message || errJson.errorMessage || errorText;
+          } catch (_) {
+            docuSignError = errorText || 'Unknown DocuSign error';
+          }
+          throw new Error(docuSignError);
         }
         
         break; // Success
