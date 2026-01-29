@@ -377,6 +377,7 @@ export default function Room() {
   const [dealAppts, setDealAppts] = useState(null);
   const [boardLoading, setBoardLoading] = useState(false);
   const [tabLoading, setTabLoading] = useState(false);
+  const [pendingCounters, setPendingCounters] = useState([]);
   const lastSentRef = useRef(0);
   const lastFetchKeyRef = useRef('');
 
