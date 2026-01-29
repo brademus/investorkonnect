@@ -832,9 +832,10 @@ export default function Room() {
           deal_id: dealId,
           status: 'pending'
         });
+        // Filter to only counters for this specific investor-agent pair (room)
         const relevant = profile?.user_role === 'investor' 
-          ? counters 
-          : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
+          ? counters.filter(c => !c.room_id || c.room_id === roomId) // Investors see counters for this room only
+          : (roomId ? counters.filter(c => c.room_id === roomId) : []); // Agents only see their own room's counters
         setPendingCounters(relevant || []);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
