@@ -1,19 +1,15 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-export default async function checkoutLite(req: Request) {
+export default async function stripeValidate(req: Request) {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const plan = body?.plan ?? "monthly";
-
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const appUrl = Deno.env.get("APP_URL") || Deno.env.get("VITE_APP_URL");
 
     if (!stripeSecretKey) {
       return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
@@ -29,13 +25,9 @@ export default async function checkoutLite(req: Request) {
       });
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2024-06-20",
-    });
-
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Auth: verify bearer token
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -56,7 +48,6 @@ export default async function checkoutLite(req: Request) {
 
     const user = authData.user;
 
-    // Load profile
     const { data: profiles, error: profileErr } = await supabase
       .from("profiles")
       .select("*")
@@ -71,59 +62,25 @@ export default async function checkoutLite(req: Request) {
     }
 
     const profile = profiles[0];
+    const subscriptionId = profile.stripe_subscription_id;
 
-    // Price mapping (must match Stripe)
-    const priceId =
-      plan === "yearly"
-        ? Deno.env.get("STRIPE_PRICE_YEARLY")
-        : Deno.env.get("STRIPE_PRICE_MONTHLY");
-
-    if (!priceId) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_PRICE env var(s)" }), {
-        status: 500,
+    if (!subscriptionId) {
+      return new Response(JSON.stringify({ ok: true, subscription: null }), {
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Determine customer
-    let customerId: string | null = profile.stripe_customer_id || null;
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email || user.email || undefined,
-        name: profile.full_name || undefined,
-        metadata: { user_id: user.id },
-      });
+    // update local profile subscription_status
+    await supabase
+      .from("profiles")
+      .update({ subscription_status: subscription.status })
+      .eq("id", profile.id);
 
-      customerId = customer.id;
-
-      await supabase
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", profile.id);
-    }
-
-    // Create checkout session
-    const successUrl = `${appUrl || ""}/billing-success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${appUrl || ""}/pricing`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+    return new Response(JSON.stringify({ ok: true, subscription }), {
+      headers: { "Content-Type": "application/json" },
     });
-
-    return new Response(
-      JSON.stringify({
-        ok: true,
-        url: session.url,
-        session_id: session.id,
-      }),
-      { headers: { "Content-Type": "application/json" } },
-    );
   } catch (e: any) {
     return new Response(JSON.stringify({ ok: false, error: e?.message || "Unknown error" }), {
       status: 500,

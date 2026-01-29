@@ -1,19 +1,18 @@
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
-export default async function checkoutLite(req: Request) {
+export default async function checkoutSession(req: Request) {
   if (req.method !== "POST") {
     return new Response("Method Not Allowed", { status: 405 });
   }
 
   try {
     const body = await req.json().catch(() => ({}));
-    const plan = body?.plan ?? "monthly";
+    const sessionId = body?.session_id;
 
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-    const appUrl = Deno.env.get("APP_URL") || Deno.env.get("VITE_APP_URL");
 
     if (!stripeSecretKey) {
       return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_SECRET_KEY" }), {
@@ -29,13 +28,16 @@ export default async function checkoutLite(req: Request) {
       });
     }
 
-    const stripe = new Stripe(stripeSecretKey, {
-      apiVersion: "2024-06-20",
-    });
+    if (!sessionId) {
+      return new Response(JSON.stringify({ ok: false, error: "Missing session_id" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
+    const stripe = new Stripe(stripeSecretKey, { apiVersion: "2024-06-20" });
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    // Auth: verify bearer token
     const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
     const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
 
@@ -56,7 +58,16 @@ export default async function checkoutLite(req: Request) {
 
     const user = authData.user;
 
-    // Load profile
+    // Lookup session
+    const session = await stripe.checkout.sessions.retrieve(sessionId, {
+      expand: ["subscription", "customer"],
+    });
+
+    const customerId = (session.customer as any)?.id || session.customer;
+    const subscriptionId = (session.subscription as any)?.id || session.subscription;
+    const subStatus = (session.subscription as any)?.status;
+
+    // Save to profile
     const { data: profiles, error: profileErr } = await supabase
       .from("profiles")
       .select("*")
@@ -72,55 +83,21 @@ export default async function checkoutLite(req: Request) {
 
     const profile = profiles[0];
 
-    // Price mapping (must match Stripe)
-    const priceId =
-      plan === "yearly"
-        ? Deno.env.get("STRIPE_PRICE_YEARLY")
-        : Deno.env.get("STRIPE_PRICE_MONTHLY");
-
-    if (!priceId) {
-      return new Response(JSON.stringify({ ok: false, error: "Missing STRIPE_PRICE env var(s)" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" },
-      });
-    }
-
-    // Determine customer
-    let customerId: string | null = profile.stripe_customer_id || null;
-
-    if (!customerId) {
-      const customer = await stripe.customers.create({
-        email: profile.email || user.email || undefined,
-        name: profile.full_name || undefined,
-        metadata: { user_id: user.id },
-      });
-
-      customerId = customer.id;
-
-      await supabase
-        .from("profiles")
-        .update({ stripe_customer_id: customerId })
-        .eq("id", profile.id);
-    }
-
-    // Create checkout session
-    const successUrl = `${appUrl || ""}/billing-success?session_id={CHECKOUT_SESSION_ID}`;
-    const cancelUrl = `${appUrl || ""}/pricing`;
-
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customerId,
-      line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
+    await supabase
+      .from("profiles")
+      .update({
+        stripe_customer_id: customerId || profile.stripe_customer_id,
+        stripe_subscription_id: subscriptionId || profile.stripe_subscription_id,
+        subscription_status: subStatus || profile.subscription_status,
+      })
+      .eq("id", profile.id);
 
     return new Response(
       JSON.stringify({
         ok: true,
-        url: session.url,
-        session_id: session.id,
+        customer_id: customerId,
+        subscription_id: subscriptionId,
+        subscription_status: subStatus,
       }),
       { headers: { "Content-Type": "application/json" } },
     );
