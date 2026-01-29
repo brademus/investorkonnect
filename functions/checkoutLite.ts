@@ -29,12 +29,11 @@ Deno.serve(async (req) => {
       console.log('📦 Received plan from URL:', plan);
     }
     
-    // Map plan to price ID
-    // Prioritize IDs from recent product catalog, fallback to env vars
+    // Map plan to price ID from environment variables
     const priceMap = {
-      "starter": "price_1SP89V1Nw95Lp8qMNv6ZlA6q" || Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": "price_1SP8AB1Nw95Lp8qMSu9CdqJk" || Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": "price_1SP8B01Nw95Lp8qMsNzWobkZ" || Deno.env.get('STRIPE_PRICE_ENTERPRISE')
+      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
+      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
+      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
     };
     
     const price = plan ? priceMap[plan] : null;
