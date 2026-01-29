@@ -640,7 +640,9 @@ export default function Room() {
       const rid = roomId;
       const thisReq = ++requestSeqRef.current;
       const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
-      if (lastFetchKeyRef.current !== `${roomId}|${profile?.user_role}`) {
+      
+      // Only set loading on initial room load, NOT on profile changes
+      if (!lastFetchKeyRef.current || lastFetchKeyRef.current.split('|')[0] !== roomId) {
         setRoomLoading(true);
       }
       
