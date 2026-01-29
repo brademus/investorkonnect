@@ -46,7 +46,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     fetchLatest();
   }, [dealId]);
 
-  // Load and subscribe to pending counter offers - trigger on mount and when dealId changes
+  // Load and subscribe to pending counter offers - trigger on mount and when agreement loads
   React.useEffect(() => {
     if (!dealId || !profile?.user_role) return;
 
@@ -66,7 +66,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       }
     };
 
-    // Load immediately and force refresh
+    // Load immediately
     loadInitial();
     const pollInterval = setInterval(loadInitial, 5000);
 
@@ -94,7 +94,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       clearInterval(pollInterval);
       try { unsubscribe?.(); } catch (_) {}
     };
-  }, [dealId, roomId, profile?.user_role]);
+  }, [dealId, roomId, profile?.user_role, agreement?.id]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
