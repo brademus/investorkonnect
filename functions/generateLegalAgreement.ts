@@ -518,8 +518,10 @@ Deno.serve(async (req) => {
       details.push('Investor legal name is required');
     }
     
-    // Only validate agent fields if generating for a specific room (after investor signs)
-    if (room_id) {
+    // Only validate agent fields if generating for a specific room AND fillAgentDetails is true
+    // For initial generation (no room_id), agent details are left as TBD placeholders
+    const fillAgentDetails = !!room_id;
+    if (fillAgentDetails) {
       const agentName = agentProfile.full_name || agentProfile.email;
       if (!agentName) {
         missing.push('agent.full_name');
