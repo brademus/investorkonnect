@@ -72,7 +72,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const fullySigned = investorSigned && agentSigned;
 
   // Check BOTH agreement and pass-in flag for regenerate requirement
-  const requiresRegenerate = localAgreement?.requires_regenerate === true;
+  // CRITICAL: Check Room.requires_regenerate (NOT agreement.requires_regenerate which is never set)
+  // This flag is set server-side when counter is accepted and drives regeneration requirement
+  const requiresRegenerate = room?.requires_regenerate === true;
   const canRegenerate = !fullySigned && requiresRegenerate;
 
   // Show form only to investor, only if no agreement yet or regenerate needed
