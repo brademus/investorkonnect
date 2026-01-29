@@ -18,14 +18,14 @@ export default function AgentProfile() {
   const [dealsCompleted, setDealsCompleted] = useState(null);
 
   useEffect(() => {
+    if (!profileId) return;
+    
+    setLoading(true);
+    setAgentProfile(null);
+    setReviews([]);
+    
     const loadProfile = async () => {
-      if (!profileId) {
-        setLoading(false);
-        return;
-      }
-
       try {
-        // Load agent profile
         const profiles = await base44.entities.Profile.filter({ id: profileId });
         const agent = profiles[0];
         
@@ -36,7 +36,6 @@ export default function AgentProfile() {
 
         setAgentProfile(agent);
 
-        // Load reviews for this agent
         try {
           const agentReviews = await base44.entities.Review.filter({ 
             reviewee_profile_id: profileId 
@@ -47,7 +46,6 @@ export default function AgentProfile() {
           setReviews([]);
         }
 
-        // Compute deals completed (count fully signed deals where this agent was locked)
         try {
           const completedDeals = await base44.asServiceRole.entities.Deal.filter({ 
             locked_agent_id: profileId,
