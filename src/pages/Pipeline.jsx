@@ -679,15 +679,14 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Navigate directly to Room page
+    // INVESTOR: Use room_id if available, otherwise navigate to deal for room creation
     if (isInvestor) {
-      // Create room if needed or navigate to existing
-      const roomId = deal?.room_id || await getOrCreateDealRoom(deal.deal_id, profile?.id);
-      if (roomId) {
-        navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
+      if (deal?.room_id) {
+        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
         return;
       }
-      toast.error('Unable to access deal room');
+      // No room yet—navigate to MyAgreement for investor to generate agreement
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
 
