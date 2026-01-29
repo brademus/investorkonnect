@@ -358,47 +358,53 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                           ? `${counter.terms_delta.buyer_commission_percentage}%`
                           : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
                       </div>
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              await base44.functions.invoke('respondToCounterOffer', {
-                                counter_offer_id: counter.id,
-                                action: 'accepted'
-                              });
-                              toast.success('Counter accepted');
-                              setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                              if (onCounterReceived) onCounterReceived();
-                            } catch (e) {
-                              toast.error('Failed to accept counter');
-                            }
-                          }}
-                          className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
-                        >
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              await base44.functions.invoke('respondToCounterOffer', {
-                                counter_offer_id: counter.id,
-                                action: 'declined'
-                              });
-                              toast.success('Counter declined');
-                              setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                            } catch (e) {
-                              toast.error('Failed to decline counter');
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs"
-                        >
-                          Decline
-                        </Button>
-                      </div>
+                      {counter.from_role === 'agent' && isAgent ? (
+                        <div className="bg-blue-500/20 border border-blue-400/30 rounded-lg p-3 text-center">
+                          <p className="text-xs text-blue-300 font-semibold">Pending Investor Review</p>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await base44.functions.invoke('respondToCounterOffer', {
+                                  counter_offer_id: counter.id,
+                                  action: 'accepted'
+                                });
+                                toast.success('Counter accepted');
+                                setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                if (onCounterReceived) onCounterReceived();
+                              } catch (e) {
+                                toast.error('Failed to accept counter');
+                              }
+                            }}
+                            className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                await base44.functions.invoke('respondToCounterOffer', {
+                                  counter_offer_id: counter.id,
+                                  action: 'declined'
+                                });
+                                toast.success('Counter declined');
+                                setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                              } catch (e) {
+                                toast.error('Failed to decline counter');
+                              }
+                            }}
+                            variant="outline"
+                            size="sm"
+                            className="flex-1 border-[#1F1F1F] text-[#FAFAFA] text-xs"
+                          >
+                            Decline
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
