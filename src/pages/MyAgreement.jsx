@@ -84,53 +84,6 @@ export default function MyAgreement() {
     return () => unsub?.();
   }, [dealId]);
 
-  // Retroactively create invites if agreement is signed but rooms don't exist
-  const handleRetroactiveInvites = async () => {
-    if (!manualAgentIds.trim()) {
-      toast.error('Please enter agent IDs separated by commas');
-      return;
-    }
-
-    setCreatingRetro(true);
-    try {
-      const agentIdList = manualAgentIds.split(',').map(id => id.trim()).filter(Boolean);
-      if (agentIdList.length === 0) {
-        toast.error('No valid agent IDs provided');
-        setCreatingRetro(false);
-        return;
-      }
-
-      const res = await base44.functions.invoke('retroactiveCreateInvites', {
-        deal_id: dealId,
-        agent_ids: agentIdList
-      });
-
-      if (res.data?.ok) {
-        toast.success(res.data.message || `Created ${res.data.invite_ids.length} invite(s)!`);
-        
-        // Invalidate caches and navigate to room
-        try { sessionStorage.removeItem(`roomsCache_${profile?.id}`); } catch (_) {}
-        queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
-        
-        // Fetch and navigate to first room
-        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-        if (roomsForDeal?.length > 0) {
-          navigate(`/Room?roomId=${roomsForDeal[0].id}`, { replace: true });
-        } else {
-          navigate(createPageUrl('Pipeline'), { replace: true });
-        }
-      } else {
-        throw new Error(res.data?.error || 'Failed to create invites');
-      }
-    } catch (e) {
-      console.error('Retroactive invite creation failed:', e);
-      toast.error(e.message || 'Failed to create invites');
-    } finally {
-      setCreatingRetro(false);
-    }
-  };
-
   if (loadingProfile || loading || !deal) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
