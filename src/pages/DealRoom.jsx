@@ -10,7 +10,7 @@ import { ArrowLeft, User, Star, FileText, CheckCircle, Clock, Users } from 'luci
 import { toast } from 'sonner';
 import SimpleAgreementPanel from '@/components/SimpleAgreementPanel';
 import PropertyDetailsCard from '@/components/PropertyDetailsCard';
-import { SimpleMessageBoard } from '@/components/chat/SimpleMessageBoard';
+import SimpleMessageBoard from '@/components/chat/SimpleMessageBoard';
 
 /**
  * DEAL-CENTRIC INVESTOR VIEW
@@ -140,7 +140,7 @@ export default function DealRoom() {
           </div>
 
           {activeTab === 'messages' && roomId && (
-            <SimpleMessageBoard roomId={roomId} currentUserId={profile?.id} />
+            <SimpleMessageBoard roomId={roomId} profile={profile} isChatEnabled={true} />
           )}
 
           {activeTab === 'deal-board' && (
