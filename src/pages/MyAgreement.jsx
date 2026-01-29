@@ -88,50 +88,59 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, create rooms and navigate to Pipeline
+  // After investor signs, check if we need agent selection first
   const handlePostSigningNavigation = async () => {
     if (!agreement?.investor_signed_at || !dealId) return;
 
     try {
-      // Check if rooms already exist
-      const existingRooms = await base44.entities.Room.filter({ deal_id: dealId });
-      
-      if (existingRooms.length === 0 && selectedAgentIds.length > 0) {
-        // Create rooms for all selected agents
-        const roomPromises = selectedAgentIds.map(agentId => 
-          base44.entities.Room.create({
-            deal_id: dealId,
-            investorId: profile?.id,
-            agentId: agentId,
-            request_status: 'requested',
-            agreement_status: 'draft',
-            title: deal.title,
-            property_address: deal.property_address,
-            city: deal.city,
-            state: deal.state,
-            county: deal.county,
-            zip: deal.zip,
-            budget: deal.purchase_price,
-            closing_date: deal.key_dates?.closing_date,
-            proposed_terms: deal.proposed_terms,
-            current_legal_agreement_id: agreement.id,
-            requested_at: new Date().toISOString()
-          })
-        );
-
-        await Promise.all(roomPromises);
-        console.log('[MyAgreement] Created rooms after investor signature');
+      // If multiple agents, show selection UI instead of auto-creating rooms
+      if (selectedAgentIds.length > 1) {
+        setLoading(false); // Show agent selection UI
+        return;
       }
 
-      // Clear sessionStorage
-      sessionStorage.removeItem("pendingDealId");
-      sessionStorage.removeItem("selectedAgentIds");
-      
-      toast.success(`Agreement signed! Sent to ${selectedAgentIds.length} agent(s)`);
-      navigate(createPageUrl('Pipeline'), { replace: true });
+      // Single agent - create room immediately
+      if (selectedAgentIds.length === 1) {
+        const agentId = selectedAgentIds[0];
+        const res = await base44.functions.invoke('generateAgreementForAgent', {
+          deal_id: dealId,
+          agent_profile_id: agentId
+        });
+
+        if (res.data?.success) {
+          sessionStorage.removeItem("pendingDealId");
+          sessionStorage.removeItem("selectedAgentIds");
+          toast.success('Agreement sent to agent!');
+          navigate(createPageUrl('Pipeline'), { replace: true });
+        } else {
+          throw new Error(res.data?.error || 'Failed to create room');
+        }
+      }
     } catch (e) {
-      console.error('Failed to create rooms:', e);
-      toast.error('Signed but failed to create agent rooms');
+      console.error('Failed to create room:', e);
+      toast.error('Signed but failed to send to agent');
+    }
+  };
+
+  // Handle selecting an agent when multiple agents are available
+  const handleSelectAgentAndProceed = async (agentId) => {
+    try {
+      const res = await base44.functions.invoke('generateAgreementForAgent', {
+        deal_id: dealId,
+        agent_profile_id: agentId
+      });
+
+      if (res.data?.success) {
+        sessionStorage.removeItem("pendingDealId");
+        sessionStorage.removeItem("selectedAgentIds");
+        toast.success('Agreement sent to selected agent!');
+        navigate(`${createPageUrl('Room')}?roomId=${res.data.room_id}`);
+      } else {
+        throw new Error(res.data?.error || 'Failed to create room');
+      }
+    } catch (e) {
+      console.error('Failed:', e);
+      toast.error('Failed to send to agent');
     }
   };
 
@@ -150,8 +159,8 @@ export default function MyAgreement() {
           <p className="text-sm text-[#808080]">Review your selected agents and sign to send the deal</p>
         </div>
 
-        {/* Selected Agents */}
-        {agentProfiles.length > 0 && (
+        {/* Selected Agents - Before Signing */}
+        {agentProfiles.length > 0 && !agreement?.investor_signed_at && (
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
             <h2 className="text-lg font-bold text-[#E3C567] mb-4 flex items-center gap-2">
               <Users className="w-5 h-5" />
@@ -169,8 +178,34 @@ export default function MyAgreement() {
               ))}
             </div>
             <p className="text-xs text-[#808080] mt-4">
-              After you sign, all selected agents will receive this deal request.
+              {agentProfiles.length > 1 
+                ? 'After you sign, select which agent you want to work with.'
+                : 'After you sign, the deal will be sent to this agent.'}
             </p>
+          </div>
+        )}
+
+        {/* Agent Selection - After Investor Signs (Multiple Agents) */}
+        {agreement?.investor_signed_at && !agreement?.agent_signed_at && agentProfiles.length > 1 && (
+          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+            <h2 className="text-lg font-bold text-[#E3C567] mb-4">Select Your Agent</h2>
+            <p className="text-sm text-[#808080] mb-6">
+              Your agreement is signed. Choose which agent you want to work with:
+            </p>
+            <div className="space-y-3">
+              {agentProfiles.map(agent => (
+                <Button
+                  key={agent.id}
+                  onClick={() => handleSelectAgentAndProceed(agent.id)}
+                  className="w-full bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#1F1F1F] text-[#FAFAFA] p-6 rounded-xl h-auto justify-start"
+                >
+                  <div className="text-left">
+                    <p className="font-semibold text-[#FAFAFA] mb-1">{agent.full_name}</p>
+                    <p className="text-sm text-[#808080]">{agent.email}</p>
+                  </div>
+                </Button>
+              ))}
+            </div>
           </div>
         )}
 
