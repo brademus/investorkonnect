@@ -31,11 +31,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Fetch latest agreement on panel load to ensure we have current signatures
   React.useEffect(() => {
-    if (!dealId) return;
-    
+    if (!dealId || !roomId) return;
+
     const fetchLatest = async () => {
       try {
-        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
         if (res?.data?.agreement) {
           setLocalAgreement(res.data.agreement);
         }
@@ -45,7 +45,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     };
 
     fetchLatest();
-  }, [dealId]);
+  }, [dealId, roomId]);
 
   // Sync incoming counters from Room component
   React.useEffect(() => {
@@ -76,7 +76,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     try {
       const res = await base44.functions.invoke('regenerateActiveAgreement', {
         deal_id: dealId,
-        room_id: null
+        room_id: roomId
       });
 
       toast.dismiss('gen');
@@ -139,12 +139,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     }
   };
 
-  // Subscribe to real-time agreement updates
+  // Subscribe to real-time agreement updates (room-scoped)
   React.useEffect(() => {
-   if (!dealId) return;
+   if (!dealId || !roomId) return;
 
    const unsubscribe = base44.entities.LegalAgreement.subscribe((event) => {
-     if (event?.data?.deal_id === dealId) {
+     // Only update if this agreement is for this specific room
+     if (event?.data?.deal_id === dealId && event?.data?.room_id === roomId) {
        setLocalAgreement(prev => {
          // Only update if signing status actually changed (prevents flickering)
          if (prev?.investor_signed_at === event.data.investor_signed_at && 
@@ -160,7 +161,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
    return () => {
      try { unsubscribe?.(); } catch (_) {}
    };
-  }, [dealId]);
+  }, [dealId, roomId]);
 
   // Detect when investor has signed and trigger callback
   useEffect(() => {
