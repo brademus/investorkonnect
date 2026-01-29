@@ -46,29 +46,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Load and subscribe to pending counter offers
   React.useEffect(() => {
-    const loadCounters = async () => {
-      try {
-        const counters = await base44.entities.CounterOffer.filter({
-          deal_id: dealId,
-          status: 'pending'
-        });
-        // For investors: show all deal-level counters (room_id may be null)
-        // For agents: filter by room if available
-        const relevant = profile?.user_role === 'investor' 
-          ? counters // Show all deal-level counters for investors
-          : (roomId ? counters.filter(c => c.room_id === roomId || !c.room_id) : counters);
-        setPendingCounters(relevant || []);
-        console.log('[SimpleAgreementPanel] Loaded counters:', relevant);
-      } catch (e) {
-        console.error('[SimpleAgreementPanel] Counter load error:', e);
-      }
-    };
-
     if (!dealId) return;
-    
-    loadCounters();
 
-    // Subscribe to counter offer changes
+    // Subscribe immediately for real-time updates
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
       if (event?.data?.deal_id === dealId) {
         // For investors: show all deal-level counters
