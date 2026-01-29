@@ -80,9 +80,11 @@ Deno.serve(async (req) => {
         
         const user = await base44.auth.me();
         userId = user.id;
-        userEmail = user.email || user.user_metadata?.email;
-        console.log('✅ User authenticated:', userEmail);
-        
+        // Try multiple sources for email
+        userEmail = user.email || user.user_metadata?.email || user.identities?.[0]?.identity_data?.email;
+        console.log('✅ User authenticated. User object:', JSON.stringify(user, null, 2));
+        console.log('✅ Extracted email:', userEmail);
+
         if (!userEmail) {
           console.log('❌ User has no email');
           return Response.json({ 
