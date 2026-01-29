@@ -409,13 +409,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       action: 'accept'
                                     });
                                     if (res.data?.error) {
-                                      throw new Error(res.data.error);
+                                      toast.error(res.data.error);
+                                      return;
                                     }
                                     toast.success('Counter accepted');
                                     setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
                                     if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
-                                    const errMsg = e?.response?.data?.error || e?.message || 'Failed to accept counter';
+                                    console.log('Full error object:', e);
+                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e) || 'Failed to accept counter';
                                     toast.error(errMsg);
                                   }
                                 }}
