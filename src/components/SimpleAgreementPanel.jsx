@@ -70,15 +70,23 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
     // Subscribe to counter offer changes
     const unsubscribe = base44.entities.CounterOffer.subscribe((event) => {
-      if (event?.data?.deal_id === dealId && (!roomId || event.data.room_id === roomId)) {
-        if (event.data.status === 'pending') {
-          setPendingCounters(prev => {
-            const exists = prev.some(c => c.id === event.id);
-            return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
-          });
-        } else {
-          // Remove if status changed (accepted/declined)
-          setPendingCounters(prev => prev.filter(c => c.id !== event.id));
+      if (event?.data?.deal_id === dealId) {
+        // For investors: show all deal-level counters
+        // For agents: filter by room
+        const matches = profile?.user_role === 'investor' 
+          ? true 
+          : (!roomId || event.data.room_id === roomId || !event.data.room_id);
+
+        if (matches) {
+          if (event.data.status === 'pending') {
+            setPendingCounters(prev => {
+              const exists = prev.some(c => c.id === event.id);
+              return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+            });
+          } else {
+            // Remove if status changed (accepted/declined)
+            setPendingCounters(prev => prev.filter(c => c.id !== event.id));
+          }
         }
       }
     });
