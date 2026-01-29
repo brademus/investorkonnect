@@ -57,19 +57,6 @@ export default function IdentityVerification() {
       }
       return;
     }
-
-    // Investor-specific subscription check
-    if (role === 'investor' && !profile.subscription_status) {
-      console.log('[IdentityVerification] No subscription, redirecting to Pricing');
-      navigate(createPageUrl("Pricing"), { replace: true });
-      return;
-    }
-    
-    if (role === 'investor' && profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing') {
-      console.log('[IdentityVerification] Invalid subscription status, redirecting to Pricing');
-      navigate(createPageUrl("Pricing"), { replace: true });
-      return;
-    }
   }, [loading, profile, onboarded, navigate]);
 
   const handleStartVerification = async () => {
