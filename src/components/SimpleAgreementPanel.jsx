@@ -439,14 +439,25 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                     const res = await base44.functions.invoke('respondToCounterOffer', payload);
 
                                     console.log('[SimpleAgreementPanel] Response:', res);
-                                    if (res.data?.error) {
-                                      setDebugError(`Backend Error: ${res.data.error}`);
-                                      toast.error(res.data.error);
-                                      return;
-                                    }
-                                    toast.success('Counter accepted');
-                                    setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                    if (onCounterReceived) onCounterReceived();
+                                       if (res.data?.error) {
+                                         setDebugError(`Backend Error: ${res.data.error}`);
+                                         toast.error(res.data.error);
+                                         return;
+                                       }
+                                       toast.success('Counter accepted');
+                                       setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+
+                                       // Refresh agreement immediately to get new room-scoped one
+                                       setTimeout(async () => {
+                                         try {
+                                           const freshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
+                                           if (freshRes?.data?.agreement) {
+                                             setLocalAgreement(freshRes.data.agreement);
+                                           }
+                                         } catch (_) {}
+                                       }, 500);
+
+                                       if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
                                     const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e);
                                     setDebugError(`Exception: ${errMsg}`);
