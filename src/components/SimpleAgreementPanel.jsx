@@ -15,7 +15,7 @@ import { toast } from 'sonner';
  * - Auto-hide from other agents once one signs
  * - Call onInvestorSigned callback after investor signs
  */
-export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived }) {
+export default function SimpleAgreementPanel({ dealId, roomId, agreement, profile, deal, onInvestorSigned, onCounterReceived, onCounterUpdate }) {
   const [busy, setBusy] = useState(false);
   const [confirmModal, setConfirmModal] = useState(false);
   const [localAgreement, setLocalAgreement] = useState(agreement);
