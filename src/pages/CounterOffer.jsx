@@ -154,7 +154,10 @@ export default function CounterOfferPage() {
       <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F] max-w-md">
         <DialogHeader>
           <DialogTitle className="text-[#FAFAFA]">
-            {isAgent ? 'Counter Offer' : 'Counter Offer to Agent'}
+            {isResponding 
+              ? (isAgent ? 'Counter Back to Investor' : 'Counter Back to Agent')
+              : (isAgent ? 'Counter Offer' : 'Counter Offer to Agent')
+            }
           </DialogTitle>
         </DialogHeader>
 
