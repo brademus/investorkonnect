@@ -2693,8 +2693,8 @@ export default function Room() {
               )}
 
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
-              </>
-              )}
+            </>
+          )
 
 
         </div>
