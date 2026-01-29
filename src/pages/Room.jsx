@@ -2134,6 +2134,7 @@ export default function Room() {
                        dealId={currentRoom.deal_id}
                        roomId={isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId}
                        agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
+                       room={currentRoom}
                        profile={profile}
                        deal={deal}
                        pendingCounters={pendingCounters}
