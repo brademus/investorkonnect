@@ -681,11 +681,13 @@ function PipelineContent() {
 
     // INVESTOR: Navigate directly to Room page
     if (isInvestor) {
-      if (deal?.room_id) {
-        navigate(`${createPageUrl("Room")}?roomId=${deal.room_id}`);
+      // Create room if needed or navigate to existing
+      const roomId = deal?.room_id || await getOrCreateDealRoom(deal.deal_id, profile?.id);
+      if (roomId) {
+        navigate(`${createPageUrl("Room")}?roomId=${roomId}`);
         return;
       }
-      toast.error('Room not found for this deal');
+      toast.error('Unable to access deal room');
       return;
     }
 
