@@ -2612,21 +2612,17 @@ export default function Room() {
               )}
 
               {/* PHASE 4/5: Window B for Investor - Agreement status + View Profile */}
-              {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && !isMultiAgentMode && (
+              {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && !isMultiAgentMode && !agreement?.investor_signed_at && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                       <div>
                         <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                          {agreement?.investor_signed_at && !agreement?.agent_signed_at
-                            ? 'Waiting for agent to sign'
-                            : 'Review and sign agreement'}
+                          Review and sign agreement
                         </h3>
                         <p className="text-sm text-[#FAFAFA]/80 mb-2">
-                          {agreement?.investor_signed_at
-                            ? 'Your signature is recorded. Waiting for agent to sign.'
-                            : 'Open My Agreement to review and sign.'}
+                          Open My Agreement to review and sign.
                         </p>
                         {/* PHASE 5: View Profile button in Window A */}
                         {currentRoom?.agentId && (
