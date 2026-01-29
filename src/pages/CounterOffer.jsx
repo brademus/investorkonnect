@@ -113,16 +113,16 @@ export default function CounterOfferPage() {
           setTimeout(() => navigate(-1), 500);
         }
       } else {
-        // Creating new counter - use createCounterOffer
-        // CRITICAL: Agents MUST include room_id to scope counter to specific investor-agent pair
-        if (isAgent && !roomId) {
-          toast.error('Room ID required for agent counter offers');
+        // Creating new counter - must have room_id to scope to specific agent
+        if (!roomId) {
+          toast.error('Room ID required to send counter offer');
           setBusy(false);
           return;
         }
+        
         const res = await base44.functions.invoke('createCounterOffer', {
           deal_id: dealId,
-          room_id: roomId || null,
+          room_id: roomId,
           from_role: isAgent ? 'agent' : 'investor',
           to_role: isAgent ? 'investor' : 'agent',
           terms_delta: counterTerms,
