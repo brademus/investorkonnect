@@ -408,7 +408,7 @@ function PipelineContent() {
             }
           } catch (_) {}
         }
-        queryClient.invalidateQueries({ queryKey: ['rooms'] });
+        queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
         queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
         queryClient.invalidateQueries({ queryKey: ['activities', profile?.id] });
         refetchDeals();
