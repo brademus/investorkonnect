@@ -85,13 +85,13 @@ Deno.serve(async (req) => {
         // Check for existing room
         let room = existingRoomsByAgent.get(agentId);
         if (!room) {
-          // 1. Create Room for this agent - set to 'accepted' so agent sees it immediately
+          // 1. Create Room - ACCEPTED status so agent sees it immediately
           room = await base44.asServiceRole.entities.Room.create({
             deal_id: deal_id,
             investorId: profile.id,
             agentId: agentId,
-            request_status: 'accepted', // Auto-accept since investor already signed base agreement
-            agreement_status: 'investor_signed', // Investor already signed
+            request_status: 'accepted', // CRITICAL: accepted, not requested
+            agreement_status: 'investor_signed',
             title: deal.title,
             property_address: deal.property_address,
             city: deal.city,
@@ -102,17 +102,17 @@ Deno.serve(async (req) => {
             closing_date: deal.key_dates?.closing_date,
             proposed_terms: deal.proposed_terms,
             requested_at: new Date().toISOString(),
-            accepted_at: new Date().toISOString() // Auto-accept
+            accepted_at: new Date().toISOString()
           });
-          console.log('[createInvitesAfterInvestorSign] Created room with accepted status:', room.id, 'for agent:', agentId);
-        } else {
-          // Update existing room to accepted status
+          console.log('[createInvitesAfterInvestorSign] ✓ Created room (accepted):', room.id);
+        } else if (room.request_status !== 'accepted') {
+          // Update existing room to accepted
           await base44.asServiceRole.entities.Room.update(room.id, {
             request_status: 'accepted',
             agreement_status: 'investor_signed',
             accepted_at: new Date().toISOString()
           });
-          console.log('[createInvitesAfterInvestorSign] Updated existing room to accepted:', room.id);
+          console.log('[createInvitesAfterInvestorSign] ✓ Updated room to accepted:', room.id);
         }
 
         // 2. Check if agreement already exists, otherwise generate
