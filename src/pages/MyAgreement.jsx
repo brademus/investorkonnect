@@ -65,12 +65,10 @@ export default function MyAgreement() {
         const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
         setAgreement(agRes?.data?.agreement || null);
 
-        // Auto-redirect if already signed and rooms created
+        // Auto-redirect if already signed - go to Pipeline
         if (agRes?.data?.agreement?.investor_signed_at) {
-          const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-          if (rooms.length > 0) {
-            navigate(`/Room?roomId=${rooms[0].id}`, { replace: true });
-          }
+          console.log('[MyAgreement] Already signed, redirecting to Pipeline');
+          navigate(createPageUrl('Pipeline'), { replace: true });
         }
       } catch (e) {
         toast.error('Failed to load agreement');
