@@ -7,7 +7,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
-  const { refresh, profile } = useCurrentProfile();
+  const { refresh, profile, loading } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
@@ -21,6 +21,11 @@ export default function BillingSuccess() {
       navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
   }, [profile, navigate]);
+
+  // Don't render anything for investors - just redirect
+  if (loading || profile?.user_role === 'investor') {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
