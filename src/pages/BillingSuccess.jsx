@@ -7,13 +7,20 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
-  const { refresh } = useCurrentProfile();
+  const { refresh, profile } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
     // Refresh profile to get updated subscription status
     refresh();
   }, [refresh]);
+
+  // Auto-redirect investors to identity verification immediately
+  useEffect(() => {
+    if (profile?.user_role === 'investor') {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+    }
+  }, [profile, navigate]);
 
   return (
     <div className="min-h-screen bg-black flex items-center justify-center px-4">
