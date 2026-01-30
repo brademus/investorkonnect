@@ -9,18 +9,18 @@ export default function BillingSuccess() {
   const navigate = useNavigate();
   const { refresh, profile, loading } = useCurrentProfile();
 
+  // Immediately redirect investors to identity verification
+  useEffect(() => {
+    if (profile?.user_role === 'investor') {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+    }
+  }, [profile, navigate]);
+
   useEffect(() => {
     document.title = "Success - Investor Konnect";
     // Refresh profile to get updated subscription status
     refresh();
   }, [refresh]);
-
-  // Auto-redirect investors to identity verification immediately
-  useEffect(() => {
-    if (!loading && profile?.user_role === 'investor') {
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
-    }
-  }, [loading, profile, navigate]);
 
   // Show nothing while loading or redirecting
   if (loading || profile?.user_role === 'investor') {
