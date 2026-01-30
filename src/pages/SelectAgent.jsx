@@ -33,13 +33,16 @@ export default function SelectAgent() {
   useEffect(() => {
     const loadAgents = async () => {
       if (!dealData?.state) {
+        console.log('[SelectAgent] No deal state found, staying in loading');
         setLoading(false);
         return;
       }
 
+      console.log('[SelectAgent] Loading agents for state:', dealData.state);
       setLoading(true);
       try {
         const allAgents = await base44.entities.Profile.filter({ user_role: "agent" });
+        console.log('[SelectAgent] Total agents found:', allAgents.length);
         
         // Filter agents that have this state in their markets
         const filteredAgents = allAgents.filter(agent => {
@@ -51,6 +54,7 @@ export default function SelectAgent() {
           );
         });
 
+        console.log('[SelectAgent] Filtered agents for', dealData.state, ':', filteredAgents.length);
         setAgents(filteredAgents);
         if (filteredAgents.length === 0) {
           toast.info("No agents available in this market yet");
@@ -62,7 +66,9 @@ export default function SelectAgent() {
       setLoading(false);
     };
 
-    loadAgents();
+    if (dealData) {
+      loadAgents();
+    }
   }, [dealData]);
 
   const toggleAgent = (agentId) => {
