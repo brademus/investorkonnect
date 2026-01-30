@@ -115,15 +115,22 @@ export default function IdentityVerification() {
         setStatus('success');
         toast.success('Identity verified successfully!');
         await refresh();
-        setTimeout(() => {
+        
+        // Check again after refresh - if verified, redirect immediately
+        const { data: finalCheck } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
+        if (finalCheck?.status === 'verified') {
           navigate(createPageUrl('NDA'), { replace: true });
-        }, 800);
+        } else {
+          setTimeout(() => {
+            navigate(createPageUrl('NDA'), { replace: true });
+          }, 800);
+        }
       } else {
         throw new Error('Verification not completed. Please try again.');
       }
 
     } catch (error) {
-      console.error('Verification error:', error);
+      console.error('[IdentityVerification] Verification error:', error);
       setStatus('error');
       toast.error(error?.message || 'Verification failed. Please try again.');
       setVerifying(false);
