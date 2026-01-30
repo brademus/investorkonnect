@@ -85,13 +85,13 @@ Deno.serve(async (req) => {
         // Check for existing room
         let room = existingRoomsByAgent.get(agentId);
         if (!room) {
-          // 1. Create Room for this agent
+          // 1. Create Room for this agent - set to 'accepted' so agent sees it immediately
           room = await base44.asServiceRole.entities.Room.create({
             deal_id: deal_id,
             investorId: profile.id,
             agentId: agentId,
-            request_status: 'requested',
-            agreement_status: 'draft',
+            request_status: 'accepted', // Auto-accept since investor already signed base agreement
+            agreement_status: 'investor_signed', // Investor already signed
             title: deal.title,
             property_address: deal.property_address,
             city: deal.city,
@@ -101,9 +101,18 @@ Deno.serve(async (req) => {
             budget: deal.purchase_price,
             closing_date: deal.key_dates?.closing_date,
             proposed_terms: deal.proposed_terms,
-            requested_at: new Date().toISOString()
+            requested_at: new Date().toISOString(),
+            accepted_at: new Date().toISOString() // Auto-accept
           });
-          console.log('[createInvitesAfterInvestorSign] Created room:', room.id, 'for agent:', agentId);
+          console.log('[createInvitesAfterInvestorSign] Created room with accepted status:', room.id, 'for agent:', agentId);
+        } else {
+          // Update existing room to accepted status
+          await base44.asServiceRole.entities.Room.update(room.id, {
+            request_status: 'accepted',
+            agreement_status: 'investor_signed',
+            accepted_at: new Date().toISOString()
+          });
+          console.log('[createInvitesAfterInvestorSign] Updated existing room to accepted:', room.id);
         }
 
         // 2. Check if agreement already exists, otherwise generate
@@ -141,11 +150,17 @@ Deno.serve(async (req) => {
           });
         }
         
-        // 4. Create DealInvite if not already exists
+        // 4. Create or update DealInvite
         let invite;
         if (existingInvite) {
+          // Update existing invite with new agreement
+          await base44.asServiceRole.entities.DealInvite.update(existingInvite.id, {
+            legal_agreement_id: agreement.id,
+            status: 'PENDING_AGENT_SIGNATURE',
+            room_id: room.id
+          });
           invite = existingInvite;
-          console.log('[createInvitesAfterInvestorSign] Invite already exists for agent:', agentId);
+          console.log('[createInvitesAfterInvestorSign] Updated existing invite for agent:', agentId);
         } else {
           invite = await base44.asServiceRole.entities.DealInvite.create({
             deal_id: deal_id,
