@@ -471,13 +471,13 @@ Deno.serve(async (req) => {
                     // Create invite for each agent
                     for (const agentId of selectedAgentIds) {
                       try {
-                        // 1. Create Room for this agent - auto-accept since investor signed
+                        // 1. Create Room for this agent - ACCEPTED status (investor already signed)
                         const room = await base44.asServiceRole.entities.Room.create({
                           deal_id: deal.id,
                           investorId: investorProfile.id,
                           agentId: agentId,
-                          request_status: 'accepted', // Auto-accept since investor already signed
-                          agreement_status: 'investor_signed', // Investor already signed
+                          request_status: 'accepted', // IMPORTANT: accepted, not requested
+                          agreement_status: 'investor_signed',
                           title: deal.title,
                           property_address: deal.property_address,
                           city: deal.city,
@@ -488,7 +488,7 @@ Deno.serve(async (req) => {
                           closing_date: deal.key_dates?.closing_date,
                           proposed_terms: deal.proposed_terms,
                           requested_at: new Date().toISOString(),
-                          accepted_at: new Date().toISOString() // Auto-accept
+                          accepted_at: new Date().toISOString()
                         });
                         
                         console.log('[DocuSign Webhook] Created room:', room.id, 'for agent:', agentId);

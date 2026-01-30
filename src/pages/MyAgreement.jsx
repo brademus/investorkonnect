@@ -140,41 +140,31 @@ export default function MyAgreement() {
       console.log('[MyAgreement] Creating invites after investor signature for', agentsToInvite.length, 'agents');
       
       // Call function to create DealInvites, rooms, and agreements for all selected agents
-      console.log('[MyAgreement] Calling createInvitesAfterInvestorSign with:', { deal_id: dealId, agents: agentsToInvite });
+      console.log('[MyAgreement] Calling createInvitesAfterInvestorSign');
       const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
         deal_id: dealId
       });
 
-      console.log('[MyAgreement] Response:', res);
+      console.log('[MyAgreement] Invite creation result:', res?.data);
 
-      if (!res.data) {
-        throw new Error('No response data from createInvitesAfterInvestorSign');
-      }
-
-      if (res.data.error) {
-        throw new Error(res.data.error);
-      }
-
-      if (res.data?.ok && res.data.invite_ids?.length > 0) {
+      if (res?.data?.ok && res.data.invite_ids?.length > 0) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
-        
-        // Invalidate React Query caches
-        try { sessionStorage.removeItem(`roomsCache_${profile?.id}`); } catch (_) {}
+
+        // Clear caches
         queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
-        
-        toast.success(`Agreement sent to ${res.data.invite_ids.length} agent(s)!`);
-        
-        // Server-fetch rooms fresh (not from cache)
-        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-        if (roomsForDeal?.length > 0) {
-          navigate(`/Room?roomId=${roomsForDeal[0].id}`, { replace: true });
-        } else {
-          navigate(createPageUrl('Pipeline'), { replace: true });
-        }
+        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+
+        toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
+
+        // Wait brief moment for DB to propagate
+        await new Promise(r => setTimeout(r, 500));
+
+        // Navigate to Pipeline to see the deal
+        navigate(createPageUrl('Pipeline'), { replace: true });
       } else {
-        throw new Error(res.data?.error || 'Failed to create invites');
+        console.error('[MyAgreement] Failed:', res?.data);
+        toast.error('Failed to send deal to agents. Please try again.');
       }
     } catch (e) {
       console.error('Failed to create invites:', e);
