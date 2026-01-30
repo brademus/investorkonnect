@@ -34,9 +34,13 @@ export default function IdentityVerification() {
   useEffect(() => {
     if (!loading && profile && onboarded && !kycVerified && status === 'pending' && !verifying) {
       console.log('[IdentityVerification] Auto-starting verification flow');
-      handleStartVerification();
+      // Small delay to ensure UI is ready
+      const timer = setTimeout(() => {
+        handleStartVerification();
+      }, 100);
+      return () => clearTimeout(timer);
     }
-  }, [loading, profile, onboarded, kycVerified, status, verifying]);
+  }, [loading, profile, onboarded, kycVerified]);
 
   // Redirect incomplete users back to proper step
   useEffect(() => {
