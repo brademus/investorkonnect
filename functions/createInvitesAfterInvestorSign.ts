@@ -39,7 +39,11 @@ Deno.serve(async (req) => {
     
     // Get selected agent IDs
     const selectedAgentIds = deal.metadata?.selected_agent_ids || [];
+    console.log('[createInvitesAfterInvestorSign] Deal metadata:', deal.metadata);
+    console.log('[createInvitesAfterInvestorSign] Selected agent IDs:', selectedAgentIds);
+    
     if (selectedAgentIds.length === 0) {
+      console.error('[createInvitesAfterInvestorSign] No agents selected for deal:', deal_id);
       return Response.json({ error: 'No agents selected for this deal' }, { status: 400 });
     }
     

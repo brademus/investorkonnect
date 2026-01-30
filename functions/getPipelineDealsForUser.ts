@@ -40,7 +40,10 @@ Deno.serve(async (req) => {
     let agentRooms = [];
     
     if (isInvestor) {
-      // Investors: show deals they have rooms for OR deals they've signed agreements for
+      // Investors: show ALL their deals (they created them) + deals they have rooms for OR signed agreements
+      const ownedDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      console.log('[getPipelineDealsForUser] Investor owned deals:', ownedDeals.length);
+      
       let investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
       const roomDealIds = Array.from(new Set(investorRooms.map(r => r.deal_id).filter(Boolean)));
       
@@ -61,7 +64,7 @@ Deno.serve(async (req) => {
       
       // Merge and deduplicate by ID (keep most recently updated)
       const dealMap = new Map();
-      [...byRooms.filter(Boolean), ...bySigned.filter(Boolean)].forEach(d => {
+      [...ownedDeals, ...byRooms.filter(Boolean), ...bySigned.filter(Boolean)].forEach(d => {
         if (!d?.id) return;
         const existing = dealMap.get(d.id);
         if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
@@ -69,7 +72,7 @@ Deno.serve(async (req) => {
         }
       });
       deals = Array.from(dealMap.values());
-      console.log('[getPipelineDealsForUser] Investor deals via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
+      console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see deals they're assigned to OR deals where they have a room
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });

@@ -126,11 +126,14 @@ export default function MyAgreement() {
           agentsToInvite = JSON.parse(storedAgents);
         }
       }
-      
-      // If no agents selected, just show success but don't create invites
+
+      console.log('[MyAgreement] Agents to invite:', agentsToInvite);
+      console.log('[MyAgreement] Deal metadata:', freshDeal?.metadata || deal?.metadata);
+
+      // If no agents selected, show error
       if (agentsToInvite.length === 0) {
-        toast.info('Agreement signed. Go to Pipeline to select agents.');
-        navigate(createPageUrl('Pipeline'), { replace: true });
+        console.error('[MyAgreement] No agents found after signing');
+        toast.error('No agents selected. Please go back and select agents.');
         return;
       }
       
@@ -143,6 +146,15 @@ export default function MyAgreement() {
       });
 
       console.log('[MyAgreement] Response:', res);
+
+      if (!res.data) {
+        throw new Error('No response data from createInvitesAfterInvestorSign');
+      }
+
+      if (res.data.error) {
+        throw new Error(res.data.error);
+      }
+
       if (res.data?.ok && res.data.invite_ids?.length > 0) {
         sessionStorage.removeItem("pendingDealId");
         sessionStorage.removeItem("selectedAgentIds");
