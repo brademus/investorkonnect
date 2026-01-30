@@ -42,6 +42,17 @@ export default function MyAgreement() {
         
         setSelectedAgentIds(agentIds);
 
+        // CRITICAL: Ensure deal metadata has selected_agent_ids before signing
+        if (agentIds.length > 0 && !loadedDeal?.metadata?.selected_agent_ids) {
+          console.log('[MyAgreement] Updating deal metadata with agent IDs:', agentIds);
+          await base44.entities.Deal.update(dealId, {
+            metadata: {
+              ...loadedDeal?.metadata,
+              selected_agent_ids: agentIds
+            }
+          });
+        }
+
         // Load agent profiles
         if (agentIds.length > 0) {
           const agentPromises = agentIds.map(id => 
