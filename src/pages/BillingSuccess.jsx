@@ -17,14 +17,18 @@ export default function BillingSuccess() {
 
   // Auto-redirect investors to identity verification immediately
   useEffect(() => {
-    if (profile?.user_role === 'investor') {
+    if (!loading && profile?.user_role === 'investor') {
       navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
-  }, [profile, navigate]);
+  }, [loading, profile, navigate]);
 
-  // Don't render anything for investors - just redirect
+  // Show nothing while loading or redirecting
   if (loading || profile?.user_role === 'investor') {
-    return null;
+    return (
+      <div className="min-h-screen bg-transparent flex items-center justify-center">
+        <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   return (
