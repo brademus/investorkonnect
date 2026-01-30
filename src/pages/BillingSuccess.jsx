@@ -9,21 +9,23 @@ export default function BillingSuccess() {
   const navigate = useNavigate();
   const { refresh, profile, loading } = useCurrentProfile();
 
-  // Immediately redirect investors to identity verification
-  useEffect(() => {
-    if (profile?.user_role === 'investor') {
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
-    }
-  }, [profile, navigate]);
-
   useEffect(() => {
     document.title = "Success - Investor Konnect";
-    // Refresh profile to get updated subscription status
     refresh();
   }, [refresh]);
 
-  // Show nothing while loading or redirecting
-  if (loading || profile?.user_role === 'investor') {
+  // Redirect investors immediately once profile loads
+  useEffect(() => {
+    if (!loading && profile) {
+      if (profile.user_role === 'investor') {
+        console.log('[BillingSuccess] Redirecting investor to IdentityVerification');
+        navigate(createPageUrl("IdentityVerification"), { replace: true });
+      }
+    }
+  }, [loading, profile, navigate]);
+
+  // Show loading while waiting for profile or during redirect
+  if (loading || (profile?.user_role === 'investor')) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
