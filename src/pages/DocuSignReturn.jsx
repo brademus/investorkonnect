@@ -25,6 +25,22 @@ export default function DocuSignReturn() {
           setMessage("Signature completed! Redirecting...");
           setStatus("success");
 
+          // If investor just signed (no roomId means base agreement), trigger invite creation
+          if (dealId && !roomId) {
+            try {
+              console.log('[DocuSignReturn] Investor signed, creating invites for deal:', dealId);
+              const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: dealId });
+              console.log('[DocuSignReturn] Invite creation response:', res.data);
+              
+              if (res.data?.ok) {
+                toast.success(`Agreement sent to ${res.data.invite_ids?.length || 0} agent(s)!`);
+              }
+            } catch (e) {
+              console.error('[DocuSignReturn] Failed to create invites:', e);
+              toast.error('Signed but failed to send to agents');
+            }
+          }
+
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
