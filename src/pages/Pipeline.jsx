@@ -440,7 +440,7 @@ function PipelineContent() {
       if (event.type === 'create' || event.type === 'update') {
         const ag = event?.data;
         console.log('[Pipeline] Agreement event:', event.type, ag?.status);
-        if (ag?.investor_signed_at || ag?.status === 'investor_signed' || ag?.agent_user_id === user.id) {
+        if (ag?.investor_signed_at || ag?.status === 'investor_signed') {
           console.log('[Pipeline] Agreement update relevant to agent, refreshing...');
           try {
             queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
@@ -471,7 +471,7 @@ function PipelineContent() {
       try { unsubAgreement && unsubAgreement(); } catch (_) {}
       try { unsubInvite && unsubInvite(); } catch (_) {}
     };
-  }, [profile?.id, profile?.user_role, isAgent, user?.id, queryClient, refetchDeals, refetchRooms]);
+  }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
 
   // Real-time: refresh deals when new ones are created or updated
   useEffect(() => {
