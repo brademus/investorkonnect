@@ -24,7 +24,9 @@ export default function IdentityVerification() {
   // Redirect if already verified
   useEffect(() => {
     if (!loading && kycVerified) {
+      console.log('[IdentityVerification] Already verified, redirecting to NDA');
       navigate(createPageUrl("NDA"), { replace: true });
+      return;
     }
   }, [loading, kycVerified, navigate]);
 
