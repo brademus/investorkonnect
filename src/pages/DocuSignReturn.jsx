@@ -29,7 +29,15 @@ export default function DocuSignReturn() {
           if (dealId && !roomId) {
             try {
               console.log('[DocuSignReturn] Investor signed, creating invites for deal:', dealId);
-              const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: dealId });
+              
+              // Get selected agent IDs from sessionStorage (more reliable than deal metadata)
+              const storedAgentIds = sessionStorage.getItem("selectedAgentIds");
+              const agentIds = storedAgentIds ? JSON.parse(storedAgentIds) : null;
+              
+              const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
+                deal_id: dealId,
+                selected_agent_ids: agentIds // Pass directly to avoid race condition
+              });
               console.log('[DocuSignReturn] Invite creation response:', res.data);
               
               if (res.data?.ok) {
