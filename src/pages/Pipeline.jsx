@@ -252,7 +252,7 @@ function PipelineContent() {
   // 2. Load Active Deals via Server-Side Access Control
     const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
       queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-      staleTime: 30_000, // Refresh every 30 seconds
+      staleTime: isAgent ? 10_000 : 30_000, // Agents refresh more frequently (10s vs 30s)
       gcTime: 30 * 60_000,
      initialData: () => {
        try {
@@ -423,27 +423,25 @@ function PipelineContent() {
     const unsubRoom = base44.entities.Room.subscribe((event) => {
       const r = event?.data;
       if (!r || r.agentId !== profile.id) return;
+      console.log('[Pipeline] Room event for agent:', event.type, r.id, r.request_status, r.agreement_status);
+      // Refresh on ANY room change for this agent
       if (event.type === 'create' || event.type === 'update') {
-        console.log('[Pipeline] Room changed for agent:', event.type, r.request_status, r.agreement_status);
-        const st = r.agreement_status;
-        const rs = r.request_status;
-        if (st === 'investor_signed' || st === 'agent_signed' || st === 'fully_signed' || rs === 'signed' || rs === 'accepted' || rs === 'requested') {
-          try { 
-            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
-            queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
-            refetchDeals();
-            refetchRooms();
-          } catch (_) {}
-        }
+        try { 
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+          queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
+          refetchDeals();
+          refetchRooms();
+        } catch (_) {}
       }
     });
     
-    // Also subscribe to LegalAgreement changes to catch investor signatures
+    // Also subscribe to LegalAgreement and DealInvite changes
     const unsubAgreement = base44.entities.LegalAgreement.subscribe((event) => {
       if (event.type === 'create' || event.type === 'update') {
         const ag = event?.data;
-        if (ag?.investor_signed_at || ag?.status === 'investor_signed') {
-          console.log('[Pipeline] Agreement signed by investor, refreshing...');
+        console.log('[Pipeline] Agreement event:', event.type, ag?.status);
+        if (ag?.investor_signed_at || ag?.status === 'investor_signed' || ag?.agent_user_id === user.id) {
+          console.log('[Pipeline] Agreement update relevant to agent, refreshing...');
           try {
             queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
             queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
@@ -454,11 +452,26 @@ function PipelineContent() {
       }
     });
     
+    const unsubInvite = base44.entities.DealInvite.subscribe((event) => {
+      const invite = event?.data;
+      if (!invite || invite.agent_profile_id !== profile.id) return;
+      console.log('[Pipeline] DealInvite event for agent:', event.type, invite.status);
+      if (event.type === 'create' || event.type === 'update') {
+        try {
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
+          queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
+          refetchDeals();
+          refetchRooms();
+        } catch (_) {}
+      }
+    });
+    
     return () => { 
       try { unsubRoom && unsubRoom(); } catch (_) {} 
       try { unsubAgreement && unsubAgreement(); } catch (_) {}
+      try { unsubInvite && unsubInvite(); } catch (_) {}
     };
-  }, [profile?.id, profile?.user_role, isAgent, queryClient, refetchDeals, refetchRooms]);
+  }, [profile?.id, profile?.user_role, isAgent, user?.id, queryClient, refetchDeals, refetchRooms]);
 
   // Real-time: refresh deals when new ones are created or updated
   useEffect(() => {
@@ -659,15 +672,11 @@ function PipelineContent() {
         return false;
       }
       
-      // Exclude expired rooms
-      if (d.agent_request_status === 'expired') return false;
+      // Exclude only rejected and voided rooms
+      if (d.agent_request_status === 'rejected' || d.agent_request_status === 'voided') return false;
       
-      // Show deals with active room request or fully signed
-      return d.agent_request_status === 'requested' || 
-             d.agent_request_status === 'accepted' || 
-             d.agent_request_status === 'signed' || 
-             d.agent_request_status === 'locked' ||
-             d.is_fully_signed === true;
+      // Show ALL other deals (requested, accepted, signed, locked, expired, or null)
+      return true;
     });
   }, [dealsData, rooms, appointments, profile?.id, isAgent]);
 

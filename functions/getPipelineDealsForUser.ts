@@ -74,16 +74,29 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see deals they're assigned to OR deals where they have a room
-      const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
+      // Agents see ALL deals where they have a room (regardless of request_status)
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      console.log('[getPipelineDealsForUser] Agent rooms:', agentRooms.length);
+      
+      // Also check DealInvites for this agent
+      const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({ 
+        agent_profile_id: profile.id 
+      });
+      console.log('[getPipelineDealsForUser] Agent invites:', agentInvites.length);
+      
       const roomDealIds = agentRooms.map(r => r.deal_id).filter(Boolean);
+      const inviteDealIds = agentInvites.map(i => i.deal_id).filter(Boolean);
+      
+      // Also get deals where agent is directly assigned
+      const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
       
       console.log('[getPipelineDealsForUser] Agent data:', {
         agentDeals: agentDeals.length,
         agentRooms: agentRooms.length,
+        agentInvites: agentInvites.length,
         roomDealIds: roomDealIds,
-        rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status }))
+        inviteDealIds: inviteDealIds,
+        rooms: agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, request_status: r.request_status, agreement_status: r.agreement_status }))
       });
       
       // Merge deals from both sources + fallback by created_by
@@ -95,6 +108,7 @@ Deno.serve(async (req) => {
       const allDealIds = new Set([
         ...agentDeals.map(d => d.id),
         ...roomDealIds,
+        ...inviteDealIds,
         ...byCreator.map(d => d.id)
       ]);
       
