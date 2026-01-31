@@ -238,6 +238,9 @@ export default function MyAgreement() {
           onCounterUpdate={(updatedDeal) => {
             if (updatedDeal) setDeal(updatedDeal);
           }}
+          onRoomUpdate={(updatedRoom) => {
+            if (updatedRoom) setRoom(updatedRoom);
+          }}
         />
 
         {/* Deal Summary */}
