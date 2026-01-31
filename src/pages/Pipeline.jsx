@@ -688,34 +688,20 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Check if deal is active and has rooms
+    // INVESTOR: Navigate to rooms or agreement page
     if (isInvestor) {
       try {
         const roomsForDeal = await base44.entities.Room.filter({ deal_id: deal.deal_id });
         if (roomsForDeal?.length > 0) {
-          // Rooms exist—navigate directly to room
           navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`);
           return;
         }
-        
-        // Check agreement status
-        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: deal.deal_id });
-        const agreement = agRes?.data?.agreement;
-        
-        // If not signed yet, go to MyAgreement
-        if (!agreement?.investor_signed_at) {
-          navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
-          return;
-        }
-        
-        // If signed but no rooms, invites may still be processing
-        toast.info('Processing your deal, please wait...');
-        setTimeout(() => refetchRooms(), 1500);
-        return;
       } catch (e) {
         console.error('[Pipeline] Failed to fetch rooms:', e);
-        toast.error('Failed to load deal details');
       }
+
+      // No rooms found - go to MyAgreement (it will handle signing or showing existing signature)
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
 
