@@ -66,13 +66,14 @@ export default function MyAgreement() {
         const loadedAgreement = agRes?.data?.agreement || null;
         setAgreement(loadedAgreement);
 
-        // If investor already signed, redirect to Pipeline immediately
-        if (loadedAgreement?.investor_signed_at) {
-          console.log('[MyAgreement] Investor already signed, redirecting to Pipeline');
-          toast.info('You already signed this agreement');
-          setTimeout(() => {
-            navigate(createPageUrl('Pipeline'), { replace: true });
-          }, 1000);
+        // If investor already signed AND invites created, redirect to rooms
+        if (loadedAgreement?.investor_signed_at && loadedDeal?.status === 'active') {
+          console.log('[MyAgreement] Investor already signed and deal is active, checking for rooms');
+          const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+          if (roomsForDeal?.length > 0) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
+            return;
+          }
         }
       } catch (e) {
         toast.error('Failed to load agreement');

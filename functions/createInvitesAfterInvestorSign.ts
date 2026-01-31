@@ -202,21 +202,29 @@ Deno.serve(async (req) => {
     
     // CRITICAL: Only mark deal active if at least 1 invite was successfully created
     if (createdInvites.length === 0) {
-     console.log('[createInvitesAfterInvestorSign] No invites were created successfully');
+     console.error('[createInvitesAfterInvestorSign] ERROR: No invites were created successfully');
+     console.error('[createInvitesAfterInvestorSign] Selected agent IDs were:', selectedAgentIds);
+     console.error('[createInvitesAfterInvestorSign] Deal metadata:', deal.metadata);
      return Response.json({ 
        ok: false,
-       error: 'No invites/rooms created. Deal remains pending.',
-       invite_ids: []
-     }, { status: 400 });
+       error: 'Failed to create invites for agents. Please contact support.',
+       invite_ids: [],
+       debug: {
+         selected_agents: selectedAgentIds,
+         deal_metadata: deal.metadata
+       }
+     }, { status: 500 });
     }
 
-    // Update deal status only if we have created at least 1 invite
+    // Update deal status and pipeline stage
     await base44.asServiceRole.entities.Deal.update(deal_id, {
      status: 'active',
+     pipeline_stage: 'new_deals',
      metadata: {
        ...deal.metadata,
        pending_agreement_generation: false,
-       invites_created_at: new Date().toISOString()
+       invites_created_at: new Date().toISOString(),
+       rooms_created: true
      }
     });
 

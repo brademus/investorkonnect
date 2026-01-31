@@ -28,50 +28,27 @@ export default function DocuSignReturn() {
           // If investor just signed (no roomId means base agreement), trigger invite creation
           if (dealId && !roomId) {
             try {
-              console.log('[DocuSignReturn] Investor signed, creating invites for deal:', dealId);
-              
-              // Try multiple sources for selected agent IDs
-              let agentIds = null;
-              
-              // 1. Try deal-specific sessionStorage key
-              const storedDealSpecific = sessionStorage.getItem(`selectedAgentIds_${dealId}`);
-              if (storedDealSpecific) {
-                agentIds = JSON.parse(storedDealSpecific);
-              }
-              
-              // 2. Fallback to generic key
-              if (!agentIds || agentIds.length === 0) {
-                const storedGeneric = sessionStorage.getItem("selectedAgentIds");
-                if (storedGeneric) {
-                  agentIds = JSON.parse(storedGeneric);
-                }
-              }
-              
-              // 3. Fallback to deal metadata
-              if (!agentIds || agentIds.length === 0) {
-                const deal = await base44.entities.Deal.filter({ id: dealId });
-                agentIds = deal[0]?.metadata?.selected_agent_ids || [];
-              }
-              
-              console.log('[DocuSignReturn] Selected agent IDs:', agentIds);
-              
-              if (!agentIds || agentIds.length === 0) {
-                throw new Error('No agents selected for this deal');
-              }
+              console.log('[DocuSignReturn] Investor signed base agreement, creating invites for deal:', dealId);
               
               const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
                 deal_id: dealId
               });
+              
               console.log('[DocuSignReturn] Invite creation response:', res.data);
               
-              if (res.data?.ok) {
-                toast.success(`Agreement sent to ${res.data.invite_ids?.length || 0} agent(s)!`);
-              } else if (res.data?.error) {
-                throw new Error(res.data.error);
+              if (res.data?.ok && res.data.invite_ids?.length > 0) {
+                toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
+                // Clear session storage
+                sessionStorage.removeItem('selectedAgentIds');
+                sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+                sessionStorage.removeItem('pendingDealId');
+              } else {
+                console.error('[DocuSignReturn] Invite creation failed:', res.data);
+                toast.error(res.data?.error || 'Failed to send deal to agents');
               }
             } catch (e) {
-              console.error('[DocuSignReturn] Failed to create invites:', e);
-              toast.error(e?.message || 'Signed but failed to send to agents');
+              console.error('[DocuSignReturn] Exception creating invites:', e);
+              toast.error(e?.response?.data?.error || e?.message || 'Failed to send deal to agents');
             }
           }
 
