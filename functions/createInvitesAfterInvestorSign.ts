@@ -35,8 +35,16 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
-    // Verify this is the investor's deal
-    if (deal.investor_id !== profile.id) {
+    // Verify this is the investor's deal or the user is an admin
+    const isAdmin = user.role === 'admin' || profile.role === 'admin';
+    if (deal.investor_id !== profile.id && !isAdmin) {
+      console.error('[createInvitesAfterInvestorSign] Auth check failed:', {
+        deal_investor_id: deal.investor_id,
+        profile_id: profile.id,
+        user_id: user.id,
+        user_role: user.role,
+        profile_role: profile.role
+      });
       return Response.json({ error: 'Not authorized' }, { status: 403 });
     }
     
