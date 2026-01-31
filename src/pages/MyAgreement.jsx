@@ -106,6 +106,30 @@ export default function MyAgreement() {
     return () => unsub?.();
   }, [dealId]);
 
+  // Subscribe to real-time counter offer updates
+  useEffect(() => {
+    if (!room?.id) return;
+
+    const unsub = base44.entities.CounterOffer.subscribe((event) => {
+      const counter = event?.data;
+      if (!counter || counter.room_id !== room.id) return;
+
+      if (event.type === 'create' || event.type === 'update') {
+        setPendingCounters(prev => {
+          const exists = prev.find(c => c.id === counter.id);
+          if (exists) {
+            return prev.map(c => c.id === counter.id ? counter : c);
+          }
+          return [...prev, counter];
+        });
+      } else if (event.type === 'delete') {
+        setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+      }
+    });
+
+    return () => unsub?.();
+  }, [room?.id]);
+
   if (loadingProfile || loading || !deal) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
