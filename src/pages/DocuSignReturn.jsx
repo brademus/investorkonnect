@@ -28,8 +28,13 @@ export default function DocuSignReturn() {
           // If investor just signed (no roomId means base agreement), trigger invite creation
           if (dealId && !roomId) {
             try {
-              console.log('[DocuSignReturn] Investor signed base agreement, creating invites for deal:', dealId);
+              console.log('[DocuSignReturn] Investor signed base agreement, syncing and creating invites for deal:', dealId);
               
+              // CRITICAL: Sync DocuSign envelope first to ensure investor_signed_at is set
+              await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
+              console.log('[DocuSignReturn] DocuSign envelope synced');
+              
+              // Now create invites for all selected agents
               const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
                 deal_id: dealId
               });
