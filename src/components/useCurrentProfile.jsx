@@ -75,7 +75,9 @@ export function useCurrentProfile() {
             try {
               await base44.entities.Profile.update(profile.id, { user_id: user.id });
               profile.user_id = user.id;
-            } catch (e) {}
+            } catch (e) {
+              console.error('[useCurrentProfile] Failed to update user_id:', e);
+            }
           }
         }
 
