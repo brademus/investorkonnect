@@ -444,14 +444,10 @@ export default function Room() {
           deal?.is_fully_signed
         ]);
 
-        // Chat unlocks: request accepted OR fully signed together
+        // Chat unlocks ONLY when both parties have fully signed
         const isChatEnabled = useMemo(() => {
-          return (
-            isWorkingTogether ||
-            currentRoom?.request_status === 'accepted' ||
-            currentRoom?.request_status === 'signed'
-          );
-        }, [isWorkingTogether, currentRoom?.request_status]);
+          return isWorkingTogether;
+        }, [isWorkingTogether]);
 
         // Treat unknown role as agent for privacy until profile loads
         const isAgentView = (profile?.user_role === 'agent') || !profile;
@@ -1149,7 +1145,7 @@ export default function Room() {
     const t = text.trim();
     if (!t || !roomId || sending) return;
     if (!isChatEnabled) {
-      toast.error('Chat unlocks after the request is accepted.');
+      toast.error('Chat unlocks after both parties sign the agreement.');
       return;
     }
     // Client-side throttle: 1.5s between sends
