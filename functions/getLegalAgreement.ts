@@ -57,7 +57,30 @@ Deno.serve(async (req) => {
       return Response.json({ agreement: null });
     }
     
-    const agreement = agreements[0];
+    // CRITICAL: If multiple agreements exist, find the CURRENT one (not superseded)
+    let agreement = agreements[0];
+    if (agreements.length > 1) {
+      console.log('[getLegalAgreement] Multiple agreements found - checking for supersedes');
+      
+      // Find which agreements are superseded by others in this set
+      const supersedingIds = new Set();
+      for (const agr of agreements) {
+        if (agr.supersedes_agreement_id) {
+          supersedingIds.add(agr.supersedes_agreement_id);
+          console.log(`[getLegalAgreement] Agreement ${agr.id} supersedes ${agr.supersedes_agreement_id}`);
+        }
+      }
+      
+      // Prefer the one that's NOT superseded by any other
+      const current = agreements.find(a => !supersedingIds.has(a.id));
+      if (current) {
+        agreement = current;
+        console.log(`[getLegalAgreement] Selected current agreement (not superseded): ${agreement.id}`);
+      } else {
+        console.log('[getLegalAgreement] No clear current - using first by creation order');
+        agreement = agreements[0];
+      }
+    }
     
     console.log('[getLegalAgreement] Agreement found:', {
       id: agreement.id,
