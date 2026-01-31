@@ -87,8 +87,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const isAgent = profile?.user_role === 'agent';
   
   // CRITICAL: Check BOTH agreement and room for signed status (room updated faster after DocuSign)
-  const investorSigned = !!localAgreement?.investor_signed_at || localRoom?.agreement_status === 'investor_signed' || localRoom?.agreement_status === 'fully_signed';
-  const agentSigned = !!localAgreement?.agent_signed_at || localRoom?.agreement_status === 'agent_signed' || localRoom?.agreement_status === 'fully_signed';
+  // IMPORTANT: Only trust investor_signed if status is NOT 'draft' or 'sent' (fresh agreements shouldn't be marked signed)
+  const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent') 
+    || (localRoom?.agreement_status === 'investor_signed' && localRoom?.agreement_status !== 'draft')
+    || localRoom?.agreement_status === 'fully_signed';
+  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent')
+    || (localRoom?.agreement_status === 'agent_signed' && localRoom?.agreement_status !== 'draft')
+    || localRoom?.agreement_status === 'fully_signed';
   const fullySigned = investorSigned && agentSigned;
 
   // Check BOTH agreement and pass-in flag for regenerate requirement
