@@ -370,8 +370,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                           }
                                           if (res.data?.agreement) {
                                             setLocalAgreement(res.data.agreement);
+                                            // If regeneration returned a signing URL, redirect immediately
+                                            if (res.data?.signing_url) {
+                                              toast.success('Redirecting to DocuSign...');
+                                              setTimeout(() => window.location.assign(res.data.signing_url), 300);
+                                              return;
+                                            }
+                                            // Otherwise, create signing session
                                             toast.success('Agreement ready, redirecting to sign...');
-                                            // Wait for state to settle, then initiate signing
                                             setTimeout(async () => {
                                               try {
                                                 if (!res.data.agreement?.id) {
