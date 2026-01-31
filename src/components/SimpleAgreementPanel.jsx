@@ -371,15 +371,40 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                           if (res.data?.agreement) {
                                             setLocalAgreement(res.data.agreement);
                                             toast.success('Agreement ready, redirecting to sign...');
-                                            // Auto-sign immediately after regeneration
-                                            setTimeout(() => handleSign('investor'), 500);
+                                            // Wait for state to settle, then initiate signing
+                                            setTimeout(async () => {
+                                              try {
+                                                if (!res.data.agreement?.id) {
+                                                  toast.error('Agreement ID missing');
+                                                  setBusy(false);
+                                                  return;
+                                                }
+                                                const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
+                                                  agreement_id: res.data.agreement.id,
+                                                  role: 'investor',
+                                                  room_id: roomId,
+                                                  redirect_url: window.location.href + '&signed=1'
+                                                });
+                                                if (signRes.data?.signing_url) {
+                                                  window.location.assign(signRes.data.signing_url);
+                                                } else {
+                                                  toast.error(signRes.data?.error || 'Failed to get signing URL');
+                                                  setBusy(false);
+                                                }
+                                              } catch (e) {
+                                                console.error('[SimpleAgreementPanel] Signing after regenerate error:', e);
+                                                toast.error(e?.message || 'Failed to start signing');
+                                                setBusy(false);
+                                              }
+                                            }, 800);
                                             return;
                                           }
                                         } catch (e) {
                                           toast.dismiss('regen');
-                                          toast.error(e?.message || 'Failed to regenerate');
+                                          console.error('[SimpleAgreementPanel] Regenerate error:', e);
+                                          toast.error(e?.response?.data?.error || e?.message || 'Failed to regenerate');
+                                          setBusy(false);
                                         }
-                                        setBusy(false);
                                       }}
                                       disabled={busy}
                                       className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
