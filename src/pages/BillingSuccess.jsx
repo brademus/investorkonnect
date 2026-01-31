@@ -14,53 +14,18 @@ export default function BillingSuccess() {
     refresh();
   }, [refresh]);
 
-  // Redirect investors immediately once profile loads
+  // Auto-redirect to Identity Verification
   useEffect(() => {
     if (!loading && profile) {
-      if (profile.user_role === 'investor') {
-        console.log('[BillingSuccess] Redirecting investor to IdentityVerification');
-        navigate(createPageUrl("IdentityVerification"), { replace: true });
-      }
+      console.log('[BillingSuccess] Auto-redirecting to IdentityVerification');
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
   }, [loading, profile, navigate]);
 
-  // Show loading while waiting for profile or during redirect
-  if (loading || (profile?.user_role === 'investor')) {
-    return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
+  // Always show loading while redirecting
   return (
-    <div className="min-h-screen bg-black flex items-center justify-center px-4">
-      <div className="max-w-md w-full text-center">
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-3xl p-12 shadow-2xl">
-          <div className="w-20 h-20 bg-[#10B981]/20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-12 h-12 text-[#10B981]" />
-          </div>
-          
-          <h1 className="text-3xl font-bold text-[#E3C567] mb-4">
-            You're All Set!
-          </h1>
-          
-          <p className="text-[#808080] mb-8">
-            Your subscription is now active. Welcome to Investor Konnect!
-          </p>
-
-          <Button
-            onClick={() => {
-              console.log('Navigating to IdentityVerification');
-              navigate(createPageUrl("IdentityVerification"), { replace: true });
-            }}
-            className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold rounded-full h-12"
-          >
-            Continue to Identity Verification
-            <ArrowRight className="w-4 h-4 ml-2" />
-          </Button>
-        </div>
-      </div>
+    <div className="min-h-screen bg-transparent flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }
