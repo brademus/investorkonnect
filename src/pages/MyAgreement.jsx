@@ -238,29 +238,29 @@ export default function MyAgreement() {
         />
 
         {/* Deal Summary */}
-        {deal && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
-            <h2 className="text-lg font-bold text-[#E3C567] mb-4">Deal Summary</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-[#808080]">Property</p>
-                <p className="text-[#FAFAFA] font-semibold">{deal.city}, {deal.state}</p>
-              </div>
-              <div>
-                <p className="text-[#808080]">Price</p>
-                <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || 0).toLocaleString()}</p>
-              </div>
-              <div className="col-span-2">
-                <p className="text-[#808080]">Buyer Commission</p>
-                <p className="text-[#FAFAFA] font-semibold">
-                  {deal.proposed_terms?.buyer_commission_type === 'percentage'
-                    ? `${deal.proposed_terms?.buyer_commission_percentage}%`
-                    : `$${(deal.proposed_terms?.buyer_flat_fee || 0).toLocaleString()}`}
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+         {deal && (
+           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
+             <h2 className="text-lg font-bold text-[#E3C567] mb-4">Deal Summary</h2>
+             <div className="grid grid-cols-2 gap-4 text-sm">
+               <div>
+                 <p className="text-[#808080]">Property</p>
+                 <p className="text-[#FAFAFA] font-semibold">{deal.city}, {deal.state}</p>
+               </div>
+               <div>
+                 <p className="text-[#808080]">Price</p>
+                 <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || 0).toLocaleString()}</p>
+               </div>
+               <div className="col-span-2">
+                 <p className="text-[#808080]">Buyer Commission</p>
+                 <p className="text-[#FAFAFA] font-semibold">
+                   {(room?.proposed_terms || deal.proposed_terms)?.buyer_commission_type === 'percentage'
+                     ? `${(room?.proposed_terms || deal.proposed_terms)?.buyer_commission_percentage}%`
+                     : `$${((room?.proposed_terms || deal.proposed_terms)?.buyer_flat_fee || 0).toLocaleString()}`}
+                 </p>
+               </div>
+             </div>
+           </div>
+         )}
       </div>
     </div>
   );
