@@ -235,6 +235,9 @@ export default function MyAgreement() {
           pendingCounters={pendingCounters}
           setPendingCounters={setPendingCounters}
           onInvestorSigned={handlePostSigningNavigation}
+          onCounterUpdate={(updatedDeal) => {
+            if (updatedDeal) setDeal(updatedDeal);
+          }}
         />
 
         {/* Deal Summary */}
