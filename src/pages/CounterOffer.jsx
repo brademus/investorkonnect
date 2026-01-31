@@ -93,7 +93,7 @@ export default function CounterOfferPage() {
     setBusy(true);
     try {
       const counterTerms = {
-        buyer_commission_type: commissionType,
+        buyer_commission_type: commissionType === 'flat_fee' ? 'flat' : 'percentage',
         buyer_commission_percentage: commissionType === 'percentage' ? parseFloat(commissionAmount) : null,
         buyer_flat_fee: commissionType === 'flat_fee' ? parseFloat(commissionAmount) : null,
       };
