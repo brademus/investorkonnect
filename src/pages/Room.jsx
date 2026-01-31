@@ -1258,14 +1258,15 @@ export default function Room() {
         const did = normId(r.deal_id);
         if (!did) return;
 
-        // PHASE 7: Exclude expired rooms
-        if (r.request_status === 'expired') return;
-
-        // PHASE 7: For agents, exclude rooms where deal is locked to a different agent
-        if (isAgent && r.deal_summary?.locked_agent_id && r.deal_summary.locked_agent_id !== myId) {
-          console.log('[Room] Filtering out room - deal locked to different agent:', r.id);
+        // CRITICAL: For agents, filter out ANY deal that has a locked room (regardless of agent ID)
+        // Once a deal locks, only that specific agent should see their winning room
+        if (isAgent && r.request_status === 'locked' && r.agentId !== myId) {
+          console.log('[Room] Filtering out locked room - not for this agent:', r.id);
           return;
         }
+
+        // CRITICAL: Exclude expired rooms completely
+        if (r.request_status === 'expired') return;
 
         // Role-specific visibility
         if (isAgent) {
