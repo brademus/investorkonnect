@@ -431,7 +431,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {investorSigned && requiresRegenerate && (
+                  {investorSigned && (requiresRegenerate || pendingCounters.some(c => c.status === 'accepted')) && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
                     </div>
