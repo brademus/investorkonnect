@@ -88,12 +88,15 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Deal-level current agreement:', currentAgreement?.id);
     }
 
-    // Skip voiding old agreement here - only void AFTER investor signs the new one
-    // This ensures other agents can still sign the old agreement while investor regenerates
-    // The DocuSignReturn function will handle superseding the old agreement after investor signs
-    if (currentAgreement?.id) {
-      console.log('[regenerateActiveAgreement] Old agreement', currentAgreement.id, 'will be superseded after investor signs new one');
-    }
+    // Don't void the old agreement here - agent will sign new one and that voids it
+    // Other agents can still sign old agreement if they haven't countered
+    console.log('[regenerateActiveAgreement] Old agreement available for other agents');
+    console.log('[regenerateActiveAgreement] When THIS agent signs new agreement, old will be voided');
+    console.log('[regenerateActiveAgreement] Room', roomId, 'now requires agent to sign new agreement');
+    console.log('[regenerateActiveAgreement] Other agents can still sign old agreement');
+    console.log('[regenerateActiveAgreement] Clear requires_regenerate flag from room');
+
+    // Room flag was cleared by createInvitesAfterInvestorSign
 
     // Call generateLegalAgreement with effective terms (room-scoped or deal-level)
     console.log('[regenerateActiveAgreement] Generating with effective terms:', effectiveTerms, 'for room:', room_id || 'legacy');
