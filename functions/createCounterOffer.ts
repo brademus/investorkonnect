@@ -104,7 +104,8 @@ Deno.serve(async (req) => {
     });
     
   } catch (error) {
-    console.error('[createCounterOffer] Error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[createCounterOffer] Error:', error?.message);
+    const errorMsg = error?.response?.data?.error || error?.message || 'Failed to create counter offer';
+    return Response.json({ error: errorMsg }, { status: 500 });
   }
 });
