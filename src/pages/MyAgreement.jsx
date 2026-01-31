@@ -34,6 +34,14 @@ export default function MyAgreement() {
         const loadedDeal = dealRes?.data?.deal || dealRes?.data;
         setDeal(loadedDeal);
 
+        // Check if rooms exist - if yes, redirect investor to Room
+        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor') {
+          console.log('[MyAgreement] Rooms exist, redirecting to Room');
+          navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
+          return;
+        }
+
         // Load selected agent IDs from sessionStorage or deal metadata
         const storedAgentIds = sessionStorage.getItem("selectedAgentIds");
         const agentIds = storedAgentIds 
@@ -65,23 +73,13 @@ export default function MyAgreement() {
         const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
         const loadedAgreement = agRes?.data?.agreement || null;
         setAgreement(loadedAgreement);
-
-        // If investor already signed AND invites created, redirect to rooms
-        if (loadedAgreement?.investor_signed_at && loadedDeal?.status === 'active') {
-          console.log('[MyAgreement] Investor already signed and deal is active, checking for rooms');
-          const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-          if (roomsForDeal?.length > 0) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
-            return;
-          }
-        }
       } catch (e) {
         toast.error('Failed to load agreement');
       } finally {
         setLoading(false);
       }
     })();
-  }, [dealId, navigate]);
+  }, [dealId, navigate, profile?.user_role]);
 
   // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
   useEffect(() => {

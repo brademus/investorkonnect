@@ -36,11 +36,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Fetch latest agreement on panel load to ensure we have current signatures
   React.useEffect(() => {
-    if (!dealId || !roomId) return;
+    if (!dealId) return;
 
     const fetchLatest = async () => {
       try {
-        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
+        const res = await base44.functions.invoke('getLegalAgreement', { 
+          deal_id: dealId, 
+          room_id: roomId || undefined 
+        });
         if (res?.data?.agreement) {
           setLocalAgreement(res.data.agreement);
         }
