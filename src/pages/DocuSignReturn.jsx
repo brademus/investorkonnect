@@ -42,6 +42,17 @@ export default function DocuSignReturn() {
                 sessionStorage.removeItem('selectedAgentIds');
                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
                 sessionStorage.removeItem('pendingDealId');
+                
+                // Wait for rooms to be created, then redirect to first one
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Fetch the created rooms
+                const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+                if (roomsForDeal?.length > 0) {
+                  console.log('[DocuSignReturn] Redirecting to created room:', roomsForDeal[0].id);
+                  navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
+                  return;
+                }
               } else {
                 console.error('[DocuSignReturn] Invite creation failed:', res.data);
                 toast.error(res.data?.error || 'Failed to send deal to agents');
@@ -55,11 +66,11 @@ export default function DocuSignReturn() {
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // ALWAYS redirect to Room if available - never use MyAgreement (it was causing crashes)
+          // ALWAYS redirect to Room if available
           if (roomId) {
             navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1&refresh=1`, { replace: true });
           } else if (dealId) {
-            // Fallback: still redirect to Pipeline, never MyAgreement
+            // Fallback to Pipeline if no rooms created
             navigate(createPageUrl("Pipeline"), { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });

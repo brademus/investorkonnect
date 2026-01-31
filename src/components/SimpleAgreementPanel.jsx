@@ -75,8 +75,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   
-  const investorSigned = !!localAgreement?.investor_signed_at;
-  const agentSigned = !!localAgreement?.agent_signed_at;
+  // CRITICAL: Check BOTH agreement and room for signed status (room updated faster after DocuSign)
+  const investorSigned = !!localAgreement?.investor_signed_at || localRoom?.agreement_status === 'investor_signed' || localRoom?.agreement_status === 'fully_signed';
+  const agentSigned = !!localAgreement?.agent_signed_at || localRoom?.agreement_status === 'agent_signed' || localRoom?.agreement_status === 'fully_signed';
   const fullySigned = investorSigned && agentSigned;
 
   // Check BOTH agreement and pass-in flag for regenerate requirement
@@ -85,8 +86,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const requiresRegenerate = localRoom?.requires_regenerate === true;
   const canRegenerate = !fullySigned && requiresRegenerate;
 
-  // CRITICAL: Don't show generate/sign buttons if investor already signed unless counter requires regeneration
-  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded') && !investorSigned;
+  // CRITICAL: Don't show generate form if investor already signed (unless counter requires regeneration)
+  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded') && !investorSigned && !canRegenerate;
 
   // Handle generate agreement
   const handleGenerate = async () => {
@@ -254,7 +255,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
            )}
 
            {/* No Agreement Yet */}
-           {!localAgreement && (
+           {!localAgreement && !investorSigned && (
             <div className="text-center py-8">
               <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
               <p className="text-[#808080] mb-4">No agreement yet</p>
@@ -268,6 +269,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                   Generate Agreement
                 </Button>
               )}
+            </div>
+          )}
+          
+          {/* Show status message if investor already signed but no agreement object loaded yet */}
+          {!localAgreement && investorSigned && (
+            <div className="text-center py-8">
+              <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
+              <p className="text-[#FAFAFA] font-semibold mb-2">You've already signed</p>
+              <p className="text-sm text-[#808080]">Waiting for agent to sign</p>
             </div>
           )}
 

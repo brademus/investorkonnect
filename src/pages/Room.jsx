@@ -582,10 +582,13 @@ export default function Room() {
         setAgreement(agRes.data.agreement);
       }
       
-      // Load room-specific agreement if it exists (priority over deal-level)
-      const roomAgRes = await base44.functions.invoke('getLegalAgreement', { deal_id: did, room_id: roomId }).catch(() => ({ data: null }));
-      if (roomAgRes?.data?.agreement) {
-        setAgreement(roomAgRes.data.agreement);
+      // CRITICAL: Load room-specific agreement if it exists (priority over deal-level)
+      // This ensures we always show the correct agreement for the current agent
+      if (roomId) {
+        const roomAgRes = await base44.functions.invoke('getLegalAgreement', { deal_id: did, room_id: roomId }).catch(() => ({ data: null }));
+        if (roomAgRes?.data?.agreement) {
+          setAgreement(roomAgRes.data.agreement);
+        }
       }
 
       return freshDeal;
@@ -864,7 +867,15 @@ export default function Room() {
         // ONLY update if this agreement is for THIS effective ROOM
         if (event?.data?.room_id === effectiveRoomId) {
           console.log('[Room] Room-scoped agreement updated for this agent');
-          setAgreement(event.data);
+          setAgreement(prev => {
+            // Only update if signing status actually changed to prevent unnecessary re-renders
+            if (prev?.investor_signed_at === event.data.investor_signed_at && 
+                prev?.agent_signed_at === event.data.agent_signed_at &&
+                prev?.status === event.data.status) {
+              return prev;
+            }
+            return event.data;
+          });
         }
         // Ignore deal-level agreements if we have a room-scoped one
         else if (!event?.data?.room_id && !agreement?.room_id) {

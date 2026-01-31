@@ -40,8 +40,12 @@ export default function MyAgreement() {
         setAgreement(loadedAgreement);
 
         // CRITICAL: If investor already signed and rooms exist, redirect immediately
+        // Check BOTH agreement and room status for signed state
         const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor' && loadedAgreement?.investor_signed_at) {
+        const hasSignedStatus = loadedAgreement?.investor_signed_at || 
+                               roomsForDeal.some(r => r.agreement_status === 'investor_signed' || r.agreement_status === 'fully_signed');
+        
+        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor' && hasSignedStatus) {
           console.log('[MyAgreement] Investor already signed and rooms exist, redirecting to Room');
           navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
           return;
