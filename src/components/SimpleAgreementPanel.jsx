@@ -347,18 +347,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {/* Investor Actions */}
               {isInvestor && !fullySigned && (
                <div className="space-y-2">
-                 {!investorSigned && !canRegenerate && localAgreement && (
-                   <Button
-                     onClick={() => handleSign('investor')}
-                     disabled={busy}
-                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                   >
-                     {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                     Sign Agreement
-                   </Button>
-                 )}
-
-                  {canRegenerate && (
+                 {/* CRITICAL: Show regenerate button if required, regardless of old signature state */}
+                 {canRegenerate && (
                                     <Button
                                       onClick={async () => {
                                         // Auto-regenerate AND sign in one flow
