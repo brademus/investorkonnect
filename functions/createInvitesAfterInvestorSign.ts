@@ -14,7 +14,10 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { deal_id } = body;
     
+    console.log('[createInvitesAfterInvestorSign] Request body:', body);
+    
     if (!deal_id) {
+      console.error('[createInvitesAfterInvestorSign] Missing deal_id in body');
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
@@ -37,14 +40,29 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Not authorized' }, { status: 403 });
     }
     
-    // Get selected agent IDs
+    // Get selected agent IDs - check both Deal and session storage backup
     const selectedAgentIds = deal.metadata?.selected_agent_ids || [];
     console.log('[createInvitesAfterInvestorSign] Deal metadata:', deal.metadata);
     console.log('[createInvitesAfterInvestorSign] Selected agent IDs:', selectedAgentIds);
     
     if (selectedAgentIds.length === 0) {
-      console.error('[createInvitesAfterInvestorSign] No agents selected for deal:', deal_id);
-      return Response.json({ error: 'No agents selected for this deal' }, { status: 400 });
+      console.error('[createInvitesAfterInvestorSign] ERROR: No agents selected for deal:', deal_id);
+      console.error('[createInvitesAfterInvestorSign] Deal object:', JSON.stringify({ 
+        id: deal.id, 
+        investor_id: deal.investor_id,
+        metadata: deal.metadata,
+        title: deal.title
+      }));
+      return Response.json({ 
+        error: 'No agents selected for this deal. Please go back to agent selection and try again.',
+        deal_id,
+        metadata_keys: deal.metadata ? Object.keys(deal.metadata) : [],
+        debug: {
+          has_metadata: !!deal.metadata,
+          has_selected_agent_ids: !!(deal.metadata?.selected_agent_ids),
+          metadata_value: deal.metadata?.selected_agent_ids
+        }
+      }, { status: 400 });
     }
     
     console.log('[createInvitesAfterInvestorSign] Creating invites for', selectedAgentIds.length, 'agents');
