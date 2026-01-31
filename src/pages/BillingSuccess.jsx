@@ -7,12 +7,11 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
-  const { refresh, profile, loading } = useCurrentProfile();
+  const { profile, loading } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
-    refresh();
-  }, [refresh]);
+  }, []);
 
   // Auto-redirect to Identity Verification
   useEffect(() => {
