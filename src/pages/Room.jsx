@@ -414,9 +414,13 @@ export default function Room() {
     setActiveTab('details');
     setDeal(null);
     setAgreement(null);
+    setInvites([]);
+    setSelectedInvite(null);
+    setPendingCounters([]);
+    setCurrentRoom(null);
     setSelectedRoomId(null);
     setRoomStates({});
-    setRoomLoading(false);
+    setRoomLoading(true);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
