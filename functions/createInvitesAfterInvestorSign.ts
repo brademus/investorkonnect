@@ -158,13 +158,11 @@ Deno.serve(async (req) => {
           console.log('[createInvitesAfterInvestorSign] Generated agreement:', agreement.id);
         }
         
-        // 3. Update room with agreement ID if not already set
-        if (!room.current_legal_agreement_id) {
-          await base44.asServiceRole.entities.Room.update(room.id, {
-            current_legal_agreement_id: agreement.id,
-            agreement_status: 'sent'
-          });
-        }
+        // 3. Update room with agreement ID and INVESTOR_SIGNED status
+        await base44.asServiceRole.entities.Room.update(room.id, {
+          current_legal_agreement_id: agreement.id,
+          agreement_status: 'investor_signed'
+        });
         
         // 4. Create or update DealInvite
         let invite;
