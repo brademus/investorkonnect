@@ -204,9 +204,13 @@ export default function MyAgreement() {
 
 
         <SimpleAgreementPanel 
-          dealId={dealId} 
-          agreement={agreement} 
+          dealId={dealId}
+          roomId={room?.id}
+          agreement={agreement}
+          room={room}
           profile={profile}
+          pendingCounters={pendingCounters}
+          setPendingCounters={setPendingCounters}
           onInvestorSigned={handlePostSigningNavigation}
         />
 
