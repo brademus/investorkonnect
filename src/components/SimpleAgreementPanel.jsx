@@ -370,6 +370,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                           }
                                           if (res.data?.agreement) {
                                             setLocalAgreement(res.data.agreement);
+                                            // Refresh room to reflect new draft status
+                                            if (roomId) {
+                                              const roomRes = await base44.entities.Room.filter({ id: roomId });
+                                              if (roomRes?.[0]) {
+                                                setLocalRoom(roomRes[0]);
+                                              }
+                                            }
                                             // If regeneration returned a signing URL, redirect immediately
                                             if (res.data?.signing_url) {
                                               toast.success('Redirecting to DocuSign...');
