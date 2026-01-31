@@ -123,8 +123,7 @@ export default function CounterOfferPage() {
         const res = await base44.functions.invoke('createCounterOffer', {
           deal_id: dealId,
           room_id: roomId,
-          from_role: isAgent ? 'agent' : 'investor',
-          to_role: isAgent ? 'investor' : 'agent',
+          from_role: profile.user_role,
           terms_delta: counterTerms,
         });
 
