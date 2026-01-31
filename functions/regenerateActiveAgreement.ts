@@ -88,18 +88,11 @@ Deno.serve(async (req) => {
       console.log('[regenerateActiveAgreement] Deal-level current agreement:', currentAgreement?.id);
     }
 
-    // Skip voiding old DocuSign envelope - not critical for regeneration
-    if (currentAgreement?.docusign_envelope_id) {
-      console.log('[regenerateActiveAgreement] Old envelope exists but skipping void (not critical)');
-    }
-
-    // Mark old agreement as superseded
+    // Skip voiding old agreement here - only void AFTER investor signs the new one
+    // This ensures other agents can still sign the old agreement while investor regenerates
+    // The DocuSignReturn function will handle superseding the old agreement after investor signs
     if (currentAgreement?.id) {
-      await base44.asServiceRole.entities.LegalAgreement.update(currentAgreement.id, {
-        status: 'superseded',
-        docusign_status: 'voided'
-      });
-      console.log('[regenerateActiveAgreement] Old agreement marked superseded');
+      console.log('[regenerateActiveAgreement] Old agreement', currentAgreement.id, 'will be superseded after investor signs new one');
     }
 
     // Call generateLegalAgreement with effective terms (room-scoped or deal-level)
