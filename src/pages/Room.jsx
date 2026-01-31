@@ -675,7 +675,13 @@ export default function Room() {
                loadedInvites = invitesRes.data;
              }
 
-             console.log('[Room] Loaded invites:', loadedInvites.length);
+             // CRITICAL: Filter out expired, voided, and locked invites
+             // Only show active invites (pending signature)
+             loadedInvites = loadedInvites.filter(invite => 
+               !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status)
+             );
+
+             console.log('[Room] Loaded active invites:', loadedInvites.length);
              setInvites(loadedInvites);
 
              // Auto-select if only one invite exists
