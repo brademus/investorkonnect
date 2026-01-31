@@ -32,23 +32,45 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get agreement: prefer room-scoped if available, fallback to deal-level
-    let agreements = [];
+    // CRITICAL: If room_id provided, check Room.current_legal_agreement_id first (points to the active agreement)
+    let agreement = null;
     if (room_id) {
-      // First try room-scoped (regenerated after counter)
-      agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id });
-      console.log('[getLegalAgreement] Room-scoped search:', agreements.length, 'found');
-      
-      // Fallback to deal-level if no room-scoped agreement exists
-      if (agreements.length === 0) {
-        agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
-        console.log('[getLegalAgreement] Fallback to deal-level:', agreements.length, 'found');
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      if (rooms?.[0]?.current_legal_agreement_id) {
+        const currentAgrId = rooms[0].current_legal_agreement_id;
+        console.log('[getLegalAgreement] Room has pointer to agreement:', currentAgrId);
+        
+        const currentAgrs = await base44.asServiceRole.entities.LegalAgreement.filter({ id: currentAgrId });
+        if (currentAgrs?.[0]) {
+          agreement = currentAgrs[0];
+          console.log('[getLegalAgreement] Using Room-pointed agreement:', agreement.id);
+        }
       }
-    } else {
-      // No room_id: get deal-level agreement
-      agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
-      console.log('[getLegalAgreement] Deal-level search:', agreements.length, 'found');
     }
+    
+    // Fallback if no room pointer or room_id not provided
+    if (!agreement) {
+      let agreements = [];
+      if (room_id) {
+        // First try room-scoped (regenerated after counter)
+        agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id });
+        console.log('[getLegalAgreement] Room-scoped search:', agreements.length, 'found');
+        
+        // Fallback to deal-level if no room-scoped agreement exists
+        if (agreements.length === 0) {
+          agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
+          console.log('[getLegalAgreement] Fallback to deal-level:', agreements.length, 'found');
+        }
+      } else {
+        // No room_id: get deal-level agreement
+        agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id, room_id: null });
+        console.log('[getLegalAgreement] Deal-level search:', agreements.length, 'found');
+      }
+      
+      if (agreements.length === 0) {
+        console.log('[getLegalAgreement] No agreement found for deal:', deal_id);
+        return Response.json({ agreement: null });
+      }
     
     console.log('[getLegalAgreement] Found agreements:', agreements.length);
     
