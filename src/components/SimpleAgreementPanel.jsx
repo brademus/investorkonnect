@@ -59,12 +59,23 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     React.useEffect(() => {
       if (incomingCounters) {
         setPendingCounters(incomingCounters);
+        // Also update parent state if setter provided
+        if (setIncomingCounters) {
+          setIncomingCounters(incomingCounters);
+        }
         // Force refresh agreement when counters change (arrival, acceptance, decline)
         const fetchLatest = async () => {
           try {
             const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
             if (res?.data?.agreement) {
               setLocalAgreement(res.data.agreement);
+            }
+            // Also refresh room state to get updated requires_regenerate flag
+            if (roomId) {
+              const roomRes = await base44.entities.Room.filter({ id: roomId });
+              if (roomRes?.[0]) {
+                setLocalRoom(roomRes[0]);
+              }
             }
           } catch (_) {}
         };
@@ -352,13 +363,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && !requiresRegenerate && pendingCounters.some(c => c.from_role === 'agent') && (
+                  {/* Show if agent has already countered */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
                     </div>
                   )}
 
-                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.from_role === 'agent') && !pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
+                  {/* Show sign/counter buttons only if no active counter from agent */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
@@ -410,8 +423,20 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                    counter_offer_id: counter.id,
                                    action: 'accept'
                                  });
-                                 toast.success('Counter accepted');
+                                 toast.success('Counter accepted - Regenerate agreement to continue');
                                  setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                 if (setIncomingCounters) setIncomingCounters(pendingCounters.filter(c => c.id !== counter.id));
+
+                                 // Refresh room to get updated requires_regenerate flag
+                                 setTimeout(async () => {
+                                   try {
+                                     const roomRes = await base44.entities.Room.filter({ id: roomId });
+                                     if (roomRes?.[0]) {
+                                       setLocalRoom(roomRes[0]);
+                                     }
+                                   } catch (_) {}
+                                 }, 500);
+
                                  if (onCounterReceived) onCounterReceived();
                                } catch (e) {
                                  toast.error('Failed to accept counter');
@@ -468,25 +493,32 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                     const res = await base44.functions.invoke('respondToCounterOffer', payload);
 
                                     console.log('[SimpleAgreementPanel] Response:', res);
-                                       if (res.data?.error) {
-                                         setDebugError(`Backend Error: ${res.data.error}`);
-                                         toast.error(res.data.error);
-                                         return;
-                                       }
-                                       toast.success('Counter accepted');
-                                       setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                      if (res.data?.error) {
+                                        setDebugError(`Backend Error: ${res.data.error}`);
+                                        toast.error(res.data.error);
+                                        return;
+                                      }
+                                      toast.success('Counter accepted - Regenerate agreement to continue');
+                                      setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                      if (setIncomingCounters) setIncomingCounters(pendingCounters.filter(c => c.id !== counter.id));
 
-                                       // Refresh agreement immediately to get new room-scoped one
-                                       setTimeout(async () => {
-                                         try {
-                                           const freshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
-                                           if (freshRes?.data?.agreement) {
-                                             setLocalAgreement(freshRes.data.agreement);
-                                           }
-                                         } catch (_) {}
-                                       }, 500);
+                                      // Refresh room AND agreement to get updated requires_regenerate flag
+                                      setTimeout(async () => {
+                                        try {
+                                          const [freshRes, roomRes] = await Promise.all([
+                                            base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }),
+                                            base44.entities.Room.filter({ id: roomId })
+                                          ]);
+                                          if (freshRes?.data?.agreement) {
+                                            setLocalAgreement(freshRes.data.agreement);
+                                          }
+                                          if (roomRes?.[0]) {
+                                            setLocalRoom(roomRes[0]);
+                                          }
+                                        } catch (_) {}
+                                      }, 500);
 
-                                       if (onCounterReceived) onCounterReceived();
+                                      if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
                                     const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e);
                                     setDebugError(`Exception: ${errMsg}`);
