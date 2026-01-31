@@ -184,15 +184,17 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
    };
   }, [dealId, roomId]);
 
-  // Detect when investor has signed and trigger callback
+  // CRITICAL: Only trigger callback once after signing, not on every load
+  const [hasTriggeredCallback, setHasTriggeredCallback] = useState(false);
   useEffect(() => {
-    if (localAgreement?.investor_signed_at && !localAgreement?.agent_signed_at && onInvestorSigned) {
+    if (localAgreement?.investor_signed_at && !localAgreement?.agent_signed_at && onInvestorSigned && !hasTriggeredCallback) {
       const params = new URLSearchParams(window.location.search);
       if (params.get('signed') === '1') {
+        setHasTriggeredCallback(true);
         onInvestorSigned();
       }
     }
-  }, [localAgreement?.investor_signed_at, onInvestorSigned]);
+  }, [localAgreement?.investor_signed_at, onInvestorSigned, hasTriggeredCallback]);
 
   // Refresh agreement after signing redirect
   useEffect(() => {
