@@ -79,6 +79,13 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
+    // CRITICAL: Ensure new agreement has no signatures (safety - should already be clean from generation)
+    await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
+      investor_signed_at: null,
+      agent_signed_at: null,
+      status: 'draft'
+    });
+
     // Update pointers and reset agreement signing status
     // Keep regenerate flag until investor completes signing via DocuSign callback
     if (room_id && room) {
