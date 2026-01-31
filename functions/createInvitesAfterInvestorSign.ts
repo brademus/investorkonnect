@@ -40,27 +40,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Not authorized' }, { status: 403 });
     }
     
-    // Get selected agent IDs - check both Deal and session storage backup
-    const selectedAgentIds = deal.metadata?.selected_agent_ids || [];
-    console.log('[createInvitesAfterInvestorSign] Deal metadata:', deal.metadata);
-    console.log('[createInvitesAfterInvestorSign] Selected agent IDs:', selectedAgentIds);
+    // CRITICAL: Get selected agent IDs from MULTIPLE sources for redundancy
+    let selectedAgentIds = deal.selected_agent_ids || deal.metadata?.selected_agent_ids || [];
+    
+    console.log('[createInvitesAfterInvestorSign] Deal.selected_agent_ids:', deal.selected_agent_ids);
+    console.log('[createInvitesAfterInvestorSign] Deal.metadata?.selected_agent_ids:', deal.metadata?.selected_agent_ids);
+    console.log('[createInvitesAfterInvestorSign] Final selectedAgentIds:', selectedAgentIds);
     
     if (selectedAgentIds.length === 0) {
       console.error('[createInvitesAfterInvestorSign] ERROR: No agents selected for deal:', deal_id);
-      console.error('[createInvitesAfterInvestorSign] Deal object:', JSON.stringify({ 
-        id: deal.id, 
-        investor_id: deal.investor_id,
-        metadata: deal.metadata,
-        title: deal.title
-      }));
+      console.error('[createInvitesAfterInvestorSign] Full deal keys:', Object.keys(deal));
+      console.error('[createInvitesAfterInvestorSign] Deal object:', JSON.stringify(deal, null, 2));
       return Response.json({ 
-        error: 'No agents selected for this deal. Please go back to agent selection and try again.',
+        error: 'No agents selected for this deal. Please contact support.',
         deal_id,
-        metadata_keys: deal.metadata ? Object.keys(deal.metadata) : [],
         debug: {
-          has_metadata: !!deal.metadata,
-          has_selected_agent_ids: !!(deal.metadata?.selected_agent_ids),
-          metadata_value: deal.metadata?.selected_agent_ids
+          deal_keys: Object.keys(deal),
+          selected_agent_ids_field: deal.selected_agent_ids,
+          metadata: deal.metadata,
+          metadata_selected_agent_ids: deal.metadata?.selected_agent_ids
         }
       }, { status: 400 });
     }
