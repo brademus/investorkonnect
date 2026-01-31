@@ -340,12 +340,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </Button>
                   )}
 
-                  {investorSigned && !agentSigned && (
+                  {investorSigned && !agentSigned && !canRegenerate && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p>
                     </div>
                   )}
-                </div>
+               </div>
               )}
 
               {/* Agent Actions */}
