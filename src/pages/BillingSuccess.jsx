@@ -23,7 +23,7 @@ export default function BillingSuccess() {
 
   // Always show loading while redirecting
   return (
-    <div className="min-h-screen bg-transparent flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
     </div>
   );
