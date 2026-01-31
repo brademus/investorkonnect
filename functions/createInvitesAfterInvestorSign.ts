@@ -104,7 +104,7 @@ Deno.serve(async (req) => {
             requested_at: new Date().toISOString(),
             accepted_at: new Date().toISOString()
           });
-          console.log('[createInvitesAfterInvestorSign] ✓ Created room (accepted):', room.id);
+          console.log('[createInvitesAfterInvestorSign] ✓ Created room for agent:', agentId, ', room ID:', room.id, ', deal ID:', deal_id);
         } else if (room.request_status !== 'accepted') {
           // Update existing room to accepted
           await base44.asServiceRole.entities.Room.update(room.id, {
@@ -202,7 +202,9 @@ Deno.serve(async (req) => {
      }
     });
 
-    console.log('[createInvitesAfterInvestorSign] Created', createdInvites.length, 'invites successfully');
+    console.log('[createInvitesAfterInvestorSign] SUCCESS: Created', createdInvites.length, 'invites for deal:', deal_id);
+    console.log('[createInvitesAfterInvestorSign] Agent IDs invited:', selectedAgentIds);
+    console.log('[createInvitesAfterInvestorSign] Room IDs created:', existingRooms.map(r => ({ room_id: r.id, agent_id: r.agentId, status: r.request_status })));
 
     return Response.json({ 
      ok: true, 
