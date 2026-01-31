@@ -335,12 +335,13 @@ Deno.serve(async (req) => {
     // SYNC FIRST to ensure DB is up-to-date with DocuSign
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
 
-    // PHASE 7: Check if already signed - return success response instead of error
-    const investorAlreadySigned = !!agreement.investor_signed_at;
-    const agentAlreadySigned = !!agreement.agent_signed_at;
+    // PHASE 7: Check if already signed - BUT ONLY if agreement is NOT in 'sent' status
+    // If status is 'sent', we know it's a fresh envelope that hasn't been signed yet
+    const investorAlreadySigned = !!agreement.investor_signed_at && agreement.status !== 'sent';
+    const agentAlreadySigned = !!agreement.agent_signed_at && agreement.status !== 'sent';
 
     if (role === 'investor' && investorAlreadySigned) {
-      console.log('[DocuSign] Investor already signed');
+      console.log('[DocuSign] Investor already signed (status:', agreement.status, ')');
       return Response.json({ 
         already_signed: true,
         message: 'You have already signed this agreement'
@@ -348,7 +349,7 @@ Deno.serve(async (req) => {
     }
 
     if (role === 'agent' && agentAlreadySigned) {
-      console.log('[DocuSign] Agent already signed');
+      console.log('[DocuSign] Agent already signed (status:', agreement.status, ')');
       return Response.json({ 
         already_signed: true,
         message: 'You have already signed this agreement'
