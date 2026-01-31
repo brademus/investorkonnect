@@ -64,12 +64,6 @@ export default function MyAgreement() {
 
         const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
         setAgreement(agRes?.data?.agreement || null);
-
-        // Auto-redirect if already signed - go to Pipeline
-        if (agRes?.data?.agreement?.investor_signed_at) {
-          console.log('[MyAgreement] Already signed, redirecting to Pipeline');
-          navigate(createPageUrl('Pipeline'), { replace: true });
-        }
       } catch (e) {
         toast.error('Failed to load agreement');
       } finally {

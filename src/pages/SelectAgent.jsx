@@ -153,9 +153,10 @@ export default function SelectAgent() {
 
       console.log('[SelectAgent] Created deal:', newDeal.id);
 
-      // Save selected agents and deal ID to sessionStorage for MyAgreement page
+      // Save selected agents to BOTH generic and deal-specific keys for redundancy
       sessionStorage.setItem("pendingDealId", newDeal.id);
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
+      sessionStorage.setItem(`selectedAgentIds_${newDeal.id}`, JSON.stringify(selectedAgentIds));
       sessionStorage.removeItem("newDealDraft");
       
       // Navigate to MyAgreement page to generate and sign
