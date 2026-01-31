@@ -444,8 +444,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {/* Show sign/counter buttons only if no pending counter (from either side) */}
-                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.status === 'pending') && (
+                  {/* Show sign/counter buttons only if: investor signed NEW agreement, no pending counters, and not regenerating */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.status === 'accepted' || c.status === 'pending') && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
