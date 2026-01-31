@@ -118,17 +118,11 @@ export default function IdentityVerification() {
       if (finalStatus === 'verified') {
         setStatus('success');
         toast.success('Identity verified successfully!');
-        await refresh();
         
-        // Check again after refresh - if verified, redirect immediately
-        const { data: finalCheck } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
-        if (finalCheck?.status === 'verified') {
+        // Redirect to NDA immediately - profile will be fetched fresh there
+        setTimeout(() => {
           navigate(createPageUrl('NDA'), { replace: true });
-        } else {
-          setTimeout(() => {
-            navigate(createPageUrl('NDA'), { replace: true });
-          }, 800);
-        }
+        }, 1000);
       } else {
         throw new Error('Verification not completed. Please try again.');
       }
