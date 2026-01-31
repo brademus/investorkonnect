@@ -130,6 +130,29 @@ export default function MyAgreement() {
     return () => unsub?.();
   }, [room?.id]);
 
+  // Refresh deal when room updates (to pick up updated proposed_terms after counter acceptance)
+  useEffect(() => {
+    if (!dealId || !room?.id) return;
+
+    const unsub = base44.entities.Room.subscribe((event) => {
+      const updatedRoom = event?.data;
+      if (!updatedRoom || updatedRoom.id !== room.id) return;
+
+      // Update room state to trigger UI refresh with new proposed_terms
+      setRoom(updatedRoom);
+
+      // Also refresh deal if room proposed_terms changed
+      if (updatedRoom.proposed_terms && updatedRoom.proposed_terms !== room.proposed_terms) {
+        setDeal(prev => prev ? {
+          ...prev,
+          proposed_terms: updatedRoom.proposed_terms
+        } : prev);
+      }
+    });
+
+    return () => unsub?.();
+  }, [dealId, room?.id]);
+
   if (loadingProfile || loading || !deal) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
