@@ -71,27 +71,8 @@ export default function DocuSignReturn() {
           // Wait a moment then redirect
           await new Promise(resolve => setTimeout(resolve, 1500));
 
-          // Handle regenerated agreement case: investor signed new agreement, now void old one
-          if (roomId && dealId) {
-            try {
-              console.log('[DocuSignReturn] Investor signed regenerated agreement, superseding old one');
-              // Void the old room-scoped agreement to prevent agent signing stale version
-              const oldAgreements = await base44.entities.LegalAgreement.filter({ 
-                deal_id: dealId, 
-                room_id: roomId,
-                status: 'superseded'
-              }, '-created_date', 1);
-              if (oldAgreements?.length > 0) {
-                const oldAgreement = oldAgreements[0];
-                await base44.functions.invoke('voidOtherAgentAgreements', {
-                  agreement_id: oldAgreement.id,
-                  room_id: roomId
-                }).catch(e => console.log('[DocuSignReturn] voidOtherAgentAgreements call skipped or failed:', e?.message));
-              }
-            } catch (e) {
-              console.log('[DocuSignReturn] Optional void step skipped:', e?.message);
-            }
-          }
+          // Regenerated agreement: investor signed, now only agent signature will void old agreement
+          // Other agents can still sign the old agreement until this specific agent signs new one
           
           // ALWAYS redirect to Room if available
           if (roomId) {
