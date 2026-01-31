@@ -25,60 +25,65 @@ export default function DocuSignReturn() {
           setMessage("Signature completed! Redirecting...");
           setStatus("success");
 
-          // If investor just signed (no roomId means base agreement), trigger invite creation
+          // Sync agreement status from DocuSign
+          try {
+            if (dealId) {
+              await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
+            }
+          } catch (e) {
+            console.log('[DocuSignReturn] Sync optional');
+          }
+
+          // Investor signing: create invites for all agents
           if (dealId && !roomId) {
             try {
-              console.log('[DocuSignReturn] Investor signed base agreement, syncing and creating invites for deal:', dealId);
-              
-              // CRITICAL: Sync DocuSign envelope first to ensure investor_signed_at is set
-              await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
-              console.log('[DocuSignReturn] DocuSign envelope synced');
-              
-              // Now create invites for all selected agents
               const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
                 deal_id: dealId
               });
               
-              console.log('[DocuSignReturn] Invite creation response:', res.data);
-              
               if (res.data?.ok && res.data.invite_ids?.length > 0) {
                 toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
-                // Clear session storage
                 sessionStorage.removeItem('selectedAgentIds');
                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                sessionStorage.removeItem('pendingDealId');
                 
-                // Wait for rooms to be created, then redirect to first one
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Fetch the created rooms
-                const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-                if (roomsForDeal?.length > 0) {
-                  console.log('[DocuSignReturn] Redirecting to created room:', roomsForDeal[0].id);
-                  navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+                if (rooms?.length > 0) {
+                  navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
                   return;
                 }
-              } else {
-                console.error('[DocuSignReturn] Invite creation failed:', res.data);
-                toast.error(res.data?.error || 'Failed to send deal to agents');
               }
             } catch (e) {
-              console.error('[DocuSignReturn] Exception creating invites:', e);
-              toast.error(e?.response?.data?.error || e?.message || 'Failed to send deal to agents');
+              console.error('[DocuSignReturn] Invites failed:', e?.message);
+              toast.error('Failed to send deal');
             }
           }
 
-          // Wait a moment then redirect
-          await new Promise(resolve => setTimeout(resolve, 1500));
-
-          // Regenerated agreement: investor signed, now only agent signature will void old agreement
-          // Other agents can still sign the old agreement until this specific agent signs new one
+          // Agent signing regenerated: void old agreement in this room only
+          if (roomId && dealId) {
+            try {
+              const latest = await base44.entities.LegalAgreement.filter({ 
+                deal_id: dealId,
+                room_id: roomId,
+                status: 'fully_signed'
+              }, '-created_date', 1);
+              
+              if (latest?.length > 0) {
+                await base44.functions.invoke('voidOldAgreementForRoom', {
+                  room_id: roomId,
+                  new_agreement_id: latest[0].id
+                }).catch(() => {});
+              }
+            } catch (e) {
+              console.log('[DocuSignReturn] Void skipped');
+            }
+          }
           
-          // ALWAYS redirect to Room if available
+          // Redirect to room or pipeline
+          await new Promise(resolve => setTimeout(resolve, 1000));
           if (roomId) {
-            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1&refresh=1`, { replace: true });
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
           } else if (dealId) {
-            // Fallback to Pipeline if no rooms created
             navigate(createPageUrl("Pipeline"), { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });
@@ -89,29 +94,24 @@ export default function DocuSignReturn() {
           toast.info("Signing cancelled");
 
           await new Promise(resolve => setTimeout(resolve, 1500));
-
-          // Return to same deal context on cancel (no signed flag)
           if (roomId) {
             navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`, { replace: true });
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         } else {
-          // Unknown event - redirect back to deal context
           setMessage("Redirecting...");
           await new Promise(resolve => setTimeout(resolve, 1000));
-          
           if (roomId) {
             navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
           } else if (dealId) {
-            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}&tab=agreement`, { replace: true });
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
           } else {
             navigate(createPageUrl("Pipeline"), { replace: true });
           }
         }
-
       } catch (error) {
         console.error('[DocuSignReturn] Error:', error);
         setStatus("error");
