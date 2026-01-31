@@ -2623,10 +2623,10 @@ export default function Room() {
             </div>
           )}
         </div>
-      ) : (
-        /* Messages View */
-        <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
-              <>
+        ) : (
+          /* Messages View */
+          <div className="max-w-4xl mx-auto w-full h-full flex flex-col">
+            <>
               {/* Deal Request Review Banner for Agents - ONLY show if status is explicitly 'requested' */}
               {profile?.user_role === 'agent' && currentRoom?.request_status === 'requested' && !currentRoom?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
