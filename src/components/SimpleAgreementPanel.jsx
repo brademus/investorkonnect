@@ -532,46 +532,35 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                 size="sm"
                                 onClick={async () => {
                                   try {
-                                    const payload = {
+                                    const res = await base44.functions.invoke('respondToCounterOffer', {
                                       counter_offer_id: counter.id,
                                       action: 'accept'
-                                    };
-                                    console.log('[SimpleAgreementPanel] Sending payload:', payload);
-                                    setDebugError(`Sending: counter_id=${counter.id}, action=accept`);
-
-                                    const res = await base44.functions.invoke('respondToCounterOffer', payload);
-
-                                    console.log('[SimpleAgreementPanel] Response:', res);
-                                      if (res.data?.error) {
-                                        setDebugError(`Backend Error: ${res.data.error}`);
-                                        toast.error(res.data.error);
-                                        return;
-                                      }
-                                      toast.success('Counter accepted - Regenerate agreement to continue');
-                                      setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                      if (setIncomingCounters) setIncomingCounters(pendingCounters.filter(c => c.id !== counter.id));
-
-                                      // Refresh room AND agreement to get updated requires_regenerate flag
-                                      setTimeout(async () => {
-                                        try {
-                                          const [freshRes, roomRes] = await Promise.all([
-                                            base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }),
-                                            base44.entities.Room.filter({ id: roomId })
-                                          ]);
-                                          if (freshRes?.data?.agreement) {
-                                            setLocalAgreement(freshRes.data.agreement);
-                                          }
-                                          if (roomRes?.[0]) {
-                                            setLocalRoom(roomRes[0]);
-                                          }
-                                        } catch (_) {}
-                                      }, 500);
-
-                                      if (onCounterReceived) onCounterReceived();
+                                    });
+                                    if (res.data?.error) {
+                                      toast.error(res.data.error);
+                                      return;
+                                    }
+                                    if (!res.data?.success) {
+                                      toast.error('Counter acceptance failed');
+                                      return;
+                                    }
+                                    toast.success('Counter accepted - Regenerate agreement to continue');
+                                    setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                    if (setIncomingCounters) setIncomingCounters(pendingCounters.filter(c => c.id !== counter.id));
+                                    // Refresh room to get updated terms and regenerate flag
+                                    setTimeout(async () => {
+                                      try {
+                                        const roomRes = await base44.entities.Room.filter({ id: roomId });
+                                        if (roomRes?.[0]) {
+                                          setLocalRoom(roomRes[0]);
+                                        }
+                                      } catch (_) {}
+                                    }, 300);
+                                    if (onCounterReceived) onCounterReceived();
                                   } catch (e) {
-                                    const errMsg = e?.response?.data?.error || e?.data?.error || e?.message || JSON.stringify(e);
-                                    setDebugError(`Exception: ${errMsg}`);
-                                    toast.error(errMsg || 'Failed to accept counter');
+                                    console.error('[SimpleAgreementPanel] Accept error:', e);
+                                    const errMsg = e?.response?.data?.error || e?.message || 'Failed to accept counter';
+                                    toast.error(errMsg);
                                   }
                                 }}
                                 className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
