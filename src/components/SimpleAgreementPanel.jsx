@@ -206,16 +206,18 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
    if (!roomId) return;
 
    const unsubscribe = base44.entities.Room.subscribe((event) => {
-     if (event?.data?.id === roomId) {
-       setLocalRoom(prev => {
-         // Update if requires_regenerate changed
-         if (prev?.requires_regenerate === event.data.requires_regenerate &&
-             prev?.proposed_terms === event.data.proposed_terms) {
-           return prev;
-         }
-         return { ...prev, ...event.data };
-       });
-     }
+    if (event?.data?.id === roomId) {
+      setLocalRoom(prev => {
+        // Update if ANY critical field changed
+        if (prev?.requires_regenerate === event.data.requires_regenerate &&
+            prev?.proposed_terms === event.data.proposed_terms &&
+            prev?.agreement_status === event.data.agreement_status &&
+            prev?.current_legal_agreement_id === event.data.current_legal_agreement_id) {
+          return prev;
+        }
+        return { ...prev, ...event.data };
+      });
+    }
    });
 
    return () => {
