@@ -141,7 +141,27 @@ export function useCurrentProfile() {
       } catch (error) {
         console.error('[useCurrentProfile] Fatal error:', error);
         if (!mounted) return;
-        setState(prev => ({ ...prev, loading: false, error: error.message }));
+        // CRITICAL: Always set loading to false even on error
+        setState({
+          loading: false,
+          user: null,
+          profile: null,
+          role: null,
+          onboarded: false,
+          needsOnboarding: false,
+          kycStatus: 'unverified',
+          kycVerified: false,
+          needsKyc: false,
+          hasNDA: false,
+          needsNda: false,
+          isInvestorReady: false,
+          hasRoom: false,
+          targetState: null,
+          subscriptionPlan: 'none',
+          subscriptionStatus: 'none',
+          isPaidSubscriber: false,
+          error: error.message || 'Profile load failed'
+        });
       }
     };
 
