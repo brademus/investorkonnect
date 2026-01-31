@@ -10,6 +10,7 @@ import {
 export function SetupChecklist({ profile, onRefresh }) {
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
+  const refreshCalledRef = useState(false);
 
   const isInvestor = profile?.user_role === 'investor' || profile?.user_type === 'investor';
   const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
@@ -149,6 +150,9 @@ export function SetupChecklist({ profile, onRefresh }) {
             const handleClick = () => {
               if (!isLocked && !isCompleted) {
                 navigate(createPageUrl(step.link));
+              } else if (isCompleted && onRefresh && !refreshCalledRef.current) {
+                // Only refresh ONCE on mount if needed, not on every click
+                refreshCalledRef.current = true;
               }
             };
             
