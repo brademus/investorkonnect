@@ -79,17 +79,18 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Update pointers but KEEP regenerate flag until investor actually signs
-    // This ensures agent doesn't see sign button until investor signs the new agreement
+    // Update pointers and update room to reflect investor_signed (agreement_status)
+    // Keep regenerate flag until investor completes signing via DocuSign callback
     if (room_id && room) {
       await base44.asServiceRole.entities.Room.update(room_id, {
-        current_legal_agreement_id: newAgreement.id
-        // DO NOT clear requires_regenerate - investor must sign new agreement first
+        current_legal_agreement_id: newAgreement.id,
+        agreement_status: 'sent'  // Reflect that new agreement is ready for investor to sign
+        // DO NOT clear requires_regenerate - cleared by webhook after investor signs
       });
     } else {
       await base44.asServiceRole.entities.Deal.update(deal_id, {
         current_legal_agreement_id: newAgreement.id
-        // DO NOT clear requires_regenerate - investor must sign new agreement first
+        // DO NOT clear requires_regenerate - cleared by webhook after investor signs
       });
     }
 
