@@ -434,6 +434,19 @@ Deno.serve(async (req) => {
         } else if (investorSigned && !agreement.investor_signed_at) {
           updates.status = 'investor_signed';
           
+          // CRITICAL: Clear requires_regenerate flag when investor signs regenerated agreement
+          if (agreement.room_id) {
+            try {
+              await base44.asServiceRole.entities.Room.update(agreement.room_id, {
+                requires_regenerate: false,
+                agreement_status: 'investor_signed'
+              });
+              console.log('[DocuSign Webhook] ✓ Cleared requires_regenerate flag on room:', agreement.room_id);
+            } catch (e) {
+              console.warn('[DocuSign Webhook] Failed to clear requires_regenerate:', e?.message);
+            }
+          }
+          
           // After investor signs, create invites for all selected agents
           if (!agreement.room_id) {
             // This is the initial "base" agreement - create invites
