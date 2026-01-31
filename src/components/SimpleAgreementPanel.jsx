@@ -352,15 +352,42 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                  )}
 
                   {canRegenerate && (
-                    <Button
-                      onClick={() => setConfirmModal(true)}
-                      disabled={busy}
-                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                    >
-                      {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                      Regenerate & Sign
-                    </Button>
-                  )}
+                                    <Button
+                                      onClick={async () => {
+                                        // Auto-regenerate AND sign in one flow
+                                        setBusy(true);
+                                        toast.loading('Regenerating...', { id: 'regen' });
+                                        try {
+                                          const res = await base44.functions.invoke('regenerateActiveAgreement', {
+                                            deal_id: dealId,
+                                            room_id: roomId
+                                          });
+                                          toast.dismiss('regen');
+                                          if (res.data?.error) {
+                                            toast.error(res.data.error);
+                                            setBusy(false);
+                                            return;
+                                          }
+                                          if (res.data?.agreement) {
+                                            setLocalAgreement(res.data.agreement);
+                                            toast.success('Agreement ready, redirecting to sign...');
+                                            // Auto-sign immediately after regeneration
+                                            setTimeout(() => handleSign('investor'), 500);
+                                            return;
+                                          }
+                                        } catch (e) {
+                                          toast.dismiss('regen');
+                                          toast.error(e?.message || 'Failed to regenerate');
+                                        }
+                                        setBusy(false);
+                                      }}
+                                      disabled={busy}
+                                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                                    >
+                                      {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                      Regenerate & Sign
+                                    </Button>
+                                  )}
 
                   {investorSigned && !agentSigned && !canRegenerate && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
