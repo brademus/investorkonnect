@@ -841,16 +841,17 @@ export default function Room() {
     // Load pending counters immediately - STRICTLY room-scoped ONLY to effective room
     const loadCounters = async () => {
       try {
-        const allCounters = await base44.entities.CounterOffer.filter({
-          deal_id: dealId,
-          status: 'pending'
-        });
-        // Filter ONLY counters for THIS effective room (strict room scoping)
-        const roomCounters = (allCounters || []).filter(c => c.room_id === effectiveRoomId);
-        console.log('[Room] Loaded counters:', roomCounters.length, 'for effective room:', effectiveRoomId);
-        setPendingCounters(roomCounters);
+        // For room-scoped: filter by room_id directly to get exact matches
+        const filterQuery = effectiveRoomId 
+          ? { room_id: effectiveRoomId, status: 'pending' }
+          : { deal_id: dealId, status: 'pending' };
+          
+        const roomCounters = await base44.entities.CounterOffer.filter(filterQuery);
+        console.log('[Room] Loaded counters:', roomCounters.length, 'for effective room:', effectiveRoomId, 'query:', filterQuery);
+        setPendingCounters(roomCounters || []);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
+        setPendingCounters([]);
       }
     };
 
@@ -883,16 +884,27 @@ export default function Room() {
 
     // Subscribe to CounterOffer updates - STRICTLY ROOM-SCOPED to effective room
     const unsubCounter = base44.entities.CounterOffer.subscribe((event) => {
+      console.log('[Room] CounterOffer event:', event.type, 'dealId:', event?.data?.deal_id, 'roomId:', event?.data?.room_id, 'status:', event?.data?.status);
+      
       // CRITICAL: Only update state if this counter is EXPLICITLY for this effective room
       if (event?.data?.deal_id === dealId && event?.data?.room_id === effectiveRoomId) {
+        console.log('[Room] Counter matches this room, updating state');
         if (event.data.status === 'pending') {
           setPendingCounters(prev => {
             const exists = prev.some(c => c.id === event.id);
-            return exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+            const updated = exists ? prev.map(c => c.id === event.id ? event.data : c) : [...prev, event.data];
+            console.log('[Room] Updated pendingCounters:', updated.length);
+            return updated;
           });
         } else {
-          setPendingCounters(prev => prev.filter(c => c.id !== event.id));
+          setPendingCounters(prev => {
+            const filtered = prev.filter(c => c.id !== event.id);
+            console.log('[Room] Removed non-pending counter, remaining:', filtered.length);
+            return filtered;
+          });
         }
+      } else {
+        console.log('[Room] Counter does NOT match this room, ignoring');
       }
       // IMPORTANT: Do NOT update state if room_id doesn't match - ignore counters for other agents
     });
