@@ -26,7 +26,7 @@ export default function MyAgreement() {
 
   // Load deal, selected agents, and agreement state
   useEffect(() => {
-    if (!dealId) return;
+    if (!dealId || !profile) return;
     
     (async () => {
       try {
@@ -34,32 +34,24 @@ export default function MyAgreement() {
         const loadedDeal = dealRes?.data?.deal || dealRes?.data;
         setDeal(loadedDeal);
 
-        // Check if rooms exist - if yes, redirect investor to Room
+        // Load agreement FIRST to check if investor already signed
+        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+        const loadedAgreement = agRes?.data?.agreement || null;
+        setAgreement(loadedAgreement);
+
+        // CRITICAL: If investor already signed and rooms exist, redirect immediately
         const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor') {
-          console.log('[MyAgreement] Rooms exist, redirecting to Room');
+        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor' && loadedAgreement?.investor_signed_at) {
+          console.log('[MyAgreement] Investor already signed and rooms exist, redirecting to Room');
           navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
           return;
         }
 
-        // Load selected agent IDs from sessionStorage or deal metadata
+        // Load selected agent IDs from deal or sessionStorage
         const storedAgentIds = sessionStorage.getItem("selectedAgentIds");
-        const agentIds = storedAgentIds 
-          ? JSON.parse(storedAgentIds) 
-          : (loadedDeal?.metadata?.selected_agent_ids || []);
+        const agentIds = loadedDeal?.selected_agent_ids || loadedDeal?.metadata?.selected_agent_ids || (storedAgentIds ? JSON.parse(storedAgentIds) : []);
         
         setSelectedAgentIds(agentIds);
-
-        // CRITICAL: Ensure deal metadata has selected_agent_ids before signing
-        if (agentIds.length > 0 && !loadedDeal?.metadata?.selected_agent_ids) {
-          console.log('[MyAgreement] Updating deal metadata with agent IDs:', agentIds);
-          await base44.entities.Deal.update(dealId, {
-            metadata: {
-              ...loadedDeal?.metadata,
-              selected_agent_ids: agentIds
-            }
-          });
-        }
 
         // Load agent profiles
         if (agentIds.length > 0) {
@@ -69,17 +61,13 @@ export default function MyAgreement() {
           const agents = await Promise.all(agentPromises);
           setAgentProfiles(agents.filter(Boolean));
         }
-
-        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-        const loadedAgreement = agRes?.data?.agreement || null;
-        setAgreement(loadedAgreement);
       } catch (e) {
         toast.error('Failed to load agreement');
       } finally {
         setLoading(false);
       }
     })();
-  }, [dealId, navigate, profile?.user_role]);
+  }, [dealId, navigate, profile]);
 
   // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
   useEffect(() => {
