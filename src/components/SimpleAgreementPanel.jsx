@@ -554,6 +554,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                         if (roomRes?.[0]) {
                                           setLocalRoom(roomRes[0]);
                                         }
+                                        // Also refresh deal to sync updated proposed_terms to parent
+                                        const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
+                                        if (onCounterUpdate) onCounterUpdate(dealRes?.data?.deal || dealRes?.data);
                                       } catch (_) {}
                                     }, 300);
                                     if (onCounterReceived) onCounterReceived();
