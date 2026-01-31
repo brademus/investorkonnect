@@ -189,12 +189,34 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
          return { ...prev, ...event.data };
        });
      }
+    });
+
+    return () => {
+      try { unsubscribe?.(); } catch (_) {}
+    };
+   }, [dealId, roomId]);
+
+  // Subscribe to room updates to track requires_regenerate flag
+  React.useEffect(() => {
+   if (!roomId) return;
+
+   const unsubscribe = base44.entities.Room.subscribe((event) => {
+     if (event?.data?.id === roomId) {
+       setLocalRoom(prev => {
+         // Update if requires_regenerate changed
+         if (prev?.requires_regenerate === event.data.requires_regenerate &&
+             prev?.proposed_terms === event.data.proposed_terms) {
+           return prev;
+         }
+         return { ...prev, ...event.data };
+       });
+     }
    });
 
    return () => {
      try { unsubscribe?.(); } catch (_) {}
    };
-  }, [dealId, roomId]);
+  }, [roomId]);
 
   // CRITICAL: Only trigger callback once after signing, not on every load
   const [hasTriggeredCallback, setHasTriggeredCallback] = useState(false);
