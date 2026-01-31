@@ -381,25 +381,31 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                             setTimeout(async () => {
                                               try {
                                                 if (!res.data.agreement?.id) {
+                                                  setDebugError('Agreement ID missing from regeneration response');
                                                   toast.error('Agreement ID missing');
                                                   setBusy(false);
                                                   return;
                                                 }
+                                                const baseUrl = window.location.href.split('&signed')[0];
                                                 const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
                                                   agreement_id: res.data.agreement.id,
                                                   role: 'investor',
                                                   room_id: roomId,
-                                                  redirect_url: window.location.href + '&signed=1'
+                                                  redirect_url: baseUrl + '&signed=1'
                                                 });
                                                 if (signRes.data?.signing_url) {
                                                   window.location.assign(signRes.data.signing_url);
                                                 } else {
-                                                  toast.error(signRes.data?.error || 'Failed to get signing URL');
+                                                  const errorMsg = signRes.data?.error || 'Failed to get signing URL';
+                                                  setDebugError(errorMsg);
+                                                  toast.error(errorMsg);
                                                   setBusy(false);
                                                 }
                                               } catch (e) {
                                                 console.error('[SimpleAgreementPanel] Signing after regenerate error:', e);
-                                                toast.error(e?.message || 'Failed to start signing');
+                                                const errorMsg = e?.response?.data?.error || e?.message || 'Failed to start signing';
+                                                setDebugError(errorMsg);
+                                                toast.error(errorMsg);
                                                 setBusy(false);
                                               }
                                             }, 800);
