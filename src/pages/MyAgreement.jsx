@@ -63,7 +63,17 @@ export default function MyAgreement() {
         }
 
         const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-        setAgreement(agRes?.data?.agreement || null);
+        const loadedAgreement = agRes?.data?.agreement || null;
+        setAgreement(loadedAgreement);
+
+        // If investor already signed, redirect to Pipeline immediately
+        if (loadedAgreement?.investor_signed_at) {
+          console.log('[MyAgreement] Investor already signed, redirecting to Pipeline');
+          toast.info('You already signed this agreement');
+          setTimeout(() => {
+            navigate(createPageUrl('Pipeline'), { replace: true });
+          }, 1000);
+        }
       } catch (e) {
         toast.error('Failed to load agreement');
       } finally {
