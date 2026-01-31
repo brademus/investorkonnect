@@ -1119,15 +1119,9 @@ Deno.serve(async (req) => {
       }]
     };
     
-    // ALWAYS create a NEW agreement (never update in-place)
-    if (existingAgreementId) {
-      // Mark old agreement as superseded
-      await base44.asServiceRole.entities.LegalAgreement.update(existingAgreementId, {
-        status: 'superseded',
-        docusign_status: 'voided'
-      });
-      console.log('[generateLegalAgreement] ✓ Old agreement marked superseded:', existingAgreementId);
-    }
+    // IMPORTANT: Do NOT mark old agreement as superseded yet
+    // It will be marked as superseded AFTER the new agreement is fully signed (via webhook)
+    // This preserves the old agreement during signing in case the user navigates away
     
     // Create NEW agreement
     const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
