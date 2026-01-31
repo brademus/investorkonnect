@@ -60,8 +60,7 @@ export default function DocuSignReturn() {
               }
               
               const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
-                deal_id: dealId,
-                selected_agent_ids: agentIds
+                deal_id: dealId
               });
               console.log('[DocuSignReturn] Invite creation response:', res.data);
               
