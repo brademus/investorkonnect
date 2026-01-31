@@ -99,8 +99,8 @@ export default function SelectAgent() {
       
       const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
-      // Create ONE deal with selected agents stored in metadata
-      const newDeal = await base44.entities.Deal.create({
+      // CRITICAL FIX: Create deal with agents in metadata as plain object, not nested
+      const dealPayload = {
         title: `${dealData.propertyAddress}`,
         description: dealData.specialNotes || "",
         property_address: dealData.propertyAddress,
@@ -143,17 +143,19 @@ export default function SelectAgent() {
           uploaded_at: new Date().toISOString()
         } : null,
         status: "draft",
-        pipeline_stage: "new_listings",
+        pipeline_stage: "new_deals",
         investor_id: currentProfile?.id,
-        metadata: {
-          selected_agent_ids: selectedAgentIds,
-          pending_agreement_generation: true
-        }
-      });
+        selected_agent_ids: selectedAgentIds,
+        pending_agreement_generation: true
+      };
 
-      console.log('[SelectAgent] Created deal:', newDeal.id);
+      console.log('[SelectAgent] Creating deal with selected agents:', selectedAgentIds);
 
-      // Save selected agents to BOTH generic and deal-specific keys for redundancy
+      const newDeal = await base44.entities.Deal.create(dealPayload);
+
+      console.log('[SelectAgent] Created deal:', newDeal.id, 'with agents:', newDeal.selected_agent_ids);
+
+      // Save selected agents to session storage for redundancy
       sessionStorage.setItem("pendingDealId", newDeal.id);
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
       sessionStorage.setItem(`selectedAgentIds_${newDeal.id}`, JSON.stringify(selectedAgentIds));
