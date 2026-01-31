@@ -200,16 +200,16 @@ Deno.serve(async (req) => {
       const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
       const roomData = roomsCheck?.[0];
 
-      // CRITICAL: Agent can sign if investor has signed the CURRENT agreement, even if requires_regenerate flag is true
-      // (means investor regenerated and signed, agent now needs to sign the fresh agreement)
-      const agentCanProceedAfterInvestorRegen = role === 'agent' && agreement.investor_signed_at && agreement.status !== 'sent' && agreement.status !== 'draft';
+      // CRITICAL: Investor can ALWAYS sign the current agreement (that's their job after regeneration)
+      // Only AGENT is blocked until investor has signed the fresh agreement
+      const agentMustWaitForInvestor = role === 'agent' && roomData?.requires_regenerate === true && !agreement.investor_signed_at;
 
-      if (roomData && roomData.requires_regenerate === true && !agentCanProceedAfterInvestorRegen) {
-        console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true, investor must regenerate first`);
+      if (agentMustWaitForInvestor) {
+        console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true and investor hasn't signed yet`);
         return Response.json({ 
           ok: false,
           code: 'REGENERATE_REQUIRED',
-          message: 'Investor must regenerate and re-sign before signing can continue.',
+          message: 'Investor must regenerate and re-sign before you can sign.',
           error: 'Agreement terms have changed. Investor must regenerate and sign the new document first before you can sign.'
         }, { status: 400 });
       }
