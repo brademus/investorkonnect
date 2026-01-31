@@ -85,8 +85,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const requiresRegenerate = localRoom?.requires_regenerate === true;
   const canRegenerate = !fullySigned && requiresRegenerate;
 
-  // Show form only to investor, only if no agreement yet or regenerate needed
-  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded');
+  // CRITICAL: Don't show generate/sign buttons if investor already signed unless counter requires regeneration
+  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded') && !investorSigned;
 
   // Handle generate agreement
   const handleGenerate = async () => {
