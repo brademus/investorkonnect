@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
@@ -23,10 +23,12 @@ export default function MyAgreement() {
   const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
+  const loadedRef = useRef(false);
 
   // Load deal, selected agents, and agreement state
   useEffect(() => {
-    if (!dealId || !profile) return;
+    if (!dealId || !profile || loadedRef.current) return;
+    loadedRef.current = true;
     
     (async () => {
       try {
