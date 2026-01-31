@@ -79,23 +79,25 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Update pointers and clear regenerate flag
+    // Update pointers but KEEP regenerate flag until investor actually signs
+    // This ensures agent doesn't see sign button until investor signs the new agreement
     if (room_id && room) {
       await base44.asServiceRole.entities.Room.update(room_id, {
-        current_legal_agreement_id: newAgreement.id,
-        requires_regenerate: false
+        current_legal_agreement_id: newAgreement.id
+        // DO NOT clear requires_regenerate - investor must sign new agreement first
       });
     } else {
       await base44.asServiceRole.entities.Deal.update(deal_id, {
-        current_legal_agreement_id: newAgreement.id,
-        requires_regenerate: false,
-        requires_regenerate_reason: null
+        current_legal_agreement_id: newAgreement.id
+        // DO NOT clear requires_regenerate - investor must sign new agreement first
       });
     }
 
+    // Return signing URL so frontend can redirect immediately
     return Response.json({ 
       success: true, 
-      agreement: newAgreement 
+      agreement: newAgreement,
+      signing_url: newAgreement.docusign_signing_url || null
     });
     
   } catch (error) {
