@@ -209,13 +209,21 @@ Deno.serve(async (req) => {
       });
 
       const otherPendingCounters = (allCounters || []).filter(c => c.id !== counter_offer_id);
-      for (const otherCounter of otherPendingCounters) {
-        await withRetry(async () => {
-          await base44.asServiceRole.entities.CounterOffer.update(otherCounter.id, {
-            status: 'superseded',
-            superseded_by_counter_offer_id: counter_offer_id
+      if (otherPendingCounters.length > 0) {
+        // Batch supersede operations with throttling
+        for (let i = 0; i < otherPendingCounters.length; i++) {
+          const otherCounter = otherPendingCounters[i];
+          await withRetry(async () => {
+            await base44.asServiceRole.entities.CounterOffer.update(otherCounter.id, {
+              status: 'superseded',
+              superseded_by_counter_offer_id: counter_offer_id
+            });
           });
-        });
+          // Small delay between updates to avoid rate limiting
+          if (i < otherPendingCounters.length - 1) {
+            await new Promise(r => setTimeout(r, 100));
+          }
+        }
       }
       console.log('[respondToCounterOffer] ✓ Marked', otherPendingCounters.length, 'other pending counters as superseded');
 
