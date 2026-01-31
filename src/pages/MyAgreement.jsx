@@ -106,83 +106,23 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, create invites for all selected agents
+  // After investor signs, wait for invites to be created then redirect
   const handlePostSigningNavigation = async () => {
     if (!dealId) return;
 
     try {
-      // Re-fetch fresh deal and base agreement to ensure we have latest data
-      const freshDeals = await base44.entities.Deal.filter({ id: dealId });
-      const freshDeal = freshDeals?.[0];
-      if (freshDeal) {
-        setDeal(freshDeal);
-      }
+      // Wait for invites to be created by DocuSignReturn
+      await new Promise(r => setTimeout(r, 1000));
 
-      const freshAgreements = await base44.entities.LegalAgreement.filter({ 
-        deal_id: dealId, 
-        room_id: null 
-      });
-      const freshAgreement = freshAgreements?.sort((a,b) => 
-        new Date(b.updated_date || b.created_date || 0) - new Date(a.updated_date || a.created_date || 0)
-      )?.[0];
+      // Clear caches
+      queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+      queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
-      if (!freshAgreement?.investor_signed_at) {
-        return;
-      }
-
-      setAgreement(freshAgreement);
-      
-      // Get selected agents from sessionStorage, state, or fresh deal metadata
-      let agentsToInvite = selectedAgentIds.length > 0 ? selectedAgentIds : (freshDeal?.metadata?.selected_agent_ids || deal?.metadata?.selected_agent_ids || []);
-      if (agentsToInvite.length === 0) {
-        const storedAgents = sessionStorage.getItem("selectedAgentIds");
-        if (storedAgents) {
-          agentsToInvite = JSON.parse(storedAgents);
-        }
-      }
-
-      console.log('[MyAgreement] Agents to invite:', agentsToInvite);
-      console.log('[MyAgreement] Deal metadata:', freshDeal?.metadata || deal?.metadata);
-
-      // If no agents selected, show error
-      if (agentsToInvite.length === 0) {
-        console.error('[MyAgreement] No agents found after signing');
-        toast.error('No agents selected. Please go back and select agents.');
-        return;
-      }
-      
-      console.log('[MyAgreement] Creating invites after investor signature for', agentsToInvite.length, 'agents');
-      
-      // Call function to create DealInvites, rooms, and agreements for all selected agents
-      console.log('[MyAgreement] Calling createInvitesAfterInvestorSign');
-      const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
-        deal_id: dealId
-      });
-
-      console.log('[MyAgreement] Invite creation result:', res?.data);
-
-      if (res?.data?.ok && res.data.invite_ids?.length > 0) {
-        sessionStorage.removeItem("pendingDealId");
-        sessionStorage.removeItem("selectedAgentIds");
-
-        // Clear caches
-        queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-
-        toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
-
-        // Wait brief moment for DB to propagate
-        await new Promise(r => setTimeout(r, 500));
-
-        // Navigate to Pipeline to see the deal
-        navigate(createPageUrl('Pipeline'), { replace: true });
-      } else {
-        console.error('[MyAgreement] Failed:', res?.data);
-        toast.error('Failed to send deal to agents. Please try again.');
-      }
+      // Navigate to Pipeline to see the deal
+      navigate(createPageUrl('Pipeline'), { replace: true });
     } catch (e) {
-      console.error('Failed to create invites:', e);
-      toast.error('Signed but failed to send to agents');
+      console.error('[MyAgreement] Navigation error:', e);
+      navigate(createPageUrl('Pipeline'), { replace: true });
     }
   };
 
