@@ -23,6 +23,8 @@ export default function MyAgreement() {
   const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
   const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
+  const [room, setRoom] = useState(null);
+  const [pendingCounters, setPendingCounters] = useState([]);
   const loadedRef = useRef(false);
 
   // Load deal, selected agents, and agreement state
