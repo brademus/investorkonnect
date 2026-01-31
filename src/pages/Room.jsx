@@ -414,13 +414,9 @@ export default function Room() {
     setActiveTab('details');
     setDeal(null);
     setAgreement(null);
-    setInvites([]);
-    setSelectedInvite(null);
-    setPendingCounters([]);
-    setCurrentRoom(null);
     setSelectedRoomId(null);
     setRoomStates({});
-    setRoomLoading(true);
+    setRoomLoading(false);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
@@ -1262,22 +1258,25 @@ export default function Room() {
         const did = normId(r.deal_id);
         if (!did) return;
 
-        // PHASE 7: Exclude expired rooms
-        if (r.request_status === 'expired') return;
-
-        // PHASE 7: For agents, exclude rooms where deal is locked to a different agent
-        if (isAgent && r.deal_summary?.locked_agent_id && r.deal_summary.locked_agent_id !== myId) {
-          console.log('[Room] Filtering out room - deal locked to different agent:', r.id);
-          return;
+        // CRITICAL: Exclude expired and locked rooms
+        if (r.request_status === 'expired' || r.request_status === 'locked') {
+          // Allow locked rooms only if they belong to the current user
+          if (r.request_status === 'locked' && isAgent && myId && r.agentId === myId) {
+            // Keep locked room for this agent - they won
+          } else if (r.request_status === 'locked' && !isAgent && myId && r.investorId === myId) {
+            // Investor can see all their locked rooms
+          } else {
+            return; // Skip expired or locked rooms that don't belong to this user
+          }
         }
 
         // Role-specific visibility
         if (isAgent) {
-          if (myId && r.agentId && r.agentId !== myId) return;
+          if (myId && r.agentId && r.agentId !== myId) return; // Only show my own rooms
           const ok = !r.request_status || ['requested', 'accepted', 'signed', 'locked'].includes(r.request_status);
           if (!ok) return;
         } else if (myId) {
-          if (r.investorId && r.investorId !== myId) return;
+          if (r.investorId && r.investorId !== myId) return; // Only show my own rooms
         }
 
         const prev = byDeal.get(did);
@@ -1285,50 +1284,31 @@ export default function Room() {
         const sA = score(r), sB = score(prev);
         const tA = new Date(r.updated_date || r.created_date || 0).getTime();
         const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
+        // Keep highest scoring room for this deal
         if (sA > sB || (sA === sB && tA > tB)) byDeal.set(did, r);
       });
 
-      // 2) Secondary collapse by canonical address signature (strip apt/suite, normalize zip)
-      const norm = (v) => (v ?? '').toString().trim().toLowerCase();
-      const cleanAddr = (s) => norm(s)
-        .replace(/\b(apt|apartment|unit|ste|suite|#)\b.*$/i, '')
-        .replace(/[^a-z0-9]/g, '')
-        .slice(0, 80);
-      const makeSig = (r) => [
-        cleanAddr(r?.property_address || r?.deal_title || r?.title || ''),
-        norm(r?.city),
-        norm(r?.state),
-        String(r?.zip || '').toString().slice(0, 5),
-        Number(Math.round(Number(r?.budget || 0)))
-      ].join('|');
+      let list = Array.from(byDeal.values());
 
-      const bySig = new Map();
-      for (const r of byDeal.values()) {
-        const k = makeSig(r);
-        const prev = bySig.get(k);
-        if (!prev) { bySig.set(k, r); continue; }
-        const sA = score(r), sB = score(prev);
-        const tA = new Date(r.updated_date || r.created_date || 0).getTime();
-        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-        if (sA > sB || (sA === sB && tA > tB)) bySig.set(k, r);
-      }
-
-      let list = Array.from(bySig.values());
-
-      // 3) Text filter
+      // 2) Text filter BEFORE deduplication
       if (searchConversations) {
         const q = String(searchConversations || '').toLowerCase();
-        list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || '')).toLowerCase().includes(q));
+        list = list.filter(r => ((r?.counterparty_name || r?.title || r?.deal_title || r?.property_address || '')).toLowerCase().includes(q));
       }
 
-      // 4) Final guard: ensure unique by normalized deal_id
-      list = list.filter((r, i, arr) => arr.findIndex(x => normId(x.deal_id) === normId(r.deal_id)) === i);
+      // 3) Final dedup by room ID (most recent wins)
+      const seen = new Set();
+      list = list.filter((r) => {
+        if (seen.has(r.id)) return false;
+        seen.add(r.id);
+        return true;
+      });
 
-      // 5) Sort newest first
+      // 4) Sort newest first
       return list.sort((a, b) => new Date(b?.updated_date || b?.created_date || 0) - new Date(a?.updated_date || a?.created_date || 0));
     } catch (e) {
       console.error('[Room] filteredRooms error:', e);
-      return Array.isArray(rooms) ? rooms.filter(r => r && r.deal_id) : [];
+      return Array.isArray(rooms) ? rooms.filter(r => r && r.deal_id && r.id) : [];
     }
   }, [rooms, searchConversations, profile?.user_role, profile?.id]);
 
