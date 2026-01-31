@@ -31,7 +31,7 @@ export default function MyAgreement() {
   useEffect(() => {
     if (!dealId || !profile || loadedRef.current) return;
     loadedRef.current = true;
-    
+
     (async () => {
       try {
         const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
@@ -43,12 +43,26 @@ export default function MyAgreement() {
         const loadedAgreement = agRes?.data?.agreement || null;
         setAgreement(loadedAgreement);
 
+        // Load all rooms for this deal
+        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
+
+        // For investor: load first room with counter offers
+        if (profile?.user_role === 'investor' && roomsForDeal?.length > 0) {
+          setRoom(roomsForDeal[0]);
+
+          // Load pending counter offers from agents
+          const counters = await base44.entities.CounterOffer.filter({ 
+            room_id: roomsForDeal[0].id,
+            status: 'pending'
+          });
+          setPendingCounters(counters);
+        }
+
         // CRITICAL: If investor already signed and rooms exist, redirect immediately
         // Check BOTH agreement and room status for signed state
-        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
         const hasSignedStatus = loadedAgreement?.investor_signed_at || 
                                roomsForDeal.some(r => r.agreement_status === 'investor_signed' || r.agreement_status === 'fully_signed');
-        
+
         if (roomsForDeal?.length > 0 && profile?.user_role === 'investor' && hasSignedStatus) {
           console.log('[MyAgreement] Investor already signed and rooms exist, redirecting to Room');
           navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
@@ -58,7 +72,7 @@ export default function MyAgreement() {
         // Load selected agent IDs from deal or sessionStorage
         const storedAgentIds = sessionStorage.getItem("selectedAgentIds");
         const agentIds = loadedDeal?.selected_agent_ids || loadedDeal?.metadata?.selected_agent_ids || (storedAgentIds ? JSON.parse(storedAgentIds) : []);
-        
+
         setSelectedAgentIds(agentIds);
 
         // Load agent profiles
