@@ -1,13 +1,13 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-async function withRetry(fn, maxAttempts = 3) {
+async function withRetry(fn, maxAttempts = 5) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       return await fn();
     } catch (error) {
       if (error.status === 429 && attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt - 1) * 1000;
-        console.log(`[respondToCounterOffer] Rate limited, retrying in ${delay}ms`);
+        const delay = Math.pow(2, attempt) * 500; // exponential: 1s, 2s, 4s, 8s, 16s
+        console.log(`[respondToCounterOffer] Rate limited (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms`);
         await new Promise(r => setTimeout(r, delay));
       } else {
         throw error;
