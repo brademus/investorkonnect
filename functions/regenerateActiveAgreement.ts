@@ -79,12 +79,12 @@ Deno.serve(async (req) => {
       }, { status: 500 });
     }
 
-    // Update pointers and update room to reflect investor_signed (agreement_status)
+    // Update pointers and reset agreement signing status
     // Keep regenerate flag until investor completes signing via DocuSign callback
     if (room_id && room) {
       await base44.asServiceRole.entities.Room.update(room_id, {
         current_legal_agreement_id: newAgreement.id,
-        agreement_status: 'sent'  // Reflect that new agreement is ready for investor to sign
+        agreement_status: 'draft'  // Reset to draft - no signatures yet
         // DO NOT clear requires_regenerate - cleared by webhook after investor signs
       });
     } else {
