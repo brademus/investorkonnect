@@ -553,6 +553,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                         const roomRes = await base44.entities.Room.filter({ id: roomId });
                                         if (roomRes?.[0]) {
                                           setLocalRoom(roomRes[0]);
+                                          if (onRoomUpdate) onRoomUpdate(roomRes[0]);
                                         }
                                         // Also refresh deal to sync updated proposed_terms to parent
                                         const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
