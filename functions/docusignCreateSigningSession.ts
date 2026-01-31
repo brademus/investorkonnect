@@ -199,8 +199,12 @@ Deno.serve(async (req) => {
       // Load Room to check requires_regenerate flag
       const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
       const roomData = roomsCheck?.[0];
-      
-      if (roomData && roomData.requires_regenerate === true) {
+
+      // CRITICAL: Agent can sign if investor has signed the CURRENT agreement, even if requires_regenerate flag is true
+      // (means investor regenerated and signed, agent now needs to sign the fresh agreement)
+      const agentCanProceedAfterInvestorRegen = role === 'agent' && agreement.investor_signed_at && agreement.status !== 'sent' && agreement.status !== 'draft';
+
+      if (roomData && roomData.requires_regenerate === true && !agentCanProceedAfterInvestorRegen) {
         console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true, investor must regenerate first`);
         return Response.json({ 
           ok: false,
