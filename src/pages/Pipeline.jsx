@@ -917,7 +917,7 @@ function PipelineContent() {
             {/* Setup Checklist */}
             {identityLoaded && ((isAgent && !agentSetupComplete) || (isInvestor && !investorSetupComplete)) && (
               <div className="mb-6">
-                <SetupChecklist profile={profile} onRefresh={refresh} />
+                <SetupChecklist profile={profile} />
               </div>
             )}
 
