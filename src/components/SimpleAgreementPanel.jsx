@@ -40,20 +40,36 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
     const fetchLatest = async () => {
       try {
+        // CRITICAL: Try room-scoped first, then fall back to deal-level
         const res = await base44.functions.invoke('getLegalAgreement', { 
           deal_id: dealId, 
           room_id: roomId || undefined 
         });
+        
         if (res?.data?.agreement) {
-          console.log('[SimpleAgreementPanel] Loaded agreement:', res.data.agreement.id, 'status:', res.data.agreement.status, 'investor_signed:', !!res.data.agreement.investor_signed_at, 'agent_signed:', !!res.data.agreement.agent_signed_at);
+          console.log('[SimpleAgreementPanel] Loaded agreement:', {
+            id: res.data.agreement.id,
+            status: res.data.agreement.status,
+            investor_signed: !!res.data.agreement.investor_signed_at,
+            agent_signed: !!res.data.agreement.agent_signed_at,
+            room_id: res.data.agreement.room_id,
+            is_room_scoped: !!res.data.agreement.room_id
+          });
           setLocalAgreement(res.data.agreement);
+        } else {
+          console.log('[SimpleAgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
-        // Also refresh room to sync requires_regenerate flag
+        // Also refresh room to sync requires_regenerate flag and agreement_status
         if (roomId) {
           const roomRes = await base44.entities.Room.filter({ id: roomId });
           if (roomRes?.[0]) {
-            console.log('[SimpleAgreementPanel] Loaded room, requires_regenerate:', roomRes[0].requires_regenerate, 'agreement_status:', roomRes[0].agreement_status);
+            console.log('[SimpleAgreementPanel] Loaded room:', {
+              id: roomRes[0].id,
+              requires_regenerate: roomRes[0].requires_regenerate,
+              agreement_status: roomRes[0].agreement_status,
+              is_fully_signed: roomRes[0].is_fully_signed
+            });
             setLocalRoom(roomRes[0]);
           }
         }
@@ -582,13 +598,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {/* Agent Actions - Only show if not fully signed */}
               {isAgent && !fullySigned && (
                 <div className="space-y-3">
-                  {!investorSigned && requiresRegenerate && !fullySigned && (
+                  {!investorSigned && requiresRegenerate && !fullySigned && localAgreement && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
                     </div>
                   )}
 
-                  {!investorSigned && !requiresRegenerate && !fullySigned && (
+                  {!investorSigned && !requiresRegenerate && !fullySigned && localAgreement && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
                     </div>
