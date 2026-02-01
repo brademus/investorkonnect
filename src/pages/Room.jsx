@@ -445,15 +445,18 @@ export default function Room() {
 
         // Unified post-sign flag: chat unlocks ONLY when both parties have fully signed
         const isWorkingTogether = useMemo(() => {
-          return (
-            currentRoom?.agreement_status === 'fully_signed' ||
-            currentRoom?.is_fully_signed === true ||
-            deal?.is_fully_signed === true
-          );
+          const fullySignedRoom = currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed === true;
+          const fullySignedDeal = deal?.is_fully_signed === true;
+          const agreementFullySigned = agreement?.status === 'fully_signed';
+          const bothSigned = agreement?.investor_signed_at && agreement?.agent_signed_at;
+          return fullySignedRoom || fullySignedDeal || agreementFullySigned || bothSigned;
         }, [
           currentRoom?.agreement_status,
           currentRoom?.is_fully_signed,
-          deal?.is_fully_signed
+          deal?.is_fully_signed,
+          agreement?.status,
+          agreement?.investor_signed_at,
+          agreement?.agent_signed_at
         ]);
 
         // Chat unlocks ONLY when both parties have fully signed
