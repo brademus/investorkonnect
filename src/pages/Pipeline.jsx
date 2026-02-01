@@ -46,20 +46,19 @@ function PipelineContent() {
   useEffect(() => {
     if (loading) return;
     
-    // Prevent redirect loop: don't redirect if we just came from PostAuth
-    const fromPostAuth = sessionStorage.getItem('from_postauth') === 'true';
-    if (!profile && !fromPostAuth) {
-      sessionStorage.setItem('from_postauth', 'true');
-      navigate(createPageUrl("PostAuth"), { replace: true });
+    // CRITICAL: Guard against null profile first
+    if (!profile) {
+      // Prevent redirect loop: don't redirect if we just came from PostAuth
+      const fromPostAuth = sessionStorage.getItem('from_postauth') === 'true';
+      if (!fromPostAuth) {
+        sessionStorage.setItem('from_postauth', 'true');
+        navigate(createPageUrl("PostAuth"), { replace: true });
+      }
       return;
     }
     
     // Clear flag on successful load
-    if (profile) {
-      sessionStorage.removeItem('from_postauth');
-    }
-    
-    if (!profile) return; // CRITICAL: Guard against null profile
+    sessionStorage.removeItem('from_postauth');
     
     if (!onboarded) {
       const role = profile.user_role;
