@@ -1427,11 +1427,9 @@ export default function Room() {
           <Button
            onClick={(e) => {
              e.stopPropagation();
-             // Refresh profile and query caches before navigating to Pipeline
-             profile?.refresh?.();
+             // Invalidate caches before navigating to Pipeline
              queryClient.invalidateQueries({ queryKey: ['pipelineDeals'], exact: false });
              queryClient.invalidateQueries({ queryKey: ['rooms'], exact: false });
-             prefetchPipeline();
              navigate(createPageUrl("Pipeline"));
            }}
            variant="outline"
