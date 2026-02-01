@@ -112,8 +112,15 @@ function useMessages(roomId, authUser, currentProfile) {
   }, [roomId]);
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId) {
+      setItems([]);
+      setLoading(false);
+      setInitialLoadDone(true);
+      return;
+    }
+    
     let cancelled = false;
+    setLoading(true); // Start loading immediately on room switch
 
     const fetchMessages = async () => {
       try {
@@ -421,6 +428,8 @@ export default function Room() {
     setSelectedRoomId(null);
     setRoomStates({});
     setRoomLoading(true);
+    setItems([]); // Clear messages immediately
+    setInitialLoadDone(false); // Reset messages loading state
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
@@ -1383,10 +1392,37 @@ export default function Room() {
                 setDrawer(false);
                 return;
               }
-              // Optimistically set room to avoid momentary mismatch
-              // Reset state immediately to avoid cross-room flicker
-              setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
+              
+              // Instant reset: clear everything immediately for crisp switch
+              setItems([]);
+              setShowBoard(false);
+              setActiveTab('details');
               setDeal(null);
+              setAgreement(null);
+              setInvites([]);
+              setSelectedInvite(null);
+              setPendingCounters([]);
+              setRoomLoading(true);
+              
+              // Optimistically set room with cached data from sidebar for instant render
+              const cachedDeal = getCachedDeal(r.deal_id);
+              setCurrentRoom({ 
+                ...r,
+                id: r.id, 
+                city: r.city, 
+                state: r.state, 
+                budget: r.budget, 
+                is_fully_signed: r.is_fully_signed, 
+                title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title),
+                property_address: cachedDeal?.property_address,
+                pipeline_stage: cachedDeal?.pipeline_stage,
+                closing_date: cachedDeal?.key_dates?.closing_date
+              });
+              
+              if (cachedDeal) {
+                setDeal(cachedDeal);
+              }
+              
               navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
               setDrawer(false);
             };
