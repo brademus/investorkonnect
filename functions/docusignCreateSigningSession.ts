@@ -135,7 +135,12 @@ Deno.serve(async (req) => {
     if (legalAgreements && legalAgreements.length > 0) {
       agreement = legalAgreements[0];
       agreementType = 'LegalAgreement';
-      console.log('[DocuSign] Found LegalAgreement by ID');
+      console.log('[DocuSign] Found LegalAgreement by ID:', {
+        id: agreement.id,
+        investor_signed_at: agreement.investor_signed_at,
+        agent_signed_at: agreement.agent_signed_at,
+        status: agreement.status
+      });
     } else {
       // 2) Back-compat: check if agreement_id is an AgreementVersion (legacy)
       console.log('[DocuSign] Not found as LegalAgreement, checking legacy AgreementVersion...');
