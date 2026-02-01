@@ -2740,7 +2740,8 @@ export default function Room() {
                     </Button>
                   </div>
                 </div>
-              )}
+                 );
+               })()}
 
               {/* CRITICAL: Only show "Open My Agreement" banner if investor hasn't signed ANY agreement yet */}
               {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && !isMultiAgentMode && !agreement?.investor_signed_at && currentRoom?.agreement_status !== 'investor_signed' && (
