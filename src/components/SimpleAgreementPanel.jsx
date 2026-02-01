@@ -650,8 +650,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {/* Show sign/counter buttons if: investor signed current agreement, no pending counters, and agreement is active */}
-                  {investorSigned && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
+                  {/* Show sign/counter buttons if: agreement is sent/investor_signed, no pending counters, and not already signed by agent */}
+                  {(investorSigned || localAgreement?.status === 'sent' || localAgreement?.status === 'investor_signed') && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
