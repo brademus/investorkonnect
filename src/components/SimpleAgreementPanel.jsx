@@ -632,10 +632,17 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {/* Show if agent has already countered */}
+                  {/* Show if agent has a pending counter waiting for investor review */}
                   {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
+                    </div>
+                  )}
+
+                  {/* Show if investor has sent a counter and agent is waiting to respond */}
+                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Investor sent a counter offer - review or make your own counter</p>
                     </div>
                   )}
 
