@@ -58,6 +58,9 @@ function PipelineContent() {
     if (profile) {
       sessionStorage.removeItem('from_postauth');
     }
+    
+    if (!profile) return; // CRITICAL: Guard against null profile
+    
     if (!onboarded) {
       const role = profile.user_role;
       if (role === 'investor') {
