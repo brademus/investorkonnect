@@ -472,32 +472,60 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
                                             console.log('[SimpleAgreementPanel] Creating signing session for agreement:', agreementId);
 
-                                            // Small delay to ensure agreement is saved
-                                            await new Promise(r => setTimeout(r, 500));
+                                            // Longer delay to ensure DocuSign envelope is created
+                                            await new Promise(r => setTimeout(r, 2000));
 
-                                            try {
-                                              const baseUrl = window.location.href.split('&signed')[0].split('?')[0];
-                                              const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
-                                                agreement_id: agreementId,
-                                                role: 'investor',
-                                                room_id: roomId,
-                                                redirect_url: `${baseUrl}?roomId=${roomId}&signed=1`
-                                              });
+                                            // Retry logic for signing session
+                                            let signRes = null;
+                                            let attempts = 0;
+                                            const maxAttempts = 3;
 
-                                              console.log('[SimpleAgreementPanel] Signing session response:', signRes.data);
+                                            while (attempts < maxAttempts && !signRes?.data?.signing_url) {
+                                              attempts++;
+                                              try {
+                                                const baseUrl = window.location.href.split('&signed')[0].split('?')[0];
+                                                signRes = await base44.functions.invoke('docusignCreateSigningSession', {
+                                                  agreement_id: agreementId,
+                                                  role: 'investor',
+                                                  room_id: roomId,
+                                                  redirect_url: `${baseUrl}?roomId=${roomId}&signed=1`
+                                                });
 
-                                              if (signRes.data?.signing_url) {
-                                                window.location.assign(signRes.data.signing_url);
-                                              } else {
-                                                const errorMsg = signRes.data?.error || 'Failed to get signing URL';
-                                                console.error('[SimpleAgreementPanel] No signing URL:', signRes.data);
-                                                setDebugError(errorMsg);
-                                                toast.error(errorMsg);
-                                                setBusy(false);
+                                                console.log(`[SimpleAgreementPanel] Signing session response (attempt ${attempts}):`, signRes.data);
+
+                                                if (signRes.data?.signing_url) {
+                                                  window.location.assign(signRes.data.signing_url);
+                                                  return;
+                                                }
+
+                                                // If envelope not ready, wait and retry
+                                                if (signRes.data?.error?.includes('envelope') || signRes.data?.error?.includes('missing')) {
+                                                  if (attempts < maxAttempts) {
+                                                    console.log('[SimpleAgreementPanel] Envelope not ready, retrying in 1.5s...');
+                                                    await new Promise(r => setTimeout(r, 1500));
+                                                  }
+                                                } else {
+                                                  // Other error, don't retry
+                                                  break;
+                                                }
+                                              } catch (e) {
+                                                console.error(`[SimpleAgreementPanel] Signing attempt ${attempts} error:`, e);
+                                                if (attempts >= maxAttempts) {
+                                                  const errorMsg = e?.response?.data?.error || e?.message || 'Failed to start signing';
+                                                  setDebugError(errorMsg);
+                                                  toast.error(errorMsg);
+                                                  setBusy(false);
+                                                  return;
+                                                }
+                                                // Wait and retry
+                                                await new Promise(r => setTimeout(r, 1500));
                                               }
-                                            } catch (e) {
-                                              console.error('[SimpleAgreementPanel] Signing after regenerate error:', e);
-                                              const errorMsg = e?.response?.data?.error || e?.message || 'Failed to start signing';
+                                            }
+
+                                            // Final fallback if no signing URL after retries
+                                            if (!signRes?.data?.signing_url) {
+                                              const errorMsg = signRes?.data?.error || 'Failed to get signing URL after multiple attempts';
+                                              console.error('[SimpleAgreementPanel] No signing URL after retries:', signRes?.data);
                                               setDebugError(errorMsg);
                                               toast.error(errorMsg);
                                               setBusy(false);
