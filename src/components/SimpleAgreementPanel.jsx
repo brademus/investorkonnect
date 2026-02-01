@@ -219,6 +219,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
    const unsubscribe = base44.entities.Room.subscribe((event) => {
     if (event?.data?.id === roomId) {
+      console.log('[SimpleAgreementPanel] Room update received:', {
+        requires_regenerate: event.data.requires_regenerate,
+        agreement_status: event.data.agreement_status,
+        current_legal_agreement_id: event.data.current_legal_agreement_id
+      });
       setLocalRoom(prev => {
         // Update if ANY critical field changed
         if (prev?.requires_regenerate === event.data.requires_regenerate &&
@@ -236,6 +241,37 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
      try { unsubscribe?.(); } catch (_) {}
    };
   }, [roomId]);
+
+  // Force refresh room state periodically if agent is waiting
+  React.useEffect(() => {
+    if (!roomId || !isAgent || !requiresRegenerate) return;
+    
+    const pollInterval = setInterval(async () => {
+      try {
+        const rooms = await base44.entities.Room.filter({ id: roomId });
+        if (rooms?.[0]) {
+          console.log('[SimpleAgreementPanel] Polling room state:', {
+            requires_regenerate: rooms[0].requires_regenerate,
+            agreement_status: rooms[0].agreement_status
+          });
+          setLocalRoom(rooms[0]);
+          
+          // Also refresh agreement to get latest investor signature status
+          const res = await base44.functions.invoke('getLegalAgreement', { 
+            deal_id: dealId, 
+            room_id: roomId 
+          });
+          if (res?.data?.agreement) {
+            setLocalAgreement(res.data.agreement);
+          }
+        }
+      } catch (e) {
+        console.error('[SimpleAgreementPanel] Poll error:', e);
+      }
+    }, 3000); // Poll every 3 seconds
+
+    return () => clearInterval(pollInterval);
+  }, [roomId, isAgent, requiresRegenerate, dealId]);
 
   // CRITICAL: Only trigger callback once after signing, not on every load
   const [hasTriggeredCallback, setHasTriggeredCallback] = useState(false);
