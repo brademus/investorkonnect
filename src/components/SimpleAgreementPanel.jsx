@@ -100,7 +100,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: Check Room.requires_regenerate (NOT agreement.requires_regenerate which is never set)
   // This flag is set server-side when counter is accepted and drives regeneration requirement
   const requiresRegenerate = localRoom?.requires_regenerate === true || pendingCounters.some(c => c.status === 'accepted');
-  const canRegenerate = !fullySigned && requiresRegenerate;
+  // CRITICAL: Once investor signs, they should NOT see regenerate button anymore (even if agent hasn't signed yet)
+  const canRegenerate = !investorSigned && requiresRegenerate;
 
   // CRITICAL: Don't show generate form if investor already signed (unless counter requires regeneration)
   const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded') && !investorSigned && !canRegenerate;
