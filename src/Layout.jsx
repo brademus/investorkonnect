@@ -47,8 +47,8 @@ function LayoutContent({ children }) {
     if (loading) {
       setShowAppLoader(true);
     } else {
-      const t = setTimeout(() => setShowAppLoader(false), 150);
-      return () => clearTimeout(t);
+      // Fade out immediately when data loads
+      setShowAppLoader(false);
     }
   }, [loading]);
 
