@@ -1,5 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+async function withRetry(fn, maxAttempts = 5) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.status === 429 && attempt < maxAttempts) {
+        const delay = Math.pow(2, attempt) * 500;
+        console.log(`[regenerateActiveAgreement] Rate limited (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms`);
+        await new Promise(r => setTimeout(r, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+}
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -14,31 +30,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
 
-    // Verify investor
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles?.[0];
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
+    // Verify investor with retry
+    const profile = await withRetry(async () => {
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      if (!profiles?.[0]) throw new Error('Profile not found');
+      return profiles[0];
+    });
+    
     if (profile.user_role !== 'investor') {
       return Response.json({ error: 'Only investor can regenerate' }, { status: 403 });
     }
 
-    // Load deal
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-    if (!deals?.length) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
-    }
-    const deal = deals[0];
+    // Load deal with retry
+    const deal = await withRetry(async () => {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+      if (!deals?.length) throw new Error('Deal not found');
+      return deals[0];
+    });
 
     // Load Room if room-scoped to get its proposed_terms
     let room = null;
     if (room_id) {
-      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-      room = rooms?.[0] || null;
-      if (!room) {
-        return Response.json({ error: 'Room not found' }, { status: 404 });
-      }
+      room = await withRetry(async () => {
+        const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+        if (!rooms?.[0]) throw new Error('Room not found');
+        return rooms[0];
+      });
     }
 
     // Use room-scoped terms if available, otherwise fall back to deal terms
@@ -80,24 +97,30 @@ Deno.serve(async (req) => {
     }
 
     // CRITICAL: Ensure new agreement has no signatures (safety - should already be clean from generation)
-    await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
-      investor_signed_at: null,
-      agent_signed_at: null,
-      status: 'draft'
+    await withRetry(async () => {
+      await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
+        investor_signed_at: null,
+        agent_signed_at: null,
+        status: 'draft'
+      });
     });
 
-    // Update pointers and reset agreement signing status
+    // Update pointers and reset agreement signing status with retry
     // Keep regenerate flag until investor completes signing via DocuSign callback
     if (room_id && room) {
-      await base44.asServiceRole.entities.Room.update(room_id, {
-        current_legal_agreement_id: newAgreement.id,
-        agreement_status: 'draft'  // Reset to draft - no signatures yet
-        // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.Room.update(room_id, {
+          current_legal_agreement_id: newAgreement.id,
+          agreement_status: 'draft'  // Reset to draft - no signatures yet
+          // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+        });
       });
     } else {
-      await base44.asServiceRole.entities.Deal.update(deal_id, {
-        current_legal_agreement_id: newAgreement.id
-        // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+      await withRetry(async () => {
+        await base44.asServiceRole.entities.Deal.update(deal_id, {
+          current_legal_agreement_id: newAgreement.id
+          // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+        });
       });
     }
 
