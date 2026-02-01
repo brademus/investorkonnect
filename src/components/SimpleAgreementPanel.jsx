@@ -566,16 +566,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                </div>
               )}
 
-              {/* Agent Actions */}
+              {/* Agent Actions - Only show if not fully signed */}
               {isAgent && !fullySigned && (
                 <div className="space-y-3">
-                  {!investorSigned && requiresRegenerate && (
+                  {!investorSigned && requiresRegenerate && !fullySigned && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
                     </div>
                   )}
 
-                  {!investorSigned && !requiresRegenerate && (
+                  {!investorSigned && !requiresRegenerate && !fullySigned && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
                     </div>
