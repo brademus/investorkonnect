@@ -199,7 +199,7 @@ function LayoutContent({ children }) {
       {/* Page content – centered, offset for fixed header */}
       <main
         className={showNav && !isNoNavPage && !isFullBleedPage ? "mx-auto max-w-6xl px-4 pb-28 md:pb-12 pt-4 md:pt-20 sm:px-6 lg:max-w-7xl lg:px-8 lg:pt-24" : ""}
-        style={{ opacity: showAppLoader ? 0 : 1, pointerEvents: showAppLoader ? 'none' : 'auto', transition: 'opacity 150ms ease' }}
+        style={{ opacity: showAppLoader ? 0 : 1, pointerEvents: showAppLoader ? 'none' : 'auto', transition: 'opacity 75ms ease' }}
       >
         {children}
       </main>
