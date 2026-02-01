@@ -648,19 +648,7 @@ Deno.serve(async (req) => {
     
     const viewData = await viewResponse.json();
       
-      if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
-        return Response.json({ 
-          error: 'Signing session issue detected. Please regenerate the agreement from the Agreement tab.'
-        }, { status: 400 });
-      }
-      
-      return Response.json({ 
-        error: errorMsg || 'Failed to create signing session',
-        hint: 'If this persists, try regenerating the agreement.'
-      }, { status: 500 });
-    }
-    
-    const viewData = await viewResponse.json();
+
     
     // Log signing session (only update the entity type we found)
     if (agreementType === 'LegalAgreement') {
