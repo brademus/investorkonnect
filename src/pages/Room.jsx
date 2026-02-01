@@ -428,7 +428,7 @@ export default function Room() {
     setSelectedRoomId(null);
     setRoomStates({});
     setRoomLoading(true);
-    setItems([]); // Clear messages immediately
+    // DO NOT clear items here - useMessages hook handles its own cleanup
     // Force fresh fetch by resetting current room
     setCurrentRoom(null);
   }, [roomId]);
