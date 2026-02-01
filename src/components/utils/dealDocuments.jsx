@@ -35,7 +35,7 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
       source: 'deal.documents'
     },
     
-    // Internal Agreement - robust fallbacks
+    // Internal Agreement - robust fallbacks (check both Deal and Room scope)
     internalAgreement: {
       label: 'Internal Agreement',
       urlSignedPdf:
@@ -45,16 +45,18 @@ export function resolveDealDocuments({ deal = {}, room = {} }) {
         docs.operating_agreement?.file_url ||
         docs.operating_agreement?.url ||
         docs.operating_agreement?.signed_pdf_url ||
+        room?.internal_agreement_document?.url ||
+        room?.internal_agreement_document?.signed_pdf_url ||
         deal?.internal_agreement_signed_url ||
         (deal?.legal_agreement && (deal.legal_agreement.signed_pdf_url || deal.legal_agreement.final_pdf_url || deal.legal_agreement.pdf_file_url)) ||
         deal?.signed_pdf_url ||
         deal?.signing_pdf_url ||
         deal?.final_pdf_url ||
-        deal?.docusign_pdf_url ||
-        room?.internal_agreement_document?.url,
+        deal?.docusign_pdf_url,
       urlDraft: docs.internal_agreement_draft?.file_url || docs.internal_agreement_draft?.url,
-      filename: docs.internal_agreement?.filename || docs.operating_agreement?.filename || deal?.agreement_filename || room?.internal_agreement_document?.name,
-      createdAt: docs.internal_agreement?.uploaded_at || docs.operating_agreement?.uploaded_at || room?.internal_agreement_document?.generated_at,
+      filename: docs.internal_agreement?.filename || docs.internal_agreement?.name || docs.operating_agreement?.filename || docs.operating_agreement?.name || room?.internal_agreement_document?.name || deal?.agreement_filename,
+      createdAt: docs.internal_agreement?.uploaded_at || docs.operating_agreement?.uploaded_at || room?.internal_agreement_document?.generated_at || room?.internal_agreement_document?.uploaded_at,
+      uploadedBy: docs.internal_agreement?.uploaded_by_name || docs.operating_agreement?.uploaded_by_name || 'System',
       source: 'deal/room.documents'
     },
     
