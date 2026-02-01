@@ -1481,8 +1481,7 @@ export default function Room() {
                   const agentId = deal?.locked_agent_id || roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
                   navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
                 }}
-                variant="outline"
-                className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full font-semibold hover:border-[#E3C567]"
+                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
               >
                 <User className="w-4 h-4 mr-2" />
                 Agent Profile
@@ -2750,9 +2749,8 @@ export default function Room() {
                               e.stopPropagation();
                               navigate(`${createPageUrl("AgentProfile")}?profileId=${currentRoom.agentId}`);
                             }}
-                            variant="outline"
                             size="sm"
-                            className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full mt-2"
+                            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full mt-2 font-semibold"
                           >
                             View Agent Profile
                           </Button>
