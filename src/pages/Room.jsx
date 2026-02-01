@@ -992,9 +992,8 @@ export default function Room() {
   }, [messages, roomId, currentRoom?.id]);
 
   // Multi-agent mode: Show pending agents instead of messages for investors with multiple agents
-  // Exit multi-agent mode once investor has signed OR deal is locked OR room is fully signed
-  const investorHasSigned = agreement?.investor_signed_at || currentRoom?.ioa_investor_signed_at || currentRoom?.agreement_status === 'investor_signed' || currentRoom?.agreement_status === 'fully_signed';
-  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !investorHasSigned && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
+  // Exit multi-agent mode ONLY when deal is locked OR room is fully signed (both parties signed)
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed && currentRoom?.agreement_status !== 'fully_signed' && !deal?.is_fully_signed;
 
 
 
