@@ -611,22 +611,26 @@ Deno.serve(async (req) => {
       console.warn('[DocuSign Webhook] Warning: failed to update Room agreement_status', e?.message || e);
     }
 
-    // Persist signed agreement into Deal.documents so Shared Files can show it immediately
+    // Persist signed agreement into BOTH Deal.documents AND Room.internal_agreement_document
     try {
       const finalStatus = updates.status || agreement.status;
       if ((finalStatus === 'fully_signed' || finalStatus === 'attorney_review_pending') && (updates.signed_pdf_url || agreement.signed_pdf_url)) {
         const nowIso = new Date().toISOString();
-        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
-        const existingDeal = dealArr[0] || {};
-        const existingDocs = existingDeal.documents || {};
         const signedUrl = updates.signed_pdf_url || agreement.signed_pdf_url;
         const docMeta = {
           url: signedUrl,
+          signed_pdf_url: signedUrl,
           name: 'Internal Agreement (Signed).pdf',
           type: 'application/pdf',
           uploaded_at: nowIso,
-          verified: true
+          verified: true,
+          uploaded_by_name: 'System'
         };
+        
+        // Update Deal.documents
+        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+        const existingDeal = dealArr[0] || {};
+        const existingDocs = existingDeal.documents || {};
         const newDocs = {
           ...existingDocs,
           operating_agreement: docMeta,
@@ -634,9 +638,17 @@ Deno.serve(async (req) => {
         };
         await base44.asServiceRole.entities.Deal.update(agreement.deal_id, { documents: newDocs, is_fully_signed: true });
         console.log('[DocuSign Webhook] ✓ Deal.documents updated with signed agreement');
+        
+        // ALSO update Room.internal_agreement_document for room-scoped visibility
+        if (agreement.room_id) {
+          await base44.asServiceRole.entities.Room.update(agreement.room_id, {
+            internal_agreement_document: docMeta
+          });
+          console.log('[DocuSign Webhook] ✓ Room.internal_agreement_document updated');
+        }
       }
     } catch (e) {
-      console.warn('[DocuSign Webhook] Warning: failed to persist signed agreement to Deal.documents', e?.message || e);
+      console.warn('[DocuSign Webhook] Warning: failed to persist signed agreement to documents', e?.message || e);
     }
     
     return Response.json({ received: true });
