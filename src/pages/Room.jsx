@@ -1445,7 +1445,11 @@ export default function Room() {
                        ? counterpartName : (profile?.user_role === 'investor' ? 'Agent' : 'Investor')}
              </h2>
             <div className="flex items-center gap-3">
-             {(currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed || deal?.is_fully_signed || (agreement?.investor_signed_at && agreement?.agent_signed_at)) ? (
+             {(currentRoom?.agreement_status === 'fully_signed' || 
+               currentRoom?.is_fully_signed || 
+               deal?.is_fully_signed || 
+               agreement?.status === 'fully_signed' ||
+               (agreement?.investor_signed_at && agreement?.agent_signed_at)) ? (
                                    <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">
                  <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
@@ -1565,7 +1569,11 @@ export default function Room() {
                   </span>
                   <span className="text-[#555] text-xs">•</span>
                   <span className="text-[#808080] text-xs uppercase tracking-wider font-semibold">
-                   {currentRoom?.is_fully_signed || (agreement?.investor_signed_at && agreement?.agent_signed_at) ? (
+                   {currentRoom?.is_fully_signed || 
+                    currentRoom?.agreement_status === 'fully_signed' ||
+                    deal?.is_fully_signed ||
+                    agreement?.status === 'fully_signed' ||
+                    (agreement?.investor_signed_at && agreement?.agent_signed_at) ? (
                      <span className="text-[#10B981]">Working Together</span>
                    ) : currentRoom?.request_status === 'accepted' ? (
                      <span className="text-[#F59E0B]">Awaiting Agreement Signatures</span>
@@ -2675,7 +2683,12 @@ export default function Room() {
               )}
 
               {/* PHASE 4: Window B for Agent - Sign to lock in - Hide if fully signed */}
-              {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed && !(agreement?.investor_signed_at && agreement?.agent_signed_at) && (
+              {profile?.user_role === 'agent' && 
+               !currentRoom?.is_fully_signed && 
+               !(agreement?.investor_signed_at && agreement?.agent_signed_at) && 
+               currentRoom?.agreement_status !== 'fully_signed' &&
+               agreement?.status !== 'fully_signed' &&
+               !deal?.is_fully_signed && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">

@@ -101,11 +101,24 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
-  // CRITICAL: Check signatures directly from agreement object - most authoritative
+  // CRITICAL: Check signatures from MULTIPLE sources to handle all cases
   const investorSigned = !!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
   const agentSigned = !!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
 
-  const fullySigned = investorSigned && agentSigned;
+  // Check multiple sources for fully signed status
+  const fullySigned = investorSigned && agentSigned || 
+                      localRoom?.agreement_status === 'fully_signed' || 
+                      localRoom?.is_fully_signed === true ||
+                      deal?.is_fully_signed === true ||
+                      localAgreement?.status === 'fully_signed';
+  
+  console.log('[SimpleAgreementPanel] Signature status:', {
+    investorSigned,
+    agentSigned,
+    fullySigned,
+    roomStatus: localRoom?.agreement_status,
+    agreementStatus: localAgreement?.status
+  });
 
   // Show regenerate button ONLY when requires_regenerate is true AND investor hasn't signed the NEW agreement
   const canRegenerate = requiresRegenerate && !investorSigned;
