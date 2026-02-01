@@ -25,6 +25,7 @@ function NDAContent() {
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
+  const isNavigatingRef = React.useRef(false);
 
   // ADMIN BYPASS: Auto-sign NDA for admin users
   useEffect(() => {
@@ -100,11 +101,10 @@ function NDAContent() {
 
   // Redirect if already accepted (check after loading completes)
   useEffect(() => {
-    if (!loading && hasNDA) {
+    if (!loading && hasNDA && !isNavigatingRef.current) {
       devLog('[NDA] Already accepted, redirecting to dashboard...');
-      setTimeout(() => {
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }, 500);
+      isNavigatingRef.current = true;
+      navigate(createPageUrl("Pipeline"), { replace: true });
     }
   }, [loading, hasNDA, navigate]);
 
@@ -115,6 +115,8 @@ function NDAContent() {
       return;
     }
 
+    if (isNavigatingRef.current) return; // Prevent double-submission
+
     devLog('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
@@ -122,7 +124,7 @@ function NDAContent() {
     try {
       devLog('[NDA] Updating profile directly with NDA acceptance...');
       
-      // Directly update the profile - skip the backend function that may have issues
+      // Directly update the profile
       if (profile && profile.id) {
         await base44.entities.Profile.update(profile.id, {
           nda_accepted: true,
@@ -131,18 +133,12 @@ function NDAContent() {
         });
         devLog('[NDA] ✅ Profile updated with NDA flags');
         
-        const response = { data: { ok: true } };
+        toast.success("NDA accepted successfully!");
         
-          toast.success("NDA accepted successfully!");
+        // Mark as navigating to prevent useEffect from also triggering redirect
+        isNavigatingRef.current = true;
         
-        // Force profile refresh to load new data
-        devLog('[NDA] Refreshing profile...');
-        await refresh();
-        
-        // Small delay to ensure state is updated
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Navigate to Dashboard
+        // Navigate immediately without waiting for refresh
         devLog('[NDA] Navigating to Dashboard...');
         navigate(createPageUrl("Pipeline"), { replace: true });
       } else {
@@ -154,6 +150,7 @@ function NDAContent() {
       setError(errorMsg);
       toast.error(errorMsg);
       setAccepting(false);
+      isNavigatingRef.current = false;
     }
   };
 
