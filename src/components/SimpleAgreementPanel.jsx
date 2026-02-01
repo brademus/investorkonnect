@@ -130,10 +130,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
-  // CRITICAL: Check signatures from MULTIPLE sources - but for agents, ONLY trust room-scoped agreement data
+  // CRITICAL: Check signatures from MULTIPLE sources to handle all cases including deal-level signatures
   const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                         (isInvestor && (!!localRoom?.ioa_investor_signed_at || !!deal?.ioa_investor_signed_at || localRoom?.agreement_status === 'investor_signed' || localRoom?.agreement_status === 'fully_signed'));
-  const agentSigned = !!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
+                         !!localRoom?.ioa_investor_signed_at ||
+                         !!deal?.ioa_investor_signed_at ||
+                         localRoom?.agreement_status === 'investor_signed' ||
+                         localRoom?.agreement_status === 'fully_signed';
+  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
+                      !!localRoom?.ioa_agent_signed_at;
 
   // Check multiple sources for fully signed status
   const fullySigned = investorSigned && agentSigned || 

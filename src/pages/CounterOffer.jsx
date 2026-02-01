@@ -92,11 +92,7 @@ export default function CounterOfferPage() {
       return;
     }
 
-    if (busy) return; // Prevent double-submission
-
     setBusy(true);
-    setError(null);
-    
     try {
       // CRITICAL: Normalize commission type to match backend expectations (percentage or flat)
       const counterTerms = {
@@ -104,11 +100,6 @@ export default function CounterOfferPage() {
         buyer_commission_percentage: commissionType === 'percentage' ? parseFloat(commissionAmount) : undefined,
         buyer_flat_fee: commissionType === 'percentage' ? undefined : parseFloat(commissionAmount),
       };
-
-      // Remove undefined fields to prevent backend issues
-      Object.keys(counterTerms).forEach(key => {
-        if (counterTerms[key] === undefined) delete counterTerms[key];
-      });
 
       if (isResponding && respondingTo) {
         // Responding to an existing counter - use recounter action
@@ -119,20 +110,15 @@ export default function CounterOfferPage() {
         });
 
         if (res.data?.error) {
-          setError(res.data.error);
           toast.error(res.data.error);
-          setBusy(false);
-          return;
+        } else {
+          toast.success('Counter offer sent');
+          setTimeout(() => navigate(-1), 500);
         }
-        
-        toast.success('Counter offer sent');
-        setTimeout(() => navigate(-1), 500);
       } else {
         // Creating new counter - must have room_id to scope to specific agent
         if (!roomId) {
-          const errorMsg = 'Room ID required to send counter offer';
-          setError(errorMsg);
-          toast.error(errorMsg);
+          toast.error('Room ID required to send counter offer');
           setBusy(false);
           return;
         }
@@ -145,20 +131,16 @@ export default function CounterOfferPage() {
         });
 
         if (res.data?.error) {
-          setError(res.data.error);
           toast.error(res.data.error);
-          setBusy(false);
-          return;
+        } else {
+          toast.success('Counter offer sent');
+          setTimeout(() => navigate(-1), 500);
         }
-        
-        toast.success('Counter offer sent');
-        setTimeout(() => navigate(-1), 500);
       }
     } catch (e) {
       console.error('[CounterOffer] Send error:', e);
-      const errorMsg = e?.response?.data?.error || e?.message || 'Failed to send counter';
-      setError(errorMsg);
-      toast.error(errorMsg);
+      toast.error(e?.response?.data?.error || 'Failed to send counter');
+    } finally {
       setBusy(false);
     }
   };

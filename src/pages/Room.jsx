@@ -112,15 +112,8 @@ function useMessages(roomId, authUser, currentProfile) {
   }, [roomId]);
 
   useEffect(() => {
-    if (!roomId) {
-      setItems([]);
-      setLoading(false);
-      setInitialLoadDone(true);
-      return;
-    }
-    
+    if (!roomId) return;
     let cancelled = false;
-    setLoading(true); // Start loading immediately on room switch
 
     const fetchMessages = async () => {
       try {
@@ -417,7 +410,6 @@ export default function Room() {
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
-    if (!roomId) return;
     setShowBoard(false);
     setActiveTab('details');
     setDeal(null);
@@ -425,12 +417,10 @@ export default function Room() {
     setInvites([]);
     setSelectedInvite(null);
     setPendingCounters([]);
+    setCurrentRoom(null);
     setSelectedRoomId(null);
     setRoomStates({});
     setRoomLoading(true);
-    // DO NOT clear items here - useMessages hook handles its own cleanup
-    // Force fresh fetch by resetting current room
-    setCurrentRoom(null);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
@@ -447,18 +437,15 @@ export default function Room() {
 
         // Unified post-sign flag: chat unlocks ONLY when both parties have fully signed
         const isWorkingTogether = useMemo(() => {
-          const fullySignedRoom = currentRoom?.agreement_status === 'fully_signed' || currentRoom?.is_fully_signed === true;
-          const fullySignedDeal = deal?.is_fully_signed === true;
-          const agreementFullySigned = agreement?.status === 'fully_signed';
-          const bothSigned = agreement?.investor_signed_at && agreement?.agent_signed_at;
-          return fullySignedRoom || fullySignedDeal || agreementFullySigned || bothSigned;
+          return (
+            currentRoom?.agreement_status === 'fully_signed' ||
+            currentRoom?.is_fully_signed === true ||
+            deal?.is_fully_signed === true
+          );
         }, [
           currentRoom?.agreement_status,
           currentRoom?.is_fully_signed,
-          deal?.is_fully_signed,
-          agreement?.status,
-          agreement?.investor_signed_at,
-          agreement?.agent_signed_at
+          deal?.is_fully_signed
         ]);
 
         // Chat unlocks ONLY when both parties have fully signed
@@ -663,24 +650,17 @@ export default function Room() {
       const thisReq = ++requestSeqRef.current;
       const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
       
+      // Always set loading on room change to ensure fresh data
+      setRoomLoading(true);
+      
       try {
-        // CRITICAL: Reset all UI state on room change to prevent cross-room flicker
-        setRoomLoading(true);
-        setAgreement(null);
-        setDeal(null); // Clear old deal immediately
-        setAgreementPanelKey(prev => prev + 1);
-        setCurrentRoom(null); // Force full refresh
-        
         // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
          const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
 
-          // Abort if room changed during fetch
-          if (isStale()) return;
-
-          if (!rawRoom) {
-            setRoomLoading(false);
-            return;
-          }
+         if (!rawRoom) {
+           setRoomLoading(false);
+           return;
+         }
 
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
          if (rawRoom.deal_id && profile?.user_role === 'investor') {
@@ -742,9 +722,8 @@ export default function Room() {
                 ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
                 : dealData.title;
               
-              // Ensure we still match current selection + abort if stale
-              if (isStale()) return;
-
+              // Ensure we still match current selection
+              if (rid !== roomId) return;
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
@@ -895,7 +874,12 @@ export default function Room() {
         if (event?.data?.room_id === effectiveRoomId) {
           console.log('[Room] Room-scoped agreement updated for this agent');
           setAgreement(prev => {
-            // Always update - don't compare signing status as it may have changed
+            // Only update if signing status actually changed to prevent unnecessary re-renders
+            if (prev?.investor_signed_at === event.data.investor_signed_at && 
+                prev?.agent_signed_at === event.data.agent_signed_at &&
+                prev?.status === event.data.status) {
+              return prev;
+            }
             return event.data;
           });
         }
@@ -1008,8 +992,8 @@ export default function Room() {
   }, [messages, roomId, currentRoom?.id]);
 
   // Multi-agent mode: Show pending agents instead of messages for investors with multiple agents
-  // Exit multi-agent mode ONLY when deal is locked OR room is fully signed (both parties signed)
-  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed && currentRoom?.agreement_status !== 'fully_signed' && !deal?.is_fully_signed;
+  // Exit multi-agent mode once deal is locked or this room is fully signed
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
 
 
 
@@ -1392,22 +1376,24 @@ export default function Room() {
            })
            .map(r => {
             const handleClick = () => {
-             if (r.is_orphan) {
-               // Pipeline-only deal: route to Pipeline to continue
-               prefetchPipeline();
-               navigate(createPageUrl("Pipeline"));
-               setDrawer(false);
-               return;
-             }
-
-             // Navigate without setting state - let URL change trigger fresh fetch
-             navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
-             setDrawer(false);
+              if (r.is_orphan) {
+                // Pipeline-only deal: route to Pipeline to continue
+                prefetchPipeline();
+                navigate(createPageUrl("Pipeline"));
+                setDrawer(false);
+                return;
+              }
+              // Optimistically set room to avoid momentary mismatch
+              // Reset state immediately to avoid cross-room flicker
+              setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
+              setDeal(null);
+              navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+              setDrawer(false);
             };
             
             return (
               <ConversationItem
-                key={`${r.id}-${r.updated_date}`}
+                key={r.id}
                 room={r}
                 isActive={r.id === roomId}
                 onClick={handleClick}
@@ -1431,8 +1417,13 @@ export default function Room() {
            <Menu className="w-6 h-6" />
           </button>
           <Button
-           onClick={() => {
-             console.log('[Room] Navigating to Pipeline');
+           onClick={(e) => {
+             e.stopPropagation();
+             // Refresh profile and query caches before navigating to Pipeline
+             profile?.refresh?.();
+             queryClient.invalidateQueries({ queryKey: ['pipelineDeals'], exact: false });
+             queryClient.invalidateQueries({ queryKey: ['rooms'], exact: false });
+             prefetchPipeline();
              navigate(createPageUrl("Pipeline"));
            }}
            variant="outline"
@@ -1490,7 +1481,8 @@ export default function Room() {
                   const agentId = deal?.locked_agent_id || roomAgentProfileId || currentRoom?.agentId || currentRoom?.counterparty_profile_id;
                   navigate(`${createPageUrl("AgentProfile")}?profileId=${agentId}`);
                 }}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                variant="outline"
+                className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full font-semibold hover:border-[#E3C567]"
               >
                 <User className="w-4 h-4 mr-2" />
                 Agent Profile
@@ -2179,7 +2171,6 @@ export default function Room() {
                 <div className="space-y-6">
                   {currentRoom?.deal_id ? (
                      <SimpleAgreementPanel
-                       key={agreementPanelKey}
                        dealId={currentRoom.deal_id}
                        roomId={isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId}
                        agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
@@ -2759,8 +2750,9 @@ export default function Room() {
                               e.stopPropagation();
                               navigate(`${createPageUrl("AgentProfile")}?profileId=${currentRoom.agentId}`);
                             }}
+                            variant="outline"
                             size="sm"
-                            className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full mt-2 font-semibold"
+                            className="border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] rounded-full mt-2"
                           >
                             View Agent Profile
                           </Button>
@@ -2796,7 +2788,53 @@ export default function Room() {
 
 
 
-
+              {/* Floating Deal Summary Box - always visible when a room is selected */}
+              {currentRoom?.id && !roomLoading && (
+                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-lg font-bold text-[#E3C567] mb-1">
+                        {/* Privacy: Hide full address from agents until internal agreement is fully signed */}
+                        {isAgentView && !currentRoom?.is_fully_signed
+                          ? `Deal in ${[currentRoom.city, currentRoom.state].filter(Boolean).join(', ') || 'Location'}`
+                          : (currentRoom.property_address || currentRoom.deal_title || 'Deal Summary')
+                        }
+                      </h3>
+                      <div className="space-y-1 text-sm">
+                        {currentRoom.counterparty_name && currentRoom.is_fully_signed && (
+                          <p className="text-[#FAFAFA]">
+                            {currentRoom.counterparty_role === 'agent' ? 'Agent' : 'Investor'}: {currentRoom.counterparty_name}
+                          </p>
+                        )}
+                        {(currentRoom.city || currentRoom.state) && (
+                          <p className="text-[#808080]">
+                            {/* Privacy: Only show city/state/zip for agents until internal agreement is fully signed */}
+                            {profile?.user_role === 'agent' && !currentRoom?.is_fully_signed
+                              ? `${currentRoom.county ? currentRoom.county + ' County, ' : ''}${currentRoom.city}, ${currentRoom.state} ${currentRoom.zip || ''}`
+                              : [currentRoom.city, currentRoom.state].filter(Boolean).join(', ')
+                            }
+                          </p>
+                        )}
+                        {currentRoom.budget > 0 && (
+                          <p className="text-[#34D399] font-semibold">
+                            ${currentRoom.budget.toLocaleString()}
+                          </p>
+                        )}
+                        {currentRoom.closing_date && (
+                          <p className="text-[#808080]">
+                            Closing: {new Date(currentRoom.closing_date).toLocaleDateString()}
+                          </p>
+                        )}
+                        {!currentRoom.closing_date && currentRoom.created_date && (
+                          <p className="text-[#666]">
+                            Started: {new Date(currentRoom.created_date).toLocaleDateString()}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {isMultiAgentMode ? (
                 <PendingAgentsList 

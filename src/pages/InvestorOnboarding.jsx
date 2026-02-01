@@ -133,8 +133,6 @@ export default function InvestorOnboarding() {
   };
 
   const handleSubmit = async () => {
-    if (saving) return; // Prevent double-click
-    
     setSaving(true);
     try {
       if (!profile) {
@@ -162,9 +160,11 @@ export default function InvestorOnboarding() {
         }
       });
 
-      toast.success("Profile saved! Redirecting to pricing...");
+      await refresh();
+      toast.success("Profile saved! Let's choose your plan.");
       
-      // Immediate redirect without refresh to avoid delays
+      // Navigate to Pricing (next step for investors)
+      await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl("Pricing");
     } catch (error) {
       toast.error("Failed to save. Please try again.");

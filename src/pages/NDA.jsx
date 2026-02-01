@@ -25,7 +25,6 @@ function NDAContent() {
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
-  const isNavigatingRef = React.useRef(false);
 
   // ADMIN BYPASS: Auto-sign NDA for admin users
   useEffect(() => {
@@ -99,14 +98,13 @@ function NDAContent() {
     }
   }, [loading, profile, onboarded, kycVerified, navigate]);
 
-  // Redirect if already accepted (check after loading completes) - SINGLE CHECK
+  // Redirect if already accepted (check after loading completes)
   useEffect(() => {
-    if (!loading && hasNDA && !isNavigatingRef.current) {
+    if (!loading && hasNDA) {
       devLog('[NDA] Already accepted, redirecting to dashboard...');
-      isNavigatingRef.current = true;
       setTimeout(() => {
         navigate(createPageUrl("Pipeline"), { replace: true });
-      }, 100);
+      }, 500);
     }
   }, [loading, hasNDA, navigate]);
 
@@ -117,17 +115,14 @@ function NDAContent() {
       return;
     }
 
-    if (isNavigatingRef.current || accepting) return; // Prevent double-submission
-
     devLog('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
-    isNavigatingRef.current = true; // Lock immediately to prevent any race conditions
 
     try {
       devLog('[NDA] Updating profile directly with NDA acceptance...');
       
-      // Directly update the profile
+      // Directly update the profile - skip the backend function that may have issues
       if (profile && profile.id) {
         await base44.entities.Profile.update(profile.id, {
           nda_accepted: true,
@@ -136,11 +131,20 @@ function NDAContent() {
         });
         devLog('[NDA] ✅ Profile updated with NDA flags');
         
-        toast.success("NDA accepted successfully!");
+        const response = { data: { ok: true } };
         
-        // Navigate immediately without waiting for refresh - single redirect
+          toast.success("NDA accepted successfully!");
+        
+        // Force profile refresh to load new data
+        devLog('[NDA] Refreshing profile...');
+        await refresh();
+        
+        // Small delay to ensure state is updated
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Navigate to Dashboard
         devLog('[NDA] Navigating to Dashboard...');
-        window.location.href = createPageUrl("Pipeline"); // Hard navigation to ensure clean state
+        navigate(createPageUrl("Pipeline"), { replace: true });
       } else {
         throw new Error("Profile not available");
       }
@@ -150,7 +154,6 @@ function NDAContent() {
       setError(errorMsg);
       toast.error(errorMsg);
       setAccepting(false);
-      isNavigatingRef.current = false;
     }
   };
 
