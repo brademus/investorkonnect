@@ -215,16 +215,15 @@ Deno.serve(async (req) => {
       }
     }
 
-    // CRITICAL: Agent cannot sign if investor hasn't signed yet
-    // Only block if THIS agreement is marked superseded or if requires_regenerate is set on this room
-    if (role === 'agent' && !agreement.investor_signed_at) {
-      // Only check requires_regenerate if this is a room-scoped agreement
+    // CRITICAL: Agent cannot sign ONLY IF this agreement was superseded due to counter acceptance
+    // Agents CAN sign original agreements even if investor hasn't signed (multi-agent flow)
+    if (role === 'agent' && agreement.status === 'superseded' && !agreement.investor_signed_at) {
       if (effectiveRoomId) {
         const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
         const roomData = roomsCheck?.[0];
         
-        // Only block if requires_regenerate is true AND this agreement is superseded
-        if (roomData?.requires_regenerate && agreement.status === 'superseded') {
+        // Only block if requires_regenerate is true - means this agreement was superseded due to counter
+        if (roomData?.requires_regenerate) {
           console.error('[DocuSign] ❌ This agreement has been superseded due to counter acceptance');
           return Response.json({ 
             ok: false,
@@ -233,13 +232,6 @@ Deno.serve(async (req) => {
           }, { status: 400 });
         }
       }
-      
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
-      return Response.json({ 
-        ok: false,
-        code: 'INVESTOR_SIGNATURE_REQUIRED',
-        error: 'The investor must sign this agreement first before you can sign it.'
-      }, { status: 400 });
     }
 
     // PHASE 7: Enforce Deal Lock-in
