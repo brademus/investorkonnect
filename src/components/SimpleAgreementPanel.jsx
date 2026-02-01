@@ -348,8 +348,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {isInvestor && !fullySigned && (
                <div className="space-y-2">
                  {/* Priority 1: Show regenerate button ONLY if requires_regenerate is TRUE and investor has NOT signed the NEW agreement */}
-                 {canRegenerate && !investorSigned ? (
-                                    <Button
+                 {canRegenerate && !investorSigned && (
+                   <Button
                                       onClick={async () => {
                                         // Auto-regenerate AND sign in one flow
                                         setBusy(true);
