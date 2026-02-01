@@ -447,6 +447,19 @@ Deno.serve(async (req) => {
                 agreement_status: 'investor_signed'
               });
               console.log('[DocuSign Webhook] ✓ Cleared requires_regenerate flag on room:', agreement.room_id);
+              
+              // CRITICAL: Mark all accepted counters for this room as 'completed' to prevent UI showing them
+              const acceptedCounters = await base44.asServiceRole.entities.CounterOffer.filter({
+                room_id: agreement.room_id,
+                status: 'accepted'
+              });
+              
+              for (const counter of acceptedCounters || []) {
+                await base44.asServiceRole.entities.CounterOffer.update(counter.id, {
+                  status: 'completed'
+                });
+              }
+              console.log('[DocuSign Webhook] ✓ Marked', (acceptedCounters || []).length, 'accepted counters as completed');
             } catch (e) {
               console.warn('[DocuSign Webhook] Failed to clear requires_regenerate:', e?.message);
             }
