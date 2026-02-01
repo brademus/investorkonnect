@@ -420,15 +420,20 @@ Deno.serve(async (req) => {
             }
           }
           
-          // PHASE 7: Also update Room.current_legal_agreement_id
+          // PHASE 7: Also update Room.current_legal_agreement_id and sync agreement status
           if (agreement.room_id && agreement.id) {
             try {
               await base44.asServiceRole.entities.Room.update(agreement.room_id, {
-                current_legal_agreement_id: agreement.id
+                current_legal_agreement_id: agreement.id,
+                agreement_status: 'fully_signed',
+                request_status: 'signed',
+                signed_at: new Date().toISOString(),
+                is_fully_signed: true,
+                requires_regenerate: false // Clear regenerate flag on full signature
               });
-              console.log('[DocuSign Webhook] ✓ Updated Room.current_legal_agreement_id');
+              console.log('[DocuSign Webhook] ✓ Updated Room to fully_signed status');
             } catch (e) {
-              console.warn('[DocuSign Webhook] Failed to update Room.current_legal_agreement_id:', e?.message);
+              console.warn('[DocuSign Webhook] Failed to update Room status:', e?.message);
             }
           }
         } else if (investorSigned && !agreement.investor_signed_at) {
