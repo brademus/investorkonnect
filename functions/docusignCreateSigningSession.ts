@@ -216,7 +216,31 @@ Deno.serve(async (req) => {
     }
 
     // CRITICAL: Agent cannot sign if investor hasn't signed yet
+    // BUT: Check if a newer superseding agreement exists (multi-agent counter acceptance case)
     if (role === 'agent' && !agreement.investor_signed_at) {
+      // Check if this agreement has been superseded by a newer one
+      const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter(
+        { deal_id: agreement.deal_id, room_id: effectiveRoomId || null },
+        '-created_date',
+        5
+      );
+      
+      const newerActive = allAgreements?.find(a => 
+        a.id !== agreement.id && 
+        a.status !== 'superseded' && 
+        a.status !== 'voided'
+      );
+      
+      if (newerActive) {
+        console.error('[DocuSign] ❌ This agreement has been superseded - a newer one exists');
+        return Response.json({ 
+          ok: false,
+          code: 'AGREEMENT_SUPERSEDED_NEWER_EXISTS',
+          error: 'A new agreement has been generated. Please sign the latest agreement instead.',
+          newer_agreement_id: newerActive.id
+        }, { status: 400 });
+      }
+      
       console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
       return Response.json({ 
         ok: false,
