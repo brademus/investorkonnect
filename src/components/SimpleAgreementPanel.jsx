@@ -459,39 +459,49 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                               setTimeout(() => window.location.assign(res.data.signing_url), 300);
                                               return;
                                             }
-                                            // Otherwise, create signing session
+                                            // Otherwise, create signing session with retry
                                             toast.success('Agreement ready, redirecting to sign...');
-                                            setTimeout(async () => {
-                                              try {
-                                                if (!res.data.agreement?.id) {
-                                                  setDebugError('Agreement ID missing from regeneration response');
-                                                  toast.error('Agreement ID missing');
-                                                  setBusy(false);
-                                                  return;
-                                                }
-                                                const baseUrl = window.location.href.split('&signed')[0];
-                                                const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
-                                                  agreement_id: res.data.agreement.id,
-                                                  role: 'investor',
-                                                  room_id: roomId,
-                                                  redirect_url: baseUrl + '&signed=1'
-                                                });
-                                                if (signRes.data?.signing_url) {
-                                                  window.location.assign(signRes.data.signing_url);
-                                                } else {
-                                                  const errorMsg = signRes.data?.error || 'Failed to get signing URL';
-                                                  setDebugError(errorMsg);
-                                                  toast.error(errorMsg);
-                                                  setBusy(false);
-                                                }
-                                              } catch (e) {
-                                                console.error('[SimpleAgreementPanel] Signing after regenerate error:', e);
-                                                const errorMsg = e?.response?.data?.error || e?.message || 'Failed to start signing';
+
+                                            const agreementId = res.data.agreement?.id;
+                                            if (!agreementId) {
+                                              setDebugError('Agreement ID missing from regeneration response');
+                                              toast.error('Agreement ID missing');
+                                              setBusy(false);
+                                              return;
+                                            }
+
+                                            console.log('[SimpleAgreementPanel] Creating signing session for agreement:', agreementId);
+
+                                            // Small delay to ensure agreement is saved
+                                            await new Promise(r => setTimeout(r, 500));
+
+                                            try {
+                                              const baseUrl = window.location.href.split('&signed')[0].split('?')[0];
+                                              const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
+                                                agreement_id: agreementId,
+                                                role: 'investor',
+                                                room_id: roomId,
+                                                redirect_url: `${baseUrl}?roomId=${roomId}&signed=1`
+                                              });
+
+                                              console.log('[SimpleAgreementPanel] Signing session response:', signRes.data);
+
+                                              if (signRes.data?.signing_url) {
+                                                window.location.assign(signRes.data.signing_url);
+                                              } else {
+                                                const errorMsg = signRes.data?.error || 'Failed to get signing URL';
+                                                console.error('[SimpleAgreementPanel] No signing URL:', signRes.data);
                                                 setDebugError(errorMsg);
                                                 toast.error(errorMsg);
                                                 setBusy(false);
                                               }
-                                            }, 800);
+                                            } catch (e) {
+                                              console.error('[SimpleAgreementPanel] Signing after regenerate error:', e);
+                                              const errorMsg = e?.response?.data?.error || e?.message || 'Failed to start signing';
+                                              setDebugError(errorMsg);
+                                              toast.error(errorMsg);
+                                              setBusy(false);
+                                            }
                                             return;
                                           }
                                         } catch (e) {
