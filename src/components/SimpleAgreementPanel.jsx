@@ -34,7 +34,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     }
   }, [agreement?.id, room?.id]);
 
-  // Fetch latest agreement on panel load to ensure we have current signatures
+  // Fetch latest agreement on panel load AND when room's current_legal_agreement_id changes
   React.useEffect(() => {
     if (!dealId) return;
 
@@ -45,6 +45,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
           room_id: roomId || undefined 
         });
         if (res?.data?.agreement) {
+          console.log('[SimpleAgreementPanel] Loaded agreement:', res.data.agreement.id, 'investor_signed:', !!res.data.agreement.investor_signed_at);
           setLocalAgreement(res.data.agreement);
         }
       } catch (e) {
@@ -53,7 +54,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     };
 
     fetchLatest();
-  }, [dealId, roomId]);
+  }, [dealId, roomId, localRoom?.current_legal_agreement_id]);
 
   // Sync incoming counters from Room component and trigger refresh
     React.useEffect(() => {
@@ -142,14 +143,24 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     setBusy(true);
 
     try {
-      if (!localAgreement?.id) {
+      // CRITICAL: Always fetch latest agreement before signing to ensure we have the current one
+      const latestRes = await base44.functions.invoke('getLegalAgreement', { 
+        deal_id: dealId, 
+        room_id: roomId || undefined 
+      });
+      
+      const agreementToSign = latestRes?.data?.agreement || localAgreement;
+      
+      if (!agreementToSign?.id) {
         toast.error('No agreement to sign');
         setBusy(false);
         return;
       }
 
+      console.log('[SimpleAgreementPanel] Signing agreement:', agreementToSign.id, 'investor_signed:', !!agreementToSign.investor_signed_at);
+
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
-        agreement_id: localAgreement.id,
+        agreement_id: agreementToSign.id,
         role,
         room_id: roomId,
         redirect_url: window.location.href + '&signed=1'
