@@ -1425,11 +1425,8 @@ export default function Room() {
            <Menu className="w-6 h-6" />
           </button>
           <Button
-           onClick={(e) => {
-             e.stopPropagation();
-             // Invalidate caches before navigating to Pipeline
-             queryClient.invalidateQueries({ queryKey: ['pipelineDeals'], exact: false });
-             queryClient.invalidateQueries({ queryKey: ['rooms'], exact: false });
+           onClick={() => {
+             console.log('[Room] Navigating to Pipeline');
              navigate(createPageUrl("Pipeline"));
            }}
            variant="outline"
