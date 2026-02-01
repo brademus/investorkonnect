@@ -339,10 +339,9 @@ Deno.serve(async (req) => {
     // SYNC FIRST to ensure DB is up-to-date with DocuSign
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
 
-    // PHASE 7: Check if already signed - BUT ONLY if agreement is NOT in 'sent' status
-    // If status is 'sent', we know it's a fresh envelope that hasn't been signed yet
-    const investorAlreadySigned = !!agreement.investor_signed_at && agreement.status !== 'sent';
-    const agentAlreadySigned = !!agreement.agent_signed_at && agreement.status !== 'sent';
+    // Check if already signed - use simple presence of signature date
+    const investorAlreadySigned = !!agreement.investor_signed_at;
+    const agentAlreadySigned = !!agreement.agent_signed_at;
 
     if (role === 'investor' && investorAlreadySigned) {
       console.log('[DocuSign] Investor already signed (status:', agreement.status, ')');
@@ -360,10 +359,10 @@ Deno.serve(async (req) => {
       }, { status: 200 });
     }
 
-    // GATING: Now that DB is synced, check if agent can sign
+    // GATING: Agent cannot sign until investor has signed
     if (role === 'agent' && !investorAlreadySigned) {
       console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
-      console.error('[DocuSign] Agreement status:', agreement.status);
+      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at, 'status:', agreement.status);
       return Response.json({ 
         error: 'The investor must sign this agreement first before you can sign it.',
         investor_signed: false
