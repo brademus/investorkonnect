@@ -45,8 +45,17 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
           room_id: roomId || undefined 
         });
         if (res?.data?.agreement) {
-          console.log('[SimpleAgreementPanel] Loaded agreement:', res.data.agreement.id, 'investor_signed:', !!res.data.agreement.investor_signed_at);
+          console.log('[SimpleAgreementPanel] Loaded agreement:', res.data.agreement.id, 'status:', res.data.agreement.status, 'investor_signed:', !!res.data.agreement.investor_signed_at, 'agent_signed:', !!res.data.agreement.agent_signed_at);
           setLocalAgreement(res.data.agreement);
+        }
+
+        // Also refresh room to sync requires_regenerate flag
+        if (roomId) {
+          const roomRes = await base44.entities.Room.filter({ id: roomId });
+          if (roomRes?.[0]) {
+            console.log('[SimpleAgreementPanel] Loaded room, requires_regenerate:', roomRes[0].requires_regenerate, 'agreement_status:', roomRes[0].agreement_status);
+            setLocalRoom(roomRes[0]);
+          }
         }
       } catch (e) {
         console.error('[SimpleAgreementPanel] Fetch latest error:', e);
@@ -291,22 +300,38 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     }
   }, [localAgreement?.investor_signed_at, onInvestorSigned, hasTriggeredCallback]);
 
-  // Refresh agreement after signing redirect
+  // Refresh agreement AND room after signing redirect
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('signed') === '1' && dealId && !localAgreement?.investor_signed_at) {
-      // Small delay to ensure DocuSign has synced
+    if (params.get('signed') === '1' && dealId) {
+      // Small delay to ensure DocuSign webhook has processed
       const timer = setTimeout(async () => {
         try {
-          const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
+          // Refresh agreement to get latest signature status
+          const res = await base44.functions.invoke('getLegalAgreement', { 
+            deal_id: dealId, 
+            room_id: roomId || undefined 
+          });
           if (res?.data?.agreement) {
+            console.log('[SimpleAgreementPanel] Refreshed agreement after signing:', res.data.agreement.id, 'investor_signed:', !!res.data.agreement.investor_signed_at);
             setLocalAgreement(res.data.agreement);
           }
-        } catch (_) {}
-      }, 500);
+
+          // Refresh room to get cleared requires_regenerate flag
+          if (roomId) {
+            const roomRes = await base44.entities.Room.filter({ id: roomId });
+            if (roomRes?.[0]) {
+              console.log('[SimpleAgreementPanel] Refreshed room after signing, requires_regenerate:', roomRes[0].requires_regenerate);
+              setLocalRoom(roomRes[0]);
+            }
+          }
+        } catch (e) {
+          console.error('[SimpleAgreementPanel] Failed to refresh after signing:', e);
+        }
+      }, 1000); // Longer delay to ensure webhook has processed
       return () => clearTimeout(timer);
     }
-  }, [dealId]);
+  }, [dealId, roomId]);
 
   return (
     <>
@@ -485,7 +510,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       )}
 
                                       {/* Priority 2: Show sign button if investor hasn't signed and no regeneration needed */}
-                                      {!investorSigned && !canRegenerate && localAgreement && (
+                                      {!investorSigned && !canRegenerate && localAgreement && localAgreement.status !== 'superseded' && (
                                       <Button
                                       onClick={() => handleSign('investor')}
                                       disabled={busy}
@@ -497,7 +522,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       )}
 
                                       {/* Priority 3: Investor already signed - show waiting message */}
-                                      {investorSigned && !agentSigned && !canRegenerate && (
+                                      {investorSigned && !agentSigned && (
                                       <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                                       <p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p>
                                       </div>
@@ -508,27 +533,27 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {/* Agent Actions */}
               {isAgent && !fullySigned && (
                 <div className="space-y-3">
-                  {!investorSigned && (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
-                    </div>
-                  )}
-
-                  {investorSigned && requiresRegenerate && (
+                  {!investorSigned && requiresRegenerate && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
                     </div>
                   )}
 
+                  {!investorSigned && !requiresRegenerate && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
+                    </div>
+                  )}
+
                   {/* Show if agent has already countered */}
-                  {investorSigned && !agentSigned && !requiresRegenerate && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
+                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
                     </div>
                   )}
 
-                  {/* Show sign/counter buttons only if: investor signed NEW agreement, no pending counters, and not regenerating */}
-                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.status === 'accepted' || c.status === 'pending') && (
+                  {/* Show sign/counter buttons only if: investor signed, no pending counters, not regenerating, and agreement is active */}
+                  {investorSigned && !agentSigned && !requiresRegenerate && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
@@ -547,8 +572,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                       </Button>
                     </>
                   )}
-
-
                 </div>
               )}
 
