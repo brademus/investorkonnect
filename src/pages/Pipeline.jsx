@@ -263,7 +263,7 @@ function PipelineContent() {
   // 2. Load Active Deals via Server-Side Access Control
     const { data: dealsData = [], isLoading: loadingDeals, isFetching: fetchingDeals, refetch: refetchDeals } = useQuery({
       queryKey: ['pipelineDeals', profile?.id, profile?.user_role],
-      staleTime: isAgent ? 10_000 : 30_000, // Agents refresh more frequently (10s vs 30s)
+      staleTime: isAgent ? 10_000 : 30_000,
       gcTime: 30 * 60_000,
      initialData: () => {
        try {
@@ -272,20 +272,15 @@ function PipelineContent() {
          return Array.isArray(cached) && cached.length > 0 ? cached : undefined;
        } catch { return undefined; }
      },
-     refetchOnMount: true,
+     refetchOnMount: 'always',
      queryFn: async () => {
-       if (!profile?.id) {
-         console.log('[Pipeline] No profile ID, returning empty deals');
-         return [];
-       }
-
        console.log('[Pipeline] Fetching deals for profile:', profile.id, 'role:', profile.user_role);
        
        // PRODUCTION: Server-side access control enforces role-based redaction
        const response = await base44.functions.invoke('getPipelineDealsForUser');
        const deals = response.data?.deals || [];
        
-       console.log('[Pipeline] Loaded deals:', deals.length);
+       console.log('[Pipeline] Loaded', deals.length, 'deals');
 
        // Deduplicate by ID on client side as well
        const dealsMap = new Map();
@@ -299,12 +294,14 @@ function PipelineContent() {
            }
          });
 
-       return Array.from(dealsMap.values())
+       const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+       
+       console.log('[Pipeline] Returning', dedupedDeals.length, 'deals after dedup');
+       return dedupedDeals;
      },
      enabled: !!profile?.id,
      refetchOnWindowFocus: true,
-
    });
 
   useEffect(() => {

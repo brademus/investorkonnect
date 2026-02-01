@@ -126,6 +126,15 @@ export function useCurrentProfile() {
         // Skip expensive hasRoom check on initial load for faster performance
         const hasRoom = false;
 
+        console.log('[useCurrentProfile] Setting state:', {
+          profileId: profile?.id,
+          fullName: profile?.full_name,
+          role,
+          onboarded,
+          kycVerified,
+          hasNDA
+        });
+
         setState({
           loading: false,
           user,

@@ -162,8 +162,9 @@ function LayoutContent({ children }) {
 
                   <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="w-9 h-9 rounded-full flex items-center justify-center transition-colors bg-[#0D0D0D] hover:bg-[#1F1F1F]">
+                    <button className="flex items-center gap-2 px-3 h-9 rounded-full transition-colors bg-[#0D0D0D] hover:bg-[#1F1F1F] border border-[#1F1F1F]">
                       <User className="w-4 h-4 text-[#E3C567]" />
+                      <span className="text-sm text-[#FAFAFA]">{profile?.full_name || user?.email?.split('@')[0] || 'Account'}</span>
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="bg-[#0D0D0D] border-[#1F1F1F]">
