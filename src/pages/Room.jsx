@@ -2178,6 +2178,7 @@ export default function Room() {
                 <div className="space-y-6">
                   {currentRoom?.deal_id ? (
                      <SimpleAgreementPanel
+                       key={agreementPanelKey}
                        dealId={currentRoom.deal_id}
                        roomId={isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId}
                        agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
