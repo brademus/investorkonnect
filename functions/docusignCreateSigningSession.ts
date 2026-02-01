@@ -222,7 +222,12 @@ Deno.serve(async (req) => {
 
     // CRITICAL: Agent cannot sign if investor hasn't signed yet
     if (role === 'agent' && !agreement.investor_signed_at) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet', {
+        agreement_id: agreement.id,
+        investor_signed_at: agreement.investor_signed_at,
+        status: agreement.status,
+        envelope_id: agreement.docusign_envelope_id
+      });
       return Response.json({ 
         ok: false,
         code: 'INVESTOR_SIGNATURE_REQUIRED',
