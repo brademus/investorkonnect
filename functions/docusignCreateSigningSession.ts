@@ -604,66 +604,7 @@ Deno.serve(async (req) => {
         }, { status: 500 });
       }
       
-      // Retry without sequence validation - recreate recipient view
-      const retryRecipientViewRequest = {
-        ...recipientViewRequest,
-        requireIdLookup: false,
-        idCheckConfigurationName: 'ID Check $'
-      };
-      
-      const retryViewResponse = await fetch(viewUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(retryRecipientViewRequest)
-      });
-      
-      if (!retryViewResponse.ok) {
-        const retryError = await retryViewResponse.text();
-        console.error('[DocuSign] Retry also failed:', retryError);
-        return Response.json({ 
-          error: 'Unable to create signing session. Please try again.',
-          hint: 'If this persists, regenerate the agreement.'
-        }, { status: 500 });
-      }
-      
-      const retryViewData = await retryViewResponse.json();
-      
-      return Response.json({ 
-        signing_url: retryViewData.url
-      });
-    }
-    
-    if (!viewResponse.ok) {
-      const errorText = await viewResponse.text();
-      let parsedError = null;
-      let errorMsg = 'Failed to create signing session';
-      
-      try {
-        parsedError = JSON.parse(errorText);
-        errorMsg = parsedError.message || parsedError.errorCode || errorMsg;
-      } catch (e) {
-        errorMsg = errorText.substring(0, 200);
-      }
-      
-      console.error('[DocuSign] Recipient view failed:', {
-        status: viewResponse.status,
-        error: parsedError || errorText,
-        envelopeId,
-        recipientId,
-        clientUserId,
-        role
-      });
-      
-      return Response.json({ 
-        error: errorMsg || 'Failed to create signing session',
-        hint: 'If this persists, try regenerating the agreement.'
-      }, { status: 500 });
-    }
-    
-    const viewData = await viewResponse.json();
+
       
 
     
