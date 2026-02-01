@@ -427,25 +427,27 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                     >
                                       {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                                       Regenerate & Sign
-                                    </Button>
-                                  )}
+                                      </Button>
+                                      )}
 
-                  {/* Priority 2: Show sign button if investor hasn't signed and no regeneration needed */}
-                  ) : !investorSigned && localAgreement ? (
-                     <Button
-                       onClick={() => handleSign('investor')}
-                       disabled={busy}
-                       className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                     >
-                       {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                       Sign Agreement
-                     </Button>
-                   ) : investorSigned && !agentSigned ? (
-                     /* Priority 3: Investor already signed - show waiting message */
-                     <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                       <p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p>
-                     </div>
-                   ) : null}
+                                      {/* Priority 2: Show sign button if investor hasn't signed and no regeneration needed */}
+                                      {!investorSigned && !canRegenerate && localAgreement && (
+                                      <Button
+                                      onClick={() => handleSign('investor')}
+                                      disabled={busy}
+                                      className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                                      >
+                                      {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                      Sign Agreement
+                                      </Button>
+                                      )}
+
+                                      {/* Priority 3: Investor already signed - show waiting message */}
+                                      {investorSigned && !agentSigned && !canRegenerate && (
+                                      <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                                      <p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p>
+                                      </div>
+                                      )}
                </div>
               )}
 
