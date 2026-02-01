@@ -129,6 +129,16 @@ Deno.serve(async (req) => {
         });
       });
       
+      // CRITICAL: Clear requires_regenerate if it was set (user declined the counter)
+      if (room_id) {
+        const room = (await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0];
+        if (room?.requires_regenerate) {
+          await base44.asServiceRole.entities.Room.update(room_id, {
+            requires_regenerate: false
+          });
+        }
+      }
+      
       console.log('[respondToCounterOffer] ✓ Counter declined');
       return Response.json({ success: true, action: 'declined' });
     }
@@ -227,21 +237,42 @@ Deno.serve(async (req) => {
       }
       console.log('[respondToCounterOffer] ✓ Marked', otherPendingCounters.length, 'other pending counters as superseded');
 
+      // Merge accepted terms with existing room/deal terms
+      const baseTerms = room_id 
+        ? ((await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0]?.proposed_terms || {})
+        : (deal.proposed_terms || {});
+      
+      const mergedTerms = { ...baseTerms, ...acceptedTerms };
+      
       // Set regeneration flag (room-scoped or legacy) - only update the specific room/deal pair
       const updates = [];
       if (room_id) {
         // Room-scoped: update only this room's terms
         updates.push(
           base44.asServiceRole.entities.Room.update(room_id, {
-            proposed_terms: acceptedTerms,
-            requires_regenerate: true
+            proposed_terms: mergedTerms,
+            requires_regenerate: true,
+            agreement_status: 'draft' // Reset to draft to trigger regeneration
           })
         );
+        
+        // CRITICAL: Mark old agreement as superseded
+        const room = (await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0];
+        if (room?.current_legal_agreement_id) {
+          try {
+            await base44.asServiceRole.entities.LegalAgreement.update(room.current_legal_agreement_id, {
+              status: 'superseded'
+            });
+            console.log('[respondToCounterOffer] ✓ Marked old agreement as superseded');
+          } catch (e) {
+            console.warn('[respondToCounterOffer] Failed to mark agreement superseded:', e?.message);
+          }
+        }
       } else {
         // Legacy: update deal level
         updates.push(
           base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-            proposed_terms: acceptedTerms,
+            proposed_terms: mergedTerms,
             requires_regenerate: true,
             requires_regenerate_reason: `${userRole} accepted counter at ${now}`
           })
@@ -249,12 +280,12 @@ Deno.serve(async (req) => {
       }
 
       await Promise.all(updates);
-      console.log('[respondToCounterOffer] ✓ Terms and regenerate flags updated for room/agent');
+      console.log('[respondToCounterOffer] ✓ Terms and regenerate flags updated');
 
       return Response.json({ 
         success: true, 
         action: 'accepted',
-        accepted_terms: acceptedTerms
+        accepted_terms: mergedTerms
       });
     }
     
