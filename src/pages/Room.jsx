@@ -888,12 +888,7 @@ export default function Room() {
         if (event?.data?.room_id === effectiveRoomId) {
           console.log('[Room] Room-scoped agreement updated for this agent');
           setAgreement(prev => {
-            // Only update if signing status actually changed to prevent unnecessary re-renders
-            if (prev?.investor_signed_at === event.data.investor_signed_at && 
-                prev?.agent_signed_at === event.data.agent_signed_at &&
-                prev?.status === event.data.status) {
-              return prev;
-            }
+            // Always update - don't compare signing status as it may have changed
             return event.data;
           });
         }
