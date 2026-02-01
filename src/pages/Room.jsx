@@ -666,6 +666,7 @@ export default function Room() {
       // Always set loading on room change to ensure fresh data
       setRoomLoading(true);
       setAgreement(null); // Clear stale agreement
+      setAgreementPanelKey(prev => prev + 1); // Force SimpleAgreementPanel remount
       
       try {
         // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
