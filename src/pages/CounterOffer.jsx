@@ -65,7 +65,9 @@ export default function CounterOfferPage() {
             setCounterToRespond(c[0]);
             // Pre-fill form with inverse terms
             if (c[0].terms_delta?.buyer_commission_type) {
-              setCommissionType(c[0].terms_delta.buyer_commission_type);
+              // Normalize: flat_fee -> flat, percentage -> percentage
+              const normalizedType = c[0].terms_delta.buyer_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
+              setCommissionType(normalizedType);
               if (c[0].terms_delta.buyer_commission_type === 'percentage') {
                 setCommissionAmount(String(c[0].terms_delta.buyer_commission_percentage || ''));
               } else {
@@ -92,10 +94,11 @@ export default function CounterOfferPage() {
 
     setBusy(true);
     try {
+      // CRITICAL: Normalize commission type to match backend expectations (percentage or flat)
       const counterTerms = {
-        buyer_commission_type: commissionType === 'flat_fee' ? 'flat' : 'percentage',
-        buyer_commission_percentage: commissionType === 'percentage' ? parseFloat(commissionAmount) : null,
-        buyer_flat_fee: commissionType === 'flat_fee' ? parseFloat(commissionAmount) : null,
+        buyer_commission_type: commissionType === 'percentage' ? 'percentage' : 'flat',
+        buyer_commission_percentage: commissionType === 'percentage' ? parseFloat(commissionAmount) : undefined,
+        buyer_flat_fee: commissionType === 'percentage' ? undefined : parseFloat(commissionAmount),
       };
 
       if (isResponding && respondingTo) {

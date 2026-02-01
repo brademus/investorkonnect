@@ -50,12 +50,14 @@ export default function MyAgreement() {
         if (profile?.user_role === 'investor' && roomsForDeal?.length > 0) {
           setRoom(roomsForDeal[0]);
 
-          // Load pending counter offers from agents
+          // Load STRICTLY pending counter offers from agents (exclude accepted/completed)
           const counters = await base44.entities.CounterOffer.filter({ 
             room_id: roomsForDeal[0].id,
             status: 'pending'
           });
-          setPendingCounters(counters);
+          // Double-check status locally to ensure no non-pending slip through
+          const strictlyPending = (counters || []).filter(c => c.status === 'pending');
+          setPendingCounters(strictlyPending);
         }
 
         // CRITICAL: If investor already signed and rooms exist, redirect immediately
@@ -114,14 +116,20 @@ export default function MyAgreement() {
       const counter = event?.data;
       if (!counter || counter.room_id !== room.id) return;
 
+      // CRITICAL: Only show pending counters, remove all others
       if (event.type === 'create' || event.type === 'update') {
-        setPendingCounters(prev => {
-          const exists = prev.find(c => c.id === counter.id);
-          if (exists) {
-            return prev.map(c => c.id === counter.id ? counter : c);
-          }
-          return [...prev, counter];
-        });
+        if (counter.status === 'pending') {
+          setPendingCounters(prev => {
+            const exists = prev.find(c => c.id === counter.id);
+            if (exists) {
+              return prev.map(c => c.id === counter.id ? counter : c);
+            }
+            return [...prev, counter];
+          });
+        } else {
+          // Counter status changed to non-pending, remove it
+          setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+        }
       } else if (event.type === 'delete') {
         setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
       }

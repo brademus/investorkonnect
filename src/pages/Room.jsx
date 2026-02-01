@@ -847,14 +847,17 @@ export default function Room() {
     // Load pending counters immediately - STRICTLY room-scoped ONLY to effective room
     const loadCounters = async () => {
       try {
-        // For room-scoped: filter by room_id directly to get exact matches
+        // For room-scoped: filter by room_id AND status=pending to exclude completed/superseded
         const filterQuery = effectiveRoomId 
           ? { room_id: effectiveRoomId, status: 'pending' }
           : { deal_id: dealId, status: 'pending' };
           
         const roomCounters = await base44.entities.CounterOffer.filter(filterQuery);
-        console.log('[Room] Loaded counters:', roomCounters.length, 'for effective room:', effectiveRoomId, 'query:', filterQuery);
-        setPendingCounters(roomCounters || []);
+        console.log('[Room] Loaded pending counters:', roomCounters.length, 'for effective room:', effectiveRoomId);
+        
+        // CRITICAL: Double-check status to exclude any non-pending that slipped through
+        const strictlyPending = (roomCounters || []).filter(c => c.status === 'pending');
+        setPendingCounters(strictlyPending);
       } catch (e) {
         console.error('[Room] Counter load error:', e);
         setPendingCounters([]);
@@ -895,6 +898,8 @@ export default function Room() {
       // CRITICAL: Only update state if this counter is EXPLICITLY for this effective room
       if (event?.data?.deal_id === dealId && event?.data?.room_id === effectiveRoomId) {
         console.log('[Room] Counter matches this room, updating state');
+        
+        // CRITICAL: Only keep pending counters in UI, remove all others (accepted/declined/superseded/completed)
         if (event.data.status === 'pending') {
           setPendingCounters(prev => {
             const exists = prev.some(c => c.id === event.id);
@@ -903,6 +908,7 @@ export default function Room() {
             return updated;
           });
         } else {
+          // Remove counter if status changed to anything other than pending
           setPendingCounters(prev => {
             const filtered = prev.filter(c => c.id !== event.id);
             console.log('[Room] Removed non-pending counter, remaining:', filtered.length);

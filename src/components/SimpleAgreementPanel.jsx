@@ -59,10 +59,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // Sync incoming counters from Room component and trigger refresh
     React.useEffect(() => {
       if (incomingCounters) {
-        setPendingCounters(incomingCounters);
+        // CRITICAL: Only show PENDING counters, filter out accepted/completed
+        const activePending = (incomingCounters || []).filter(c => c.status === 'pending');
+        setPendingCounters(activePending);
         // Also update parent state if setter provided
         if (setIncomingCounters) {
-          setIncomingCounters(incomingCounters);
+          setIncomingCounters(activePending);
         }
         // Force refresh agreement when counters change (arrival, acceptance, decline)
         const fetchLatest = async () => {
@@ -82,7 +84,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         };
         setTimeout(fetchLatest, 300);
       }
-    }, [incomingCounters]);
+    }, [incomingCounters?.length]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
@@ -579,15 +581,27 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                    return;
                                  }
                                  toast.success('Counter accepted - Regenerate agreement to continue');
-                                 setPendingCounters(pendingCounters.filter(c => c.id !== counter.id));
-                                 if (setIncomingCounters) setIncomingCounters(pendingCounters.filter(c => c.id !== counter.id));
 
-                                 // Refresh room to get updated requires_regenerate flag
+                                 // CRITICAL: Remove this counter AND refresh to get updated room state
+                                 setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+                                 if (setIncomingCounters) setIncomingCounters(prev => prev.filter(c => c.id !== counter.id));
+
+                                 // Refresh room and agreement to get updated requires_regenerate flag
                                  setTimeout(async () => {
                                    try {
                                      const roomRes = await base44.entities.Room.filter({ id: roomId });
                                      if (roomRes?.[0]) {
                                        setLocalRoom(roomRes[0]);
+                                       if (onRoomUpdate) onRoomUpdate(roomRes[0]);
+                                     }
+
+                                     // Also refresh agreement to sync new terms
+                                     const agRes = await base44.functions.invoke('getLegalAgreement', { 
+                                       deal_id: dealId, 
+                                       room_id: roomId 
+                                     });
+                                     if (agRes?.data?.agreement) {
+                                       setLocalAgreement(agRes.data.agreement);
                                      }
                                    } catch (_) {}
                                  }, 500);
