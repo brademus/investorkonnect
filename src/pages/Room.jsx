@@ -995,6 +995,14 @@ export default function Room() {
   // Exit multi-agent mode once deal is locked or this room is fully signed
   const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
 
+  // CRITICAL: Once fully signed, clear invites to prevent showing other agents
+  useEffect(() => {
+    if (currentRoom?.is_fully_signed || deal?.is_fully_signed) {
+      setInvites([]);
+      setSelectedInvite(null);
+    }
+  }, [currentRoom?.is_fully_signed, deal?.is_fully_signed]);
+
 
 
    // Auto-extract property details from Seller Contract if missing
