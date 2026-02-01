@@ -986,7 +986,8 @@ export default function Room() {
   }, [messages, roomId, currentRoom?.id]);
 
   // Multi-agent mode: Show pending agents instead of messages for investors with multiple agents
-  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id;
+  // Exit multi-agent mode once deal is locked or this room is fully signed
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 1 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
 
 
 
