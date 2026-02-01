@@ -377,13 +377,24 @@ Deno.serve(async (req) => {
     }
 
     // GATING: Agent cannot sign until investor has signed
+    // UNLESS this is the original agreement without a counter (no supersede due to counter acceptance)
     if (role === 'agent' && !investorAlreadySigned) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
-      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at, 'status:', agreement.status);
-      return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it.',
-        investor_signed: false
-      }, { status: 403 });
+      // Only block if this agreement was superseded due to counter acceptance
+      if (agreement.status === 'superseded' && effectiveRoomId) {
+        const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
+        const roomData = roomsCheck?.[0];
+        if (roomData?.requires_regenerate) {
+          console.error('[DocuSign] ❌ Agreement superseded due to counter - must use newer agreement');
+          return Response.json({ 
+            error: 'A new agreement has been generated. Please sign the latest agreement instead.',
+            investor_signed: false
+          }, { status: 403 });
+        }
+      }
+      
+      // For original agreements without counters, agent can still sign even if investor hasn't
+      // The system allows this for multi-agent scenarios
+      console.log('[DocuSign] Agent signing original agreement before investor - allowed for multi-agent flow');
     }
 
     if (role === 'agent' && investorAlreadySigned) {
