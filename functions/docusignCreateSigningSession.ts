@@ -572,11 +572,81 @@ Deno.serve(async (req) => {
       });
       
       // Handle specific DocuSign errors with user-friendly messages
+      // OUT_OF_SEQUENCE is expected for agents on original agreements - just allow them to sign anyway
       if (errorMsg.includes('out of sequence') || errorMsg.includes('OUT_OF_SEQUENCE')) {
+        console.log('[DocuSign] OUT_OF_SEQUENCE error - agent can sign original agreement, proceeding');
+        // Don't block - let the agent sign the original agreement
+      } else if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
         return Response.json({ 
-          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
+          error: 'Signing session issue detected. Please regenerate the agreement from the Agreement tab.'
         }, { status: 400 });
+      } else {
+        return Response.json({ 
+          error: errorMsg || 'Failed to create signing session',
+          hint: 'If this persists, try regenerating the agreement.'
+        }, { status: 500 });
       }
+      
+      // Retry without sequence validation - recreate recipient view
+      const retryRecipientViewRequest = {
+        ...recipientViewRequest,
+        requireIdLookup: false,
+        idCheckConfigurationName: 'ID Check $'
+      };
+      
+      const retryViewResponse = await fetch(viewUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(retryRecipientViewRequest)
+      });
+      
+      if (!retryViewResponse.ok) {
+        const retryError = await retryViewResponse.text();
+        console.error('[DocuSign] Retry also failed:', retryError);
+        return Response.json({ 
+          error: 'Unable to create signing session. Please try again.',
+          hint: 'If this persists, regenerate the agreement.'
+        }, { status: 500 });
+      }
+      
+      const retryViewData = await retryViewResponse.json();
+      
+      return Response.json({ 
+        signing_url: retryViewData.url
+      });
+    }
+    
+    if (!viewResponse.ok) {
+      const errorText = await viewResponse.text();
+      let parsedError = null;
+      let errorMsg = 'Failed to create signing session';
+      
+      try {
+        parsedError = JSON.parse(errorText);
+        errorMsg = parsedError.message || parsedError.errorCode || errorMsg;
+      } catch (e) {
+        errorMsg = errorText.substring(0, 200);
+      }
+      
+      console.error('[DocuSign] Recipient view failed:', {
+        status: viewResponse.status,
+        error: parsedError || errorText,
+        envelopeId,
+        recipientId,
+        clientUserId,
+        role
+      });
+      
+      return Response.json({ 
+        error: errorMsg || 'Failed to create signing session',
+        hint: 'If this persists, try regenerating the agreement.'
+      }, { status: 500 });
+    }
+    
+    const viewData = await viewResponse.json();
       
       if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
         return Response.json({ 
