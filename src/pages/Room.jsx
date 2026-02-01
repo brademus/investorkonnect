@@ -1375,21 +1375,37 @@ export default function Room() {
              }) === idx;
            })
            .map(r => {
-            const handleClick = () => {
-              if (r.is_orphan) {
-                // Pipeline-only deal: route to Pipeline to continue
-                prefetchPipeline();
-                navigate(createPageUrl("Pipeline"));
-                setDrawer(false);
-                return;
-              }
-              // Optimistically set room to avoid momentary mismatch
-              // Reset state immediately to avoid cross-room flicker
-              setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
-              setDeal(null);
-              navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
-              setDrawer(false);
-            };
+            const handleClick = async () => {
+               if (r.is_orphan) {
+                 // Pipeline-only deal: route to Pipeline to continue
+                 prefetchPipeline();
+                 navigate(createPageUrl("Pipeline"));
+                 setDrawer(false);
+                 return;
+               }
+               // Optimistically set room to avoid momentary mismatch
+               // Reset state immediately to avoid cross-room flicker
+               setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, title: (profile?.user_role === 'agent' && !r.is_fully_signed) ? `${r.city || 'City'}, ${r.state || 'State'}` : (r.title || r.deal_title) });
+               setDeal(null);
+               setAgreement(null);
+               navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
+               setDrawer(false);
+
+               // Immediately fetch fresh deal data for this room
+               if (r.deal_id) {
+                 try {
+                   const response = await base44.functions.invoke('getDealDetailsForUser', {
+                     dealId: r.deal_id
+                   });
+                   if (response?.data) {
+                     setDeal(response.data);
+                     setCachedDeal(r.deal_id, response.data);
+                   }
+                 } catch (e) {
+                   console.error('[Room] Failed to prefetch deal on sidebar click:', e);
+                 }
+               }
+             };
             
             return (
               <ConversationItem
