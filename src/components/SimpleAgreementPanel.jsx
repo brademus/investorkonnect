@@ -136,8 +136,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                          !!deal?.ioa_investor_signed_at ||
                          localRoom?.agreement_status === 'investor_signed' ||
                          localRoom?.agreement_status === 'fully_signed';
-  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                      !!localRoom?.ioa_agent_signed_at;
+  const agentSigned = !!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
 
   // Check multiple sources for fully signed status
   const fullySigned = investorSigned && agentSigned || 
