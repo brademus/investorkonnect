@@ -136,6 +136,23 @@ Deno.serve(async (req) => {
       agreement = legalAgreements[0];
       agreementType = 'LegalAgreement';
       console.log('[DocuSign] Found LegalAgreement by ID');
+      
+      // CRITICAL: For agents signing original agreements without investor signature yet,
+      // find the first/original agreement the investor signed instead
+      if (role === 'agent' && !agreement.investor_signed_at && agreement.deal_id) {
+        console.log('[DocuSign] Agent trying to sign agreement without investor signature - looking for original...');
+        const allAgreementsForDeal = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: agreement.deal_id }, 'created_date', 50);
+        
+        // Find the first agreement that has investor signature (the original one)
+        const originalWithInvestorSig = allAgreementsForDeal?.find(a => a.investor_signed_at && !a.agent_signed_at);
+        
+        if (originalWithInvestorSig) {
+          console.log('[DocuSign] Found original agreement with investor signature:', originalWithInvestorSig.id);
+          agreement = originalWithInvestorSig;
+        } else {
+          console.log('[DocuSign] No original agreement with investor signature found');
+        }
+      }
     } else {
       // 2) Back-compat: check if agreement_id is an AgreementVersion (legacy)
       console.log('[DocuSign] Not found as LegalAgreement, checking legacy AgreementVersion...');
