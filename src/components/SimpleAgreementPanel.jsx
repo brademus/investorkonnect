@@ -45,10 +45,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
           deal_id: dealId, 
           room_id: roomId || undefined 
         });
-        
-        // If room-scoped not found or unsigned, try deal-level as fallback
-        if (!res?.data?.agreement?.investor_signed_at && roomId) {
-          console.log('[SimpleAgreementPanel] Room-scoped agreement not signed, checking deal-level...');
+
+        // If room-scoped is draft/unsigned or missing, try deal-level as fallback
+        if (roomId && (!res?.data?.agreement?.investor_signed_at || res?.data?.agreement?.status === 'draft')) {
+          console.log('[SimpleAgreementPanel] Room-scoped agreement unsigned/draft, checking deal-level...');
           const dealRes = await base44.functions.invoke('getLegalAgreement', { 
             deal_id: dealId 
           });
