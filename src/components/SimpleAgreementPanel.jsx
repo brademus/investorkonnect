@@ -131,11 +131,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
   // CRITICAL: Check signatures from MULTIPLE sources to handle all cases including deal-level signatures
+  // If an agreement exists and has been sent/generated, the investor must have signed it
   const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
                          !!localRoom?.ioa_investor_signed_at ||
                          !!deal?.ioa_investor_signed_at ||
                          localRoom?.agreement_status === 'investor_signed' ||
-                         localRoom?.agreement_status === 'fully_signed';
+                         localRoom?.agreement_status === 'fully_signed' ||
+                         (localAgreement && ['sent', 'investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status));
   const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
                       !!localRoom?.ioa_agent_signed_at;
 
