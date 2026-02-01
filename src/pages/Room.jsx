@@ -742,8 +742,9 @@ export default function Room() {
                 ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
                 : dealData.title;
               
-              // Ensure we still match current selection
-              if (rid !== roomId) return;
+              // Ensure we still match current selection + abort if stale
+              if (isStale()) return;
+
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
