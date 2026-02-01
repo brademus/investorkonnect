@@ -339,9 +339,33 @@ Deno.serve(async (req) => {
     // SYNC FIRST to ensure DB is up-to-date with DocuSign
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
 
+    // CRITICAL: Check DocuSign directly for live signature status (in case sync missed it)
+    const envelopeCheckUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${agreement.docusign_envelope_id}/recipients`;
+    let liveInvestorSigned = !!agreement.investor_signed_at;
+    let liveAgentSigned = !!agreement.agent_signed_at;
+    
+    try {
+      const recipientsCheckResponse = await fetch(envelopeCheckUrl, {
+        headers: { 'Authorization': `Bearer ${accessToken}` }
+      });
+      if (recipientsCheckResponse.ok) {
+        const recipients = await recipientsCheckResponse.json();
+        const signers = recipients.signers || [];
+        const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+        const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+        
+        liveInvestorSigned = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
+        liveAgentSigned = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
+        
+        console.log('[DocuSign] Live signature check - investor:', liveInvestorSigned, 'agent:', liveAgentSigned);
+      }
+    } catch (e) {
+      console.warn('[DocuSign] Failed to check live signatures (using DB):', e.message);
+    }
+
     // Check if already signed - use simple presence of signature date
-    const investorAlreadySigned = !!agreement.investor_signed_at;
-    const agentAlreadySigned = !!agreement.agent_signed_at;
+    const investorAlreadySigned = liveInvestorSigned || !!agreement.investor_signed_at;
+    const agentAlreadySigned = liveAgentSigned || !!agreement.agent_signed_at;
 
     if (role === 'investor' && investorAlreadySigned) {
       console.log('[DocuSign] Investor already signed (status:', agreement.status, ')');
