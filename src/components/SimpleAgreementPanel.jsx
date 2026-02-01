@@ -101,23 +101,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
-  // If regeneration is required, treat old signatures as void
-  const investorSigned = requiresRegenerate ? false : (
-    (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent' && localAgreement?.status !== 'superseded') 
-    || (localRoom?.agreement_status === 'investor_signed' && localRoom?.agreement_status !== 'draft')
-    || localRoom?.agreement_status === 'fully_signed'
-  );
-
-  const agentSigned = requiresRegenerate ? false : (
-    (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent' && localAgreement?.status !== 'superseded')
-    || (localRoom?.agreement_status === 'agent_signed' && localRoom?.agreement_status !== 'draft')
-    || localRoom?.agreement_status === 'fully_signed'
-  );
+  // CRITICAL: Check signatures directly from agreement object - most authoritative
+  const investorSigned = !!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
+  const agentSigned = !!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided';
 
   const fullySigned = investorSigned && agentSigned;
 
-  // Show regenerate button when requires_regenerate is true (investor hasn't signed NEW agreement yet)
-  const canRegenerate = requiresRegenerate;
+  // Show regenerate button ONLY when requires_regenerate is true AND investor hasn't signed the NEW agreement
+  const canRegenerate = requiresRegenerate && !investorSigned;
 
   // Show generate form only for initial agreement creation (not after counter acceptance)
   const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft') && !requiresRegenerate && !investorSigned;
@@ -304,7 +295,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1' && dealId) {
-      // Small delay to ensure DocuSign webhook has processed
+      // Longer delay to ensure DocuSign webhook has processed and cleared flags
       const timer = setTimeout(async () => {
         try {
           // Refresh agreement to get latest signature status
@@ -323,15 +314,22 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
             if (roomRes?.[0]) {
               console.log('[SimpleAgreementPanel] Refreshed room after signing, requires_regenerate:', roomRes[0].requires_regenerate);
               setLocalRoom(roomRes[0]);
+
+              // CRITICAL: If investor just signed, clear requires_regenerate manually if webhook hasn't done it yet
+              if (isInvestor && res?.data?.agreement?.investor_signed_at && roomRes[0].requires_regenerate === true) {
+                console.log('[SimpleAgreementPanel] Investor signed, clearing requires_regenerate flag');
+                await base44.entities.Room.update(roomId, { requires_regenerate: false });
+                setLocalRoom(prev => ({ ...prev, requires_regenerate: false }));
+              }
             }
           }
         } catch (e) {
           console.error('[SimpleAgreementPanel] Failed to refresh after signing:', e);
         }
-      }, 1000); // Longer delay to ensure webhook has processed
+      }, 2000); // Longer delay to ensure webhook has processed
       return () => clearTimeout(timer);
     }
-  }, [dealId, roomId]);
+  }, [dealId, roomId, isInvestor]);
 
   return (
     <>
