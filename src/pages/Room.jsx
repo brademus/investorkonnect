@@ -663,14 +663,14 @@ export default function Room() {
       const thisReq = ++requestSeqRef.current;
       const isStale = () => (roomId !== rid || requestSeqRef.current !== thisReq);
       
-      // Always set loading on room change to ensure fresh data
-      setRoomLoading(true);
-      setAgreement(null); // Clear stale agreement
-      setAgreementPanelKey(prev => prev + 1); // Force SimpleAgreementPanel remount
-      
       try {
+        // Always set loading on room change to ensure fresh data
+        setRoomLoading(true);
+        setAgreement(null); // Clear stale agreement
+        setAgreementPanelKey(prev => prev + 1); // Force SimpleAgreementPanel remount
+        
         // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
-         const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
+        const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
 
          if (!rawRoom) {
            setRoomLoading(false);
