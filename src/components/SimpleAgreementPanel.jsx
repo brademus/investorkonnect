@@ -311,14 +311,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: Only trigger callback once after signing, not on every load
   const [hasTriggeredCallback, setHasTriggeredCallback] = useState(false);
   useEffect(() => {
-    if (localAgreement?.investor_signed_at && !localAgreement?.agent_signed_at && onInvestorSigned && !hasTriggeredCallback) {
+    if (investorSigned && !agentSigned && onInvestorSigned && !hasTriggeredCallback) {
       const params = new URLSearchParams(window.location.search);
       if (params.get('signed') === '1') {
+        console.log('[SimpleAgreementPanel] Triggering onInvestorSigned callback');
         setHasTriggeredCallback(true);
         onInvestorSigned();
       }
     }
-  }, [localAgreement?.investor_signed_at, onInvestorSigned, hasTriggeredCallback]);
+  }, [investorSigned, agentSigned, onInvestorSigned, hasTriggeredCallback]);
 
   // Refresh agreement AND room after signing redirect
   useEffect(() => {
@@ -453,8 +454,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {/* Investor Actions */}
               {isInvestor && !fullySigned && (
                <div className="space-y-2">
-                 {/* Priority 1: Show regenerate button ONLY if requires_regenerate is TRUE and investor has NOT signed the NEW agreement */}
-                 {canRegenerate && !investorSigned && (
+                 {/* Priority 1: Show regenerate button ONLY if counter was accepted (requires_regenerate) and investor hasn't signed the NEW agreement */}
+                 {canRegenerate && (
                    <Button
                                       onClick={async () => {
                                         // Auto-regenerate AND sign in one flow
@@ -574,8 +575,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       </Button>
                                       )}
 
-                                      {/* Priority 2: Show sign button if investor hasn't signed and no regeneration needed */}
-                                      {!investorSigned && !canRegenerate && localAgreement && localAgreement.status !== 'superseded' && (
+                                      {/* Priority 2: Show sign button ONLY if investor hasn't signed AND no regeneration needed AND agreement exists and is not superseded */}
+                                      {!investorSigned && !canRegenerate && !requiresRegenerate && localAgreement && localAgreement.status !== 'superseded' && (
                                       <Button
                                       onClick={() => handleSign('investor')}
                                       disabled={busy}
@@ -587,7 +588,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                       )}
 
                                       {/* Priority 3: Investor already signed - show waiting message */}
-                                      {investorSigned && !agentSigned && (
+                                      {investorSigned && !agentSigned && !requiresRegenerate && (
                                       <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
                                       <p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p>
                                       </div>
