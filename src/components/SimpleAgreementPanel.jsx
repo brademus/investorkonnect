@@ -135,9 +135,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
                          !!localRoom?.ioa_investor_signed_at ||
                          !!deal?.ioa_investor_signed_at ||
+                         !!deal?.investor_signed_at ||
                          localRoom?.agreement_status === 'investor_signed' ||
                          localRoom?.agreement_status === 'fully_signed' ||
-                         (localAgreement && ['sent', 'investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status));
+                         (localAgreement && ['sent', 'investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status)) ||
+                         (deal && ['sent', 'investor_signed', 'agent_signed', 'fully_signed'].includes(deal?.status));
   const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
                       !!localRoom?.ioa_agent_signed_at;
 
