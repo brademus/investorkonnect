@@ -45,9 +45,18 @@ function PipelineContent() {
   // CRITICAL: Redirect to onboarding if not complete
   useEffect(() => {
     if (loading) return;
-    if (!profile) {
+    
+    // Prevent redirect loop: don't redirect if we just came from PostAuth
+    const fromPostAuth = sessionStorage.getItem('from_postauth') === 'true';
+    if (!profile && !fromPostAuth) {
+      sessionStorage.setItem('from_postauth', 'true');
       navigate(createPageUrl("PostAuth"), { replace: true });
       return;
+    }
+    
+    // Clear flag on successful load
+    if (profile) {
+      sessionStorage.removeItem('from_postauth');
     }
     if (!onboarded) {
       const role = profile.user_role;

@@ -177,6 +177,7 @@ export default function PostAuth() {
 
           // Fully cleared - go to Pipeline (main dashboard)
           console.log('[PostAuth] User fully cleared, redirecting to Pipeline');
+          sessionStorage.setItem('from_postauth', 'true');
           navigate(createPageUrl("Pipeline"), { replace: true });
         }
 
