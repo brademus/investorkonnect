@@ -2688,34 +2688,22 @@ export default function Room() {
                !(agreement?.investor_signed_at && agreement?.agent_signed_at) && 
                currentRoom?.agreement_status !== 'fully_signed' &&
                agreement?.status !== 'fully_signed' &&
-               !deal?.is_fully_signed && (() => {
-                 // Check investor signature from multiple sources
-                 const investorSigned = !!agreement?.investor_signed_at || 
-                                       !!currentRoom?.ioa_investor_signed_at || 
-                                       !!deal?.ioa_investor_signed_at ||
-                                       currentRoom?.agreement_status === 'investor_signed';
-                 const agentSigned = !!agreement?.agent_signed_at || !!currentRoom?.ioa_agent_signed_at;
-                 
-                 return (
+               !deal?.is_fully_signed && 
+               // Check investor signature from multiple sources
+               (!!agreement?.investor_signed_at || 
+                !!currentRoom?.ioa_investor_signed_at || 
+                !!deal?.ioa_investor_signed_at ||
+                currentRoom?.agreement_status === 'investor_signed') && (
                 <div className="mb-4 bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-2xl p-5 flex-shrink-0">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1">
                       <Shield className="w-5 h-5 text-[#60A5FA] mt-0.5 flex-shrink-0" />
                       <div>
                         <h3 className="text-md font-bold text-[#60A5FA] mb-1">
-                          {currentRoom?.request_status === 'requested' ? 'Review Agreement' : 
-                           investorSigned && !agentSigned ? 'Review terms and sign' :
-                           !investorSigned ? 'Waiting for investor to sign' :
-                           'Sign agreement to lock in this deal'}
+                          Review terms and sign
                         </h3>
                         <p className="text-sm text-[#FAFAFA]/80">
-                          {currentRoom?.request_status === 'requested' 
-                            ? 'Go to the My Agreement tab to sign or counter the compensation terms.'
-                            : investorSigned && !agentSigned
-                            ? 'Investor has signed. Review and sign to lock in this deal.'
-                            : !investorSigned
-                            ? 'Waiting for investor to sign the agreement.'
-                            : 'Sign the agreement to unlock full property details and lock in this deal.'}
+                          Investor has signed. Review and sign to lock in this deal.
                         </p>
                       </div>
                     </div>
@@ -2740,8 +2728,7 @@ export default function Room() {
                     </Button>
                   </div>
                 </div>
-                 );
-               })()}
+              )}
 
               {/* CRITICAL: Only show "Open My Agreement" banner if investor hasn't signed ANY agreement yet */}
               {profile?.user_role === 'investor' && !currentRoom?.is_fully_signed && !isMultiAgentMode && !agreement?.investor_signed_at && currentRoom?.agreement_status !== 'investor_signed' && (
