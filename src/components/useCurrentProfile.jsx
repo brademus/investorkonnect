@@ -4,7 +4,7 @@ import { base44 } from '@/api/base44Client';
 // Global cache to prevent redundant API calls across component instances
 let globalProfileCache = null;
 let globalCacheTimestamp = 0;
-const CACHE_DURATION = 10000; // 10 seconds
+const CACHE_DURATION = 30000; // 30 seconds - extended for faster reload
 
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Aggressive Caching to Prevent Rate Limits
