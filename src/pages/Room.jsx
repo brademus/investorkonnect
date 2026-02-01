@@ -1401,7 +1401,7 @@ export default function Room() {
             
             return (
               <ConversationItem
-                key={r.id}
+                key={`${r.id}-${r.updated_date}`}
                 room={r}
                 isActive={r.id === roomId}
                 onClick={handleClick}
