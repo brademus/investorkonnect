@@ -417,6 +417,7 @@ export default function Room() {
 
   // On room switch, reset board/tab and transient data to avoid cross-room flicker
   useEffect(() => {
+    if (!roomId) return;
     setShowBoard(false);
     setActiveTab('details');
     setDeal(null);
@@ -424,11 +425,12 @@ export default function Room() {
     setInvites([]);
     setSelectedInvite(null);
     setPendingCounters([]);
-    setCurrentRoom(null);
     setSelectedRoomId(null);
     setRoomStates({});
     setRoomLoading(true);
     setItems([]); // Clear messages immediately
+    // Force fresh fetch by resetting current room
+    setCurrentRoom(null);
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
