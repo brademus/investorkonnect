@@ -89,25 +89,29 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
   
-  // CRITICAL: Check BOTH agreement and room for signed status (room updated faster after DocuSign)
-  // IMPORTANT: Only trust investor_signed if status is NOT 'draft' or 'sent' (fresh agreements shouldn't be marked signed)
-  const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent') 
+  // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
+  const requiresRegenerate = localRoom?.requires_regenerate === true;
+
+  // If regeneration is required, treat old signatures as void
+  const investorSigned = requiresRegenerate ? false : (
+    (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent' && localAgreement?.status !== 'superseded') 
     || (localRoom?.agreement_status === 'investor_signed' && localRoom?.agreement_status !== 'draft')
-    || localRoom?.agreement_status === 'fully_signed';
-  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent')
+    || localRoom?.agreement_status === 'fully_signed'
+  );
+
+  const agentSigned = requiresRegenerate ? false : (
+    (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'draft' && localAgreement?.status !== 'sent' && localAgreement?.status !== 'superseded')
     || (localRoom?.agreement_status === 'agent_signed' && localRoom?.agreement_status !== 'draft')
-    || localRoom?.agreement_status === 'fully_signed';
+    || localRoom?.agreement_status === 'fully_signed'
+  );
+
   const fullySigned = investorSigned && agentSigned;
 
-  // Check BOTH agreement and pass-in flag for regenerate requirement
-  // CRITICAL: Check Room.requires_regenerate - this is the authoritative flag
-  // Do NOT check pendingCounters status - counters stay 'accepted' until marked 'completed' after signing
-  const requiresRegenerate = localRoom?.requires_regenerate === true;
-  // CRITICAL: Once investor signs, they should NOT see regenerate button anymore
-  const canRegenerate = !investorSigned && requiresRegenerate;
+  // Show regenerate button when requires_regenerate is true (investor hasn't signed NEW agreement yet)
+  const canRegenerate = requiresRegenerate;
 
-  // CRITICAL: Don't show generate form if investor already signed (unless counter requires regeneration)
-  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft' || localAgreement.status === 'superseded') && !investorSigned && !canRegenerate;
+  // Show generate form only for initial agreement creation (not after counter acceptance)
+  const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft') && !requiresRegenerate && !investorSigned;
 
   // Handle generate agreement
   const handleGenerate = async () => {
