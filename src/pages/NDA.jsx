@@ -99,12 +99,14 @@ function NDAContent() {
     }
   }, [loading, profile, onboarded, kycVerified, navigate]);
 
-  // Redirect if already accepted (check after loading completes)
+  // Redirect if already accepted (check after loading completes) - SINGLE CHECK
   useEffect(() => {
     if (!loading && hasNDA && !isNavigatingRef.current) {
       devLog('[NDA] Already accepted, redirecting to dashboard...');
       isNavigatingRef.current = true;
-      navigate(createPageUrl("Pipeline"), { replace: true });
+      setTimeout(() => {
+        navigate(createPageUrl("Pipeline"), { replace: true });
+      }, 100);
     }
   }, [loading, hasNDA, navigate]);
 
@@ -115,11 +117,12 @@ function NDAContent() {
       return;
     }
 
-    if (isNavigatingRef.current) return; // Prevent double-submission
+    if (isNavigatingRef.current || accepting) return; // Prevent double-submission
 
     devLog('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
+    isNavigatingRef.current = true; // Lock immediately to prevent any race conditions
 
     try {
       devLog('[NDA] Updating profile directly with NDA acceptance...');
@@ -135,12 +138,9 @@ function NDAContent() {
         
         toast.success("NDA accepted successfully!");
         
-        // Mark as navigating to prevent useEffect from also triggering redirect
-        isNavigatingRef.current = true;
-        
-        // Navigate immediately without waiting for refresh
+        // Navigate immediately without waiting for refresh - single redirect
         devLog('[NDA] Navigating to Dashboard...');
-        navigate(createPageUrl("Pipeline"), { replace: true });
+        window.location.href = createPageUrl("Pipeline"); // Hard navigation to ensure clean state
       } else {
         throw new Error("Profile not available");
       }
