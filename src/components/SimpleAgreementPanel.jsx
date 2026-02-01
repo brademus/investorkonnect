@@ -41,10 +41,22 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     const fetchLatest = async () => {
       try {
         // CRITICAL: Try room-scoped first, then fall back to deal-level
-        const res = await base44.functions.invoke('getLegalAgreement', { 
+        let res = await base44.functions.invoke('getLegalAgreement', { 
           deal_id: dealId, 
           room_id: roomId || undefined 
         });
+        
+        // If room-scoped not found or unsigned, try deal-level as fallback
+        if (!res?.data?.agreement?.investor_signed_at && roomId) {
+          console.log('[SimpleAgreementPanel] Room-scoped agreement not signed, checking deal-level...');
+          const dealRes = await base44.functions.invoke('getLegalAgreement', { 
+            deal_id: dealId 
+          });
+          if (dealRes?.data?.agreement?.investor_signed_at) {
+            console.log('[SimpleAgreementPanel] Found signed deal-level agreement, using that');
+            res = dealRes;
+          }
+        }
         
         if (res?.data?.agreement) {
           console.log('[SimpleAgreementPanel] Loaded agreement:', {
@@ -68,7 +80,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               id: roomRes[0].id,
               requires_regenerate: roomRes[0].requires_regenerate,
               agreement_status: roomRes[0].agreement_status,
-              is_fully_signed: roomRes[0].is_fully_signed
+              is_fully_signed: roomRes[0].is_fully_signed,
+              investor_signed_at: roomRes[0].ioa_investor_signed_at
             });
             setLocalRoom(roomRes[0]);
           }
