@@ -429,7 +429,6 @@ export default function Room() {
     setRoomStates({});
     setRoomLoading(true);
     setItems([]); // Clear messages immediately
-    setInitialLoadDone(false); // Reset messages loading state
   }, [roomId]);
   // Property Details editor state
   const [editingPD, setEditingPD] = useState(false);
