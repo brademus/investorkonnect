@@ -274,11 +274,18 @@ function PipelineContent() {
      },
      refetchOnMount: true,
      queryFn: async () => {
-       if (!profile?.id) return [];
+       if (!profile?.id) {
+         console.log('[Pipeline] No profile ID, returning empty deals');
+         return [];
+       }
 
+       console.log('[Pipeline] Fetching deals for profile:', profile.id, 'role:', profile.user_role);
+       
        // PRODUCTION: Server-side access control enforces role-based redaction
        const response = await base44.functions.invoke('getPipelineDealsForUser');
        const deals = response.data?.deals || [];
+       
+       console.log('[Pipeline] Loaded deals:', deals.length);
 
        // Deduplicate by ID on client side as well
        const dealsMap = new Map();

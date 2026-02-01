@@ -62,23 +62,33 @@ export function useCurrentProfile() {
           return;
         }
 
+        console.log('[useCurrentProfile] Loading profile for user:', user.id, user.email);
+
         // Load profile by user_id (fastest path)
         let profiles = await base44.entities.Profile.filter({ user_id: user.id });
         let profile = profiles[0] || null;
-        
+
+        console.log('[useCurrentProfile] Profile by user_id:', profile ? profile.id : 'not found');
+
         // Fallback: search by email
         if (!profile) {
           const emailLower = user.email.toLowerCase().trim();
           profiles = await base44.entities.Profile.filter({ email: emailLower });
           profile = profiles[0] || null;
+          console.log('[useCurrentProfile] Profile by email:', profile ? profile.id : 'not found');
           if (profile && profile.user_id !== user.id) {
             try {
               await base44.entities.Profile.update(profile.id, { user_id: user.id });
               profile.user_id = user.id;
+              console.log('[useCurrentProfile] Updated profile user_id');
             } catch (e) {
               console.error('[useCurrentProfile] Failed to update user_id:', e);
             }
           }
+        }
+
+        if (!profile) {
+          console.error('[useCurrentProfile] No profile found for user:', user.id, user.email);
         }
 
         if (!mounted) return;
