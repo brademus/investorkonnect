@@ -672,12 +672,15 @@ export default function Room() {
         setCurrentRoom(null); // Force full refresh
         
         // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
-        const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
+         const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
 
-         if (!rawRoom) {
-           setRoomLoading(false);
-           return;
-         }
+          // Abort if room changed during fetch
+          if (isStale()) return;
+
+          if (!rawRoom) {
+            setRoomLoading(false);
+            return;
+          }
 
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
          if (rawRoom.deal_id && profile?.user_role === 'investor') {
