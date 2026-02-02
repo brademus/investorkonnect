@@ -519,35 +519,37 @@ Deno.serve(async (req) => {
                     
                     // Create invite for each agent
                     for (const agentId of selectedAgentIds) {
-                      try {
-                        // 1. Create Room for this agent - ACCEPTED status (investor already signed)
-                        const room = await base44.asServiceRole.entities.Room.create({
-                          deal_id: deal.id,
-                          investorId: investorProfile.id,
-                          agentId: agentId,
-                          request_status: 'accepted', // IMPORTANT: accepted, not requested
-                          agreement_status: 'investor_signed',
-                          title: deal.title,
-                          property_address: deal.property_address,
-                          city: deal.city,
-                          state: deal.state,
-                          county: deal.county,
-                          zip: deal.zip,
-                          budget: deal.purchase_price,
-                          closing_date: deal.key_dates?.closing_date,
-                          proposed_terms: deal.proposed_terms,
-                          requested_at: new Date().toISOString(),
-                          accepted_at: new Date().toISOString()
-                        });
-                        
-                        console.log('[DocuSign Webhook] Created room:', room.id, 'for agent:', agentId);
-                        
-                        // 2. Generate agent-specific agreement
-                        const genRes = await base44.functions.invoke('generateLegalAgreement', {
-                          deal_id: deal.id,
-                          room_id: room.id,
-                          exhibit_a
-                        });
+                     try {
+                       // 1. Create Room for this agent - ACCEPTED status (investor already signed)
+                       const room = await base44.asServiceRole.entities.Room.create({
+                         deal_id: deal.id,
+                         investorId: investorProfile.id,
+                         agentId: agentId,
+                         request_status: 'accepted', // IMPORTANT: accepted, not requested
+                         agreement_status: 'sent', // Agent can sign
+                         title: deal.title,
+                         property_address: deal.property_address,
+                         city: deal.city,
+                         state: deal.state,
+                         county: deal.county,
+                         zip: deal.zip,
+                         budget: deal.purchase_price,
+                         closing_date: deal.key_dates?.closing_date,
+                         proposed_terms: deal.proposed_terms,
+                         requested_at: new Date().toISOString(),
+                         accepted_at: new Date().toISOString()
+                       });
+
+                       console.log('[DocuSign Webhook] Created room:', room.id, 'for agent:', agentId);
+
+                       // 2. Generate agent-only agreement
+                       const genRes = await base44.functions.invoke('generateLegalAgreement', {
+                         deal_id: deal.id,
+                         room_id: room.id,
+                         signer_mode: 'agent_only',
+                         source_base_agreement_id: agreement.id,
+                         exhibit_a
+                       });
                         
                         if (genRes.data?.success) {
                           const newAgreement = genRes.data.agreement;
