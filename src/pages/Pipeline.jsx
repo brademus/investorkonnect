@@ -40,12 +40,13 @@ function PipelineContent() {
   const [identity, setIdentity] = useState(null);
   const [identityLoaded, setIdentityLoaded] = useState(false);
   const [allowExtras, setAllowExtras] = useState(false);
+  const [loadingComplete, setLoadingComplete] = useState(false);
   useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
 
   // CRITICAL: Redirect to onboarding if not complete
   const hasRedirectedRef = useRef(false);
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadingComplete) return;
     if (hasRedirectedRef.current) return;
     
     // CRITICAL: Guard against null profile first
