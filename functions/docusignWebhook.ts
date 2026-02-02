@@ -489,8 +489,8 @@ Deno.serve(async (req) => {
             try {
               // Get deal with selected agent IDs
               const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
-              const deal = deals[0];
-              const selectedAgentIds = deal?.metadata?.selected_agent_ids || [];
+                const deal = deals[0];
+                const selectedAgentIds = deal?.selected_agent_ids || deal?.metadata?.selected_agent_ids || [];
               
               if (selectedAgentIds.length > 0) {
                 console.log('[DocuSign Webhook] Creating invites for', selectedAgentIds.length, 'agents');
