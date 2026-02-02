@@ -16,19 +16,21 @@ import LoadingAnimation from "@/components/LoadingAnimation";
  * 4. Has onboarding → Dashboard
  */
 export default function PostAuth() {
-  const navigate = useNavigate();
-  const [status, setStatus] = useState("Signing you in...");
-  const [navigated, setNavigated] = useState(false);
-  const [error, setError] = useState(null);
+   const navigate = useNavigate();
+   const [status, setStatus] = useState("Signing you in...");
+   const [navigated, setNavigated] = useState(false);
+   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    let mounted = true;
-    const route = async () => {
-      try {
-        // Timeout safeguard
-        const timeoutId = setTimeout(() => {
-          if (mounted) setError("Taking longer than expected...");
-        }, 8000);
+   useEffect(() => {
+     if (navigated) return; // Prevent re-running if already navigated
+
+     let mounted = true;
+     const route = async () => {
+       try {
+         // Timeout safeguard
+         const timeoutId = setTimeout(() => {
+           if (mounted) setError("Taking longer than expected...");
+         }, 12000);
 
         // Step 1: Get user
         const user = await base44.auth.me();
