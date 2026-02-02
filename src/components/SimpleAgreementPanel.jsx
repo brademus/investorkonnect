@@ -130,17 +130,26 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
-  // CRITICAL: Check signatures from MULTIPLE sources to handle all cases including deal-level signatures
-  const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                         !!localRoom?.ioa_investor_signed_at ||
-                         !!deal?.ioa_investor_signed_at ||
-                         !!deal?.investor_signed_at ||
-                         localRoom?.agreement_status === 'investor_signed' ||
-                         localRoom?.agreement_status === 'fully_signed' ||
-                         (localAgreement && ['investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status)) ||
-                         (deal && ['investor_signed', 'agent_signed', 'fully_signed'].includes(deal?.status));
-  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                      !!localRoom?.ioa_agent_signed_at;
+  // CRITICAL: Check signer_mode to determine what signatures are needed
+  const signerMode = localAgreement?.signer_mode || 'both';
+  
+  // For agent_only agreements: only care about agent signature
+  // For investor_only agreements: only care about investor signature
+  // For both mode: both signatures required
+  
+  const investorSigned = (signerMode === 'investor_only' || signerMode === 'both') &&
+                         ((!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
+                          !!localRoom?.ioa_investor_signed_at ||
+                          !!deal?.ioa_investor_signed_at ||
+                          !!deal?.investor_signed_at ||
+                          localRoom?.agreement_status === 'investor_signed' ||
+                          localRoom?.agreement_status === 'fully_signed' ||
+                          (localAgreement && ['investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status)) ||
+                          (deal && ['investor_signed', 'agent_signed', 'fully_signed'].includes(deal?.status)));
+  
+  const agentSigned = (signerMode === 'agent_only' || signerMode === 'both') &&
+                      ((!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
+                       !!localRoom?.ioa_agent_signed_at);
 
   // Check multiple sources for fully signed status
   const fullySigned = investorSigned && agentSigned || 
@@ -150,12 +159,14 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                       localAgreement?.status === 'fully_signed';
   
   console.log('[SimpleAgreementPanel] Signature status:', {
+    signerMode,
     investorSigned,
     agentSigned,
     fullySigned,
     roomStatus: localRoom?.agreement_status,
     agreementStatus: localAgreement?.status,
     agreementInvestorSigned: !!localAgreement?.investor_signed_at,
+    agreementAgentSigned: !!localAgreement?.agent_signed_at,
     roomInvestorSigned: !!localRoom?.ioa_investor_signed_at,
     dealInvestorSigned: !!deal?.ioa_investor_signed_at
   });
@@ -629,7 +640,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {!investorSigned && !requiresRegenerate && !fullySigned && localAgreement && (
+                  {!investorSigned && !requiresRegenerate && !fullySigned && localAgreement && signerMode === 'both' && (
                     <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
                       <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
                     </div>
@@ -649,8 +660,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
-                  {/* Show sign/counter buttons if: agreement is sent/investor_signed, no pending counters, and not already signed by agent */}
-                  {(investorSigned || localAgreement?.status === 'sent' || localAgreement?.status === 'investor_signed') && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
+                  {/* Show sign/counter buttons if:
+                      - agent_only mode: agreement is sent, agent can sign immediately
+                      - both mode: agreement is sent AND investor signed, agent can sign
+                      - No pending counters, not already signed by agent */}
+                  {((signerMode === 'agent_only' && localAgreement?.status === 'sent') || 
+                    (signerMode === 'both' && investorSigned)) && 
+                   !agentSigned && 
+                   !pendingCounters.some(c => c.status === 'pending') && 
+                   localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
