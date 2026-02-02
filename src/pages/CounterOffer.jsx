@@ -116,26 +116,28 @@ export default function CounterOfferPage() {
           setTimeout(() => navigate(-1), 500);
         }
       } else {
-        // Creating new counter - must have room_id to scope to specific agent
-        if (!roomId) {
-          toast.error('Room ID required to send counter offer');
-          setBusy(false);
-          return;
-        }
-        
-        const res = await base44.functions.invoke('createCounterOffer', {
-          deal_id: dealId,
-          room_id: roomId,
-          from_role: profile.user_role,
-          terms_delta: counterTerms,
-        });
+         // Creating new counter - must have room_id to scope to specific agent
+         if (!roomId) {
+           toast.error('Room ID required to send counter offer');
+           setBusy(false);
+           return;
+         }
 
-        if (res.data?.error) {
-          toast.error(res.data.error);
-        } else {
-          toast.success('Counter offer sent');
-          setTimeout(() => navigate(-1), 500);
-        }
+         const res = await base44.functions.invoke('createCounterOffer', {
+           deal_id: dealId,
+           room_id: roomId,
+           from_role: profile.user_role,
+           terms_delta: counterTerms,
+         });
+
+         if (res.data?.error) {
+           toast.error(res.data.error);
+         } else if (res.data?.ok || res.data?.success) {
+           toast.success('Counter offer sent');
+           setTimeout(() => navigate(-1), 500);
+         } else {
+           toast.error('Failed to send counter');
+         }
       }
     } catch (e) {
       console.error('[CounterOffer] Send error:', e);
