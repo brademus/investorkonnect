@@ -150,10 +150,13 @@ export default function SelectAgent() {
       };
 
       console.log('[SelectAgent] Creating deal with selected agents:', selectedAgentIds);
+      console.log('[SelectAgent] dealPayload.selected_agent_ids:', dealPayload.selected_agent_ids);
 
       const newDeal = await base44.entities.Deal.create(dealPayload);
 
-      console.log('[SelectAgent] Created deal:', newDeal.id, 'with agents:', newDeal.selected_agent_ids);
+      console.log('[SelectAgent] Created deal:', newDeal.id);
+      console.log('[SelectAgent] newDeal.selected_agent_ids:', newDeal.selected_agent_ids);
+      console.log('[SelectAgent] Full deal object keys:', Object.keys(newDeal));
 
       // Save selected agents to session storage for redundancy
       sessionStorage.setItem("pendingDealId", newDeal.id);
