@@ -129,7 +129,22 @@ Deno.serve(async (req) => {
             accepted_at: new Date().toISOString()
           });
           console.log('[createInvitesAfterInvestorSign] ✓ Created room for agent:', agentId, ', room ID:', room.id, ', deal ID:', deal_id);
-        } else if (room.request_status !== 'accepted') {
+
+          // CRITICAL: Verify room is immediately queryable
+          try {
+            const verifyRoom = await base44.asServiceRole.entities.Room.filter({ 
+              id: room.id,
+              agentId: agentId,
+              deal_id: deal_id
+            });
+            console.log('[createInvitesAfterInvestorSign] ✓ VERIFIED room is queryable:', verifyRoom.length > 0 ? 'YES' : 'NO');
+            if (verifyRoom.length === 0) {
+              console.error('[createInvitesAfterInvestorSign] WARNING: Room created but not queryable by ID!');
+            }
+          } catch (e) {
+            console.error('[createInvitesAfterInvestorSign] Failed to verify room:', e.message);
+          }
+          } else if (room.request_status !== 'accepted') {
           // Update existing room to accepted
           await base44.asServiceRole.entities.Room.update(room.id, {
             request_status: 'accepted',
