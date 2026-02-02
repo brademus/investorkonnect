@@ -232,8 +232,7 @@ Deno.serve(async (req) => {
         agreement_id: agreement.id,
         investor_signed_at: agreement.investor_signed_at,
         status: agreement.status,
-        envelope_id: agreement.docusign_envelope_id,
-        liveInvestorSigned
+        envelope_id: agreement.docusign_envelope_id
       });
       return Response.json({ 
         ok: false,
@@ -241,11 +240,10 @@ Deno.serve(async (req) => {
         error: 'The investor must sign this agreement first before you can sign it.'
       }, { status: 400 });
     }
-    
+
     console.log('[DocuSign] ✓ Agent signature allowed - agreement ready:', {
       status: agreement.status,
-      investor_signed_at: !!agreement.investor_signed_at,
-      liveInvestorSigned
+      investor_signed_at: !!agreement.investor_signed_at
     });
 
     // PHASE 7: Enforce Deal Lock-in
