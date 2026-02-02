@@ -148,10 +148,11 @@ function PipelineContent() {
     if (!profile?.id) return;
     (async () => {
       try {
-        const { data } = await base44.functions.invoke('getIdentityStatus');
-        setIdentity(data?.identity || null);
+        const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile?.identity_session_id });
+        const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
+        setIdentity({ verificationStatus: status });
       } catch (e) {
-        console.warn('[Pipeline] getIdentityStatus failed:', e);
+        console.warn('[Pipeline] getStripeIdentityStatus failed:', e);
         // Fallback: use profile data directly
         const fallbackIdentity = {
           verificationStatus: profile.identity_status === 'approved' || profile.identity_status === 'verified' 
@@ -165,21 +166,21 @@ function PipelineContent() {
         setIdentityLoaded(true);
       }
     })();
-  }, [profile?.id, profile?.identity_status]);
+  }, [profile?.id, profile?.identity_status, profile?.identity_session_id]);
 
   // Auto-refresh identity while under review so the banner updates and hides when done
   useEffect(() => {
-    if (!profile?.id) return;
+    if (!profile?.id || !profile?.identity_session_id) return;
     const isUnderReview = String(identity?.verificationStatus || '').toUpperCase() === 'PROCESSING';
     if (!isUnderReview) return;
 
     const interval = setInterval(async () => {
       try {
-        const { data } = await base44.functions.invoke('getIdentityStatus');
-        const status = String(data?.identity?.verificationStatus || '').toUpperCase();
-        setIdentity(data?.identity || null);
+        const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile?.identity_session_id });
+        const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
+        setIdentity({ verificationStatus: status });
         if (status === 'VERIFIED') {
-          try { if (profile?.id) { await base44.entities.Profile.update(profile.id, { identity_status: 'approved', identity_verified_at: new Date().toISOString() }); } } catch (_) {}
+          try { if (profile?.id) { await base44.entities.Profile.update(profile.id, { identity_status: 'verified', kyc_status: 'approved', identity_verified_at: new Date().toISOString() }); } } catch (_) {}
           setIdentity({ verificationStatus: 'VERIFIED' });
           clearInterval(interval);
         }
@@ -195,7 +196,7 @@ function PipelineContent() {
     }, 8000);
 
     return () => clearInterval(interval);
-  }, [profile?.id, identity?.verificationStatus, profile?.identity_status, refresh]);
+  }, [profile?.id, identity?.verificationStatus, profile?.identity_status, profile?.identity_session_id, refresh]);
 
   // Backfill identity_status immediately once VERIFIED
   useEffect(() => {
