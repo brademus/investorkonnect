@@ -39,9 +39,12 @@ export default function PostAuth() {
         if (!mounted) return;
 
         if (!user) {
-          navigate(createPageUrl("Home"), { replace: true });
-          return;
-        }
+           if (mounted) {
+             setNavigated(true);
+             navigate(createPageUrl("Home"), { replace: true });
+           }
+           return;
+         }
 
         // Step 2: Get or create profile - USE EMAIL AS PRIMARY KEY
         if (mounted) setStatus("Loading your profile...");
