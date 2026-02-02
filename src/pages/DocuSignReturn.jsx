@@ -36,37 +36,32 @@ export default function DocuSignReturn() {
 
           // Investor signing: create invites for all agents
           if (dealId && !roomId) {
-            try {
-              console.log('[DocuSignReturn] Creating invites for deal:', dealId);
-              const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
-                deal_id: dealId
-              });
+            console.log('[DocuSignReturn] Creating invites for deal:', dealId);
+            const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
+              deal_id: dealId
+            });
+            
+            console.log('[DocuSignReturn] Invites response:', res.data);
+            
+            if (res.data?.error) {
+              console.error('[DocuSignReturn] Invites error:', res.data.error);
+              toast.error(res.data.error);
+            } else if (res.data?.ok && res.data.invite_ids?.length > 0) {
+              console.log('[DocuSignReturn] ✓ Created', res.data.invite_ids.length, 'invites');
+              toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
+              sessionStorage.removeItem('selectedAgentIds');
+              sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
               
-              console.log('[DocuSignReturn] Invites response:', res.data);
-              
-              if (res.data?.error) {
-                console.error('[DocuSignReturn] Invites error:', res.data.error);
-                toast.error(res.data.error);
-              } else if (res.data?.ok && res.data.invite_ids?.length > 0) {
-                console.log('[DocuSignReturn] ✓ Created', res.data.invite_ids.length, 'invites');
-                toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
-                sessionStorage.removeItem('selectedAgentIds');
-                sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-                console.log('[DocuSignReturn] Loaded rooms after invites:', rooms.length);
-                if (rooms?.length > 0) {
-                  navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
-                  return;
-                }
-              } else {
-                console.error('[DocuSignReturn] No invites created - response:', res.data);
-                toast.error('No agents were invited. Please contact support.');
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+              console.log('[DocuSignReturn] Loaded rooms after invites:', rooms.length);
+              if (rooms?.length > 0) {
+                navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
+                return;
               }
-            } catch (e) {
-              console.error('[DocuSignReturn] Invites exception:', e);
-              toast.error('Failed to send deal to agents');
+            } else {
+              console.error('[DocuSignReturn] No invites created - response:', res.data);
+              toast.error('No agents were invited. Please contact support.');
             }
           }
 
