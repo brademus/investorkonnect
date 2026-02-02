@@ -160,14 +160,18 @@ export default function InvestorOnboarding() {
         }
       });
 
+      // Wait for profile to update before refreshing
+      await new Promise(resolve => setTimeout(resolve, 500));
       await refresh();
+      
       toast.success("Profile saved! Let's choose your plan.");
       
       // Navigate to Pricing (next step for investors)
       await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = createPageUrl("Pricing");
     } catch (error) {
-      toast.error("Failed to save. Please try again.");
+      console.error('[InvestorOnboarding] Save error:', error);
+      toast.error(error?.message || "Failed to save. Please try again.");
       setSaving(false);
     }
   };
