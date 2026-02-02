@@ -661,7 +661,9 @@ export default function Room() {
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
          if (rawRoom.deal_id && profile?.user_role === 'investor') {
            try {
+             console.log('[Room] Loading invites for deal:', rawRoom.deal_id);
              const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
+             console.log('[Room] Raw invites response:', invitesRes);
              let loadedInvites = [];
 
              // Handle different response formats
@@ -671,17 +673,22 @@ export default function Room() {
                loadedInvites = invitesRes.data;
              }
 
+             console.log('[Room] Loaded invites before filter:', loadedInvites);
+
              // CRITICAL: Filter out expired, voided, and locked invites
              // Only show active invites (pending signature)
-             loadedInvites = loadedInvites.filter(invite => 
-               !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status)
-             );
+             loadedInvites = loadedInvites.filter(invite => {
+               const shouldShow = !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status);
+               console.log('[Room] Invite', invite.id, 'status:', invite.status, 'shouldShow:', shouldShow);
+               return shouldShow;
+             });
 
-             console.log('[Room] Loaded active invites:', loadedInvites.length);
+             console.log('[Room] Loaded active invites:', loadedInvites.length, loadedInvites);
              setInvites(loadedInvites);
 
              // Auto-select if only one invite exists
              if (loadedInvites.length === 1) {
+               console.log('[Room] Auto-selecting single invite');
                setSelectedInvite(loadedInvites[0]);
              }
            } catch (e) {
