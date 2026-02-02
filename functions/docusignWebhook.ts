@@ -494,7 +494,9 @@ Deno.serve(async (req) => {
               
               if (selectedAgentIds.length > 0) {
                 console.log('[DocuSign Webhook] Creating invites for', selectedAgentIds.length, 'agents');
-                
+                console.log('[DocuSign Webhook] deal.selected_agent_ids:', deal.selected_agent_ids);
+                console.log('[DocuSign Webhook] deal.metadata?.selected_agent_ids:', deal.metadata?.selected_agent_ids);
+
                 // Check if invites already exist (idempotency)
                 const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: deal.id });
                 
