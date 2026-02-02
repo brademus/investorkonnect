@@ -47,17 +47,24 @@ export default function DocuSignReturn() {
               console.error('[DocuSignReturn] Invites error:', res.data.error);
               toast.error(res.data.error);
             } else if (res.data?.ok && res.data.invite_ids?.length > 0) {
-              console.log('[DocuSignReturn] ✓ Created', res.data.invite_ids.length, 'invites');
+              console.log('[DocuSignReturn] ✓ Created', res.data.invite_ids.length, 'invites, room_count:', res.data.room_count);
               toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
               sessionStorage.removeItem('selectedAgentIds');
               sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
               
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              // Wait for rooms to be queryable (increased wait time for consistency)
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              
               const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-              console.log('[DocuSignReturn] Loaded rooms after invites:', rooms.length);
+              console.log('[DocuSignReturn] Verified rooms exist after invites:', rooms.length, rooms.map(r => ({ room_id: r.id, agent_id: r.agentId })));
+              
               if (rooms?.length > 0) {
+                // Navigate to first room for investor to see their deal
                 navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
                 return;
+              } else {
+                console.warn('[DocuSignReturn] WARNING: No rooms found after invites - data may not be consistent');
+                toast.error('Rooms not created. Please refresh or contact support.');
               }
             } else {
               console.error('[DocuSignReturn] No invites created - response:', res.data);

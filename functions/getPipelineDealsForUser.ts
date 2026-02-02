@@ -82,14 +82,31 @@ Deno.serve(async (req) => {
     } else if (isAgent) {
       // Agents see ALL deals where they have a room (regardless of request_status)
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
-      console.log('[getPipelineDealsForUser] Agent rooms:', agentRooms.length, agentRooms.map(r => ({ id: r.id, deal_id: r.deal_id, status: r.request_status })));
-      
+      console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length);
+      agentRooms.forEach(r => {
+        console.log('[getPipelineDealsForUser] Room:', {
+          room_id: r.id,
+          deal_id: r.deal_id,
+          request_status: r.request_status,
+          agreement_status: r.agreement_status,
+          created_date: r.created_date
+        });
+      });
+
       // Also check DealInvites for this agent
       const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({ 
         agent_profile_id: profile.id 
       });
-      console.log('[getPipelineDealsForUser] Agent invites:', agentInvites.length, agentInvites.map(i => ({ id: i.id, deal_id: i.deal_id, status: i.status })));
-      
+      console.log('[getPipelineDealsForUser] Agent invites:', agentInvites.length);
+      agentInvites.forEach(i => {
+        console.log('[getPipelineDealsForUser] Invite:', {
+          invite_id: i.id,
+          deal_id: i.deal_id,
+          status: i.status,
+          created_at: i.created_at_iso
+        });
+      });
+
       const roomDealIds = agentRooms.map(r => r.deal_id).filter(Boolean);
       const inviteDealIds = agentInvites.map(i => i.deal_id).filter(Boolean);
       
