@@ -442,15 +442,18 @@ function PipelineContent() {
     const unsubRoom = base44.entities.Room.subscribe((event) => {
       const r = event?.data;
       if (!r || r.agentId !== profile.id) return;
-      console.log('[Pipeline] Room event for agent:', event.type, r.id, r.request_status, r.agreement_status);
+      console.log('[Pipeline] 🔄 REALTIME Room event for agent:', event.type, r.id, r.request_status, r.agreement_status, r.deal_id);
       // Refresh on ANY room change for this agent
       if (event.type === 'create' || event.type === 'update') {
+        console.log('[Pipeline] 🔄 Invalidating queries and refetching after room event');
         try { 
           queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile.id, profile.user_role] }); 
           queryClient.invalidateQueries({ queryKey: ['rooms', profile.id] });
           refetchDeals();
           refetchRooms();
-        } catch (_) {}
+        } catch (e) {
+          console.error('[Pipeline] Refetch error:', e);
+        }
       }
     });
     
