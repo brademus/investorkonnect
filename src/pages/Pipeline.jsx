@@ -43,28 +43,30 @@ function PipelineContent() {
   useEffect(() => { const t = setTimeout(() => setAllowExtras(true), 250); return () => clearTimeout(t); }, []);
 
   // CRITICAL: Redirect to onboarding if not complete
+  const hasRedirectedRef = useRef(false);
   useEffect(() => {
     if (loading) return;
+    if (hasRedirectedRef.current) return;
     
     // CRITICAL: Guard against null profile first
     if (!profile) {
-      // Prevent redirect loop: don't redirect if we just came from PostAuth
-      const fromPostAuth = sessionStorage.getItem('from_postauth') === 'true';
-      if (!fromPostAuth) {
-        sessionStorage.setItem('from_postauth', 'true');
-        navigate(createPageUrl("PostAuth"), { replace: true });
-      }
+      hasRedirectedRef.current = true;
+      navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
     
-    // Clear flag on successful load
-    sessionStorage.removeItem('from_postauth');
+    // Skip all gating for admins
+    if (profile.role === 'admin') {
+      return;
+    }
     
     if (!onboarded) {
       const role = profile.user_role;
       if (role === 'investor') {
+        hasRedirectedRef.current = true;
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
       } else if (role === 'agent') {
+        hasRedirectedRef.current = true;
         navigate(createPageUrl("AgentOnboarding"), { replace: true });
       }
       return;
@@ -74,25 +76,27 @@ function PipelineContent() {
     const role = profile.user_role;
 
     // 1. Subscription (Investors)
-    const isPaidSubscriber = profile?.role === 'admin' || profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
+    const isPaidSubscriber = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
     if (role === 'investor' && !isPaidSubscriber) {
+      hasRedirectedRef.current = true;
       navigate(createPageUrl("Pricing"), { replace: true });
       return;
     }
 
-    // 2. KYC (Agents + Investors sometimes)
-    const kycStatus = profile?.role === 'admin' ? 'approved' : (profile?.kyc_status || profile?.identity_status || 'unverified');
-    const isKycVerified = profile?.role === 'admin' || kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
-
     // 2. KYC (Everyone)
+    const kycStatus = profile?.kyc_status || profile?.identity_status || 'unverified';
+    const isKycVerified = kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
+
     if (!isKycVerified) {
-       navigate(createPageUrl("IdentityVerification"), { replace: true });
-       return;
+      hasRedirectedRef.current = true;
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      return;
     }
 
     // 3. NDA (Everyone)
-    const hasNDA = profile?.role === 'admin' || !!profile?.nda_accepted;
+    const hasNDA = !!profile?.nda_accepted;
     if (!hasNDA) {
+      hasRedirectedRef.current = true;
       navigate(createPageUrl("NDA"), { replace: true });
       return;
     }
