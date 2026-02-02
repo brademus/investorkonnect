@@ -2234,6 +2234,37 @@ export default function Room() {
                        deal={deal}
                        pendingCounters={pendingCounters}
                        setPendingCounters={setPendingCounters}
+                       onInvestorSigned={async () => {
+                         // After investor signs, create invites for all selected agents
+                         if (!currentRoom?.deal_id) return;
+                         try {
+                           console.log('[Room] Investor signed - creating invites for all agents');
+                           const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
+                             deal_id: currentRoom.deal_id
+                           });
+                           if (res.data?.ok) {
+                             console.log('[Room] Invites created successfully:', res.data.invite_ids);
+                             // Refresh invites and rooms
+                             await Promise.all([
+                               (async () => {
+                                 const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: currentRoom.deal_id });
+                                 const newInvites = Array.isArray(invitesRes.data?.invites) ? invitesRes.data.invites : Array.isArray(invitesRes.data) ? invitesRes.data : [];
+                                 const activeInvites = newInvites.filter(i => !['EXPIRED', 'VOIDED', 'LOCKED'].includes(i.status));
+                                 setInvites(activeInvites);
+                                 console.log('[Room] Updated invites:', activeInvites);
+                               })(),
+                               (async () => {
+                                 queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                 queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                               })()
+                             ]);
+                           } else {
+                             console.error('[Room] Invite creation failed:', res.data);
+                           }
+                         } catch (error) {
+                           console.error('[Room] Error creating invites after investor sign:', error);
+                         }
+                       }}
                      />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
