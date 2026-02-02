@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import Stripe from 'npm:stripe@14.25.0';
 
 Deno.serve(async (req) => {
   try {
@@ -9,31 +10,32 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get user's profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    const body = await req.json();
+    const sessionId = body?.session_id;
+
+    if (!sessionId) {
+      return Response.json({ error: 'session_id required' }, { status: 400 });
     }
 
-    // Return identity status from profile
-    const identity = {
-      verificationStatus: profile.identity_status === 'approved' || profile.identity_status === 'verified' 
-        ? 'VERIFIED' 
-        : profile.identity_status === 'pending' 
-        ? 'PROCESSING' 
-        : 'NOT_STARTED',
-      verified_at: profile.identity_verified_at,
-      session_id: profile.identity_session_id,
-      provider: profile.identity_provider || 'stripe_identity'
-    };
+    // Get Stripe secret key
+    const stripeSecret = Deno.env.get('STRIPE_SECRET_KEY');
+    if (!stripeSecret) {
+      return Response.json({ error: 'Stripe not configured' }, { status: 500 });
+    }
 
-    return Response.json({ identity });
+    const stripe = new Stripe(stripeSecret, { apiVersion: '2023-10-16' });
+
+    // Check Stripe verification session status directly (fast call, no DB queries)
+    const session = await stripe.identity.verificationSessions.retrieve(sessionId);
+    
+    const status = session?.status === 'verified' ? 'verified' : 'processing';
+
+    return Response.json({ status });
   } catch (error) {
-    console.error('[getIdentityStatus] Error:', error);
+    console.error('[getStripeIdentityStatus] Error:', error.message);
     return Response.json({ 
-      error: error.message || 'Failed to get identity status' 
+      status: 'error',
+      error: error.message 
     }, { status: 500 });
   }
 });
