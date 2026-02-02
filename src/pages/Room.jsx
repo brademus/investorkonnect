@@ -460,10 +460,6 @@ export default function Room() {
         // Mask address for agents until fully signed
         const maskAddr = useMemo(() => shouldMaskAddress(profile, currentRoom, deal), [profile?.user_role, currentRoom?.is_fully_signed, deal?.is_fully_signed]);
 
-        // Multi-agent mode disabled for simplicity
-  const multiAgentMode = false;
-  const invitedRooms = [];
-
         // Hard sanitizer: if anything slips through, null it out for agents until fully signed
         useEffect(() => {
           if (profile?.user_role !== 'agent') return;
