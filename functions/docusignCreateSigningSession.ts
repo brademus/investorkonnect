@@ -196,55 +196,63 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // CRITICAL: ENFORCE SERVER-SIDE "REGENERATE REQUIRED" BLOCK
-    // Determine room context: from request or agreement
+    // CRITICAL: ENFORCE SERVER-SIDE GATING BASED ON signer_mode
+    const signerMode = agreement.signer_mode || 'both'; // Default to both for legacy agreements
     const effectiveRoomId = room_id || agreement.room_id;
     
+    console.log('[DocuSign] signer_mode:', signerMode, 'role:', role);
+    
+    // Check requires_regenerate flag for room-scoped agreements
     if (effectiveRoomId) {
-      // Load Room to check requires_regenerate flag
       const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
       const roomData = roomsCheck?.[0];
 
-      // CRITICAL: Investor can ALWAYS sign the current agreement (that's their job after regeneration)
-      // Only AGENT is blocked until investor has signed the fresh agreement
-      const agentMustWaitForInvestor = role === 'agent' && roomData?.requires_regenerate === true && !agreement.investor_signed_at;
-
-      if (agentMustWaitForInvestor) {
-        console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true and investor hasn't signed yet`);
+      if (roomData?.requires_regenerate === true) {
+        console.error(`[DocuSign] ❌ BLOCKED: Room ${effectiveRoomId} requires_regenerate=true`);
         return Response.json({ 
           ok: false,
           code: 'REGENERATE_REQUIRED',
-          message: 'Investor must regenerate and re-sign before you can sign.',
-          error: 'Agreement terms have changed. Investor must regenerate and sign the new document first before you can sign.'
+          message: 'Terms have changed. Please regenerate the agreement.',
+          error: 'Agreement terms have changed. You must regenerate and sign the new document.'
         }, { status: 400 });
       }
     }
 
-    // CRITICAL: Agent cannot sign if investor hasn't signed yet
-    // ALLOW signing if agreement status is 'sent' or 'investor_signed' (DocuSign already has investor signature)
-    const agreementReadyForAgent = agreement.status === 'sent' || 
-                                    agreement.status === 'investor_signed' || 
-                                    agreement.status === 'fully_signed' ||
-                                    !!agreement.investor_signed_at;
-
-    if (role === 'agent' && !agreementReadyForAgent) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet', {
-        agreement_id: agreement.id,
-        investor_signed_at: agreement.investor_signed_at,
-        status: agreement.status,
-        envelope_id: agreement.docusign_envelope_id
-      });
-      return Response.json({ 
-        ok: false,
-        code: 'INVESTOR_SIGNATURE_REQUIRED',
-        error: 'The investor must sign this agreement first before you can sign it.'
-      }, { status: 400 });
+    // GATING LOGIC BY signer_mode
+    if (signerMode === 'agent_only') {
+      // Agent can sign immediately, investor cannot sign agent_only agreements
+      if (role === 'investor') {
+        console.error('[DocuSign] ❌ Investor cannot sign agent_only agreement');
+        return Response.json({ 
+          error: 'This agreement is for agent signature only.',
+          code: 'WRONG_SIGNER'
+        }, { status: 403 });
+      }
+      console.log('[DocuSign] ✓ Agent can sign agent_only agreement immediately');
+      
+    } else if (signerMode === 'investor_only') {
+      // Only investor can sign
+      if (role === 'agent') {
+        console.error('[DocuSign] ❌ Agent cannot sign investor_only agreement');
+        return Response.json({ 
+          error: 'This agreement is for investor signature only.',
+          code: 'WRONG_SIGNER'
+        }, { status: 403 });
+      }
+      console.log('[DocuSign] ✓ Investor can sign investor_only agreement');
+      
+    } else if (signerMode === 'both') {
+      // Investor signs first (recipientId 1), agent signs second (recipientId 2)
+      if (role === 'agent' && !agreement.investor_signed_at) {
+        console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet (both mode)');
+        return Response.json({ 
+          ok: false,
+          code: 'INVESTOR_SIGNATURE_REQUIRED',
+          error: 'The investor must sign this agreement first before you can sign it.'
+        }, { status: 400 });
+      }
+      console.log('[DocuSign] ✓ Signing allowed for both mode');
     }
-
-    console.log('[DocuSign] ✓ Agent signature allowed - agreement ready:', {
-      status: agreement.status,
-      investor_signed_at: !!agreement.investor_signed_at
-    });
 
     // PHASE 7: Enforce Deal Lock-in
     // If deal is locked to a different room/agent, block signing
@@ -298,19 +306,21 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Validate recipient IDs exist
-    if (!agreement.investor_recipient_id || !agreement.agent_recipient_id) {
-      console.error('[DocuSign] ❌ Missing recipient IDs');
+    // Validate recipient IDs exist for this signer
+    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
+    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
+    
+    if (!recipientId) {
+      console.error(`[DocuSign] ❌ Missing ${role}_recipient_id`);
       return Response.json({ 
-        error: 'Missing recipient IDs. Please regenerate the agreement.'
+        error: `Missing recipient ID for ${role}. This agreement may not support ${role} signing.`
       }, { status: 400 });
     }
 
-    // Validate client user IDs exist
-    if (!agreement.investor_client_user_id || !agreement.agent_client_user_id) {
-      console.error('[DocuSign] ❌ Missing client user IDs');
+    if (!clientUserId) {
+      console.error(`[DocuSign] ❌ Missing ${role}_client_user_id`);
       return Response.json({ 
-        error: 'Missing client user IDs. Please regenerate the agreement.'
+        error: `Missing client user ID for ${role}. Please regenerate the agreement.`
       }, { status: 400 });
     }
 
@@ -524,28 +534,8 @@ Deno.serve(async (req) => {
     returnURL.searchParams.set('role', role);
     const docusignReturnUrl = returnURL.toString();
     
-    // Get recipient details based on role
-    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
-    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
+    // Get profile details based on role
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
-    
-    // Validate recipientId and clientUserId for current role
-    if (!recipientId) {
-      console.error(`[DocuSign] ❌ Missing ${role}_recipient_id for role ${role}`);
-      return Response.json({ 
-        error: `Missing recipient ID for ${role}. Please regenerate the agreement.`,
-        debug: { role, has_recipient_id: false }
-      }, { status: 400 });
-    }
-    
-    if (!clientUserId) {
-      console.error(`[DocuSign] ❌ Missing ${role}_client_user_id for role ${role}`);
-      return Response.json({ 
-        error: `Missing client user ID for ${role}. Please regenerate the agreement.`,
-        debug: { role, has_client_user_id: false }
-      }, { status: 400 });
-    }
-    
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
     const profile = profiles[0];
     
