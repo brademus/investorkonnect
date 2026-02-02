@@ -203,13 +203,15 @@ Deno.serve(async (req) => {
     console.log('[DocuSign] signer_mode:', signerMode, 'role:', role);
     
     // CRITICAL: Only block regenerate if investor is trying to sign with requires_regenerate=true
-    // Agents should always be allowed to proceed (they'll sign after investor signs new version)
+    // AND this is the room's current_legal_agreement_id (the one that requires regeneration)
+    // Agents can always sign their own room's agreement, even if investor regenerated elsewhere
     if (effectiveRoomId && role === 'investor') {
       const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
       const roomData = roomsCheck?.[0];
 
-      if (roomData?.requires_regenerate === true && !agreement.investor_signed_at) {
-        console.error(`[DocuSign] ❌ BLOCKED: Investor trying to sign but requires_regenerate=true`);
+      // Only block if requires_regenerate=true AND this agreement is the one requiring regeneration
+      if (roomData?.requires_regenerate === true && roomData?.current_legal_agreement_id === agreement.id && !agreement.investor_signed_at) {
+        console.error(`[DocuSign] ❌ BLOCKED: Investor trying to sign but requires_regenerate=true on THIS agreement`);
         return Response.json({ 
           ok: false,
           code: 'REGENERATE_REQUIRED',
