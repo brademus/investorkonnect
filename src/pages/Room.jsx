@@ -997,6 +997,15 @@ export default function Room() {
   // Multi-agent mode: Show pending agents instead of messages for investors with any agents
   // Exit multi-agent mode once deal is locked or this room is fully signed
   const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 0 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
+  
+  console.log('[Room] isMultiAgentMode check:', {
+    isInvestor: profile?.user_role === 'investor',
+    invitesCount: invites.length,
+    locked_agent: deal?.locked_agent_profile_id,
+    locked_room: deal?.locked_room_id,
+    is_fully_signed: currentRoom?.is_fully_signed,
+    result: isMultiAgentMode
+  });
 
   // CRITICAL: Once fully signed, clear invites immediately to hide pending agents and show only messages
   useEffect(() => {
