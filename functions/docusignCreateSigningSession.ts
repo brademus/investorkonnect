@@ -220,38 +220,39 @@ Deno.serve(async (req) => {
 
     // GATING LOGIC BY signer_mode
     if (signerMode === 'agent_only') {
-      // Agent can sign immediately, investor cannot sign agent_only agreements
+      // Agent can sign immediately, investor should NOT be allowed
       if (role === 'investor') {
-        console.error('[DocuSign] ❌ Investor cannot sign agent_only agreement');
+        console.error('[DocuSign] ❌ Investor trying to sign agent_only agreement');
         return Response.json({ 
-          error: 'This agreement is for agent signature only.',
+          error: 'This agreement is for agent signature only. You have already signed.',
           code: 'WRONG_SIGNER'
         }, { status: 403 });
       }
-      console.log('[DocuSign] ✓ Agent can sign agent_only agreement immediately');
+      console.log('[DocuSign] ✓ Agent can sign agent_only agreement');
       
     } else if (signerMode === 'investor_only') {
       // Only investor can sign
       if (role === 'agent') {
-        console.error('[DocuSign] ❌ Agent cannot sign investor_only agreement');
+        console.error('[DocuSign] ❌ Agent trying to sign investor_only agreement');
         return Response.json({ 
-          error: 'This agreement is for investor signature only.',
+          error: 'This agreement is for investor signature only. Wait for investor to sign first.',
           code: 'WRONG_SIGNER'
         }, { status: 403 });
       }
       console.log('[DocuSign] ✓ Investor can sign investor_only agreement');
       
-    } else if (signerMode === 'both') {
+    } else {
+      // Default to 'both' mode if not specified (backward compatibility)
       // Investor signs first (recipientId 1), agent signs second (recipientId 2)
       if (role === 'agent' && !agreement.investor_signed_at) {
-        console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet (both mode)');
+        console.error('[DocuSign] ❌ Agent trying to sign before investor (both mode)');
         return Response.json({ 
           ok: false,
           code: 'INVESTOR_SIGNATURE_REQUIRED',
           error: 'The investor must sign this agreement first before you can sign it.'
         }, { status: 400 });
       }
-      console.log('[DocuSign] ✓ Signing allowed for both mode');
+      console.log('[DocuSign] ✓ Signing allowed (both mode):', role);
     }
 
     // PHASE 7: Enforce Deal Lock-in
@@ -419,18 +420,17 @@ Deno.serve(async (req) => {
       }, { status: 200 });
     }
 
-    // GATING: Agent cannot sign until investor has signed
-    if (role === 'agent' && !investorAlreadySigned) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet');
-      console.error('[DocuSign] investor_signed_at:', agreement.investor_signed_at, 'status:', agreement.status);
+    // Additional gating for 'both' mode only
+    if (signerMode === 'both' && role === 'agent' && !investorAlreadySigned) {
+      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet (both mode)');
       return Response.json({ 
         error: 'The investor must sign this agreement first before you can sign it.',
         investor_signed: false
       }, { status: 403 });
     }
 
-    if (role === 'agent' && investorAlreadySigned) {
-      console.log('[DocuSign] ✓ DB confirms investor signed - agent can proceed');
+    if (signerMode === 'both' && role === 'agent' && investorAlreadySigned) {
+      console.log('[DocuSign] ✓ Investor signed - agent can proceed (both mode)');
     }
 
     // Check envelope status for terminal states
