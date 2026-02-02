@@ -1807,6 +1807,24 @@ export default function Room() {
 
                                   {/* Deal Summary removed per request */}
 
+                                  {/* CRITICAL: Show Pending Agents List for investors BEFORE signing */}
+                                  {isMultiAgentMode && !currentRoom?.is_fully_signed && (
+                                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                                     <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4 flex items-center gap-2">
+                                       <User className="w-5 h-5 text-[#E3C567]" />
+                                       Select Agent to Continue
+                                     </h4>
+                                     <PendingAgentsList 
+                                       invites={invites} 
+                                       onSelectAgent={(invite) => {
+                                         setSelectedInvite(invite);
+                                         toast.success('Agent selected - you can now review and sign the agreement');
+                                       }}
+                                       selectedInviteId={selectedInvite?.id}
+                                     />
+                                   </div>
+                                  )}
+
                                   <PropertyDetailsCard deal={dealForDetails} />
 
                                   <DealAppointmentsCard dealId={currentRoom?.deal_id} userRole={profile?.user_role} />
