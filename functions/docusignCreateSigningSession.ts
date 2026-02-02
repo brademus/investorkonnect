@@ -288,6 +288,10 @@ Deno.serve(async (req) => {
     const baseUri = connection.base_uri;
     const accountId = connection.account_id;
 
+    // Initialize signature status variables early
+    let liveInvestorSigned = false;
+    let liveAgentSigned = false;
+
     // Validate envelope exists
     const envelopeId = agreement.docusign_envelope_id;
     if (!envelopeId) {
