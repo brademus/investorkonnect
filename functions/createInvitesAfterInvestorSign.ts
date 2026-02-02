@@ -152,9 +152,18 @@ Deno.serve(async (req) => {
         }
 
         if (!agreement) {
+          // Get base agreement for source reference
+          const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+            deal_id: deal_id,
+            room_id: null
+          }, '-created_date', 1);
+          const baseAgreement = baseAgreements?.[0];
+          
           const genRes = await base44.functions.invoke('generateLegalAgreement', {
             deal_id: deal_id,
             room_id: room.id,
+            signer_mode: 'agent_only', // CRITICAL: agent signs alone
+            source_base_agreement_id: baseAgreement?.id || null,
             exhibit_a
           });
           
@@ -163,42 +172,15 @@ Deno.serve(async (req) => {
           }
           
           agreement = genRes.data.agreement;
-          console.log('[createInvitesAfterInvestorSign] Generated agreement:', agreement.id);
+          console.log('[createInvitesAfterInvestorSign] Generated agent-only agreement:', agreement.id);
           
-          // CRITICAL: Get the base (deal-scoped) agreement to copy investor signature to this new room-scoped agreement
-          // This prevents the investor from being asked to sign again
-          try {
-            const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
-              deal_id: deal_id,
-              room_id: null  // Base agreement has no room_id
-            }, '-created_date', 1);
-            
-            if (baseAgreements?.length > 0) {
-              const baseAgreement = baseAgreements[0];
-              if (baseAgreement.investor_signed_at) {
-                // Copy investor signature from base agreement to this room-scoped agreement
-                await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
-                  investor_signed_at: baseAgreement.investor_signed_at,
-                  investor_ip: baseAgreement.investor_ip,
-                  status: 'investor_signed'
-                });
-                console.log('[createInvitesAfterInvestorSign] ✓ Copied investor signature from base agreement to room-scoped agreement');
-                
-                // Reload agreement to get updated data
-                const updatedAg = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id }).then(arr => arr[0]);
-                if (updatedAg) agreement = updatedAg;
-              }
-            }
-          } catch (e) {
-            console.warn('[createInvitesAfterInvestorSign] Warning: Could not copy investor signature:', e?.message);
-            // Continue anyway - the agreement was generated successfully
-          }
+          // NO NEED to copy investor signature - agent_only mode has no investor recipient
         }
         
-        // 3. Update room with agreement ID and INVESTOR_SIGNED status
+        // 3. Update room with agreement ID - status is 'sent' (waiting for agent)
         await base44.asServiceRole.entities.Room.update(room.id, {
           current_legal_agreement_id: agreement.id,
-          agreement_status: 'investor_signed'
+          agreement_status: 'sent' // Agent can now sign
         });
         
         // 4. Create or update DealInvite
