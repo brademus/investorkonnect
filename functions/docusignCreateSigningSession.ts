@@ -364,9 +364,10 @@ Deno.serve(async (req) => {
     agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
 
     // CRITICAL: Check DocuSign directly for live signature status (in case sync missed it)
-    const envelopeCheckUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${agreement.docusign_envelope_id}/recipients`;
     let liveInvestorSigned = !!agreement.investor_signed_at;
     let liveAgentSigned = !!agreement.agent_signed_at;
+    
+    const envelopeCheckUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${agreement.docusign_envelope_id}/recipients`;
     
     try {
       const recipientsCheckResponse = await fetch(envelopeCheckUrl, {
