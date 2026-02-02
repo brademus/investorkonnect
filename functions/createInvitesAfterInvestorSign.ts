@@ -129,21 +129,6 @@ Deno.serve(async (req) => {
             accepted_at: new Date().toISOString()
           });
           console.log('[createInvitesAfterInvestorSign] ✓ Created room for agent:', agentId, ', room ID:', room.id, ', deal ID:', deal_id);
-
-          // CRITICAL: Verify room is immediately queryable
-          try {
-            const verifyRoom = await base44.asServiceRole.entities.Room.filter({ 
-              id: room.id,
-              agentId: agentId,
-              deal_id: deal_id
-            });
-            console.log('[createInvitesAfterInvestorSign] ✓ VERIFIED room is queryable:', verifyRoom.length > 0 ? 'YES' : 'NO');
-            if (verifyRoom.length === 0) {
-              console.error('[createInvitesAfterInvestorSign] WARNING: Room created but not queryable by ID!');
-            }
-          } catch (e) {
-            console.error('[createInvitesAfterInvestorSign] Failed to verify room:', e.message);
-          }
           } else if (room.request_status !== 'accepted') {
           // Update existing room to accepted
           await base44.asServiceRole.entities.Room.update(room.id, {
@@ -263,27 +248,9 @@ Deno.serve(async (req) => {
     console.log('[createInvitesAfterInvestorSign] SUCCESS: Created', createdInvites.length, 'invites for deal:', deal_id);
     console.log('[createInvitesAfterInvestorSign] Agent IDs invited:', selectedAgentIds);
     
-    // Reload rooms to get fresh list after creation - verify by both deal_id AND agentId
+    // Reload rooms to confirm creation
     const finalRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
-    console.log('[createInvitesAfterInvestorSign] Final room count by deal_id:', finalRooms.length);
-    console.log('[createInvitesAfterInvestorSign] Room details:', finalRooms.map(r => ({ 
-      room_id: r.id, 
-      agent_id: r.agentId, 
-      status: r.request_status,
-      agreement_status: r.agreement_status 
-    })));
-    
-    // CRITICAL: Also verify each agent can see their rooms
-    for (const agentId of selectedAgentIds) {
-      const agentRooms = await base44.asServiceRole.entities.Room.filter({ 
-        agentId: agentId,
-        deal_id: deal_id
-      });
-      console.log('[createInvitesAfterInvestorSign] Agent', agentId, 'can see rooms for this deal:', agentRooms.length);
-      if (agentRooms.length === 0) {
-        console.error('[createInvitesAfterInvestorSign] ⚠️ CRITICAL: Agent', agentId, 'cannot see any rooms for deal', deal_id);
-      }
-    }
+    console.log('[createInvitesAfterInvestorSign] ✓ Final room count:', finalRooms.length);
 
     return Response.json({ 
      ok: true, 
