@@ -243,6 +243,8 @@ Deno.serve(async (req) => {
      }
     });
 
+    console.log('[createInvitesAfterInvestorSign] ✓ Updated deal status to active, pipeline_stage to new_deals');
+
     console.log('[createInvitesAfterInvestorSign] SUCCESS: Created', createdInvites.length, 'invites for deal:', deal_id);
     console.log('[createInvitesAfterInvestorSign] Agent IDs invited:', selectedAgentIds);
     console.log('[createInvitesAfterInvestorSign] Room IDs created:', existingRooms.map(r => ({ room_id: r.id, agent_id: r.agentId, status: r.request_status })));
