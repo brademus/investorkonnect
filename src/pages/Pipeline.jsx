@@ -896,8 +896,8 @@ function PipelineContent() {
   }
 
   // Prevent initial flicker by waiting for profile to load
-  if (loading || !profile) {
-    console.log('[Pipeline] Loading state:', { loading, hasProfile: !!profile });
+  if (loading || !profile || !loadingComplete) {
+    console.log('[Pipeline] Loading state:', { loading, hasProfile: !!profile, loadingComplete });
     return (
       <div className="min-h-screen bg-transparent flex flex-col">
         <Header profile={profile} />
