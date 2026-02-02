@@ -579,18 +579,15 @@ Deno.serve(async (req) => {
                     }
                     
                     console.log('[DocuSign Webhook] ✓ Created invites after investor signature');
-                  }
-                } else {
-                  console.log('[DocuSign Webhook] Invites already exist, skipping');
-                }
-              }
-            } catch (e) {
-              console.warn('[DocuSign Webhook] Failed to create invites:', e?.message || e);
-            }
-          }
-        } else if (agentSigned) {
-          updates.status = 'agent_signed';
-        }
+                    }
+                    } else {
+                    console.log('[DocuSign Webhook] Invites already exist, skipping');
+                    }
+                    }
+                    } catch (e) {
+                    console.warn('[DocuSign Webhook] Failed to create invites:', e?.message || e);
+                    }
+                    }
         break;
         
       case 'voided':
