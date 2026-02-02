@@ -221,12 +221,20 @@ Deno.serve(async (req) => {
     }
 
     // CRITICAL: Agent cannot sign if investor hasn't signed yet
-    if (role === 'agent' && !agreement.investor_signed_at) {
+    // ALLOW signing if agreement status is 'sent' or 'investor_signed' (DocuSign already has investor signature)
+    const agreementReadyForAgent = agreement.status === 'sent' || 
+                                    agreement.status === 'investor_signed' || 
+                                    agreement.status === 'fully_signed' ||
+                                    !!agreement.investor_signed_at ||
+                                    liveInvestorSigned;
+    
+    if (role === 'agent' && !agreementReadyForAgent) {
       console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet', {
         agreement_id: agreement.id,
         investor_signed_at: agreement.investor_signed_at,
         status: agreement.status,
-        envelope_id: agreement.docusign_envelope_id
+        envelope_id: agreement.docusign_envelope_id,
+        liveInvestorSigned
       });
       return Response.json({ 
         ok: false,
@@ -234,6 +242,12 @@ Deno.serve(async (req) => {
         error: 'The investor must sign this agreement first before you can sign it.'
       }, { status: 400 });
     }
+    
+    console.log('[DocuSign] ✓ Agent signature allowed - agreement ready:', {
+      status: agreement.status,
+      investor_signed_at: !!agreement.investor_signed_at,
+      liveInvestorSigned
+    });
 
     // PHASE 7: Enforce Deal Lock-in
     // If deal is locked to a different room/agent, block signing
