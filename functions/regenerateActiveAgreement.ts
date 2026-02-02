@@ -107,13 +107,13 @@ Deno.serve(async (req) => {
     });
 
     // Update pointers and reset agreement signing status with retry
-    // requires_regenerate stays TRUE until investor completes signing via DocuSign callback
+    // CRITICAL: Clear requires_regenerate immediately so investor can sign the new agreement
     if (room_id && room) {
       await withRetry(async () => {
         await base44.asServiceRole.entities.Room.update(room_id, {
           current_legal_agreement_id: newAgreement.id,
-          agreement_status: 'draft'  // Reset to draft - both must sign
-          // Keep requires_regenerate=true until investor signs (cleared by webhook)
+          agreement_status: 'draft',  // Reset to draft - both must sign
+          requires_regenerate: false  // Clear flag - new agreement is ready to sign
         });
       });
     } else {
