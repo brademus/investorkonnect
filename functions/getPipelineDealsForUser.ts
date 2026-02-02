@@ -26,20 +26,26 @@ Deno.serve(async (req) => {
 
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
+    const isAdmin = profile.role === 'admin' || user.role === 'admin';
 
     console.log('[getPipelineDealsForUser]', {
       profile_id: profile.id,
       user_id: user.id,
       user_role: profile.user_role,
       isAgent,
-      isInvestor
+      isInvestor,
+      isAdmin
     });
 
     // Fetch deals based on role
     let deals = [];
     let agentRooms = [];
     
-    if (isInvestor) {
+    if (isAdmin) {
+      // Admins see ALL deals across the platform
+      deals = await base44.asServiceRole.entities.Deal.list('-updated_date', 100);
+      console.log('[getPipelineDealsForUser] Admin view - showing all deals:', deals.length);
+    } else if (isInvestor) {
       // Investors: show ALL their deals (they created them) + deals they have rooms for OR signed agreements
       const ownedDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
       console.log('[getPipelineDealsForUser] Investor owned deals:', ownedDeals.length);
