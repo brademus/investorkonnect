@@ -2890,7 +2890,7 @@ export default function Room() {
                 </div>
               )}
 
-              {isMultiAgentMode && !currentRoom?.is_fully_signed && !agreement?.status === 'fully_signed' ? (
+              {isMultiAgentMode ? (
                 <PendingAgentsList 
                   invites={invites} 
                   onSelectAgent={(invite) => {
