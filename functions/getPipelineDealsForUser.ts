@@ -81,7 +81,13 @@ Deno.serve(async (req) => {
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
       // Agents see ALL deals where they have a room (regardless of request_status)
+      // RETRY: Query twice in case rooms were just created and need indexing
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      if (agentRooms.length === 0) {
+        console.log('[getPipelineDealsForUser] No rooms on first query, retrying after 500ms...');
+        await new Promise(r => setTimeout(r, 500));
+        agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      }
       console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length);
       agentRooms.forEach(r => {
         console.log('[getPipelineDealsForUser] Room:', {
