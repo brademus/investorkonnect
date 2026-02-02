@@ -225,9 +225,8 @@ Deno.serve(async (req) => {
     const agreementReadyForAgent = agreement.status === 'sent' || 
                                     agreement.status === 'investor_signed' || 
                                     agreement.status === 'fully_signed' ||
-                                    !!agreement.investor_signed_at ||
-                                    liveInvestorSigned;
-    
+                                    !!agreement.investor_signed_at;
+
     if (role === 'agent' && !agreementReadyForAgent) {
       console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet', {
         agreement_id: agreement.id,
