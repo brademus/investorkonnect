@@ -630,36 +630,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               )}
 
               {/* Agent Actions - Only show if not fully signed */}
-              {isAgent && !fullySigned && (
+              {isAgent && !fullySigned && localAgreement && (
                 <div className="space-y-3">
-                  {!investorSigned && requiresRegenerate && !fullySigned && localAgreement && (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
-                    </div>
-                  )}
-
-                  {!investorSigned && !requiresRegenerate && !fullySigned && localAgreement && (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
-                    </div>
-                  )}
-
-                  {/* Show if agent has a pending counter waiting for investor review */}
-                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
-                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
-                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
-                    </div>
-                  )}
-
-                  {/* Show if investor has sent a counter and agent is waiting to respond */}
-                  {investorSigned && !agentSigned && pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
-                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
-                      <p className="text-sm text-[#FAFAFA]">Investor sent a counter offer - review or make your own counter</p>
-                    </div>
-                  )}
-
-                  {/* Show sign/counter buttons if: agreement is sent/investor_signed, no pending counters, and not already signed by agent */}
-                  {(investorSigned || localAgreement?.status === 'sent' || localAgreement?.status === 'investor_signed') && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
+                  {/* CRITICAL: Check signer_mode to determine correct UI state */}
+                  {localAgreement.signer_mode === 'agent_only' && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
@@ -667,7 +641,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                       >
                         {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        Sign as Agent
+                        Sign Agreement
                       </Button>
                       <Button
                         onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}`}
@@ -677,6 +651,55 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                         Make Counter Offer
                       </Button>
                     </>
+                  )}
+
+                  {/* For 'both' mode - wait for investor to regenerate after counter */}
+                  {localAgreement.signer_mode === 'both' && requiresRegenerate && !investorSigned && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to regenerate and sign with the new terms</p>
+                    </div>
+                  )}
+
+                  {/* For 'both' mode - wait for investor to sign first */}
+                  {localAgreement.signer_mode === 'both' && !investorSigned && !requiresRegenerate && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
+                    </div>
+                  )}
+
+                  {/* For 'both' mode - investor signed, agent can sign */}
+                  {localAgreement.signer_mode === 'both' && investorSigned && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
+                    <>
+                      <Button
+                        onClick={() => handleSign('agent')}
+                        disabled={busy}
+                        className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                      >
+                        {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                        Sign Agreement
+                      </Button>
+                      <Button
+                        onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}`}
+                        variant="outline"
+                        className="w-full border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414]"
+                      >
+                        Make Counter Offer
+                      </Button>
+                    </>
+                  )}
+
+                  {/* Show if agent has a pending counter waiting for investor review */}
+                  {!agentSigned && pendingCounters.some(c => c.from_role === 'agent' && c.status === 'pending') && (
+                    <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to review your counter offer</p>
+                    </div>
+                  )}
+
+                  {/* Show if investor has sent a counter and agent is waiting to respond */}
+                  {!agentSigned && pendingCounters.some(c => c.from_role === 'investor' && c.status === 'pending') && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Investor sent a counter offer - review or make your own counter</p>
+                    </div>
                   )}
                 </div>
               )}
