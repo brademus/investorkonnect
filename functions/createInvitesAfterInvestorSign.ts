@@ -247,11 +247,21 @@ Deno.serve(async (req) => {
 
     console.log('[createInvitesAfterInvestorSign] SUCCESS: Created', createdInvites.length, 'invites for deal:', deal_id);
     console.log('[createInvitesAfterInvestorSign] Agent IDs invited:', selectedAgentIds);
-    console.log('[createInvitesAfterInvestorSign] Room IDs created:', existingRooms.map(r => ({ room_id: r.id, agent_id: r.agentId, status: r.request_status })));
+    
+    // Reload rooms to get fresh list after creation
+    const finalRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
+    console.log('[createInvitesAfterInvestorSign] Final room count:', finalRooms.length);
+    console.log('[createInvitesAfterInvestorSign] Room details:', finalRooms.map(r => ({ 
+      room_id: r.id, 
+      agent_id: r.agentId, 
+      status: r.request_status,
+      agreement_status: r.agreement_status 
+    })));
 
     return Response.json({ 
      ok: true, 
      invite_ids: createdInvites,
+     room_count: finalRooms.length,
      locked: false
     });
     
