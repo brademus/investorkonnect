@@ -23,28 +23,41 @@ Deno.serve(async (req) => {
 
     const publicAppUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || '';
 
-    const session = await stripe.identity.verificationSessions.create({
-      type: 'document',
-      options: {
-        document: {
-          require_matching_selfie: true,
+    // Create verification session with timeout protection
+    let session;
+    try {
+      const sessionPromise = stripe.identity.verificationSessions.create({
+        type: 'document',
+        options: {
+          document: {
+            require_matching_selfie: true,
+          },
         },
-      },
-      metadata: {
-        user_id: user.id,
-        user_email: user.email || '',
-        profile_id: profile?.id || '',
-      },
-      // For redirect fallback flows. Not required for modal, but safe to include.
-      return_url: publicAppUrl ? `${publicAppUrl}/IdentityVerification` : undefined,
-    });
+        metadata: {
+          user_id: user.id,
+          user_email: user.email || '',
+          profile_id: profile?.id || '',
+        },
+        return_url: publicAppUrl ? `${publicAppUrl}/IdentityVerification` : undefined,
+      });
 
+      // Set a 20-second timeout for Stripe API call
+      session = await Promise.race([
+        sessionPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Stripe API timeout')), 20000))
+      ]);
+    } catch (stripeError) {
+      console.error('[createStripeIdentitySession] Stripe API error:', stripeError.message);
+      return Response.json({ error: 'Failed to create verification session. Please try again.' }, { status: 502 });
+    }
+
+    // Update profile in background (don't wait for it, just fire and forget)
     if (profile?.id) {
-      await base44.entities.Profile.update(profile.id, {
+      base44.entities.Profile.update(profile.id, {
         identity_status: 'pending',
         identity_session_id: session.id,
         kyc_status: 'pending',
-      });
+      }).catch(err => console.error('[createStripeIdentitySession] Profile update failed:', err.message));
     }
 
     return Response.json({
@@ -53,6 +66,7 @@ Deno.serve(async (req) => {
       publishable_key: publishableKey,
     });
   } catch (error) {
-    return Response.json({ error: error.message }, { status: 500 });
+    console.error('[createStripeIdentitySession] Unexpected error:', error.message);
+    return Response.json({ error: 'Verification setup failed. Please try again.' }, { status: 500 });
   }
 });
