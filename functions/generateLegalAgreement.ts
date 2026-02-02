@@ -438,10 +438,11 @@ Deno.serve(async (req) => {
     const deal_id = body.deal_id;
     const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
     let exhibit_a = body.exhibit_a || {};
+    const signer_mode = body.signer_mode || (room_id ? 'agent_only' : 'investor_only');
 
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
     
-    console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)');
+    console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)', 'signer_mode:', signer_mode);
     
     // Load investor profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -860,12 +861,17 @@ Deno.serve(async (req) => {
     const investorClientUserId = `investor-${deal_id}-${timestamp}`;
     const agentClientUserId = `agent-${deal_id}-${timestamp}`;
     
-    // Create envelope definition - with or without agent based on mode
-    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal_id} - v2.2.pdf`;
+    // Create envelope definition based on signer_mode
+    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal_id} - v2.3.pdf`;
     
-    // For deal-scoped (no room_id): investor only. For room-scoped: both signers.
-    const signers = [
-      {
+    const signers = [];
+    
+    // investor_only: Base agreement - investor signs alone (recipientId 1)
+    // agent_only: Invite agreement - agent signs alone (recipientId 1), NO investor
+    // both: Negotiated/regenerated - investor first (recipientId 1), agent second (recipientId 2)
+    
+    if (signer_mode === 'investor_only' || signer_mode === 'both') {
+      signers.push({
         email: profile.email,
         name: profile.full_name || profile.email,
         recipientId: '1',
@@ -908,16 +914,19 @@ Deno.serve(async (req) => {
             tabLabel: 'investorFullName'
           }]
         }
-      }
-    ];
+      });
+    }
     
-    // Only add agent if room_scoped (actual agent with valid email)
-    if (room_id && agentProfile.email && agentProfile.email !== 'TBD') {
+    // Add agent recipient based on signer_mode
+    if ((signer_mode === 'agent_only' || signer_mode === 'both') && agentProfile.email && agentProfile.email !== 'TBD') {
+      const agentRecipientId = signer_mode === 'agent_only' ? '1' : '2';
+      const agentRoutingOrder = signer_mode === 'agent_only' ? '1' : '2';
+      
       signers.push({
         email: agentProfile.email,
         name: agentProfile.full_name || agentProfile.email,
-        recipientId: '2',
-        routingOrder: '2',
+        recipientId: agentRecipientId,
+        routingOrder: agentRoutingOrder,
         clientUserId: agentClientUserId,
         tabs: {
           signHereTabs: [{
@@ -1081,7 +1090,9 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.2-dual-pdf',
+      agreement_version: '2.3-signer-mode',
+      signer_mode: signer_mode,
+      source_base_agreement_id: body.source_base_agreement_id || null,
       status: 'sent',
       template_url: templateUrl,
       final_pdf_url: humanUpload.file_url,
@@ -1105,8 +1116,8 @@ Deno.serve(async (req) => {
       docusign_status: 'sent',
       docusign_envelope_pdf_hash: docusignPdfSha256,
       docusign_last_sent_sha256: docusignPdfSha256,
-      investor_recipient_id: '1',
-      agent_recipient_id: '2',
+      investor_recipient_id: (signer_mode === 'investor_only' || signer_mode === 'both') ? '1' : null,
+      agent_recipient_id: (signer_mode === 'agent_only') ? '1' : (signer_mode === 'both' ? '2' : null),
       investor_client_user_id: investorClientUserId,
       agent_client_user_id: agentClientUserId,
       investor_signing_url: null,
@@ -1114,8 +1125,8 @@ Deno.serve(async (req) => {
       audit_log: [{
         timestamp: new Date().toISOString(),
         actor: user.email,
-        action: 'envelope_created_with_both_recipients',
-        details: `Created DocuSign envelope ${envelopeId} with investor (recipientId=1) and agent (recipientId=2) - PDF hash ${docusignPdfSha256.substring(0, 8)}...`
+        action: `envelope_created_${signer_mode}`,
+        details: `Created DocuSign envelope ${envelopeId} in ${signer_mode} mode - PDF hash ${docusignPdfSha256.substring(0, 8)}...`
       }]
     };
     
