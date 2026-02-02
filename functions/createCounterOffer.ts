@@ -28,8 +28,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
     
-    // Verify role matches
-    if (profile.user_role !== from_role) {
+    // Verify role matches (allow admin to act as either role)
+    if (profile.user_role !== from_role && profile.role !== 'admin') {
       return Response.json({ error: 'Role mismatch' }, { status: 403 });
     }
     
