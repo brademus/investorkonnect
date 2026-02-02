@@ -1655,7 +1655,8 @@ export default function Room() {
 
               {/* Tab Navigation */}
               <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-2 flex gap-2 overflow-x-auto items-center">
-                {(isWorkingTogether || (isInvestor && (currentRoom?.is_fully_signed || deal?.is_fully_signed)))
+                {(
+                  (isWorkingTogether || (isInvestor && (currentRoom?.is_fully_signed || deal?.is_fully_signed)))
                     ? [
                         { id: 'details', label: 'Property Details', icon: Info },
                         { id: 'agreement', label: 'My Agreement', icon: Shield },
@@ -1667,7 +1668,7 @@ export default function Room() {
                         { id: 'details', label: 'Property Details', icon: Info },
                         { id: 'agreement', label: 'My Agreement', icon: Shield }
                       ]
-                 ).map(tab => {
+                ).map(tab => {
                   const Icon = tab.icon;
                   return (
                     <button
