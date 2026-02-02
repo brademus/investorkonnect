@@ -110,86 +110,89 @@ export default function PostAuth() {
         }
 
         // Step 3: Route based on state (align with useCurrentProfile logic)
-        const role = profile?.user_role;
-        const hasRole = role && role !== 'member';
+         const role = profile?.user_role;
+         const hasRole = role && role !== 'member';
 
-        // Consider onboarding complete if timestamp OR step OR version OR legacy profile completeness
-        const hasLegacyProfile = !!(
-          profile?.full_name &&
-          profile?.phone &&
-          (profile?.company || profile?.investor?.company_name) &&
-          (profile?.target_state || profile?.location || (profile?.markets && profile?.markets.length > 0))
-        );
-        const isOnboarded = !!(
-          profile?.onboarding_completed_at ||
-          profile?.onboarding_step === 'basic_complete' ||
-          profile?.onboarding_step === 'deep_complete' ||
-          profile?.onboarding_version ||
-          hasLegacyProfile
-        );
+         // Consider onboarding complete if timestamp OR step OR version OR legacy profile completeness
+         const hasLegacyProfile = !!(
+           profile?.full_name &&
+           profile?.phone &&
+           (profile?.company || profile?.investor?.company_name) &&
+           (profile?.target_state || profile?.location || (profile?.markets && profile?.markets.length > 0))
+         );
+         const isOnboarded = !!(
+           profile?.onboarding_completed_at ||
+           profile?.onboarding_step === 'basic_complete' ||
+           profile?.onboarding_step === 'deep_complete' ||
+           profile?.onboarding_version ||
+           hasLegacyProfile
+         );
 
-        // Route strictly by existing role state (ignore selectedRole for existing users)
-        if (!hasRole) {
-          // New user without role: respect selectedRole from landing and go straight to onboarding
-          if (selectedRole === 'investor') {
-            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          } else if (selectedRole === 'agent') {
-            navigate(createPageUrl("AgentOnboarding"), { replace: true });
-          } else {
-            // No selectedRole: default to investor onboarding (never show role picker)
-            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          }
-        } else if (!isOnboarded) {
-          // Has role but not onboarded
-          if (role === 'investor') {
-            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          } else if (role === 'agent') {
-            navigate(createPageUrl("AgentOnboarding"), { replace: true });
-          } else {
-            // Fallback: default to investor onboarding
-            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          }
-        } else {
-          // 4. Post-Onboarding Gates (Subscription -> KYC -> NDA)
-          
-          // Skip all gates for admin users
-          if (profile?.role === 'admin') {
-            console.log('[PostAuth] Admin user, redirecting to Pipeline');
-            navigate(createPageUrl("Pipeline"), { replace: true });
-            return;
-          }
+         if (!mounted) return;
+         setNavigated(true); // Mark as navigated to prevent re-runs
 
-          // Gate A: Subscription (Investors only)
-          const subscriptionStatus = profile?.subscription_status || 'none';
-          const isPaidSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-          if (role === 'investor' && !isPaidSubscriber) {
-            console.log('[PostAuth] Investor missing subscription, redirecting to Pricing');
-            navigate(createPageUrl("Pricing"), { replace: true });
-            return;
-          }
+         // Route strictly by existing role state (ignore selectedRole for existing users)
+         if (!hasRole) {
+           // New user without role: respect selectedRole from landing and go straight to onboarding
+           if (selectedRole === 'investor') {
+             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+           } else if (selectedRole === 'agent') {
+             navigate(createPageUrl("AgentOnboarding"), { replace: true });
+           } else {
+             // No selectedRole: default to investor onboarding (never show role picker)
+             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+           }
+         } else if (!isOnboarded) {
+           // Has role but not onboarded
+           if (role === 'investor') {
+             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+           } else if (role === 'agent') {
+             navigate(createPageUrl("AgentOnboarding"), { replace: true });
+           } else {
+             // Fallback: default to investor onboarding
+             navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+           }
+         } else {
+           // 4. Post-Onboarding Gates (Subscription -> KYC -> NDA)
 
-          // Gate B: KYC / Identity
-          const kycStatus = profile?.kyc_status || profile?.identity_status || 'unverified';
-          const isKycVerified = kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
-          
-          if (!isKycVerified) {
-            console.log('[PostAuth] Identity not verified, redirecting to IdentityVerification');
-            navigate(createPageUrl("IdentityVerification"), { replace: true });
-            return;
-          }
+           // Skip all gates for admin users
+           if (profile?.role === 'admin') {
+             console.log('[PostAuth] Admin user, redirecting to Pipeline');
+             navigate(createPageUrl("Pipeline"), { replace: true });
+             return;
+           }
 
-          // Gate C: NDA
-          const hasNDA = !!profile?.nda_accepted;
-          if (!hasNDA) {
-            console.log('[PostAuth] NDA not accepted, redirecting to NDA');
-            navigate(createPageUrl("NDA"), { replace: true });
-            return;
-          }
+           // Gate A: Subscription (Investors only)
+           const subscriptionStatus = profile?.subscription_status || 'none';
+           const isPaidSubscriber = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+           if (role === 'investor' && !isPaidSubscriber) {
+             console.log('[PostAuth] Investor missing subscription, redirecting to Pricing');
+             navigate(createPageUrl("Pricing"), { replace: true });
+             return;
+           }
 
-          // Fully cleared - go to Pipeline (main dashboard)
-          console.log('[PostAuth] User fully cleared, redirecting to Pipeline');
-          navigate(createPageUrl("Pipeline"), { replace: true });
-        }
+           // Gate B: KYC / Identity
+           const kycStatus = profile?.kyc_status || profile?.identity_status || 'unverified';
+           const isKycVerified = kycStatus === 'approved' || kycStatus === 'verified' || !!profile?.identity_verified || !!profile?.identity_verified_at;
+
+           if (!isKycVerified) {
+             console.log('[PostAuth] Identity not verified, redirecting to IdentityVerification');
+             navigate(createPageUrl("IdentityVerification"), { replace: true });
+             return;
+           }
+
+           // Gate C: NDA
+           const hasNDA = !!profile?.nda_accepted;
+           if (!hasNDA) {
+             console.log('[PostAuth] NDA not accepted, redirecting to NDA');
+             navigate(createPageUrl("NDA"), { replace: true });
+             return;
+           }
+
+           // Fully cleared - go to Pipeline (main dashboard)
+           console.log('[PostAuth] User fully cleared, redirecting to Pipeline');
+           navigate(createPageUrl("Pipeline"), { replace: true });
+         }
 
       } catch (error) {
         console.error('[PostAuth] Error:', error);
