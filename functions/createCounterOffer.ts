@@ -98,7 +98,7 @@ Deno.serve(async (req) => {
     console.log('[createCounterOffer] ✓ Created new counter offer:', newCounter.id);
     
     return Response.json({
-      success: true,
+      ok: true,
       counter_offer: newCounter,
       deal: deal
     });
