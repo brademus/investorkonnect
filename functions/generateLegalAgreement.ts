@@ -870,7 +870,62 @@ Deno.serve(async (req) => {
     // agent_only: Invite agreement - agent signs alone (recipientId 1), NO investor
     // both: Negotiated/regenerated - investor first (recipientId 1), agent second (recipientId 2)
     
-    if (signer_mode === 'investor_only' || signer_mode === 'both') {
+    // For agent_only mode: add investor signature fields as read-only (already signed)
+    // For other modes: add investor as active signer
+    if (signer_mode === 'agent_only') {
+      // In agent_only mode, investor signature fields are pre-filled and locked (read-only)
+      // This shows the investor already signed without requiring their action
+      signers.push({
+        email: profile.email,
+        name: profile.full_name || profile.email,
+        recipientId: '1',
+        routingOrder: '1',
+        clientUserId: investorClientUserId,
+        embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
+        tabs: {
+          signHereTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_SIGN]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true,
+            locked: true, // Lock the signature field - already signed
+            disableimetrics: true,
+            signatureName: profile.full_name || profile.email
+          }],
+          dateSignedTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_DATE]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true,
+            locked: true, // Lock the date field
+            value: new Date().toLocaleDateString()
+          }],
+          fullNameTabs: [{
+            documentId: '1',
+            anchorString: '[[INVESTOR_PRINT]]',
+            anchorUnits: 'pixels',
+            anchorXOffset: '0',
+            anchorYOffset: '0',
+            anchorIgnoreIfNotPresent: false,
+            anchorCaseSensitive: false,
+            anchorMatchWholeWord: true,
+            name: 'Investor Full Name',
+            value: profile.full_name || profile.email,
+            locked: true,
+            required: true,
+            tabLabel: 'investorFullName'
+          }]
+        }
+      });
+    } else if (signer_mode === 'investor_only' || signer_mode === 'both') {
       signers.push({
         email: profile.email,
         name: profile.full_name || profile.email,
@@ -919,8 +974,8 @@ Deno.serve(async (req) => {
     
     // Add agent recipient based on signer_mode
     if ((signer_mode === 'agent_only' || signer_mode === 'both') && agentProfile.email && agentProfile.email !== 'TBD') {
-      const agentRecipientId = signer_mode === 'agent_only' ? '1' : '2';
-      const agentRoutingOrder = signer_mode === 'agent_only' ? '1' : '2';
+      const agentRecipientId = signer_mode === 'agent_only' ? '2' : '2';
+      const agentRoutingOrder = signer_mode === 'agent_only' ? '2' : '2';
       
       signers.push({
         email: agentProfile.email,
