@@ -130,17 +130,26 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
   // CRITICAL: When requires_regenerate is true, IGNORE old signatures (fresh start needed)
   const requiresRegenerate = localRoom?.requires_regenerate === true;
 
-  // CRITICAL: Check signatures from MULTIPLE sources to handle all cases including deal-level signatures
-  const investorSigned = (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                         !!localRoom?.ioa_investor_signed_at ||
-                         !!deal?.ioa_investor_signed_at ||
-                         !!deal?.investor_signed_at ||
-                         localRoom?.agreement_status === 'investor_signed' ||
-                         localRoom?.agreement_status === 'fully_signed' ||
-                         (localAgreement && ['investor_signed', 'agent_signed', 'fully_signed'].includes(localAgreement?.status)) ||
-                         (deal && ['investor_signed', 'agent_signed', 'fully_signed'].includes(deal?.status));
-  const agentSigned = (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
-                      !!localRoom?.ioa_agent_signed_at;
+  // CRITICAL: Check investor signature - prefer current agreement, fallback to room/deal
+  const investorSigned = requiresRegenerate 
+    ? false // If regeneration needed, ignore old signatures
+    : (!!localAgreement?.investor_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
+      localAgreement?.status === 'investor_signed' ||
+      localAgreement?.status === 'agent_signed' ||
+      localAgreement?.status === 'fully_signed' ||
+      localRoom?.agreement_status === 'investor_signed' ||
+      localRoom?.agreement_status === 'fully_signed' ||
+      !!deal?.investor_signed_at ||
+      !!deal?.ioa_investor_signed_at;
+      
+  const agentSigned = requiresRegenerate
+    ? false // If regeneration needed, ignore old signatures
+    : (!!localAgreement?.agent_signed_at && localAgreement?.status !== 'superseded' && localAgreement?.status !== 'voided') ||
+      localAgreement?.status === 'agent_signed' ||
+      localAgreement?.status === 'fully_signed' ||
+      localRoom?.agreement_status === 'agent_signed' ||
+      localRoom?.agreement_status === 'fully_signed' ||
+      !!deal?.agent_signed_at;
 
   // Check multiple sources for fully signed status
   const fullySigned = investorSigned && agentSigned || 
