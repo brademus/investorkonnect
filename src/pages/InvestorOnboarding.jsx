@@ -135,8 +135,15 @@ export default function InvestorOnboarding() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
+      // Ensure profile is loaded
       if (!profile) {
-        throw new Error('Profile not found');
+        console.error('[InvestorOnboarding] Profile not loaded, fetching...');
+        await refresh();
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+      
+      if (!profile) {
+        throw new Error('Unable to load profile. Please refresh the page.');
       }
 
       // Save basic info and mark onboarding as complete
