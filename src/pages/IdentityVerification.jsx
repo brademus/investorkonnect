@@ -100,7 +100,7 @@ export default function IdentityVerification() {
       // 3) Poll backend for final status (Stripe may take a moment to finalize)
       let attempts = 0;
       let finalStatus = 'processing';
-      while (attempts < 8) {
+      while (attempts < 15) {
         const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
         const s = statusData?.status;
         if (s === 'verified') {
@@ -111,7 +111,7 @@ export default function IdentityVerification() {
           finalStatus = 'error';
           break;
         }
-        await new Promise(r => setTimeout(r, 1500));
+        await new Promise(r => setTimeout(r, 1000));
         attempts += 1;
       }
 
@@ -119,12 +119,24 @@ export default function IdentityVerification() {
         setStatus('success');
         toast.success('Identity verified successfully!');
         
-        // Redirect to NDA immediately - profile will be fetched fresh there
+        // Refresh profile to get updated verification status before redirecting
+        refresh();
+        
+        // Redirect to NDA after profile refresh
         setTimeout(() => {
           navigate(createPageUrl('NDA'), { replace: true });
-        }, 1000);
+        }, 1500);
+      } else if (finalStatus === 'error') {
+        throw new Error('Verification was cancelled. Please try again.');
       } else {
-        throw new Error('Verification not completed. Please try again.');
+        // Polling timed out but don't fail - user may have completed verification
+        // Refresh profile and redirect to NDA to check final status
+        setStatus('success');
+        toast.success('Identity verification submitted. Redirecting...');
+        refresh();
+        setTimeout(() => {
+          navigate(createPageUrl('NDA'), { replace: true });
+        }, 1500);
       }
 
     } catch (error) {
