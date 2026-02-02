@@ -69,10 +69,11 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Call generateLegalAgreement with effective terms
+    // Call generateLegalAgreement with effective terms and BOTH mode (investor + agent must sign)
     const gen = await base44.functions.invoke('generateLegalAgreement', {
       deal_id,
       room_id: room_id || null,
+      signer_mode: 'both', // CRITICAL: both signers required after counter acceptance
       exhibit_a: {
         buyer_commission_type: effectiveTerms.buyer_commission_type || 'flat',
         buyer_commission_percentage: effectiveTerms.buyer_commission_percentage || null,
@@ -106,20 +107,20 @@ Deno.serve(async (req) => {
     });
 
     // Update pointers and reset agreement signing status with retry
-    // Keep regenerate flag until investor completes signing via DocuSign callback
+    // requires_regenerate stays TRUE until investor completes signing via DocuSign callback
     if (room_id && room) {
       await withRetry(async () => {
         await base44.asServiceRole.entities.Room.update(room_id, {
           current_legal_agreement_id: newAgreement.id,
-          agreement_status: 'draft'  // Reset to draft - no signatures yet
-          // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+          agreement_status: 'draft'  // Reset to draft - both must sign
+          // Keep requires_regenerate=true until investor signs (cleared by webhook)
         });
       });
     } else {
       await withRetry(async () => {
         await base44.asServiceRole.entities.Deal.update(deal_id, {
           current_legal_agreement_id: newAgreement.id
-          // DO NOT clear requires_regenerate - cleared by webhook after investor signs
+          // Keep requires_regenerate=true until investor signs (cleared by webhook)
         });
       });
     }
