@@ -101,7 +101,10 @@ function PipelineContent() {
       navigate(createPageUrl("NDA"), { replace: true });
       return;
     }
-  }, [loading, profile, onboarded, navigate]);
+
+    // Mark loading as complete to stop flashing animation
+    setLoadingComplete(true);
+    }, [loading, profile, onboarded, navigate]);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
