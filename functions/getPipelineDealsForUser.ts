@@ -24,6 +24,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Profile not found' }, { status: 404 });
     }
 
+    const isAdmin = profile.role === 'admin' || user.role === 'admin';
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
@@ -31,6 +32,7 @@ Deno.serve(async (req) => {
       profile_id: profile.id,
       user_id: user.id,
       user_role: profile.user_role,
+      isAdmin,
       isAgent,
       isInvestor
     });
@@ -39,7 +41,11 @@ Deno.serve(async (req) => {
     let deals = [];
     let agentRooms = [];
     
-    if (isInvestor) {
+    if (isAdmin) {
+      // Admins see ALL deals
+      deals = await base44.asServiceRole.entities.Deal.list('-updated_date', 1000);
+      console.log('[getPipelineDealsForUser] Admin sees all deals:', deals.length);
+    } else if (isInvestor) {
       // Investors: show ALL their deals (they created them) + deals they have rooms for OR signed agreements
       const ownedDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
       console.log('[getPipelineDealsForUser] Investor owned deals:', ownedDeals.length);
