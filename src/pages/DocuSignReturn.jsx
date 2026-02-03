@@ -41,37 +41,37 @@ export default function DocuSignReturn() {
               const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
                 deal_id: dealId
               });
-              
+
               console.log('[DocuSignReturn] Invites response:', res.data);
-              
+
               if (res.data?.error) {
                 console.error('[DocuSignReturn] Invites error:', res.data.error);
                 toast.error(res.data.error);
                 throw new Error(res.data.error);
-              } else if (res.data?.ok && res.data.invite_ids?.length > 0) {
-                console.log('[DocuSignReturn] ✓ Created', res.data.invite_ids.length, 'invites, room_count:', res.data.room_count);
-                toast.success(`Deal sent to ${res.data.invite_ids.length} agent(s)!`);
+              } else if (res.data?.ok || res.data?.room_id) {
+                console.log('[DocuSignReturn] ✓ Deal sent to agents, room_id:', res.data.room_id);
+                toast.success('Deal sent to agents!');
                 sessionStorage.removeItem('selectedAgentIds');
                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                
-                // Wait for rooms to be queryable (increased wait time for consistency)
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                
+
+                // Wait for rooms to be queryable
+                await new Promise(resolve => setTimeout(resolve, 1500));
+
                 const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-                console.log('[DocuSignReturn] Verified rooms exist after invites:', rooms.length, rooms.map(r => ({ room_id: r.id, agent_id: r.agentId })));
-                
+                console.log('[DocuSignReturn] Verified rooms exist after invites:', rooms.length);
+
                 if (rooms?.length > 0) {
                   // Navigate to first room for investor to see their deal
                   navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
                   return;
                 } else {
-                  throw new Error('No rooms created after invites');
+                  throw new Error('No rooms found after invites created');
                 }
               } else {
-                throw new Error('No invites created - check response: ' + JSON.stringify(res.data));
+                throw new Error('Unexpected response: ' + JSON.stringify(res.data));
               }
             } catch (inviteError) {
-              console.error('[DocuSignReturn] Invite creation failed:', inviteError.message);
+              console.error('[DocuSignReturn] Invite creation failed:', inviteError);
               toast.error('Failed to send deal to agents: ' + inviteError.message);
               throw inviteError;
             }
