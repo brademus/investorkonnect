@@ -874,7 +874,7 @@ function PipelineContent() {
         if (d.locked_agent_id && d.locked_agent_id !== profile.id) return;
         
         const hasRequest = rs === 'requested' || rs === 'accepted' || rs === 'signed' || rs === 'locked';
-        const hasSigning = d.is_fully_signed || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending';
+        const hasSigning = d.is_fully_signed || st === 'sent' || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending';
         const allowed = hasRequest || hasSigning;
         if (!allowed) return;
       }
