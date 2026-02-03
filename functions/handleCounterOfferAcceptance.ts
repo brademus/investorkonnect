@@ -33,17 +33,25 @@ Deno.serve(async (req) => {
     
     const room = rooms[0];
     
-    // Merge the counter offer terms with existing proposed terms - ONLY for this agent's room
-    const updatedTerms = {
-      ...(room.proposed_terms || {}),
+    // Get agent who made the counter
+    const agentId = counterOffer.from_role === 'agent' ? counterOffer.agent_profile_id : null;
+    if (!agentId) {
+      return Response.json({ error: 'Could not determine agent ID from counter offer' }, { status: 400 });
+    }
+
+    // Update ONLY this specific agent's terms in the room
+    const agentTerms = room.agent_terms || {};
+    const currentAgentTerms = agentTerms[agentId] || {};
+    const updatedAgentTerms = {
+      ...currentAgentTerms,
       ...(counterOffer.terms_delta || {})
     };
 
-    // Update ONLY this agent's room with new terms and flag for agreement regeneration
-    // This keeps each agent's terms isolated - other agents' rooms are unaffected
+    agentTerms[agentId] = updatedAgentTerms;
+
+    // Update room with new agent-specific terms
     await base44.asServiceRole.entities.Room.update(roomId, {
-      proposed_terms: updatedTerms,
-      requires_regenerate: true
+      agent_terms: agentTerms
     });
 
     // Mark all OTHER pending counters for THIS ROOM as superseded
