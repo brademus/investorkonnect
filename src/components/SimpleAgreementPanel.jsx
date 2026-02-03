@@ -181,9 +181,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     toast.loading('Generating...', { id: 'gen' });
 
     try {
-      if (!dealId) {
+      if (!draftId && !dealId) {
         toast.dismiss('gen');
-        toast.error('Deal ID is missing');
+        toast.error('Deal context missing');
         setBusy(false);
         return;
       }
@@ -197,10 +197,17 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         transaction_type: 'ASSIGNMENT'
       };
 
+      // Use draftId if deal doesn't exist yet (pre-signing flow), otherwise use dealId
       const res = await base44.functions.invoke('regenerateActiveAgreement', {
+        draft_id: draftId,
         deal_id: dealId,
         room_id: roomId || undefined,
-        exhibit_a: exhibit_a
+        exhibit_a: exhibit_a,
+        investor_profile_id: profile?.id,
+        property_address: dealData?.propertyAddress,
+        city: dealData?.city,
+        state: dealData?.state,
+        zip: dealData?.zip
       });
 
       toast.dismiss('gen');
