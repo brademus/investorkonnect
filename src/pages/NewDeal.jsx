@@ -16,7 +16,6 @@ export default function NewDeal() {
   const { profile, loading } = useCurrentProfile();
   
   const dealId = searchParams.get("dealId");
-  const draftKey = dealId ? `dealDraft_${dealId}` : "newDealDraft";
   const fromVerify = searchParams.get("fromVerify") === "1";
 
   // Section 1: Property + Deal Info
@@ -61,7 +60,7 @@ export default function NewDeal() {
     const isEditing = !!dealId;
     const shouldLoad = isEditing || fromVerify;
     if (!shouldLoad) return;
-    const raw = sessionStorage.getItem(draftKey);
+    const raw = sessionStorage.getItem('newDealDraft');
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
@@ -135,16 +134,16 @@ export default function NewDeal() {
     const isEditing = !!dealId;
     const hasUserInput = [propertyAddress, city, state, zip, county, purchasePrice, closingDate, sellerName, earnestMoney, sellerCommissionPercentage, sellerFlatFee, buyerCommissionPercentage, buyerFlatFee, agreementLength].some(v => (v ?? '').toString().trim().length > 0);
     if ((isEditing && hydrated) || hasUserInput) {
-      sessionStorage.setItem(draftKey, JSON.stringify(draft));
+      sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
-  }, [draftKey, dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
     if (dealId && profile?.id) {
       // Only skip server load if a meaningful draft exists (not an empty placeholder)
       let hasMeaningfulDraft = false;
-      const raw = sessionStorage.getItem(draftKey);
+      const raw = sessionStorage.getItem('newDealDraft');
       if (raw) {
         try {
           const d = JSON.parse(raw);
@@ -475,7 +474,7 @@ export default function NewDeal() {
   } catch (_) {}
 
   // Save to sessionStorage - include dealId if editing
-    sessionStorage.setItem(draftKey, JSON.stringify({
+    sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
       city,
