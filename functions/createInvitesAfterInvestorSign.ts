@@ -120,18 +120,29 @@ Deno.serve(async (req) => {
       throw new Error('Base agreement not found');
     }
     
+    // Get or create room 
+    let room = existingRooms[0];
+    if (!room) {
+      const allRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
+      room = allRooms[0];
+    }
+
+    if (!room) {
+      throw new Error('Failed to create or find room for deal');
+    }
+
     // Update room to point to agreement
-    const room = existingRooms[0] || (await base44.asServiceRole.entities.Room.filter({ deal_id }))[0];
     await base44.asServiceRole.entities.Room.update(room.id, {
       current_legal_agreement_id: baseAgreement.id
     });
-    
+
     // Update deal
     await base44.asServiceRole.entities.Deal.update(deal_id, {
       status: 'active',
       pipeline_stage: 'new_deals'
     });
 
+    console.log('[createInvitesAfterInvestorSign] Success - created room:', room.id, 'for deal:', deal_id);
     return Response.json({ ok: true, room_id: room.id });
     
   } catch (error) {
