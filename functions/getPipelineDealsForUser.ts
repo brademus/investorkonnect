@@ -46,9 +46,13 @@ Deno.serve(async (req) => {
       deals = await base44.asServiceRole.entities.Deal.list('-updated_date', 100);
       console.log('[getPipelineDealsForUser] Admin view - showing all deals:', deals.length);
     } else if (isInvestor) {
-      // Investors: show ALL their deals (they created them) + deals they have rooms for OR signed agreements
-      const ownedDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
-      console.log('[getPipelineDealsForUser] Investor owned deals:', ownedDeals.length);
+      // Investors: show ACTIVE deals only (status != draft) + deals they have rooms for OR signed agreements
+      // CRITICAL: Draft deals should NOT appear until investor signs
+      const ownedDeals = await base44.entities.Deal.filter({ 
+        investor_id: profile.id,
+        status: { $ne: 'draft' } // Exclude draft deals
+      });
+      console.log('[getPipelineDealsForUser] Investor active deals (excluding drafts):', ownedDeals.length);
       
       let investorRooms = await base44.entities.Room.filter({ investorId: profile.id });
       const roomDealIds = Array.from(new Set(investorRooms.map(r => r.deal_id).filter(Boolean)));

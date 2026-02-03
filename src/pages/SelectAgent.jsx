@@ -113,7 +113,9 @@ export default function SelectAgent() {
       
       const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
 
-      // CRITICAL FIX: Create deal with agents in metadata as plain object, not nested
+      // Check if updating existing deal or creating new
+      const isEditing = dealData?.dealId;
+
       const dealPayload = {
         title: `${dealData.propertyAddress}`,
         description: dealData.specialNotes || "",
@@ -163,22 +165,30 @@ export default function SelectAgent() {
         pending_agreement_generation: true
       };
 
-      console.log('[SelectAgent] Creating deal with selected agents:', selectedAgentIds);
-      console.log('[SelectAgent] dealPayload:', JSON.stringify(dealPayload, null, 2));
-
-      const newDeal = await base44.entities.Deal.create(dealPayload);
-
-      console.log('[SelectAgent] Created deal:', newDeal.id);
-      console.log('[SelectAgent] Returned deal:', JSON.stringify(newDeal, null, 2));
+      let newDeal;
+      
+      if (isEditing) {
+        // UPDATE existing deal
+        console.log('[SelectAgent] Updating existing deal:', dealData.dealId, 'with selected agents:', selectedAgentIds);
+        newDeal = await base44.entities.Deal.update(dealData.dealId, dealPayload);
+        console.log('[SelectAgent] Updated deal:', newDeal.id);
+      } else {
+        // CREATE new deal
+        console.log('[SelectAgent] Creating deal with selected agents:', selectedAgentIds);
+        console.log('[SelectAgent] dealPayload:', JSON.stringify(dealPayload, null, 2));
+        newDeal = await base44.entities.Deal.create(dealPayload);
+        console.log('[SelectAgent] Created deal:', newDeal.id);
+      }
 
       // Save selected agents to session storage for redundancy
-      sessionStorage.setItem("pendingDealId", newDeal.id);
+      const finalDealId = isEditing ? dealData.dealId : newDeal.id;
+      sessionStorage.setItem("pendingDealId", finalDealId);
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
-      sessionStorage.setItem(`selectedAgentIds_${newDeal.id}`, JSON.stringify(selectedAgentIds));
+      sessionStorage.setItem(`selectedAgentIds_${finalDealId}`, JSON.stringify(selectedAgentIds));
       sessionStorage.removeItem("newDealDraft");
       
       // Navigate to MyAgreement page to generate and sign
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${newDeal.id}`);
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${finalDealId}`);
     } catch (error) {
       console.error("Error creating deal:", error);
       toast.error("Failed to create deal");
