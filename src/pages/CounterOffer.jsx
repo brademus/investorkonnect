@@ -44,6 +44,11 @@ export default function CounterOfferPage() {
   // Load deal and room data
   useEffect(() => {
     const loadData = async () => {
+      if (!profile) {
+        console.log('[CounterOffer] Waiting for profile...');
+        return;
+      }
+
       try {
         if (dealId) {
           const d = await base44.entities.Deal.filter({ id: dealId });
@@ -84,9 +89,14 @@ export default function CounterOfferPage() {
       }
     };
     loadData();
-  }, [dealId, roomId, respondingTo]);
+  }, [dealId, roomId, respondingTo, profile]);
 
   const handleSendCounter = async () => {
+    if (!profile?.user_role) {
+      toast.error('Profile not loaded. Please refresh.');
+      return;
+    }
+
     if (!commissionAmount) {
       toast.error('Please enter commission amount');
       return;
