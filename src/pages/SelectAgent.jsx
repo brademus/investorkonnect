@@ -106,92 +106,22 @@ export default function SelectAgent() {
 
     setProceeding(true);
     try {
-      // Get current user to set investor_id
-      const user = await base44.auth.me();
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      const currentProfile = profiles[0];
-      
-      const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-
-      // Check if updating existing deal or creating new
-      const isEditing = dealData?.dealId;
-
-      const dealPayload = {
-        title: `${dealData.propertyAddress}`,
-        description: dealData.specialNotes || "",
-        property_address: dealData.propertyAddress,
-        city: dealData.city,
-        state: dealData.state,
-        zip: dealData.zip,
-        county: dealData.county,
-        purchase_price: Number(cleanedPrice),
-        key_dates: {
-          closing_date: dealData.closingDate,
-          contract_date: dealData.contractDate,
-        },
-        property_type: dealData.propertyType || null,
-        property_details: {
-          beds: dealData.beds ? Number(dealData.beds) : null,
-          baths: dealData.baths ? Number(dealData.baths) : null,
-          sqft: dealData.sqft ? Number(dealData.sqft) : null,
-          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-          number_of_stories: dealData.numberOfStories || null,
-          has_basement: dealData.hasBasement || null,
-        },
-        seller_info: {
-          seller_name: dealData.sellerName,
-          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-          number_of_signers: dealData.numberOfSigners,
-          second_signer_name: dealData.secondSignerName,
-        },
-        proposed_terms: {
-          seller_commission_type: dealData.sellerCommissionType,
-          seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-        },
-        contract_document: dealData.contractUrl ? {
-          url: dealData.contractUrl,
-          name: "contract.pdf",
-          uploaded_at: new Date().toISOString()
-        } : null,
-        status: "draft",
-        pipeline_stage: "new_deals",
-        investor_id: currentProfile?.id,
-        selected_agent_ids: selectedAgentIds,
-        pending_agreement_generation: true
+      // Save selected agents to sessionStorage - deal will be created AFTER investor signs
+      const updatedDealData = {
+        ...dealData,
+        selectedAgentIds: selectedAgentIds
       };
-
-      let newDeal;
       
-      if (isEditing) {
-        // UPDATE existing deal
-        console.log('[SelectAgent] Updating existing deal:', dealData.dealId, 'with selected agents:', selectedAgentIds);
-        newDeal = await base44.entities.Deal.update(dealData.dealId, dealPayload);
-        console.log('[SelectAgent] Updated deal:', newDeal.id);
-      } else {
-        // CREATE new deal
-        console.log('[SelectAgent] Creating deal with selected agents:', selectedAgentIds);
-        console.log('[SelectAgent] dealPayload:', JSON.stringify(dealPayload, null, 2));
-        newDeal = await base44.entities.Deal.create(dealPayload);
-        console.log('[SelectAgent] Created deal:', newDeal.id);
-      }
-
-      // Save selected agents to session storage for redundancy
-      const finalDealId = isEditing ? dealData.dealId : newDeal.id;
-      sessionStorage.setItem("pendingDealId", finalDealId);
+      sessionStorage.setItem("newDealDraft", JSON.stringify(updatedDealData));
       sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
-      sessionStorage.setItem(`selectedAgentIds_${finalDealId}`, JSON.stringify(selectedAgentIds));
-      sessionStorage.removeItem("newDealDraft");
       
-      // Navigate to MyAgreement page to generate and sign
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${finalDealId}`);
+      console.log('[SelectAgent] Saved agent selection to sessionStorage:', selectedAgentIds);
+      
+      // Navigate to MyAgreement page to generate and sign (deal will be created on signature)
+      navigate(createPageUrl("MyAgreement"));
     } catch (error) {
-      console.error("Error creating deal:", error);
-      toast.error("Failed to create deal");
+      console.error("Error proceeding:", error);
+      toast.error("Failed to proceed");
       setProceeding(false);
     }
   };
