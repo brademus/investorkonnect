@@ -284,11 +284,11 @@ function PipelineContent() {
      refetchOnMount: 'always',
      queryFn: async () => {
        console.log('[Pipeline] Fetching deals for profile:', profile.id, 'role:', profile.user_role);
-       
+
        // PRODUCTION: Server-side access control enforces role-based redaction
        const response = await base44.functions.invoke('getPipelineDealsForUser');
        const deals = response.data?.deals || [];
-       
+
        console.log('[Pipeline] Loaded', deals.length, 'deals');
 
        // Deduplicate by ID on client side as well
@@ -305,9 +305,26 @@ function PipelineContent() {
 
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-       
-       console.log('[Pipeline] Returning', dedupedDeals.length, 'deals after dedup');
-       return dedupedDeals;
+
+       // CRITICAL: Filter out deals with no agents selected, and delete them
+       const validDeals = [];
+       for (const deal of dedupedDeals) {
+         const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
+         if (hasAgents) {
+           validDeals.push(deal);
+         } else {
+           // Orphaned deal with no agents - delete it
+           console.log('[Pipeline] Deleting orphaned deal with no agents:', deal.id);
+           try {
+             await base44.entities.Deal.delete(deal.id);
+           } catch (e) {
+             console.warn('[Pipeline] Failed to delete orphaned deal:', e);
+           }
+         }
+       }
+
+       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering orphaned deals');
+       return validDeals;
      },
      enabled: !!profile?.id,
      refetchOnWindowFocus: true,
