@@ -181,9 +181,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     toast.loading('Generating...', { id: 'gen' });
 
     try {
-      // If dealId is a DraftDraft ID (not a Deal ID), it will fail
-      // The deal should already exist at this point
-      // If not, this indicates a data consistency issue
       if (!dealId) {
         toast.dismiss('gen');
         toast.error('Deal ID is missing');
@@ -191,9 +188,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         return;
       }
 
+      // Build exhibit_a from dealData (buyer commission structure)
+      const exhibit_a = {
+        buyer_commission_type: dealData?.buyerCommissionType || 'percentage',
+        buyer_commission_percentage: dealData?.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
+        buyer_flat_fee: dealData?.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
+        agreement_length_days: dealData?.agreementLength ? Number(dealData.agreementLength) : 180,
+        transaction_type: 'ASSIGNMENT'
+      };
+
       const res = await base44.functions.invoke('regenerateActiveAgreement', {
         deal_id: dealId,
-        room_id: roomId
+        room_id: roomId,
+        exhibit_a: exhibit_a
       });
 
       toast.dismiss('gen');
