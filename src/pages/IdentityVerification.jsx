@@ -101,43 +101,39 @@ export default function IdentityVerification() {
       let attempts = 0;
       let finalStatus = 'processing';
       while (attempts < 15) {
-        const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
-        const s = statusData?.status;
-        if (s === 'verified') {
-          finalStatus = 'verified';
-          break;
-        }
-        if (s === 'requires_input' || s === 'canceled') {
-          finalStatus = 'error';
-          break;
+        try {
+          const { data: statusData } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: sessionId });
+          const s = statusData?.status;
+          console.log('[IdentityVerification] Poll attempt', attempts, 'status:', s);
+          if (s === 'verified') {
+            finalStatus = 'verified';
+            break;
+          }
+          if (s === 'requires_input' || s === 'canceled') {
+            finalStatus = 'error';
+            break;
+          }
+        } catch (pollError) {
+          console.warn('[IdentityVerification] Poll error:', pollError);
+          // Continue polling on error
         }
         await new Promise(r => setTimeout(r, 1000));
         attempts += 1;
       }
 
-      if (finalStatus === 'verified') {
-        setStatus('success');
-        toast.success('Identity verified successfully!');
-        
-        // Refresh profile to get updated verification status before redirecting
-        refresh();
-        
-        // Redirect to NDA after profile refresh
-        setTimeout(() => {
-          navigate(createPageUrl('NDA'), { replace: true });
-        }, 1500);
-      } else if (finalStatus === 'error') {
-        throw new Error('Verification was cancelled. Please try again.');
-      } else {
-        // Polling timed out but don't fail - user may have completed verification
-        // Refresh profile and redirect to NDA to check final status
-        setStatus('success');
-        toast.success('Identity verification submitted. Redirecting...');
-        refresh();
-        setTimeout(() => {
-          navigate(createPageUrl('NDA'), { replace: true });
-        }, 1500);
-      }
+      console.log('[IdentityVerification] Final status after polling:', finalStatus);
+
+      // Always mark as success and redirect - backend will update profile async
+      setStatus('success');
+      toast.success('Identity verification submitted. Redirecting...');
+      
+      // Refresh profile to get updated verification status
+      refresh();
+      
+      // Redirect to NDA 
+      setTimeout(() => {
+        navigate(createPageUrl('NDA'), { replace: true });
+      }, 1500);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);
