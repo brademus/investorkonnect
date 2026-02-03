@@ -135,19 +135,22 @@ export default function InvestorOnboarding() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      // Ensure profile is loaded
-      if (!profile) {
-        console.error('[InvestorOnboarding] Profile not loaded, fetching...');
-        await refresh();
-        await new Promise(resolve => setTimeout(resolve, 500));
+      // Get fresh profile data to ensure we have the latest
+      let currentProfile = profile;
+      if (!currentProfile) {
+        console.log('[InvestorOnboarding] Profile not in state, fetching fresh...');
+        const profiles = await base44.entities.Profile.filter({ user_id: user?.id });
+        currentProfile = profiles[0];
       }
       
-      if (!profile) {
+      if (!currentProfile?.id) {
         throw new Error('Unable to load profile. Please refresh the page.');
       }
 
+      console.log('[InvestorOnboarding] Saving profile:', currentProfile.id);
+
       // Save basic info and mark onboarding as complete
-      await base44.entities.Profile.update(profile.id, {
+      await base44.entities.Profile.update(currentProfile.id, {
         full_name: formData.full_name,
         phone: formData.phone,
         company: formData.company,
@@ -160,21 +163,18 @@ export default function InvestorOnboarding() {
         onboarding_completed_at: new Date().toISOString(),
         onboarding_version: 'investor-v1',
         metadata: {
-          ...profile.metadata,
+          ...(currentProfile.metadata || {}),
           basicProfile: {
             investment_experience: formData.investment_experience
           }
         }
       });
 
-      // Wait for profile to update before refreshing
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await refresh();
+      console.log('[InvestorOnboarding] Profile saved successfully');
       
       toast.success("Profile saved! Let's choose your plan.");
       
-      // Navigate to Pricing (next step for investors)
-      await new Promise(resolve => setTimeout(resolve, 300));
+      // Hard navigate to ensure fresh page load with updated profile
       window.location.href = createPageUrl("Pricing");
     } catch (error) {
       console.error('[InvestorOnboarding] Save error:', error);
