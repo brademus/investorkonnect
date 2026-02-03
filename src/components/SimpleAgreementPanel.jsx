@@ -371,43 +371,60 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
     }
   }, [investorSigned, agentSigned, onInvestorSigned, hasTriggeredCallback]);
 
-  // Refresh agreement AND room after signing redirect
+  // Refresh agreement AND room after signing redirect with exponential backoff retry
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1' && dealId) {
-      // Longer delay to ensure DocuSign webhook has processed and cleared flags
-      const timer = setTimeout(async () => {
+      let retryCount = 0;
+      const maxRetries = 5;
+      const initialDelay = 1000; // Start at 1 second
+
+      const attemptRefresh = async () => {
         try {
           // Refresh agreement to get latest signature status
           const res = await base44.functions.invoke('getLegalAgreement', { 
             deal_id: dealId, 
             room_id: roomId || undefined 
           });
-          if (res?.data?.agreement) {
-            console.log('[SimpleAgreementPanel] Refreshed agreement after signing:', res.data.agreement.id, 'investor_signed:', !!res.data.agreement.investor_signed_at);
+
+          if (res?.data?.agreement?.investor_signed_at) {
+            // Agreement has signature - we're done
+            console.log('[SimpleAgreementPanel] Signature confirmed after retry', retryCount);
             setLocalAgreement(res.data.agreement);
-          }
 
-          // Refresh room to get cleared requires_regenerate flag
-          if (roomId) {
-            const roomRes = await base44.entities.Room.filter({ id: roomId });
-            if (roomRes?.[0]) {
-              console.log('[SimpleAgreementPanel] Refreshed room after signing, requires_regenerate:', roomRes[0].requires_regenerate);
-              setLocalRoom(roomRes[0]);
-
-              // CRITICAL: If investor just signed, clear requires_regenerate manually if webhook hasn't done it yet
-              if (isInvestor && res?.data?.agreement?.investor_signed_at && roomRes[0].requires_regenerate === true) {
-                console.log('[SimpleAgreementPanel] Investor signed, clearing requires_regenerate flag');
-                await base44.entities.Room.update(roomId, { requires_regenerate: false });
-                setLocalRoom(prev => ({ ...prev, requires_regenerate: false }));
+            if (roomId) {
+              const roomRes = await base44.entities.Room.filter({ id: roomId });
+              if (roomRes?.[0]) {
+                setLocalRoom(roomRes[0]);
+                if (isInvestor && res?.data?.agreement?.investor_signed_at && roomRes[0].requires_regenerate === true) {
+                  await base44.entities.Room.update(roomId, { requires_regenerate: false });
+                  setLocalRoom(prev => ({ ...prev, requires_regenerate: false }));
+                }
               }
             }
+            return true; // Success
+          } else if (retryCount < maxRetries) {
+            // No signature yet, retry with exponential backoff
+            retryCount++;
+            const delay = initialDelay * Math.pow(2, retryCount - 1);
+            console.log(`[SimpleAgreementPanel] Signature not found yet, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+            setTimeout(attemptRefresh, delay);
+          } else {
+            console.warn('[SimpleAgreementPanel] Max retries reached, signature still not found');
           }
         } catch (e) {
-          console.error('[SimpleAgreementPanel] Failed to refresh after signing:', e);
+          if (retryCount < maxRetries) {
+            retryCount++;
+            const delay = initialDelay * Math.pow(2, retryCount - 1);
+            console.warn(`[SimpleAgreementPanel] Refresh error, retrying in ${delay}ms:`, e.message);
+            setTimeout(attemptRefresh, delay);
+          } else {
+            console.error('[SimpleAgreementPanel] Failed to refresh after max retries:', e);
+          }
         }
-      }, 2000); // Longer delay to ensure webhook has processed
-      return () => clearTimeout(timer);
+      };
+
+      attemptRefresh();
     }
   }, [dealId, roomId, isInvestor]);
 
