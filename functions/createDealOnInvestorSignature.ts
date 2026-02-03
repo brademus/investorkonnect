@@ -29,21 +29,50 @@ Deno.serve(async (req) => {
 
     console.log('[createDealOnInvestorSignature] Investor just signed base agreement:', agreementData.id);
 
-    // Find associated DealDraft
+    // Check if Deal already exists for this agreement (new flow creates it immediately)
+    const deals = await base44.asServiceRole.entities.Deal.filter({
+      current_legal_agreement_id: agreementData.id
+    });
+
+    if (deals && deals.length > 0) {
+      console.log('[createDealOnInvestorSignature] Deal already exists:', deals[0].id, '- creating invites');
+      
+      // Deal was created in MyAgreement.js - just create invites and update agreement
+      const deal = deals[0];
+      
+      try {
+        await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
+          deal_id: deal.id
+        });
+        console.log('[createDealOnInvestorSignature] Created agent invites');
+      } catch (e) {
+        console.error('[createDealOnInvestorSignature] Failed to create invites:', e.message);
+      }
+
+      return Response.json({
+        status: 'success',
+        deal_id: deal.id,
+        reason: 'invites_created_for_existing_deal'
+      });
+    }
+
+    // Fallback: Try to find DealDraft (old flow)
     const drafts = await base44.asServiceRole.entities.DealDraft.filter({
       legal_agreement_id: agreementData.id
     });
 
     if (!drafts || drafts.length === 0) {
-      console.error('[createDealOnInvestorSignature] No DealDraft found for agreement:', agreementData.id);
-      return Response.json({ status: 'error', error: 'no_deal_draft_found' }, { status: 404 });
+      console.warn('[createDealOnInvestorSignature] No Deal or DealDraft found - agreement may not be linked to deal');
+      return Response.json({ 
+        status: 'ignored', 
+        reason: 'no_deal_found' 
+      });
     }
 
     const draft = drafts[0];
-
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id);
 
-    // Create the Deal entity
+    // Create the Deal entity (old flow)
     const newDeal = await base44.asServiceRole.entities.Deal.create({
       title: draft.property_address,
       description: draft.special_notes || "",
