@@ -287,9 +287,9 @@ export default function MyAgreement() {
                <div className="col-span-2">
                  <p className="text-[#808080]">Buyer Commission</p>
                  <p className="text-[#FAFAFA] font-semibold">
-                   {(room?.proposed_terms || deal.proposed_terms)?.buyer_commission_type === 'percentage'
-                     ? `${(room?.proposed_terms || deal.proposed_terms)?.buyer_commission_percentage}%`
-                     : `$${((room?.proposed_terms || deal.proposed_terms)?.buyer_flat_fee || 0).toLocaleString()}`}
+                   {deal.buyerCommissionType === 'percentage'
+                     ? `${deal.buyerCommissionPercentage}%`
+                     : `$${(deal.buyerFlatFee || 0).toLocaleString()}`}
                  </p>
                </div>
              </div>
