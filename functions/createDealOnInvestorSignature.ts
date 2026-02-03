@@ -56,17 +56,30 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fallback: Try to find DealDraft (old flow)
-    const drafts = await base44.asServiceRole.entities.DealDraft.filter({
-      legal_agreement_id: agreementData.id
-    });
+    // Fallback: Try to find DealDraft by investor_profile_id + agreement_id link
+    const investorId = agreementData.investor_profile_id;
+    console.log('[createDealOnInvestorSignature] Looking for DealDraft for investor:', investorId);
+
+    let drafts = [];
+    if (investorId) {
+      drafts = await base44.asServiceRole.entities.DealDraft.filter({
+        investor_profile_id: investorId
+      });
+    }
+
+    // Filter by most recent created
+    if (drafts && drafts.length > 0) {
+      drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      drafts = [drafts[0]]; // Take most recent
+    }
 
     if (!drafts || drafts.length === 0) {
-      console.warn('[createDealOnInvestorSignature] No Deal or DealDraft found - agreement may not be linked to deal');
+      console.error('[createDealOnInvestorSignature] No DealDraft found for investor:', investorId);
       return Response.json({ 
-        status: 'ignored', 
-        reason: 'no_deal_found' 
-      });
+        status: 'error', 
+        error: 'no_deal_draft_found',
+        reason: 'Could not find DealDraft for this investor'
+      }, { status: 404 });
     }
 
     const draft = drafts[0];
