@@ -215,7 +215,7 @@ export default function MyAgreement() {
     <div className="min-h-screen bg-transparent px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
         <button
-          onClick={() => navigate(createPageUrl('Pipeline'))}
+          onClick={() => navigate(createPageUrl('NewDeal'))}
           className="text-[#808080] hover:text-[#E3C567] text-sm"
         >
           ← Back
