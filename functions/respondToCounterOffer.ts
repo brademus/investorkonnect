@@ -208,14 +208,23 @@ Deno.serve(async (req) => {
 
       console.log('[respondToCounterOffer] Counter marked accepted');
 
-      // CRITICAL: Mark ALL other pending counters in this room as superseded
-      // This prevents multiple conflicting accepted states
+      // CRITICAL: Mark ALL other pending counters ONLY in THIS SPECIFIC ROOM as superseded
+      // This prevents multiple conflicting accepted states within the same room
       const allCounters = await withRetry(async () => {
-        return await base44.asServiceRole.entities.CounterOffer.filter({
-          deal_id: counter.deal_id,
-          room_id: room_id || null, // Match room context exactly
-          status: 'pending'
-        });
+        if (room_id) {
+          // Room-scoped: only get counters for THIS specific room
+          return await base44.asServiceRole.entities.CounterOffer.filter({
+            room_id: room_id,
+            status: 'pending'
+          });
+        } else {
+          // Legacy deal-scoped
+          return await base44.asServiceRole.entities.CounterOffer.filter({
+            deal_id: counter.deal_id,
+            room_id: null,
+            status: 'pending'
+          });
+        }
       });
 
       const otherPendingCounters = (allCounters || []).filter(c => c.id !== counter_offer_id);
