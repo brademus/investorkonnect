@@ -51,46 +51,47 @@ export default function MyAgreement() {
           return;
         }
 
-        // Create DealDraft entity to store temporarily until signing
+        // Create Deal entity to use for agreement generation
         const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
         
-        const draft = await base44.entities.DealDraft.create({
-          investor_profile_id: profile.id,
+        const dealCreated = await base44.entities.Deal.create({
+          title: `${dealData.city}, ${dealData.state} - ${new Date().toLocaleDateString()}`,
+          investor_id: profile.id,
           property_address: dealData.propertyAddress,
           city: dealData.city,
           state: dealData.state,
           zip: dealData.zip,
           county: dealData.county,
           purchase_price: Number(cleanedPrice),
-          closing_date: dealData.closingDate,
-          contract_date: dealData.contractDate,
           property_type: dealData.propertyType || null,
-          beds: dealData.beds ? Number(dealData.beds) : null,
-          baths: dealData.baths ? Number(dealData.baths) : null,
-          sqft: dealData.sqft ? Number(dealData.sqft) : null,
-          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-          number_of_stories: dealData.numberOfStories || null,
-          has_basement: dealData.hasBasement || null,
-          seller_name: dealData.sellerName,
-          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-          number_of_signers: dealData.numberOfSigners,
-          second_signer_name: dealData.secondSignerName,
-          seller_commission_type: dealData.sellerCommissionType,
-          seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-          contract_url: dealData.contractUrl || null,
-          special_notes: dealData.specialNotes || null,
-          selected_agent_ids: agentIds
+          property_details: {
+            beds: dealData.beds ? Number(dealData.beds) : null,
+            baths: dealData.baths ? Number(dealData.baths) : null,
+            sqft: dealData.sqft ? Number(dealData.sqft) : null,
+            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+            number_of_stories: dealData.numberOfStories || null,
+            has_basement: dealData.hasBasement || null
+          },
+          seller_info: {
+            seller_name: dealData.sellerName,
+            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+            number_of_signers: dealData.numberOfSigners,
+            second_signer_name: dealData.secondSignerName
+          },
+          key_dates: {
+            closing_date: dealData.closingDate,
+            contract_date: dealData.contractDate
+          },
+          status: 'draft',
+          pipeline_stage: 'new_deals',
+          selected_agent_ids: agentIds,
+          special_notes: dealData.specialNotes || null
         });
 
-        console.log('[MyAgreement] Created DealDraft:', draft.id);
+        console.log('[MyAgreement] Created Deal:', dealCreated.id);
         
-        setDraftId(draft.id);
-        setDeal(dealData);
+        setDraftId(dealCreated.id);
+        setDeal({ ...dealData, id: dealCreated.id });
         setSelectedAgentIds(agentIds);
 
         // Load agent profiles
