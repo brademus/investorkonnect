@@ -34,48 +34,45 @@ export default function DocuSignReturn() {
             console.log('[DocuSignReturn] Sync optional');
           }
 
-          // Investor signing: create invites for all agents
-          if (dealId && !roomId) {
-            try {
-              console.log('[DocuSignReturn] Creating invites for deal:', dealId);
-              const res = await base44.functions.invoke('createInvitesAfterInvestorSign', { 
-                deal_id: dealId
-              });
+          // Investor signing: wait for automation to create deal, then verify room exists
+           if (dealId && !roomId) {
+             try {
+               console.log('[DocuSignReturn] Investor signature detected - waiting for deal creation automation');
 
-              console.log('[DocuSignReturn] Invites response:', res.data);
+               // Give the automation time to create the Deal and invites
+               // (createDealOnInvestorSignature runs on LegalAgreement update)
+               let attempts = 0;
+               const maxAttempts = 12; // ~6 seconds with 500ms intervals
+               let rooms = [];
 
-              if (res.data?.error) {
-                console.error('[DocuSignReturn] Invites error:', res.data.error);
-                toast.error(res.data.error);
-                throw new Error(res.data.error);
-              } else if (res.data?.ok || res.data?.room_id) {
-                console.log('[DocuSignReturn] ✓ Deal sent to agents, room_id:', res.data.room_id);
-                toast.success('Deal sent to agents!');
-                sessionStorage.removeItem('selectedAgentIds');
-                sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+               while (attempts < maxAttempts && rooms.length === 0) {
+                 await new Promise(resolve => setTimeout(resolve, 500));
+                 try {
+                   rooms = await base44.entities.Room.filter({ deal_id: dealId });
+                 } catch (e) {
+                   // Deal might not be queryable yet
+                 }
+                 attempts++;
+               }
 
-                // Wait for rooms to be queryable
-                await new Promise(resolve => setTimeout(resolve, 1500));
+               if (rooms?.length > 0) {
+                 console.log('[DocuSignReturn] ✓ Room found after automation, navigating to room');
+                 toast.success('Deal created and sent to agents!');
+                 sessionStorage.removeItem('selectedAgentIds');
+                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
 
-                const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-                console.log('[DocuSignReturn] Verified rooms exist after invites:', rooms.length);
-
-                if (rooms?.length > 0) {
-                  // Navigate to first room for investor to see their deal
-                  navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
-                  return;
-                } else {
-                  throw new Error('No rooms found after invites created');
-                }
-              } else {
-                throw new Error('Unexpected response: ' + JSON.stringify(res.data));
-              }
-            } catch (inviteError) {
-              console.error('[DocuSignReturn] Invite creation failed:', inviteError);
-              toast.error('Failed to send deal to agents: ' + inviteError.message);
-              throw inviteError;
-            }
-          }
+                 // Navigate to first room
+                 navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
+                 return;
+               } else {
+                 throw new Error('Room was not created by automation');
+               }
+             } catch (inviteError) {
+               console.error('[DocuSignReturn] Deal creation or room lookup failed:', inviteError);
+               toast.error('Failed to create deal: ' + inviteError.message);
+               throw inviteError;
+             }
+           }
 
           // Agent signing regenerated: void old agreement in this room only
           if (roomId && dealId) {
