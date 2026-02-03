@@ -464,10 +464,12 @@ Deno.serve(async (req) => {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0] || null;
 
-      // Prefer room-scoped terms over deal-level terms
+      // CRITICAL: ALWAYS use room.proposed_terms as single source of truth
       if (room?.proposed_terms) {
         exhibit_a = { ...exhibit_a, ...room.proposed_terms };
-        console.log('[generateLegalAgreement] Using room-scoped terms:', exhibit_a);
+        console.log('[generateLegalAgreement] Using room-scoped terms (single source of truth):', exhibit_a);
+      } else {
+        console.warn('[generateLegalAgreement] Room has no proposed_terms - this should not happen in room-scoped mode');
       }
     }
 

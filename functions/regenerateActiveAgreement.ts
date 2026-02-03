@@ -58,14 +58,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use room-scoped terms if available, otherwise fall back to deal terms
-    const effectiveTerms = (room?.proposed_terms && Object.keys(room.proposed_terms).length > 0) 
-      ? room.proposed_terms 
-      : deal.proposed_terms || {};
+    // CRITICAL: ALWAYS use room.proposed_terms as single source of truth
+    const effectiveTerms = room?.proposed_terms || {};
     
     if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
-        error: 'Missing buyer commission terms. Please set commission structure first.'
+        error: 'Missing buyer commission terms in room. Please set commission structure first.'
       }, { status: 400 });
     }
 

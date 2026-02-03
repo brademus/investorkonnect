@@ -1,5 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
+/**
+ * DEPRECATED - Use processCounterAction instead
+ * This function redirects to the new unified handler
+ */
+
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
