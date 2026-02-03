@@ -110,6 +110,7 @@ Deno.serve(async (req) => {
         let room = existingRoomsByAgent.get(agentId);
         if (!room) {
           // 1. Create Room - ACCEPTED status so agent sees it immediately
+          // CRITICAL: Create independent copy of terms for each room to ensure isolation
           room = await base44.asServiceRole.entities.Room.create({
             deal_id: deal_id,
             investorId: profile.id,
@@ -124,7 +125,7 @@ Deno.serve(async (req) => {
             zip: deal.zip,
             budget: deal.purchase_price,
             closing_date: deal.key_dates?.closing_date,
-            proposed_terms: deal.proposed_terms,
+            proposed_terms: deal.proposed_terms ? JSON.parse(JSON.stringify(deal.proposed_terms)) : {},
             requested_at: new Date().toISOString(),
             accepted_at: new Date().toISOString()
           });
