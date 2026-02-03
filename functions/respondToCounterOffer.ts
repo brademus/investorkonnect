@@ -36,12 +36,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Invalid action: accept, decline, or recounter' }, { status: 400 });
     }
     
-    // Load the counter offer
-    const counter = await withRetry(async () => {
-      const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
-      if (!counters?.length) throw new Error('Counter offer not found');
-      return counters[0];
-    });
+    // PARALLEL FETCH: Load counter + profile + deal/room in 1-2 queries
+    const [counter, userProfile] = await Promise.all([
+      withRetry(async () => {
+        const counters = await base44.asServiceRole.entities.CounterOffer.filter({ id: counter_offer_id });
+        if (!counters?.length) throw new Error('Counter offer not found');
+        return counters[0];
+      }),
+      withRetry(async () => {
+        const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+        if (!profiles?.length) throw new Error('Profile not found for user');
+        return profiles[0];
+      })
+    ]);
     
     const room_id = counter.room_id || null;
     console.log('[respondToCounterOffer] Counter loaded:', { 
@@ -58,13 +65,6 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
     
-    // Verify user is the recipient
-    const userProfile = await withRetry(async () => {
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      if (!profiles?.length) throw new Error('Profile not found for user');
-      return profiles[0];
-    });
-    
     const userRole = userProfile.user_role;
     console.log('[respondToCounterOffer] User role:', userRole, 'Counter recipient:', counter.to_role);
     
@@ -76,21 +76,31 @@ Deno.serve(async (req) => {
     
     const now = new Date().toISOString();
     
-    // Load deal for context
-    const deal = await withRetry(async () => {
-      const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
-      if (!deals?.length) throw new Error('Deal not found');
-      return deals[0];
-    });
-
-    // Room-scoped/legacy authorization after loading deal
+    // PARALLEL FETCH: Load deal + room (if needed) together
+    let deal, rm;
     if (counter.room_id) {
-      const rooms = await withRetry(async () => {
-        const rs = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
-        if (!rs?.length) throw new Error('Room not found for counter');
-        return rs;
+      [deal, rm] = await Promise.all([
+        withRetry(async () => {
+          const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
+          if (!deals?.length) throw new Error('Deal not found');
+          return deals[0];
+        }),
+        withRetry(async () => {
+          const rooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
+          if (!rooms?.length) throw new Error('Room not found for counter');
+          return rooms[0];
+        })
+      ]);
+    } else {
+      deal = await withRetry(async () => {
+        const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
+        if (!deals?.length) throw new Error('Deal not found');
+        return deals[0];
       });
-      const rm = rooms[0];
+    }
+
+    // Authorization check
+    if (counter.room_id) {
       if (userRole === 'agent') {
         if (rm.agentId !== userProfile.id || rm.request_status === 'expired') {
           return Response.json({ error: 'Not authorized for this room' }, { status: 403 });
@@ -248,31 +258,29 @@ Deno.serve(async (req) => {
 
       // CRITICAL: Only update THIS specific room's terms, never the deal or other rooms
       if (room_id) {
-        // Room-scoped: get current room terms and merge with accepted counter
-        const room = (await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0];
-        const baseTerms = room?.proposed_terms || {};
+        // Room-scoped: use already-loaded room data (rm) instead of fetching again
+        const baseTerms = rm?.proposed_terms || {};
         const mergedTerms = { ...baseTerms, ...acceptedTerms };
         
-        // Update ONLY this room - do NOT touch deal or other rooms
-        await base44.asServiceRole.entities.Room.update(room_id, {
-          proposed_terms: mergedTerms,
-          requires_regenerate: true,
-          agreement_status: 'draft' // Reset to draft to trigger regeneration
-        });
+        // PARALLEL: Update room + mark old agreement superseded together
+        const updates = [
+          base44.asServiceRole.entities.Room.update(room_id, {
+            proposed_terms: mergedTerms,
+            requires_regenerate: true,
+            agreement_status: 'draft'
+          })
+        ];
         
-        console.log('[respondToCounterOffer] ✓ Updated room', room_id, 'terms (isolated from other rooms)');
-        
-        // Mark old agreement as superseded
-        if (room?.current_legal_agreement_id) {
-          try {
-            await base44.asServiceRole.entities.LegalAgreement.update(room.current_legal_agreement_id, {
+        if (rm?.current_legal_agreement_id) {
+          updates.push(
+            base44.asServiceRole.entities.LegalAgreement.update(rm.current_legal_agreement_id, {
               status: 'superseded'
-            });
-            console.log('[respondToCounterOffer] ✓ Marked old agreement as superseded');
-          } catch (e) {
-            console.warn('[respondToCounterOffer] Failed to mark agreement superseded:', e?.message);
-          }
+            }).catch(e => console.warn('[respondToCounterOffer] Failed to mark agreement superseded:', e?.message))
+          );
         }
+        
+        await Promise.all(updates);
+        console.log('[respondToCounterOffer] ✓ Updated room', room_id, 'terms (isolated from other rooms)');
       } else {
         // Legacy deal-scoped mode (should rarely happen now)
         const baseTerms = deal.proposed_terms || {};
