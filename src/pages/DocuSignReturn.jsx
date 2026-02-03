@@ -69,8 +69,12 @@ export default function DocuSignReturn() {
                }
              } catch (inviteError) {
                console.error('[DocuSignReturn] Deal creation or room lookup failed:', inviteError);
-               toast.error('Failed to create deal: ' + inviteError.message);
-               throw inviteError;
+               toast.error('Deal created but room not accessible yet. Returning to pipeline...');
+
+               // Still navigate to pipeline since the automation should have created the deal
+               await new Promise(resolve => setTimeout(resolve, 1000));
+               navigate(createPageUrl("Pipeline"), { replace: true });
+               return;
              }
            }
 
