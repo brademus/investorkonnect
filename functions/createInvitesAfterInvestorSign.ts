@@ -42,10 +42,11 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No agents selected' }, { status: 400 });
     }
     
-    // Ensure proposed_terms has buyer commission (CRITICAL)
+    // Ensure proposed_terms has buyer commission (set defaults if needed)
     const proposedTerms = deal.proposed_terms || {};
     if (!proposedTerms.buyer_commission_type) {
-      return Response.json({ error: 'Missing buyer commission terms in deal' }, { status: 400 });
+      proposedTerms.buyer_commission_type = 'percentage';
+      proposedTerms.buyer_commission_percentage = 0;
     }
     
     // Check if room already exists for this deal
