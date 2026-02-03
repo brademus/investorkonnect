@@ -25,7 +25,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { deal_id, room_id } = await req.json();
+    const { deal_id, room_id, exhibit_a } = await req.json();
     if (!deal_id) {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
@@ -58,12 +58,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    // CRITICAL: ALWAYS use room.proposed_terms as single source of truth
-    const effectiveTerms = room?.proposed_terms || {};
+    // CRITICAL: Use exhibit_a from request if provided, otherwise fall back to room.proposed_terms or deal.proposed_terms
+    let effectiveTerms = exhibit_a || room?.proposed_terms || deal?.proposed_terms || {};
     
     if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
-        error: 'Missing buyer commission terms in room. Please set commission structure first.'
+        error: 'Missing buyer commission terms. Please set commission structure first.'
       }, { status: 400 });
     }
 
