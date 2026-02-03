@@ -199,7 +199,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
       const res = await base44.functions.invoke('regenerateActiveAgreement', {
         deal_id: dealId,
-        room_id: roomId,
+        room_id: roomId || undefined,
         exhibit_a: exhibit_a
       });
 
