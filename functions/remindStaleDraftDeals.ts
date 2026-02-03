@@ -30,6 +30,10 @@ Deno.serve(async (req) => {
       const investorId = deal.investor_id;
       if (!investorId) continue;
       
+      // Double-check the deal is still in draft (may have changed during loop)
+      const freshDeals = await base44.asServiceRole.entities.Deal.filter({ id: deal.id });
+      if (freshDeals.length === 0 || freshDeals[0].status !== 'draft') continue;
+      
       // Get investor profile
       const profiles = await base44.asServiceRole.entities.Profile.filter({ id: investorId });
       if (profiles.length === 0) continue;

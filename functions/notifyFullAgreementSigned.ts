@@ -13,10 +13,16 @@ Deno.serve(async (req) => {
     }
     
     const agreement = data;
+    const oldAgreement = body.old_data;
     
-    // Check if agreement is now fully_signed
+    // Check if agreement is now fully_signed (and wasn't before to avoid duplicate notifications)
     if (agreement.status !== 'fully_signed') {
       return Response.json({ success: true, message: 'Agreement not fully signed yet' });
+    }
+    
+    // Skip if it was already fully_signed (idempotency check)
+    if (oldAgreement?.status === 'fully_signed') {
+      return Response.json({ success: true, message: 'Agreement already was fully signed' });
     }
     
     // Get the room
