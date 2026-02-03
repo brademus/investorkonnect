@@ -62,14 +62,12 @@ export default function MyAgreement() {
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
         
-        // Don't create the Deal here - let the automation handle it after signing
-        // Instead, just create a DealDraft with the agreement link
-        return;
-
-        console.log('[MyAgreement] Created Deal:', dealCreated.id);
-        
-        setDraftId(dealCreated.id);
-        setDeal({ ...dealData, id: dealCreated.id });
+        // Store deal data in state (don't create Deal entity yet - automation will do it after signing)
+        setDeal({ 
+          ...dealData, 
+          proposed_terms: proposedTerms,
+          investor_id: profile.id
+        });
         setSelectedAgentIds(agentIds);
 
         // Load agent profiles
