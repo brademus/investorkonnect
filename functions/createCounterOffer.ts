@@ -40,6 +40,13 @@ Deno.serve(async (req) => {
     }
     const deal = deals[0];
     
+    // Load room if room_id provided (for room-scoped counters)
+    let room = null;
+    if (room_id) {
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      room = rooms?.[0] || null;
+    }
+    
     // Verify user is participant (room-scoped aware)
     if (from_role === 'investor') {
       if (deal.investor_id !== profile.id) {
@@ -47,9 +54,7 @@ Deno.serve(async (req) => {
       }
     } else if (from_role === 'agent') {
       if (room_id) {
-        const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-        const rm = rooms?.[0];
-        if (!rm || rm.agentId !== profile.id || rm.request_status === 'expired') {
+        if (!room || room.agentId !== profile.id || room.request_status === 'expired') {
           return Response.json({ error: 'Not authorized for this room' }, { status: 403 });
         }
       } else {
@@ -82,8 +87,13 @@ Deno.serve(async (req) => {
     }
     
     // Create new counter offer with original terms snapshot
+    // CRITICAL: Use room-specific terms if room_id provided, otherwise use deal terms
     const toRole = from_role === 'investor' ? 'agent' : 'investor';
-    const originalTerms = deal.proposed_terms || {};
+    const originalTerms = (room && room.proposed_terms && Object.keys(room.proposed_terms).length > 0) 
+      ? room.proposed_terms 
+      : deal.proposed_terms || {};
+    
+    console.log('[createCounterOffer] Using terms as baseline:', room_id ? 'room-scoped' : 'deal-level');
     
     const newCounter = await base44.asServiceRole.entities.CounterOffer.create({
       deal_id,
