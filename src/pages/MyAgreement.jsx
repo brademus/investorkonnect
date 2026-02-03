@@ -156,10 +156,21 @@ export default function MyAgreement() {
     return () => unsub?.();
   }, [dealId, room?.id]);
 
-  if (loadingProfile || loading || !deal) {
+  if (loadingProfile || loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
         <LoadingAnimation className="w-64 h-64 mx-auto" />
+      </div>
+    );
+  }
+
+  if (!deal) {
+    return (
+      <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
+        <div className="text-center">
+          <p className="text-sm text-[#808080]">No deal data found</p>
+          <button onClick={() => navigate(createPageUrl('NewDeal'))} className="mt-4 text-[#E3C567] hover:underline">Start over</button>
+        </div>
       </div>
     );
   }
