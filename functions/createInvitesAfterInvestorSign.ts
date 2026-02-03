@@ -142,8 +142,24 @@ Deno.serve(async (req) => {
       pipeline_stage: 'new_deals'
     });
 
-    console.log('[createInvitesAfterInvestorSign] Success - created room:', room.id, 'for deal:', deal_id);
-    return Response.json({ ok: true, room_id: room.id });
+    // Create DealInvite records for each agent (so they see it in their inbox)
+    const createdInvites = [];
+    for (const agentId of selectedAgentIds) {
+      const invite = await base44.asServiceRole.entities.DealInvite.create({
+        deal_id: deal_id,
+        investor_id: profile.id,
+        agent_profile_id: agentId,
+        room_id: room.id,
+        legal_agreement_id: baseAgreement.id,
+        status: 'PENDING_AGENT_SIGNATURE',
+        created_at_iso: new Date().toISOString()
+      });
+      createdInvites.push(invite.id);
+      console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id, 'for agent:', agentId);
+    }
+
+    console.log('[createInvitesAfterInvestorSign] Success - created room:', room.id, 'and', createdInvites.length, 'invites for deal:', deal_id);
+    return Response.json({ ok: true, room_id: room.id, invite_ids: createdInvites });
     
   } catch (error) {
     console.error('[createInvitesAfterInvestorSign] Error:', error);
