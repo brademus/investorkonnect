@@ -38,8 +38,15 @@ Deno.serve(async (req) => {
     }
     
     let selectedAgentIds = deal.selected_agent_ids || [];
+    console.log('[createInvitesAfterInvestorSign] Deal:', { 
+      id: deal.id, 
+      selected_agent_ids: selectedAgentIds,
+      agent_id: deal.agent_id 
+    });
+    
     if (selectedAgentIds.length === 0) {
-      return Response.json({ error: 'No agents selected' }, { status: 400 });
+      console.error('[createInvitesAfterInvestorSign] No agents selected on deal');
+      return Response.json({ error: 'No agents selected for this deal' }, { status: 400 });
     }
     
     // Ensure proposed_terms has buyer commission (set defaults if needed)
