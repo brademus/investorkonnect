@@ -42,6 +42,8 @@ Deno.serve(async (req) => {
     // Update ONLY this specific agent's terms in the room
     const agentTerms = room.agent_terms || {};
     const currentAgentTerms = agentTerms[agentId] || {};
+
+    // Merge counter terms with existing terms (preserve all fields)
     const updatedAgentTerms = {
       ...currentAgentTerms,
       ...(counterOffer.terms_delta || {})
