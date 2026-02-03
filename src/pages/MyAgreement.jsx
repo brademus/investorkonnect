@@ -197,10 +197,10 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, automation will handle deal creation
+  // After investor signs, automation will handle deal creation + invites
   const handlePostSigningNavigation = async () => {
-    console.log('[MyAgreement] Investor signed - automation will create deal');
-    
+    console.log('[MyAgreement] Investor signed - automation will create deal and invites');
+
     // Clear sessionStorage
     sessionStorage.removeItem('newDealDraft');
     sessionStorage.removeItem('selectedAgentIds');
@@ -210,9 +210,9 @@ export default function MyAgreement() {
     queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
     // Show success message
-    toast.success('Agreement signed! Your deal is being created...');
+    toast.success('Agreement signed! Your deal is being created and sent to agents...');
 
-    // Wait a moment for automation to complete, then navigate
+    // Wait for automation to complete, then navigate
     setTimeout(() => {
       navigate(createPageUrl('Pipeline'), { replace: true });
     }, 2000);
