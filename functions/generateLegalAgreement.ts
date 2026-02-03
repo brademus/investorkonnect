@@ -463,16 +463,30 @@ Deno.serve(async (req) => {
 
     // Load room (if room_id provided) to get room-scoped terms
     let room = null;
+    let agentIdForTerms = null;
     if (room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0] || null;
 
-      // CRITICAL: ALWAYS use room.proposed_terms as single source of truth
-      if (room?.proposed_terms) {
-        exhibit_a = { ...exhibit_a, ...room.proposed_terms };
-        console.log('[generateLegalAgreement] Using room-scoped terms (single source of truth):', exhibit_a);
+      if (!room) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
+      }
+      
+      // CRITICAL: Get terms for the specific agent from agent_terms
+      // For room-scoped generation, we need to know which agent - get from request body or first agent
+      const agentId = body.agent_profile_id || room.agent_ids?.[0];
+      if (!agentId) {
+        return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
+      }
+      
+      agentIdForTerms = agentId;
+      const agentTerms = room.agent_terms?.[agentId];
+      
+      if (agentTerms) {
+        exhibit_a = { ...exhibit_a, ...agentTerms };
+        console.log('[generateLegalAgreement] Using agent-specific terms for agent', agentId, ':', exhibit_a);
       } else {
-        console.warn('[generateLegalAgreement] Room has no proposed_terms - this should not happen in room-scoped mode');
+        console.warn('[generateLegalAgreement] Room has no terms for agent', agentId);
       }
     }
 
