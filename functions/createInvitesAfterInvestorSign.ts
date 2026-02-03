@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
         agent_terms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
       }
       
-      await base44.asServiceRole.entities.Room.create({
+      const newRoom = await base44.asServiceRole.entities.Room.create({
         deal_id: deal_id,
         investorId: profile.id,
         agent_ids: selectedAgentIds,
@@ -85,6 +85,8 @@ Deno.serve(async (req) => {
         requested_at: new Date().toISOString(),
         accepted_at: new Date().toISOString()
       });
+      console.log('[createInvitesAfterInvestorSign] Created new Room:', newRoom.id);
+      return newRoom;
     } else {
       // Update existing room to add any new agents
       const room = existingRooms[0];
