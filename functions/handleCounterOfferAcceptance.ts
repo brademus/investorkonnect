@@ -33,24 +33,26 @@ Deno.serve(async (req) => {
     
     const room = rooms[0];
     
-    // Merge the counter offer terms with existing proposed terms
+    // Merge the counter offer terms with existing proposed terms - ONLY for this agent's room
     const updatedTerms = {
       ...(room.proposed_terms || {}),
       ...(counterOffer.terms_delta || {})
     };
-    
-    // Update the room with new terms and set requires_regenerate flag
+
+    // Update ONLY this agent's room with new terms and flag for agreement regeneration
+    // This keeps each agent's terms isolated - other agents' rooms are unaffected
     await base44.asServiceRole.entities.Room.update(roomId, {
       proposed_terms: updatedTerms,
       requires_regenerate: true
     });
-    
-    // Mark all other pending counter offers for this room as superseded
+
+    // Mark all OTHER pending counters for THIS ROOM as superseded
+    // This ensures only one counter per agent is in flight at a time
     const pendingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
       room_id: roomId,
       status: 'pending'
     });
-    
+
     for (const pending of pendingCounters) {
       if (pending.id !== counterOffer.id) {
         await base44.asServiceRole.entities.CounterOffer.update(pending.id, {
