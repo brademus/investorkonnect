@@ -55,11 +55,10 @@ export default function NewDeal() {
   const [county, setCounty] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
-  // Load draft from sessionStorage when editing or returning from verification error
+  // Load draft from sessionStorage when editing, returning from verification, or navigating back
   useEffect(() => {
     const isEditing = !!dealId;
-    const shouldLoad = isEditing || fromVerify;
-    if (!shouldLoad) return;
+    const shouldLoad = isEditing || fromVerify || true; // Always try to load draft
     const raw = sessionStorage.getItem('newDealDraft');
     if (!raw) return;
     try {
