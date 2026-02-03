@@ -62,11 +62,46 @@ export default function MyAgreement() {
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
         
-        // Store deal data in state (don't create Deal entity yet - automation will do it after signing)
+        // Create DealDraft so automation can find it after investor signs
+        const draftCreated = await base44.entities.DealDraft.create({
+          investor_profile_id: profile.id,
+          property_address: dealData.propertyAddress,
+          city: dealData.city,
+          state: dealData.state,
+          zip: dealData.zip,
+          county: dealData.county,
+          purchase_price: Number(cleanedPrice),
+          property_type: dealData.propertyType || null,
+          beds: dealData.beds ? Number(dealData.beds) : null,
+          baths: dealData.baths ? Number(dealData.baths) : null,
+          sqft: dealData.sqft ? Number(dealData.sqft) : null,
+          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+          number_of_stories: dealData.numberOfStories || null,
+          has_basement: dealData.hasBasement || null,
+          seller_name: dealData.sellerName,
+          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+          number_of_signers: dealData.numberOfSigners,
+          second_signer_name: dealData.secondSignerName,
+          buyer_commission_type: dealData.buyerCommissionType,
+          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
+          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+          contract_url: dealData.contractUrl || null,
+          special_notes: dealData.specialNotes || null,
+          closing_date: dealData.closingDate,
+          contract_date: dealData.contractDate,
+          selected_agent_ids: agentIds
+        });
+
+        console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+
+        // Store deal data in state with draft reference
+        setDraft(draftCreated);
         setDeal({ 
           ...dealData, 
           proposed_terms: proposedTerms,
-          investor_id: profile.id
+          investor_id: profile.id,
+          draft_id: draftCreated.id
         });
         setSelectedAgentIds(agentIds);
 
