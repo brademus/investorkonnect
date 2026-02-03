@@ -84,10 +84,10 @@ Deno.serve(async (req) => {
       const newAgentIds = selectedAgentIds.filter(id => !currentAgentIds.includes(id));
       
       if (newAgentIds.length > 0) {
-        const updatedAgentTerms = room.agent_terms || {};
-        for (const agentId of newAgentIds) {
-          updatedAgentTerms[agentId] = deal.proposed_terms ? JSON.parse(JSON.stringify(deal.proposed_terms)) : {};
-        }
+         const updatedAgentTerms = room.agent_terms || {};
+         for (const agentId of newAgentIds) {
+           updatedAgentTerms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
+         }
         
         await base44.asServiceRole.entities.Room.update(room.id, {
           agent_ids: [...currentAgentIds, ...newAgentIds],
