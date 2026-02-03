@@ -353,33 +353,7 @@ Deno.serve(async (req) => {
         console.log('[DocuSign Webhook] Signatures - investor:', investorSigned, 'agent:', agentSigned);
         
         // Determine status and lock-in logic based on signer_mode
-        if (signerMode === 'agent_only' && agentSigned) {
-          // Agent-only: agent signature LOCKS the deal (first to sign wins)
-          updates.status = 'fully_signed';
-          
-          // Download signed PDF
-          try {
-            const pdfBuffer = await downloadSignedPdf(base44, envelopeId);
-            const pdfHash = await sha256(pdfBuffer);
-            
-            const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
-            const file = new File([blob], `agreement_${agreement.id}_signed.pdf`);
-            const uploadResponse = await base44.integrations.Core.UploadFile({ file });
-            
-            updates.signed_pdf_url = uploadResponse.file_url;
-            updates.signed_pdf_sha256 = pdfHash;
-            
-            console.log('[DocuSign Webhook] Signed PDF uploaded for agent_only:', uploadResponse.file_url);
-          } catch (error) {
-            console.error('[DocuSign Webhook] Failed to download/upload signed PDF:', error);
-          }
-          
-          // LOCK THE DEAL to this agent/room
-          if (agreement.room_id) {
-            await enforceDealLockIn(base44, agreement.deal_id, agreement.room_id);
-          }
-          
-        } else if (signerMode === 'investor_only' && investorSigned) {
+        if (signerMode === 'investor_only' && investorSigned) {
           // Investor-only: just marks investor signed, doesn't lock deal
           updates.status = 'investor_signed';
           
@@ -421,25 +395,8 @@ Deno.serve(async (req) => {
         } else if (signerMode === 'both' && investorSigned && !agentSigned) {
           updates.status = 'investor_signed';
         } else if (signerMode === 'both' && !investorSigned && agentSigned) {
-          // Should not happen (agent should be gated), but handle gracefully
+          // Agent signed first in counter-accepted agreement (should wait for investor)
           updates.status = 'agent_signed';
-          
-          // PHASE 7: Also update Room.current_legal_agreement_id and sync agreement status
-          if (agreement.room_id && agreement.id) {
-            try {
-              await base44.asServiceRole.entities.Room.update(agreement.room_id, {
-                current_legal_agreement_id: agreement.id,
-                agreement_status: 'fully_signed',
-                request_status: 'signed',
-                signed_at: new Date().toISOString(),
-                is_fully_signed: true,
-                requires_regenerate: false // Clear regenerate flag on full signature
-              });
-              console.log('[DocuSign Webhook] ✓ Updated Room to fully_signed status');
-            } catch (e) {
-              console.warn('[DocuSign Webhook] Failed to update Room status:', e?.message);
-            }
-          }
         } else if (investorSigned && !agreement.investor_signed_at) {
           updates.status = 'investor_signed';
           
@@ -483,113 +440,18 @@ Deno.serve(async (req) => {
             }
           }
           
-          // After investor signs investor_only agreement, trigger invite creation
+          // CRITICAL: After investor signs base agreement, call createInvitesAfterInvestorSign
           if (signerMode === 'investor_only' && !agreement.room_id) {
-            // This is the base agreement - create invites for all agents
             try {
-              // Get deal with selected agent IDs
-              const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
-                const deal = deals[0];
-                const selectedAgentIds = deal?.selected_agent_ids || deal?.metadata?.selected_agent_ids || [];
-              
-              if (selectedAgentIds.length > 0) {
-                console.log('[DocuSign Webhook] Creating invites for', selectedAgentIds.length, 'agents');
-                console.log('[DocuSign Webhook] deal.selected_agent_ids:', deal.selected_agent_ids);
-                console.log('[DocuSign Webhook] deal.metadata?.selected_agent_ids:', deal.metadata?.selected_agent_ids);
-
-                // Check if invites already exist (idempotency)
-                const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: deal.id });
-                
-                if (existingInvites.length === 0) {
-                  // Get investor profile
-                  const profiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id });
-                  const investorProfile = profiles[0];
-                  
-                  if (investorProfile) {
-                    // Prepare exhibit_a for agreements
-                    const exhibit_a = {
-                      transaction_type: 'ASSIGNMENT',
-                      compensation_model: deal.proposed_terms?.seller_commission_type === 'percentage' ? 'COMMISSION_PCT' : 'FLAT_FEE',
-                      commission_percentage: deal.proposed_terms?.seller_commission_percentage || 3,
-                      flat_fee_amount: deal.proposed_terms?.seller_flat_fee || 5000,
-                      buyer_commission_type: deal.proposed_terms?.buyer_commission_type || 'percentage',
-                      buyer_commission_percentage: deal.proposed_terms?.buyer_commission_percentage || 3,
-                      buyer_flat_fee: deal.proposed_terms?.buyer_flat_fee || 5000,
-                      agreement_length_days: deal.proposed_terms?.agreement_length || 180,
-                      exclusive_agreement: true
-                    };
-                    
-                    // Create invite for each agent
-                    for (const agentId of selectedAgentIds) {
-                     try {
-                       // 1. Create Room for this agent - ACCEPTED status (investor already signed)
-                       const room = await base44.asServiceRole.entities.Room.create({
-                         deal_id: deal.id,
-                         investorId: investorProfile.id,
-                         agentId: agentId,
-                         request_status: 'accepted', // IMPORTANT: accepted, not requested
-                         agreement_status: 'sent', // Agent can sign
-                         title: deal.title,
-                         property_address: deal.property_address,
-                         city: deal.city,
-                         state: deal.state,
-                         county: deal.county,
-                         zip: deal.zip,
-                         budget: deal.purchase_price,
-                         closing_date: deal.key_dates?.closing_date,
-                         proposed_terms: deal.proposed_terms,
-                         requested_at: new Date().toISOString(),
-                         accepted_at: new Date().toISOString()
-                       });
-
-                       console.log('[DocuSign Webhook] Created room:', room.id, 'for agent:', agentId);
-
-                       // 2. Generate agent-only agreement
-                       const genRes = await base44.functions.invoke('generateLegalAgreement', {
-                         deal_id: deal.id,
-                         room_id: room.id,
-                         signer_mode: 'agent_only',
-                         source_base_agreement_id: agreement.id,
-                         exhibit_a
-                       });
-                        
-                        if (genRes.data?.success) {
-                          const newAgreement = genRes.data.agreement;
-                          
-                          // 3. Update room with agreement ID
-                          await base44.asServiceRole.entities.Room.update(room.id, {
-                            current_legal_agreement_id: newAgreement.id,
-                            agreement_status: 'sent'
-                          });
-                          
-                          // 4. Create DealInvite
-                          await base44.asServiceRole.entities.DealInvite.create({
-                            deal_id: deal.id,
-                            investor_id: investorProfile.id,
-                            agent_profile_id: agentId,
-                            room_id: room.id,
-                            legal_agreement_id: newAgreement.id,
-                            status: 'PENDING_AGENT_SIGNATURE',
-                            created_at_iso: new Date().toISOString()
-                          });
-                          
-                          console.log('[DocuSign Webhook] Created invite for agent:', agentId);
-                        }
-                      } catch (error) {
-                        console.error('[DocuSign Webhook] Failed to create invite for agent', agentId, ':', error);
-                      }
-                    }
-                    
-                    console.log('[DocuSign Webhook] ✓ Created invites after investor signature');
-                    }
-                    } else {
-                    console.log('[DocuSign Webhook] Invites already exist, skipping');
-                    }
-                    }
-                    } catch (e) {
-                    console.warn('[DocuSign Webhook] Failed to create invites:', e?.message || e);
-                    }
-                    }
+              console.log('[DocuSign Webhook] Invoking createInvitesAfterInvestorSign for deal:', agreement.deal_id);
+              await base44.functions.invoke('createInvitesAfterInvestorSign', {
+                deal_id: agreement.deal_id
+              });
+              console.log('[DocuSign Webhook] ✓ Invites created after investor signature');
+            } catch (e) {
+              console.warn('[DocuSign Webhook] Failed to create invites:', e?.message || e);
+            }
+          }
         break;
         
       case 'voided':
