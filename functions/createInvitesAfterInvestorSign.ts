@@ -42,14 +42,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No agents selected' }, { status: 400 });
     }
     
+    // Ensure proposed_terms has buyer commission (CRITICAL)
+    const proposedTerms = deal.proposed_terms || {};
+    if (!proposedTerms.buyer_commission_type) {
+      return Response.json({ error: 'Missing buyer commission terms in deal' }, { status: 400 });
+    }
+    
     // Check if room already exists for this deal
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
     
     if (existingRooms.length === 0) {
-      // Create ONE room for all agents
+      // Create ONE room for all agents - each agent gets same initial terms
       const agent_terms = {};
       for (const agentId of selectedAgentIds) {
-        agent_terms[agentId] = deal.proposed_terms ? JSON.parse(JSON.stringify(deal.proposed_terms)) : {};
+        agent_terms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
       }
       
       await base44.asServiceRole.entities.Room.create({
