@@ -7,9 +7,6 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    
     const body = await req.json();
     const { deal_id } = body;
     
@@ -17,25 +14,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get investor profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
-    
-    // Get deal
+    // Get deal first (use service role as this might be called from automation)
     const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
     if (!deals || deals.length === 0) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
+      return Response.json({ error: 'Deal not found', status: 404 }, { status: 404 });
     }
     const deal = deals[0];
     
-    // Verify authorization
-    const isAdmin = user.role === 'admin' || profile.role === 'admin';
-    if (deal.investor_id !== profile.id && !isAdmin) {
-      return Response.json({ error: 'Not authorized' }, { status: 403 });
+    // Get investor profile using deal's investor_id
+    const profiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id });
+    if (!profiles || profiles.length === 0) {
+      return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
+    const profile = profiles[0];
     
     let selectedAgentIds = deal.selected_agent_ids || [];
     console.log('[createInvitesAfterInvestorSign] Deal:', { 
