@@ -90,7 +90,10 @@ export default function MyAgreement() {
           special_notes: dealData.specialNotes || null,
           closing_date: dealData.closingDate,
           contract_date: dealData.contractDate,
-          selected_agent_ids: agentIds
+          selected_agent_ids: agentIds,
+          seller_commission_type: dealData.sellerCommissionType,
+          seller_commission_percentage: dealData.sellerCommissionType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+          seller_flat_fee: dealData.sellerCommissionType === 'flat_fee' ? Number(dealData.sellerFlatFee) : null
         });
 
         console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
