@@ -27,55 +27,87 @@ export default function MyAgreement() {
   const [pendingCounters, setPendingCounters] = useState([]);
   const loadedRef = useRef(false);
 
-  // Load deal, selected agents, and agreement state
+  // Load deal data from sessionStorage and create deal when ready
   useEffect(() => {
-    if (!dealId || !profile || loadedRef.current) return;
+    if (!profile || loadedRef.current) return;
     loadedRef.current = true;
 
     (async () => {
       try {
-        const dealRes = await base44.functions.invoke('getDealDetailsForUser', { dealId });
-        const loadedDeal = dealRes?.data?.deal || dealRes?.data;
-        setDeal(loadedDeal);
-
-        // Load agreement FIRST to check if investor already signed
-        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId });
-        const loadedAgreement = agRes?.data?.agreement || null;
-        setAgreement(loadedAgreement);
-
-        // Load all rooms for this deal
-        const roomsForDeal = await base44.entities.Room.filter({ deal_id: dealId });
-
-        // For investor: load first room with counter offers
-        if (profile?.user_role === 'investor' && roomsForDeal?.length > 0) {
-          setRoom(roomsForDeal[0]);
-
-          // Load STRICTLY pending counter offers from agents (exclude accepted/completed)
-          const counters = await base44.entities.CounterOffer.filter({ 
-            room_id: roomsForDeal[0].id,
-            status: 'pending'
-          });
-          // Double-check status locally to ensure no non-pending slip through
-          const strictlyPending = (counters || []).filter(c => c.status === 'pending');
-          setPendingCounters(strictlyPending);
-        }
-
-        // CRITICAL: If investor already signed and rooms exist, redirect immediately
-        // Check BOTH agreement and room status for signed state
-        const hasSignedStatus = loadedAgreement?.investor_signed_at || 
-                               roomsForDeal.some(r => r.agreement_status === 'investor_signed' || r.agreement_status === 'fully_signed');
-
-        if (roomsForDeal?.length > 0 && profile?.user_role === 'investor' && hasSignedStatus) {
-          console.log('[MyAgreement] Investor already signed and rooms exist, redirecting to Room');
-          navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`, { replace: true });
+        // Load deal data from sessionStorage
+        const draftData = sessionStorage.getItem('newDealDraft');
+        if (!draftData) {
+          toast.error('No deal data found. Please start over.');
+          navigate(createPageUrl('Pipeline'), { replace: true });
           return;
         }
 
-        // Load selected agent IDs from deal or sessionStorage
-        const storedAgentIds = sessionStorage.getItem("selectedAgentIds");
-        const agentIds = loadedDeal?.selected_agent_ids || loadedDeal?.metadata?.selected_agent_ids || (storedAgentIds ? JSON.parse(storedAgentIds) : []);
+        const dealData = JSON.parse(draftData);
+        const agentIds = dealData.selectedAgentIds || [];
 
+        if (agentIds.length === 0) {
+          toast.error('No agents selected. Please start over.');
+          navigate(createPageUrl('Pipeline'), { replace: true });
+          return;
+        }
+
+        // Create the deal NOW (only when investor reaches this page)
+        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+        
+        const newDeal = await base44.entities.Deal.create({
+          title: dealData.propertyAddress,
+          description: dealData.specialNotes || "",
+          property_address: dealData.propertyAddress,
+          city: dealData.city,
+          state: dealData.state,
+          zip: dealData.zip,
+          county: dealData.county,
+          purchase_price: Number(cleanedPrice),
+          key_dates: {
+            closing_date: dealData.closingDate,
+            contract_date: dealData.contractDate,
+          },
+          property_type: dealData.propertyType || null,
+          property_details: {
+            beds: dealData.beds ? Number(dealData.beds) : null,
+            baths: dealData.baths ? Number(dealData.baths) : null,
+            sqft: dealData.sqft ? Number(dealData.sqft) : null,
+            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+            number_of_stories: dealData.numberOfStories || null,
+            has_basement: dealData.hasBasement || null,
+          },
+          seller_info: {
+            seller_name: dealData.sellerName,
+            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+            number_of_signers: dealData.numberOfSigners,
+            second_signer_name: dealData.secondSignerName,
+          },
+          proposed_terms: {
+            seller_commission_type: dealData.sellerCommissionType,
+            seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
+            seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
+            buyer_commission_type: dealData.buyerCommissionType,
+            buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
+            buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
+            agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+          },
+          contract_document: dealData.contractUrl ? {
+            url: dealData.contractUrl,
+            name: "contract.pdf",
+            uploaded_at: new Date().toISOString()
+          } : null,
+          status: "draft",
+          pipeline_stage: "new_deals",
+          investor_id: profile.id,
+          selected_agent_ids: agentIds,
+          pending_agreement_generation: true
+        });
+
+        setDeal(newDeal);
         setSelectedAgentIds(agentIds);
+
+        // Update URL with dealId
+        navigate(`${createPageUrl("MyAgreement")}?dealId=${newDeal.id}`, { replace: true });
 
         // Load agent profiles
         if (agentIds.length > 0) {
@@ -86,12 +118,14 @@ export default function MyAgreement() {
           setAgentProfiles(agents.filter(Boolean));
         }
       } catch (e) {
-        toast.error('Failed to load agreement');
+        console.error('[MyAgreement] Error creating deal:', e);
+        toast.error('Failed to create deal');
+        navigate(createPageUrl('Pipeline'), { replace: true });
       } finally {
         setLoading(false);
       }
     })();
-  }, [dealId, navigate, profile]);
+  }, [navigate, profile]);
 
   // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
   useEffect(() => {
