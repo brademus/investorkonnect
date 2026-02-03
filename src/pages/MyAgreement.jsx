@@ -169,13 +169,19 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, wait for invites to be created then redirect
+  // After investor signs, create invites for agents immediately then redirect
   const handlePostSigningNavigation = async () => {
     if (!dealId) return;
 
     try {
-      // Wait for invites to be created by DocuSignReturn
-      await new Promise(r => setTimeout(r, 1000));
+      console.log('[MyAgreement] Investor signed, creating agent invites...');
+      
+      // CRITICAL: Create invites for all selected agents immediately
+      await base44.functions.invoke('createInvitesAfterInvestorSign', { 
+        deal_id: dealId 
+      });
+      
+      console.log('[MyAgreement] Agent invites created successfully');
 
       // Clear caches
       queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
@@ -184,7 +190,8 @@ export default function MyAgreement() {
       // Navigate to Pipeline to see the deal
       navigate(createPageUrl('Pipeline'), { replace: true });
     } catch (e) {
-      console.error('[MyAgreement] Navigation error:', e);
+      console.error('[MyAgreement] Error creating invites:', e);
+      // Still navigate even if invite creation fails
       navigate(createPageUrl('Pipeline'), { replace: true });
     }
   };
