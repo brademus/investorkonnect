@@ -437,6 +437,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
+    const draft_id = body.draft_id;
     const deal_id = body.deal_id;
     const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
     let exhibit_a = body.exhibit_a || {};
