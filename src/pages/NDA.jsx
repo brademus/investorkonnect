@@ -122,32 +122,29 @@ function NDAContent() {
     try {
       devLog('[NDA] Updating profile directly with NDA acceptance...');
       
-      // Directly update the profile - skip the backend function that may have issues
-      if (profile && profile.id) {
-        await base44.entities.Profile.update(profile.id, {
-          nda_accepted: true,
-          nda_accepted_at: new Date().toISOString(),
-          nda_version: 'v1.0'
-        });
-        devLog('[NDA] ✅ Profile updated with NDA flags');
-        
-        const response = { data: { ok: true } };
-        
-          toast.success("NDA accepted successfully!");
-        
-        // Force profile refresh to load new data
-        devLog('[NDA] Refreshing profile...');
-        await refresh();
-        
-        // Small delay to ensure state is updated
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Navigate to Dashboard
-        devLog('[NDA] Navigating to Dashboard...');
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      } else {
+      // Get fresh profile data to ensure we have the latest
+      let currentProfile = profile;
+      if (!currentProfile?.id) {
+        const profiles = await base44.entities.Profile.filter({ user_id: user?.id });
+        currentProfile = profiles[0];
+      }
+      
+      if (!currentProfile?.id) {
         throw new Error("Profile not available");
       }
+      
+      await base44.entities.Profile.update(currentProfile.id, {
+        nda_accepted: true,
+        nda_accepted_at: new Date().toISOString(),
+        nda_version: 'v1.0'
+      });
+      devLog('[NDA] ✅ Profile updated with NDA flags');
+      
+      toast.success("NDA accepted successfully!");
+      
+      // Hard navigate to ensure fresh page load with updated profile
+      devLog('[NDA] Navigating to Pipeline...');
+      window.location.href = createPageUrl("Pipeline");
     } catch (error) {
       devLog('[NDA] ❌ Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
