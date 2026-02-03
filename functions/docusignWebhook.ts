@@ -352,8 +352,40 @@ Deno.serve(async (req) => {
         
         console.log('[DocuSign Webhook] Signatures - investor:', investorSigned, 'agent:', agentSigned);
         
-        // Determine status and lock-in logic based on signer_mode
-        if (signerMode === 'investor_only' && investorSigned) {
+        // CRITICAL: Check if this is an agent signing a shared base agreement (first-to-sign-wins)
+        // This happens when ANY agent signs the investor_only base agreement via their room
+        const isAgentSigningBaseAgreement = (
+          signerMode === 'investor_only' && 
+          agentSigned && 
+          agreement.room_id // Room-specific signing of base agreement
+        );
+        
+        if (isAgentSigningBaseAgreement) {
+          console.log('[DocuSign Webhook] AGENT SIGNED BASE AGREEMENT - First-to-sign-wins!');
+          updates.status = 'fully_signed';
+          
+          // Download signed PDF
+          try {
+            const pdfBuffer = await downloadSignedPdf(base44, envelopeId);
+            const pdfHash = await sha256(pdfBuffer);
+            
+            const blob = new Blob([pdfBuffer], { type: 'application/pdf' });
+            const file = new File([blob], `agreement_${agreement.id}_signed.pdf`);
+            const uploadResponse = await base44.integrations.Core.UploadFile({ file });
+            
+            updates.signed_pdf_url = uploadResponse.file_url;
+            updates.signed_pdf_sha256 = pdfHash;
+            updates.agent_signed_at = new Date().toISOString();
+            
+            console.log('[DocuSign Webhook] Signed PDF uploaded:', uploadResponse.file_url);
+          } catch (error) {
+            console.error('[DocuSign Webhook] Failed to download/upload signed PDF:', error);
+          }
+          
+          // LOCK THE DEAL to this agent/room
+          await enforceDealLockIn(base44, agreement.deal_id, agreement.room_id);
+          
+        } else if (signerMode === 'investor_only' && investorSigned) {
           // Investor-only: just marks investor signed, doesn't lock deal
           updates.status = 'investor_signed';
           
