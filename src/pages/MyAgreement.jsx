@@ -51,8 +51,16 @@ export default function MyAgreement() {
           return;
         }
 
-        // Create Deal entity to use for agreement generation
+        // Create Deal entity with proposed_terms (buyer commission) for agreement generation
         const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+        
+        // Build proposed_terms from deal data
+        const proposedTerms = {
+          buyer_commission_type: dealData.buyerCommissionType,
+          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
+          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
+        };
         
         const dealCreated = await base44.entities.Deal.create({
           title: `${dealData.city}, ${dealData.state} - ${new Date().toLocaleDateString()}`,
@@ -85,7 +93,8 @@ export default function MyAgreement() {
           status: 'draft',
           pipeline_stage: 'new_deals',
           selected_agent_ids: agentIds,
-          special_notes: dealData.specialNotes || null
+          special_notes: dealData.specialNotes || null,
+          proposed_terms: proposedTerms
         });
 
         console.log('[MyAgreement] Created Deal:', dealCreated.id);
