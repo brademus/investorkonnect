@@ -277,9 +277,9 @@ export default function MyAgreement() {
 
 
         <SimpleAgreementPanel 
-          dealId={deal?.id || draftId}
+          dealId={draft?.id}
           dealData={deal}
-          draftId={draftId}
+          draftId={draft?.id}
           roomId={room?.id}
           agreement={agreement}
           room={room}
