@@ -25,9 +25,10 @@ export default function MyAgreement() {
   const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
   const [room, setRoom] = useState(null);
   const [pendingCounters, setPendingCounters] = useState([]);
+  const [draftId, setDraftId] = useState(null);
   const loadedRef = useRef(false);
 
-  // Load deal data from sessionStorage only - NO deal created until after signing
+  // Load deal data from sessionStorage and create DealDraft
   useEffect(() => {
     if (!profile || loadedRef.current) return;
     loadedRef.current = true;
@@ -51,7 +52,45 @@ export default function MyAgreement() {
           return;
         }
 
-        // Store deal data in state (NO entity created yet)
+        // Create DealDraft entity to store temporarily until signing
+        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+        
+        const draft = await base44.entities.DealDraft.create({
+          investor_profile_id: profile.id,
+          property_address: dealData.propertyAddress,
+          city: dealData.city,
+          state: dealData.state,
+          zip: dealData.zip,
+          county: dealData.county,
+          purchase_price: Number(cleanedPrice),
+          closing_date: dealData.closingDate,
+          contract_date: dealData.contractDate,
+          property_type: dealData.propertyType || null,
+          beds: dealData.beds ? Number(dealData.beds) : null,
+          baths: dealData.baths ? Number(dealData.baths) : null,
+          sqft: dealData.sqft ? Number(dealData.sqft) : null,
+          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+          number_of_stories: dealData.numberOfStories || null,
+          has_basement: dealData.hasBasement || null,
+          seller_name: dealData.sellerName,
+          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+          number_of_signers: dealData.numberOfSigners,
+          second_signer_name: dealData.secondSignerName,
+          seller_commission_type: dealData.sellerCommissionType,
+          seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
+          seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
+          buyer_commission_type: dealData.buyerCommissionType,
+          buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
+          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+          contract_url: dealData.contractUrl || null,
+          special_notes: dealData.specialNotes || null,
+          selected_agent_ids: agentIds
+        });
+
+        console.log('[MyAgreement] Created DealDraft:', draft.id);
+        
+        setDraftId(draft.id);
         setDeal(dealData);
         setSelectedAgentIds(agentIds);
 
@@ -149,95 +188,25 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, CREATE the deal then create invites for agents
+  // After investor signs, automation will handle deal creation
   const handlePostSigningNavigation = async () => {
-    try {
-      console.log('[MyAgreement] Investor signed, creating deal...');
-      
-      const draftData = sessionStorage.getItem('newDealDraft');
-      if (!draftData) {
-        toast.error('Deal data lost. Please start over.');
-        navigate(createPageUrl('Pipeline'), { replace: true });
-        return;
-      }
+    console.log('[MyAgreement] Investor signed - automation will create deal');
+    
+    // Clear sessionStorage
+    sessionStorage.removeItem('newDealDraft');
+    sessionStorage.removeItem('selectedAgentIds');
 
-      const dealData = JSON.parse(draftData);
-      const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-      
-      // NOW create the deal entity after investor signed
-      const newDeal = await base44.entities.Deal.create({
-        title: dealData.propertyAddress,
-        description: dealData.specialNotes || "",
-        property_address: dealData.propertyAddress,
-        city: dealData.city,
-        state: dealData.state,
-        zip: dealData.zip,
-        county: dealData.county,
-        purchase_price: Number(cleanedPrice),
-        key_dates: {
-          closing_date: dealData.closingDate,
-          contract_date: dealData.contractDate,
-        },
-        property_type: dealData.propertyType || null,
-        property_details: {
-          beds: dealData.beds ? Number(dealData.beds) : null,
-          baths: dealData.baths ? Number(dealData.baths) : null,
-          sqft: dealData.sqft ? Number(dealData.sqft) : null,
-          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-          number_of_stories: dealData.numberOfStories || null,
-          has_basement: dealData.hasBasement || null,
-        },
-        seller_info: {
-          seller_name: dealData.sellerName,
-          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-          number_of_signers: dealData.numberOfSigners,
-          second_signer_name: dealData.secondSignerName,
-        },
-        proposed_terms: {
-          seller_commission_type: dealData.sellerCommissionType,
-          seller_commission_percentage: dealData.sellerCommissionPercentage ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: dealData.sellerFlatFee ? Number(dealData.sellerFlatFee) : null,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-        },
-        contract_document: dealData.contractUrl ? {
-          url: dealData.contractUrl,
-          name: "contract.pdf",
-          uploaded_at: new Date().toISOString()
-        } : null,
-        status: "active",
-        pipeline_stage: "new_deals",
-        investor_id: profile.id,
-        selected_agent_ids: dealData.selectedAgentIds || [],
-        pending_agreement_generation: false
-      });
+    // Clear caches
+    queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+    queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
-      console.log('[MyAgreement] Deal created:', newDeal.id);
-      
-      // CRITICAL: Create invites for all selected agents
-      await base44.functions.invoke('createInvitesAfterInvestorSign', { 
-        deal_id: newDeal.id 
-      });
-      
-      console.log('[MyAgreement] Agent invites created successfully');
+    // Show success message
+    toast.success('Agreement signed! Your deal is being created...');
 
-      // Clear sessionStorage
-      sessionStorage.removeItem('newDealDraft');
-      sessionStorage.removeItem('selectedAgentIds');
-
-      // Clear caches
-      queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-      queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-
-      // Navigate to Pipeline to see the deal
+    // Wait a moment for automation to complete, then navigate
+    setTimeout(() => {
       navigate(createPageUrl('Pipeline'), { replace: true });
-    } catch (e) {
-      console.error('[MyAgreement] Error creating deal:', e);
-      toast.error('Failed to create deal after signing');
-      navigate(createPageUrl('Pipeline'), { replace: true });
-    }
+    }, 2000);
   };
 
 
@@ -288,6 +257,7 @@ export default function MyAgreement() {
         <SimpleAgreementPanel 
           dealId={null}
           dealData={deal}
+          draftId={draftId}
           roomId={room?.id}
           agreement={agreement}
           room={room}
