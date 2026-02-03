@@ -51,9 +51,10 @@ Deno.serve(async (req) => {
 
     agentTerms[agentId] = updatedAgentTerms;
 
-    // Update room with new agent-specific terms
+    // Update room with new agent-specific terms and set regeneration flag
     await base44.asServiceRole.entities.Room.update(roomId, {
-      agent_terms: agentTerms
+      agent_terms: agentTerms,
+      requires_regenerate: true
     });
 
     // Mark all OTHER pending counters for THIS ROOM as superseded
