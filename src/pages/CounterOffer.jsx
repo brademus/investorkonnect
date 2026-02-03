@@ -20,7 +20,7 @@ import { toast } from 'sonner';
 export default function CounterOfferPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { profile } = useCurrentProfile();
+  const { profile, loading: profileLoading } = useCurrentProfile();
 
   const dealId = searchParams.get('dealId');
   const roomId = searchParams.get('roomId');
@@ -41,11 +41,11 @@ export default function CounterOfferPage() {
   const isAgent = profile?.user_role === 'agent';
   const isResponding = !!respondingTo;
 
-  // Load deal and room data
+  // Load deal and room data - wait for profile first
   useEffect(() => {
     const loadData = async () => {
-      if (!profile) {
-        console.log('[CounterOffer] Waiting for profile...');
+      // Wait for profile to load
+      if (profileLoading || !profile) {
         return;
       }
 
@@ -81,15 +81,15 @@ export default function CounterOfferPage() {
             }
           }
         }
+        setLoading(false);
       } catch (e) {
         console.error('[CounterOffer] Load error:', e);
         setError('Failed to load deal');
-      } finally {
         setLoading(false);
       }
     };
     loadData();
-  }, [dealId, roomId, respondingTo, profile]);
+  }, [dealId, roomId, respondingTo, profile, profileLoading]);
 
   const handleSendCounter = async () => {
     if (!profile?.user_role) {
@@ -157,7 +157,7 @@ export default function CounterOfferPage() {
     }
   };
 
-  if (loading) {
+  if (profileLoading || loading) {
     return (
       <Dialog open={true}>
         <DialogContent className="bg-[#0D0D0D] border-[#1F1F1F]">
