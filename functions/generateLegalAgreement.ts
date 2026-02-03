@@ -440,7 +440,8 @@ Deno.serve(async (req) => {
     const deal_id = body.deal_id;
     const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
     let exhibit_a = body.exhibit_a || {};
-    const signer_mode = body.signer_mode || (room_id ? 'agent_only' : 'investor_only');
+    // Only support investor_only (initial) or both (counter-accepted)
+    const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
     
@@ -834,65 +835,9 @@ Deno.serve(async (req) => {
     const signers = [];
     
     // investor_only: Base agreement - investor signs alone (recipientId 1)
-    // agent_only: Invite agreement - agent signs alone (recipientId 1), NO investor
-    // both: Negotiated/regenerated - investor first (recipientId 1), agent second (recipientId 2)
+    // both: Counter-accepted - investor first (recipientId 1), agent second (recipientId 2)
     
-    // For agent_only mode: add investor signature fields as read-only (already signed)
-    // For other modes: add investor as active signer
-    if (signer_mode === 'agent_only') {
-      // In agent_only mode, investor signature fields are pre-filled and locked (read-only)
-      // This shows the investor already signed without requiring their action
-      signers.push({
-        email: profile.email,
-        name: profile.full_name || profile.email,
-        recipientId: '1',
-        routingOrder: '1',
-        clientUserId: investorClientUserId,
-        embeddedRecipientStartURL: 'SIGN_AT_DOCUSIGN',
-        tabs: {
-          signHereTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_SIGN]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true,
-            locked: true, // Lock the signature field - already signed
-            disableimetrics: true,
-            signatureName: profile.full_name || profile.email
-          }],
-          dateSignedTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_DATE]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true,
-            locked: true, // Lock the date field
-            value: new Date().toLocaleDateString()
-          }],
-          fullNameTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_PRINT]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true,
-            name: 'Investor Full Name',
-            value: profile.full_name || profile.email,
-            locked: true,
-            required: true,
-            tabLabel: 'investorFullName'
-          }]
-        }
-      });
-    } else if (signer_mode === 'investor_only' || signer_mode === 'both') {
+    if (signer_mode === 'investor_only' || signer_mode === 'both') {
       signers.push({
         email: profile.email,
         name: profile.full_name || profile.email,
@@ -939,10 +884,10 @@ Deno.serve(async (req) => {
       });
     }
     
-    // Add agent recipient based on signer_mode
-    if ((signer_mode === 'agent_only' || signer_mode === 'both') && agentProfile.email && agentProfile.email !== 'TBD') {
-      const agentRecipientId = signer_mode === 'agent_only' ? '2' : '2';
-      const agentRoutingOrder = signer_mode === 'agent_only' ? '2' : '2';
+    // Add agent recipient only in 'both' mode (counter-accepted)
+    if (signer_mode === 'both' && agentProfile.email && agentProfile.email !== 'TBD') {
+      const agentRecipientId = '2';
+      const agentRoutingOrder = '2';
       
       signers.push({
         email: agentProfile.email,
@@ -1139,7 +1084,7 @@ Deno.serve(async (req) => {
       docusign_envelope_pdf_hash: docusignPdfSha256,
       docusign_last_sent_sha256: docusignPdfSha256,
       investor_recipient_id: (signer_mode === 'investor_only' || signer_mode === 'both') ? '1' : null,
-      agent_recipient_id: (signer_mode === 'agent_only') ? '1' : (signer_mode === 'both' ? '2' : null),
+      agent_recipient_id: (signer_mode === 'both') ? '2' : null,
       investor_client_user_id: investorClientUserId,
       agent_client_user_id: agentClientUserId,
       investor_signing_url: null,

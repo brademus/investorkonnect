@@ -109,14 +109,13 @@ Deno.serve(async (req) => {
         // Check for existing room
         let room = existingRoomsByAgent.get(agentId);
         if (!room) {
-          // 1. Create Room - ACCEPTED status so agent sees it immediately
-          // CRITICAL: Create independent copy of terms for each room to ensure isolation
+          // 1. Create Room - all agents will share the same base agreement initially
           room = await base44.asServiceRole.entities.Room.create({
             deal_id: deal_id,
             investorId: profile.id,
             agentId: agentId,
-            request_status: 'accepted', // CRITICAL: accepted, not requested
-            agreement_status: 'investor_signed',
+            request_status: 'accepted',
+            agreement_status: 'sent', // Waiting for agent to sign shared base agreement
             title: deal.title,
             property_address: deal.property_address,
             city: deal.city,
@@ -129,83 +128,57 @@ Deno.serve(async (req) => {
             requested_at: new Date().toISOString(),
             accepted_at: new Date().toISOString()
           });
-          console.log('[createInvitesAfterInvestorSign] ✓ Created room for agent:', agentId, ', room ID:', room.id, ', deal ID:', deal_id);
-          } else if (room.request_status !== 'accepted') {
-          // Update existing room to accepted
+          console.log('[createInvitesAfterInvestorSign] ✓ Created room for agent:', agentId, ', room ID:', room.id);
+        } else if (room.request_status !== 'accepted') {
           await base44.asServiceRole.entities.Room.update(room.id, {
             request_status: 'accepted',
-            agreement_status: 'investor_signed',
+            agreement_status: 'sent',
             accepted_at: new Date().toISOString()
           });
           console.log('[createInvitesAfterInvestorSign] ✓ Updated room to accepted:', room.id);
         }
-
-        // 2. Check if agreement already exists, otherwise generate
-        let agreement;
-        if (existingInvite?.legal_agreement_id) {
-          const existingAg = await base44.asServiceRole.entities.LegalAgreement.filter({ 
-            id: existingInvite.legal_agreement_id 
-          }).then(arr => arr[0]);
-          if (existingAg) {
-            agreement = existingAg;
-            console.log('[createInvitesAfterInvestorSign] Using existing agreement:', agreement.id);
-          }
-        }
-
-        if (!agreement) {
-          // Get base agreement for source reference
-          const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
-            deal_id: deal_id,
-            room_id: null
-          }, '-created_date', 1);
-          const baseAgreement = baseAgreements?.[0];
-          
-          const genRes = await base44.functions.invoke('generateLegalAgreement', {
-            deal_id: deal_id,
-            room_id: room.id,
-            signer_mode: 'agent_only', // CRITICAL: agent signs alone
-            source_base_agreement_id: baseAgreement?.id || null,
-            exhibit_a
-          });
-          
-          if (!genRes.data?.success) {
-            throw new Error(genRes.data?.error || 'Failed to generate agreement');
-          }
-          
-          agreement = genRes.data.agreement;
-          console.log('[createInvitesAfterInvestorSign] Generated agent-only agreement:', agreement.id);
-          
-          // NO NEED to copy investor signature - agent_only mode has no investor recipient
+        
+        // 2. Get the single base agreement (investor already signed)
+        const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+          deal_id: deal_id,
+          room_id: null,
+          status: 'investor_signed'
+        }, '-created_date', 1);
+        
+        const baseAgreement = baseAgreements?.[0];
+        if (!baseAgreement) {
+          throw new Error('Base investor-signed agreement not found. Investor must sign first.');
         }
         
-        // 3. Update room with agreement ID - status is 'sent' (waiting for agent)
+        console.log('[createInvitesAfterInvestorSign] Using shared base agreement:', baseAgreement.id);
+        
+        // 3. Point room to the shared base agreement
         await base44.asServiceRole.entities.Room.update(room.id, {
-          current_legal_agreement_id: agreement.id,
-          agreement_status: 'sent' // Agent can now sign
+          current_legal_agreement_id: baseAgreement.id,
+          agreement_status: 'sent'
         });
         
-        // 4. Create or update DealInvite
+        // 4. Create or update DealInvite - all point to same base agreement
         let invite;
         if (existingInvite) {
-          // Update existing invite with new agreement
           await base44.asServiceRole.entities.DealInvite.update(existingInvite.id, {
-            legal_agreement_id: agreement.id,
+            legal_agreement_id: baseAgreement.id,
             status: 'PENDING_AGENT_SIGNATURE',
             room_id: room.id
           });
           invite = existingInvite;
-          console.log('[createInvitesAfterInvestorSign] Updated existing invite for agent:', agentId);
+          console.log('[createInvitesAfterInvestorSign] Updated invite - shared agreement');
         } else {
           invite = await base44.asServiceRole.entities.DealInvite.create({
             deal_id: deal_id,
             investor_id: profile.id,
             agent_profile_id: agentId,
             room_id: room.id,
-            legal_agreement_id: agreement.id,
+            legal_agreement_id: baseAgreement.id,
             status: 'PENDING_AGENT_SIGNATURE',
             created_at_iso: new Date().toISOString()
           });
-          console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id);
+          console.log('[createInvitesAfterInvestorSign] Created invite - shared agreement');
         }
         
         createdInvites.push(invite.id);
