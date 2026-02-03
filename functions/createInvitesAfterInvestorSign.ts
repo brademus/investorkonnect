@@ -59,14 +59,15 @@ Deno.serve(async (req) => {
     // Check if room already exists for this deal
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
     
+    let roomToUse;
     if (existingRooms.length === 0) {
       // Create ONE room for all agents - each agent gets same initial terms
       const agent_terms = {};
       for (const agentId of selectedAgentIds) {
         agent_terms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
       }
-      
-      const newRoom = await base44.asServiceRole.entities.Room.create({
+
+      roomToUse = await base44.asServiceRole.entities.Room.create({
         deal_id: deal_id,
         investorId: profile.id,
         agent_ids: selectedAgentIds,
@@ -85,30 +86,30 @@ Deno.serve(async (req) => {
         requested_at: new Date().toISOString(),
         accepted_at: new Date().toISOString()
       });
-      console.log('[createInvitesAfterInvestorSign] Created new Room:', newRoom.id);
-      return newRoom;
+      console.log('[createInvitesAfterInvestorSign] Created new Room:', roomToUse.id);
     } else {
       // Update existing room to add any new agents
-      const room = existingRooms[0];
-      const currentAgentIds = room.agent_ids || [];
+      roomToUse = existingRooms[0];
+      const currentAgentIds = roomToUse.agent_ids || [];
       const newAgentIds = selectedAgentIds.filter(id => !currentAgentIds.includes(id));
-      
+
       if (newAgentIds.length > 0) {
-         const updatedAgentTerms = room.agent_terms || {};
+         const updatedAgentTerms = roomToUse.agent_terms || {};
          for (const agentId of newAgentIds) {
            updatedAgentTerms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
          }
-        
-        await base44.asServiceRole.entities.Room.update(room.id, {
-          agent_ids: [...currentAgentIds, ...newAgentIds],
-          agent_terms: updatedAgentTerms,
-          agent_agreement_status: {
-            ...room.agent_agreement_status,
-            ...newAgentIds.reduce((acc, id) => ({ ...acc, [id]: 'sent' }), {})
-          }
-        });
-      }
-    }
+
+         await base44.asServiceRole.entities.Room.update(roomToUse.id, {
+           agent_ids: [...currentAgentIds, ...newAgentIds],
+           agent_terms: updatedAgentTerms,
+           agent_agreement_status: {
+             ...roomToUse.agent_agreement_status,
+             ...newAgentIds.reduce((acc, id) => ({ ...acc, [id]: 'sent' }), {})
+           }
+         });
+         console.log('[createInvitesAfterInvestorSign] Updated existing Room:', roomToUse.id);
+       }
+     }
     
     // Get base investor-signed agreement
     const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
