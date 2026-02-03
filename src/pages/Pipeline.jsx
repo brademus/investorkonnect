@@ -862,29 +862,14 @@ function PipelineContent() {
     const m = new Map();
     PIPELINE_STAGES.filter(s => s.id !== 'canceled').forEach(s => m.set(s.id, []));
     deals.forEach(d => {
-      // PHASE 7: Agents - exclude expired and locked-to-other-agent deals
-      if (isAgent) {
-        const st = d.agreement_status;
-        const rs = d.agent_request_status;
-        
-        // Exclude expired rooms
-        if (rs === 'expired' || rs === 'rejected') return;
-        
-        // Exclude deals locked to a different agent
-        if (d.locked_agent_id && d.locked_agent_id !== profile.id) return;
-        
-        const hasRequest = rs === 'requested' || rs === 'accepted' || rs === 'signed' || rs === 'locked';
-        const hasSigning = d.is_fully_signed || st === 'sent' || st === 'investor_signed' || st === 'agent_signed' || st === 'attorney_review_pending';
-        const allowed = hasRequest || hasSigning;
-        if (!allowed) return;
-      }
+      // Deals are already filtered in the deals useMemo - no need to filter again
       const stage = d.pipeline_stage === 'canceled' ? 'completed' : d.pipeline_stage;
       const arr = m.get(stage) || [];
       arr.push(d);
       m.set(stage, arr);
     });
     return m;
-  }, [deals, isAgent]);
+  }, [deals]);
 
   if (deduplicating) {
     return (
