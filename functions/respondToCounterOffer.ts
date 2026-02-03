@@ -246,27 +246,23 @@ Deno.serve(async (req) => {
       }
       console.log('[respondToCounterOffer] ✓ Marked', otherPendingCounters.length, 'other pending counters as superseded');
 
-      // Merge accepted terms with existing room/deal terms
-      const baseTerms = room_id 
-        ? ((await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0]?.proposed_terms || {})
-        : (deal.proposed_terms || {});
-      
-      const mergedTerms = { ...baseTerms, ...acceptedTerms };
-      
-      // Set regeneration flag (room-scoped or legacy) - only update the specific room/deal pair
-      const updates = [];
+      // CRITICAL: Only update THIS specific room's terms, never the deal or other rooms
       if (room_id) {
-        // Room-scoped: update only this room's terms
-        updates.push(
-          base44.asServiceRole.entities.Room.update(room_id, {
-            proposed_terms: mergedTerms,
-            requires_regenerate: true,
-            agreement_status: 'draft' // Reset to draft to trigger regeneration
-          })
-        );
-        
-        // CRITICAL: Mark old agreement as superseded
+        // Room-scoped: get current room terms and merge with accepted counter
         const room = (await base44.asServiceRole.entities.Room.filter({ id: room_id }))[0];
+        const baseTerms = room?.proposed_terms || {};
+        const mergedTerms = { ...baseTerms, ...acceptedTerms };
+        
+        // Update ONLY this room - do NOT touch deal or other rooms
+        await base44.asServiceRole.entities.Room.update(room_id, {
+          proposed_terms: mergedTerms,
+          requires_regenerate: true,
+          agreement_status: 'draft' // Reset to draft to trigger regeneration
+        });
+        
+        console.log('[respondToCounterOffer] ✓ Updated room', room_id, 'terms (isolated from other rooms)');
+        
+        // Mark old agreement as superseded
         if (room?.current_legal_agreement_id) {
           try {
             await base44.asServiceRole.entities.LegalAgreement.update(room.current_legal_agreement_id, {
@@ -278,18 +274,18 @@ Deno.serve(async (req) => {
           }
         }
       } else {
-        // Legacy: update deal level
-        updates.push(
-          base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-            proposed_terms: mergedTerms,
-            requires_regenerate: true,
-            requires_regenerate_reason: `${userRole} accepted counter at ${now}`
-          })
-        );
+        // Legacy deal-scoped mode (should rarely happen now)
+        const baseTerms = deal.proposed_terms || {};
+        const mergedTerms = { ...baseTerms, ...acceptedTerms };
+        
+        await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+          proposed_terms: mergedTerms,
+          requires_regenerate: true,
+          requires_regenerate_reason: `${userRole} accepted counter at ${now}`
+        });
+        
+        console.log('[respondToCounterOffer] ✓ Updated deal-level terms (legacy mode)');
       }
-
-      await Promise.all(updates);
-      console.log('[respondToCounterOffer] ✓ Terms and regenerate flags updated');
 
       return Response.json({ 
         success: true, 
