@@ -80,7 +80,8 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see ALL deals where they have a room (regardless of request_status)
+      // Agents see ALL deals where they have a room (regardless of request_status, city, or address)
+      // CRITICAL: No filtering by address - each room is unique even if same city/state
       // RETRY: Query twice in case rooms were just created and need indexing
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
       if (agentRooms.length === 0) {
@@ -88,7 +89,7 @@ Deno.serve(async (req) => {
         await new Promise(r => setTimeout(r, 500));
         agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
       }
-      console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length);
+      console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length, 'for agent:', profile.id);
       agentRooms.forEach(r => {
         console.log('[getPipelineDealsForUser] Room:', {
           room_id: r.id,
