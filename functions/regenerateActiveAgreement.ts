@@ -1,21 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
-async function withRetry(fn, maxAttempts = 5) {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await fn();
-    } catch (error) {
-      if (error.status === 429 && attempt < maxAttempts) {
-        const delay = Math.pow(2, attempt) * 500;
-        console.log(`[regenerateActiveAgreement] Rate limited (attempt ${attempt}/${maxAttempts}), retrying in ${delay}ms`);
-        await new Promise(r => setTimeout(r, delay));
-      } else {
-        throw error;
-      }
-    }
-  }
-}
-
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -25,105 +9,105 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { deal_id, room_id, exhibit_a } = await req.json();
-    if (!deal_id) {
-      return Response.json({ error: 'deal_id required' }, { status: 400 });
+    const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip } = await req.json();
+
+    if (!draft_id && !deal_id) {
+      return Response.json({ error: 'draft_id or deal_id required' }, { status: 400 });
     }
 
-    // Verify investor with retry
-    const profile = await withRetry(async () => {
-      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-      if (!profiles?.[0]) throw new Error('Profile not found');
-      return profiles[0];
-    });
-    
-    if (profile.user_role !== 'investor') {
-      return Response.json({ error: 'Only investor can regenerate' }, { status: 403 });
+    // Get profile
+    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    const profile = profiles?.[0];
+    if (!profile) {
+      return Response.json({ error: 'Profile not found' }, { status: 403 });
     }
 
-    // Load deal with retry
-    const deal = await withRetry(async () => {
+    // Load DealDraft (pre-signing flow) or Deal (post-counter flow)
+    let dealContext = null;
+    let draftContext = null;
+
+    if (draft_id) {
+      const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
+      draftContext = drafts?.[0];
+      if (!draftContext) {
+        return Response.json({ error: 'DealDraft not found' }, { status: 404 });
+      }
+    } else if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-      if (!deals?.length) throw new Error('Deal not found');
-      return deals[0];
-    });
+      dealContext = deals?.[0];
+      if (!dealContext) {
+        return Response.json({ error: 'Deal not found' }, { status: 404 });
+      }
+    }
 
-    // Load Room if room-scoped to get its proposed_terms
+    // Load Room if room-scoped
     let room = null;
     if (room_id) {
-      room = await withRetry(async () => {
-        const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-        if (!rooms?.[0]) throw new Error('Room not found');
-        return rooms[0];
-      });
+      const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+      room = rooms?.[0];
     }
 
-    // CRITICAL: Use exhibit_a from request if provided, otherwise fall back to room.proposed_terms or deal.proposed_terms
-    let effectiveTerms = exhibit_a || room?.proposed_terms || deal?.proposed_terms || {};
+    // Build exhibit_a: prefer request param, then room terms, then deal terms
+    const effectiveTerms = exhibit_a || room?.proposed_terms || dealContext?.proposed_terms || draftContext || {};
     
     if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
-        error: 'Missing buyer commission terms. Please set commission structure first.'
+        error: 'Missing buyer commission terms' 
       }, { status: 400 });
     }
 
-    // Call generateLegalAgreement with effective terms and BOTH mode (investor + agent must sign)
+    // Call generateLegalAgreement
     const gen = await base44.functions.invoke('generateLegalAgreement', {
-      deal_id,
+      draft_id: draft_id || undefined,
+      deal_id: deal_id || undefined,
       room_id: room_id || null,
-      signer_mode: 'both', // CRITICAL: both signers required after counter acceptance
+      signer_mode: draft_id ? 'investor_only' : (room_id ? 'agent_only' : 'both'),
       exhibit_a: {
-        buyer_commission_type: effectiveTerms.buyer_commission_type || 'flat',
+        buyer_commission_type: effectiveTerms.buyer_commission_type,
         buyer_commission_percentage: effectiveTerms.buyer_commission_percentage || null,
         buyer_flat_fee: effectiveTerms.buyer_flat_fee || null,
         agreement_length_days: effectiveTerms.agreement_length || 180,
-        transaction_type: deal.transaction_type || 'ASSIGNMENT'
-      }
+        transaction_type: 'ASSIGNMENT'
+      },
+      investor_profile_id: investor_profile_id || profile?.id,
+      property_address: property_address || draftContext?.property_address || dealContext?.property_address,
+      city: city || draftContext?.city || dealContext?.city,
+      state: state || draftContext?.state || dealContext?.state,
+      zip: zip || draftContext?.zip || dealContext?.zip
     });
 
     if (gen.data?.error) {
-      return Response.json({ 
-        error: gen.data.error, 
-        details: gen.data 
-      }, { status: 400 });
+      return Response.json({ error: gen.data.error }, { status: 400 });
     }
     
     const newAgreement = gen.data?.agreement;
     if (!newAgreement?.id) {
-      return Response.json({ 
-        error: 'Generation failed - no agreement returned' 
-      }, { status: 500 });
+      return Response.json({ error: 'Generation failed' }, { status: 500 });
     }
 
-    // CRITICAL: Ensure new agreement has no signatures (safety - should already be clean from generation)
-    await withRetry(async () => {
-      await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
-        investor_signed_at: null,
-        agent_signed_at: null,
-        status: 'draft'
-      });
+    // Clean new agreement (no signatures yet)
+    await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
+      investor_signed_at: null,
+      agent_signed_at: null,
+      status: 'draft'
     });
 
-    // Update pointers and reset agreement signing status with retry
-    // CRITICAL: Clear requires_regenerate immediately so investor can sign the new agreement
+    // Update pointers based on context
     if (room_id && room) {
-      await withRetry(async () => {
-        await base44.asServiceRole.entities.Room.update(room_id, {
-          current_legal_agreement_id: newAgreement.id,
-          agreement_status: 'draft',  // Reset to draft - both must sign
-          requires_regenerate: false  // Clear flag - new agreement is ready to sign
-        });
+      // Room-scoped regenerate (after counter)
+      await base44.asServiceRole.entities.Room.update(room_id, {
+        current_legal_agreement_id: newAgreement.id,
+        agreement_status: 'draft',
+        requires_regenerate: false
       });
-    } else {
-      await withRetry(async () => {
-        await base44.asServiceRole.entities.Deal.update(deal_id, {
-          current_legal_agreement_id: newAgreement.id
-          // Keep requires_regenerate=true until investor signs (cleared by webhook)
-        });
+    } else if (deal_id && dealContext) {
+      // Deal-scoped regenerate
+      await base44.asServiceRole.entities.Deal.update(deal_id, {
+        current_legal_agreement_id: newAgreement.id
       });
     }
+    // draft_id flow: agreement is linked, will be used to create Deal on signing
 
-    // Return signing URL so frontend can redirect immediately
     return Response.json({ 
       success: true, 
       agreement: newAgreement,
@@ -132,9 +116,8 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     console.error('[regenerateActiveAgreement] Error:', error?.message);
-    const errorMsg = error?.response?.data?.error || error?.message || 'Failed to regenerate agreement';
     return Response.json({ 
-      error: errorMsg
+      error: error?.message || 'Failed to regenerate agreement'
     }, { status: 500 });
   }
 });
