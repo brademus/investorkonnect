@@ -62,40 +62,9 @@ export default function MyAgreement() {
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
         
-        const dealCreated = await base44.entities.Deal.create({
-          title: `${dealData.city}, ${dealData.state} - ${new Date().toLocaleDateString()}`,
-          investor_id: profile.id,
-          property_address: dealData.propertyAddress,
-          city: dealData.city,
-          state: dealData.state,
-          zip: dealData.zip,
-          county: dealData.county,
-          purchase_price: Number(cleanedPrice),
-          property_type: dealData.propertyType || null,
-          property_details: {
-            beds: dealData.beds ? Number(dealData.beds) : null,
-            baths: dealData.baths ? Number(dealData.baths) : null,
-            sqft: dealData.sqft ? Number(dealData.sqft) : null,
-            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-            number_of_stories: dealData.numberOfStories || null,
-            has_basement: dealData.hasBasement || null
-          },
-          seller_info: {
-            seller_name: dealData.sellerName,
-            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-            number_of_signers: dealData.numberOfSigners,
-            second_signer_name: dealData.secondSignerName
-          },
-          key_dates: {
-            closing_date: dealData.closingDate,
-            contract_date: dealData.contractDate
-          },
-          status: 'draft',
-          pipeline_stage: 'new_deals',
-          selected_agent_ids: agentIds,
-          special_notes: dealData.specialNotes || null,
-          proposed_terms: proposedTerms
-        });
+        // Don't create the Deal here - let the automation handle it after signing
+        // Instead, just create a DealDraft with the agreement link
+        return;
 
         console.log('[MyAgreement] Created Deal:', dealCreated.id);
         
