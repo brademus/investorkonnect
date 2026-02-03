@@ -29,22 +29,22 @@ export default function SelectAgent() {
     }
   }, []);
 
-  // Load agents that have this state as a target market
+  // Load agents that have this state and city as a target market
   useEffect(() => {
     const loadAgents = async () => {
-      if (!dealData?.state) {
-        console.log('[SelectAgent] No deal state found, staying in loading');
+      if (!dealData?.state || !dealData?.city) {
+        console.log('[SelectAgent] No deal state or city found, staying in loading');
         setLoading(false);
         return;
       }
 
-      console.log('[SelectAgent] Loading agents for state:', dealData.state);
+      console.log('[SelectAgent] Loading agents for city:', dealData.city, 'state:', dealData.state);
       setLoading(true);
       try {
         const allAgents = await base44.entities.Profile.filter({ user_role: "agent" });
         console.log('[SelectAgent] Total agents found:', allAgents.length);
         
-        // Filter agents that have this state in their markets
+        // Filter agents that have this state in their markets AND prefer by nearest city match
         const filteredAgents = allAgents.filter(agent => {
           const markets = agent.agent?.markets || agent.markets || [];
           const licensedStates = agent.agent?.licensed_states || [];
@@ -54,9 +54,23 @@ export default function SelectAgent() {
           );
         });
 
-        console.log('[SelectAgent] Filtered agents for', dealData.state, ':', filteredAgents.length);
-        setAgents(filteredAgents);
-        if (filteredAgents.length === 0) {
+        // Sort by city proximity - prioritize agents with matching city in their profile
+        const sortedAgents = filteredAgents.sort((a, b) => {
+          const aCity = (a.agent?.primary_neighborhoods_notes || a.location || '').toLowerCase();
+          const bCity = (b.agent?.primary_neighborhoods_notes || b.location || '').toLowerCase();
+          const dealCity = dealData.city.toLowerCase();
+          
+          const aHasCity = aCity.includes(dealCity);
+          const bHasCity = bCity.includes(dealCity);
+          
+          if (aHasCity && !bHasCity) return -1;
+          if (!aHasCity && bHasCity) return 1;
+          return 0;
+        });
+
+        console.log('[SelectAgent] Filtered agents for', dealData.city, dealData.state, ':', sortedAgents.length);
+        setAgents(sortedAgents);
+        if (sortedAgents.length === 0) {
           toast.info("No agents available in this market yet");
         }
       } catch (err) {

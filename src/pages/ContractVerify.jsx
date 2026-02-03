@@ -84,6 +84,8 @@ export default function ContractVerify() {
       - Seller Name: ${dealData.sellerName}
       - Earnest Money: $${dealData.earnestMoney}
       - Closing Date: ${dealData.closingDate}
+      
+      Note: County is optional and not being verified.
 
       YOUR TASK:
       1. Carefully read through the ENTIRE contract PDF - contracts vary widely in format, layout, and structure.
