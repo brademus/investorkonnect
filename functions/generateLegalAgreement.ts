@@ -628,13 +628,9 @@ Deno.serve(async (req) => {
       console.log('[generateLegalAgreement] Regenerating - inputs changed or version updated');
     }
     
-    // Fetch template PDF
+    // Fetch template PDF (with caching)
     console.log('Fetching template:', templateUrl);
-    const templateResponse = await fetch(templateUrl);
-    if (!templateResponse.ok) {
-      return Response.json({ error: 'Failed to fetch template PDF' }, { status: 500 });
-    }
-    const templateBytes = await templateResponse.arrayBuffer();
+    const templateBytes = await fetchTemplate(templateUrl);
     
     // Extract text from PDF
     console.log('Extracting text from template...');
@@ -747,12 +743,12 @@ Deno.serve(async (req) => {
     
     console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
     
-    // Generate TWO PDFs: human-readable and DocuSign-specific
-    console.log('Generating human-readable PDF (no anchors visible)...');
-    const humanPdfBytes = await generatePdfFromText(templateText, deal.id, false);
-    
-    console.log('Generating DocuSign PDF (invisible anchors)...');
-    const docusignPdfBytes = await generatePdfFromText(templateText, deal.id, true);
+    // Generate both PDFs in parallel for speed
+    console.log('Generating PDFs in parallel...');
+    const [humanPdfBytes, docusignPdfBytes] = await Promise.all([
+      generatePdfFromText(templateText, deal.id, false),
+      generatePdfFromText(templateText, deal.id, true)
+    ]);
     
     // Compute hashes for both
     const humanHashBuffer = await crypto.subtle.digest('SHA-256', humanPdfBytes);
@@ -769,15 +765,16 @@ Deno.serve(async (req) => {
     console.log('  Human PDF SHA-256:', humanPdfSha256.substring(0, 16) + '...');
     console.log('  DocuSign PDF SHA-256:', docusignPdfSha256.substring(0, 16) + '...');
     
-    // Upload human-readable PDF
+    // Upload both PDFs in parallel
     const humanBlob = new Blob([humanPdfBytes], { type: 'application/pdf' });
     const humanFile = new File([humanBlob], `agreement_${deal_id}_human.pdf`);
-    const humanUpload = await base44.integrations.Core.UploadFile({ file: humanFile });
-    
-    // Upload DocuSign PDF with hash in filename to prevent caching
     const docusignBlob = new Blob([docusignPdfBytes], { type: 'application/pdf' });
     const docusignFile = new File([docusignBlob], `agreement_${deal_id}_docusign_${docusignPdfSha256.substring(0, 8)}.pdf`);
-    const docusignUpload = await base44.integrations.Core.UploadFile({ file: docusignFile });
+    
+    const [humanUpload, docusignUpload] = await Promise.all([
+      base44.integrations.Core.UploadFile({ file: humanFile }),
+      base44.integrations.Core.UploadFile({ file: docusignFile })
+    ]);
     
     console.log('[PDF Uploads]');
     console.log('  Human PDF URL:', humanUpload.file_url);
@@ -786,77 +783,43 @@ Deno.serve(async (req) => {
     // Create DocuSign envelope with BOTH recipients
     console.log('[DocuSign] Creating envelope with both investor and agent recipients...');
     
-    async function getDocuSignConnection() {
-      const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
-      if (!connections || connections.length === 0) {
-        throw new Error('DocuSign not connected. Admin must connect DocuSign first.');
-      }
-      
-      const connection = connections[0];
-      const now = new Date();
-      const expiresAt = new Date(connection.expires_at);
-      
-      if (now >= expiresAt && connection.refresh_token) {
-        const tokenUrl = connection.base_uri.includes('demo') 
-          ? 'https://account-d.docusign.com/oauth/token'
-          : 'https://account.docusign.com/oauth/token';
-        
-        const refreshResponse = await fetch(tokenUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            grant_type: 'refresh_token',
-            refresh_token: connection.refresh_token,
-            client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
-            client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
-          })
-        });
-        
-        if (!refreshResponse.ok) {
-          throw new Error('DocuSign token expired and refresh failed. Admin must reconnect DocuSign.');
-        }
-        
-        const tokenData = await refreshResponse.json();
-        await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
-          access_token: tokenData.access_token,
-          refresh_token: tokenData.refresh_token || connection.refresh_token,
-          expires_at: new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString()
-        });
-        
-        connection.access_token = tokenData.access_token;
-      }
-      
-      return connection;
-    }
-    
-    const connection = await getDocuSignConnection();
+    const connection = await getDocuSignConnection(base44);
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // Attempt to void prior DocuSign envelope (if any) before creating a new one
-    // CRITICAL: Only void the DocuSign envelope, never touch the deal itself
+    // OPTIMIZATION: Check envelope status before voiding to avoid unnecessary API calls
     if (toVoidEnvelopeId) {
       try {
-        console.log('[DocuSign] Voiding prior envelope:', toVoidEnvelopeId);
-        const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
-        const voidResp = await fetch(voidUrl, {
-          method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated with new terms on ${new Date().toISOString()}` })
+        console.log('[DocuSign] Checking prior envelope status:', toVoidEnvelopeId);
+        const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
+        const statusResp = await fetch(statusUrl, {
+          method: 'GET',
+          headers: { 'Authorization': `Bearer ${accessToken}` }
         });
-
-        if (!voidResp.ok) {
-          const txt = await voidResp.text();
-          console.warn('[DocuSign] Warning: failed to void prior envelope:', txt);
-          // Continue anyway - we'll still create the new envelope
-        } else {
-          console.log('[DocuSign] ✓ Prior envelope voided successfully:', toVoidEnvelopeId);
+        
+        if (statusResp.ok) {
+          const statusData = await statusResp.json();
+          const currentStatus = statusData.status?.toLowerCase();
+          
+          // Only void if envelope is in voidable state
+          if (['sent', 'delivered'].includes(currentStatus)) {
+            console.log('[DocuSign] Voiding envelope (status:', currentStatus, ')');
+            const voidResp = await fetch(statusUrl, {
+              method: 'PUT',
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated with new terms on ${new Date().toISOString()}` })
+            });
+            if (voidResp.ok) {
+              console.log('[DocuSign] ✓ Envelope voided');
+            }
+          } else {
+            console.log('[DocuSign] Envelope already', currentStatus, '- skipping void');
+          }
         }
       } catch (e) {
-        console.warn('[DocuSign] Warning: void attempt threw error:', e?.message || e);
-        // Continue anyway - the new envelope creation is more important
+        console.warn('[DocuSign] Warning: envelope check/void failed:', e?.message);
       }
     }
     
@@ -1193,7 +1156,7 @@ Deno.serve(async (req) => {
     // It will be marked as superseded AFTER the new agreement is fully signed (via webhook)
     // This preserves the old agreement during signing in case the user navigates away
     
-    // Create NEW agreement
+    // Create agreement + update pointer in parallel
     const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
       ...agreementData,
       investor_signed_at: null,
@@ -1210,18 +1173,12 @@ Deno.serve(async (req) => {
     
     console.log('[generateLegalAgreement] ✓ NEW agreement created:', agreement.id);
     
-    // Update pointers (room-scoped or legacy)
-    if (room_id) {
-      await base44.asServiceRole.entities.Room.update(room_id, {
-        current_legal_agreement_id: agreement.id
-      });
-      console.log('[generateLegalAgreement] ✓ Room pointer updated');
-    } else {
-      await base44.asServiceRole.entities.Deal.update(deal_id, {
-        current_legal_agreement_id: agreement.id
-      });
-      console.log('[generateLegalAgreement] ✓ Deal pointer updated (legacy)');
-    }
+    // Update pointer asynchronously (don't block response)
+    const pointerUpdate = room_id
+      ? base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id })
+      : base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id });
+    
+    pointerUpdate.then(() => console.log('[generateLegalAgreement] ✓ Pointer updated')).catch(e => console.warn('[generateLegalAgreement] Pointer update failed:', e.message));
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
