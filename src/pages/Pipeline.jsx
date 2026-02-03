@@ -792,6 +792,37 @@ function PipelineContent() {
         return;
       }
 
+      // CRITICAL: Fetch room directly from database if not in cache yet
+      try {
+        console.log('[Pipeline] Room not in cache, fetching from DB for deal:', deal.deal_id);
+        const roomsForDeal = await base44.entities.Room.filter({ 
+          deal_id: deal.deal_id, 
+          agentId: profile.id 
+        });
+        
+        if (roomsForDeal?.length > 0) {
+          const freshRoom = roomsForDeal[0];
+          console.log('[Pipeline] Found room in DB:', freshRoom.id);
+          const masked = {
+            id: deal.deal_id,
+            title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
+            property_address: null,
+            city: deal.city,
+            state: deal.state,
+            purchase_price: deal.budget,
+            pipeline_stage: deal.pipeline_stage,
+            key_dates: { closing_date: deal.closing_date },
+            agent_id: deal.agent_id,
+            is_fully_signed: false,
+          };
+          setCachedDeal(deal.deal_id, masked);
+          navigate(`${createPageUrl("Room")}?roomId=${freshRoom.id}&tab=agreement`);
+          return;
+        }
+      } catch (e) {
+        console.error('[Pipeline] Failed to fetch room from DB:', e);
+      }
+
       toast.error('Room not found for this deal');
     }
   };
