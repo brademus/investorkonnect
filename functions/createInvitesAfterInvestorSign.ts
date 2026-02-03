@@ -123,19 +123,8 @@ Deno.serve(async (req) => {
       throw new Error('Base agreement not found');
     }
     
-    // Get or create room 
-    let room = existingRooms[0];
-    if (!room) {
-      const allRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
-      room = allRooms[0];
-    }
-
-    if (!room) {
-      throw new Error('Failed to create or find room for deal');
-    }
-
     // Update room to point to agreement
-    await base44.asServiceRole.entities.Room.update(room.id, {
+    await base44.asServiceRole.entities.Room.update(roomToUse.id, {
       current_legal_agreement_id: baseAgreement.id
     });
 
@@ -152,7 +141,7 @@ Deno.serve(async (req) => {
         deal_id: deal_id,
         investor_id: profile.id,
         agent_profile_id: agentId,
-        room_id: room.id,
+        room_id: roomToUse.id,
         legal_agreement_id: baseAgreement.id,
         status: 'PENDING_AGENT_SIGNATURE',
         created_at_iso: new Date().toISOString()
@@ -161,8 +150,8 @@ Deno.serve(async (req) => {
       console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id, 'for agent:', agentId);
     }
 
-    console.log('[createInvitesAfterInvestorSign] Success - created room:', room.id, 'and', createdInvites.length, 'invites for deal:', deal_id);
-    return Response.json({ ok: true, room_id: room.id, invite_ids: createdInvites });
+    console.log('[createInvitesAfterInvestorSign] Success - created room:', roomToUse.id, 'and', createdInvites.length, 'invites for deal:', deal_id);
+    return Response.json({ ok: true, room_id: roomToUse.id, invite_ids: createdInvites });
     
   } catch (error) {
     console.error('[createInvitesAfterInvestorSign] Error:', error);
