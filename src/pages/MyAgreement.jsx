@@ -19,11 +19,10 @@ export default function MyAgreement() {
 
   const [deal, setDeal] = useState(null);
   const [agreement, setAgreement] = useState(null);
+  const [room, setRoom] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedAgentIds, setSelectedAgentIds] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
-  const [selectedAgentForSigning, setSelectedAgentForSigning] = useState(null);
-  const [room, setRoom] = useState(null);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [draftId, setDraftId] = useState(null);
   const loadedRef = useRef(false);
