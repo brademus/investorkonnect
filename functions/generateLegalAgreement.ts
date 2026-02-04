@@ -1164,11 +1164,18 @@ Deno.serve(async (req) => {
     console.log('[generateLegalAgreement] ✓ NEW agreement created:', agreement.id);
     
     // Update pointer asynchronously (don't block response)
-    const pointerUpdate = room_id
-      ? base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id })
-      : base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id });
-    
-    pointerUpdate.then(() => console.log('[generateLegalAgreement] ✓ Pointer updated')).catch(e => console.warn('[generateLegalAgreement] Pointer update failed:', e.message));
+    // Skip pointer update for draft flow since no Deal entity exists yet
+    if (room_id) {
+      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id })
+        .then(() => console.log('[generateLegalAgreement] ✓ Room pointer updated'))
+        .catch(e => console.warn('[generateLegalAgreement] Room pointer update failed:', e.message));
+    } else if (deal_id) {
+      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id })
+        .then(() => console.log('[generateLegalAgreement] ✓ Deal pointer updated'))
+        .catch(e => console.warn('[generateLegalAgreement] Deal pointer update failed:', e.message));
+    } else {
+      console.log('[generateLegalAgreement] Draft flow - no pointer to update (Deal will be created on investor signature)');
+    }
     
     console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
