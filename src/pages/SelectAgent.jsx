@@ -10,7 +10,7 @@ export default function SelectAgent() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [agents, setAgents] = useState([]);
-  const [selectedAgentIds, setSelectedAgentIds] = useState([]);
+  const [selectedAgents, setSelectedAgents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [proceeding, setProceeding] = useState(false);
   const [dealData, setDealData] = useState(null);
@@ -86,7 +86,7 @@ export default function SelectAgent() {
   }, [dealData]);
 
   const toggleAgent = (agentId) => {
-    setSelectedAgentIds(prev => {
+    setSelectedAgents(prev => {
       if (prev.includes(agentId)) {
         return prev.filter(id => id !== agentId);
       } else {
@@ -99,29 +99,67 @@ export default function SelectAgent() {
     });
   };
 
-  const handleProceed = async () => {
-    if (selectedAgentIds.length === 0 || proceeding) {
+  const handleContinue = async () => {
+    if (selectedAgents.length === 0) {
+      toast.error('Please select at least one agent');
       return;
     }
 
     setProceeding(true);
     try {
-      // Save selected agents to sessionStorage - deal will be created AFTER investor signs
-      const updatedDealData = {
-        ...dealData,
-        selectedAgentIds: selectedAgentIds
-      };
+      // Get draft data from sessionStorage
+      const draftData = JSON.parse(sessionStorage.getItem('newDealDraft') || '{}');
       
-      sessionStorage.setItem("newDealDraft", JSON.stringify(updatedDealData));
-      sessionStorage.setItem("selectedAgentIds", JSON.stringify(selectedAgentIds));
+      // Create draft
+      const res = await base44.functions.invoke('createDealDraft', {
+        property_address: draftData.propertyAddress,
+        city: draftData.city,
+        state: draftData.state,
+        zip: draftData.zip,
+        county: draftData.county,
+        purchase_price: draftData.purchasePrice,
+        property_type: draftData.propertyType,
+        beds: draftData.beds,
+        baths: draftData.baths,
+        sqft: draftData.sqft,
+        year_built: draftData.yearBuilt,
+        number_of_stories: draftData.numberOfStories,
+        has_basement: draftData.hasBasement,
+        seller_name: draftData.sellerName,
+        earnest_money: draftData.earnestMoney,
+        number_of_signers: draftData.numberOfSigners,
+        second_signer_name: draftData.secondSignerName,
+        seller_commission_type: draftData.sellerCommissionType,
+        seller_commission_percentage: draftData.sellerCommissionPercentage,
+        seller_flat_fee: draftData.sellerFlatFee,
+        buyer_commission_type: draftData.buyerCommissionType,
+        buyer_commission_percentage: draftData.buyerCommissionPercentage,
+        buyer_flat_fee: draftData.buyerFlatFee,
+        agreement_length: draftData.agreementLength,
+        contract_url: draftData.contractUrl,
+        special_notes: draftData.specialNotes,
+        closing_date: draftData.closingDate,
+        contract_date: draftData.contractDate,
+        selected_agent_ids: selectedAgents
+      });
+
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        setProceeding(false);
+        return;
+      }
+
+      const draftId = res.data.draft_id;
       
-      console.log('[SelectAgent] Saved agent selection to sessionStorage:', selectedAgentIds);
-      
-      // Navigate to MyAgreement page to generate and sign (deal will be created on signature)
-      navigate(createPageUrl("MyAgreement"));
-    } catch (error) {
-      console.error("Error proceeding:", error);
-      toast.error("Failed to proceed");
+      // Store draft ID for MyAgreement page
+      sessionStorage.setItem('draft_id', draftId);
+      sessionStorage.setItem('selectedAgentIds', JSON.stringify(selectedAgents));
+
+      // Navigate to MyAgreement page
+      navigate(createPageUrl('MyAgreement'));
+    } catch (e) {
+      console.error('[SelectAgent] Error:', e);
+      toast.error('Failed to create draft');
       setProceeding(false);
     }
   };
@@ -146,7 +184,7 @@ export default function SelectAgent() {
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
           <h1 className="text-3xl font-bold text-[#E3C567] mb-2">Select Your Agents</h1>
-          <p className="text-sm text-[#808080]">Choose up to 3 agents to send this deal to ({selectedAgentIds.length}/3 selected)</p>
+          <p className="text-sm text-[#808080]">Choose up to 3 agents to send this deal to ({selectedAgents.length}/3 selected)</p>
         </div>
 
         {loading ? (
@@ -170,7 +208,7 @@ export default function SelectAgent() {
         ) : (
           <div className="space-y-4">
             {agents.map((agent) => {
-              const isSelected = selectedAgentIds.includes(agent.id);
+              const isSelected = selectedAgents.includes(agent.id);
               return (
                 <div
                   key={agent.id}
@@ -239,17 +277,17 @@ export default function SelectAgent() {
             })}
 
             <Button
-              onClick={handleProceed}
-              disabled={proceeding || selectedAgentIds.length === 0}
+              onClick={handleContinue}
+              disabled={proceeding || selectedAgents.length === 0}
               className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 py-6 font-semibold text-base h-auto disabled:opacity-50 mt-6"
             >
               {proceeding ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating Deal...
+                  Creating Draft...
                 </>
               ) : (
-                `Continue with ${selectedAgentIds.length} Agent${selectedAgentIds.length !== 1 ? 's' : ''}`
+                `Continue with ${selectedAgents.length} Agent${selectedAgents.length !== 1 ? 's' : ''}`
               )}
             </Button>
           </div>
