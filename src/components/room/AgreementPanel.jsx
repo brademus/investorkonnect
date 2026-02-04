@@ -135,9 +135,11 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
+      } finally {
+        setLoading(false);
       }
     })();
-  }, [dealId, roomId]);
+  }, [dealId, roomId, initialAgreement]);
 
   // Subscribe to real-time updates
   useEffect(() => {
