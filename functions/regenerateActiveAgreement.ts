@@ -27,11 +27,16 @@ Deno.serve(async (req) => {
     let draftContext = null;
 
     if (draft_id) {
-      const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
-      draftContext = drafts?.[0];
-      if (!draftContext) {
-        return Response.json({ error: 'DealDraft not found' }, { status: 404 });
-      }
+      // For draft flow, use request params directly - DealDraft may or may not exist yet
+      // The generateLegalAgreement function will use these params
+      draftContext = {
+        state: state,
+        city: city,
+        zip: zip,
+        property_address: property_address,
+        investor_profile_id: investor_profile_id || profile?.id
+      };
+      console.log('[regenerateActiveAgreement] Using draft context from request params:', draftContext);
     } else if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
       dealContext = deals?.[0];
