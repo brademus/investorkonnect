@@ -88,6 +88,10 @@ export default function PostAuth() {
           }
         } catch (e) {
           console.error('[PostAuth] Profile error:', e);
+          // Don't fail silently - profile is required
+          if (!profile) {
+            throw new Error('Failed to load or create profile');
+          }
         }
 
         // Parse selectedRole from URL (preselected on landing)
