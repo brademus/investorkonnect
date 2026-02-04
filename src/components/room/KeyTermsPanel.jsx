@@ -75,12 +75,20 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
         }
         
-        // Priority 5: room agent_terms
+        // Priority 5: room agent_terms - use specific agent if provided
         if (!terms && room?.agent_terms && typeof room.agent_terms === 'object') {
-          const agentIds = Object.keys(room.agent_terms);
-          if (agentIds.length > 0) {
-            terms = room.agent_terms[agentIds[0]];
-            console.log('[KeyTermsPanel] Fallback to room.agent_terms:', terms);
+          // CRITICAL: Use selectedAgentId if provided, otherwise use the room's first agent
+          const agentId = selectedAgentId || room.agent_ids?.[0];
+          if (agentId && room.agent_terms[agentId]) {
+            terms = room.agent_terms[agentId];
+            console.log('[KeyTermsPanel] Using room.agent_terms for specific agent:', agentId, terms);
+          } else {
+            // Fallback to first agent's terms
+            const agentIds = Object.keys(room.agent_terms);
+            if (agentIds.length > 0) {
+              terms = room.agent_terms[agentIds[0]];
+              console.log('[KeyTermsPanel] Fallback to first agent_terms:', terms);
+            }
           }
         }
       } catch (e) {
