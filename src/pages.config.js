@@ -71,8 +71,8 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
-import Terms from './pages/Terms';
 import SendCounter from './pages/SendCounter';
+import Terms from './pages/Terms';
 import __Layout from './Layout.jsx';
 
 
@@ -101,8 +101,8 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "SelectAgent": SelectAgent,
-    "Terms": Terms,
     "SendCounter": SendCounter,
+    "Terms": Terms,
 }
 
 export const pagesConfig = {

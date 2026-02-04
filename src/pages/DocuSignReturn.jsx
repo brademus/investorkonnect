@@ -22,22 +22,37 @@ export default function DocuSignReturn() {
       try {
         // Handle signature events
         if (event === 'signing_complete') {
-          // Investor signed - DocuSign webhook will convert draft to deal
+          // Investor signed - wait for webhook then convert draft
           if (role === 'investor' && draftId) {
             setMessage('Processing your signature...');
             
-            // Wait for webhook to process (poll for deal creation)
+            // Wait for webhook to mark agreement as signed
             let attempts = 0;
-            const maxAttempts = 10;
+            const maxAttempts = 15;
             
             while (attempts < maxAttempts) {
               await new Promise(resolve => setTimeout(resolve, 1000));
               
-              // Check if draft was converted to deal
-              const drafts = await base44.entities.DealDraft.filter({ id: draftId });
+              // Check if agreement is signed
+              const agreements = await base44.entities.LegalAgreement.filter({ 
+                deal_id: draftId 
+              });
               
-              if (drafts.length === 0) {
-                // Draft deleted = conversion succeeded
+              if (agreements.length > 0 && agreements[0].investor_signed_at) {
+                // Agreement signed - now convert draft to deal
+                setMessage('Creating your deal...');
+                
+                const res = await base44.functions.invoke('convertDraftToDeal', {
+                  draft_id: draftId
+                });
+
+                if (res.status !== 200 || res.data?.error) {
+                  setStatus('error');
+                  setMessage(res.data?.error || 'Failed to create deal');
+                  console.error('[DocuSignReturn] convertDraftToDeal error:', res);
+                  return;
+                }
+
                 setStatus('success');
                 setMessage('Deal created! Agents have been notified.');
                 
@@ -50,9 +65,25 @@ export default function DocuSignReturn() {
               attempts++;
             }
             
-            // Timeout - webhook may be delayed
-            setStatus('success');
-            setMessage('Signature received! Your deal will be ready shortly.');
+            // Timeout - webhook may be delayed, try conversion anyway
+            setMessage('Finalizing your deal...');
+            
+            try {
+              const res = await base44.functions.invoke('convertDraftToDeal', {
+                draft_id: draftId
+              });
+
+              if (res.status === 200 && !res.data?.error) {
+                setStatus('success');
+                setMessage('Deal created! Agents have been notified.');
+              } else {
+                setStatus('error');
+                setMessage('Signature confirmed, but deal creation is delayed. Check your pipeline in a moment.');
+              }
+            } catch (e) {
+              setStatus('error');
+              setMessage('Signature confirmed, but deal creation is delayed. Check your pipeline in a moment.');
+            }
             
             setTimeout(() => {
               navigate(createPageUrl('Pipeline'), { replace: true });
