@@ -41,16 +41,47 @@ export default function DocuSignReturn() {
 
                // Give the automation time to create the Deal and invites
                // (createDealOnInvestorSignature runs on LegalAgreement update)
+               // NOTE: dealId here might be a draft ID, the automation creates the real Deal
                let attempts = 0;
-               const maxAttempts = 12; // ~6 seconds with 500ms intervals
+               const maxAttempts = 20; // ~10 seconds with 500ms intervals
                let rooms = [];
+               let realDealId = null;
 
                while (attempts < maxAttempts && rooms.length === 0) {
                  await new Promise(resolve => setTimeout(resolve, 500));
                  try {
+                   // First try to find room by the dealId passed (in case it's already a real deal)
                    rooms = await base44.entities.Room.filter({ deal_id: dealId });
+                   
+                   // If no rooms found, try to find the agreement and check if it has a different deal_id
+                   if (rooms.length === 0) {
+                     const agreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId });
+                     if (agreements?.length > 0 && agreements[0].deal_id && agreements[0].deal_id !== dealId) {
+                       // Agreement was updated with real deal_id
+                       realDealId = agreements[0].deal_id;
+                       rooms = await base44.entities.Room.filter({ deal_id: realDealId });
+                     }
+                   }
+                   
+                   // Also try finding rooms by investor if we still have none
+                   if (rooms.length === 0) {
+                     const user = await base44.auth.me();
+                     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+                     if (profiles?.length > 0) {
+                       const recentRooms = await base44.entities.Room.filter({ investorId: profiles[0].id }, '-created_date', 1);
+                       // Check if this room was created in the last 30 seconds
+                       if (recentRooms?.length > 0) {
+                         const roomCreated = new Date(recentRooms[0].created_date);
+                         const now = new Date();
+                         if ((now - roomCreated) < 30000) {
+                           rooms = recentRooms;
+                           realDealId = recentRooms[0].deal_id;
+                         }
+                       }
+                     }
+                   }
                  } catch (e) {
-                   // Deal might not be queryable yet
+                   console.log('[DocuSignReturn] Query attempt failed:', e.message);
                  }
                  attempts++;
                }
@@ -60,18 +91,24 @@ export default function DocuSignReturn() {
                  toast.success('Deal created and sent to agents!');
                  sessionStorage.removeItem('selectedAgentIds');
                  sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+                 sessionStorage.removeItem('newDealDraft');
 
                  // Navigate to first room
                  navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
                  return;
                } else {
-                 throw new Error('Room was not created by automation');
+                 console.warn('[DocuSignReturn] Room not found after max attempts, redirecting to pipeline');
+                 toast.success('Deal created! Check your pipeline.');
+                 sessionStorage.removeItem('newDealDraft');
+                 navigate(createPageUrl("Pipeline"), { replace: true });
+                 return;
                }
              } catch (inviteError) {
                console.error('[DocuSignReturn] Deal creation or room lookup failed:', inviteError);
                toast.error('Deal created but room not accessible yet. Returning to pipeline...');
 
                // Still navigate to pipeline since the automation should have created the deal
+               sessionStorage.removeItem('newDealDraft');
                await new Promise(resolve => setTimeout(resolve, 1000));
                navigate(createPageUrl("Pipeline"), { replace: true });
                return;
