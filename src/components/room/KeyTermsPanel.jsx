@@ -93,7 +93,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
     };
 
     loadTerms();
-  }, [deal?.id, room?.id, room?.deal_id, room?.current_legal_agreement_id, agreement?.id]);
+  }, [deal?.id, room?.id, room?.deal_id, room?.current_legal_agreement_id, room?.proposed_terms, agreement?.id, agreement?.exhibit_a_terms]);
 
   const formatComm = (type, percentage, flatFee) => {
     if (type === 'percentage' && percentage !== undefined) {
