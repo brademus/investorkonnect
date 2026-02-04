@@ -56,7 +56,13 @@ Deno.serve(async (req) => {
     };
 
     const generateRes = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
-      deal_id: draft_id,
+      draft_id: draft_id,
+      state: draft.state,
+      city: draft.city,
+      county: draft.county,
+      zip: draft.zip,
+      property_address: draft.property_address,
+      property_type: draft.property_type,
       investor_profile_id: profile.id,
       exhibit_a,
       signer_mode: 'investor_only'
