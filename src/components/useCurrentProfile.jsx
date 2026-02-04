@@ -203,9 +203,9 @@ export function useCurrentProfile() {
       } catch (error) {
         console.error('[useCurrentProfile] Fatal error:', error);
         
-        // On rate limit, use stale cache if available
-        if (error?.message?.includes('Rate limit') && globalProfileCache) {
-          console.log('[useCurrentProfile] Rate limited - using stale cache');
+        // CRITICAL: Always use stale cache on ANY error to prevent logout loops
+        if (globalProfileCache) {
+          console.log('[useCurrentProfile] Error encountered - using cached state to prevent logout');
           if (mounted) setState(globalProfileCache);
           return;
         }
