@@ -29,20 +29,45 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
         const rooms = await base44.entities.Room.filter({ id: roomId });
         if (rooms[0]) setRoom(rooms[0]);
 
-        // Load agreement for this room
-        const agreements = await base44.entities.LegalAgreement.filter({ 
+        // Try multiple strategies to find agreement
+        let agreement = null;
+
+        // Strategy 1: Both deal_id and room_id
+        let agreements = await base44.entities.LegalAgreement.filter({ 
           deal_id: dealId,
           room_id: roomId 
         });
-        
-        // If no room-specific agreement, use base agreement
-        if (!agreements[0]) {
-          const baseAgreements = await base44.entities.LegalAgreement.filter({ 
+        if (agreements[0]) {
+          agreement = agreements[0];
+          console.log('[AgreementPanel] Found by deal_id + room_id');
+        }
+
+        // Strategy 2: Just deal_id
+        if (!agreement) {
+          const dealAgreements = await base44.entities.LegalAgreement.filter({ 
             deal_id: dealId 
           });
-          if (baseAgreements[0]) setAgreement(baseAgreements[0]);
+          if (dealAgreements[0]) {
+            agreement = dealAgreements[0];
+            console.log('[AgreementPanel] Found by deal_id');
+          }
+        }
+
+        // Strategy 3: Just room_id
+        if (!agreement) {
+          const roomAgreements = await base44.entities.LegalAgreement.filter({ 
+            room_id: roomId 
+          });
+          if (roomAgreements[0]) {
+            agreement = roomAgreements[0];
+            console.log('[AgreementPanel] Found by room_id');
+          }
+        }
+
+        if (agreement) {
+          setAgreement(agreement);
         } else {
-          setAgreement(agreements[0]);
+          console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
         // Load pending counters (for this room or deal)
