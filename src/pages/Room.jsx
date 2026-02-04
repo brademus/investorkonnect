@@ -1007,8 +1007,9 @@ export default function Room() {
   }, [messages, roomId, currentRoom?.id]);
 
   // Multi-agent mode: Show pending agents instead of messages for investors with any agents
-  // Exit multi-agent mode once deal is locked or this room is fully signed
-  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 0 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
+  // Exit multi-agent mode ONLY when deal is locked (an agent fully signed)
+  // Accepting a counter offer does NOT exit multi-agent mode - agent still needs to sign
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 0 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !deal?.locked_agent_id;
   
   console.log('[Room] isMultiAgentMode check:', {
     isInvestor: profile?.user_role === 'investor',
