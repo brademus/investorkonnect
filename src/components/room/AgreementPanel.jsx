@@ -205,6 +205,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   };
 
   const handleAcceptCounter = async (counterId) => {
+    setBusy(true);
     try {
       const res = await base44.functions.invoke('acceptCounterOffer', {
         counter_id: counterId
@@ -212,27 +213,107 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
 
       if (res.data?.error) {
         toast.error(res.data.error);
+        setBusy(false);
         return;
       }
 
-      toast.success('Counter accepted - new agreement generated');
+      toast.success('Counter accepted - new agreement generated. Please sign the updated agreement.');
       setPendingCounters(prev => prev.filter(c => c.id !== counterId));
 
-      // Reload agreement
+      // Reload agreement - look for DRAFT status (the new one)
       const agreements = await base44.entities.LegalAgreement.filter({ 
         deal_id: dealId,
         room_id: roomId 
       });
-      if (agreements[0]) setAgreement(agreements[0]);
+      // Prefer draft agreement (newly generated) over voided ones
+      const newAgreement = agreements.find(a => a.status === 'draft') || agreements.find(a => a.status !== 'voided') || agreements[0];
+      if (newAgreement) {
+        setAgreement(newAgreement);
+        if (onAgreementChange) onAgreementChange(newAgreement);
+      }
     } catch (e) {
       console.error('[AgreementPanel] Accept error:', e);
       toast.error('Failed to accept counter');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Regenerate agreement (for investor after accepting counter)
+  const handleRegenerate = async () => {
+    setRegenerating(true);
+    try {
+      // Get the room to fetch current terms
+      const rooms = await base44.entities.Room.filter({ id: roomId });
+      const currentRoom = rooms[0];
+      
+      if (!currentRoom) {
+        toast.error('Room not found');
+        setRegenerating(false);
+        return;
+      }
+
+      // Determine signer mode based on who is regenerating
+      const signerMode = isInvestor ? 'investor_only' : 'agent_only';
+
+      const res = await base44.functions.invoke('generateLegalAgreement', {
+        deal_id: dealId,
+        room_id: roomId,
+        investor_profile_id: currentRoom.investorId,
+        agent_profile_ids: currentRoom.agent_ids,
+        signer_mode: signerMode
+      });
+
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        setRegenerating(false);
+        return;
+      }
+
+      const newAgreement = res.data?.agreement;
+      if (newAgreement) {
+        setAgreement(newAgreement);
+        if (onAgreementChange) onAgreementChange(newAgreement);
+        toast.success('Agreement regenerated - ready for signing');
+      }
+    } catch (e) {
+      console.error('[AgreementPanel] Regenerate error:', e);
+      toast.error('Failed to regenerate agreement');
+    } finally {
+      setRegenerating(false);
+    }
+  };
+
+  // Sign agreement (for investor)
+  const handleInvestorSign = async () => {
+    setBusy(true);
+    try {
+      const res = await base44.functions.invoke('docusignCreateSigningSession', {
+        agreement_id: agreement.id,
+        role: 'investor',
+        room_id: roomId,
+        redirect_url: window.location.href + '&signed=1'
+      });
+
+      if (res.data?.signing_url) {
+        window.location.assign(res.data.signing_url);
+      } else {
+        toast.error('Failed to start signing');
+        setBusy(false);
+      }
+    } catch (e) {
+      console.error('[AgreementPanel] Investor sign error:', e);
+      toast.error('Failed to start signing');
+      setBusy(false);
     }
   };
 
   const investorSigned = !!agreement?.investor_signed_at;
   const agentSigned = !!agreement?.agent_signed_at;
   const fullySigned = investorSigned && agentSigned;
+  
+  // Check if agreement needs regeneration (status is draft and no signatures yet)
+  const needsSignature = agreement && agreement.status === 'draft' && !investorSigned && !agentSigned;
 
   return (
     <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
