@@ -27,13 +27,17 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   const isInvestor = profile?.user_role === 'investor';
 
   // Update agreement when initialAgreement changes (from parent)
+  // CRITICAL: Also reset when roomId changes to prevent showing stale agreement
   useEffect(() => {
-    if (initialAgreement) {
+    if (initialAgreement && initialAgreement.room_id === roomId) {
       setAgreement(initialAgreement);
       agreementInitializedRef.current = true;
-      console.log('[AgreementPanel] Updated from initialAgreement');
+      console.log('[AgreementPanel] Updated from initialAgreement for room:', roomId);
+    } else if (!initialAgreement) {
+      // Reset if no initial agreement provided (new room selected)
+      agreementInitializedRef.current = false;
     }
-  }, [initialAgreement?.id]); // Only trigger on ID change to avoid loops
+  }, [initialAgreement?.id, roomId]); // Trigger on ID change or room change
 
   // Load room and agreement
   // CRITICAL: When selectedAgentId is provided, we need to find the RIGHT room for that agent
