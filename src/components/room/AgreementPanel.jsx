@@ -111,61 +111,21 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
           console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
-        // Load pending counters - try multiple strategies
+        // Load pending counters - STRICTLY room-scoped only
+        // CRITICAL: Only load counters for THIS specific room to prevent cross-agent pollution
         let counters = [];
         
-        // Strategy 1: Filter by room_id + status
         try {
-          counters = await base44.entities.CounterOffer.filter({
-            room_id: roomId,
-            status: 'pending'
+          // Only fetch counters for THIS room - never fall back to deal-level
+          const roomCounters = await base44.entities.CounterOffer.filter({
+            room_id: roomId
           });
-          console.log('[AgreementPanel] Room+status filter returned:', counters.length);
+          counters = roomCounters.filter(c => c.status === 'pending');
+          console.log('[AgreementPanel] Loaded counters for room:', roomId, 'pending:', counters.length);
         } catch (e) {
-          console.warn('[AgreementPanel] Room+status filter failed:', e.message);
+          console.warn('[AgreementPanel] Counter load failed:', e.message);
         }
         
-        // Strategy 2: Filter by room_id only
-        if (counters.length === 0) {
-          try {
-            const roomCounters = await base44.entities.CounterOffer.filter({
-              room_id: roomId
-            });
-            counters = roomCounters.filter(c => c.status === 'pending');
-            console.log('[AgreementPanel] Room filter returned:', roomCounters.length, 'pending:', counters.length);
-          } catch (e) {
-            console.warn('[AgreementPanel] Room filter failed:', e.message);
-          }
-        }
-        
-        // Strategy 3: Filter by deal_id + status
-        if (counters.length === 0) {
-          try {
-            const dealCounters = await base44.entities.CounterOffer.filter({
-              deal_id: dealId,
-              status: 'pending'
-            });
-            counters = dealCounters;
-            console.log('[AgreementPanel] Deal+status filter returned:', counters.length);
-          } catch (e) {
-            console.warn('[AgreementPanel] Deal+status filter failed:', e.message);
-          }
-        }
-        
-        // Strategy 4: Filter by deal_id only
-        if (counters.length === 0) {
-          try {
-            const dealCounters = await base44.entities.CounterOffer.filter({
-              deal_id: dealId
-            });
-            counters = dealCounters.filter(c => c.status === 'pending');
-            console.log('[AgreementPanel] Deal filter returned:', dealCounters.length, 'pending:', counters.length);
-          } catch (e) {
-            console.warn('[AgreementPanel] Deal filter failed:', e.message);
-          }
-        }
-        
-        console.log('[AgreementPanel] Final counters:', counters.length, counters);
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
