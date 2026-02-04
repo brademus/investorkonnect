@@ -1854,8 +1854,42 @@ export default function Room() {
                                      </h4>
                                      <PendingAgentsList 
                                        invites={invites} 
-                                       onSelectAgent={(invite) => {
+                                       onSelectAgent={async (invite) => {
+                                         console.log('[Room] Agent selected from Deal Board:', invite.agent_profile_id, 'room:', invite.room_id);
+                                         
+                                         // Reset agreement state to prevent stale data
+                                         setAgreement(null);
                                          setSelectedInvite(invite);
+                                         
+                                         if (invite.room_id) {
+                                           try {
+                                             const rooms = await base44.entities.Room.filter({ id: invite.room_id });
+                                             if (rooms[0]) {
+                                               const agentRoom = rooms[0];
+                                               setCurrentRoom(prev => ({
+                                                 ...prev,
+                                                 agent_terms: agentRoom.agent_terms,
+                                                 proposed_terms: agentRoom.proposed_terms,
+                                                 current_legal_agreement_id: agentRoom.current_legal_agreement_id
+                                               }));
+                                             }
+                                             
+                                             const dealId = currentRoom?.deal_id || deal?.id;
+                                             const agreements = await base44.entities.LegalAgreement.filter({ 
+                                               deal_id: dealId,
+                                               room_id: invite.room_id 
+                                             });
+                                             
+                                             const activeAgreement = agreements.find(a => a.status === 'draft') || 
+                                                                    agreements.find(a => a.status !== 'voided') || 
+                                                                    agreements[0];
+                                             if (activeAgreement) {
+                                               setAgreement(activeAgreement);
+                                             }
+                                           } catch (e) {
+                                             console.error('[Room] Failed to load agent-specific data:', e);
+                                           }
+                                         }
                                          toast.success('Agent selected - you can now review and sign the agreement');
                                        }}
                                        selectedInviteId={selectedInvite?.id}
