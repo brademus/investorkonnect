@@ -471,17 +471,7 @@ export default function NewDeal() {
       }
     }
 
-    // Immediately create a room request so the agent sees it right away (if agent already selected)
-  try {
-    if (dealId) {
-      const selectedAgentId = sessionStorage.getItem('selectedAgentId');
-      if (selectedAgentId) {
-        await base44.functions.invoke('sendDealRequest', { deal_id: dealId, agent_profile_id: selectedAgentId });
-      }
-    }
-  } catch (_) {}
-
-  // Save to sessionStorage - include dealId if editing
+    // Save to sessionStorage - include dealId if editing
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -514,12 +504,8 @@ export default function NewDeal() {
       hasBasement
     }));
 
-    // Navigate with dealId if editing
-    if (dealId) {
-      navigate(`${createPageUrl("ContractVerify")}?dealId=${dealId}`);
-    } else {
-      navigate(createPageUrl("ContractVerify"));
-    }
+    // Navigate to agent selection
+    navigate(createPageUrl("SelectAgent"));
   };
 
   if (loading) {
