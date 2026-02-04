@@ -109,10 +109,20 @@ Deno.serve(async (req) => {
     }
 
     // Update room with new agreement AND the new terms
+    // CRITICAL: Store terms in agent_terms[agentId] to keep them agent-specific
+    // This ensures other agents in other rooms don't see these negotiated terms
+    const agentId = room.agent_ids?.[0];
+    const updatedAgentTerms = {
+      ...(room.agent_terms || {}),
+      [agentId]: newTerms
+    };
+    
     await base44.asServiceRole.entities.Room.update(counter.room_id, {
       current_legal_agreement_id: newAgreement.id,
       agreement_status: 'draft',
-      // Store the negotiated terms on the room for quick access
+      // Store agent-specific negotiated terms
+      agent_terms: updatedAgentTerms,
+      // Also store in proposed_terms for backward compatibility with UI
       proposed_terms: newTerms
     });
 
