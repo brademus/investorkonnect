@@ -437,15 +437,17 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
-    const draft_id = body.draft_id;
-    const deal_id = body.deal_id;
+    const draft_id = body.draft_id || null;
+    const deal_id = body.deal_id || null;
     const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
     let exhibit_a = body.exhibit_a || {};
     // Only support investor_only (initial) or both (counter-accepted)
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
+    console.log('[generateLegalAgreement] Received params:', { deal_id, draft_id, room_id, signer_mode, has_exhibit_a: !!exhibit_a });
+
     if (!deal_id && !draft_id) {
-      console.log('[generateLegalAgreement] Missing both deal_id and draft_id');
+      console.log('[generateLegalAgreement] Missing both deal_id and draft_id - full body:', JSON.stringify(body));
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
     console.log('[generateLegalAgreement] Starting with deal_id:', deal_id, 'draft_id:', draft_id);
