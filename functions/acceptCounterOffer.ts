@@ -116,7 +116,6 @@ Deno.serve(async (req) => {
     // Update room with new agreement AND the new terms
     // CRITICAL: Store terms in agent_terms[agentId] to keep them agent-specific
     // This ensures other agents in other rooms don't see these negotiated terms
-    const agentId = room.agent_ids?.[0];
     const updatedAgentTerms = {
       ...(room.agent_terms || {}),
       [agentId]: newTerms
