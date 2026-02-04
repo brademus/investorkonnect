@@ -26,6 +26,7 @@ Deno.serve(async (req) => {
     }
 
     // Load DealDraft (pre-signing flow) or Deal (post-counter flow)
+    // CRITICAL: If draft_id is provided, prioritize draft flow and skip Deal lookup
     let dealContext = null;
     let draftContext = null;
 
@@ -41,6 +42,7 @@ Deno.serve(async (req) => {
       };
       console.log('[regenerateActiveAgreement] Using draft context from request params:', draftContext);
     } else if (deal_id) {
+      // Only load Deal if draft_id was NOT provided
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
       dealContext = deals?.[0];
       if (!dealContext) {
