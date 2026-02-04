@@ -3,23 +3,25 @@ import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { FileText, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { FileText, CheckCircle2, Clock, Loader2, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 /**
  * AGREEMENT PANEL for Room Page
- * Shows agreement status and signing for agents
- * Handles counter offers
+ * Shows agreement status and signing for both investors and agents
+ * Handles counter offers and regeneration after terms change
  */
-export default function AgreementPanel({ dealId, roomId, profile, initialAgreement }) {
+export default function AgreementPanel({ dealId, roomId, profile, initialAgreement, onAgreementChange }) {
   const [agreement, setAgreement] = useState(initialAgreement || null);
   const [room, setRoom] = useState(null);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
   const [loading, setLoading] = useState(!initialAgreement);
   const agreementInitializedRef = useRef(false);
 
   const isAgent = profile?.user_role === 'agent';
+  const isInvestor = profile?.user_role === 'investor';
 
   // Update agreement when initialAgreement changes (from parent)
   useEffect(() => {
