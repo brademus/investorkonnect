@@ -108,17 +108,25 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Failed to generate new agreement' }, { status: 500 });
     }
 
-    // Update room
+    // Update room with new agreement AND the new terms
     await base44.asServiceRole.entities.Room.update(counter.room_id, {
       current_legal_agreement_id: newAgreement.id,
-      agreement_status: 'draft'
+      agreement_status: 'draft',
+      // Store the negotiated terms on the room for quick access
+      proposed_terms: newTerms
     });
 
-    console.log('[acceptCounterOffer] Generated new agreement:', newAgreement.id);
+    console.log('[acceptCounterOffer] Generated new agreement:', newAgreement.id, 'with terms:', newTerms);
+
+    // Fetch the full new agreement to return to frontend
+    const fullAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: newAgreement.id });
+    const fullAgreement = fullAgreements[0] || newAgreement;
 
     return Response.json({
       success: true,
       new_agreement_id: newAgreement.id,
+      agreement: fullAgreement,
+      new_terms: newTerms,
       needs_signature_from: userRole === 'investor' ? 'investor' : 'agent'
     });
   } catch (error) {
