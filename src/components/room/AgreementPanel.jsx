@@ -258,8 +258,6 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
                 <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
               </div>
             )}
-          </>
-        )}
       </CardContent>
     </Card>
   );
