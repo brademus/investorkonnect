@@ -36,14 +36,17 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   }, [initialAgreement?.id]); // Only trigger on ID change to avoid loops
 
   // Load room and agreement
+  // CRITICAL: When selectedAgentId is provided, we need to find the RIGHT room for that agent
   useEffect(() => {
     if (!dealId || !roomId || agreementInitializedRef.current) return;
 
     (async () => {
       try {
-        // Load room
+        // Load room - use the specific roomId passed in (should be agent-specific)
         const rooms = await base44.entities.Room.filter({ id: roomId });
         if (rooms[0]) setRoom(rooms[0]);
+        
+        console.log('[AgreementPanel] Loading for dealId:', dealId, 'roomId:', roomId, 'selectedAgentId:', selectedAgentId);
 
         // Skip if we already have a valid agreement from props
         if (agreement?.id) {
