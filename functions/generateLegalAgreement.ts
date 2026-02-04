@@ -464,25 +464,30 @@ Deno.serve(async (req) => {
       }
       deal = deals[0];
     } else if (draft_id) {
-      // For draft-scoped generation (investor-only), we still need basic deal info
-      // Build minimal deal object from draft
-      const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
-      if (!drafts || drafts.length === 0) {
-        return Response.json({ error: 'DealDraft not found' }, { status: 404 });
+      // For draft-scoped generation (investor-only), use provided params
+      // No need to fetch DealDraft - all data should be in request body
+      const stateParam = body.state;
+      const cityParam = body.city;
+      const zipParam = body.zip;
+      const countyParam = body.county;
+      const addressParam = body.property_address;
+
+      if (!stateParam) {
+        return Response.json({ error: 'State required for draft-based generation' }, { status: 400 });
       }
-      const draft = drafts[0];
-      // Convert draft to deal-like structure for rendering
+
+      // Build minimal deal object for rendering
       deal = {
-        id: `draft-${draft_id}`,
-        state: draft.state,
-        city: draft.city,
-        county: draft.county,
-        zip: draft.zip,
-        property_address: draft.property_address,
-        property_type: draft.property_type,
+        id: draft_id,
+        state: stateParam,
+        city: cityParam || 'TBD',
+        county: countyParam || 'TBD',
+        zip: zipParam || 'TBD',
+        property_address: addressParam || 'TBD',
+        property_type: body.property_type || 'Single Family',
         transaction_type: 'ASSIGNMENT'
       };
-      console.log('[generateLegalAgreement] Generated deal from DealDraft:', draft_id);
+      console.log('[generateLegalAgreement] Using draft-based deal:', deal);
     }
 
     // Load room (if room_id provided) to get room-scoped terms
