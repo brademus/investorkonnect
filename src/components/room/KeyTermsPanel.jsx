@@ -2,93 +2,90 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 /**
  * KEY TERMS PANEL for Room Page
  * Shows purchase price, buyer agent commission, and agreement length - updates when counters are accepted
- * Fetches latest terms from the room's current legal agreement
+ * ALWAYS fetches latest non-voided agreement for this specific room to get the most current terms
  */
 export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement }) {
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Extract current buyer commission terms - prioritize agreement exhibit_a_terms
+  // Extract current buyer commission terms - ALWAYS fetch fresh from agreement
   useEffect(() => {
-    if (!deal && !room) {
+    if (!room?.id) {
       setDisplayTerms(null);
+      setLoading(false);
       return;
     }
 
     const loadTerms = async () => {
+      setLoading(true);
       let terms = null;
 
-      // Priority 1: If agreement passed in, use its exhibit_a_terms
-      if (agreement?.exhibit_a_terms) {
-        terms = agreement.exhibit_a_terms;
-        console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', terms);
-      }
-      // Priority 2: Fetch from room's current_legal_agreement_id
-      else if (room?.current_legal_agreement_id) {
-        try {
-          setLoading(true);
+      try {
+        // ALWAYS fetch the latest non-voided agreement for this room
+        // This ensures we get the updated terms after counter acceptance
+        const dealId = deal?.id || room?.deal_id;
+        
+        if (dealId && room?.id) {
+          console.log('[KeyTermsPanel] Fetching agreements for deal:', dealId, 'room:', room.id);
+          
           const agreements = await base44.entities.LegalAgreement.filter({ 
-            id: room.current_legal_agreement_id 
-          });
-          if (agreements[0]?.exhibit_a_terms) {
-            terms = agreements[0].exhibit_a_terms;
-            console.log('[KeyTermsPanel] Fetched from current_legal_agreement_id:', terms);
-          }
-        } catch (e) {
-          console.warn('[KeyTermsPanel] Failed to fetch agreement:', e);
-        } finally {
-          setLoading(false);
-        }
-      }
-      // Priority 3: Fetch latest non-voided agreement for this room
-      else if (room?.id && deal?.id) {
-        try {
-          setLoading(true);
-          const agreements = await base44.entities.LegalAgreement.filter({ 
-            deal_id: deal.id,
+            deal_id: dealId,
             room_id: room.id 
           });
-          // Find the latest non-voided agreement
-          const validAgreement = agreements.find(a => a.status !== 'voided') || agreements[0];
-          if (validAgreement?.exhibit_a_terms) {
-            terms = validAgreement.exhibit_a_terms;
-            console.log('[KeyTermsPanel] Fetched from room+deal query:', terms);
+          
+          console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
+          
+          // Find the latest non-voided agreement (prefer draft for newly generated)
+          const draftAgreement = agreements.find(a => a.status === 'draft');
+          const nonVoidedAgreement = agreements.find(a => a.status !== 'voided');
+          const latestAgreement = draftAgreement || nonVoidedAgreement || agreements[0];
+          
+          if (latestAgreement?.exhibit_a_terms) {
+            terms = latestAgreement.exhibit_a_terms;
+            console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', latestAgreement.id, terms);
           }
-        } catch (e) {
-          console.warn('[KeyTermsPanel] Failed to fetch room agreements:', e);
-        } finally {
-          setLoading(false);
         }
-      }
-      
-      // Priority 4: Fall back to deal.proposed_terms
-      if (!terms && deal?.proposed_terms) {
-        terms = deal.proposed_terms;
-        console.log('[KeyTermsPanel] Using deal.proposed_terms:', terms);
-      }
-      // Priority 5: Fallback to room agent_terms
-      else if (!terms && room?.agent_terms && typeof room.agent_terms === 'object') {
-        const agentIds = Object.keys(room.agent_terms);
-        if (agentIds.length > 0) {
-          terms = room.agent_terms[agentIds[0]];
-          console.log('[KeyTermsPanel] Using room.agent_terms:', terms);
+        
+        // Fallback: use passed agreement prop
+        if (!terms && agreement?.exhibit_a_terms) {
+          terms = agreement.exhibit_a_terms;
+          console.log('[KeyTermsPanel] Fallback to agreement prop:', terms);
         }
+        
+        // Fallback: use deal.proposed_terms
+        if (!terms && deal?.proposed_terms) {
+          terms = deal.proposed_terms;
+          console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
+        }
+        
+        // Fallback: room agent_terms
+        if (!terms && room?.agent_terms && typeof room.agent_terms === 'object') {
+          const agentIds = Object.keys(room.agent_terms);
+          if (agentIds.length > 0) {
+            terms = room.agent_terms[agentIds[0]];
+            console.log('[KeyTermsPanel] Fallback to room.agent_terms:', terms);
+          }
+        }
+      } catch (e) {
+        console.error('[KeyTermsPanel] Error fetching terms:', e);
       }
 
       setDisplayTerms(terms);
+      setLoading(false);
+      
       if (onTermsChange) {
         onTermsChange(terms);
       }
     };
 
     loadTerms();
-  }, [deal?.proposed_terms, room?.agent_terms, room?.current_legal_agreement_id, deal?.id, room?.id, agreement?.id, agreement?.exhibit_a_terms]);
+  }, [deal?.id, room?.id, room?.deal_id, room?.current_legal_agreement_id, agreement?.id]);
 
   const formatComm = (type, percentage, flatFee) => {
     if (type === 'percentage' && percentage !== undefined) {
