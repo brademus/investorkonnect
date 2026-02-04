@@ -46,14 +46,18 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Access denied' }, { status: 403 });
     }
 
-    if (isAgent && deal.agent_id !== profile.id) {
-      // Check if agent has a room for this deal
+    if (isAgent) {
+      // Check if agent has a room for this deal (multi-agent support)
       const agentRooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        agentId: profile.id 
+        deal_id: dealId
       });
       
-      if (agentRooms.length === 0) {
+      // Agent must be in the room's agent_ids array
+      const hasAccess = agentRooms.some(r => 
+        r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+      );
+      
+      if (!hasAccess) {
         return Response.json({ error: 'Access denied' }, { status: 403 });
       }
     }
@@ -61,11 +65,13 @@ Deno.serve(async (req) => {
     // Get room to check signature status
     let room = null;
     if (isAgent) {
+      // Find room where this agent is in the agent_ids array
       const rooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        agentId: profile.id 
+        deal_id: dealId
       });
-      room = rooms[0];
+      room = rooms.find(r => 
+        r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+      );
     } else if (isInvestor) {
       const rooms = await base44.entities.Room.filter({ 
         deal_id: dealId,
