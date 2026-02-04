@@ -1019,13 +1019,21 @@ export default function Room() {
     result: isMultiAgentMode
   });
 
-  // CRITICAL: Once fully signed, clear invites immediately to hide pending agents and show only messages
+  // CRITICAL: Once fully signed (BOTH parties signed), clear invites to hide pending agents
+  // Do NOT clear invites just because investor accepted a counter - agent still needs to sign
   useEffect(() => {
-    if (currentRoom?.is_fully_signed || deal?.is_fully_signed || agreement?.status === 'fully_signed') {
+    // Only clear invites when agreement is FULLY signed (both investor AND agent)
+    const isFullySigned = 
+      agreement?.status === 'fully_signed' ||
+      (agreement?.investor_signed_at && agreement?.agent_signed_at) ||
+      currentRoom?.agreement_status === 'fully_signed' ||
+      deal?.locked_agent_id; // Deal is locked to an agent = fully signed
+    
+    if (isFullySigned) {
       setInvites([]);
       setSelectedInvite(null);
     }
-  }, [currentRoom?.is_fully_signed, deal?.is_fully_signed, agreement?.status]);
+  }, [currentRoom?.agreement_status, deal?.locked_agent_id, agreement?.status, agreement?.investor_signed_at, agreement?.agent_signed_at]);
 
 
 
