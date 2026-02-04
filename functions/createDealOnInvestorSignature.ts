@@ -56,29 +56,55 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fallback: Try to find DealDraft by investor_profile_id + agreement_id link
+    // Fallback: Try to find DealDraft by legal_agreement_id first, then by investor_profile_id
     const investorId = agreementData.investor_profile_id;
-    console.log('[createDealOnInvestorSignature] Looking for DealDraft for investor:', investorId);
+    console.log('[createDealOnInvestorSignature] Looking for DealDraft - agreement:', agreementData.id, 'investor:', investorId);
 
     let drafts = [];
-    if (investorId) {
+    
+    // PRIORITY 1: Try to find by legal_agreement_id (most accurate)
+    try {
       drafts = await base44.asServiceRole.entities.DealDraft.filter({
-        investor_profile_id: investorId
+        legal_agreement_id: agreementData.id
       });
+      console.log('[createDealOnInvestorSignature] Found', drafts.length, 'drafts by legal_agreement_id');
+    } catch (e) {
+      console.log('[createDealOnInvestorSignature] Query by legal_agreement_id failed:', e.message);
+    }
+    
+    // PRIORITY 2: If not found, try by investor_profile_id (most recent)
+    if ((!drafts || drafts.length === 0) && investorId) {
+      try {
+        drafts = await base44.asServiceRole.entities.DealDraft.filter({
+          investor_profile_id: investorId
+        }, '-created_date', 5); // Get 5 most recent
+        console.log('[createDealOnInvestorSignature] Found', drafts.length, 'drafts by investor_profile_id');
+      } catch (e) {
+        console.log('[createDealOnInvestorSignature] Query by investor_profile_id failed:', e.message);
+      }
     }
 
-    // Filter by most recent created
+    // Filter by most recent created if multiple found
     if (drafts && drafts.length > 0) {
       drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+      console.log('[createDealOnInvestorSignature] Selected most recent draft:', drafts[0].id);
       drafts = [drafts[0]]; // Take most recent
     }
 
     if (!drafts || drafts.length === 0) {
-      console.error('[createDealOnInvestorSignature] No DealDraft found for investor:', investorId);
+      console.error('[createDealOnInvestorSignature] ERROR: No DealDraft found!', {
+        agreement_id: agreementData.id,
+        investor_profile_id: investorId,
+        deal_id: agreementData.deal_id
+      });
       return Response.json({ 
         status: 'error', 
         error: 'no_deal_draft_found',
-        reason: 'Could not find DealDraft for this investor'
+        reason: 'Could not find DealDraft for this investor',
+        debug: {
+          agreement_id: agreementData.id,
+          investor_profile_id: investorId
+        }
       }, { status: 404 });
     }
 
@@ -145,11 +171,15 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Updated LegalAgreement with deal_id');
 
     // Create invites for selected agents
-    await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
-      deal_id: newDeal.id
-    });
-
-    console.log('[createDealOnInvestorSignature] Created agent invites');
+    try {
+      await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
+        deal_id: newDeal.id
+      });
+      console.log('[createDealOnInvestorSignature] Created agent invites');
+    } catch (inviteError) {
+      console.error('[createDealOnInvestorSignature] Failed to create invites:', inviteError.message);
+      // Don't fail the whole operation if invites fail - deal is still created
+    }
 
     // Delete the DealDraft
     await base44.asServiceRole.entities.DealDraft.delete(draft.id);
