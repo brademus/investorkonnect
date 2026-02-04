@@ -5,9 +5,10 @@ import { AlertCircle } from 'lucide-react';
 
 /**
  * KEY TERMS PANEL for Room Page
- * Shows buyer agent commission terms and updates when counters are accepted
+ * Shows purchase price, buyer agent commission, and agreement length - updates when counters are accepted
  */
 export default function KeyTermsPanel({ deal, room, profile, onTermsChange }) {
+  const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
 
   // Extract current buyer commission terms
