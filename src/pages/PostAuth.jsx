@@ -201,8 +201,8 @@ export default function PostAuth() {
       } catch (error) {
         console.error('[PostAuth] Error:', error);
         if (mounted) {
-          // Fallback to Home on error, not Pipeline
-          navigate(createPageUrl("Home"), { replace: true });
+          setError(error.message || 'Authentication failed');
+          // Give user option to retry instead of redirecting
         }
       }
     };
