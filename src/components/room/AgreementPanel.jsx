@@ -41,8 +41,18 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
 
   // Load room and agreement
   // CRITICAL: When selectedAgentId is provided, we need to find the RIGHT room for that agent
+  // CRITICAL: Reset state when roomId changes to prevent cross-agent data pollution
   useEffect(() => {
-    if (!dealId || !roomId || agreementInitializedRef.current) return;
+    // Reset on room change
+    setAgreement(null);
+    setRoom(null);
+    setPendingCounters([]);
+    agreementInitializedRef.current = false;
+    setLoading(true);
+  }, [roomId]);
+  
+  useEffect(() => {
+    if (!dealId || !roomId) return;
 
     (async () => {
       try {
@@ -52,9 +62,9 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         
         console.log('[AgreementPanel] Loading for dealId:', dealId, 'roomId:', roomId, 'selectedAgentId:', selectedAgentId);
 
-        // Skip if we already have a valid agreement from props
-        if (agreement?.id) {
-          console.log('[AgreementPanel] Already have agreement, skipping load');
+        // Skip if we already have a valid agreement from props that matches this room
+        if (agreement?.id && agreement?.room_id === roomId) {
+          console.log('[AgreementPanel] Already have agreement for this room, skipping load');
           setLoading(false);
           return;
         }
