@@ -1,4 +1,4 @@
-import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
+import { createClientFromRequest, createClient } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
   try {
@@ -9,6 +9,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Get auth token from request to forward to inner function
+    const authHeader = req.headers.get('Authorization') || '';
+    
     const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip } = await req.json();
 
     if (!draft_id && !deal_id) {
