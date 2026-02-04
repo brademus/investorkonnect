@@ -207,43 +207,49 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
                 </Button>
               </div>
             )}
+          </>
+        )}
 
-            {/* Pending Counters */}
-            {pendingCounters.map(counter => {
-              const isForMe = (isAgent && counter.to_role === 'agent') || (!isAgent && counter.to_role === 'investor');
-              
-              return (
-                <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
-                  <p className="text-xs text-[#E3C567] mb-3 font-semibold">
-                    {counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer
-                  </p>
-                  <div className="text-sm text-[#FAFAFA] mb-3">
-                    <p>Buyer Commission: {counter.terms_delta.buyer_commission_type === 'percentage'
-                      ? `${counter.terms_delta.buyer_commission_percentage}%`
-                      : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
-                  </div>
-                  {isForMe && (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleAcceptCounter(counter.id)}
-                        className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => window.location.href = `/SendCounter?dealId=${dealId}&roomId=${roomId}&respondingTo=${counter.id}`}
-                        variant="outline"
-                        className="flex-1 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
-                      >
-                        Counter Back
-                      </Button>
-                    </div>
-                  )}
+        {/* Pending Counters - Show outside agreement block for investors */}
+        {pendingCounters.map(counter => {
+          const isForMe = (isAgent && counter.to_role === 'agent') || (!isAgent && counter.to_role === 'investor');
+          
+          return (
+            <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
+              <p className="text-xs text-[#E3C567] mb-3 font-semibold">
+                {counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer
+              </p>
+              <div className="text-sm text-[#FAFAFA] mb-3">
+                <p>Buyer Commission: {counter.terms_delta.buyer_commission_type === 'percentage'
+                  ? `${counter.terms_delta.buyer_commission_percentage}%`
+                  : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
+              </div>
+              {isForMe && (
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleAcceptCounter(counter.id)}
+                    className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => window.location.href = `/SendCounter?dealId=${dealId}&roomId=${roomId}&respondingTo=${counter.id}`}
+                    variant="outline"
+                    className="flex-1 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
+                  >
+                    Counter Back
+                  </Button>
                 </div>
-              );
-            })}
+              )}
+            </div>
+          );
+        })}
+
+        {agreement && (
+          <>
+
 
             {/* Fully Signed */}
             {fullySigned && (
