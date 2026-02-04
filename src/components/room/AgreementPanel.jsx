@@ -165,36 +165,7 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
         {!agreement && (
           <div className="text-center py-8">
             <FileText className="w-12 h-12 text-[#808080] mx-auto mb-4 opacity-50" />
-            <p className="text-[#808080] mb-4">No agreement yet</p>
-            {!isAgent && (
-              <Button
-                onClick={async () => {
-                  setBusy(true);
-                  try {
-                    const res = await base44.functions.invoke('generateInvestorAgreement', {
-                      deal_id: dealId,
-                      room_id: roomId
-                    });
-                    if (res.data?.agreement) {
-                      setAgreement(res.data.agreement);
-                      toast.success('Agreement generated');
-                    } else {
-                      toast.error('Failed to generate agreement');
-                    }
-                  } catch (e) {
-                    console.error('[AgreementPanel] Generate error:', e);
-                    toast.error('Failed to generate agreement');
-                  } finally {
-                    setBusy(false);
-                  }
-                }}
-                disabled={busy}
-                className="bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-              >
-                {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                Generate Agreement
-              </Button>
-            )}
+            <p className="text-[#808080]">No agreement yet</p>
           </div>
         )}
 
