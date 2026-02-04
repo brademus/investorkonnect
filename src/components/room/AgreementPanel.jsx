@@ -27,32 +27,18 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   const isInvestor = profile?.user_role === 'investor';
 
   // Update agreement when initialAgreement changes (from parent)
-  // CRITICAL: Also reset when roomId changes to prevent showing stale agreement
   useEffect(() => {
-    if (initialAgreement && initialAgreement.room_id === roomId) {
+    if (initialAgreement) {
       setAgreement(initialAgreement);
       agreementInitializedRef.current = true;
-      console.log('[AgreementPanel] Updated from initialAgreement for room:', roomId);
-    } else if (!initialAgreement) {
-      // Reset if no initial agreement provided (new room selected)
-      agreementInitializedRef.current = false;
+      console.log('[AgreementPanel] Updated from initialAgreement');
     }
-  }, [initialAgreement?.id, roomId]); // Trigger on ID change or room change
+  }, [initialAgreement?.id]); // Only trigger on ID change to avoid loops
 
   // Load room and agreement
   // CRITICAL: When selectedAgentId is provided, we need to find the RIGHT room for that agent
-  // CRITICAL: Reset state when roomId changes to prevent cross-agent data pollution
   useEffect(() => {
-    // Reset on room change
-    setAgreement(null);
-    setRoom(null);
-    setPendingCounters([]);
-    agreementInitializedRef.current = false;
-    setLoading(true);
-  }, [roomId]);
-  
-  useEffect(() => {
-    if (!dealId || !roomId) return;
+    if (!dealId || !roomId || agreementInitializedRef.current) return;
 
     (async () => {
       try {
@@ -62,9 +48,9 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         
         console.log('[AgreementPanel] Loading for dealId:', dealId, 'roomId:', roomId, 'selectedAgentId:', selectedAgentId);
 
-        // Skip if we already have a valid agreement from props that matches this room
-        if (agreement?.id && agreement?.room_id === roomId) {
-          console.log('[AgreementPanel] Already have agreement for this room, skipping load');
+        // Skip if we already have a valid agreement from props
+        if (agreement?.id) {
+          console.log('[AgreementPanel] Already have agreement, skipping load');
           setLoading(false);
           return;
         }
@@ -111,21 +97,61 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
           console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
-        // Load pending counters - STRICTLY room-scoped only
-        // CRITICAL: Only load counters for THIS specific room to prevent cross-agent pollution
+        // Load pending counters - try multiple strategies
         let counters = [];
         
+        // Strategy 1: Filter by room_id + status
         try {
-          // Only fetch counters for THIS room - never fall back to deal-level
-          const roomCounters = await base44.entities.CounterOffer.filter({
-            room_id: roomId
+          counters = await base44.entities.CounterOffer.filter({
+            room_id: roomId,
+            status: 'pending'
           });
-          counters = roomCounters.filter(c => c.status === 'pending');
-          console.log('[AgreementPanel] Loaded counters for room:', roomId, 'pending:', counters.length);
+          console.log('[AgreementPanel] Room+status filter returned:', counters.length);
         } catch (e) {
-          console.warn('[AgreementPanel] Counter load failed:', e.message);
+          console.warn('[AgreementPanel] Room+status filter failed:', e.message);
         }
         
+        // Strategy 2: Filter by room_id only
+        if (counters.length === 0) {
+          try {
+            const roomCounters = await base44.entities.CounterOffer.filter({
+              room_id: roomId
+            });
+            counters = roomCounters.filter(c => c.status === 'pending');
+            console.log('[AgreementPanel] Room filter returned:', roomCounters.length, 'pending:', counters.length);
+          } catch (e) {
+            console.warn('[AgreementPanel] Room filter failed:', e.message);
+          }
+        }
+        
+        // Strategy 3: Filter by deal_id + status
+        if (counters.length === 0) {
+          try {
+            const dealCounters = await base44.entities.CounterOffer.filter({
+              deal_id: dealId,
+              status: 'pending'
+            });
+            counters = dealCounters;
+            console.log('[AgreementPanel] Deal+status filter returned:', counters.length);
+          } catch (e) {
+            console.warn('[AgreementPanel] Deal+status filter failed:', e.message);
+          }
+        }
+        
+        // Strategy 4: Filter by deal_id only
+        if (counters.length === 0) {
+          try {
+            const dealCounters = await base44.entities.CounterOffer.filter({
+              deal_id: dealId
+            });
+            counters = dealCounters.filter(c => c.status === 'pending');
+            console.log('[AgreementPanel] Deal filter returned:', dealCounters.length, 'pending:', counters.length);
+          } catch (e) {
+            console.warn('[AgreementPanel] Deal filter failed:', e.message);
+          }
+        }
+        
+        console.log('[AgreementPanel] Final counters:', counters.length, counters);
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
