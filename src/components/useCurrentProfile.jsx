@@ -73,8 +73,18 @@ export function useCurrentProfile() {
       // Use global cache if recent enough
       const now = Date.now();
       if (globalProfileCache && (now - globalCacheTimestamp) < CACHE_DURATION) {
-        console.log('[useCurrentProfile] Using cached profile');
+        console.log('[useCurrentProfile] Using in-memory cached profile');
         if (mounted) setState(globalProfileCache);
+        return;
+      }
+
+      // Try sessionStorage cache on cold start
+      const cachedProfile = loadCachedProfile();
+      if (cachedProfile) {
+        console.log('[useCurrentProfile] Using sessionStorage cached profile');
+        globalProfileCache = cachedProfile;
+        globalCacheTimestamp = Date.now();
+        if (mounted) setState(cachedProfile);
         return;
       }
 
