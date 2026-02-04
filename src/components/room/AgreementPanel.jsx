@@ -11,11 +11,12 @@ import { toast } from 'sonner';
  * Shows agreement status and signing for agents
  * Handles counter offers
  */
-export default function AgreementPanel({ dealId, roomId, profile }) {
-  const [agreement, setAgreement] = useState(null);
+export default function AgreementPanel({ dealId, roomId, profile, initialAgreement }) {
+  const [agreement, setAgreement] = useState(initialAgreement || null);
   const [room, setRoom] = useState(null);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(!initialAgreement);
 
   const isAgent = profile?.user_role === 'agent';
 
@@ -29,45 +30,51 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
         const rooms = await base44.entities.Room.filter({ id: roomId });
         if (rooms[0]) setRoom(rooms[0]);
 
-        // Try multiple strategies to find agreement
-        let agreement = null;
+        // If we have initialAgreement, use it; otherwise load
+        if (initialAgreement) {
+          setAgreement(initialAgreement);
+          console.log('[AgreementPanel] Using prefetched agreement');
+        } else {
+          // Try multiple strategies to find agreement
+          let foundAgreement = null;
 
-        // Strategy 1: Both deal_id and room_id
-        let agreements = await base44.entities.LegalAgreement.filter({ 
-          deal_id: dealId,
-          room_id: roomId 
-        });
-        if (agreements[0]) {
-          agreement = agreements[0];
-          console.log('[AgreementPanel] Found by deal_id + room_id');
-        }
-
-        // Strategy 2: Just deal_id
-        if (!agreement) {
-          const dealAgreements = await base44.entities.LegalAgreement.filter({ 
-            deal_id: dealId 
-          });
-          if (dealAgreements[0]) {
-            agreement = dealAgreements[0];
-            console.log('[AgreementPanel] Found by deal_id');
-          }
-        }
-
-        // Strategy 3: Just room_id
-        if (!agreement) {
-          const roomAgreements = await base44.entities.LegalAgreement.filter({ 
+          // Strategy 1: Both deal_id and room_id
+          let agreements = await base44.entities.LegalAgreement.filter({ 
+            deal_id: dealId,
             room_id: roomId 
           });
-          if (roomAgreements[0]) {
-            agreement = roomAgreements[0];
-            console.log('[AgreementPanel] Found by room_id');
+          if (agreements[0]) {
+            foundAgreement = agreements[0];
+            console.log('[AgreementPanel] Found by deal_id + room_id');
           }
-        }
 
-        if (agreement) {
-          setAgreement(agreement);
-        } else {
-          console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
+          // Strategy 2: Just deal_id
+          if (!foundAgreement) {
+            const dealAgreements = await base44.entities.LegalAgreement.filter({ 
+              deal_id: dealId 
+            });
+            if (dealAgreements[0]) {
+              foundAgreement = dealAgreements[0];
+              console.log('[AgreementPanel] Found by deal_id');
+            }
+          }
+
+          // Strategy 3: Just room_id
+          if (!foundAgreement) {
+            const roomAgreements = await base44.entities.LegalAgreement.filter({ 
+              room_id: roomId 
+            });
+            if (roomAgreements[0]) {
+              foundAgreement = roomAgreements[0];
+              console.log('[AgreementPanel] Found by room_id');
+            }
+          }
+
+          if (foundAgreement) {
+            setAgreement(foundAgreement);
+          } else {
+            console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
+          }
         }
 
         // Load pending counters - try multiple strategies
