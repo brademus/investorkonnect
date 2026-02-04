@@ -2250,11 +2250,12 @@ export default function Room() {
           {activeTab === 'agreement' && (
                 <div className="space-y-6">
                   {currentRoom?.deal_id ? (
-                     <AgreementPanel
-                       dealId={currentRoom.deal_id}
-                       roomId={roomId}
-                       profile={profile}
-                     />
+                             <AgreementPanel
+                               dealId={currentRoom.deal_id}
+                               roomId={roomId}
+                               profile={profile}
+                               initialAgreement={agreement}
+                             />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
