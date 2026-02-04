@@ -448,9 +448,21 @@ Deno.serve(async (req) => {
     
     console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)', 'signer_mode:', signer_mode);
 
-    // Load investor profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
+    // Load investor profile - prefer from request body for draft flow
+    let profile = null;
+    const investorProfileId = body.investor_profile_id;
+    
+    if (investorProfileId) {
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ id: investorProfileId });
+      profile = profiles?.[0];
+    }
+    
+    if (!profile) {
+      // Fallback to user_id lookup
+      const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+      profile = profiles?.[0];
+    }
+    
     if (!profile) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
