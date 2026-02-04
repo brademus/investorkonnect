@@ -61,8 +61,8 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Call generateLegalAgreement
-    const gen = await base44.functions.invoke('generateLegalAgreement', {
+    // Call generateLegalAgreement using asServiceRole for internal calls
+    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
       room_id: room_id || null,
