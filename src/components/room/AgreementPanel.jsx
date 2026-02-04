@@ -220,16 +220,23 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
       toast.success('Counter accepted - new agreement generated. Please sign the updated agreement.');
       setPendingCounters(prev => prev.filter(c => c.id !== counterId));
 
-      // Reload agreement - look for DRAFT status (the new one)
-      const agreements = await base44.entities.LegalAgreement.filter({ 
-        deal_id: dealId,
-        room_id: roomId 
-      });
-      // Prefer draft agreement (newly generated) over voided ones
-      const newAgreement = agreements.find(a => a.status === 'draft') || agreements.find(a => a.status !== 'voided') || agreements[0];
-      if (newAgreement) {
-        setAgreement(newAgreement);
-        if (onAgreementChange) onAgreementChange(newAgreement);
+      // Use the agreement returned directly from the API (has latest terms)
+      if (res.data?.agreement) {
+        console.log('[AgreementPanel] Using agreement from response:', res.data.agreement.id);
+        setAgreement(res.data.agreement);
+        if (onAgreementChange) onAgreementChange(res.data.agreement);
+      } else {
+        // Fallback: Reload agreement - look for DRAFT status (the new one)
+        const agreements = await base44.entities.LegalAgreement.filter({ 
+          deal_id: dealId,
+          room_id: roomId 
+        });
+        // Prefer draft agreement (newly generated) over voided ones
+        const newAgreement = agreements.find(a => a.status === 'draft') || agreements.find(a => a.status !== 'voided') || agreements[0];
+        if (newAgreement) {
+          setAgreement(newAgreement);
+          if (onAgreementChange) onAgreementChange(newAgreement);
+        }
       }
     } catch (e) {
       console.error('[AgreementPanel] Accept error:', e);
