@@ -1,4 +1,4 @@
-// v2.6 - Draft flow support with proper parameter handling (2024-02-04)
+// v2.7 - Draft flow support (deployment ID: gen-2024-02-04-v7)
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { fetchTemplate } from './utils/templateCache.js';
