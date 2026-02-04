@@ -879,6 +879,7 @@ export default function Room() {
     };
 
     loadCounters();
+    console.log('[Room] pendingCounters loaded:', pendingCounters.length);
 
     // Subscribe to LegalAgreement for real-time signature updates
     // STRICTLY prefer room-scoped agreements for effective room
