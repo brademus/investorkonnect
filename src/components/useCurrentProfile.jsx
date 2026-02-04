@@ -231,6 +231,7 @@ export function useCurrentProfile() {
         // Update global cache
         globalProfileCache = finalState;
         globalCacheTimestamp = Date.now();
+        saveCachedProfile(finalState);
 
         if (mounted) setState(finalState);
 
