@@ -2304,18 +2304,21 @@ export default function Room() {
                       )}
 
                       {/* Buyer's Agent Commission - Always prefer room-scoped terms */}
-                      {(currentRoom?.proposed_terms?.buyer_commission_type || deal?.proposed_terms?.buyer_commission_type) && (
+                      {(currentRoom?.proposed_terms?.buyer_commission_type || deal?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_percentage || currentRoom?.proposed_terms?.buyer_flat_fee || deal?.proposed_terms?.buyer_commission_percentage || deal?.proposed_terms?.buyer_flat_fee) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
+                            <p className="text-sm font-medium text-[#808080]">Your Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {(currentRoom?.proposed_terms?.buyer_commission_type === 'percentage'
+                              {currentRoom?.proposed_terms?.buyer_commission_type === 'percentage'
                                 ? `${currentRoom?.proposed_terms?.buyer_commission_percentage}% of purchase price`
-                                : `$${currentRoom?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`) ||
-                               (deal?.proposed_terms?.buyer_commission_type === 'percentage'
+                                : currentRoom?.proposed_terms?.buyer_commission_type === 'flat_fee'
+                                ? `$${currentRoom?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`
+                                : deal?.proposed_terms?.buyer_commission_type === 'percentage'
                                 ? `${deal?.proposed_terms?.buyer_commission_percentage}% of purchase price`
-                                : `$${deal?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`)}
+                                : deal?.proposed_terms?.buyer_commission_type === 'flat_fee'
+                                ? `$${deal?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`
+                                : '—'}
                             </p>
                           </div>
                         </div>
