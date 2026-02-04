@@ -2241,6 +2241,7 @@ export default function Room() {
                     deal={deal}
                     room={currentRoom}
                     profile={profile}
+                    agreement={agreement}
                   />
 
                   {/* Pending Counter Offers - Second */}
