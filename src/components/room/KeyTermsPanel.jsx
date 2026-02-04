@@ -114,8 +114,8 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
 
   const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
-  const agreementLength = (displayTerms?.agreement_length || deal?.agreement_length)
-    ? `${displayTerms?.agreement_length || deal?.agreement_length} days`
+  const agreementLength = (displayTerms?.agreement_length_days || displayTerms?.agreement_length || deal?.agreement_length)
+    ? `${displayTerms?.agreement_length_days || displayTerms?.agreement_length || deal?.agreement_length} days`
     : 'Not set';
 
   return (
