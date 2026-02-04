@@ -17,12 +17,22 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   const [pendingCounters, setPendingCounters] = useState([]);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(!initialAgreement);
+  const agreementInitializedRef = useRef(false);
 
   const isAgent = profile?.user_role === 'agent';
 
+  // Update agreement when initialAgreement changes (from parent)
+  useEffect(() => {
+    if (initialAgreement) {
+      setAgreement(initialAgreement);
+      agreementInitializedRef.current = true;
+      console.log('[AgreementPanel] Updated from initialAgreement');
+    }
+  }, [initialAgreement?.id]); // Only trigger on ID change to avoid loops
+
   // Load room and agreement
   useEffect(() => {
-    if (!dealId || !roomId) return;
+    if (!dealId || !roomId || agreementInitializedRef.current) return;
 
     (async () => {
       try {
@@ -30,51 +40,53 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         const rooms = await base44.entities.Room.filter({ id: roomId });
         if (rooms[0]) setRoom(rooms[0]);
 
-        // If we have initialAgreement, use it; otherwise load
-        if (initialAgreement) {
-          setAgreement(initialAgreement);
-          console.log('[AgreementPanel] Using prefetched agreement');
-        } else {
-          // Try multiple strategies to find agreement
-          let foundAgreement = null;
+        // Skip if we already have a valid agreement from props
+        if (agreement?.id) {
+          console.log('[AgreementPanel] Already have agreement, skipping load');
+          setLoading(false);
+          return;
+        }
 
-          // Strategy 1: Both deal_id and room_id
-          let agreements = await base44.entities.LegalAgreement.filter({ 
-            deal_id: dealId,
+        // Try multiple strategies to find agreement
+        let foundAgreement = null;
+
+        // Strategy 1: Both deal_id and room_id
+        let agreements = await base44.entities.LegalAgreement.filter({ 
+          deal_id: dealId,
+          room_id: roomId 
+        });
+        if (agreements[0]) {
+          foundAgreement = agreements[0];
+          console.log('[AgreementPanel] Found by deal_id + room_id');
+        }
+
+        // Strategy 2: Just deal_id
+        if (!foundAgreement) {
+          const dealAgreements = await base44.entities.LegalAgreement.filter({ 
+            deal_id: dealId 
+          });
+          if (dealAgreements[0]) {
+            foundAgreement = dealAgreements[0];
+            console.log('[AgreementPanel] Found by deal_id');
+          }
+        }
+
+        // Strategy 3: Just room_id
+        if (!foundAgreement) {
+          const roomAgreements = await base44.entities.LegalAgreement.filter({ 
             room_id: roomId 
           });
-          if (agreements[0]) {
-            foundAgreement = agreements[0];
-            console.log('[AgreementPanel] Found by deal_id + room_id');
+          if (roomAgreements[0]) {
+            foundAgreement = roomAgreements[0];
+            console.log('[AgreementPanel] Found by room_id');
           }
+        }
 
-          // Strategy 2: Just deal_id
-          if (!foundAgreement) {
-            const dealAgreements = await base44.entities.LegalAgreement.filter({ 
-              deal_id: dealId 
-            });
-            if (dealAgreements[0]) {
-              foundAgreement = dealAgreements[0];
-              console.log('[AgreementPanel] Found by deal_id');
-            }
-          }
-
-          // Strategy 3: Just room_id
-          if (!foundAgreement) {
-            const roomAgreements = await base44.entities.LegalAgreement.filter({ 
-              room_id: roomId 
-            });
-            if (roomAgreements[0]) {
-              foundAgreement = roomAgreements[0];
-              console.log('[AgreementPanel] Found by room_id');
-            }
-          }
-
-          if (foundAgreement) {
-            setAgreement(foundAgreement);
-          } else {
-            console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
-          }
+        if (foundAgreement) {
+          setAgreement(foundAgreement);
+          agreementInitializedRef.current = true;
+        } else {
+          console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
         // Load pending counters - try multiple strategies
