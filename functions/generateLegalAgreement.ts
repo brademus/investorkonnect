@@ -1,3 +1,4 @@
+// v2.4 - Draft flow support
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { fetchTemplate } from './utils/templateCache.js';
