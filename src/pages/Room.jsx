@@ -677,7 +677,10 @@ export default function Room() {
 
         // Process agreement first (needed by AgreementPanel)
         if (agRes?.data?.agreement) {
+          console.log('[Room] ✅ Loaded agreement on room init:', agRes.data.agreement.id);
           setAgreement(agRes.data.agreement);
+        } else {
+          console.log('[Room] ❌ No agreement in agRes:', agRes?.data);
         }
 
         // Process invites
