@@ -3010,6 +3010,32 @@ export default function Room() {
                   invites={invites} 
                   onSelectAgent={(invite) => {
                     setSelectedInvite(invite);
+                    // CRITICAL: When investor selects an agent, also load that agent's room-specific data
+                    // This ensures Key Terms and Agreement panels show the correct agent-specific data
+                    if (invite.room_id) {
+                      // Load the specific room for this agent
+                      base44.entities.Room.filter({ id: invite.room_id }).then(rooms => {
+                        if (rooms[0]) {
+                          // Merge agent-specific room data without overwriting the current room entirely
+                          setCurrentRoom(prev => ({
+                            ...prev,
+                            agent_terms: rooms[0].agent_terms,
+                            proposed_terms: rooms[0].proposed_terms,
+                            current_legal_agreement_id: rooms[0].current_legal_agreement_id
+                          }));
+                        }
+                      });
+                      // Also load the agent-specific agreement
+                      base44.entities.LegalAgreement.filter({ 
+                        deal_id: currentRoom?.deal_id || deal?.id,
+                        room_id: invite.room_id 
+                      }).then(agreements => {
+                        const activeAgreement = agreements.find(a => a.status !== 'voided') || agreements[0];
+                        if (activeAgreement) {
+                          setAgreement(activeAgreement);
+                        }
+                      });
+                    }
                     toast.success('Agent selected - Deal Board is now available');
                   }}
                   selectedInviteId={selectedInvite?.id}
