@@ -27,44 +27,52 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       let terms = null;
 
       try {
-        // ALWAYS fetch the latest non-voided agreement for this room
-        // This ensures we get the updated terms after counter acceptance
-        const dealId = deal?.id || room?.deal_id;
+        // Priority 1: Use passed agreement prop (has most up-to-date terms after counter acceptance)
+        if (agreement?.exhibit_a_terms) {
+          terms = agreement.exhibit_a_terms;
+          console.log('[KeyTermsPanel] Using agreement prop exhibit_a_terms:', terms);
+        }
         
-        if (dealId && room?.id) {
-          console.log('[KeyTermsPanel] Fetching agreements for deal:', dealId, 'room:', room.id);
+        // Priority 2: Use room.proposed_terms (stored when counter is accepted)
+        if (!terms && room?.proposed_terms) {
+          terms = room.proposed_terms;
+          console.log('[KeyTermsPanel] Using room.proposed_terms:', terms);
+        }
+        
+        // Priority 3: Fetch the latest non-voided agreement for this room
+        if (!terms) {
+          const dealId = deal?.id || room?.deal_id;
           
-          const agreements = await base44.entities.LegalAgreement.filter({ 
-            deal_id: dealId,
-            room_id: room.id 
-          });
-          
-          console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
-          
-          // Find the latest non-voided agreement (prefer draft for newly generated)
-          const draftAgreement = agreements.find(a => a.status === 'draft');
-          const nonVoidedAgreement = agreements.find(a => a.status !== 'voided');
-          const latestAgreement = draftAgreement || nonVoidedAgreement || agreements[0];
-          
-          if (latestAgreement?.exhibit_a_terms) {
-            terms = latestAgreement.exhibit_a_terms;
-            console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', latestAgreement.id, terms);
+          if (dealId && room?.id) {
+            console.log('[KeyTermsPanel] Fetching agreements for deal:', dealId, 'room:', room.id);
+            
+            const agreements = await base44.entities.LegalAgreement.filter({ 
+              deal_id: dealId,
+              room_id: room.id 
+            });
+            
+            console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
+            
+            // Find the latest non-voided agreement (prefer draft for newly generated, then sent)
+            const draftAgreement = agreements.find(a => a.status === 'draft');
+            const sentAgreement = agreements.find(a => a.status === 'sent');
+            const nonVoidedAgreement = agreements.find(a => a.status !== 'voided');
+            const latestAgreement = draftAgreement || sentAgreement || nonVoidedAgreement || agreements[0];
+            
+            if (latestAgreement?.exhibit_a_terms) {
+              terms = latestAgreement.exhibit_a_terms;
+              console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', latestAgreement.id, terms);
+            }
           }
         }
         
-        // Fallback: use passed agreement prop
-        if (!terms && agreement?.exhibit_a_terms) {
-          terms = agreement.exhibit_a_terms;
-          console.log('[KeyTermsPanel] Fallback to agreement prop:', terms);
-        }
-        
-        // Fallback: use deal.proposed_terms
+        // Priority 4: use deal.proposed_terms
         if (!terms && deal?.proposed_terms) {
           terms = deal.proposed_terms;
           console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
         }
         
-        // Fallback: room agent_terms
+        // Priority 5: room agent_terms
         if (!terms && room?.agent_terms && typeof room.agent_terms === 'object') {
           const agentIds = Object.keys(room.agent_terms);
           if (agentIds.length > 0) {
