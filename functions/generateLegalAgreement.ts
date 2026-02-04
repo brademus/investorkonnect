@@ -217,7 +217,10 @@ Deno.serve(async (req) => {
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    console.log('[generateLegalAgreement v3.0] Params:', { deal_id, draft_id, room_id, signer_mode });
+    // CRITICAL: For agent-specific agreements, require agent_profile_id 
+    const agent_profile_id = body.agent_profile_id || body.agent_profile_ids?.[0] || null;
+    
+    console.log('[generateLegalAgreement v3.0] Params:', { deal_id, draft_id, room_id, signer_mode, agent_profile_id });
 
     if (!deal_id && !draft_id) {
       console.log('[generateLegalAgreement v3.0] ERROR: Missing both deal_id and draft_id');
