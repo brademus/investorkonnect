@@ -90,11 +90,16 @@ Deno.serve(async (req) => {
       ...counter.terms_delta
     };
 
+    // CRITICAL: Pass the specific agent_profile_id for this room
+    // This ensures the agreement is generated ONLY for this agent, not others
+    const agentId = room.agent_ids?.[0];
+    
     const generateRes = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       deal_id: counter.deal_id,
       room_id: counter.room_id,
       investor_profile_id: room.investorId,
-      agent_profile_ids: room.agent_ids,
+      agent_profile_id: agentId, // Specific agent for this agreement
+      agent_profile_ids: [agentId], // Keep for backward compatibility
       exhibit_a: newTerms,
       signer_mode: userRole === 'investor' ? 'investor_only' : 'agent_only'
     });
