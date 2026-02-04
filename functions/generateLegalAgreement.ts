@@ -444,7 +444,11 @@ Deno.serve(async (req) => {
     // Only support investor_only (initial) or both (counter-accepted)
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    if (!deal_id && !draft_id) return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
+    if (!deal_id && !draft_id) {
+      console.log('[generateLegalAgreement] Missing both deal_id and draft_id');
+      return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
+    }
+    console.log('[generateLegalAgreement] Starting with deal_id:', deal_id, 'draft_id:', draft_id);
     
     console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)', 'signer_mode:', signer_mode);
 
