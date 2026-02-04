@@ -2236,25 +2236,14 @@ export default function Room() {
 
           {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {currentRoom?.deal_id ? (
-                             <AgreementPanel
-                               dealId={currentRoom.deal_id}
-                               roomId={roomId}
-                               profile={profile}
-                               initialAgreement={agreement}
-                             />
-                  ) : (
-                    <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
-                  )}
-
-                  {/* Key Terms Panel */}
+                  {/* Key Terms Panel - First */}
                   <KeyTermsPanel 
                     deal={deal}
                     room={currentRoom}
                     profile={profile}
                   />
 
-                  {/* Pending Counter Offers */}
+                  {/* Pending Counter Offers - Second */}
                   {pendingCounters.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="text-lg font-semibold text-[#FAFAFA]">Pending Counter Offers</h4>
@@ -2309,6 +2298,18 @@ export default function Room() {
                         );
                       })}
                     </div>
+                  )}
+
+                  {/* Agreement Panel - Third (Last) */}
+                  {currentRoom?.deal_id ? (
+                             <AgreementPanel
+                               dealId={currentRoom.deal_id}
+                               roomId={roomId}
+                               profile={profile}
+                               initialAgreement={agreement}
+                             />
+                  ) : (
+                    <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
 
                   {/* Legacy Key Terms - keeping for reference but hidden */}
