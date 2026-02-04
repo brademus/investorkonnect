@@ -18,43 +18,52 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   const [loading, setLoading] = useState(true);
 
   // Extract current buyer commission terms - ALWAYS fetch fresh from agreement
+  // CRITICAL: When room.id or selectedAgentId changes, we need to reload terms from scratch
   useEffect(() => {
+    // Reset terms on room/agent change to prevent stale data showing
+    setDisplayTerms(null);
+    setLoading(true);
+    
     if (!room?.id) {
-      setDisplayTerms(null);
       setLoading(false);
       return;
     }
 
     const loadTerms = async () => {
-      setLoading(true);
       let terms = null;
+      const effectiveAgentId = selectedAgentId || room.agent_ids?.[0];
+      console.log('[KeyTermsPanel] Loading terms for room:', room.id, 'agent:', effectiveAgentId);
 
       try {
         // Priority 1: Use passed agreement prop (has most up-to-date terms after counter acceptance)
-        if (agreement?.exhibit_a_terms) {
+        // BUT only if this agreement is for THIS specific room
+        if (agreement?.exhibit_a_terms && agreement?.room_id === room.id) {
           terms = agreement.exhibit_a_terms;
           console.log('[KeyTermsPanel] Using agreement prop exhibit_a_terms:', terms);
         }
         
-        // Priority 2: Use room.proposed_terms (stored when counter is accepted)
-        if (!terms && room?.proposed_terms) {
-          terms = room.proposed_terms;
-          console.log('[KeyTermsPanel] Using room.proposed_terms:', terms);
+        // Priority 2: Use agent-specific terms from room.agent_terms[agentId] - MOST RELIABLE for multi-agent
+        if (!terms && room?.agent_terms && typeof room.agent_terms === 'object' && effectiveAgentId) {
+          if (room.agent_terms[effectiveAgentId]) {
+            terms = room.agent_terms[effectiveAgentId];
+            console.log('[KeyTermsPanel] Using room.agent_terms for specific agent:', effectiveAgentId, terms);
+          }
         }
         
-        // Priority 3: Fetch the latest non-voided agreement for this room
+        // Priority 3: Fetch the latest non-voided agreement for this specific room
         if (!terms) {
           const dealId = deal?.id || room?.deal_id;
           
           if (dealId && room?.id) {
             console.log('[KeyTermsPanel] Fetching agreements for deal:', dealId, 'room:', room.id);
             
+            // CRITICAL: Filter by BOTH deal_id AND room_id to get room-specific agreement
             const agreements = await base44.entities.LegalAgreement.filter({ 
               deal_id: dealId,
               room_id: room.id 
             });
             
-            console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
+            console.log('[KeyTermsPanel] Found room-specific agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
             
             // Find the latest non-voided agreement (prefer draft for newly generated, then sent)
             const draftAgreement = agreements.find(a => a.status === 'draft');
@@ -64,32 +73,21 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
             
             if (latestAgreement?.exhibit_a_terms) {
               terms = latestAgreement.exhibit_a_terms;
-              console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', latestAgreement.id, terms);
+              console.log('[KeyTermsPanel] Using room agreement exhibit_a_terms:', latestAgreement.id, terms);
             }
           }
         }
         
-        // Priority 4: use deal.proposed_terms
+        // Priority 4: Use room.proposed_terms (stored when counter is accepted) - but only if not agent-specific
+        if (!terms && room?.proposed_terms) {
+          terms = room.proposed_terms;
+          console.log('[KeyTermsPanel] Using room.proposed_terms:', terms);
+        }
+        
+        // Priority 5: use deal.proposed_terms as last resort
         if (!terms && deal?.proposed_terms) {
           terms = deal.proposed_terms;
           console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
-        }
-        
-        // Priority 5: room agent_terms - use specific agent if provided
-        if (!terms && room?.agent_terms && typeof room.agent_terms === 'object') {
-          // CRITICAL: Use selectedAgentId if provided, otherwise use the room's first agent
-          const agentId = selectedAgentId || room.agent_ids?.[0];
-          if (agentId && room.agent_terms[agentId]) {
-            terms = room.agent_terms[agentId];
-            console.log('[KeyTermsPanel] Using room.agent_terms for specific agent:', agentId, terms);
-          } else {
-            // Fallback to first agent's terms
-            const agentIds = Object.keys(room.agent_terms);
-            if (agentIds.length > 0) {
-              terms = room.agent_terms[agentIds[0]];
-              console.log('[KeyTermsPanel] Fallback to first agent_terms:', terms);
-            }
-          }
         }
       } catch (e) {
         console.error('[KeyTermsPanel] Error fetching terms:', e);
@@ -104,7 +102,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
     };
 
     loadTerms();
-  }, [deal?.id, room?.id, room?.deal_id, room?.current_legal_agreement_id, room?.proposed_terms, agreement?.id, agreement?.exhibit_a_terms]);
+  }, [deal?.id, room?.id, room?.deal_id, selectedAgentId, agreement?.id, agreement?.room_id]);
 
   const formatComm = (type, percentage, flatFee) => {
     if (type === 'percentage' && percentage !== undefined) {
