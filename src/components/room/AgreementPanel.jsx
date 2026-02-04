@@ -210,7 +210,7 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
           </>
         )}
 
-        {/* Pending Counters - Show outside agreement block for investors */}
+        {/* Pending Counters - Show for both investors and agents */}
         {pendingCounters.map(counter => {
           const isForMe = (isAgent && counter.to_role === 'agent') || (!isAgent && counter.to_role === 'investor');
           
@@ -247,17 +247,13 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
           );
         })}
 
-        {agreement && (
-          <>
-
-
-            {/* Fully Signed */}
-            {fullySigned && (
-              <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
-                <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-2" />
-                <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
-              </div>
-            )}
+        {/* Fully Signed */}
+        {agreement && fullySigned && (
+          <div className="bg-[#10B981]/10 border border-[#10B981]/30 rounded-xl p-4 text-center">
+            <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-2" />
+            <p className="text-sm text-[#FAFAFA] font-semibold">Fully Signed</p>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
