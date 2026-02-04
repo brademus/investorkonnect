@@ -21,6 +21,7 @@ import PendingAgentsList from "@/components/PendingAgentsList";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
 import AgreementPanel from "@/components/room/AgreementPanel";
+import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
