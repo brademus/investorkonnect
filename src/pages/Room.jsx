@@ -3043,7 +3043,7 @@ export default function Room() {
                 <PendingAgentsList 
                   invites={invites} 
                   onSelectAgent={async (invite) => {
-                    console.log('[Room] Agent selected:', invite.agent_profile_id, 'room:', invite.room_id);
+                    console.log('[Room] Agent selected from Messages view:', invite.agent_profile_id, 'room:', invite.room_id);
                     
                     // CRITICAL: Reset agreement state immediately to prevent showing stale data
                     setAgreement(null);
