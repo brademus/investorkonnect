@@ -8,8 +8,11 @@ import { AlertCircle, Loader2 } from 'lucide-react';
  * KEY TERMS PANEL for Room Page
  * Shows purchase price, buyer agent commission, and agreement length - updates when counters are accepted
  * ALWAYS fetches latest non-voided agreement for this specific room to get the most current terms
+ * 
+ * CRITICAL: Each agent has THEIR OWN terms stored in room.agent_terms[agentId]
+ * Counter offers and negotiations are agent-specific, not deal-wide
  */
-export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement }) {
+export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agreement, selectedAgentId }) {
   const currentRoom = room;
   const [displayTerms, setDisplayTerms] = useState(null);
   const [loading, setLoading] = useState(true);
