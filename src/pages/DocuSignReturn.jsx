@@ -22,23 +22,37 @@ export default function DocuSignReturn() {
       try {
         // Handle signature events
         if (event === 'signing_complete') {
-          // Investor signed
+          // Investor signed - DocuSign webhook will convert draft to deal
           if (role === 'investor' && draftId) {
-            setMessage('Converting draft to deal...');
+            setMessage('Processing your signature...');
             
-            const res = await base44.functions.invoke('convertDraftToDeal', {
-              draft_id: draftId
-            });
-
-            if (res.status !== 200 || res.data?.error) {
-              setStatus('error');
-              setMessage(res.data?.error || 'Failed to convert draft to deal');
-              console.error('[DocuSignReturn] convertDraftToDeal error:', res);
-              return;
+            // Wait for webhook to process (poll for deal creation)
+            let attempts = 0;
+            const maxAttempts = 10;
+            
+            while (attempts < maxAttempts) {
+              await new Promise(resolve => setTimeout(resolve, 1000));
+              
+              // Check if draft was converted to deal
+              const drafts = await base44.entities.DealDraft.filter({ id: draftId });
+              
+              if (drafts.length === 0) {
+                // Draft deleted = conversion succeeded
+                setStatus('success');
+                setMessage('Deal created! Agents have been notified.');
+                
+                setTimeout(() => {
+                  navigate(createPageUrl('Pipeline'), { replace: true });
+                }, 1500);
+                return;
+              }
+              
+              attempts++;
             }
-
+            
+            // Timeout - webhook may be delayed
             setStatus('success');
-            setMessage('Deal created! Agents have been notified.');
+            setMessage('Signature received! Your deal will be ready shortly.');
             
             setTimeout(() => {
               navigate(createPageUrl('Pipeline'), { replace: true });
