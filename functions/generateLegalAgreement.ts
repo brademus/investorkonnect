@@ -447,20 +447,43 @@ Deno.serve(async (req) => {
     if (!deal_id && !draft_id) return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     
     console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)', 'signer_mode:', signer_mode);
-    
+
     // Load investor profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
     const profile = profiles[0];
     if (!profile) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
-    
-    // Load deal
-    const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-    if (!deals || deals.length === 0) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
+
+    // Load deal OR draft
+    let deal = null;
+    if (deal_id) {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+      if (!deals || deals.length === 0) {
+        return Response.json({ error: 'Deal not found' }, { status: 404 });
+      }
+      deal = deals[0];
+    } else if (draft_id) {
+      // For draft-scoped generation (investor-only), we still need basic deal info
+      // Build minimal deal object from draft
+      const drafts = await base44.asServiceRole.entities.DealDraft.filter({ id: draft_id });
+      if (!drafts || drafts.length === 0) {
+        return Response.json({ error: 'DealDraft not found' }, { status: 404 });
+      }
+      const draft = drafts[0];
+      // Convert draft to deal-like structure for rendering
+      deal = {
+        id: `draft-${draft_id}`,
+        state: draft.state,
+        city: draft.city,
+        county: draft.county,
+        zip: draft.zip,
+        property_address: draft.property_address,
+        property_type: draft.property_type,
+        transaction_type: 'ASSIGNMENT'
+      };
+      console.log('[generateLegalAgreement] Generated deal from DealDraft:', draft_id);
     }
-    const deal = deals[0];
 
     // Load room (if room_id provided) to get room-scoped terms
     let room = null;
