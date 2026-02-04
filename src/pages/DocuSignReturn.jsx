@@ -30,9 +30,10 @@ export default function DocuSignReturn() {
               draft_id: draftId
             });
 
-            if (res.data?.error) {
+            if (res.status !== 200 || res.data?.error) {
               setStatus('error');
-              setMessage(res.data.error);
+              setMessage(res.data?.error || 'Failed to convert draft to deal');
+              console.error('[DocuSignReturn] convertDraftToDeal error:', res);
               return;
             }
 
