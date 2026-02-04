@@ -650,22 +650,7 @@ export default function Room() {
       setRoomLoading(true);
       
       try {
-        // CRITICAL: Fetch room + deal + invites in PARALLEL to reduce latency
-        const [rawRoomResults, invitesRes] = await Promise.all([
-          base44.entities.Room.filter({ id: roomId }),
-          // Load invites immediately if investor
-          profile?.user_role === 'investor' 
-            ? (async () => {
-                try {
-                  const res = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: null }).catch(() => ({ data: null }));
-                  return res;
-                } catch (_) {
-                  return { data: null };
-                }
-              })()
-            : Promise.resolve({ data: null })
-        ]);
-
+        const rawRoomResults = await base44.entities.Room.filter({ id: roomId });
         const rawRoom = rawRoomResults?.[0];
 
         if (!rawRoom) {
@@ -673,89 +658,74 @@ export default function Room() {
           return;
         }
 
-        // Immediately load agreement for this room so it's available when Agreement tab opens
-        if (rawRoom.deal_id) {
-          try {
-            const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId }).catch(() => ({ data: null }));
-            if (agRes?.data?.agreement) {
-              setAgreement(agRes.data.agreement);
-            }
-          } catch (_) {}
+        // Kick off deal + agreement + invites fetch in PARALLEL (don't wait for each)
+        const dealPromise = rawRoom.deal_id 
+          ? base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null }))
+          : Promise.resolve({ data: null });
+        
+        const agreementPromise = rawRoom.deal_id
+          ? base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId }).catch(() => ({ data: null }))
+          : Promise.resolve({ data: null });
+        
+        const invitesPromise = profile?.user_role === 'investor' && rawRoom.deal_id
+          ? base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id }).catch(() => ({ data: null }))
+          : Promise.resolve({ data: null });
+
+        // Wait for all in parallel
+        const [dealRes, agRes, invitesRes] = await Promise.all([dealPromise, agreementPromise, invitesPromise]);
+
+        // Process agreement first (needed by AgreementPanel)
+        if (agRes?.data?.agreement) {
+          setAgreement(agRes.data.agreement);
         }
 
-        // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
-         if (rawRoom.deal_id && profile?.user_role === 'investor') {
-           try {
-             console.log('[Room] Loading invites for deal:', rawRoom.deal_id);
-             const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
-             console.log('[Room] Raw invites response:', invitesRes);
-             let loadedInvites = [];
+        // Process invites
+        if (profile?.user_role === 'investor' && rawRoom.deal_id) {
+          try {
+            let loadedInvites = [];
+            if (invitesRes?.data?.invites) {
+              loadedInvites = Array.isArray(invitesRes.data.invites) ? invitesRes.data.invites : [];
+            } else if (Array.isArray(invitesRes?.data)) {
+              loadedInvites = invitesRes.data;
+            }
 
-             // Handle different response formats
-             if (invitesRes.data?.invites) {
-               loadedInvites = Array.isArray(invitesRes.data.invites) ? invitesRes.data.invites : [];
-             } else if (Array.isArray(invitesRes.data)) {
-               loadedInvites = invitesRes.data;
-             }
+            // Filter out expired, voided, locked
+            loadedInvites = loadedInvites.filter(invite => !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status));
+            
+            setInvites(loadedInvites);
+            if (loadedInvites.length === 1) {
+              setSelectedInvite(loadedInvites[0]);
+            }
+          } catch (e) {
+            console.error('[Room] Failed to process invites:', e);
+          }
+        }
 
-             console.log('[Room] Loaded invites before filter:', loadedInvites);
-
-             // CRITICAL: Filter out expired, voided, and locked invites
-             // Only show active invites (pending signature)
-             loadedInvites = loadedInvites.filter(invite => {
-               const shouldShow = !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status);
-               console.log('[Room] Invite', invite.id, 'status:', invite.status, 'shouldShow:', shouldShow);
-               return shouldShow;
-             });
-
-             console.log('[Room] Loaded active invites:', loadedInvites.length, loadedInvites);
-             setInvites(loadedInvites);
-
-             // Auto-select if only one invite exists
-             if (loadedInvites.length === 1) {
-               console.log('[Room] Auto-selecting single invite');
-               setSelectedInvite(loadedInvites[0]);
-             }
-           } catch (e) {
-             console.error('[Room] Failed to load invites:', e);
-           }
-         }
-
-        // Optimistic hydrate from cache (instant UI) while fetching securely
+        // Process deal
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
-          if (cached) {
-            // Ensure cached belongs to this deal id (guard against residual cache)
-            if (cached.id !== rawRoom.deal_id) {
-              // ignore wrong cached snapshot
-            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
-              setDeal({ ...cached, property_address: null });
-            } else {
-              setDeal(cached);
-            }
-          }
+          const dealData = dealRes?.data || cached;
 
-          // Use server-side access-controlled deal fetch
-          try {
-            const response = await base44.functions.invoke('getDealDetailsForUser', {
-              dealId: rawRoom.deal_id
-            });
-            const dealData = response.data;
+          if (dealData) {
+            if (dealData.id === rawRoom.deal_id) {
+              // Only cache if IDs match
+              if (!cached) setCachedDeal(rawRoom.deal_id, dealData);
+            }
             
-            if (dealData) {
-              setDeal(dealData);
-              setCachedDeal(dealData.id, dealData);
-              
-              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
-                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
-                : dealData.title;
-              
-              // Ensure we still match current selection
-              if (rid !== roomId) return;
+            const displayDeal = shouldMaskAddress(profile, rawRoom, dealData) && dealData.property_address 
+              ? { ...dealData, property_address: null } 
+              : dealData;
+            setDeal(displayDeal);
+            
+            const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
+              ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
+              : dealData.title;
+            
+            if (!isStale()) {
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
-                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
+                property_address: displayDeal.property_address,
                 city: dealData.city,
                 state: dealData.state,
                 county: dealData.county,
@@ -770,22 +740,21 @@ export default function Room() {
                 proposed_terms: dealData.proposed_terms,
                 photos: rawRoom?.photos || [],
                 files: rawRoom?.files || [],
-                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
+                counterparty_name: rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
               });
-            } else {
-              setCurrentRoom(rawRoom);
             }
-          } catch (error) {
-            console.error('Failed to fetch deal:', error);
+          } else if (!isStale()) {
             setCurrentRoom(rawRoom);
           }
-        } else {
+        } else if (!isStale()) {
           setCurrentRoom(rawRoom);
         }
       } catch (error) {
         console.error('Failed to fetch room:', error);
       } finally {
-        setRoomLoading(false);
+        if (!isStale()) {
+          setRoomLoading(false);
+        }
       }
     };
     
