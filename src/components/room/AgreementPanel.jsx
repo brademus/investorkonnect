@@ -10,8 +10,11 @@ import { toast } from 'sonner';
  * AGREEMENT PANEL for Room Page
  * Shows agreement status and signing for both investors and agents
  * Handles counter offers and regeneration after terms change
+ * 
+ * CRITICAL: Each agent has their OWN agreement. When investor selects an agent,
+ * we show ONLY that agent's agreement and counter offers.
  */
-export default function AgreementPanel({ dealId, roomId, profile, initialAgreement, onAgreementChange }) {
+export default function AgreementPanel({ dealId, roomId, profile, initialAgreement, onAgreementChange, selectedAgentId }) {
   const [agreement, setAgreement] = useState(initialAgreement || null);
   const [room, setRoom] = useState(null);
   const [pendingCounters, setPendingCounters] = useState([]);
