@@ -76,6 +76,12 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange }) {
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Purchase Price */}
+            <div className="bg-[#141414] rounded-xl p-4">
+              <p className="text-xs text-[#808080] mb-1">Purchase Price</p>
+              <p className="text-sm font-semibold text-[#34D399]">${purchasePrice}</p>
+            </div>
+
             {/* Buyer Commission */}
             <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
               <div>
@@ -84,17 +90,6 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange }) {
               </div>
               <Badge className="bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30">
                 {displayTerms.buyer_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'}
-              </Badge>
-            </div>
-
-            {/* Seller Commission */}
-            <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
-              <div>
-                <p className="text-xs text-[#808080] mb-1">Seller Commission</p>
-                <p className="text-sm font-semibold text-[#FAFAFA]">{sellerComm}</p>
-              </div>
-              <Badge className="bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30">
-                {displayTerms.seller_commission_type === 'percentage' ? 'Percentage' : 'Flat Fee'}
               </Badge>
             </div>
 
