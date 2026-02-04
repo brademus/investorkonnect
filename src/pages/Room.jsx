@@ -2246,11 +2246,13 @@ export default function Room() {
           {activeTab === 'agreement' && (
                 <div className="space-y-6">
                   {/* Key Terms Panel - First */}
+                  {/* CRITICAL: Pass selectedAgentId when investor has selected a specific agent */}
                   <KeyTermsPanel 
                     deal={deal}
                     room={currentRoom}
                     profile={profile}
                     agreement={agreement}
+                    selectedAgentId={selectedInvite?.agent_profile_id || currentRoom?.agent_ids?.[0]}
                   />
 
                   {/* Pending Counter Offers - Second */}
