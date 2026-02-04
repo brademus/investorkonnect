@@ -2332,12 +2332,14 @@ export default function Room() {
                   )}
 
                   {/* Agreement Panel - Third (Last) */}
+                  {/* CRITICAL: Pass selectedAgentId to ensure agent-specific agreement is loaded */}
                   {currentRoom?.deal_id ? (
                              <AgreementPanel
                                dealId={currentRoom.deal_id}
-                               roomId={roomId}
+                               roomId={selectedInvite?.room_id || roomId}
                                profile={profile}
                                initialAgreement={agreement}
+                               selectedAgentId={selectedInvite?.agent_profile_id || currentRoom?.agent_ids?.[0]}
                                onAgreementChange={(newAg) => {
                                  setAgreement(newAg);
                                  // Force key terms to reload by triggering state update
