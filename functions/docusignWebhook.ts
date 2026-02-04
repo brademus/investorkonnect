@@ -472,78 +472,8 @@ Deno.serve(async (req) => {
             }
           }
           
-          // CRITICAL: After investor signs base agreement, create Deal from DealDraft if needed
-          if (signerMode === 'investor_only' && !agreement.room_id && !agreement.deal_id) {
-            try {
-              console.log('[DocuSign Webhook] Creating Deal from DealDraft after investor signature');
-              
-              // Find DealDraft by investor_profile_id (most recent)
-              const drafts = await base44.asServiceRole.entities.DealDraft.filter({
-                investor_profile_id: agreement.investor_profile_id
-              });
-              
-              if (drafts && drafts.length > 0) {
-                const draft = drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
-                
-                // Create Deal from DealDraft
-                const newDeal = await base44.asServiceRole.entities.Deal.create({
-                  title: draft.property_address,
-                  property_address: draft.property_address,
-                  city: draft.city,
-                  state: draft.state,
-                  zip: draft.zip,
-                  county: draft.county,
-                  purchase_price: draft.purchase_price,
-                  property_type: draft.property_type,
-                  property_details: {
-                    beds: draft.beds,
-                    baths: draft.baths,
-                    sqft: draft.sqft,
-                    year_built: draft.year_built,
-                    number_of_stories: draft.number_of_stories,
-                    has_basement: draft.has_basement
-                  },
-                  seller_info: {
-                    seller_name: draft.seller_name,
-                    earnest_money: draft.earnest_money,
-                    number_of_signers: draft.number_of_signers,
-                    second_signer_name: draft.second_signer_name
-                  },
-                  proposed_terms: {
-                    buyer_commission_type: draft.buyer_commission_type,
-                    buyer_commission_percentage: draft.buyer_commission_percentage,
-                    buyer_flat_fee: draft.buyer_flat_fee,
-                    agreement_length: draft.agreement_length
-                  },
-                  status: 'active',
-                  pipeline_stage: 'new_deals',
-                  investor_id: draft.investor_profile_id,
-                  selected_agent_ids: draft.selected_agent_ids || [],
-                  current_legal_agreement_id: agreement.id
-                });
-                
-                console.log('[DocuSign Webhook] ✓ Created Deal:', newDeal.id);
-                
-                // Link agreement to deal
-                await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
-                  deal_id: newDeal.id
-                });
-                
-                // Create rooms + invites for selected agents
-                await base44.functions.invoke('createInvitesAfterInvestorSign', {
-                  deal_id: newDeal.id
-                });
-                
-                console.log('[DocuSign Webhook] ✓ Invites created for', draft.selected_agent_ids?.length || 0, 'agents');
-                
-                // Delete DealDraft
-                await base44.asServiceRole.entities.DealDraft.delete(draft.id);
-                console.log('[DocuSign Webhook] ✓ Deleted DealDraft');
-              }
-            } catch (e) {
-              console.error('[DocuSign Webhook] Failed to create Deal from DealDraft:', e?.message || e);
-            }
-          }
+          // REMOVED: Draft-to-deal conversion now handled explicitly via convertDraftToDeal function
+          // to avoid race conditions with return URL processing
         break;
         
       case 'voided':
