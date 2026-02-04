@@ -56,16 +56,10 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange }) {
       )
     : 'Not set';
 
-  const sellerComm = displayTerms?.seller_commission_type
-    ? formatComm(
-        displayTerms.seller_commission_type,
-        displayTerms.seller_commission_percentage,
-        displayTerms.seller_flat_fee
-      )
-    : 'Not set';
+  const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
-  const agreementLength = displayTerms?.agreement_length
-    ? `${displayTerms.agreement_length} days`
+  const agreementLength = (displayTerms?.agreement_length || deal?.agreement_length)
+    ? `${displayTerms?.agreement_length || deal?.agreement_length} days`
     : 'Not set';
 
   return (
