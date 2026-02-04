@@ -120,6 +120,7 @@ export function useCurrentProfile() {
           // Update cache with no-user state
           globalProfileCache = noUserState;
           globalCacheTimestamp = Date.now();
+          saveCachedProfile(noUserState);
           
           if (mounted) setState(noUserState);
           return;
