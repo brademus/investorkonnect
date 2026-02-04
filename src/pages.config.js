@@ -54,7 +54,6 @@ import AgentOnboarding from './pages/AgentOnboarding';
 import AgentProfile from './pages/AgentProfile';
 import BillingSuccess from './pages/BillingSuccess';
 import ContractVerify from './pages/ContractVerify';
-import CounterOffer from './pages/CounterOffer';
 import DocuSignReturn from './pages/DocuSignReturn';
 import Home from './pages/Home';
 import IdentityVerification from './pages/IdentityVerification';
@@ -85,7 +84,6 @@ export const PAGES = {
     "AgentProfile": AgentProfile,
     "BillingSuccess": BillingSuccess,
     "ContractVerify": ContractVerify,
-    "CounterOffer": CounterOffer,
     "DocuSignReturn": DocuSignReturn,
     "Home": Home,
     "IdentityVerification": IdentityVerification,

@@ -1,325 +1,210 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useCurrentProfile } from '@/components/useCurrentProfile';
 import { createPageUrl } from '@/components/utils';
-import { useQueryClient } from '@tanstack/react-query';
 import LoadingAnimation from '@/components/LoadingAnimation';
-import SimpleAgreementPanel from '@/components/SimpleAgreementPanel';
 import { Button } from '@/components/ui/button';
-import { Users, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText, Loader2, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
 
+/**
+ * MY AGREEMENT PAGE
+ * Investor signs the base agreement here
+ * After signing, converts draft to real deal
+ */
 export default function MyAgreement() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
-  const dealId = params.get('dealId');
   const { profile, loading: loadingProfile } = useCurrentProfile();
-  const queryClient = useQueryClient();
 
-  const [deal, setDeal] = useState(null);
+  const [draftId, setDraftId] = useState(null);
   const [agreement, setAgreement] = useState(null);
-  const [room, setRoom] = useState(null);
+  const [signingUrl, setSigningUrl] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedAgentIds, setSelectedAgentIds] = useState([]);
+  const [generating, setGenerating] = useState(false);
+  const [selectedAgents, setSelectedAgents] = useState([]);
   const [agentProfiles, setAgentProfiles] = useState([]);
-  const [pendingCounters, setPendingCounters] = useState([]);
-  const [draft, setDraft] = useState(null);
-  const loadedRef = useRef(false);
 
-  // Load deal data from sessionStorage and create DealDraft
   useEffect(() => {
-    if (!profile || loadedRef.current) return;
-    loadedRef.current = true;
+    if (!profile) return;
 
+    // Get draft ID from sessionStorage or URL
+    const storedDraftId = sessionStorage.getItem('draft_id') || params.get('draft_id');
+    if (!storedDraftId) {
+      toast.error('No draft found');
+      navigate(createPageUrl('Pipeline'), { replace: true });
+      return;
+    }
+
+    setDraftId(storedDraftId);
+
+    // Get selected agents
+    const agentIds = JSON.parse(sessionStorage.getItem('selectedAgentIds') || '[]');
+    setSelectedAgents(agentIds);
+
+    // Load agent profiles
     (async () => {
       try {
-        // Load deal data from sessionStorage
-        const draftData = sessionStorage.getItem('newDealDraft');
-        if (!draftData) {
-          toast.error('No deal data found. Please start over.');
-          navigate(createPageUrl('Pipeline'), { replace: true });
-          return;
-        }
+        const profiles = await Promise.all(
+          agentIds.map(id => base44.entities.Profile.filter({ id }).then(p => p[0]))
+        );
+        setAgentProfiles(profiles.filter(Boolean));
+      } catch (e) {
+        console.error('[MyAgreement] Error loading agents:', e);
+      }
+    })();
 
-        const dealData = JSON.parse(draftData);
-        const agentIds = dealData.selectedAgentIds || [];
-
-        if (agentIds.length === 0) {
-          toast.error('No agents selected. Please start over.');
-          navigate(createPageUrl('Pipeline'), { replace: true });
-          return;
-        }
-
-        // Create Deal entity with proposed_terms (buyer commission) for agreement generation
-        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-        
-        // Build proposed_terms from deal data
-        const proposedTerms = {
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
-        };
-        
-        // Create DealDraft so automation can find it after investor signs
-        const draftCreated = await base44.entities.DealDraft.create({
-          investor_profile_id: profile.id,
-          property_address: dealData.propertyAddress,
-          city: dealData.city,
-          state: dealData.state,
-          zip: dealData.zip,
-          county: dealData.county,
-          purchase_price: Number(cleanedPrice),
-          property_type: dealData.propertyType || null,
-          beds: dealData.beds ? Number(dealData.beds) : null,
-          baths: dealData.baths ? Number(dealData.baths) : null,
-          sqft: dealData.sqft ? Number(dealData.sqft) : null,
-          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-          number_of_stories: dealData.numberOfStories || null,
-          has_basement: dealData.hasBasement || null,
-          seller_name: dealData.sellerName,
-          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-          number_of_signers: dealData.numberOfSigners,
-          second_signer_name: dealData.secondSignerName,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-          contract_url: dealData.contractUrl || null,
-          special_notes: dealData.specialNotes || null,
-          closing_date: dealData.closingDate,
-          contract_date: dealData.contractDate,
-          selected_agent_ids: agentIds,
-          seller_commission_type: dealData.sellerCommissionType,
-          seller_commission_percentage: dealData.sellerCommissionType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: dealData.sellerCommissionType === 'flat_fee' ? Number(dealData.sellerFlatFee) : null
+    // Check if agreement exists
+    (async () => {
+      try {
+        const agreements = await base44.entities.LegalAgreement.filter({ 
+          deal_id: storedDraftId 
         });
-
-        console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
-
-        // Store deal data in state with draft reference
-        setDraft(draftCreated);
-        setDeal({ 
-          ...dealData, 
-          proposed_terms: proposedTerms,
-          investor_id: profile.id,
-          draft_id: draftCreated.id
-        });
-        setSelectedAgentIds(agentIds);
-
-        // Load agent profiles
-        if (agentIds.length > 0) {
-          const agentPromises = agentIds.map(id => 
-            base44.entities.Profile.filter({ id }).then(profiles => profiles[0])
-          );
-          const agents = await Promise.all(agentPromises);
-          setAgentProfiles(agents.filter(Boolean));
+        if (agreements[0]) {
+          setAgreement(agreements[0]);
         }
       } catch (e) {
-        console.error('[MyAgreement] Error loading deal data:', e);
-        toast.error('Failed to load deal data');
-        navigate(createPageUrl('Pipeline'), { replace: true });
+        console.error('[MyAgreement] Error loading agreement:', e);
       } finally {
         setLoading(false);
       }
     })();
-  }, [navigate, profile]);
+  }, [profile, navigate, params]);
 
-  // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
+  const handleGenerate = async () => {
+    setGenerating(true);
+    try {
+      const res = await base44.functions.invoke('generateInvestorAgreement', {
+        draft_id: draftId
+      });
+
+      if (res.data?.error) {
+        toast.error(res.data.error);
+        setGenerating(false);
+        return;
+      }
+
+      setAgreement({ id: res.data.agreement_id });
+      setSigningUrl(res.data.signing_url);
+      
+      // Redirect to DocuSign
+      window.location.assign(res.data.signing_url);
+    } catch (e) {
+      console.error('[MyAgreement] Error:', e);
+      toast.error('Failed to generate agreement');
+      setGenerating(false);
+    }
+  };
+
+  // Check if returning from DocuSign
   useEffect(() => {
-    if (!dealId) return;
-
-    const unsub = base44.entities.LegalAgreement.subscribe((event) => {
-      const a = event?.data;
-      if (!a) return;
-      if (a.deal_id !== dealId) return;
-      if (a.room_id != null) return; // ONLY base agreement updates
-      setAgreement(a);
-    });
-
-    return () => unsub?.();
-  }, [dealId]);
-
-  // Subscribe to real-time counter offer updates
-  useEffect(() => {
-    if (!room?.id) return;
-
-    const unsub = base44.entities.CounterOffer.subscribe((event) => {
-      const counter = event?.data;
-      if (!counter || counter.room_id !== room.id) return;
-
-      // CRITICAL: Only show pending counters, remove all others
-      if (event.type === 'create' || event.type === 'update') {
-        if (counter.status === 'pending') {
-          setPendingCounters(prev => {
-            const exists = prev.find(c => c.id === counter.id);
-            if (exists) {
-              return prev.map(c => c.id === counter.id ? counter : c);
-            }
-            return [...prev, counter];
+    if (params.get('signed') === '1' && draftId) {
+      // Convert draft to real deal
+      (async () => {
+        try {
+          const res = await base44.functions.invoke('convertDraftToDeal', {
+            draft_id: draftId
           });
-        } else {
-          // Counter status changed to non-pending, remove it
-          setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+
+          if (res.data?.error) {
+            toast.error(res.data.error);
+            return;
+          }
+
+          // Clear sessionStorage
+          sessionStorage.removeItem('newDealDraft');
+          sessionStorage.removeItem('draft_id');
+          sessionStorage.removeItem('selectedAgentIds');
+
+          toast.success('Deal created! Agents have been notified.');
+          navigate(createPageUrl('Pipeline'), { replace: true });
+        } catch (e) {
+          console.error('[MyAgreement] Error converting draft:', e);
+          toast.error('Failed to create deal');
         }
-      } else if (event.type === 'delete') {
-        setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
-      }
-    });
-
-    return () => unsub?.();
-  }, [room?.id]);
-
-  // Refresh deal when room updates (to pick up updated proposed_terms after counter acceptance)
-  useEffect(() => {
-    if (!dealId || !room?.id) return;
-
-    const unsub = base44.entities.Room.subscribe((event) => {
-      const updatedRoom = event?.data;
-      if (!updatedRoom || updatedRoom.id !== room.id) return;
-
-      // Update room state to trigger UI refresh with new proposed_terms
-      setRoom(updatedRoom);
-
-      // Also refresh deal if room proposed_terms changed
-      if (updatedRoom.proposed_terms && updatedRoom.proposed_terms !== room.proposed_terms) {
-        setDeal(prev => prev ? {
-          ...prev,
-          proposed_terms: updatedRoom.proposed_terms
-        } : prev);
-      }
-    });
-
-    return () => unsub?.();
-  }, [dealId, room?.id]);
+      })();
+    }
+  }, [params, draftId, navigate]);
 
   if (loadingProfile || loading) {
     return (
       <div className="min-h-screen bg-transparent flex items-center justify-center">
-        <LoadingAnimation className="w-64 h-64 mx-auto" />
+        <LoadingAnimation className="w-64 h-64" />
       </div>
     );
   }
 
-  if (!deal) {
-    return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
-        <div className="text-center">
-          <p className="text-sm text-[#808080]">No deal data found</p>
-          <button onClick={() => navigate(createPageUrl('NewDeal'))} className="mt-4 text-[#E3C567] hover:underline">Start over</button>
-        </div>
-      </div>
-    );
-  }
-
-  // After investor signs, automation will handle deal creation + invites
-  const handlePostSigningNavigation = async () => {
-    console.log('[MyAgreement] Investor signed - automation will create deal and invites');
-
-    // Clear sessionStorage
-    sessionStorage.removeItem('newDealDraft');
-    sessionStorage.removeItem('selectedAgentIds');
-
-    // Clear caches
-    queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-    queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-
-    // Show success message
-    toast.success('Agreement signed! Your deal is being created and sent to agents...');
-
-    // Wait for automation to complete, then navigate
-    setTimeout(() => {
-      navigate(createPageUrl('Pipeline'), { replace: true });
-    }, 2000);
-  };
-
-
+  const signed = agreement?.investor_signed_at || params.get('signed') === '1';
 
   return (
     <div className="min-h-screen bg-transparent px-6 py-10">
       <div className="max-w-3xl mx-auto space-y-6">
         <button
-          onClick={() => navigate(createPageUrl('NewDeal'))}
+          onClick={() => navigate(createPageUrl('SelectAgent'))}
           className="text-[#808080] hover:text-[#E3C567] text-sm"
         >
           ← Back
         </button>
 
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-[#E3C567]">Generate & Sign Agreement</h1>
-          <p className="text-sm text-[#808080]">Review your selected agents and sign to send the deal</p>
+          <h1 className="text-3xl font-bold text-[#E3C567]">Sign Agreement</h1>
+          <p className="text-sm text-[#808080] mt-2">
+            Review and sign to send your deal to selected agents
+          </p>
         </div>
 
-        {/* Selected Agents - Before Signing */}
-        {agentProfiles.length > 0 && !agreement?.investor_signed_at && (
-          <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-            <h2 className="text-lg font-bold text-[#E3C567] mb-4 flex items-center gap-2">
-              <Users className="w-5 h-5" />
-              Selected Agents ({agentProfiles.length})
-            </h2>
-            <div className="space-y-3">
+        {/* Selected Agents */}
+        {agentProfiles.length > 0 && (
+          <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
+            <CardHeader>
+              <CardTitle className="text-[#E3C567]">Selected Agents ({agentProfiles.length})</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
               {agentProfiles.map(agent => (
                 <div key={agent.id} className="bg-[#141414] border border-[#1F1F1F] rounded-xl p-4 flex items-center justify-between">
                   <div>
                     <p className="text-[#FAFAFA] font-semibold">{agent.full_name}</p>
                     <p className="text-sm text-[#808080]">{agent.email}</p>
                   </div>
-                  <CheckCircle className="w-5 h-5 text-[#34D399]" />
+                  <CheckCircle2 className="w-5 h-5 text-[#34D399]" />
                 </div>
               ))}
-            </div>
-            <p className="text-xs text-[#808080] mt-4">
-              {agentProfiles.length > 1 
-                ? 'After you sign, select which agent you want to work with.'
-                : 'After you sign, the deal will be sent to this agent.'}
-            </p>
-          </div>
+            </CardContent>
+          </Card>
         )}
 
+        {/* Agreement Card */}
+        <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
+          <CardHeader>
+            <CardTitle className="text-[#E3C567]">Investor Agreement</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!agreement && !signed && (
+              <div className="text-center py-8">
+                <FileText className="w-12 h-12 text-[#E3C567] mx-auto mb-4" />
+                <p className="text-[#808080] mb-4">Ready to generate your agreement</p>
+                <Button
+                  onClick={handleGenerate}
+                  disabled={generating}
+                  className="bg-[#E3C567] hover:bg-[#EDD89F] text-black"
+                >
+                  {generating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                  Generate & Sign Agreement
+                </Button>
+              </div>
+            )}
 
-
-        <SimpleAgreementPanel 
-          dealId={draft?.id}
-          dealData={deal}
-          draftId={draft?.id}
-          roomId={room?.id}
-          agreement={agreement}
-          room={room}
-          profile={profile}
-          pendingCounters={pendingCounters}
-          setPendingCounters={setPendingCounters}
-          onInvestorSigned={handlePostSigningNavigation}
-          onCounterUpdate={() => {}}
-          onRoomUpdate={(updatedRoom) => {
-            if (updatedRoom) setRoom(updatedRoom);
-          }}
-        />
-
-        {/* Deal Summary */}
-         {deal && (
-           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-5">
-             <h2 className="text-lg font-bold text-[#E3C567] mb-4">Deal Summary</h2>
-             <div className="grid grid-cols-2 gap-4 text-sm">
-               <div>
-                 <p className="text-[#808080]">Property</p>
-                 <p className="text-[#FAFAFA] font-semibold">{deal.city}, {deal.state}</p>
-               </div>
-               <div>
-                 <p className="text-[#808080]">Price</p>
-                 <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || deal.purchasePrice || 0).toLocaleString()}</p>
-               </div>
-               <div className="col-span-2">
-                 <p className="text-[#808080]">Buyer Commission</p>
-                 <p className="text-[#FAFAFA] font-semibold">
-                   {deal.buyerCommissionType === 'percentage'
-                     ? `${deal.buyerCommissionPercentage}%`
-                     : `$${(deal.buyerFlatFee || 0).toLocaleString()}`}
-                 </p>
-               </div>
-             </div>
-           </div>
-         )}
+            {signed && (
+              <div className="text-center py-8">
+                <CheckCircle2 className="w-12 h-12 text-[#10B981] mx-auto mb-4" />
+                <p className="text-[#FAFAFA] font-semibold mb-2">Agreement Signed!</p>
+                <p className="text-sm text-[#808080]">Creating your deal and notifying agents...</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
