@@ -673,6 +673,16 @@ export default function Room() {
           return;
         }
 
+        // Immediately load agreement for this room so it's available when Agreement tab opens
+        if (rawRoom.deal_id) {
+          try {
+            const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId }).catch(() => ({ data: null }));
+            if (agRes?.data?.agreement) {
+              setAgreement(agRes.data.agreement);
+            }
+          } catch (_) {}
+        }
+
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
          if (rawRoom.deal_id && profile?.user_role === 'investor') {
            try {
