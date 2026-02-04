@@ -319,33 +319,8 @@ function PipelineContent() {
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-       // CRITICAL: Filter out deals with no agents selected
-       // NOTE: Don't delete immediately - give automation time to add agents
-       const validDeals = [];
-       for (const deal of dedupedDeals) {
-         const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
-         if (hasAgents) {
-           validDeals.push(deal);
-         } else {
-           // Orphaned deal with no agents - only delete if older than 30 seconds
-           const dealAge = Date.now() - new Date(deal.created_date).getTime();
-           if (dealAge > 30000) {
-             console.log('[Pipeline] Deleting orphaned deal with no agents (older than 30s):', deal.id);
-             try {
-               await base44.entities.Deal.delete(deal.id);
-             } catch (e) {
-               console.warn('[Pipeline] Failed to delete orphaned deal:', e);
-             }
-           } else {
-             console.log('[Pipeline] Skipping new orphaned deal (may still be processing):', deal.id);
-             // Still add to validDeals temporarily so it shows up while automation runs
-             validDeals.push(deal);
-           }
-         }
-       }
-
-       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering orphaned deals');
-       return validDeals;
+       console.log('[Pipeline] Returning', dedupedDeals.length, 'deals after deduplication');
+       return dedupedDeals;
      },
      enabled: !!profile?.id,
      refetchOnWindowFocus: true,
