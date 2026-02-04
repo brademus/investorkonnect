@@ -382,15 +382,17 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
               </div>
             </div>
 
-            {/* Investor Actions - Sign new agreement after counter accepted */}
-            {isInvestor && needsSignature && (
+            {/* Investor Actions - Sign agreement (initial or after counter accepted) */}
+            {isInvestor && needsInvestorSignature && (
               <div className="space-y-3">
                 <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
                   <p className="text-sm text-[#E3C567] font-semibold mb-2">
-                    New Agreement Ready
+                    {agreement?.status === 'draft' ? 'New Agreement Ready' : 'Sign Agreement'}
                   </p>
                   <p className="text-xs text-[#FAFAFA]/80 mb-3">
-                    Terms have been updated. Please sign the new agreement to continue.
+                    {agreement?.status === 'draft' 
+                      ? 'Terms have been updated. Please sign the new agreement to continue.'
+                      : 'Please review and sign the agreement to proceed.'}
                   </p>
                   <Button
                     onClick={handleInvestorSign}
@@ -398,7 +400,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
                     className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                   >
                     {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Sign Updated Agreement
+                    Sign Agreement
                   </Button>
                 </div>
               </div>
