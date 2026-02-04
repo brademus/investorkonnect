@@ -319,7 +319,16 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   const agentSigned = !!agreement?.agent_signed_at;
   const fullySigned = investorSigned && agentSigned;
   
-  // Check if agreement needs regeneration (status is draft and no signatures yet)
+  // Check if agreement needs signature (draft or sent but not yet signed by current party)
+  // For investor: needs signature if agreement exists, not voided, and investor hasn't signed
+  // For agent: needs signature if agreement exists, investor signed, and agent hasn't signed
+  const needsInvestorSignature = agreement && 
+    ['draft', 'sent', 'investor_signed'].includes(agreement.status) === false ? false :
+    (agreement && !investorSigned && agreement.status !== 'voided' && agreement.status !== 'fully_signed');
+  
+  const needsAgentSignature = agreement && investorSigned && !agentSigned && agreement.status !== 'voided';
+  
+  // Legacy: Check if agreement needs regeneration (status is draft and no signatures yet)
   const needsSignature = agreement && agreement.status === 'draft' && !investorSigned && !agentSigned;
 
   return (
