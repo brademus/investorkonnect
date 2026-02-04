@@ -56,12 +56,21 @@ export default function MyAgreement() {
       }
     })();
 
-    // Check if agreement exists
+    // Check if agreement exists (by draft_id or deal_id)
     (async () => {
       try {
-        const agreements = await base44.entities.LegalAgreement.filter({ 
+        // First try by the ID as-is (might be deal_id if already converted)
+        let agreements = await base44.entities.LegalAgreement.filter({ 
           deal_id: storedDraftId 
         });
+        
+        // If no agreement found, try searching all and filter client-side
+        if (!agreements[0]) {
+          const allAgreements = await base44.entities.LegalAgreement.list();
+          // LegalAgreement doesn't have draft_id, but try to find one associated with this draft
+          agreements = allAgreements.filter(a => a.deal_id === storedDraftId);
+        }
+        
         if (agreements[0]) {
           setAgreement(agreements[0]);
         }
