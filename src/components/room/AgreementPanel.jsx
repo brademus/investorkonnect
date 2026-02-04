@@ -70,18 +70,34 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
           console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
-        // Load pending counters (for this room or deal)
+        // Load pending counters - try multiple strategies
         let counters = [];
+        
+        // Strategy 1: Filter by room_id + status
         try {
           counters = await base44.entities.CounterOffer.filter({
             room_id: roomId,
             status: 'pending'
           });
+          console.log('[AgreementPanel] Room+status filter returned:', counters.length);
         } catch (e) {
-          console.warn('[AgreementPanel] Room-scoped counter filter failed:', e);
+          console.warn('[AgreementPanel] Room+status filter failed:', e.message);
         }
         
-        // If no room-scoped counters, try deal-scoped (legacy)
+        // Strategy 2: Filter by room_id only
+        if (counters.length === 0) {
+          try {
+            const roomCounters = await base44.entities.CounterOffer.filter({
+              room_id: roomId
+            });
+            counters = roomCounters.filter(c => c.status === 'pending');
+            console.log('[AgreementPanel] Room filter returned:', roomCounters.length, 'pending:', counters.length);
+          } catch (e) {
+            console.warn('[AgreementPanel] Room filter failed:', e.message);
+          }
+        }
+        
+        // Strategy 3: Filter by deal_id + status
         if (counters.length === 0) {
           try {
             const dealCounters = await base44.entities.CounterOffer.filter({
@@ -89,12 +105,26 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
               status: 'pending'
             });
             counters = dealCounters;
+            console.log('[AgreementPanel] Deal+status filter returned:', counters.length);
           } catch (e) {
-            console.warn('[AgreementPanel] Deal-scoped counter filter failed:', e);
+            console.warn('[AgreementPanel] Deal+status filter failed:', e.message);
           }
         }
         
-        console.log('[AgreementPanel] Loaded counters:', counters.length, counters);
+        // Strategy 4: Filter by deal_id only
+        if (counters.length === 0) {
+          try {
+            const dealCounters = await base44.entities.CounterOffer.filter({
+              deal_id: dealId
+            });
+            counters = dealCounters.filter(c => c.status === 'pending');
+            console.log('[AgreementPanel] Deal filter returned:', dealCounters.length, 'pending:', counters.length);
+          } catch (e) {
+            console.warn('[AgreementPanel] Deal filter failed:', e.message);
+          }
+        }
+        
+        console.log('[AgreementPanel] Final counters:', counters.length, counters);
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
