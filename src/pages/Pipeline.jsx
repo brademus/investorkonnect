@@ -148,9 +148,22 @@ function PipelineContent() {
     if (!profile?.id) return;
     (async () => {
       try {
-        const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile?.identity_session_id });
-        const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
-        setIdentity({ verificationStatus: status });
+        // CRITICAL: Only call getStripeIdentityStatus if session_id exists
+        if (profile?.identity_session_id) {
+          const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile.identity_session_id });
+          const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
+          setIdentity({ verificationStatus: status });
+        } else {
+          // No session ID - use profile data directly
+          const fallbackIdentity = {
+            verificationStatus: profile.identity_status === 'approved' || profile.identity_status === 'verified' 
+              ? 'VERIFIED' 
+              : profile.identity_status === 'pending' 
+              ? 'PROCESSING' 
+              : 'NOT_STARTED'
+          };
+          setIdentity(fallbackIdentity);
+        }
       } catch (e) {
         console.warn('[Pipeline] getStripeIdentityStatus failed:', e);
         // Fallback: use profile data directly
@@ -817,17 +830,20 @@ function PipelineContent() {
         return;
       }
 
-      // CRITICAL: Fetch room directly from database if not in cache yet
+      // CRITICAL: Fetch room directly from database if not in cache yet (multi-agent support)
       try {
         console.log('[Pipeline] Room not in cache, fetching from DB for deal:', deal.deal_id);
         const roomsForDeal = await base44.entities.Room.filter({ 
-          deal_id: deal.deal_id, 
-          agentId: profile.id 
+          deal_id: deal.deal_id
         });
         
-        if (roomsForDeal?.length > 0) {
-          const freshRoom = roomsForDeal[0];
-          console.log('[Pipeline] Found room in DB:', freshRoom.id);
+        // Find room where this agent is in the agent_ids array
+        const agentRoom = roomsForDeal.find(r => 
+          r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+        );
+        
+        if (agentRoom) {
+          console.log('[Pipeline] Found room in DB:', agentRoom.id);
           const masked = {
             id: deal.deal_id,
             title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
@@ -841,7 +857,7 @@ function PipelineContent() {
             is_fully_signed: false,
           };
           setCachedDeal(deal.deal_id, masked);
-          navigate(`${createPageUrl("Room")}?roomId=${freshRoom.id}&tab=agreement`);
+          navigate(`${createPageUrl("Room")}?roomId=${agentRoom.id}&tab=agreement`);
           return;
         }
       } catch (e) {
