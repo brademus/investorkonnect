@@ -2230,8 +2230,15 @@ export default function Room() {
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
 
-                  {/* Key Terms */}
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+                  {/* Key Terms Panel */}
+                  <KeyTermsPanel 
+                    deal={deal}
+                    room={currentRoom}
+                    profile={profile}
+                  />
+
+                  {/* Legacy Key Terms - keeping for reference but hidden */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hidden">
                     <h5 className="text-md font-semibold text-[#FAFAFA] mb-4">Key Terms</h5>
                     <div className="space-y-4">
                       {/* Purchase Price */}
