@@ -43,7 +43,7 @@ Deno.serve(async (req) => {
 
     console.log('[convertDraftToDeal] Converting draft to deal:', draft_id);
 
-    // Create real Deal
+    // Create real Deal with proposed_terms
     const deal = await base44.asServiceRole.entities.Deal.create({
       title: `${draft.city}, ${draft.state}`,
       investor_id: investorProfile.id,
@@ -67,6 +67,15 @@ Deno.serve(async (req) => {
         earnest_money: draft.earnest_money,
         number_of_signers: draft.number_of_signers,
         second_signer_name: draft.second_signer_name
+      },
+      proposed_terms: {
+        seller_commission_type: draft.seller_commission_type,
+        seller_commission_percentage: draft.seller_commission_percentage,
+        seller_flat_fee: draft.seller_flat_fee,
+        buyer_commission_type: draft.buyer_commission_type,
+        buyer_commission_percentage: draft.buyer_commission_percentage,
+        buyer_flat_fee: draft.buyer_flat_fee,
+        agreement_length: draft.agreement_length
       },
       key_dates: {
         closing_date: draft.closing_date,
@@ -102,7 +111,7 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Create Room
+      // Create Room with proposed_terms
       const room = await base44.asServiceRole.entities.Room.create({
         deal_id: deal.id,
         investorId: investorProfile.id,
@@ -117,7 +126,14 @@ Deno.serve(async (req) => {
         zip: draft.zip,
         budget: draft.purchase_price,
         closing_date: draft.closing_date,
-        requested_at: new Date().toISOString()
+        requested_at: new Date().toISOString(),
+        agent_terms: {
+          [agentProfileId]: {
+            buyer_commission_type: draft.buyer_commission_type,
+            buyer_commission_percentage: draft.buyer_commission_percentage,
+            buyer_flat_fee: draft.buyer_flat_fee
+          }
+        }
       });
 
       roomIds.push(room.id);
