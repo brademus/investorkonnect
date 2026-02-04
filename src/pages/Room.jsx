@@ -3008,33 +3008,55 @@ export default function Room() {
               {isMultiAgentMode ? (
                 <PendingAgentsList 
                   invites={invites} 
-                  onSelectAgent={(invite) => {
+                  onSelectAgent={async (invite) => {
+                    console.log('[Room] Agent selected:', invite.agent_profile_id, 'room:', invite.room_id);
+                    
+                    // CRITICAL: Reset agreement state immediately to prevent showing stale data
+                    setAgreement(null);
                     setSelectedInvite(invite);
-                    // CRITICAL: When investor selects an agent, also load that agent's room-specific data
-                    // This ensures Key Terms and Agreement panels show the correct agent-specific data
+                    
+                    // CRITICAL: When investor selects an agent, load that agent's SPECIFIC room data
+                    // Each agent has their own room with their own terms and agreement
                     if (invite.room_id) {
-                      // Load the specific room for this agent
-                      base44.entities.Room.filter({ id: invite.room_id }).then(rooms => {
+                      try {
+                        // Load the specific room for this agent
+                        const rooms = await base44.entities.Room.filter({ id: invite.room_id });
                         if (rooms[0]) {
-                          // Merge agent-specific room data without overwriting the current room entirely
+                          const agentRoom = rooms[0];
+                          console.log('[Room] Loaded agent-specific room:', agentRoom.id, 'agent_terms:', agentRoom.agent_terms);
+                          
+                          // Update current room with agent-specific data
                           setCurrentRoom(prev => ({
                             ...prev,
-                            agent_terms: rooms[0].agent_terms,
-                            proposed_terms: rooms[0].proposed_terms,
-                            current_legal_agreement_id: rooms[0].current_legal_agreement_id
+                            agent_terms: agentRoom.agent_terms,
+                            proposed_terms: agentRoom.proposed_terms,
+                            current_legal_agreement_id: agentRoom.current_legal_agreement_id
                           }));
                         }
-                      });
-                      // Also load the agent-specific agreement
-                      base44.entities.LegalAgreement.filter({ 
-                        deal_id: currentRoom?.deal_id || deal?.id,
-                        room_id: invite.room_id 
-                      }).then(agreements => {
-                        const activeAgreement = agreements.find(a => a.status !== 'voided') || agreements[0];
+                        
+                        // Load the agent-specific agreement for THIS room only
+                        const dealId = currentRoom?.deal_id || deal?.id;
+                        const agreements = await base44.entities.LegalAgreement.filter({ 
+                          deal_id: dealId,
+                          room_id: invite.room_id 
+                        });
+                        
+                        console.log('[Room] Found agreements for agent room:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
+                        
+                        // Pick the active agreement (prefer non-voided)
+                        const activeAgreement = agreements.find(a => a.status === 'draft') || 
+                                               agreements.find(a => a.status !== 'voided') || 
+                                               agreements[0];
+                        
                         if (activeAgreement) {
+                          console.log('[Room] Setting agreement:', activeAgreement.id, 'terms:', activeAgreement.exhibit_a_terms);
                           setAgreement(activeAgreement);
+                        } else {
+                          console.log('[Room] No agreement found for this agent room');
                         }
-                      });
+                      } catch (e) {
+                        console.error('[Room] Failed to load agent-specific data:', e);
+                      }
                     }
                     toast.success('Agent selected - Deal Board is now available');
                   }}
