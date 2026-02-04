@@ -741,8 +741,19 @@ function PipelineContent() {
         console.error('[Pipeline] Failed to fetch rooms:', e);
       }
 
-      // No rooms found - go to MyAgreement (it will handle signing or showing existing signature)
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
+      // Always show the room for investors - create one if needed
+      try {
+        const room = await getOrCreateDealRoom(deal.deal_id);
+        if (room?.id) {
+          navigate(`${createPageUrl("Room")}?roomId=${room.id}`);
+          return;
+        }
+      } catch (e) {
+        console.error('[Pipeline] Failed to get or create room:', e);
+      }
+      
+      // Fallback - should rarely happen
+      toast.error('Failed to open deal room');
       return;
     }
 
