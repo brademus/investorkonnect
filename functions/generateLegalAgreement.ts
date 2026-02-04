@@ -250,6 +250,8 @@ Deno.serve(async (req) => {
 
     // Load room if needed
     let room = null, agentProfile = { id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD', agent: { license_number: 'TBD', brokerage: 'TBD' } };
+    // Save the explicitly passed exhibit_a terms - these take precedence (e.g. from counter offer)
+    const passedExhibitA = { ...exhibit_a };
     if (room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0];
@@ -258,7 +260,11 @@ Deno.serve(async (req) => {
       if (agentId) {
         const agents = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
         if (agents?.length) agentProfile = agents[0];
-        if (room.agent_terms?.[agentId]) exhibit_a = { ...exhibit_a, ...room.agent_terms[agentId] };
+        // Merge order: room.agent_terms (base) -> passedExhibitA (override)
+        // Passed terms take precedence over stored room.agent_terms
+        if (room.agent_terms?.[agentId]) {
+          exhibit_a = { ...room.agent_terms[agentId], ...passedExhibitA };
+        }
       }
     }
     
