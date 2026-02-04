@@ -198,9 +198,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
       };
 
       // Use draftId if deal doesn't exist yet (pre-signing flow), otherwise use dealId
+      // CRITICAL: Only pass ONE of draft_id or deal_id, not both - pass draft_id if available
       const res = await base44.functions.invoke('regenerateActiveAgreement', {
-        draft_id: draftId,
-        deal_id: dealId,
+        draft_id: draftId || undefined,
+        deal_id: draftId ? undefined : dealId,  // Only pass dealId if draftId is not provided
         room_id: roomId || undefined,
         exhibit_a: exhibit_a,
         investor_profile_id: profile?.id,
