@@ -117,7 +117,12 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       </CardHeader>
 
       <CardContent className="p-6 space-y-4">
-        {!displayTerms ? (
+        {loading ? (
+          <div className="text-center py-6">
+            <Loader2 className="w-8 h-8 text-[#E3C567] mx-auto mb-2 animate-spin" />
+            <p className="text-[#808080] text-sm">Loading terms...</p>
+          </div>
+        ) : !displayTerms ? (
           <div className="text-center py-6">
             <AlertCircle className="w-10 h-10 text-[#808080] mx-auto mb-2 opacity-50" />
             <p className="text-[#808080] text-sm">No terms set yet</p>
