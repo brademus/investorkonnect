@@ -45,11 +45,31 @@ export default function AgreementPanel({ dealId, roomId, profile }) {
           setAgreement(agreements[0]);
         }
 
-        // Load pending counters
-        const counters = await base44.entities.CounterOffer.filter({
-          room_id: roomId,
-          status: 'pending'
-        });
+        // Load pending counters (for this room or deal)
+        let counters = [];
+        try {
+          counters = await base44.entities.CounterOffer.filter({
+            room_id: roomId,
+            status: 'pending'
+          });
+        } catch (e) {
+          console.warn('[AgreementPanel] Room-scoped counter filter failed:', e);
+        }
+        
+        // If no room-scoped counters, try deal-scoped (legacy)
+        if (counters.length === 0) {
+          try {
+            const dealCounters = await base44.entities.CounterOffer.filter({
+              deal_id: dealId,
+              status: 'pending'
+            });
+            counters = dealCounters;
+          } catch (e) {
+            console.warn('[AgreementPanel] Deal-scoped counter filter failed:', e);
+          }
+        }
+        
+        console.log('[AgreementPanel] Loaded counters:', counters.length, counters);
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
