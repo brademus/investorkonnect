@@ -2237,6 +2237,63 @@ export default function Room() {
                     profile={profile}
                   />
 
+                  {/* Pending Counter Offers */}
+                  {pendingCounters.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Pending Counter Offers</h4>
+                      {pendingCounters.map(counter => {
+                        const isForMe = (profile?.user_role === 'agent' && counter.to_role === 'agent') || (profile?.user_role === 'investor' && counter.to_role === 'investor');
+
+                        return (
+                          <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
+                            <p className="text-xs text-[#E3C567] mb-3 font-semibold">
+                              {counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer
+                            </p>
+                            <div className="text-sm text-[#FAFAFA] mb-3">
+                              <p>Buyer Commission: {counter.terms_delta.buyer_commission_type === 'percentage'
+                                ? `${counter.terms_delta.buyer_commission_percentage}%`
+                                : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
+                            </div>
+                            {isForMe && (
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  onClick={async () => {
+                                    try {
+                                      const res = await base44.functions.invoke('acceptCounterOffer', {
+                                        counter_id: counter.id
+                                      });
+                                      if (res.data?.error) {
+                                        toast.error(res.data.error);
+                                        return;
+                                      }
+                                      toast.success('Counter accepted - terms updated');
+                                      setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+                                      await refreshRoomState();
+                                    } catch (e) {
+                                      toast.error('Failed to accept counter');
+                                    }
+                                  }}
+                                  className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
+                                >
+                                  Accept
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  onClick={() => navigate(`${createPageUrl("SendCounter")}?dealId=${currentRoom?.deal_id}&roomId=${roomId}&respondingTo=${counter.id}`)}
+                                  variant="outline"
+                                  className="flex-1 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
+                                >
+                                  Counter Back
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
                   {/* Legacy Key Terms - keeping for reference but hidden */}
                   <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hidden">
                     <h5 className="text-md font-semibold text-[#FAFAFA] mb-4">Key Terms</h5>
