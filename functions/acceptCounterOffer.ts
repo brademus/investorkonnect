@@ -92,14 +92,14 @@ Deno.serve(async (req) => {
 
     // CRITICAL: Pass the specific agent_profile_id for this room
     // This ensures the agreement is generated ONLY for this agent, not others
-    const agentId = room.agent_ids?.[0];
+    const agentIdForAgreement = room.agent_ids?.[0];
     
     const generateRes = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       deal_id: counter.deal_id,
       room_id: counter.room_id,
       investor_profile_id: room.investorId,
-      agent_profile_id: agentId, // Specific agent for this agreement
-      agent_profile_ids: [agentId], // Keep for backward compatibility
+      agent_profile_id: agentIdForAgreement, // Specific agent for this agreement
+      agent_profile_ids: [agentIdForAgreement], // Keep for backward compatibility
       exhibit_a: newTerms,
       signer_mode: userRole === 'investor' ? 'investor_only' : 'agent_only'
     });
@@ -116,10 +116,9 @@ Deno.serve(async (req) => {
     // Update room with new agreement AND the new terms
     // CRITICAL: Store terms in agent_terms[agentId] to keep them agent-specific
     // This ensures other agents in other rooms don't see these negotiated terms
-    const agentId = room.agent_ids?.[0];
     const updatedAgentTerms = {
       ...(room.agent_terms || {}),
-      [agentId]: newTerms
+      [agentIdForAgreement]: newTerms
     };
     
     await base44.asServiceRole.entities.Room.update(counter.room_id, {
