@@ -2308,6 +2308,11 @@ export default function Room() {
                                roomId={roomId}
                                profile={profile}
                                initialAgreement={agreement}
+                               onAgreementChange={(newAg) => {
+                                 setAgreement(newAg);
+                                 // Force key terms to reload by triggering state update
+                                 setAgreementPanelKey(prev => prev + 1);
+                               }}
                              />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
