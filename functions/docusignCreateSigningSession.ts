@@ -530,10 +530,13 @@ Deno.serve(async (req) => {
     // Build DocuSign return URL with deal context
     const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
     const returnURL = new URL(`${origin}/DocuSignReturn`);
-    returnURL.searchParams.set('token', tokenValue);
-    if (agreement.deal_id) returnURL.searchParams.set('dealId', agreement.deal_id);
-    if (room_id) returnURL.searchParams.set('roomId', room_id);
-    returnURL.searchParams.set('tab', 'agreement');
+    returnURL.searchParams.set('event', 'signing_complete');
+    if (agreement.deal_id) returnURL.searchParams.set('deal_id', agreement.deal_id);
+    if (room_id) returnURL.searchParams.set('room_id', room_id);
+    // For drafts (investor_only mode), pass draft_id instead
+    if (signerMode === 'investor_only' && !room_id) {
+      returnURL.searchParams.set('draft_id', agreement.deal_id);
+    }
     returnURL.searchParams.set('role', role);
     const docusignReturnUrl = returnURL.toString();
     
