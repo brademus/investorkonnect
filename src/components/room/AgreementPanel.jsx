@@ -151,7 +151,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         setLoading(false);
       }
     })();
-  }, [dealId, roomId, initialAgreement]);
+  }, [dealId, roomId]);
 
   // Subscribe to real-time updates
   useEffect(() => {
