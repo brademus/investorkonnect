@@ -1,4 +1,4 @@
-// v2.4 - Draft flow support
+// v2.5 - Draft flow support with proper parameter handling
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { fetchTemplate } from './utils/templateCache.js';
@@ -60,9 +60,6 @@ const STATE_TEMPLATES = {
 };
 
 function normalizeSignatureSection(text) {
-  console.log('[normalizeSignatureSection] Starting normalization...');
-  console.log('[normalizeSignatureSection] Text length:', text.length);
-  
   const standardSignatureBlock = `
 
 SIGNATURES
@@ -80,7 +77,6 @@ Brokerage: [[AGENT_BROKERAGE]]
 Date: [[AGENT_DATE]]
 `;
   
-  // Patterns to find signature sections (case-insensitive, more flexible)
   const signaturePatterns = [
     /^\s*SIGNATURES?\s*$/gim,
     /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,
@@ -89,26 +85,20 @@ Date: [[AGENT_DATE]]
   
   let signatureIndex = -1;
   
-  // Find the LAST occurrence of any signature header
   for (let i = 0; i < signaturePatterns.length; i++) {
     const pattern = signaturePatterns[i];
     const matches = [...text.matchAll(pattern)];
     if (matches.length > 0) {
       const lastMatch = matches[matches.length - 1];
       signatureIndex = lastMatch.index;
-      console.log(`[normalizeSignatureSection] Found signature at index ${signatureIndex}, replacing with standard block`);
       break;
     }
   }
   
   if (signatureIndex >= 0) {
-    // Replace everything from signature section onwards with standard block
     text = text.substring(0, signatureIndex) + standardSignatureBlock;
-    console.log('[normalizeSignatureSection] Replaced signature section with standard block');
   } else {
-    // No signature found, append to end
     text += standardSignatureBlock;
-    console.log('[normalizeSignatureSection] No signature found, appended standard block');
   }
   
   return text;
@@ -116,29 +106,15 @@ Date: [[AGENT_DATE]]
 
 function normalizeWinAnsi(text) {
   const map = {
-    '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '“': '"', '”': '"', '‘': "'", '’': "'",
+    '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '"': '"', '"': '"', ''': "'", ''': "'",
     '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≤': '<=', '≥': '>=', '©': '(c)', '®': '(r)', '™': 'TM',
     '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' ', '\u202F': ' ', '\u2009': ' ', '\u200A': ' ',
     '\u200B': '', '\uFEFF': '', '\u2060': '',
-    // Checkbox and shapes
-    '\u2610': '[ ]', // ☐ ballot box
-    '\u2611': '[x]', // ☑ ballot box with check
-    '\u2612': '[x]', // ☒ ballot box with X
-    '\u25A1': '[ ]', // □ white square
-    '\u25A0': '[]',  // ■ black square
-    '\u25CF': '*',   // ● black circle
-    '\u25CB': 'o',   // ○ white circle
-    '\u25AB': '-',   // ▫
-    '\u25AA': '-',   // ▪
-    // Check marks
-    '\u2713': '[x]', // ✓ check mark
-    '\u2714': '[x]', // ✔ heavy check mark
-    '\u2715': 'x',   // ✕
-    '\u2717': 'x'    // ✗
+    '\u2610': '[ ]', '\u2611': '[x]', '\u2612': '[x]', '\u25A1': '[ ]', '\u25A0': '[]',
+    '\u25CF': '*', '\u25CB': 'o', '\u25AB': '-', '\u25AA': '-',
+    '\u2713': '[x]', '\u2714': '[x]', '\u2715': 'x', '\u2717': 'x'
   };
-  // First, replace known problem characters
   let out = text.replace(/[\u2013\u2014\u2212\u2022\u00B7\u2026\u201C\u201D\u2018\u2019\u2192\u2190\u2194\u21D2\u2264\u2265\u00A9\u00AE\u2122\u00AD\u00A0\u2002\u2003\u202F\u2009\u200A\u200B\uFEFF\u2060\u2610\u2611\u2612\u25A1\u25A0\u25CF\u25CB\u25AB\u25AA\u2713\u2714\u2715\u2717]/g, ch => map[ch] ?? '');
-  // Safety: strip any remaining non-WinAnsi characters
   out = out.replace(/[^\x00-\xFF]/g, '');
   return out;
 }
@@ -171,19 +147,16 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
   for (let i = 0; i < lines.length; i++) {
     let line = lines[i];
     
-    // Add new page if needed
     if (yPosition < margin + 30) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
       yPosition = pageHeight - margin;
     }
     
-    // Skip empty lines but add spacing
     if (!line.trim()) {
       yPosition -= lineHeight * 0.5;
       continue;
     }
     
-    // Detect headings (all caps or numbered)
     const isTitle = line.includes('INTERNAL OPERATING AGREEMENT') || line.includes('InvestorKonnect');
     const isHeading = /^[A-Z\s]{15,}$/.test(line.trim()) || /^\d+\)/.test(line.trim()) || /^[A-Z]\)/.test(line.trim());
     const isSubheading = /^\d+\./.test(line.trim());
@@ -192,11 +165,9 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
     const currentSize = isTitle ? 14 : isHeading ? 11 : isSubheading ? 10.5 : fontSize;
     const textColor = rgb(0, 0, 0);
     
-    // Check if line contains DocuSign anchors (test without consuming regex)
     const hasAnchors = /\[\[([A-Z_]+)\]\]/.test(line);
     
     if (hasAnchors && isDocuSignVersion) {
-      // DocuSign version: render anchors as invisible text
       const parts = line.split(/(\[\[[A-Z_]+\]\])/);
       let xPos = margin;
       
@@ -206,30 +177,14 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
         const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
         
         if (isAnchor) {
-          // Draw anchor as WHITE 1px text (invisible but searchable by DocuSign)
-          page.drawText(part, {
-            x: xPos,
-            y: yPosition,
-            size: 1,
-            font: font,
-            color: rgb(1, 1, 1) // Pure white
-          });
-          // Don't advance xPos - anchor takes no visible space
+          page.drawText(part, { x: xPos, y: yPosition, size: 1, font: font, color: rgb(1, 1, 1) });
         } else if (part.trim()) {
-          // Draw visible text normally
-          page.drawText(part, {
-            x: xPos,
-            y: yPosition,
-            size: currentSize,
-            font: currentFont,
-            color: textColor
-          });
+          page.drawText(part, { x: xPos, y: yPosition, size: currentSize, font: currentFont, color: textColor });
           xPos += currentFont.widthOfTextAtSize(part, currentSize);
         }
       }
       yPosition -= lineHeight;
     } else if (hasAnchors && !isDocuSignVersion) {
-      // Human PDF version: strip anchors completely
       const cleanLine = line.replace(/\[\[[A-Z_]+\]\]/g, '');
       const words = cleanLine.split(' ');
       let currentLine = '';
@@ -239,20 +194,9 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
         const width = currentFont.widthOfTextAtSize(testLine, currentSize);
         
         if (width > maxWidth && currentLine) {
-          page.drawText(currentLine, {
-            x: margin,
-            y: yPosition,
-            size: currentSize,
-            font: currentFont,
-            color: textColor
-          });
+          page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
           yPosition -= lineHeight;
-          
-          if (yPosition < margin + 30) {
-            page = pdfDoc.addPage([pageWidth, pageHeight]);
-            yPosition = pageHeight - margin;
-          }
-          
+          if (yPosition < margin + 30) { page = pdfDoc.addPage([pageWidth, pageHeight]); yPosition = pageHeight - margin; }
           currentLine = word;
         } else {
           currentLine = testLine;
@@ -260,17 +204,10 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
       }
       
       if (currentLine.trim()) {
-        page.drawText(currentLine, {
-          x: margin,
-          y: yPosition,
-          size: currentSize,
-          font: currentFont,
-          color: textColor
-        });
+        page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
         yPosition -= lineHeight;
       }
     } else {
-      // Normal word wrap for non-anchor lines
       const words = line.split(' ');
       let currentLine = '';
       
@@ -279,81 +216,42 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
         const width = currentFont.widthOfTextAtSize(testLine, currentSize);
         
         if (width > maxWidth && currentLine) {
-          // Draw current line
-          page.drawText(currentLine, {
-            x: margin,
-            y: yPosition,
-            size: currentSize,
-            font: currentFont,
-            color: textColor
-          });
+          page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
           yPosition -= lineHeight;
-          
-          // Check if new page needed
-          if (yPosition < margin + 30) {
-            page = pdfDoc.addPage([pageWidth, pageHeight]);
-            yPosition = pageHeight - margin;
-          }
-          
+          if (yPosition < margin + 30) { page = pdfDoc.addPage([pageWidth, pageHeight]); yPosition = pageHeight - margin; }
           currentLine = word;
         } else {
           currentLine = testLine;
         }
       }
       
-      // Draw remaining text
       if (currentLine) {
-        page.drawText(currentLine, {
-          x: margin,
-          y: yPosition,
-          size: currentSize,
-          font: currentFont,
-          color: textColor
-        });
+        page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
         yPosition -= lineHeight;
       }
     }
     
-    // Extra spacing after headings
-    if (isHeading || isTitle) {
-      yPosition -= lineHeight * 0.5;
-    }
+    if (isHeading || isTitle) { yPosition -= lineHeight * 0.5; }
   }
   
-  // Add footer to all pages
   const pages = pdfDoc.getPages();
   for (let i = 0; i < pages.length; i++) {
     const pg = pages[i];
-    pg.drawText(`Page ${i + 1} of ${pages.length}`, {
-      x: pageWidth / 2 - 30,
-      y: 30,
-      size: 8,
-      font: font,
-      color: rgb(0.5, 0.5, 0.5)
-    });
+    pg.drawText(`Page ${i + 1} of ${pages.length}`, { x: pageWidth / 2 - 30, y: 30, size: 8, font: font, color: rgb(0.5, 0.5, 0.5) });
   }
   
   return await pdfDoc.save();
 }
 
 function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails = true) {
-  const effectiveDate = new Date().toLocaleDateString('en-US', { 
-    month: 'long', 
-    day: 'numeric', 
-    year: 'numeric' 
-  });
+  const effectiveDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   
-  // Build venue - ensure it's never empty
   let venue = deal.state || 'N/A';
-  if (deal.county && deal.state) {
-    venue = `${deal.county} County, ${deal.state}`;
-  }
+  if (deal.county && deal.state) { venue = `${deal.county} County, ${deal.state}`; }
   
-  // ROFR settings
   const rofrEnabled = deal.rofr_enabled || false;
   const rofrDays = deal.rofr_days || 0;
   
-  // Compensation
   const compensationModel = exhibit_a.compensation_model || 'FLAT_FEE';
   let sellerCompType = 'Flat Fee';
   let sellerCompValue = `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`;
@@ -366,22 +264,19 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDet
     sellerCompValue = `Net: $${(exhibit_a.net_target || 0).toLocaleString()}`;
   }
   
-  // Buyer compensation - normalize from percentage/flat_fee fields
   let buyerCompType = 'Commission Percentage';
   let buyerCompValue = '3%';
-  let buyerCompAmount = 0;
   
   if (exhibit_a.buyer_commission_type === 'flat') {
     buyerCompType = 'Flat Fee';
-    buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
+    const buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
     buyerCompValue = `$${buyerCompAmount.toLocaleString()}`;
   } else if (exhibit_a.buyer_commission_type === 'percentage') {
     buyerCompType = 'Commission Percentage';
-    buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
+    const buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
     buyerCompValue = `${buyerCompAmount}%`;
   }
   
-  // Agent details - only fill if fillAgentDetails is true
   const agentName = fillAgentDetails ? (agentProfile.full_name || agentProfile.email || 'TBD') : 'TBD';
   const licenseNumber = fillAgentDetails ? (agentProfile.agent?.license_number || agentProfile.license_number || 'TBD') : 'TBD';
   const brokerageName = fillAgentDetails ? (agentProfile.agent?.brokerage || agentProfile.broker || 'TBD') : 'TBD';
@@ -429,33 +324,30 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDet
   };
 }
 
-
-
 Deno.serve(async (req) => {
+  console.log('[generateLegalAgreement v2.5] Starting...');
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
+    console.log('[generateLegalAgreement v2.5] Body keys:', Object.keys(body));
+    
     const draft_id = body.draft_id || null;
     const deal_id = body.deal_id || null;
-    const room_id = body.room_id || null; // Room-scoped or legacy deal-scoped
+    const room_id = body.room_id || null;
     let exhibit_a = body.exhibit_a || {};
-    // Only support investor_only (initial) or both (counter-accepted)
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    console.log('[generateLegalAgreement] v2.4 - Received params:', { deal_id, draft_id, room_id, signer_mode, has_exhibit_a: !!exhibit_a });
+    console.log('[generateLegalAgreement v2.5] Params:', { deal_id, draft_id, room_id, signer_mode });
 
     if (!deal_id && !draft_id) {
-      console.log('[generateLegalAgreement] v2.4 - Missing both deal_id and draft_id - full body:', JSON.stringify(body));
+      console.log('[generateLegalAgreement v2.5] Missing both - body:', JSON.stringify(body).substring(0, 500));
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
-    console.log('[generateLegalAgreement] Starting with deal_id:', deal_id, 'draft_id:', draft_id);
     
-    console.log('[generateLegalAgreement] Mode:', room_id ? 'ROOM-SCOPED' : 'LEGACY (deal-scoped)', 'signer_mode:', signer_mode);
-
-    // Load investor profile - prefer from request body for draft flow
+    // Load investor profile
     let profile = null;
     const investorProfileId = body.investor_profile_id;
     
@@ -465,7 +357,6 @@ Deno.serve(async (req) => {
     }
     
     if (!profile) {
-      // Fallback to user_id lookup
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       profile = profiles?.[0];
     }
@@ -474,7 +365,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
 
-    // Load deal OR draft
+    // Load deal OR build from draft params
     let deal = null;
     if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
@@ -483,91 +374,62 @@ Deno.serve(async (req) => {
       }
       deal = deals[0];
     } else if (draft_id) {
-      // For draft-scoped generation (investor-only), use provided params
-      // No need to fetch DealDraft - all data should be in request body
+      // Build minimal deal object from request body params
       const stateParam = body.state;
-      const cityParam = body.city;
-      const zipParam = body.zip;
-      const countyParam = body.county;
-      const addressParam = body.property_address;
-
       if (!stateParam) {
         return Response.json({ error: 'State required for draft-based generation' }, { status: 400 });
       }
-
-      // Build minimal deal object for rendering
+      
       deal = {
         id: draft_id,
         state: stateParam,
-        city: cityParam || 'TBD',
-        county: countyParam || 'TBD',
-        zip: zipParam || 'TBD',
-        property_address: addressParam || 'TBD',
+        city: body.city || 'TBD',
+        county: body.county || 'TBD',
+        zip: body.zip || 'TBD',
+        property_address: body.property_address || 'TBD',
         property_type: body.property_type || 'Single Family',
         transaction_type: 'ASSIGNMENT'
       };
-      console.log('[generateLegalAgreement] Using draft-based deal:', deal);
+      console.log('[generateLegalAgreement v2.5] Draft-based deal:', deal);
     }
 
-    // Load room (if room_id provided) to get room-scoped terms
+    // Load room if room_id provided
     let room = null;
-    let agentIdForTerms = null;
     if (room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0] || null;
-
       if (!room) {
         return Response.json({ error: 'Room not found' }, { status: 404 });
       }
       
-      // CRITICAL: Get terms for the specific agent from agent_terms
-      // For room-scoped generation, we need to know which agent - get from request body or first agent
       const agentId = body.agent_profile_id || room.agent_ids?.[0];
       if (!agentId) {
         return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
       }
       
-      agentIdForTerms = agentId;
       const agentTerms = room.agent_terms?.[agentId];
-      
       if (agentTerms) {
         exhibit_a = { ...exhibit_a, ...agentTerms };
-        console.log('[generateLegalAgreement] Using agent-specific terms for agent', agentId, ':', exhibit_a);
-      } else {
-        console.warn('[generateLegalAgreement] Room has no terms for agent', agentId);
       }
     }
 
-    // Resolve agent from Room (if room_id provided) or fallback to Deal.agent_id (legacy)
+    // Resolve agent profile
     let agentProfile = null;
-
-    if (room_id) {
-      // ROOM-SCOPED: Get agent from Room (already loaded above)
-      if (!room) {
-        return Response.json({ error: 'Room not found' }, { status: 404 });
-      }
-      
+    if (room_id && room) {
       const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
         return Response.json({ error: 'Agent profile not found for this room' }, { status: 404 });
       }
       agentProfile = agentProfiles[0];
-      console.log('[generateLegalAgreement] Resolved agent from room:', agentProfile.id);
     } else {
-      // LEGACY/DEAL-SCOPED: No room_id means this is the initial investor-generated agreement
-      // Agent fields will be left as TBD placeholders (fillAgentDetails = false)
-      // Create a minimal agent profile with TBD values for rendering
+      // No room - use TBD placeholders
       agentProfile = {
-        id: 'TBD',
-        full_name: 'TBD',
-        email: 'TBD',
-        user_id: 'TBD',
+        id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD',
         agent: { license_number: 'TBD', brokerage: 'TBD' }
       };
-      console.log('[generateLegalAgreement] Deal-scoped generation: agent details will be TBD placeholders');
     }
     
-    // Validate required fields with detailed info
+    // Validate required fields
     const missing = [];
     const details = [];
     
@@ -582,34 +444,23 @@ Deno.serve(async (req) => {
       details.push('Investor legal name is required');
     }
     
-    // Only validate agent fields if generating for a specific room AND fillAgentDetails is true
-    // For initial generation (no room_id), agent details are left as TBD placeholders
     const fillAgentDetails = !!room_id;
     if (fillAgentDetails) {
-      const agentName = agentProfile.full_name || agentProfile.email;
-      if (!agentName) {
+      if (!(agentProfile.full_name || agentProfile.email)) {
         missing.push('agent.full_name');
         details.push('Agent legal name is required');
       }
-      
-      const licenseNumber = agentProfile.agent?.license_number || agentProfile.license_number;
-      if (!licenseNumber) {
+      if (!(agentProfile.agent?.license_number || agentProfile.license_number)) {
         missing.push('agent.license_number');
         details.push('Agent license number is required');
       }
-      
-      const brokerage = agentProfile.agent?.brokerage || agentProfile.broker;
-      if (!brokerage) {
+      if (!(agentProfile.agent?.brokerage || agentProfile.broker)) {
         missing.push('agent.brokerage');
         details.push('Agent brokerage name is required');
       }
     }
     
     if (missing.length > 0) {
-      console.log('Validation failed. Missing:', missing);
-      console.log('Deal state:', deal.state);
-      console.log('Investor name:', investorName);
-      
       return Response.json({ 
         error: `Missing required fields: ${details.join(', ')}`,
         missing_fields: missing,
@@ -624,11 +475,8 @@ Deno.serve(async (req) => {
       return Response.json({ error: `No template available for state: ${deal.state}` }, { status: 400 });
     }
     
-    // Build render context - only fill agent details if room_id provided (after investor signs)
-    // For initial generation (no room_id), leave agent details as TBD
     const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails);
     
-    // Extract buyer compensation amount for later use
     let buyerCompAmount = 0;
     if (exhibit_a.buyer_commission_type === 'flat') {
       buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
@@ -636,33 +484,18 @@ Deno.serve(async (req) => {
       buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
     }
     
-    // Compute render input hash for regeneration guard
     const inputData = JSON.stringify({
       state_code: stateCode,
       template_url: templateUrl,
-      deal_fields: {
-        id: deal.id,
-        state: deal.state,
-        city: deal.city,
-        county: deal.county,
-        zip: deal.zip,
-        property_address: deal.property_address
-      },
-      investor_fields: {
-        full_name: profile.full_name,
-        email: profile.email
-      },
-      agent_fields: {
-        full_name: agentProfile.full_name,
-        license_number: agentProfile.agent?.license_number || agentProfile.license_number,
-        brokerage: agentProfile.agent?.brokerage || agentProfile.broker
-      },
+      deal_fields: { id: deal.id, state: deal.state, city: deal.city, county: deal.county, zip: deal.zip, property_address: deal.property_address },
+      investor_fields: { full_name: profile.full_name, email: profile.email },
+      agent_fields: { full_name: agentProfile.full_name, license_number: agentProfile.agent?.license_number || agentProfile.license_number, brokerage: agentProfile.agent?.brokerage || agentProfile.broker },
       exhibit_a: exhibit_a,
-      version: '2.1-normalized-signatures'
+      version: '2.5-draft-flow'
     });
     const renderInputHash = await sha256(inputData);
     
-    // Check for existing agreement to void (room-scoped or legacy)
+    // Check for existing agreement
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
 
@@ -670,50 +503,35 @@ Deno.serve(async (req) => {
       ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
       : deal_id 
         ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1)
-        : []; // No existing agreement for draft_id flow
+        : [];
     
     if (existing.length > 0) {
       const existingAgreement = existing[0];
       existingAgreementId = existingAgreement.id;
       toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
       
-      // Check for identical inputs - skip regeneration
       if (existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 
           existingAgreement.docusign_envelope_id &&
           existingAgreement.status !== 'superseded' &&
           existingAgreement.status !== 'voided') {
-        console.log('[generateLegalAgreement] Returning existing agreement (identical inputs)');
-        return Response.json({ 
-          success: true, 
-          agreement: existingAgreement, 
-          regenerated: false 
-        });
+        console.log('[generateLegalAgreement v2.5] Returning existing agreement');
+        return Response.json({ success: true, agreement: existingAgreement, regenerated: false });
       }
-      console.log('[generateLegalAgreement] Regenerating - inputs changed or version updated');
     }
     
-    // Fetch template PDF (with caching)
-    console.log('Fetching template:', templateUrl);
+    // Fetch template
+    console.log('[generateLegalAgreement v2.5] Fetching template:', templateUrl);
     const templateBytes = await fetchTemplate(templateUrl);
     
-    // Extract text from PDF
-    console.log('Extracting text from template...');
+    // Extract text
     const pdfData = await pdfParse(new Uint8Array(templateBytes));
     let templateText = pdfData.text;
-    console.log(`Extracted ${templateText.length} characters`);
     
-    // Log first 500 chars to debug
-    console.log('Template text preview:', templateText.substring(0, 500));
-    
-    // Log all available context keys
-    console.log('Available render context keys:', Object.keys(renderContext));
-
-    // Replace all placeholders
+    // Replace placeholders
     const missingTokens = new Set();
     const foundTokens = new Set();
-
-    // Pre-seed platform tokens
+    
     const platformDefaults = {
       PLATFORM_NAME: 'investor konnect',
       PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
@@ -724,182 +542,103 @@ Deno.serve(async (req) => {
     for (const k of Object.keys(platformDefaults)) { if (!renderContext[k]) renderContext[k] = platformDefaults[k]; }
 
     templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
-      // Allow TBD for agent fields when not filling agent details (initial generation)
       const value = renderContext[token];
       const isTBD = value === 'TBD';
       const isAgentField = ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME', 'AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
       const allowTBD = isTBD && isAgentField && !fillAgentDetails;
       
       if (value !== undefined && value !== null && value !== '' && value !== 'N/A' && (value !== 'TBD' || allowTBD)) {
-        console.log(`✓ Replacing ${token} with: ${value}`);
         foundTokens.add(token);
         return String(value);
       } else {
-        console.log(`✗ Missing token: ${token} (value: ${value})`);
         missingTokens.add(token);
         return match;
       }
     });
 
-    console.log(`Processed ${foundTokens.size} placeholders successfully`);
-    console.log(`Missing ${missingTokens.size} placeholders:`, Array.from(missingTokens));
-
     if (missingTokens.size > 0) {
-      const missingList = Array.from(missingTokens).map(token => {
-        const value = renderContext[token];
-        // auto-fill known platform tokens if missing
-        if (token === 'PLATFORM_NAME') return 'PLATFORM_NAME (auto: investor konnect)';
-        if (token === 'PLATFORM_URL') return 'PLATFORM_URL (auto: https://agent-vault-da3d088b.base44.app/)';
-        if (token === 'WEBSITE_URL') return 'WEBSITE_URL (auto: https://agent-vault-da3d088b.base44.app/)';
-        if (token === 'APP_URL') return 'APP_URL (auto: https://agent-vault-da3d088b.base44.app/)';
-        if (token === 'PLATFORM_WEBSITE_URL') return 'PLATFORM_WEBSITE_URL (auto: https://agent-vault-da3d088b.base44.app/)';
-        return `${token} (current: ${value || 'empty'})`;
-      });
-
       return Response.json({
         error: `Missing required fields for contract: ${Array.from(missingTokens).join(', ')}`,
-        missing_placeholders: Array.from(missingTokens),
-        missing_details: missingList,
-        message: 'Please complete these fields in the deal/profile to generate the agreement.'
+        missing_placeholders: Array.from(missingTokens)
       }, { status: 400 });
     }
     
-    console.log('All placeholders replaced successfully');
-    
-    // Sanitize text to WinAnsi-safe characters
     templateText = normalizeWinAnsi(templateText);
-    // Normalize signature section BEFORE generating PDF
     templateText = normalizeSignatureSection(templateText);
     
-    // Verify all required anchors exist exactly once
-    const requiredAnchors = [
-      'INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE',
-      'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'
-    ];
-    
+    // Verify anchors
+    const requiredAnchors = ['INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE', 'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'];
     const missingAnchors = [];
-    const duplicateAnchors = [];
-    
     for (const anchor of requiredAnchors) {
       const anchorString = `[[${anchor}]]`;
-      const regex = new RegExp(anchorString.replace(/[[\]]/g, '\\$&'), 'g');
-      const matches = templateText.match(regex);
-      const count = matches ? matches.length : 0;
-      
-      if (count === 0) {
+      if (!templateText.includes(anchorString)) {
         missingAnchors.push(anchor);
-      } else if (count > 1) {
-        duplicateAnchors.push(`${anchor} (${count}x)`);
       }
     }
     
-    if (missingAnchors.length > 0 || duplicateAnchors.length > 0) {
-      const errors = [];
-      if (missingAnchors.length > 0) errors.push(`Missing: ${missingAnchors.join(', ')}`);
-      if (duplicateAnchors.length > 0) errors.push(`Duplicates: ${duplicateAnchors.join(', ')}`);
-      
-      console.error('[Anchor Verification FAILED]', errors.join('; '));
-      return Response.json({
-        error: 'DocuSign anchor verification failed: ' + errors.join('; '),
-        missing_anchors: missingAnchors,
-        duplicate_anchors: duplicateAnchors
-      }, { status: 500 });
+    if (missingAnchors.length > 0) {
+      return Response.json({ error: `DocuSign anchor verification failed: Missing: ${missingAnchors.join(', ')}` }, { status: 500 });
     }
     
-    console.log('[Anchor Verification ✓] All 8 anchors found exactly once');
-    
-    // Generate both PDFs in parallel for speed
-    console.log('Generating PDFs in parallel...');
+    // Generate PDFs
+    console.log('[generateLegalAgreement v2.5] Generating PDFs...');
     const [humanPdfBytes, docusignPdfBytes] = await Promise.all([
       generatePdfFromText(templateText, deal.id, false),
       generatePdfFromText(templateText, deal.id, true)
     ]);
     
-    // Compute hashes for both
     const humanHashBuffer = await crypto.subtle.digest('SHA-256', humanPdfBytes);
-    const humanPdfSha256 = Array.from(new Uint8Array(humanHashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    const humanPdfSha256 = Array.from(new Uint8Array(humanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     
     const docusignHashBuffer = await crypto.subtle.digest('SHA-256', docusignPdfBytes);
-    const docusignPdfSha256 = Array.from(new Uint8Array(docusignHashBuffer))
-      .map(b => b.toString(16).padStart(2, '0'))
-      .join('');
+    const docusignPdfSha256 = Array.from(new Uint8Array(docusignHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     
-    console.log('[PDF Hashes]');
-    console.log('  Human PDF SHA-256:', humanPdfSha256.substring(0, 16) + '...');
-    console.log('  DocuSign PDF SHA-256:', docusignPdfSha256.substring(0, 16) + '...');
-    
-    // Upload both PDFs in parallel
+    // Upload PDFs
     const humanBlob = new Blob([humanPdfBytes], { type: 'application/pdf' });
-    const humanFile = new File([humanBlob], `agreement_${deal_id}_human.pdf`);
+    const humanFile = new File([humanBlob], `agreement_${deal.id}_human.pdf`);
     const docusignBlob = new Blob([docusignPdfBytes], { type: 'application/pdf' });
-    const docusignFile = new File([docusignBlob], `agreement_${deal_id}_docusign_${docusignPdfSha256.substring(0, 8)}.pdf`);
+    const docusignFile = new File([docusignBlob], `agreement_${deal.id}_docusign_${docusignPdfSha256.substring(0, 8)}.pdf`);
     
     const [humanUpload, docusignUpload] = await Promise.all([
       base44.integrations.Core.UploadFile({ file: humanFile }),
       base44.integrations.Core.UploadFile({ file: docusignFile })
     ]);
     
-    console.log('[PDF Uploads]');
-    console.log('  Human PDF URL:', humanUpload.file_url);
-    console.log('  DocuSign PDF URL:', docusignUpload.file_url);
+    console.log('[generateLegalAgreement v2.5] PDFs uploaded');
     
-    // Create DocuSign envelope with BOTH recipients
-    console.log('[DocuSign] Creating envelope with both investor and agent recipients...');
-    
+    // Create DocuSign envelope
     const connection = await getDocuSignConnection(base44);
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // OPTIMIZATION: Check envelope status before voiding to avoid unnecessary API calls
+    // Void old envelope if exists
     if (toVoidEnvelopeId) {
       try {
-        console.log('[DocuSign] Checking prior envelope status:', toVoidEnvelopeId);
         const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
-        const statusResp = await fetch(statusUrl, {
-          method: 'GET',
-          headers: { 'Authorization': `Bearer ${accessToken}` }
-        });
+        const statusResp = await fetch(statusUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } });
         
         if (statusResp.ok) {
           const statusData = await statusResp.json();
           const currentStatus = statusData.status?.toLowerCase();
           
-          // Only void if envelope is in voidable state
           if (['sent', 'delivered'].includes(currentStatus)) {
-            console.log('[DocuSign] Voiding envelope (status:', currentStatus, ')');
-            const voidResp = await fetch(statusUrl, {
+            await fetch(statusUrl, {
               method: 'PUT',
-              headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated with new terms on ${new Date().toISOString()}` })
+              headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated on ${new Date().toISOString()}` })
             });
-            if (voidResp.ok) {
-              console.log('[DocuSign] ✓ Envelope voided');
-            }
-          } else {
-            console.log('[DocuSign] Envelope already', currentStatus, '- skipping void');
           }
         }
       } catch (e) {
-        console.warn('[DocuSign] Warning: envelope check/void failed:', e?.message);
+        console.warn('[generateLegalAgreement v2.5] Void failed:', e?.message);
       }
     }
     
-    // Generate unique clientUserIds for embedded signing
     const timestamp = Date.now();
-    const investorClientUserId = `investor-${deal_id}-${timestamp}`;
-    const agentClientUserId = `agent-${deal_id}-${timestamp}`;
+    const investorClientUserId = `investor-${deal.id}-${timestamp}`;
+    const agentClientUserId = `agent-${deal.id}-${timestamp}`;
     
-    // Create envelope definition based on signer_mode
-    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal_id} - v2.3.pdf`;
-    
+    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal.id} - v2.5.pdf`;
     const signers = [];
-    
-    // investor_only: Base agreement - investor signs alone (recipientId 1)
-    // both: Counter-accepted - investor first (recipientId 1), agent second (recipientId 2)
     
     if (signer_mode === 'investor_only' || signer_mode === 'both') {
       signers.push({
@@ -909,123 +648,27 @@ Deno.serve(async (req) => {
         routingOrder: '1',
         clientUserId: investorClientUserId,
         tabs: {
-          signHereTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_SIGN]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true
-          }],
-          dateSignedTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_DATE]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true
-          }],
-          fullNameTabs: [{
-            documentId: '1',
-            anchorString: '[[INVESTOR_PRINT]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true,
-            name: 'Investor Full Name',
-            value: profile.full_name || profile.email,
-            locked: true,
-            required: true,
-            tabLabel: 'investorFullName'
-          }]
+          signHereTabs: [{ documentId: '1', anchorString: '[[INVESTOR_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          dateSignedTabs: [{ documentId: '1', anchorString: '[[INVESTOR_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          fullNameTabs: [{ documentId: '1', anchorString: '[[INVESTOR_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Investor Full Name', value: profile.full_name || profile.email, locked: true, required: true, tabLabel: 'investorFullName' }]
         }
       });
     }
     
-    // Add agent recipient only in 'both' mode (counter-accepted)
     if (signer_mode === 'both' && agentProfile.email && agentProfile.email !== 'TBD') {
-      const agentRecipientId = '2';
-      const agentRoutingOrder = '2';
-      
       signers.push({
         email: agentProfile.email,
         name: agentProfile.full_name || agentProfile.email,
-        recipientId: agentRecipientId,
-        routingOrder: agentRoutingOrder,
+        recipientId: '2',
+        routingOrder: '2',
         clientUserId: agentClientUserId,
         tabs: {
-          signHereTabs: [{
-            documentId: '1',
-            anchorString: '[[AGENT_SIGN]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true
-          }],
-          dateSignedTabs: [{
-            documentId: '1',
-            anchorString: '[[AGENT_DATE]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true
-          }],
-          fullNameTabs: [{
-            documentId: '1',
-            anchorString: '[[AGENT_PRINT]]',
-            anchorUnits: 'pixels',
-            anchorXOffset: '0',
-            anchorYOffset: '0',
-            anchorIgnoreIfNotPresent: false,
-            anchorCaseSensitive: false,
-            anchorMatchWholeWord: true,
-            name: 'Agent Full Name',
-            value: agentProfile.full_name || agentProfile.email,
-            locked: true,
-            required: true,
-            tabLabel: 'agentFullName'
-          }],
+          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Agent Full Name', value: agentProfile.full_name || agentProfile.email, locked: true, required: true, tabLabel: 'agentFullName' }],
           textTabs: [
-            {
-              documentId: '1',
-              anchorString: '[[AGENT_LICENSE]]',
-              anchorUnits: 'pixels',
-              anchorXOffset: '0',
-              anchorYOffset: '0',
-              anchorIgnoreIfNotPresent: false,
-              anchorCaseSensitive: false,
-              anchorMatchWholeWord: true,
-              name: 'License Number',
-              value: agentProfile.agent?.license_number || agentProfile.license_number || '',
-              locked: false,
-              required: true,
-              tabLabel: 'agentLicense'
-            },
-            {
-              documentId: '1',
-              anchorString: '[[AGENT_BROKERAGE]]',
-              anchorUnits: 'pixels',
-              anchorXOffset: '0',
-              anchorYOffset: '0',
-              anchorIgnoreIfNotPresent: false,
-              anchorCaseSensitive: false,
-              anchorMatchWholeWord: true,
-              name: 'Brokerage',
-              value: agentProfile.agent?.brokerage || agentProfile.broker || '',
-              locked: false,
-              required: true,
-              tabLabel: 'agentBrokerage'
-            }
+            { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'License Number', value: agentProfile.agent?.license_number || agentProfile.license_number || '', locked: false, required: true, tabLabel: 'agentLicense' },
+            { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Brokerage', value: agentProfile.agent?.brokerage || agentProfile.broker || '', locked: false, required: true, tabLabel: 'agentBrokerage' }
           ]
         }
       });
@@ -1033,38 +676,27 @@ Deno.serve(async (req) => {
     
     const envelopeDefinition = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
-      documents: [{
-        documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))),
-        name: docName,
-        fileExtension: 'pdf',
-        documentId: '1'
-      }],
+      documents: [{ documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))), name: docName, fileExtension: 'pdf', documentId: '1' }],
       recipients: { signers },
       status: 'sent'
     };
     
     const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
     
-    // Envelope creation with exponential backoff on rate limit
     let createResponse;
     let retries = 0;
-    const maxRetries = 5; // More retries for rate limit resilience
+    const maxRetries = 5;
     
     while (retries <= maxRetries) {
       try {
         createResponse = await fetch(createUrl, {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(envelopeDefinition)
         });
         
-        // Rate limit - exponential backoff
         if (createResponse.status === 429 && retries < maxRetries) {
-          const waitMs = Math.min(1000 * Math.pow(2, retries), 15000); // 1s, 2s, 4s, 8s, 15s, 15s
-          console.log(`[DocuSign] Rate limited (429), retry ${retries + 1}/${maxRetries} after ${waitMs}ms`);
+          const waitMs = Math.min(1000 * Math.pow(2, retries), 15000);
           await new Promise(r => setTimeout(r, waitMs));
           retries++;
           continue;
@@ -1072,23 +704,13 @@ Deno.serve(async (req) => {
         
         if (!createResponse.ok) {
           const errorText = await createResponse.text();
-          console.error('[DocuSign] Envelope creation failed:', errorText);
-          // Try to parse JSON error response
-          let docuSignError = 'DocuSign envelope creation failed';
-          try {
-            const errJson = JSON.parse(errorText);
-            docuSignError = errJson.message || errJson.errorMessage || errorText;
-          } catch (_) {
-            docuSignError = errorText || 'Unknown DocuSign error';
-          }
-          throw new Error(docuSignError);
+          throw new Error(errorText || 'DocuSign envelope creation failed');
         }
         
-        break; // Success
+        break;
       } catch (err) {
-        if (retries < maxRetries && (err.message.includes('rate') || err.message.includes('429'))) {
+        if (retries < maxRetries) {
           const waitMs = Math.min(1000 * Math.pow(2, retries), 15000);
-          console.log(`[DocuSign] Network error retry ${retries + 1}/${maxRetries} after ${waitMs}ms: ${err.message}`);
           await new Promise(r => setTimeout(r, waitMs));
           retries++;
           continue;
@@ -1104,13 +726,12 @@ Deno.serve(async (req) => {
     const envelope = await createResponse.json();
     const envelopeId = envelope.envelopeId;
     
-    console.log('[DocuSign] ✓ Envelope created:', envelopeId);
-    console.log('[DocuSign] Recipients: investor (ID=1), agent (ID=2)');
+    console.log('[generateLegalAgreement v2.5] Envelope created:', envelopeId);
     
-    // Save agreement with envelope details
+    // Save agreement
     const agreementData = {
-      deal_id: deal_id || draft_id, // Use draft_id as temporary deal_id if no deal exists yet
-      room_id: room_id || null, // Room-scoped or legacy null
+      deal_id: deal_id || draft_id,
+      room_id: room_id || null,
       investor_user_id: user.id,
       agent_user_id: agentProfile.user_id,
       investor_profile_id: profile.id,
@@ -1121,7 +742,7 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.3-signer-mode',
+      agreement_version: '2.5-draft-flow',
       signer_mode: signer_mode,
       source_base_agreement_id: body.source_base_agreement_id || null,
       status: 'sent',
@@ -1137,10 +758,7 @@ Deno.serve(async (req) => {
       selected_rule_id: stateCode + '_TEMPLATE',
       selected_clause_ids: {},
       deep_dive_module_ids: [],
-      exhibit_a_terms: {
-        ...exhibit_a,
-        buyer_commission_amount: buyerCompAmount // Derived field for compatibility
-      },
+      exhibit_a_terms: { ...exhibit_a, buyer_commission_amount: buyerCompAmount },
       rendered_markdown_full: templateText.substring(0, 10000),
       missing_placeholders: [],
       docusign_envelope_id: envelopeId,
@@ -1153,19 +771,9 @@ Deno.serve(async (req) => {
       agent_client_user_id: agentClientUserId,
       investor_signing_url: null,
       agent_signing_url: null,
-      audit_log: [{
-        timestamp: new Date().toISOString(),
-        actor: user.email,
-        action: `envelope_created_${signer_mode}`,
-        details: `Created DocuSign envelope ${envelopeId} in ${signer_mode} mode - PDF hash ${docusignPdfSha256.substring(0, 8)}...`
-      }]
+      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `envelope_created_${signer_mode}`, details: `Created DocuSign envelope ${envelopeId}` }]
     };
     
-    // IMPORTANT: Do NOT mark old agreement as superseded yet
-    // It will be marked as superseded AFTER the new agreement is fully signed (via webhook)
-    // This preserves the old agreement during signing in case the user navigates away
-    
-    // Create agreement + update pointer in parallel
     const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
       ...agreementData,
       investor_signed_at: null,
@@ -1180,30 +788,18 @@ Deno.serve(async (req) => {
       supersedes_agreement_id: existingAgreementId || null
     });
     
-    console.log('[generateLegalAgreement] ✓ NEW agreement created:', agreement.id);
+    console.log('[generateLegalAgreement v2.5] Agreement created:', agreement.id);
     
-    // Update pointer asynchronously (don't block response)
-    // Skip pointer update for draft flow since no Deal entity exists yet
+    // Update pointer (don't block)
     if (room_id) {
-      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id })
-        .then(() => console.log('[generateLegalAgreement] ✓ Room pointer updated'))
-        .catch(e => console.warn('[generateLegalAgreement] Room pointer update failed:', e.message));
+      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
     } else if (deal_id) {
-      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id })
-        .then(() => console.log('[generateLegalAgreement] ✓ Deal pointer updated'))
-        .catch(e => console.warn('[generateLegalAgreement] Deal pointer update failed:', e.message));
-    } else {
-      console.log('[generateLegalAgreement] Draft flow - no pointer to update (Deal will be created on investor signature)');
+      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
     }
-    
-    console.log('[DocuSign] ✓ Agreement saved with envelope ID:', envelopeId);
     
     return Response.json({ success: true, agreement: agreement, regenerated: true });
   } catch (error) {
-    console.error('Generate error:', error);
-    return Response.json({ 
-      error: error.message || 'Internal server error',
-      stack: error.stack 
-    }, { status: 500 });
+    console.error('[generateLegalAgreement v2.5] Error:', error);
+    return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 });
