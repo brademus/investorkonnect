@@ -665,7 +665,20 @@ export default function Room() {
           : Promise.resolve({ data: null });
         
         const agreementPromise = rawRoom.deal_id
-          ? base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId }).catch(() => ({ data: null }))
+          ? base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId })
+              .then(res => res)
+              .catch(async () => {
+                // Fallback: try to fetch agreement directly from entity
+                try {
+                  const agreements = await base44.entities.LegalAgreement.filter({ deal_id: rawRoom.deal_id, room_id: roomId });
+                  if (agreements[0]) return { data: { agreement: agreements[0] } };
+                  
+                  // Second fallback: try deal_id only
+                  const dealAgreements = await base44.entities.LegalAgreement.filter({ deal_id: rawRoom.deal_id });
+                  if (dealAgreements[0]) return { data: { agreement: dealAgreements[0] } };
+                } catch (_) {}
+                return { data: null };
+              })
           : Promise.resolve({ data: null });
         
         const invitesPromise = profile?.user_role === 'investor' && rawRoom.deal_id
