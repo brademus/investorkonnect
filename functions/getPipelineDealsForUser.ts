@@ -84,20 +84,28 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see ALL deals where they have a room (regardless of request_status, city, or address)
-      // CRITICAL: No filtering by address - each room is unique even if same city/state
+      // Agents see ALL deals where they have a room (multi-agent support)
+      // CRITICAL: Rooms now have agent_ids array, not single agentId
       // RETRY: Query twice in case rooms were just created and need indexing
-      agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      const allRooms = await base44.entities.Room.list('-created_date', 500);
+      agentRooms = allRooms.filter(r => 
+        r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+      );
+      
       if (agentRooms.length === 0) {
         console.log('[getPipelineDealsForUser] No rooms on first query, retrying after 500ms...');
         await new Promise(r => setTimeout(r, 500));
-        agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+        const retryRooms = await base44.entities.Room.list('-created_date', 500);
+        agentRooms = retryRooms.filter(r => 
+          r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+        );
       }
       console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length, 'for agent:', profile.id);
       agentRooms.forEach(r => {
         console.log('[getPipelineDealsForUser] Room:', {
           room_id: r.id,
           deal_id: r.deal_id,
+          agent_ids: r.agent_ids,
           request_status: r.request_status,
           agreement_status: r.agreement_status,
           created_date: r.created_date
@@ -171,9 +179,16 @@ Deno.serve(async (req) => {
     // If no deals found, try a broad fallback: any rooms for this profile, then load those deals
     if (!deals || deals.length === 0) {
       try {
-        const myRooms = isInvestor
-          ? await base44.entities.Room.filter({ investorId: profile.id })
-          : await base44.entities.Room.filter({ agentId: profile.id });
+        let myRooms = [];
+        if (isInvestor) {
+          myRooms = await base44.entities.Room.filter({ investorId: profile.id });
+        } else if (isAgent) {
+          // For agents, check agent_ids array
+          const allRooms = await base44.entities.Room.list('-created_date', 500);
+          myRooms = allRooms.filter(r => 
+            r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+          );
+        }
         const rIds = Array.from(new Set(myRooms.map(r => r.deal_id).filter(Boolean)));
         if (rIds.length) {
           const fromRooms = await Promise.all(rIds.map(id => base44.entities.Deal.filter({ id }).then(a => a[0]).catch(() => null)));
