@@ -253,20 +253,35 @@ Deno.serve(async (req) => {
 
     // Load room if needed
     let room = null, agentProfile = { id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD', agent: { license_number: 'TBD', brokerage: 'TBD' } };
-    // Save the explicitly passed exhibit_a terms - these take precedence (e.g. from counter offer)
+    // Save the explicitly passed exhibit_a terms - these ALWAYS take precedence (e.g. from counter offer)
     const passedExhibitA = { ...exhibit_a };
+    const hasPassedTerms = Object.keys(passedExhibitA).length > 0;
+    
     if (room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0];
       if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
-      const agentId = body.agent_profile_id || room.agent_ids?.[0];
+      
+      // CRITICAL: Use the specific agent_profile_id passed in, NOT just room.agent_ids[0]
+      // This ensures we get the right agent for multi-agent scenarios
+      const agentId = agent_profile_id || room.agent_ids?.[0];
+      console.log('[generateLegalAgreement v3.0] Using agentId:', agentId, 'from agent_profile_id:', agent_profile_id, 'room.agent_ids:', room.agent_ids);
+      
       if (agentId) {
         const agents = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
         if (agents?.length) agentProfile = agents[0];
-        // Merge order: room.agent_terms (base) -> passedExhibitA (override)
-        // Passed terms take precedence over stored room.agent_terms
-        if (room.agent_terms?.[agentId]) {
-          exhibit_a = { ...room.agent_terms[agentId], ...passedExhibitA };
+        
+        // CRITICAL: Passed terms from acceptCounterOffer ALWAYS take precedence
+        // Only fall back to room.agent_terms if no explicit terms were passed
+        if (hasPassedTerms) {
+          // Explicit terms were passed (e.g., from counter offer acceptance)
+          // Use them directly - they already have the negotiated values
+          exhibit_a = passedExhibitA;
+          console.log('[generateLegalAgreement v3.0] Using EXPLICIT passed terms:', exhibit_a);
+        } else if (room.agent_terms?.[agentId]) {
+          // No explicit terms - use stored agent-specific terms
+          exhibit_a = { ...room.agent_terms[agentId] };
+          console.log('[generateLegalAgreement v3.0] Using room.agent_terms for agent:', agentId, exhibit_a);
         }
       }
     }
