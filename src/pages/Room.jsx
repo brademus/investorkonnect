@@ -2274,8 +2274,27 @@ export default function Room() {
                                         toast.error(res.data.error);
                                         return;
                                       }
-                                      toast.success('Counter accepted - terms updated');
+                                      toast.success('Counter accepted - new agreement generated with updated terms');
                                       setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+                                      
+                                      // CRITICAL: Update agreement state with the new agreement from response
+                                      // This ensures KeyTermsPanel gets the updated exhibit_a_terms
+                                      if (res.data?.agreement) {
+                                        console.log('[Room] Setting new agreement from counter acceptance:', res.data.agreement.id);
+                                        setAgreement(res.data.agreement);
+                                        
+                                        // Also update room with new proposed_terms for immediate display
+                                        if (res.data?.new_terms) {
+                                          setCurrentRoom(prev => prev ? {
+                                            ...prev,
+                                            proposed_terms: res.data.new_terms,
+                                            current_legal_agreement_id: res.data.agreement.id
+                                          } : prev);
+                                        }
+                                      }
+                                      
+                                      // Trigger UI refresh
+                                      setAgreementPanelKey(prev => prev + 1);
                                       await refreshRoomState();
                                     } catch (e) {
                                       toast.error('Failed to accept counter');
