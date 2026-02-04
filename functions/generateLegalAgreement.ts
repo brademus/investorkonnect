@@ -1,4 +1,4 @@
-// v2.5 - Draft flow support with proper parameter handling
+// v2.6 - Draft flow support with proper parameter handling (2024-02-04)
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { fetchTemplate } from './utils/templateCache.js';
@@ -325,14 +325,15 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDet
 }
 
 Deno.serve(async (req) => {
-  console.log('[generateLegalAgreement v2.5] Starting...');
+  console.log('[generateLegalAgreement v2.6] Starting...');
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
-    console.log('[generateLegalAgreement v2.5] Body keys:', Object.keys(body));
+    console.log('[generateLegalAgreement v2.6] Body keys:', Object.keys(body));
+    console.log('[generateLegalAgreement v2.6] Full body:', JSON.stringify(body).substring(0, 1000));
     
     const draft_id = body.draft_id || null;
     const deal_id = body.deal_id || null;
@@ -340,11 +341,11 @@ Deno.serve(async (req) => {
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    console.log('[generateLegalAgreement v2.5] Params:', { deal_id, draft_id, room_id, signer_mode });
+    console.log('[generateLegalAgreement v2.6] Params:', { deal_id, draft_id, room_id, signer_mode });
 
     if (!deal_id && !draft_id) {
-      console.log('[generateLegalAgreement v2.5] Missing both - body:', JSON.stringify(body).substring(0, 500));
-      return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
+      console.log('[generateLegalAgreement v2.6] ERROR: Missing both deal_id and draft_id');
+      return Response.json({ error: 'deal_id or draft_id required (v2.6)' }, { status: 400 });
     }
     
     // Load investor profile
