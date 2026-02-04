@@ -6,6 +6,30 @@ let globalProfileCache = null;
 let globalCacheTimestamp = 0;
 const CACHE_DURATION = 10000; // 10 seconds
 
+// Helper to load cache from sessionStorage
+const loadCachedProfile = () => {
+  try {
+    const cached = sessionStorage.getItem('profile_cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < 300000) { // 5 minutes
+        return parsed.data;
+      }
+    }
+  } catch (_) {}
+  return null;
+};
+
+// Helper to save cache to sessionStorage
+const saveCachedProfile = (data) => {
+  try {
+    sessionStorage.setItem('profile_cache', JSON.stringify({
+      data,
+      timestamp: Date.now()
+    }));
+  } catch (_) {}
+};
+
 /**
  * CANONICAL PROFILE HOOK - Enhanced with Aggressive Caching to Prevent Rate Limits
  * 
