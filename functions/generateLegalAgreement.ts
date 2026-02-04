@@ -1083,7 +1083,7 @@ Deno.serve(async (req) => {
     
     // Save agreement with envelope details
     const agreementData = {
-      deal_id: deal_id,
+      deal_id: deal_id || draft_id, // Use draft_id as temporary deal_id if no deal exists yet
       room_id: room_id || null, // Room-scoped or legacy null
       investor_user_id: user.id,
       agent_user_id: agentProfile.user_id,
