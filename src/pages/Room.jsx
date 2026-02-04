@@ -650,13 +650,28 @@ export default function Room() {
       setRoomLoading(true);
       
       try {
-        // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
-         const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
+        // CRITICAL: Fetch room + deal + invites in PARALLEL to reduce latency
+        const [rawRoomResults, invitesRes] = await Promise.all([
+          base44.entities.Room.filter({ id: roomId }),
+          // Load invites immediately if investor
+          profile?.user_role === 'investor' 
+            ? (async () => {
+                try {
+                  const res = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: null }).catch(() => ({ data: null }));
+                  return res;
+                } catch (_) {
+                  return { data: null };
+                }
+              })()
+            : Promise.resolve({ data: null })
+        ]);
 
-         if (!rawRoom) {
-           setRoomLoading(false);
-           return;
-         }
+        const rawRoom = rawRoomResults?.[0];
+
+        if (!rawRoom) {
+          setRoomLoading(false);
+          return;
+        }
 
         // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
          if (rawRoom.deal_id && profile?.user_role === 'investor') {
