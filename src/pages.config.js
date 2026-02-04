@@ -53,7 +53,6 @@ import AgentLanding from './pages/AgentLanding';
 import AgentOnboarding from './pages/AgentOnboarding';
 import AgentProfile from './pages/AgentProfile';
 import BillingSuccess from './pages/BillingSuccess';
-import ContractVerify from './pages/ContractVerify';
 import DocuSignReturn from './pages/DocuSignReturn';
 import Home from './pages/Home';
 import IdentityVerification from './pages/IdentityVerification';
@@ -84,7 +83,6 @@ export const PAGES = {
     "AgentOnboarding": AgentOnboarding,
     "AgentProfile": AgentProfile,
     "BillingSuccess": BillingSuccess,
-    "ContractVerify": ContractVerify,
     "DocuSignReturn": DocuSignReturn,
     "Home": Home,
     "IdentityVerification": IdentityVerification,
