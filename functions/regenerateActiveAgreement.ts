@@ -64,8 +64,11 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Call generateLegalAgreement - use service role for inner function call
-    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
+    // Call generateLegalAgreement via fetch with forwarded auth
+    const appId = Deno.env.get('BASE44_APP_ID');
+    const functionUrl = `https://base44.app/api/apps/${appId}/functions/generateLegalAgreement`;
+    
+    const genPayload = {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
       room_id: room_id || null,
@@ -82,7 +85,22 @@ Deno.serve(async (req) => {
       city: city || draftContext?.city || dealContext?.city,
       state: state || draftContext?.state || dealContext?.state,
       zip: zip || draftContext?.zip || dealContext?.zip
+    };
+    
+    console.log('[regenerateActiveAgreement] Calling generateLegalAgreement with:', JSON.stringify(genPayload).substring(0, 500));
+    
+    const genResponse = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': authHeader
+      },
+      body: JSON.stringify(genPayload)
     });
+    
+    const gen = { data: await genResponse.json() };
+    
+    console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', genResponse.status);
 
     if (gen.data?.error) {
       return Response.json({ error: gen.data.error }, { status: 400 });
