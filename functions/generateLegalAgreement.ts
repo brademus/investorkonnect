@@ -641,10 +641,12 @@ Deno.serve(async (req) => {
     // Check for existing agreement to void (room-scoped or legacy)
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
-    
+
     const existing = room_id
       ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
-      : await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1);
+      : deal_id 
+        ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1)
+        : []; // No existing agreement for draft_id flow
     
     if (existing.length > 0) {
       const existingAgreement = existing[0];
