@@ -86,19 +86,30 @@ Deno.serve(async (req) => {
     } else if (isAgent) {
       // Agents see ALL deals where they have a room (multi-agent support)
       // CRITICAL: Rooms now have agent_ids array, not single agentId
-      // RETRY: Query twice in case rooms were just created and need indexing
-      const allRooms = await base44.entities.Room.list('-created_date', 500);
+      // RETRY: Query multiple times with increasing delays for newly created rooms
+      
+      // First attempt
+      let allRooms = await base44.entities.Room.list('-created_date', 500);
       agentRooms = allRooms.filter(r => 
         r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
       );
       
+      // Retry up to 3 times if no rooms found
       if (agentRooms.length === 0) {
-        console.log('[getPipelineDealsForUser] No rooms on first query, retrying after 500ms...');
-        await new Promise(r => setTimeout(r, 500));
-        const retryRooms = await base44.entities.Room.list('-created_date', 500);
-        agentRooms = retryRooms.filter(r => 
-          r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
-        );
+        console.log('[getPipelineDealsForUser] No rooms on first query, retrying...');
+        
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          await new Promise(r => setTimeout(r, 300 * attempt)); // 300ms, 600ms, 900ms
+          const retryRooms = await base44.entities.Room.list('-created_date', 500);
+          agentRooms = retryRooms.filter(r => 
+            r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
+          );
+          
+          if (agentRooms.length > 0) {
+            console.log(`[getPipelineDealsForUser] Found rooms on retry attempt ${attempt}`);
+            break;
+          }
+        }
       }
       console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length, 'for agent:', profile.id);
       agentRooms.forEach(r => {
