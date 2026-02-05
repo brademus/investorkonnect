@@ -3033,7 +3033,8 @@ export default function Room() {
                     if (invite.room_id) {
                       console.log('[Room] Loading agent-specific room:', invite.room_id, 'for agent:', invite.agent_profile_id);
                       
-                      // Load the specific room for this agent
+                      // Load the specific room for this agent - use the deal_id from current context
+                      const dealId = currentRoom?.deal_id || deal?.id;
                       const rooms = await base44.entities.Room.filter({ id: invite.room_id });
                       if (rooms[0]) {
                         const agentRoom = rooms[0];
@@ -3046,7 +3047,7 @@ export default function Room() {
                       
                       // Also load the agent-specific agreement
                       const agreements = await base44.entities.LegalAgreement.filter({ 
-                        deal_id: currentRoom?.deal_id || deal?.id,
+                        deal_id: dealId,
                         room_id: invite.room_id 
                       });
                       // Find non-voided agreement for THIS agent
