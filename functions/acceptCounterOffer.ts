@@ -85,15 +85,23 @@ Deno.serve(async (req) => {
     }
 
     // Generate NEW agreement with updated terms (ONLY for this room)
+    // CRITICAL: Merge counter offer terms into the base agreement terms
     const newTerms = {
       ...baseAgreement.exhibit_a_terms,
       ...counter.terms_delta
     };
+    
+    console.log('[acceptCounterOffer] Base terms:', JSON.stringify(baseAgreement.exhibit_a_terms));
+    console.log('[acceptCounterOffer] Counter delta:', JSON.stringify(counter.terms_delta));
+    console.log('[acceptCounterOffer] Merged newTerms:', JSON.stringify(newTerms));
 
     // CRITICAL: Pass the specific agent_profile_id for this room
     // This ensures the agreement is generated ONLY for this agent, not others
     const agentId = room.agent_ids?.[0];
     
+    // CRITICAL: After counter is accepted, investor must sign the new agreement first
+    // So signer_mode should always be 'investor_only' to require investor signature
+    // Agent can sign AFTER investor has signed
     const generateRes = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       deal_id: counter.deal_id,
       room_id: counter.room_id,
@@ -101,7 +109,7 @@ Deno.serve(async (req) => {
       agent_profile_id: agentId, // Specific agent for this agreement
       agent_profile_ids: [agentId], // Keep for backward compatibility
       exhibit_a: newTerms,
-      signer_mode: userRole === 'investor' ? 'investor_only' : 'agent_only'
+      signer_mode: 'investor_only' // Investor must sign first after counter acceptance
     });
 
     if (generateRes.data?.error) {
