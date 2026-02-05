@@ -70,13 +70,8 @@ export function useCurrentProfile() {
         return;
       }
 
-      // Use global cache if recent enough
-      const now = Date.now();
-      if (globalProfileCache && (now - globalCacheTimestamp) < CACHE_DURATION) {
-        console.log('[useCurrentProfile] Using in-memory cached profile');
-        if (mounted) setState(globalProfileCache);
-        return;
-      }
+      // CRITICAL: Always fetch user first to validate cache belongs to current user
+      // Cannot use cache blindly - must verify user identity first
 
       // Try sessionStorage cache on cold start - BUT must validate user first
       const cachedProfile = loadCachedProfile();
