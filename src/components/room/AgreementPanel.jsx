@@ -38,7 +38,12 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   // Load room and agreement
   // CRITICAL: When selectedAgentId is provided, we need to find the RIGHT room for that agent
   useEffect(() => {
-    if (!dealId || !roomId || agreementInitializedRef.current) return;
+    if (!dealId || !roomId) return;
+    
+    // Reset initialized ref when roomId changes to allow reloading for different agents
+    if (selectedAgentId) {
+      agreementInitializedRef.current = false;
+    }
 
     (async () => {
       try {
@@ -48,45 +53,42 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         
         console.log('[AgreementPanel] Loading for dealId:', dealId, 'roomId:', roomId, 'selectedAgentId:', selectedAgentId);
 
-        // Skip if we already have a valid agreement from props
-        if (agreement?.id) {
-          console.log('[AgreementPanel] Already have agreement, skipping load');
+        // Skip if we already have a valid agreement from props that matches this room
+        if (agreement?.id && agreement?.room_id === roomId) {
+          console.log('[AgreementPanel] Already have agreement for this room, skipping load');
           setLoading(false);
           return;
         }
 
-        // Try multiple strategies to find agreement
+        // Try multiple strategies to find agreement - ALWAYS prioritize room-specific
         let foundAgreement = null;
 
-        // Strategy 1: Both deal_id and room_id
+        // Strategy 1: Both deal_id and room_id (MOST SPECIFIC - agent-specific agreement)
         let agreements = await base44.entities.LegalAgreement.filter({ 
           deal_id: dealId,
           room_id: roomId 
         });
-        if (agreements[0]) {
-          foundAgreement = agreements[0];
-          console.log('[AgreementPanel] Found by deal_id + room_id');
+        // Find the best non-voided agreement
+        const draftAg = agreements.find(a => a.status === 'draft');
+        const sentAg = agreements.find(a => a.status === 'sent');
+        const nonVoidedAg = agreements.find(a => a.status !== 'voided');
+        foundAgreement = draftAg || sentAg || nonVoidedAg || agreements[0];
+        
+        if (foundAgreement) {
+          console.log('[AgreementPanel] Found by deal_id + room_id:', foundAgreement.id);
         }
 
-        // Strategy 2: Just deal_id
+        // Strategy 2: Just deal_id - ONLY if no room-specific agreement found
+        // This is the base agreement before agent-specific negotiation
         if (!foundAgreement) {
           const dealAgreements = await base44.entities.LegalAgreement.filter({ 
             deal_id: dealId 
           });
-          if (dealAgreements[0]) {
-            foundAgreement = dealAgreements[0];
-            console.log('[AgreementPanel] Found by deal_id');
-          }
-        }
-
-        // Strategy 3: Just room_id
-        if (!foundAgreement) {
-          const roomAgreements = await base44.entities.LegalAgreement.filter({ 
-            room_id: roomId 
-          });
-          if (roomAgreements[0]) {
-            foundAgreement = roomAgreements[0];
-            console.log('[AgreementPanel] Found by room_id');
+          // Prefer agreements without room_id (base agreement)
+          const baseAgreement = dealAgreements.find(a => !a.room_id && a.status !== 'voided');
+          if (baseAgreement) {
+            foundAgreement = baseAgreement;
+            console.log('[AgreementPanel] Found base agreement by deal_id');
           }
         }
 
@@ -97,10 +99,10 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
           console.warn('[AgreementPanel] No agreement found for deal:', dealId, 'room:', roomId);
         }
 
-        // Load pending counters - try multiple strategies
+        // Load pending counters - STRICTLY for this room only
         let counters = [];
         
-        // Strategy 1: Filter by room_id + status
+        // ONLY filter by room_id to get agent-specific counters
         try {
           counters = await base44.entities.CounterOffer.filter({
             room_id: roomId,
@@ -111,7 +113,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
           console.warn('[AgreementPanel] Room+status filter failed:', e.message);
         }
         
-        // Strategy 2: Filter by room_id only
+        // Fallback: Filter by room_id only, then filter pending
         if (counters.length === 0) {
           try {
             const roomCounters = await base44.entities.CounterOffer.filter({
@@ -124,34 +126,9 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
           }
         }
         
-        // Strategy 3: Filter by deal_id + status
-        if (counters.length === 0) {
-          try {
-            const dealCounters = await base44.entities.CounterOffer.filter({
-              deal_id: dealId,
-              status: 'pending'
-            });
-            counters = dealCounters;
-            console.log('[AgreementPanel] Deal+status filter returned:', counters.length);
-          } catch (e) {
-            console.warn('[AgreementPanel] Deal+status filter failed:', e.message);
-          }
-        }
+        // DO NOT fall back to deal_id only - that would show counters for ALL agents
         
-        // Strategy 4: Filter by deal_id only
-        if (counters.length === 0) {
-          try {
-            const dealCounters = await base44.entities.CounterOffer.filter({
-              deal_id: dealId
-            });
-            counters = dealCounters.filter(c => c.status === 'pending');
-            console.log('[AgreementPanel] Deal filter returned:', dealCounters.length, 'pending:', counters.length);
-          } catch (e) {
-            console.warn('[AgreementPanel] Deal filter failed:', e.message);
-          }
-        }
-        
-        console.log('[AgreementPanel] Final counters:', counters.length, counters);
+        console.log('[AgreementPanel] Final counters for room', roomId, ':', counters.length, counters);
         setPendingCounters(counters);
       } catch (e) {
         console.error('[AgreementPanel] Load error:', e);
@@ -159,7 +136,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         setLoading(false);
       }
     })();
-  }, [dealId, roomId]);
+  }, [dealId, roomId, selectedAgentId]);
 
   // Subscribe to real-time updates
   useEffect(() => {
