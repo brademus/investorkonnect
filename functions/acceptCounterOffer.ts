@@ -121,6 +121,8 @@ Deno.serve(async (req) => {
       [agentId]: newTerms
     };
     
+    console.log('[acceptCounterOffer] Updating room:', counter.room_id, 'with agent_terms:', JSON.stringify(updatedAgentTerms));
+    
     await base44.asServiceRole.entities.Room.update(counter.room_id, {
       current_legal_agreement_id: newAgreement.id,
       agreement_status: 'draft',
@@ -129,6 +131,10 @@ Deno.serve(async (req) => {
       // Also store in proposed_terms for backward compatibility with UI
       proposed_terms: newTerms
     });
+    
+    // Verify the update worked
+    const verifyRooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
+    console.log('[acceptCounterOffer] Verified room agent_terms:', JSON.stringify(verifyRooms[0]?.agent_terms));
 
     console.log('[acceptCounterOffer] Generated new agreement:', newAgreement.id, 'with terms:', newTerms);
 
