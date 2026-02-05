@@ -78,15 +78,9 @@ export function useCurrentProfile() {
         return;
       }
 
-      // Try sessionStorage cache on cold start
+      // Try sessionStorage cache on cold start - BUT must validate user first
       const cachedProfile = loadCachedProfile();
-      if (cachedProfile) {
-        console.log('[useCurrentProfile] Using sessionStorage cached profile');
-        globalProfileCache = cachedProfile;
-        globalCacheTimestamp = Date.now();
-        if (mounted) setState(cachedProfile);
-        return;
-      }
+      // Don't use cached profile yet - we need to validate the user matches first
 
       loadingRef.current = true;
 
