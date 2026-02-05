@@ -32,7 +32,7 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, refresh, onboarded } = useCurrentProfile();
+  const { profile, loading, refresh, onboarded, user } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
