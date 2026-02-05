@@ -1,12 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useRef } from "react";
 import { createPageUrl } from "@/components/utils";
-import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
-  const navigate = useNavigate();
-  const { profile, loading, refresh } = useCurrentProfile();
-  const [hasRefreshed, setHasRefreshed] = useState(false);
+  const hasRedirected = useRef(false);
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
@@ -15,28 +11,22 @@ export default function BillingSuccess() {
     try {
       sessionStorage.removeItem('profile_cache');
     } catch (_) {}
+    
+    // Redirect immediately - no need to wait for profile
+    if (!hasRedirected.current) {
+      hasRedirected.current = true;
+      console.log('[BillingSuccess] Redirecting to IdentityVerification');
+      // Use window.location for clean navigation with cleared cache
+      window.location.href = createPageUrl("IdentityVerification");
+    }
   }, []);
 
-  // Force refresh profile to get updated subscription status
-  useEffect(() => {
-    if (!hasRefreshed) {
-      setHasRefreshed(true);
-      refresh();
-    }
-  }, [hasRefreshed, refresh]);
-
-  // Auto-redirect to Identity Verification once profile is loaded
-  useEffect(() => {
-    if (!loading && profile && hasRefreshed) {
-      console.log('[BillingSuccess] Auto-redirecting to IdentityVerification');
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
-    }
-  }, [loading, profile, hasRefreshed, navigate]);
-
-  // Always show loading while redirecting
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
+    <div className="min-h-screen flex items-center justify-center bg-black">
+      <div className="text-center">
+        <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+        <p className="text-[#E3C567]">Payment successful! Redirecting...</p>
+      </div>
     </div>
   );
 }
