@@ -741,19 +741,8 @@ function PipelineContent() {
         console.error('[Pipeline] Failed to fetch rooms:', e);
       }
 
-      // Always show the room for investors - create one if needed
-      try {
-        const room = await getOrCreateDealRoom(deal.deal_id);
-        if (room?.id) {
-          navigate(`${createPageUrl("Room")}?roomId=${room.id}`);
-          return;
-        }
-      } catch (e) {
-        console.error('[Pipeline] Failed to get or create room:', e);
-      }
-      
-      // Fallback - should rarely happen
-      toast.error('Failed to open deal room');
+      // Fallback - should rarely happen since rooms are pre-created
+      toast.error('Failed to open deal room - no room found');
       return;
     }
 
