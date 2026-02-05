@@ -1854,8 +1854,26 @@ export default function Room() {
                                      </h4>
                                      <PendingAgentsList 
                                        invites={invites} 
-                                       onSelectAgent={(invite) => {
+                                       onSelectAgent={async (invite) => {
                                          setSelectedInvite(invite);
+                                         // Load agent-specific room and agreement
+                                         if (invite.room_id) {
+                                           const rooms = await base44.entities.Room.filter({ id: invite.room_id });
+                                           if (rooms[0]) {
+                                             setCurrentRoom(rooms[0]);
+                                           }
+                                           const agreements = await base44.entities.LegalAgreement.filter({ 
+                                             deal_id: currentRoom?.deal_id || deal?.id,
+                                             room_id: invite.room_id 
+                                           });
+                                           const activeAgreement = agreements.find(a => a.status === 'draft') || 
+                                                                   agreements.find(a => a.status === 'sent') ||
+                                                                   agreements.find(a => a.status !== 'voided') || 
+                                                                   agreements[0];
+                                           if (activeAgreement) {
+                                             setAgreement(activeAgreement);
+                                           }
+                                         }
                                          toast.success('Agent selected - you can now review and sign the agreement');
                                        }}
                                        selectedInviteId={selectedInvite?.id}
