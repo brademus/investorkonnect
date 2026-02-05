@@ -1,25 +1,37 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
-import { CheckCircle, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
   const navigate = useNavigate();
-  const { profile, loading } = useCurrentProfile();
+  const { profile, loading, refresh } = useCurrentProfile();
+  const [hasRefreshed, setHasRefreshed] = useState(false);
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
+    
+    // Clear profile cache to get fresh subscription status
+    try {
+      sessionStorage.removeItem('profile_cache');
+    } catch (_) {}
   }, []);
 
-  // Auto-redirect to Identity Verification
+  // Force refresh profile to get updated subscription status
   useEffect(() => {
-    if (!loading && profile) {
+    if (!hasRefreshed) {
+      setHasRefreshed(true);
+      refresh();
+    }
+  }, [hasRefreshed, refresh]);
+
+  // Auto-redirect to Identity Verification once profile is loaded
+  useEffect(() => {
+    if (!loading && profile && hasRefreshed) {
       console.log('[BillingSuccess] Auto-redirecting to IdentityVerification');
       navigate(createPageUrl("IdentityVerification"), { replace: true });
     }
-  }, [loading, profile, navigate]);
+  }, [loading, profile, hasRefreshed, navigate]);
 
   // Always show loading while redirecting
   return (
