@@ -183,9 +183,21 @@ async function generatePdf(text, dealId, isDocuSign = false) {
 
 function buildRenderContext(deal, profile, agent, exhibit, fillAgent) {
   const appUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://agent-vault-da3d088b.base44.app/';
+  
+  // CRITICAL: Extract buyer commission from exhibit_a terms
+  // Support both 'flat' and 'flat_fee' for commission type
   let buyerVal = '3%';
-  if (exhibit.buyer_commission_type === 'flat') buyerVal = '$' + (exhibit.buyer_flat_fee || 5000).toLocaleString();
-  else if (exhibit.buyer_commission_type === 'percentage') buyerVal = (exhibit.buyer_commission_percentage || 3) + '%';
+  const commType = exhibit.buyer_commission_type;
+  console.log('[buildRenderContext] exhibit_a:', JSON.stringify(exhibit));
+  console.log('[buildRenderContext] buyer_commission_type:', commType, 'percentage:', exhibit.buyer_commission_percentage, 'flat_fee:', exhibit.buyer_flat_fee);
+  
+  if (commType === 'flat' || commType === 'flat_fee') {
+    buyerVal = '$' + (exhibit.buyer_flat_fee || 5000).toLocaleString();
+  } else if (commType === 'percentage') {
+    buyerVal = (exhibit.buyer_commission_percentage || 3) + '%';
+  }
+  
+  console.log('[buildRenderContext] Final BUYER_COMP_VALUE:', buyerVal);
   
   return {
     PLATFORM_NAME: 'investor konnect', PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl,
@@ -197,7 +209,8 @@ function buildRenderContext(deal, profile, agent, exhibit, fillAgent) {
     PROPERTY_ADDRESS: deal.property_address || 'TBD', CITY: deal.city || 'TBD', STATE: deal.state || 'N/A', ZIP: deal.zip || 'N/A', COUNTY: deal.county || 'N/A',
     VENUE: deal.county && deal.state ? deal.county + ' County, ' + deal.state : deal.state || 'N/A',
     TRANSACTION_TYPE: exhibit.transaction_type || 'ASSIGNMENT', BUYER_COMP_VALUE: buyerVal,
-    AGREEMENT_LENGTH_DAYS: (exhibit.agreement_length_days || 180).toString(), TERM_DAYS: (exhibit.agreement_length_days || 180).toString()
+    AGREEMENT_LENGTH_DAYS: (exhibit.agreement_length_days || exhibit.agreement_length || 180).toString(), 
+    TERM_DAYS: (exhibit.agreement_length_days || exhibit.agreement_length || 180).toString()
   };
 }
 
