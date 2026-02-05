@@ -302,17 +302,35 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
   const agentSigned = !!agreement?.agent_signed_at;
   const fullySigned = investorSigned && agentSigned;
   
-  // Check if agreement needs signature (draft or sent but not yet signed by current party)
-  // For investor: needs signature if agreement exists, not voided, and investor hasn't signed
-  // For agent: needs signature if agreement exists, investor signed, and agent hasn't signed
+  // CRITICAL LOGIC:
+  // 1. Investor creates deal → agreement is created with status 'draft' or 'investor_signed'
+  // 2. If investor has signed (investor_signed_at exists), agent can sign
+  // 3. If counter offer was accepted, a NEW agreement is created with status 'draft' and NO signatures
+  //    → Investor must sign this new agreement FIRST, then agent can sign
+  
+  // Agreement needs investor signature if:
+  // - Agreement exists and is not voided/fully_signed
+  // - AND investor has NOT signed yet
   const needsInvestorSignature = agreement && 
-    ['draft', 'sent', 'investor_signed'].includes(agreement.status) === false ? false :
-    (agreement && !investorSigned && agreement.status !== 'voided' && agreement.status !== 'fully_signed');
+    !investorSigned && 
+    agreement.status !== 'voided' && 
+    agreement.status !== 'fully_signed';
   
-  const needsAgentSignature = agreement && investorSigned && !agentSigned && agreement.status !== 'voided';
+  // Agreement needs agent signature if:
+  // - Agreement exists
+  // - AND investor HAS signed (investor_signed_at exists)
+  // - AND agent has NOT signed
+  // - AND agreement is not voided
+  const needsAgentSignature = agreement && 
+    investorSigned && 
+    !agentSigned && 
+    agreement.status !== 'voided';
   
-  // Legacy: Check if agreement needs regeneration (status is draft and no signatures yet)
-  const needsSignature = agreement && agreement.status === 'draft' && !investorSigned && !agentSigned;
+  // Check if this is a fresh agreement after counter-offer acceptance (no signatures yet)
+  const isFreshDraftAfterCounter = agreement && 
+    agreement.status === 'draft' && 
+    !investorSigned && 
+    !agentSigned;
 
   return (
     <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
