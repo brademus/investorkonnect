@@ -98,15 +98,15 @@ function NDAContent() {
     }
   }, [loading, profile, onboarded, kycVerified, navigate]);
 
-  // Redirect if already accepted (check after loading completes)
+  // Redirect if already accepted (check after loading completes) - ONCE only
+  const hasRedirectedRef = React.useRef(false);
   useEffect(() => {
-    if (!loading && hasNDA) {
+    if (!loading && hasNDA && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       devLog('[NDA] Already accepted, redirecting to dashboard...');
-      setTimeout(() => {
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }, 500);
+      window.location.href = createPageUrl("Pipeline");
     }
-  }, [loading, hasNDA, navigate]);
+  }, [loading, hasNDA]);
 
 
   const handleAccept = async () => {

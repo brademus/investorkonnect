@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
@@ -20,31 +20,36 @@ export default function IdentityVerification() {
   const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [verifying, setVerifying] = useState(false);
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
+  const hasStartedRef = useRef(false); // Prevent multiple auto-starts
+  const hasRedirectedRef = useRef(false); // Prevent multiple redirects
 
-  // Redirect if already verified
+  // Redirect if already verified - ONCE only
   useEffect(() => {
-    if (!loading && kycVerified) {
+    if (!loading && kycVerified && !hasRedirectedRef.current) {
+      hasRedirectedRef.current = true;
       console.log('[IdentityVerification] Already verified, redirecting to NDA');
+      // Clear cache before redirect to ensure NDA page gets fresh data
+      try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
       navigate(createPageUrl("NDA"), { replace: true });
       return;
     }
   }, [loading, kycVerified, navigate]);
 
-  // Auto-start verification when page loads
+  // Auto-start verification when page loads - ONCE only
   useEffect(() => {
-    if (!loading && profile && onboarded && !kycVerified && status === 'pending' && !verifying) {
-      console.log('[IdentityVerification] Auto-starting verification flow');
-      // Small delay to ensure UI is ready
+    if (!loading && profile && onboarded && !kycVerified && status === 'pending' && !verifying && !hasStartedRef.current) {
+      hasStartedRef.current = true;
+      console.log('[IdentityVerification] Auto-starting verification flow (once)');
       const timer = setTimeout(() => {
         handleStartVerification();
       }, 100);
       return () => clearTimeout(timer);
     }
-  }, [loading, profile, onboarded, kycVerified]);
+  }, [loading, profile, onboarded, kycVerified, status, verifying]);
 
   // Redirect incomplete users back to proper step
   useEffect(() => {
-    if (loading) return; // Wait for loading to complete
+    if (loading) return;
     
     if (!profile) {
       console.log('[IdentityVerification] No profile found, redirecting to PostAuth');
@@ -123,17 +128,18 @@ export default function IdentityVerification() {
 
       console.log('[IdentityVerification] Final status after polling:', finalStatus);
 
-      // Always mark as success and redirect - backend will update profile async
+      // Mark as success and redirect immediately
       setStatus('success');
-      toast.success('Identity verification submitted. Redirecting...');
+      toast.success('Identity verified! Redirecting...');
       
-      // Refresh profile to get updated verification status
-      refresh();
+      // Clear cache to ensure NDA page gets fresh profile data
+      try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
       
-      // Redirect to NDA 
+      // Redirect to NDA immediately - use window.location for clean state
+      hasRedirectedRef.current = true;
       setTimeout(() => {
-        navigate(createPageUrl('NDA'), { replace: true });
-      }, 1500);
+        window.location.href = createPageUrl('NDA');
+      }, 500);
 
     } catch (error) {
       console.error('[IdentityVerification] Verification error:', error);
@@ -184,7 +190,11 @@ export default function IdentityVerification() {
               <h2 className="text-3xl font-bold text-red-500 mb-4">Verification Failed</h2>
               <p className="text-[#808080] mb-6">Something went wrong. Please try again.</p>
               <Button
-                onClick={() => { setStatus('pending'); setVerifying(false); }}
+                onClick={() => { 
+                  setStatus('pending'); 
+                  setVerifying(false); 
+                  hasStartedRef.current = false; // Allow retry
+                }}
                 className="bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold px-8 py-3"
               >
                 Try Again
