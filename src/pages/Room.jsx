@@ -3008,33 +3008,44 @@ export default function Room() {
               {isMultiAgentMode ? (
                 <PendingAgentsList 
                   invites={invites} 
-                  onSelectAgent={(invite) => {
+                  onSelectAgent={async (invite) => {
                     setSelectedInvite(invite);
-                    // CRITICAL: When investor selects an agent, also load that agent's room-specific data
-                    // This ensures Key Terms and Agreement panels show the correct agent-specific data
+                    // CRITICAL: When investor selects an agent, load ONLY that agent's room data
+                    // We need to fully replace the room to avoid mixing data between agents
                     if (invite.room_id) {
+                      console.log('[Room] Loading agent-specific room:', invite.room_id, 'for agent:', invite.agent_profile_id);
+                      
                       // Load the specific room for this agent
-                      base44.entities.Room.filter({ id: invite.room_id }).then(rooms => {
-                        if (rooms[0]) {
-                          // Merge agent-specific room data without overwriting the current room entirely
-                          setCurrentRoom(prev => ({
-                            ...prev,
-                            agent_terms: rooms[0].agent_terms,
-                            proposed_terms: rooms[0].proposed_terms,
-                            current_legal_agreement_id: rooms[0].current_legal_agreement_id
-                          }));
-                        }
-                      });
+                      const rooms = await base44.entities.Room.filter({ id: invite.room_id });
+                      if (rooms[0]) {
+                        const agentRoom = rooms[0];
+                        console.log('[Room] Loaded agent room - agent_terms:', JSON.stringify(agentRoom.agent_terms));
+                        
+                        // CRITICAL: Replace the current room entirely with the agent-specific room
+                        // This ensures KeyTermsPanel sees the correct agent_terms
+                        setCurrentRoom(agentRoom);
+                      }
+                      
                       // Also load the agent-specific agreement
-                      base44.entities.LegalAgreement.filter({ 
+                      const agreements = await base44.entities.LegalAgreement.filter({ 
                         deal_id: currentRoom?.deal_id || deal?.id,
                         room_id: invite.room_id 
-                      }).then(agreements => {
-                        const activeAgreement = agreements.find(a => a.status !== 'voided') || agreements[0];
-                        if (activeAgreement) {
-                          setAgreement(activeAgreement);
-                        }
                       });
+                      // Find non-voided agreement for THIS agent
+                      const agentAgreements = agreements.filter(a => 
+                        a.agent_profile_id === invite.agent_profile_id || !a.agent_profile_id
+                      );
+                      const activeAgreement = agentAgreements.find(a => a.status === 'draft') || 
+                                              agentAgreements.find(a => a.status === 'sent') ||
+                                              agentAgreements.find(a => a.status !== 'voided') || 
+                                              agentAgreements[0];
+                      if (activeAgreement) {
+                        console.log('[Room] Loaded agent agreement:', activeAgreement.id, 'terms:', JSON.stringify(activeAgreement.exhibit_a_terms));
+                        setAgreement(activeAgreement);
+                      } else {
+                        // Clear agreement if no agent-specific agreement exists
+                        setAgreement(null);
+                      }
                     }
                     toast.success('Agent selected - Deal Board is now available');
                   }}
