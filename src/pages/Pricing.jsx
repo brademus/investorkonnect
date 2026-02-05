@@ -47,26 +47,46 @@ export default function Pricing() {
         setCheckingSubscription(true);
         console.log('Checking subscription status...');
         
-        const response = await base44.functions.invoke('stripeValidate', {});
+        // Check profile first for subscription status (faster than API call)
+        const profileSubStatus = profile?.subscription_status;
+        if (profileSubStatus === 'active' || profileSubStatus === 'trialing') {
+          console.log('User has active subscription from profile, redirecting...');
+          if (profile?.user_role === 'agent') {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          } else if (profile?.user_role === 'investor') {
+            navigate(createPageUrl("IdentityVerification"), { replace: true });
+          } else {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }
+          return;
+        }
         
-        if (response?.data?.ok) {
-          const subscription = response.data.subscription;
-          setSubscriptionStatus(subscription?.status || null);
+        // Only call stripeValidate if profile doesn't show active subscription
+        try {
+          const response = await base44.functions.invoke('stripeValidate', {});
           
-          console.log('Subscription status:', subscription?.status);
-          
-          // If user has active subscription, redirect to appropriate dashboard
-          if (subscription?.status === 'active' || subscription?.status === 'trialing') {
-            console.log('User has active subscription, redirecting...');
+          if (response?.data?.ok) {
+            const subscription = response.data.subscription;
+            setSubscriptionStatus(subscription?.status || null);
             
-            if (profile?.user_role === 'agent') {
-              navigate(createPageUrl("DashboardAgent"));
-            } else if (profile?.user_role === 'investor') {
-              navigate(createPageUrl("DashboardInvestor"));
-            } else {
-              navigate(createPageUrl("IdentityVerification"));
+            console.log('Subscription status:', subscription?.status);
+            
+            // If user has active subscription, redirect to appropriate dashboard
+            if (subscription?.status === 'active' || subscription?.status === 'trialing') {
+              console.log('User has active subscription, redirecting...');
+              
+              if (profile?.user_role === 'agent') {
+                navigate(createPageUrl("Pipeline"), { replace: true });
+              } else if (profile?.user_role === 'investor') {
+                navigate(createPageUrl("IdentityVerification"), { replace: true });
+              } else {
+                navigate(createPageUrl("Pipeline"), { replace: true });
+              }
             }
           }
+        } catch (apiError) {
+          console.warn('stripeValidate API call failed, continuing with page:', apiError.message);
+          // Don't block the page - just show pricing options
         }
       } catch (error) {
         console.error('Subscription check failed:', error);
@@ -76,7 +96,7 @@ export default function Pricing() {
     };
 
     checkSubscription();
-  }, [user, loading]);
+  }, [user, profile, loading, navigate]);
 
   const handleSubscribe = async (plan) => {
     if (!user) {
