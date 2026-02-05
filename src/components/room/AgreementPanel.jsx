@@ -200,7 +200,8 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
         return;
       }
 
-      toast.success('Counter accepted - new agreement generated. Please sign the updated agreement.');
+      // After accepting counter, investor needs to sign the new agreement with updated terms
+      toast.success('Counter accepted! New agreement generated with updated terms. Please review and sign.');
       setPendingCounters(prev => prev.filter(c => c.id !== counterId));
 
       // Use the agreement returned directly from the API (has latest terms)
