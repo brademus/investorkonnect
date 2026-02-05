@@ -4,7 +4,8 @@ import { base44 } from '@/api/base44Client';
 // Global cache to prevent redundant API calls across component instances
 let globalProfileCache = null;
 let globalCacheTimestamp = 0;
-const CACHE_DURATION = 10000; // 10 seconds
+const CACHE_DURATION = 30000; // 30 seconds - increased to reduce rate limits
+let isCurrentlyLoading = false; // Prevent concurrent loads across all instances
 
 // Helper to load cache from sessionStorage
 const loadCachedProfile = () => {
@@ -64,9 +65,13 @@ export function useCurrentProfile() {
     let mounted = true;
     
     const loadProfile = async () => {
-      // Prevent concurrent calls
-      if (loadingRef.current) {
+      // Prevent concurrent calls - both local and global
+      if (loadingRef.current || isCurrentlyLoading) {
         console.log('[useCurrentProfile] Already loading, skipping...');
+        // If we have cached data, use it while waiting
+        if (globalProfileCache) {
+          if (mounted) setState(globalProfileCache);
+        }
         return;
       }
 
@@ -78,6 +83,7 @@ export function useCurrentProfile() {
       // Don't use cached profile yet - we need to validate the user matches first
 
       loadingRef.current = true;
+      isCurrentlyLoading = true;
 
       try {
         const user = await base44.auth.me();
@@ -153,10 +159,18 @@ export function useCurrentProfile() {
           profile = profiles[0] || null;
           console.log('[useCurrentProfile] Profile by user_id:', profile ? profile.id : 'not found');
         } catch (e) {
+          // Check for rate limit error - use stale cache if available
+          if (e.message?.includes('Rate limit') || e.message?.includes('429')) {
+            console.warn('[useCurrentProfile] Rate limited, using stale cache if available');
+            if (globalProfileCache) {
+              if (mounted) setState(globalProfileCache);
+              return;
+            }
+          }
           console.warn('[useCurrentProfile] Filter by user_id failed:', e.message);
         }
 
-        // Fallback: search by email only if user_id search failed
+        // Fallback: search by email only if user_id search failed AND no rate limit
         if (!profile) {
           try {
             const emailLower = user.email.toLowerCase().trim();
@@ -173,6 +187,14 @@ export function useCurrentProfile() {
               }
             }
           } catch (e) {
+            // Rate limit - use stale cache
+            if (e.message?.includes('Rate limit') || e.message?.includes('429')) {
+              console.warn('[useCurrentProfile] Rate limited on email lookup, using stale cache');
+              if (globalProfileCache) {
+                if (mounted) setState(globalProfileCache);
+                return;
+              }
+            }
             console.error('[useCurrentProfile] Email lookup failed:', e.message);
           }
         }
@@ -290,6 +312,7 @@ export function useCurrentProfile() {
         setState(errorState);
       } finally {
         loadingRef.current = false;
+        isCurrentlyLoading = false;
       }
     };
 
