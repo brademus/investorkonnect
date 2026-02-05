@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { useCurrentProfile } from "@/components/useCurrentProfile";
+// Removed useCurrentProfile to avoid rate limits - using direct API calls instead
 import { Shield, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -17,58 +17,75 @@ import LoadingAnimation from "@/components/LoadingAnimation";
  */
 export default function IdentityVerification() {
   const navigate = useNavigate();
-  const { profile, refresh, loading, kycVerified, onboarded } = useCurrentProfile();
   const [verifying, setVerifying] = useState(false);
   const [status, setStatus] = useState('pending'); // pending, verifying, success, error
-  const hasStartedRef = useRef(false); // Prevent multiple auto-starts
-  const hasRedirectedRef = useRef(false); // Prevent multiple redirects
+  const [loading, setLoading] = useState(true);
+  const [localProfile, setLocalProfile] = useState(null);
+  const hasStartedRef = useRef(false);
+  const hasRedirectedRef = useRef(false);
 
-  // Redirect if already verified - ONCE only
+  // Single initialization effect - no useCurrentProfile hook
   useEffect(() => {
-    if (!loading && kycVerified && !hasRedirectedRef.current) {
-      hasRedirectedRef.current = true;
-      console.log('[IdentityVerification] Already verified, redirecting to NDA');
-      // Clear cache before redirect to ensure NDA page gets fresh data
-      try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
-      navigate(createPageUrl("NDA"), { replace: true });
-      return;
-    }
-  }, [loading, kycVerified, navigate]);
-
-  // Auto-start verification when page loads - ONCE only
-  useEffect(() => {
-    if (!loading && profile && onboarded && !kycVerified && status === 'pending' && !verifying && !hasStartedRef.current) {
-      hasStartedRef.current = true;
-      console.log('[IdentityVerification] Auto-starting verification flow (once)');
-      const timer = setTimeout(() => {
-        handleStartVerification();
-      }, 100);
-      return () => clearTimeout(timer);
-    }
-  }, [loading, profile, onboarded, kycVerified, status, verifying]);
-
-  // Redirect incomplete users back to proper step
-  useEffect(() => {
-    if (loading) return;
-    
-    if (!profile) {
-      console.log('[IdentityVerification] No profile found, redirecting to PostAuth');
-      navigate(createPageUrl("PostAuth"), { replace: true });
-      return;
-    }
-
-    const role = profile.user_role;
-    
-    if (!onboarded) {
-      console.log('[IdentityVerification] Not onboarded, redirecting to onboarding');
-      if (role === 'investor') {
-        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-      } else if (role === 'agent') {
-        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+    const init = async () => {
+      try {
+        const authUser = await base44.auth.me();
+        if (!authUser) {
+          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
+          return;
+        }
+        
+        // Get profile directly
+        let profile = null;
+        try {
+          const profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
+          profile = profiles[0];
+        } catch (e) {
+          console.warn('[IdentityVerification] Profile fetch failed:', e.message);
+        }
+        
+        if (!profile) {
+          navigate(createPageUrl("PostAuth"), { replace: true });
+          return;
+        }
+        
+        setLocalProfile(profile);
+        
+        // Check if already verified
+        const kycVerified = profile.identity_status === 'verified' || profile.kyc_status === 'verified' || !!profile.identity_verified_at;
+        if (kycVerified) {
+          hasRedirectedRef.current = true;
+          try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
+          window.location.href = createPageUrl("NDA");
+          return;
+        }
+        
+        // Check if onboarded
+        const isOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_version);
+        if (!isOnboarded) {
+          const role = profile.user_role;
+          if (role === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+          } else if (role === 'agent') {
+            navigate(createPageUrl("AgentOnboarding"), { replace: true });
+          }
+          return;
+        }
+        
+        setLoading(false);
+        
+        // Auto-start verification
+        if (!hasStartedRef.current) {
+          hasStartedRef.current = true;
+          setTimeout(() => handleStartVerification(), 100);
+        }
+      } catch (e) {
+        console.error('[IdentityVerification] Init error:', e);
+        navigate(createPageUrl("PostAuth"), { replace: true });
       }
-      return;
-    }
-  }, [loading, profile, onboarded, navigate]);
+    };
+    
+    init();
+  }, [navigate]);
 
   const handleStartVerification = async () => {
     setVerifying(true);
@@ -211,8 +228,8 @@ export default function IdentityVerification() {
               </p>
               <div className="bg-[#141414] rounded-xl p-6 border border-[#1F1F1F]">
                 <h3 className="font-semibold text-[#FAFAFA] mb-3">Verifying as:</h3>
-                <p className="text-xl text-[#E3C567] font-bold">{profile?.full_name || 'Unknown'}</p>
-                <p className="text-sm text-[#808080] mt-2">{profile?.email}</p>
+                <p className="text-xl text-[#E3C567] font-bold">{localProfile?.full_name || 'Unknown'}</p>
+                <p className="text-sm text-[#808080] mt-2">{localProfile?.email}</p>
               </div>
             </div>
           )}

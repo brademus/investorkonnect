@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
-import { useCurrentProfile } from "@/components/useCurrentProfile";
+// Removed useCurrentProfile to avoid rate limits - using direct API calls instead
 import { CheckCircle } from "lucide-react";
 import LoadingAnimation from "@/components/LoadingAnimation";
 import { toast } from "sonner";
@@ -21,22 +21,10 @@ const US_STATES = ["AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "
  */
 export default function AgentOnboarding() {
   const navigate = useNavigate();
-  const { profile, refresh, user, onboarded, kycVerified } = useCurrentProfile();
   const [step, setStep] = useState(1);
-  
-  // Block navigation away during onboarding (except to mandatory steps)
-  useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      if (step !== 3) {
-        e.preventDefault();
-        e.returnValue = '';
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [step]);
   const [saving, setSaving] = useState(false);
   const [checking, setChecking] = useState(true);
+  const [localProfile, setLocalProfile] = useState(null);
   const [formData, setFormData] = useState({
     full_name: '',
     phone: '',
@@ -51,77 +39,94 @@ export default function AgentOnboarding() {
 
   const TOTAL_STEPS = 3;
 
-  // Check access
+  // Single initialization effect - no useCurrentProfile hook to avoid rate limits
   useEffect(() => {
-    const checkAccess = async () => {
+    document.title = "Complete Your Profile - Investor Konnect";
+    
+    const init = async () => {
       try {
         const authUser = await base44.auth.me();
         if (!authUser) {
           base44.auth.redirectToLogin(createPageUrl("PostAuth"));
           return;
         }
+        
         // Admin bypass
         if (authUser.role === 'admin') {
           toast.success('Admin access granted');
           navigate(createPageUrl("Pipeline"), { replace: true });
           return;
         }
+        
+        // Get profile directly - single API call
+        let profile = null;
+        try {
+          const profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
+          profile = profiles[0];
+        } catch (e) {
+          console.warn('[AgentOnboarding] Profile fetch failed:', e.message);
+        }
+        
+        // Create profile if missing
+        if (!profile) {
+          try {
+            profile = await base44.entities.Profile.create({
+              user_id: authUser.id,
+              email: authUser.email.toLowerCase().trim(),
+              full_name: authUser.full_name || '',
+              user_role: 'agent',
+              user_type: 'agent'
+            });
+          } catch (e) {
+            console.error('[AgentOnboarding] Profile creation failed:', e);
+          }
+        }
+        
+        if (profile) {
+          setLocalProfile(profile);
+          
+          // Check if already onboarded
+          const isOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_version);
+          if (isOnboarded) {
+            const kycVerified = profile.identity_status === 'verified' || profile.kyc_status === 'verified' || !!profile.identity_verified_at;
+            if (!kycVerified) {
+              navigate(createPageUrl("IdentityVerification"), { replace: true });
+            } else {
+              navigate(createPageUrl("Pipeline"), { replace: true });
+            }
+            return;
+          }
+          
+          // If user is investor, redirect
+          if (profile.user_role === 'investor') {
+            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+            return;
+          }
+          
+          // Load existing data into form
+          const agent = profile.agent || {};
+          setFormData({
+            full_name: profile.full_name || authUser.full_name || '',
+            phone: profile.phone || '',
+            license_number: agent.license_number || profile.license_number || '',
+            brokerage: agent.brokerage || profile.broker || '',
+            license_state: agent.license_state || profile.license_state || '',
+            main_county: agent.main_county || '',
+            markets: agent.markets || profile.markets || [],
+            experience_years: agent.experience_years || '',
+            bio: agent.bio || ''
+          });
+        }
+        
         setChecking(false);
       } catch (e) {
+        console.error('[AgentOnboarding] Init error:', e);
         base44.auth.redirectToLogin(createPageUrl("PostAuth"));
       }
     };
-    checkAccess();
+    
+    init();
   }, [navigate]);
-
-  // Redirect if already onboarded
-  useEffect(() => {
-    if (!checking && onboarded) {
-      console.log('[AgentOnboarding] Already onboarded, checking next step...');
-      console.log('[AgentOnboarding] kycVerified:', kycVerified);
-      console.log('[AgentOnboarding] identity_status:', profile?.identity_status);
-      
-      // Already onboarded, check next step
-      if (!kycVerified) {
-        console.log('[AgentOnboarding] Redirecting to IdentityVerification');
-        navigate(createPageUrl("IdentityVerification"), { replace: true });
-      } else {
-        console.log('[AgentOnboarding] Redirecting to Pipeline');
-        navigate(createPageUrl("Pipeline"), { replace: true });
-      }
-    }
-  }, [checking, onboarded, kycVerified, navigate, profile?.identity_status]);
-
-  // Load existing data
-  useEffect(() => {
-    document.title = "Complete Your Profile - Investor Konnect";
-    if (profile) {
-      const agent = profile.agent || {};
-      setFormData(prev => ({
-        ...prev,
-        full_name: profile.full_name || '',
-        phone: profile.phone || '',
-        license_number: agent.license_number || profile.license_number || '',
-        brokerage: agent.brokerage || profile.broker || '',
-        license_state: agent.license_state || profile.license_state || '',
-        main_county: agent.main_county || '',
-        markets: agent.markets || profile.markets || [],
-        experience_years: agent.experience_years || '',
-        bio: agent.bio || ''
-      }));
-    }
-  }, [profile]);
-
-  // Enforce role consistency: agents only
-  useEffect(() => {
-    if (!profile) return;
-    const current = profile.user_role;
-    if (!current || current === 'member') {
-      base44.entities.Profile.update(profile.id, { user_role: 'agent', user_type: 'agent' }).catch(() => {});
-    } else if (current === 'investor') {
-      navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-    }
-  }, [profile, navigate]);
 
   const updateField = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -151,76 +156,49 @@ export default function AgentOnboarding() {
   const handleSubmit = async () => {
     setSaving(true);
     try {
-      // Get authenticated user
-      const authUser = await base44.auth.me();
-      if (!authUser) {
-        throw new Error('Not authenticated');
-      }
-      
-      // Find profile by email (canonical) or user_id
-      const emailLower = authUser.email.toLowerCase().trim();
-      let profiles = await base44.entities.Profile.filter({ email: emailLower });
-      
-      if (!profiles || profiles.length === 0) {
-        profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
-      }
-      
-      let profileToUpdate = profiles[0];
-      
-      // If no profile exists, create one
-      if (!profileToUpdate) {
-        console.log('[AgentOnboarding] No profile found, creating new one');
-        profileToUpdate = await base44.entities.Profile.create({
-          user_id: authUser.id,
-          email: emailLower,
-          full_name: formData.full_name || authUser.full_name || '',
-          user_role: 'agent',
-          user_type: 'agent'
-        });
-        console.log('[AgentOnboarding] Created new profile:', profileToUpdate.id);
+      if (!localProfile?.id) {
+        throw new Error('Profile not loaded');
       }
 
       // Build the complete update data
       const licensedStates = formData.markets.length > 0 ? formData.markets : [formData.license_state];
       
       const updateData = {
-          full_name: formData.full_name,
-          phone: formData.phone,
-          user_role: 'agent',
-          user_type: 'agent',
-          broker: formData.brokerage,
+        full_name: formData.full_name,
+        phone: formData.phone,
+        user_role: 'agent',
+        user_type: 'agent',
+        broker: formData.brokerage,
+        license_number: formData.license_number,
+        license_state: formData.license_state,
+        markets: licensedStates,
+        target_state: formData.license_state || formData.markets[0] || '',
+        onboarding_step: 'basic_complete',
+        onboarding_completed_at: new Date().toISOString(),
+        onboarding_version: 'agent-v1',
+        agent: {
+          ...(localProfile.agent || {}),
           license_number: formData.license_number,
           license_state: formData.license_state,
+          licensed_states: licensedStates,
+          main_county: formData.main_county,
           markets: licensedStates,
-          target_state: formData.license_state || formData.markets[0] || '',
-          onboarding_step: 'basic_complete',
-          onboarding_completed_at: new Date().toISOString(),
-          onboarding_version: 'agent-v1',
-          agent: {
-            ...(profileToUpdate.agent || {}),
-            license_number: formData.license_number,
-            license_state: formData.license_state,
-            licensed_states: licensedStates,
-            main_county: formData.main_county,
-            markets: licensedStates,
-            experience_years: parseInt(formData.experience_years) || 0,
-            bio: formData.bio,
-            investor_friendly: true,
-            brokerage: formData.brokerage
-          }
-        };
+          experience_years: parseInt(formData.experience_years) || 0,
+          bio: formData.bio,
+          investor_friendly: true,
+          brokerage: formData.brokerage
+        }
+      };
       
-      console.log('[AgentOnboarding] Saving profile ID:', profileToUpdate.id);
-      console.log('[AgentOnboarding] Update data:', JSON.stringify(updateData, null, 2));
-      
-      const result = await base44.entities.Profile.update(profileToUpdate.id, updateData);
-      console.log('[AgentOnboarding] Profile saved successfully:', result);
+      console.log('[AgentOnboarding] Saving profile ID:', localProfile.id);
+      await base44.entities.Profile.update(localProfile.id, updateData);
+      console.log('[AgentOnboarding] Profile saved successfully');
 
       toast.success("Profile saved! Let's verify your identity.");
       
-      // Navigate to Identity Verification (next step for agents)
-      await new Promise(resolve => setTimeout(resolve, 500));
-      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      // Clear cache and navigate
+      try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
+      window.location.href = createPageUrl("IdentityVerification");
     } catch (error) {
       console.error('[AgentOnboarding] Error saving profile:', error);
       toast.error("Failed to save: " + (error.message || "Please try again."));
