@@ -32,22 +32,26 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       try {
         // CRITICAL: Determine which agent we're showing terms for
         const targetAgentId = selectedAgentId || room.agent_ids?.[0];
-        console.log('[KeyTermsPanel] Loading terms for agent:', targetAgentId);
+        console.log('[KeyTermsPanel] Loading terms for agent:', targetAgentId, 'room:', room?.id);
         
-        // Priority 1: Use passed agreement prop IF it's for the selected agent
-        // Check that the agreement is for this specific agent (by room_id match or agent_profile_id)
-        if (agreement?.exhibit_a_terms) {
-          // Only use if this agreement is for the current room (agent-specific)
-          terms = agreement.exhibit_a_terms;
-          console.log('[KeyTermsPanel] Using agreement prop exhibit_a_terms:', terms);
-        }
-        
-        // Priority 2: AGENT-SPECIFIC terms from room.agent_terms[agentId]
-        // This takes priority over room.proposed_terms because it's agent-specific
-        if (!terms && room?.agent_terms && typeof room.agent_terms === 'object' && targetAgentId) {
+        // Priority 1: AGENT-SPECIFIC terms from room.agent_terms[agentId]
+        // This is the HIGHEST priority because it contains negotiated terms for THIS specific agent
+        if (room?.agent_terms && typeof room.agent_terms === 'object' && targetAgentId) {
           if (room.agent_terms[targetAgentId]) {
             terms = room.agent_terms[targetAgentId];
             console.log('[KeyTermsPanel] Using room.agent_terms for specific agent:', targetAgentId, terms);
+          }
+        }
+        
+        // Priority 2: Use passed agreement prop IF it's for the selected agent
+        // Only use if we don't already have agent-specific terms
+        if (!terms && agreement?.exhibit_a_terms) {
+          // Verify this agreement is for the correct agent
+          if (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId) {
+            terms = agreement.exhibit_a_terms;
+            console.log('[KeyTermsPanel] Using agreement prop exhibit_a_terms:', terms);
+          } else {
+            console.log('[KeyTermsPanel] Skipping agreement - wrong agent:', agreement.agent_profile_id, 'vs', targetAgentId);
           }
         }
         
@@ -63,13 +67,15 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               room_id: room.id 
             });
             
-            console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status })));
+            console.log('[KeyTermsPanel] Found agreements:', agreements.length, agreements.map(a => ({ id: a.id, status: a.status, agent: a.agent_profile_id })));
             
             // Find the latest non-voided agreement (prefer draft for newly generated, then sent)
-            const draftAgreement = agreements.find(a => a.status === 'draft');
-            const sentAgreement = agreements.find(a => a.status === 'sent');
-            const nonVoidedAgreement = agreements.find(a => a.status !== 'voided');
-            const latestAgreement = draftAgreement || sentAgreement || nonVoidedAgreement || agreements[0];
+            // CRITICAL: Filter to agreements for THIS agent only
+            const agentAgreements = agreements.filter(a => !a.agent_profile_id || a.agent_profile_id === targetAgentId);
+            const draftAgreement = agentAgreements.find(a => a.status === 'draft');
+            const sentAgreement = agentAgreements.find(a => a.status === 'sent');
+            const nonVoidedAgreement = agentAgreements.find(a => a.status !== 'voided');
+            const latestAgreement = draftAgreement || sentAgreement || nonVoidedAgreement || agentAgreements[0];
             
             if (latestAgreement?.exhibit_a_terms) {
               terms = latestAgreement.exhibit_a_terms;
@@ -78,14 +84,8 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
           }
         }
         
-        // Priority 4: Use room.proposed_terms ONLY as fallback (this is deal-wide, not agent-specific)
-        // Only use if we have no agent-specific terms
-        if (!terms && room?.proposed_terms) {
-          terms = room.proposed_terms;
-          console.log('[KeyTermsPanel] Fallback to room.proposed_terms (deal-wide):', terms);
-        }
-        
-        // Priority 5: use deal.proposed_terms (original deal terms)
+        // Priority 4: use deal.proposed_terms (original deal terms - same for all agents initially)
+        // DO NOT use room.proposed_terms as it may have been updated by another agent's counter
         if (!terms && deal?.proposed_terms) {
           terms = deal.proposed_terms;
           console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
