@@ -383,16 +383,16 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
               </div>
             </div>
 
-            {/* Investor Actions - Sign agreement (initial or after counter accepted) */}
+            {/* INVESTOR: Sign agreement (initial or after counter accepted) */}
             {isInvestor && needsInvestorSignature && (
               <div className="space-y-3">
                 <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
                   <p className="text-sm text-[#E3C567] font-semibold mb-2">
-                    {agreement?.status === 'draft' ? 'New Agreement Ready' : 'Sign Agreement'}
+                    {isFreshDraftAfterCounter ? 'Updated Agreement Ready' : 'Sign Agreement'}
                   </p>
                   <p className="text-xs text-[#FAFAFA]/80 mb-3">
-                    {agreement?.status === 'draft' 
-                      ? 'Terms have been updated. Please sign the new agreement to continue.'
+                    {isFreshDraftAfterCounter 
+                      ? 'Terms have been updated after counter offer. Please sign the new agreement.'
                       : 'Please review and sign the agreement to proceed.'}
                   </p>
                   <Button
@@ -407,7 +407,7 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
               </div>
             )}
 
-            {/* Investor Actions - Awaiting agent signature */}
+            {/* INVESTOR: Awaiting agent signature */}
             {isInvestor && investorSigned && !agentSigned && (
               <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4">
                 <p className="text-sm text-[#60A5FA] font-semibold mb-1">
@@ -419,8 +419,20 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
               </div>
             )}
 
-            {/* Agent Actions */}
-            {isAgent && !agentSigned && investorSigned && (
+            {/* AGENT: Waiting for investor to sign first (after counter accepted) */}
+            {isAgent && isFreshDraftAfterCounter && (
+              <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4">
+                <p className="text-sm text-[#60A5FA] font-semibold mb-1">
+                  Awaiting Investor Signature
+                </p>
+                <p className="text-xs text-[#FAFAFA]/80">
+                  Updated terms accepted. Waiting for the investor to sign the new agreement first.
+                </p>
+              </div>
+            )}
+
+            {/* AGENT: Sign agreement (after investor has signed) */}
+            {isAgent && needsAgentSignature && (
               <div className="space-y-2">
                 <Button
                   onClick={handleSign}
@@ -437,28 +449,6 @@ export default function AgreementPanel({ dealId, roomId, profile, initialAgreeme
                 >
                   Make Counter Offer
                 </Button>
-              </div>
-            )}
-
-            {/* Agent Actions - Sign new agreement after counter accepted */}
-            {isAgent && needsSignature && (
-              <div className="space-y-3">
-                <div className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
-                  <p className="text-sm text-[#E3C567] font-semibold mb-2">
-                    New Agreement Ready
-                  </p>
-                  <p className="text-xs text-[#FAFAFA]/80 mb-3">
-                    Terms have been updated. Please sign the new agreement.
-                  </p>
-                  <Button
-                    onClick={handleSign}
-                    disabled={busy}
-                    className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
-                  >
-                    {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                    Sign Updated Agreement
-                  </Button>
-                </div>
               </div>
             )}
           </>
