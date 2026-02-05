@@ -48,16 +48,14 @@ function PipelineContent() {
   useEffect(() => {
     if (loading || loadingComplete || hasRedirectedRef.current) return;
 
-    // CRITICAL: Guard against null profile first - BUT DON'T REDIRECT TO POSTAUTH
-    // If profile is null after loading, something is wrong with auth, redirect to Home
-    if (!profile && !loading) {
-      hasRedirectedRef.current = true;
-      navigate(createPageUrl("Home"), { replace: true });
+    // Wait for profile to load - don't redirect if still loading
+    if (!profile) {
+      console.log('[Pipeline] No profile yet, waiting...');
       return;
     }
 
     // Skip all gating for admins
-    if (profile?.role === 'admin') {
+    if (profile?.role === 'admin' || user?.role === 'admin') {
       setLoadingComplete(true);
       return;
     }
@@ -77,7 +75,7 @@ function PipelineContent() {
     // Strict gating for Pipeline access
     const role = profile?.user_role;
 
-    // 1. Subscription (Investors)
+    // 1. Subscription (Investors only)
     const isPaidSubscriber = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
     if (role === 'investor' && !isPaidSubscriber) {
       hasRedirectedRef.current = true;
@@ -105,7 +103,7 @@ function PipelineContent() {
 
     // Mark loading as complete to stop flashing animation
     setLoadingComplete(true);
-    }, [loading, profile, onboarded, navigate, loadingComplete]);
+  }, [loading, profile, onboarded, navigate, loadingComplete, user]);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
