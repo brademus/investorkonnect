@@ -94,6 +94,16 @@ export function useCurrentProfile() {
         const user = await base44.auth.me();
         if (!mounted) return;
         
+        // CRITICAL: Check if cached user matches current user - clear cache if different
+        if (cachedProfile?.user?.id && user?.id && cachedProfile.user.id !== user.id) {
+          console.log('[useCurrentProfile] User changed! Clearing cache. Old:', cachedProfile.user.id, 'New:', user.id);
+          globalProfileCache = null;
+          globalCacheTimestamp = 0;
+          try {
+            sessionStorage.removeItem('profile_cache');
+          } catch (_) {}
+        }
+        
         if (!user) {
           console.log('[useCurrentProfile] No user found');
           const noUserState = {
