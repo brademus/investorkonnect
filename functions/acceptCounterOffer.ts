@@ -155,7 +155,8 @@ Deno.serve(async (req) => {
       new_agreement_id: newAgreement.id,
       agreement: fullAgreement,
       new_terms: newTerms,
-      needs_signature_from: userRole === 'investor' ? 'investor' : 'agent'
+      // After counter acceptance, investor ALWAYS needs to sign first
+      needs_signature_from: 'investor'
     });
   } catch (error) {
     console.error('[acceptCounterOffer] Error:', error);
