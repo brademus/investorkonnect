@@ -93,6 +93,25 @@ export function useCurrentProfile() {
           } catch (_) {}
         }
         
+        // Now check if we can use cached data (only if user matches)
+        const now = Date.now();
+        if (globalProfileCache && globalProfileCache.user?.id === user?.id && (now - globalCacheTimestamp) < CACHE_DURATION) {
+          console.log('[useCurrentProfile] Using validated in-memory cached profile');
+          if (mounted) setState(globalProfileCache);
+          loadingRef.current = false;
+          return;
+        }
+        
+        // Check sessionStorage cache with user validation
+        if (cachedProfile && cachedProfile.user?.id === user?.id) {
+          console.log('[useCurrentProfile] Using validated sessionStorage cached profile');
+          globalProfileCache = cachedProfile;
+          globalCacheTimestamp = Date.now();
+          if (mounted) setState(cachedProfile);
+          loadingRef.current = false;
+          return;
+        }
+        
         if (!user) {
           console.log('[useCurrentProfile] No user found');
           const noUserState = {
