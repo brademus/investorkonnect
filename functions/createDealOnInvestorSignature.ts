@@ -29,26 +29,33 @@ Deno.serve(async (req) => {
 
     console.log('[createDealOnInvestorSignature] Investor just signed base agreement:', agreementData.id);
 
-    // Check if Deal already exists for this agreement's deal_id (may be a DealDraft ID initially)
-    // First try to find Deal by the agreement's deal_id
+    // Check if a REAL Deal entity already exists (not a DealDraft)
+    // The agreement's deal_id might point to a DealDraft ID in the new flow
     let existingDeal = null;
-    if (agreementData.deal_id) {
-      const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreementData.deal_id });
-      existingDeal = deals?.[0] || null;
-    }
-
-    // Also check by current_legal_agreement_id (legacy flow)
-    if (!existingDeal) {
-      const dealsByAgreement = await base44.asServiceRole.entities.Deal.filter({
-        current_legal_agreement_id: agreementData.id
-      });
-      existingDeal = dealsByAgreement?.[0] || null;
+    
+    // Check by current_legal_agreement_id first (most reliable)
+    const dealsByAgreement = await base44.asServiceRole.entities.Deal.filter({
+      current_legal_agreement_id: agreementData.id
+    });
+    existingDeal = dealsByAgreement?.[0] || null;
+    
+    // Also try by deal_id if it's a real Deal (not a DealDraft)
+    if (!existingDeal && agreementData.deal_id) {
+      try {
+        const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreementData.deal_id });
+        if (deals && deals.length > 0) {
+          existingDeal = deals[0];
+        }
+      } catch (e) {
+        // deal_id might be a DealDraft ID, not a Deal - that's expected
+        console.log('[createDealOnInvestorSignature] deal_id is not a Deal entity (likely DealDraft):', agreementData.deal_id);
+      }
     }
 
     if (existingDeal) {
       console.log('[createDealOnInvestorSignature] Deal already exists:', existingDeal.id, '- creating invites');
       
-      // Deal was created in MyAgreement.js - just create invites and update agreement
+      // Deal was created previously - just create invites
       try {
         await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
           deal_id: existingDeal.id
