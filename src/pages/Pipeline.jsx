@@ -745,22 +745,37 @@ function PipelineContent() {
       }
 
       // No rooms found - the automation may still be creating the room
-      // Show a toast and wait a bit, then try again
-      toast.info('Deal created but room not accessible yet. Returning to pipeline...');
+      // Poll for room creation with exponential backoff
+      toast.loading('Loading deal room...', { id: 'deal-room-loading' });
       
-      // Wait 3 seconds and refetch
-      setTimeout(async () => {
+      let attempts = 0;
+      const maxAttempts = 5;
+      const tryLoadRoom = async () => {
+        attempts++;
         try {
           const roomsRetry = await base44.entities.Room.filter({ deal_id: deal.deal_id });
           if (roomsRetry?.length > 0) {
+            toast.dismiss('deal-room-loading');
+            toast.success('Deal room ready!');
             navigate(`${createPageUrl("Room")}?roomId=${roomsRetry[0].id}`);
-          } else {
-            // Still no room - refresh queries so it appears when ready
-            queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
-            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+            return;
           }
         } catch (_) {}
-      }, 3000);
+        
+        if (attempts < maxAttempts) {
+          // Retry with increasing delay
+          const delay = 1000 * Math.pow(1.5, attempts);
+          setTimeout(tryLoadRoom, delay);
+        } else {
+          // Give up after max attempts
+          toast.dismiss('deal-room-loading');
+          toast.error('Room not yet available. Please try again in a moment.');
+          queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+          queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+        }
+      };
+      
+      setTimeout(tryLoadRoom, 1500);
       return;
     }
 
