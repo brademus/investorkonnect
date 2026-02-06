@@ -29,20 +29,29 @@ Deno.serve(async (req) => {
 
     console.log('[createDealOnInvestorSignature] Investor just signed base agreement:', agreementData.id);
 
-    // Check if Deal already exists for this agreement (new flow creates it immediately)
-    const deals = await base44.asServiceRole.entities.Deal.filter({
-      current_legal_agreement_id: agreementData.id
-    });
+    // Check if Deal already exists for this agreement's deal_id (may be a DealDraft ID initially)
+    // First try to find Deal by the agreement's deal_id
+    let existingDeal = null;
+    if (agreementData.deal_id) {
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreementData.deal_id });
+      existingDeal = deals?.[0] || null;
+    }
 
-    if (deals && deals.length > 0) {
-      console.log('[createDealOnInvestorSignature] Deal already exists:', deals[0].id, '- creating invites');
+    // Also check by current_legal_agreement_id (legacy flow)
+    if (!existingDeal) {
+      const dealsByAgreement = await base44.asServiceRole.entities.Deal.filter({
+        current_legal_agreement_id: agreementData.id
+      });
+      existingDeal = dealsByAgreement?.[0] || null;
+    }
+
+    if (existingDeal) {
+      console.log('[createDealOnInvestorSignature] Deal already exists:', existingDeal.id, '- creating invites');
       
       // Deal was created in MyAgreement.js - just create invites and update agreement
-      const deal = deals[0];
-      
       try {
         await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
-          deal_id: deal.id
+          deal_id: existingDeal.id
         });
         console.log('[createDealOnInvestorSignature] Created agent invites');
       } catch (e) {
@@ -51,26 +60,38 @@ Deno.serve(async (req) => {
 
       return Response.json({
         status: 'success',
-        deal_id: deal.id,
+        deal_id: existingDeal.id,
         reason: 'invites_created_for_existing_deal'
       });
     }
 
-    // Fallback: Try to find DealDraft by investor_profile_id + agreement_id link
+    // Fallback: Try to find DealDraft by agreement's deal_id (which is the draft ID) OR by investor_profile_id
     const investorId = agreementData.investor_profile_id;
-    console.log('[createDealOnInvestorSignature] Looking for DealDraft for investor:', investorId);
+    const agreementDealId = agreementData.deal_id;
+    console.log('[createDealOnInvestorSignature] Looking for DealDraft:', { agreementDealId, investorId });
 
     let drafts = [];
-    if (investorId) {
+    
+    // First try by ID (most reliable - agreement.deal_id points to DealDraft.id in new flow)
+    if (agreementDealId) {
+      const draftById = await base44.asServiceRole.entities.DealDraft.filter({ id: agreementDealId });
+      if (draftById && draftById.length > 0) {
+        drafts = draftById;
+        console.log('[createDealOnInvestorSignature] Found DealDraft by ID:', agreementDealId);
+      }
+    }
+    
+    // Fallback: by investor_profile_id (legacy flow)
+    if (drafts.length === 0 && investorId) {
       drafts = await base44.asServiceRole.entities.DealDraft.filter({
         investor_profile_id: investorId
       });
-    }
-
-    // Filter by most recent created
-    if (drafts && drafts.length > 0) {
-      drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
-      drafts = [drafts[0]]; // Take most recent
+      // Filter by most recent created
+      if (drafts && drafts.length > 0) {
+        drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+        drafts = [drafts[0]]; // Take most recent
+        console.log('[createDealOnInvestorSignature] Found DealDraft by investor:', drafts[0].id);
+      }
     }
 
     if (!drafts || drafts.length === 0) {
