@@ -14,7 +14,7 @@ export default function Pricing() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("starter");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-  const [checkingSubscription, setCheckingSubscription] = useState(true);
+  const [checkingSubscription, setCheckingSubscription] = useState(false);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -191,16 +191,7 @@ export default function Pricing() {
     },
   ];
 
-  if (loading || checkingSubscription) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-[#808080]">Checking subscription status...</p>
-        </div>
-      </div>
-    );
-  }
+  // Don't block on loading - show pricing page immediately
 
   return (
     <div className="min-h-screen bg-black">
