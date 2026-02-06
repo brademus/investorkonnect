@@ -53,6 +53,8 @@ import AgentLanding from './pages/AgentLanding';
 import AgentOnboarding from './pages/AgentOnboarding';
 import AgentProfile from './pages/AgentProfile';
 import BillingSuccess from './pages/BillingSuccess';
+import ContractVerify from './pages/ContractVerify';
+import CounterOffer from './pages/CounterOffer';
 import DocuSignReturn from './pages/DocuSignReturn';
 import Home from './pages/Home';
 import IdentityVerification from './pages/IdentityVerification';
@@ -71,7 +73,6 @@ import Privacy from './pages/Privacy';
 import RoleLanding from './pages/RoleLanding';
 import Room from './pages/Room';
 import SelectAgent from './pages/SelectAgent';
-import SendCounter from './pages/SendCounter';
 import Terms from './pages/Terms';
 import __Layout from './Layout.jsx';
 
@@ -83,6 +84,8 @@ export const PAGES = {
     "AgentOnboarding": AgentOnboarding,
     "AgentProfile": AgentProfile,
     "BillingSuccess": BillingSuccess,
+    "ContractVerify": ContractVerify,
+    "CounterOffer": CounterOffer,
     "DocuSignReturn": DocuSignReturn,
     "Home": Home,
     "IdentityVerification": IdentityVerification,
@@ -101,7 +104,6 @@ export const PAGES = {
     "RoleLanding": RoleLanding,
     "Room": Room,
     "SelectAgent": SelectAgent,
-    "SendCounter": SendCounter,
     "Terms": Terms,
 }
 

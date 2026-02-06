@@ -1,54 +1,11 @@
-// v3.0 - Self-contained draft flow support (2024-02-04)
+// v2.5 - Draft flow support with proper parameter handling
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
+import { fetchTemplate } from './utils/templateCache.js';
+import { getDocuSignConnection, invalidateDocuSignCache } from './utils/docusignCache.js';
 import pdfParse from 'npm:pdf-parse@1.1.1';
 
-// Inline template cache (no local imports)
-const templateCache = new Map();
-const CACHE_TTL = 3600000;
-
-async function fetchTemplate(url) {
-  const cached = templateCache.get(url);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
-    return cached.data;
-  }
-  const response = await fetch(url);
-  if (!response.ok) throw new Error('Failed to fetch template: ' + response.status);
-  const data = await response.arrayBuffer();
-  templateCache.set(url, { data, timestamp: Date.now() });
-  return data;
-}
-
-// Inline DocuSign connection (no local imports)
-async function getDocuSignConnection(base44) {
-  const connections = await base44.asServiceRole.entities.DocuSignConnection.filter({});
-  if (!connections || connections.length === 0) throw new Error('DocuSign not connected');
-  const conn = connections[0];
-  if (new Date(conn.expires_at) < new Date()) {
-    // Refresh token
-    const refreshRes = await fetch('https://account-d.docusign.com/oauth/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: conn.refresh_token,
-        client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
-        client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
-      })
-    });
-    if (!refreshRes.ok) throw new Error('Failed to refresh DocuSign token');
-    const tokens = await refreshRes.json();
-    const newExpiry = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
-    await base44.asServiceRole.entities.DocuSignConnection.update(conn.id, {
-      access_token: tokens.access_token,
-      refresh_token: tokens.refresh_token || conn.refresh_token,
-      expires_at: newExpiry
-    });
-    return { access_token: tokens.access_token, account_id: conn.account_id, base_uri: conn.base_uri };
-  }
-  return { access_token: conn.access_token, account_id: conn.account_id, base_uri: conn.base_uri };
-}
-
+// State-to-template URL mapping
 const STATE_TEMPLATES = {
   'AL': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alabama%20contract%20.pdf',
   'AK': 'https://msrkgurqbldpnvwqvyzf.supabase.co/storage/v1/object/public/Contracts/Alaska.pdf',
@@ -103,126 +60,279 @@ const STATE_TEMPLATES = {
 };
 
 function normalizeSignatureSection(text) {
-  const standardBlock = '\n\nSIGNATURES\n\nInvestor:\nSignature: [[INVESTOR_SIGN]]\nPrinted Name: [[INVESTOR_PRINT]]\nDate: [[INVESTOR_DATE]]\n\nAgent:\nSignature: [[AGENT_SIGN]]\nPrinted Name: [[AGENT_PRINT]]\nLicense No.: [[AGENT_LICENSE]]\nBrokerage: [[AGENT_BROKERAGE]]\nDate: [[AGENT_DATE]]\n';
-  const patterns = [/^\s*SIGNATURES?\s*$/gim, /^\s*\d+\.?\s*SIGNATURES?\s*$/gim];
-  let idx = -1;
-  for (const p of patterns) {
-    const m = [...text.matchAll(p)];
-    if (m.length > 0) { idx = m[m.length - 1].index; break; }
+  const standardSignatureBlock = `
+
+SIGNATURES
+
+Investor:
+Signature: [[INVESTOR_SIGN]]
+Printed Name: [[INVESTOR_PRINT]]
+Date: [[INVESTOR_DATE]]
+
+Agent:
+Signature: [[AGENT_SIGN]]
+Printed Name: [[AGENT_PRINT]]
+License No.: [[AGENT_LICENSE]]
+Brokerage: [[AGENT_BROKERAGE]]
+Date: [[AGENT_DATE]]
+`;
+  
+  const signaturePatterns = [
+    /^\s*SIGNATURES?\s*$/gim,
+    /^\s*\d+\.?\s*SIGNATURES?\s*$/gim,
+    /^[\s\d.]*signatures?\s*$/gim
+  ];
+  
+  let signatureIndex = -1;
+  
+  for (let i = 0; i < signaturePatterns.length; i++) {
+    const pattern = signaturePatterns[i];
+    const matches = [...text.matchAll(pattern)];
+    if (matches.length > 0) {
+      const lastMatch = matches[matches.length - 1];
+      signatureIndex = lastMatch.index;
+      break;
+    }
   }
-  return idx >= 0 ? text.substring(0, idx) + standardBlock : text + standardBlock;
+  
+  if (signatureIndex >= 0) {
+    text = text.substring(0, signatureIndex) + standardSignatureBlock;
+  } else {
+    text += standardSignatureBlock;
+  }
+  
+  return text;
 }
 
 function normalizeWinAnsi(text) {
-  const replacements = [
-    [/\u2013/g, '-'], [/\u2014/g, '-'], [/\u2212/g, '-'], [/\u2022/g, '*'], [/\u00B7/g, '-'],
-    [/\u2026/g, '...'], [/\u201C/g, '"'], [/\u201D/g, '"'], [/\u2018/g, "'"], [/\u2019/g, "'"],
-    [/\u00AD/g, ''], [/\u00A0/g, ' '], [/\u200B/g, ''], [/\uFEFF/g, '']
-  ];
-  let out = text;
-  for (const [p, r] of replacements) out = out.replace(p, r);
-  return out.replace(/[^\x00-\xFF]/g, '');
+  const map = {
+    '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '"': '"', '"': '"', ''': "'", ''': "'",
+    '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≤': '<=', '≥': '>=', '©': '(c)', '®': '(r)', '™': 'TM',
+    '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' ', '\u202F': ' ', '\u2009': ' ', '\u200A': ' ',
+    '\u200B': '', '\uFEFF': '', '\u2060': '',
+    '\u2610': '[ ]', '\u2611': '[x]', '\u2612': '[x]', '\u25A1': '[ ]', '\u25A0': '[]',
+    '\u25CF': '*', '\u25CB': 'o', '\u25AB': '-', '\u25AA': '-',
+    '\u2713': '[x]', '\u2714': '[x]', '\u2715': 'x', '\u2717': 'x'
+  };
+  let out = text.replace(/[\u2013\u2014\u2212\u2022\u00B7\u2026\u201C\u201D\u2018\u2019\u2192\u2190\u2194\u21D2\u2264\u2265\u00A9\u00AE\u2122\u00AD\u00A0\u2002\u2003\u202F\u2009\u200A\u200B\uFEFF\u2060\u2610\u2611\u2612\u25A1\u25A0\u25CF\u25CB\u25AB\u25AA\u2713\u2714\u2715\u2717]/g, ch => map[ch] ?? '');
+  out = out.replace(/[^\x00-\xFF]/g, '');
+  return out;
 }
 
 async function sha256(data) {
-  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-async function generatePdf(text, dealId, isDocuSign = false) {
-  const pdf = await PDFDocument.create();
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const bold = await pdf.embedFont(StandardFonts.HelveticaBold);
-  const margin = 60, pageW = 612, pageH = 792, maxW = pageW - 2 * margin, lineH = 13, fontSize = 10;
-  let page = pdf.addPage([pageW, pageH]), y = pageH - margin;
+async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   
-  for (const line of text.split('\n')) {
-    if (y < margin + 30) { page = pdf.addPage([pageW, pageH]); y = pageH - margin; }
-    if (!line.trim()) { y -= lineH * 0.5; continue; }
-    const isHead = /^[A-Z\s]{15,}$/.test(line.trim()) || /^\d+\)/.test(line.trim());
-    const f = isHead ? bold : font, sz = isHead ? 11 : fontSize;
-    const hasAnchor = /\[\[[A-Z_]+\]\]/.test(line);
+  const fontSize = 10;
+  const lineHeight = 13;
+  const margin = 60;
+  const pageWidth = 612;
+  const pageHeight = 792;
+  const maxWidth = pageWidth - 2 * margin;
+  
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let yPosition = pageHeight - margin;
+  
+  const lines = text.split('\n');
+  
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
     
-    if (hasAnchor && isDocuSign) {
+    if (yPosition < margin + 30) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      yPosition = pageHeight - margin;
+    }
+    
+    if (!line.trim()) {
+      yPosition -= lineHeight * 0.5;
+      continue;
+    }
+    
+    const isTitle = line.includes('INTERNAL OPERATING AGREEMENT') || line.includes('InvestorKonnect');
+    const isHeading = /^[A-Z\s]{15,}$/.test(line.trim()) || /^\d+\)/.test(line.trim()) || /^[A-Z]\)/.test(line.trim());
+    const isSubheading = /^\d+\./.test(line.trim());
+    
+    const currentFont = (isTitle || isHeading) ? boldFont : font;
+    const currentSize = isTitle ? 14 : isHeading ? 11 : isSubheading ? 10.5 : fontSize;
+    const textColor = rgb(0, 0, 0);
+    
+    const hasAnchors = /\[\[([A-Z_]+)\]\]/.test(line);
+    
+    if (hasAnchors && isDocuSignVersion) {
       const parts = line.split(/(\[\[[A-Z_]+\]\])/);
-      let x = margin;
+      let xPos = margin;
+      
       for (const part of parts) {
         if (!part) continue;
-        if (/\[\[[A-Z_]+\]\]/.test(part)) {
-          page.drawText(part, { x, y, size: 1, font, color: rgb(1, 1, 1) });
+        
+        const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
+        
+        if (isAnchor) {
+          page.drawText(part, { x: xPos, y: yPosition, size: 1, font: font, color: rgb(1, 1, 1) });
         } else if (part.trim()) {
-          page.drawText(part, { x, y, size: sz, font: f, color: rgb(0, 0, 0) });
-          x += f.widthOfTextAtSize(part, sz);
+          page.drawText(part, { x: xPos, y: yPosition, size: currentSize, font: currentFont, color: textColor });
+          xPos += currentFont.widthOfTextAtSize(part, currentSize);
         }
       }
-      y -= lineH;
-    } else {
-      const cleanLine = hasAnchor ? line.replace(/\[\[[A-Z_]+\]\]/g, '') : line;
+      yPosition -= lineHeight;
+    } else if (hasAnchors && !isDocuSignVersion) {
+      const cleanLine = line.replace(/\[\[[A-Z_]+\]\]/g, '');
       const words = cleanLine.split(' ');
-      let cur = '';
-      for (const w of words) {
-        const test = cur ? cur + ' ' + w : w;
-        if (f.widthOfTextAtSize(test, sz) > maxW && cur) {
-          page.drawText(cur, { x: margin, y, size: sz, font: f, color: rgb(0, 0, 0) });
-          y -= lineH;
-          if (y < margin + 30) { page = pdf.addPage([pageW, pageH]); y = pageH - margin; }
-          cur = w;
-        } else cur = test;
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+        
+        if (width > maxWidth && currentLine) {
+          page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
+          yPosition -= lineHeight;
+          if (yPosition < margin + 30) { page = pdfDoc.addPage([pageWidth, pageHeight]); yPosition = pageHeight - margin; }
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
       }
-      if (cur) { page.drawText(cur, { x: margin, y, size: sz, font: f, color: rgb(0, 0, 0) }); y -= lineH; }
+      
+      if (currentLine.trim()) {
+        page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
+        yPosition -= lineHeight;
+      }
+    } else {
+      const words = line.split(' ');
+      let currentLine = '';
+      
+      for (const word of words) {
+        const testLine = currentLine ? `${currentLine} ${word}` : word;
+        const width = currentFont.widthOfTextAtSize(testLine, currentSize);
+        
+        if (width > maxWidth && currentLine) {
+          page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
+          yPosition -= lineHeight;
+          if (yPosition < margin + 30) { page = pdfDoc.addPage([pageWidth, pageHeight]); yPosition = pageHeight - margin; }
+          currentLine = word;
+        } else {
+          currentLine = testLine;
+        }
+      }
+      
+      if (currentLine) {
+        page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
+        yPosition -= lineHeight;
+      }
     }
-    if (isHead) y -= lineH * 0.5;
+    
+    if (isHeading || isTitle) { yPosition -= lineHeight * 0.5; }
   }
   
-  const pages = pdf.getPages();
+  const pages = pdfDoc.getPages();
   for (let i = 0; i < pages.length; i++) {
-    pages[i].drawText('Page ' + (i + 1) + ' of ' + pages.length, { x: pageW / 2 - 30, y: 30, size: 8, font, color: rgb(0.5, 0.5, 0.5) });
+    const pg = pages[i];
+    pg.drawText(`Page ${i + 1} of ${pages.length}`, { x: pageWidth / 2 - 30, y: 30, size: 8, font: font, color: rgb(0.5, 0.5, 0.5) });
   }
-  return await pdf.save();
+  
+  return await pdfDoc.save();
 }
 
-function buildRenderContext(deal, profile, agent, exhibit, fillAgent) {
-  const appUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://agent-vault-da3d088b.base44.app/';
+function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails = true) {
+  const effectiveDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
   
-  // CRITICAL: Extract buyer commission from exhibit_a terms
-  // Support both 'flat' and 'flat_fee' for commission type
-  let buyerVal = '3%';
-  const commType = exhibit.buyer_commission_type;
-  console.log('[buildRenderContext] exhibit_a:', JSON.stringify(exhibit));
-  console.log('[buildRenderContext] buyer_commission_type:', commType, 'percentage:', exhibit.buyer_commission_percentage, 'flat_fee:', exhibit.buyer_flat_fee);
+  let venue = deal.state || 'N/A';
+  if (deal.county && deal.state) { venue = `${deal.county} County, ${deal.state}`; }
   
-  if (commType === 'flat' || commType === 'flat_fee') {
-    buyerVal = '$' + (exhibit.buyer_flat_fee || 5000).toLocaleString();
-  } else if (commType === 'percentage') {
-    buyerVal = (exhibit.buyer_commission_percentage || 3) + '%';
+  const rofrEnabled = deal.rofr_enabled || false;
+  const rofrDays = deal.rofr_days || 0;
+  
+  const compensationModel = exhibit_a.compensation_model || 'FLAT_FEE';
+  let sellerCompType = 'Flat Fee';
+  let sellerCompValue = `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`;
+  
+  if (compensationModel === 'COMMISSION_PCT') {
+    sellerCompType = 'Commission Percentage';
+    sellerCompValue = `${exhibit_a.commission_percentage || 3}%`;
+  } else if (compensationModel === 'NET_SPREAD') {
+    sellerCompType = 'Net Listing';
+    sellerCompValue = `Net: $${(exhibit_a.net_target || 0).toLocaleString()}`;
   }
   
-  console.log('[buildRenderContext] Final BUYER_COMP_VALUE:', buyerVal);
+  let buyerCompType = 'Commission Percentage';
+  let buyerCompValue = '3%';
+  
+  if (exhibit_a.buyer_commission_type === 'flat') {
+    buyerCompType = 'Flat Fee';
+    const buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
+    buyerCompValue = `$${buyerCompAmount.toLocaleString()}`;
+  } else if (exhibit_a.buyer_commission_type === 'percentage') {
+    buyerCompType = 'Commission Percentage';
+    const buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
+    buyerCompValue = `${buyerCompAmount}%`;
+  }
+  
+  const agentName = fillAgentDetails ? (agentProfile.full_name || agentProfile.email || 'TBD') : 'TBD';
+  const licenseNumber = fillAgentDetails ? (agentProfile.agent?.license_number || agentProfile.license_number || 'TBD') : 'TBD';
+  const brokerageName = fillAgentDetails ? (agentProfile.agent?.brokerage || agentProfile.broker || 'TBD') : 'TBD';
+  const agentEmail = fillAgentDetails ? (agentProfile.email || 'TBD') : 'TBD';
+  const agentPhone = fillAgentDetails ? (agentProfile.phone || 'TBD') : 'TBD';
   
   return {
-    PLATFORM_NAME: 'investor konnect', PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl,
-    DEAL_ID: deal.id || 'N/A', EFFECTIVE_DATE: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
-    INVESTOR_LEGAL_NAME: profile.full_name || profile.email || 'N/A', INVESTOR_ENTITY_TYPE: 'Individual', INVESTOR_EMAIL: profile.email || 'N/A',
-    AGENT_LEGAL_NAME: fillAgent ? (agent.full_name || 'TBD') : 'TBD',
-    LICENSE_NUMBER: fillAgent ? (agent.agent?.license_number || agent.license_number || 'TBD') : 'TBD',
-    BROKERAGE_NAME: fillAgent ? (agent.agent?.brokerage || agent.broker || 'TBD') : 'TBD',
-    PROPERTY_ADDRESS: deal.property_address || 'TBD', CITY: deal.city || 'TBD', STATE: deal.state || 'N/A', ZIP: deal.zip || 'N/A', COUNTY: deal.county || 'N/A',
-    VENUE: deal.county && deal.state ? deal.county + ' County, ' + deal.state : deal.state || 'N/A',
-    TRANSACTION_TYPE: exhibit.transaction_type || 'ASSIGNMENT', BUYER_COMP_VALUE: buyerVal,
-    AGREEMENT_LENGTH_DAYS: (exhibit.agreement_length_days || exhibit.agreement_length || 180).toString(), 
-    TERM_DAYS: (exhibit.agreement_length_days || exhibit.agreement_length || 180).toString()
+    AGREEMENT_VERSION: 'InvestorKonnect v2.0',
+    PLATFORM_NAME: 'investor konnect',
+    PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    DEAL_ID: deal.id || 'N/A',
+    EFFECTIVE_DATE: effectiveDate,
+    INVESTOR_LEGAL_NAME: profile.full_name || profile.email || 'N/A',
+    INVESTOR_ENTITY_TYPE: 'Individual',
+    INVESTOR_EMAIL: profile.email || 'N/A',
+    INVESTOR_PHONE: profile.phone || 'N/A',
+    AGENT_LEGAL_NAME: agentName,
+    LICENSE_NUMBER: licenseNumber,
+    BROKERAGE_NAME: brokerageName,
+    AGENT_EMAIL: agentEmail,
+    AGENT_PHONE: agentPhone,
+    PROPERTY_ADDRESS: deal.property_address || 'TBD',
+    CITY: deal.city || 'TBD',
+    STATE: deal.state || 'N/A',
+    ZIP: deal.zip || 'N/A',
+    COUNTY: deal.county || 'N/A',
+    VENUE: venue,
+    TRANSACTION_TYPE: exhibit_a.transaction_type || 'ASSIGNMENT',
+    COMPENSATION_MODEL: compensationModel,
+    FLAT_FEE_AMOUNT: `$${(exhibit_a.flat_fee_amount || 5000).toLocaleString()}`,
+    COMMISSION_PERCENTAGE: `${exhibit_a.commission_percentage || 3}%`,
+    SELLER_COMP_TYPE: sellerCompType,
+    SELLER_COMP_VALUE: sellerCompValue,
+    BUYER_COMP_TYPE: buyerCompType,
+    BUYER_COMP_VALUE: buyerCompValue,
+    AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
+    TERM_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
+    TERMINATION_NOTICE_DAYS: (exhibit_a.termination_notice_days || 30).toString(),
+    EXCLUSIVITY_ON_OFF: exhibit_a.exclusive_agreement ? 'ON' : 'OFF',
+    ROFR_ON_OFF: rofrEnabled ? 'ON' : 'OFF',
+    ROFR_PERIOD_DAYS: rofrDays.toString()
   };
 }
 
 Deno.serve(async (req) => {
-  console.log('[generateLegalAgreement v3.0] Starting...');
+  console.log('[generateLegalAgreement v2.5] Starting...');
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
-    console.log('[generateLegalAgreement v3.0] Body:', JSON.stringify(body).substring(0, 500));
+    console.log('[generateLegalAgreement v2.5] Body keys:', Object.keys(body));
     
     const draft_id = body.draft_id || null;
     const deal_id = body.deal_id || null;
@@ -230,227 +340,466 @@ Deno.serve(async (req) => {
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    // CRITICAL: For agent-specific agreements, require agent_profile_id 
-    const agent_profile_id = body.agent_profile_id || body.agent_profile_ids?.[0] || null;
-    
-    console.log('[generateLegalAgreement v3.0] Params:', { deal_id, draft_id, room_id, signer_mode, agent_profile_id });
+    console.log('[generateLegalAgreement v2.5] Params:', { deal_id, draft_id, room_id, signer_mode });
 
     if (!deal_id && !draft_id) {
-      console.log('[generateLegalAgreement v3.0] ERROR: Missing both deal_id and draft_id');
-      return Response.json({ error: 'deal_id or draft_id required (v3.0)' }, { status: 400 });
+      console.log('[generateLegalAgreement v2.5] Missing both - body:', JSON.stringify(body).substring(0, 500));
+      return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
     
-    // Load profile
+    // Load investor profile
     let profile = null;
-    if (body.investor_profile_id) {
-      const profiles = await base44.asServiceRole.entities.Profile.filter({ id: body.investor_profile_id });
+    const investorProfileId = body.investor_profile_id;
+    
+    if (investorProfileId) {
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ id: investorProfileId });
       profile = profiles?.[0];
     }
+    
     if (!profile) {
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       profile = profiles?.[0];
     }
-    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+    
+    if (!profile) {
+      return Response.json({ error: 'Investor profile not found' }, { status: 404 });
+    }
 
-    // Load or build deal
+    // Load deal OR build from draft params
     let deal = null;
     if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-      if (!deals?.length) return Response.json({ error: 'Deal not found' }, { status: 404 });
+      if (!deals || deals.length === 0) {
+        return Response.json({ error: 'Deal not found' }, { status: 404 });
+      }
       deal = deals[0];
     } else if (draft_id) {
-      if (!body.state) return Response.json({ error: 'State required for draft' }, { status: 400 });
-      deal = { id: draft_id, state: body.state, city: body.city || 'TBD', county: body.county || 'TBD', zip: body.zip || 'TBD', property_address: body.property_address || 'TBD', property_type: 'Single Family' };
-      console.log('[generateLegalAgreement v3.0] Draft deal:', deal);
+      // Build minimal deal object from request body params
+      const stateParam = body.state;
+      if (!stateParam) {
+        return Response.json({ error: 'State required for draft-based generation' }, { status: 400 });
+      }
+      
+      deal = {
+        id: draft_id,
+        state: stateParam,
+        city: body.city || 'TBD',
+        county: body.county || 'TBD',
+        zip: body.zip || 'TBD',
+        property_address: body.property_address || 'TBD',
+        property_type: body.property_type || 'Single Family',
+        transaction_type: 'ASSIGNMENT'
+      };
+      console.log('[generateLegalAgreement v2.5] Draft-based deal:', deal);
     }
 
-    // Load room if needed
-    let room = null, agentProfile = { id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD', agent: { license_number: 'TBD', brokerage: 'TBD' } };
-    // Save the explicitly passed exhibit_a terms - these ALWAYS take precedence (e.g. from counter offer)
-    const passedExhibitA = { ...exhibit_a };
-    const hasPassedTerms = Object.keys(passedExhibitA).length > 0;
-    
+    // Load room if room_id provided
+    let room = null;
     if (room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
-      room = rooms?.[0];
-      if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
+      room = rooms?.[0] || null;
+      if (!room) {
+        return Response.json({ error: 'Room not found' }, { status: 404 });
+      }
       
-      // CRITICAL: Use the specific agent_profile_id passed in, NOT just room.agent_ids[0]
-      // This ensures we get the right agent for multi-agent scenarios
-      const agentId = agent_profile_id || room.agent_ids?.[0];
-      console.log('[generateLegalAgreement v3.0] Using agentId:', agentId, 'from agent_profile_id:', agent_profile_id, 'room.agent_ids:', room.agent_ids);
+      const agentId = body.agent_profile_id || room.agent_ids?.[0];
+      if (!agentId) {
+        return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
+      }
       
-      if (agentId) {
-        const agents = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
-        if (agents?.length) agentProfile = agents[0];
-        
-        // CRITICAL: Passed terms from acceptCounterOffer ALWAYS take precedence
-        // Only fall back to room.agent_terms if no explicit terms were passed
-        if (hasPassedTerms) {
-          // Explicit terms were passed (e.g., from counter offer acceptance)
-          // Use them directly - they already have the negotiated values
-          exhibit_a = passedExhibitA;
-          console.log('[generateLegalAgreement v3.0] Using EXPLICIT passed terms:', exhibit_a);
-        } else if (room.agent_terms?.[agentId]) {
-          // No explicit terms - use stored agent-specific terms
-          exhibit_a = { ...room.agent_terms[agentId] };
-          console.log('[generateLegalAgreement v3.0] Using room.agent_terms for agent:', agentId, exhibit_a);
-        }
+      const agentTerms = room.agent_terms?.[agentId];
+      if (agentTerms) {
+        exhibit_a = { ...exhibit_a, ...agentTerms };
+      }
+    }
+
+    // Resolve agent profile
+    let agentProfile = null;
+    if (room_id && room) {
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.agentId });
+      if (!agentProfiles || agentProfiles.length === 0) {
+        return Response.json({ error: 'Agent profile not found for this room' }, { status: 404 });
+      }
+      agentProfile = agentProfiles[0];
+    } else {
+      // No room - use TBD placeholders
+      agentProfile = {
+        id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD',
+        agent: { license_number: 'TBD', brokerage: 'TBD' }
+      };
+    }
+    
+    // Validate required fields
+    const missing = [];
+    const details = [];
+    
+    if (!deal.state) {
+      missing.push('deal.state');
+      details.push('Property state is required');
+    }
+    
+    const investorName = profile.full_name || profile.email;
+    if (!investorName) {
+      missing.push('investor.full_name');
+      details.push('Investor legal name is required');
+    }
+    
+    const fillAgentDetails = !!room_id;
+    if (fillAgentDetails) {
+      if (!(agentProfile.full_name || agentProfile.email)) {
+        missing.push('agent.full_name');
+        details.push('Agent legal name is required');
+      }
+      if (!(agentProfile.agent?.license_number || agentProfile.license_number)) {
+        missing.push('agent.license_number');
+        details.push('Agent license number is required');
+      }
+      if (!(agentProfile.agent?.brokerage || agentProfile.broker)) {
+        missing.push('agent.brokerage');
+        details.push('Agent brokerage name is required');
       }
     }
     
-    const fillAgent = !!room_id;
-    if (!deal.state) return Response.json({ error: 'State required' }, { status: 400 });
-    
-    const stateCode = deal.state.toUpperCase();
-    const templateUrl = STATE_TEMPLATES[stateCode];
-    if (!templateUrl) return Response.json({ error: 'No template for state: ' + deal.state }, { status: 400 });
-    
-    const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgent);
-    const inputHash = await sha256(JSON.stringify({ stateCode, deal: deal.id, profile: profile.id, exhibit_a, version: '3.0' }));
-    
-    // Check existing
-    const existing = room_id
-      ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id }, '-created_date', 1)
-      : deal_id ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 1) : [];
-    
-    if (existing.length && existing[0].render_input_hash === inputHash && existing[0].final_pdf_url && existing[0].docusign_envelope_id && !['superseded', 'voided'].includes(existing[0].status)) {
-      console.log('[generateLegalAgreement v3.0] Returning existing');
-      return Response.json({ success: true, agreement: existing[0], regenerated: false });
+    if (missing.length > 0) {
+      return Response.json({ 
+        error: `Missing required fields: ${details.join(', ')}`,
+        missing_fields: missing,
+        details: details
+      }, { status: 400 });
     }
     
-    const toVoidId = existing[0]?.docusign_envelope_id;
-    const existingId = existing[0]?.id;
+    // Get template URL
+    const stateCode = deal.state.toUpperCase();
+    const templateUrl = STATE_TEMPLATES[stateCode];
+    if (!templateUrl) {
+      return Response.json({ error: `No template available for state: ${deal.state}` }, { status: 400 });
+    }
     
-    // Fetch and process template
-    console.log('[generateLegalAgreement v3.0] Fetching template:', templateUrl);
+    const renderContext = buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDetails);
+    
+    let buyerCompAmount = 0;
+    if (exhibit_a.buyer_commission_type === 'flat') {
+      buyerCompAmount = exhibit_a.buyer_flat_fee || exhibit_a.buyer_commission_amount || 5000;
+    } else if (exhibit_a.buyer_commission_type === 'percentage') {
+      buyerCompAmount = exhibit_a.buyer_commission_percentage || exhibit_a.buyer_commission_amount || 3;
+    }
+    
+    const inputData = JSON.stringify({
+      state_code: stateCode,
+      template_url: templateUrl,
+      deal_fields: { id: deal.id, state: deal.state, city: deal.city, county: deal.county, zip: deal.zip, property_address: deal.property_address },
+      investor_fields: { full_name: profile.full_name, email: profile.email },
+      agent_fields: { full_name: agentProfile.full_name, license_number: agentProfile.agent?.license_number || agentProfile.license_number, brokerage: agentProfile.agent?.brokerage || agentProfile.broker },
+      exhibit_a: exhibit_a,
+      version: '2.5-draft-flow'
+    });
+    const renderInputHash = await sha256(inputData);
+    
+    // Check for existing agreement
+    let toVoidEnvelopeId = null;
+    let existingAgreementId = null;
+
+    const existing = room_id
+      ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
+      : deal_id 
+        ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1)
+        : [];
+    
+    if (existing.length > 0) {
+      const existingAgreement = existing[0];
+      existingAgreementId = existingAgreement.id;
+      toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
+      
+      if (existingAgreement.render_input_hash === renderInputHash && 
+          existingAgreement.final_pdf_url && 
+          existingAgreement.docusign_envelope_id &&
+          existingAgreement.status !== 'superseded' &&
+          existingAgreement.status !== 'voided') {
+        console.log('[generateLegalAgreement v2.5] Returning existing agreement');
+        return Response.json({ success: true, agreement: existingAgreement, regenerated: false });
+      }
+    }
+    
+    // Fetch template
+    console.log('[generateLegalAgreement v2.5] Fetching template:', templateUrl);
     const templateBytes = await fetchTemplate(templateUrl);
+    
+    // Extract text
     const pdfData = await pdfParse(new Uint8Array(templateBytes));
-    let text = pdfData.text;
+    let templateText = pdfData.text;
     
     // Replace placeholders
-    text = text.replace(/\{([A-Z0-9_]+)\}/g, (m, token) => {
-      const val = renderContext[token];
-      if (val !== undefined && val !== null && val !== '' && val !== 'N/A' && (val !== 'TBD' || (!fillAgent && ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME'].includes(token)))) return String(val);
-      return m;
-    });
+    const missingTokens = new Set();
+    const foundTokens = new Set();
     
-    text = normalizeWinAnsi(text);
-    text = normalizeSignatureSection(text);
+    const platformDefaults = {
+      PLATFORM_NAME: 'investor konnect',
+      PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+      PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    };
+    for (const k of Object.keys(platformDefaults)) { if (!renderContext[k]) renderContext[k] = platformDefaults[k]; }
+
+    templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
+      const value = renderContext[token];
+      const isTBD = value === 'TBD';
+      const isAgentField = ['AGENT_LEGAL_NAME', 'LICENSE_NUMBER', 'BROKERAGE_NAME', 'AGENT_EMAIL', 'AGENT_PHONE'].includes(token);
+      const allowTBD = isTBD && isAgentField && !fillAgentDetails;
+      
+      if (value !== undefined && value !== null && value !== '' && value !== 'N/A' && (value !== 'TBD' || allowTBD)) {
+        foundTokens.add(token);
+        return String(value);
+      } else {
+        missingTokens.add(token);
+        return match;
+      }
+    });
+
+    if (missingTokens.size > 0) {
+      return Response.json({
+        error: `Missing required fields for contract: ${Array.from(missingTokens).join(', ')}`,
+        missing_placeholders: Array.from(missingTokens)
+      }, { status: 400 });
+    }
+    
+    templateText = normalizeWinAnsi(templateText);
+    templateText = normalizeSignatureSection(templateText);
     
     // Verify anchors
-    const anchors = ['INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE', 'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'];
-    const missing = anchors.filter(a => !text.includes('[[' + a + ']]'));
-    if (missing.length) return Response.json({ error: 'Missing anchors: ' + missing.join(', ') }, { status: 500 });
+    const requiredAnchors = ['INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE', 'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'];
+    const missingAnchors = [];
+    for (const anchor of requiredAnchors) {
+      const anchorString = `[[${anchor}]]`;
+      if (!templateText.includes(anchorString)) {
+        missingAnchors.push(anchor);
+      }
+    }
+    
+    if (missingAnchors.length > 0) {
+      return Response.json({ error: `DocuSign anchor verification failed: Missing: ${missingAnchors.join(', ')}` }, { status: 500 });
+    }
     
     // Generate PDFs
-    console.log('[generateLegalAgreement v3.0] Generating PDFs...');
-    const [humanBytes, dsBytes] = await Promise.all([generatePdf(text, deal.id, false), generatePdf(text, deal.id, true)]);
-    const humanHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', humanBytes))).map(b => b.toString(16).padStart(2, '0')).join('');
-    const dsHash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256', dsBytes))).map(b => b.toString(16).padStart(2, '0')).join('');
-    
-    // Upload
-    const [humanUp, dsUp] = await Promise.all([
-      base44.integrations.Core.UploadFile({ file: new File([new Blob([humanBytes], { type: 'application/pdf' })], 'agreement_' + deal.id + '_human.pdf') }),
-      base44.integrations.Core.UploadFile({ file: new File([new Blob([dsBytes], { type: 'application/pdf' })], 'agreement_' + deal.id + '_ds.pdf') })
+    console.log('[generateLegalAgreement v2.5] Generating PDFs...');
+    const [humanPdfBytes, docusignPdfBytes] = await Promise.all([
+      generatePdfFromText(templateText, deal.id, false),
+      generatePdfFromText(templateText, deal.id, true)
     ]);
-    console.log('[generateLegalAgreement v3.0] PDFs uploaded');
     
-    // DocuSign
-    const conn = await getDocuSignConnection(base44);
+    const humanHashBuffer = await crypto.subtle.digest('SHA-256', humanPdfBytes);
+    const humanPdfSha256 = Array.from(new Uint8Array(humanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     
-    // Void old if needed
-    if (toVoidId) {
+    const docusignHashBuffer = await crypto.subtle.digest('SHA-256', docusignPdfBytes);
+    const docusignPdfSha256 = Array.from(new Uint8Array(docusignHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    // Upload PDFs
+    const humanBlob = new Blob([humanPdfBytes], { type: 'application/pdf' });
+    const humanFile = new File([humanBlob], `agreement_${deal.id}_human.pdf`);
+    const docusignBlob = new Blob([docusignPdfBytes], { type: 'application/pdf' });
+    const docusignFile = new File([docusignBlob], `agreement_${deal.id}_docusign_${docusignPdfSha256.substring(0, 8)}.pdf`);
+    
+    const [humanUpload, docusignUpload] = await Promise.all([
+      base44.integrations.Core.UploadFile({ file: humanFile }),
+      base44.integrations.Core.UploadFile({ file: docusignFile })
+    ]);
+    
+    console.log('[generateLegalAgreement v2.5] PDFs uploaded');
+    
+    // Create DocuSign envelope
+    const connection = await getDocuSignConnection(base44);
+    const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
+    
+    // Void old envelope if exists
+    if (toVoidEnvelopeId) {
       try {
-        const statusRes = await fetch(conn.base_uri + '/restapi/v2.1/accounts/' + conn.account_id + '/envelopes/' + toVoidId, { headers: { 'Authorization': 'Bearer ' + conn.access_token } });
-        if (statusRes.ok) {
-          const st = (await statusRes.json()).status?.toLowerCase();
-          if (['sent', 'delivered'].includes(st)) {
-            await fetch(conn.base_uri + '/restapi/v2.1/accounts/' + conn.account_id + '/envelopes/' + toVoidId, {
-              method: 'PUT', headers: { 'Authorization': 'Bearer ' + conn.access_token, 'Content-Type': 'application/json' },
-              body: JSON.stringify({ status: 'voided', voidedReason: 'Regenerated' })
+        const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
+        const statusResp = await fetch(statusUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } });
+        
+        if (statusResp.ok) {
+          const statusData = await statusResp.json();
+          const currentStatus = statusData.status?.toLowerCase();
+          
+          if (['sent', 'delivered'].includes(currentStatus)) {
+            await fetch(statusUrl, {
+              method: 'PUT',
+              headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+              body: JSON.stringify({ status: 'voided', voidedReason: `Regenerated on ${new Date().toISOString()}` })
             });
           }
         }
-      } catch (e) { console.warn('[generateLegalAgreement v3.0] Void failed:', e?.message); }
+      } catch (e) {
+        console.warn('[generateLegalAgreement v2.5] Void failed:', e?.message);
+      }
     }
     
-    const ts = Date.now();
-    const invClientId = 'investor-' + deal.id + '-' + ts;
-    const agentClientId = 'agent-' + deal.id + '-' + ts;
+    const timestamp = Date.now();
+    const investorClientUserId = `investor-${deal.id}-${timestamp}`;
+    const agentClientUserId = `agent-${deal.id}-${timestamp}`;
     
+    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal.id} - v2.5.pdf`;
     const signers = [];
+    
     if (signer_mode === 'investor_only' || signer_mode === 'both') {
       signers.push({
-        email: profile.email, name: profile.full_name || profile.email, recipientId: '1', routingOrder: '1', clientUserId: invClientId,
+        email: profile.email,
+        name: profile.full_name || profile.email,
+        recipientId: '1',
+        routingOrder: '1',
+        clientUserId: investorClientUserId,
         tabs: {
-          signHereTabs: [{ documentId: '1', anchorString: '[[INVESTOR_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0' }],
-          dateSignedTabs: [{ documentId: '1', anchorString: '[[INVESTOR_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0' }],
-          fullNameTabs: [{ documentId: '1', anchorString: '[[INVESTOR_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', value: profile.full_name || profile.email, locked: true, required: true }]
+          signHereTabs: [{ documentId: '1', anchorString: '[[INVESTOR_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          dateSignedTabs: [{ documentId: '1', anchorString: '[[INVESTOR_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          fullNameTabs: [{ documentId: '1', anchorString: '[[INVESTOR_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Investor Full Name', value: profile.full_name || profile.email, locked: true, required: true, tabLabel: 'investorFullName' }]
         }
       });
     }
+    
     if (signer_mode === 'both' && agentProfile.email && agentProfile.email !== 'TBD') {
       signers.push({
-        email: agentProfile.email, name: agentProfile.full_name || agentProfile.email, recipientId: '2', routingOrder: '2', clientUserId: agentClientId,
+        email: agentProfile.email,
+        name: agentProfile.full_name || agentProfile.email,
+        recipientId: '2',
+        routingOrder: '2',
+        clientUserId: agentClientUserId,
         tabs: {
-          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0' }],
-          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0' }],
-          fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', value: agentProfile.full_name || agentProfile.email, locked: true, required: true }],
+          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
+          fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Agent Full Name', value: agentProfile.full_name || agentProfile.email, locked: true, required: true, tabLabel: 'agentFullName' }],
           textTabs: [
-            { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', value: agentProfile.agent?.license_number || '', required: true },
-            { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', value: agentProfile.agent?.brokerage || '', required: true }
+            { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'License Number', value: agentProfile.agent?.license_number || agentProfile.license_number || '', locked: false, required: true, tabLabel: 'agentLicense' },
+            { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true, name: 'Brokerage', value: agentProfile.agent?.brokerage || agentProfile.broker || '', locked: false, required: true, tabLabel: 'agentBrokerage' }
           ]
         }
       });
     }
     
-    const envDef = {
-      emailSubject: 'Sign Agreement - ' + stateCode,
-      documents: [{ documentBase64: btoa(String.fromCharCode(...new Uint8Array(dsBytes))), name: 'Agreement-' + deal.id + '.pdf', fileExtension: 'pdf', documentId: '1' }],
-      recipients: { signers }, status: 'sent'
+    const envelopeDefinition = {
+      emailSubject: `Sign Agreement - ${stateCode} Deal`,
+      documents: [{ documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))), name: docName, fileExtension: 'pdf', documentId: '1' }],
+      recipients: { signers },
+      status: 'sent'
     };
     
-    let envRes;
-    for (let i = 0; i <= 3; i++) {
-      envRes = await fetch(conn.base_uri + '/restapi/v2.1/accounts/' + conn.account_id + '/envelopes', {
-        method: 'POST', headers: { 'Authorization': 'Bearer ' + conn.access_token, 'Content-Type': 'application/json' },
-        body: JSON.stringify(envDef)
-      });
-      if (envRes.status === 429 && i < 3) { await new Promise(r => setTimeout(r, 1000 * Math.pow(2, i))); continue; }
-      if (!envRes.ok) throw new Error(await envRes.text());
-      break;
+    const createUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes`;
+    
+    let createResponse;
+    let retries = 0;
+    const maxRetries = 5;
+    
+    while (retries <= maxRetries) {
+      try {
+        createResponse = await fetch(createUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(envelopeDefinition)
+        });
+        
+        if (createResponse.status === 429 && retries < maxRetries) {
+          const waitMs = Math.min(1000 * Math.pow(2, retries), 15000);
+          await new Promise(r => setTimeout(r, waitMs));
+          retries++;
+          continue;
+        }
+        
+        if (!createResponse.ok) {
+          const errorText = await createResponse.text();
+          throw new Error(errorText || 'DocuSign envelope creation failed');
+        }
+        
+        break;
+      } catch (err) {
+        if (retries < maxRetries) {
+          const waitMs = Math.min(1000 * Math.pow(2, retries), 15000);
+          await new Promise(r => setTimeout(r, waitMs));
+          retries++;
+          continue;
+        }
+        throw err;
+      }
     }
     
-    const envelope = await envRes.json();
-    console.log('[generateLegalAgreement v3.0] Envelope:', envelope.envelopeId);
+    if (!createResponse) {
+      throw new Error('Failed to create envelope after retries');
+    }
+    
+    const envelope = await createResponse.json();
+    const envelopeId = envelope.envelopeId;
+    
+    console.log('[generateLegalAgreement v2.5] Envelope created:', envelopeId);
     
     // Save agreement
-    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
-      deal_id: deal_id || draft_id, room_id: room_id || null, investor_user_id: user.id, agent_user_id: agentProfile.user_id,
-      investor_profile_id: profile.id, agent_profile_id: agentProfile.id, governing_state: deal.state, property_zip: deal.zip,
-      transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT', property_type: deal.property_type || 'Single Family',
-      agreement_version: '3.0', signer_mode, status: 'sent', template_url: templateUrl,
-      final_pdf_url: humanUp.file_url, pdf_file_url: humanUp.file_url, pdf_sha256: humanHash,
-      docusign_pdf_url: dsUp.file_url, docusign_pdf_sha256: dsHash, signing_pdf_url: dsUp.file_url,
-      render_context_json: renderContext, render_input_hash: inputHash, exhibit_a_terms: exhibit_a,
-      docusign_envelope_id: envelope.envelopeId, docusign_status: 'sent', docusign_last_sent_sha256: dsHash,
+    const agreementData = {
+      deal_id: deal_id || draft_id,
+      room_id: room_id || null,
+      investor_user_id: user.id,
+      agent_user_id: agentProfile.user_id,
+      investor_profile_id: profile.id,
+      agent_profile_id: agentProfile.id,
+      governing_state: deal.state,
+      property_zip: deal.zip,
+      transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
+      property_type: deal.property_type || 'Single Family',
+      investor_status: 'UNLICENSED',
+      deal_count_last_365: 0,
+      agreement_version: '2.5-draft-flow',
+      signer_mode: signer_mode,
+      source_base_agreement_id: body.source_base_agreement_id || null,
+      status: 'sent',
+      template_url: templateUrl,
+      final_pdf_url: humanUpload.file_url,
+      pdf_file_url: humanUpload.file_url,
+      pdf_sha256: humanPdfSha256,
+      docusign_pdf_url: docusignUpload.file_url,
+      docusign_pdf_sha256: docusignPdfSha256,
+      signing_pdf_url: docusignUpload.file_url,
+      render_context_json: renderContext,
+      render_input_hash: renderInputHash,
+      selected_rule_id: stateCode + '_TEMPLATE',
+      selected_clause_ids: {},
+      deep_dive_module_ids: [],
+      exhibit_a_terms: { ...exhibit_a, buyer_commission_amount: buyerCompAmount },
+      rendered_markdown_full: templateText.substring(0, 10000),
+      missing_placeholders: [],
+      docusign_envelope_id: envelopeId,
+      docusign_status: 'sent',
+      docusign_envelope_pdf_hash: docusignPdfSha256,
+      docusign_last_sent_sha256: docusignPdfSha256,
       investor_recipient_id: (signer_mode === 'investor_only' || signer_mode === 'both') ? '1' : null,
-      agent_recipient_id: signer_mode === 'both' ? '2' : null,
-      investor_client_user_id: invClientId, agent_client_user_id: agentClientId,
-      supersedes_agreement_id: existingId || null,
-      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: 'created_' + signer_mode }]
+      agent_recipient_id: (signer_mode === 'both') ? '2' : null,
+      investor_client_user_id: investorClientUserId,
+      agent_client_user_id: agentClientUserId,
+      investor_signing_url: null,
+      agent_signing_url: null,
+      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `envelope_created_${signer_mode}`, details: `Created DocuSign envelope ${envelopeId}` }]
+    };
+    
+    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
+      ...agreementData,
+      investor_signed_at: null,
+      agent_signed_at: null,
+      investor_signed: false,
+      agent_signed: false,
+      is_fully_signed: false,
+      signed_pdf_url: null,
+      signed_pdf_sha256: null,
+      investor_ip: null,
+      agent_ip: null,
+      supersedes_agreement_id: existingAgreementId || null
     });
     
-    console.log('[generateLegalAgreement v3.0] Agreement created:', agreement.id);
+    console.log('[generateLegalAgreement v2.5] Agreement created:', agreement.id);
     
-    // Update pointers
-    if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
-    else if (deal_id) base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    // Update pointer (don't block)
+    if (room_id) {
+      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    } else if (deal_id) {
+      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    }
     
-    return Response.json({ success: true, agreement, regenerated: true });
+    return Response.json({ success: true, agreement: agreement, regenerated: true });
   } catch (error) {
-    console.error('[generateLegalAgreement v3.0] Error:', error);
+    console.error('[generateLegalAgreement v2.5] Error:', error);
     return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 });

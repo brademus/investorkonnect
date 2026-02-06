@@ -1,32 +1,30 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
+import { CheckCircle, ArrowRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 
 export default function BillingSuccess() {
-  const hasRedirected = useRef(false);
+  const navigate = useNavigate();
+  const { profile, loading } = useCurrentProfile();
 
   useEffect(() => {
     document.title = "Success - Investor Konnect";
-    
-    // Clear profile cache to get fresh subscription status
-    try {
-      sessionStorage.removeItem('profile_cache');
-    } catch (_) {}
-    
-    // Redirect immediately - no need to wait for profile
-    if (!hasRedirected.current) {
-      hasRedirected.current = true;
-      console.log('[BillingSuccess] Redirecting to IdentityVerification');
-      // Use window.location for clean navigation with cleared cache
-      window.location.href = createPageUrl("IdentityVerification");
-    }
   }, []);
 
+  // Auto-redirect to Identity Verification
+  useEffect(() => {
+    if (!loading && profile) {
+      console.log('[BillingSuccess] Auto-redirecting to IdentityVerification');
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+    }
+  }, [loading, profile, navigate]);
+
+  // Always show loading while redirecting
   return (
-    <div className="min-h-screen flex items-center justify-center bg-black">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-        <p className="text-[#E3C567]">Payment successful! Redirecting...</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

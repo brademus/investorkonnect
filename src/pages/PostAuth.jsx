@@ -25,15 +25,12 @@ export default function PostAuth() {
      if (navigated) return; // Prevent re-running if already navigated
 
      let mounted = true;
-     let retryCount = 0;
-     const maxRetries = 2;
-     
      const route = async () => {
        try {
-         // Timeout safeguard - increased for slow connections
+         // Timeout safeguard
          const timeoutId = setTimeout(() => {
-           if (mounted && !navigated) setStatus("Taking longer than expected...");
-         }, 15000);
+           if (mounted) setError("Taking longer than expected...");
+         }, 12000);
 
         // Step 1: Get user
         const user = await base44.auth.me();
@@ -91,10 +88,6 @@ export default function PostAuth() {
           }
         } catch (e) {
           console.error('[PostAuth] Profile error:', e);
-          // Don't fail silently - profile is required
-          if (!profile) {
-            throw new Error('Failed to load or create profile');
-          }
         }
 
         // Parse selectedRole from URL (preselected on landing)
@@ -203,29 +196,16 @@ export default function PostAuth() {
 
       } catch (error) {
         console.error('[PostAuth] Error:', error);
-        
-        // Check if it's a rate limit error - retry with backoff
-        const isRateLimit = error.message?.includes('Rate limit') || error.message?.includes('429');
-        if (isRateLimit && retryCount < maxRetries) {
-          retryCount++;
-          console.log(`[PostAuth] Rate limited, retrying (${retryCount}/${maxRetries}) in 2s...`);
-          if (mounted) setStatus(`Rate limited, retrying (${retryCount}/${maxRetries})...`);
-          await new Promise(r => setTimeout(r, 2000 * retryCount));
-          if (mounted && !navigated) {
-            return route(); // Retry
-          }
-          return;
-        }
-        
         if (mounted) {
-          setError(error.message || 'Authentication failed');
+          // Fallback to Home on error, not Pipeline
+          navigate(createPageUrl("Home"), { replace: true });
         }
       }
     };
 
     route();
     return () => { mounted = false; };
-  }, [navigate, navigated]);
+  }, [navigate]);
 
   if (error) {
     return (

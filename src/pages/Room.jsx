@@ -20,8 +20,7 @@ import { StepGuard } from "@/components/StepGuard";
 import PendingAgentsList from "@/components/PendingAgentsList";
 
 import DocumentChecklist from "@/components/DocumentChecklist";
-import AgreementPanel from "@/components/room/AgreementPanel";
-import KeyTermsPanel from "@/components/room/KeyTermsPanel";
+import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import { PIPELINE_STAGES, normalizeStage, getStageLabel, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
@@ -651,98 +650,87 @@ export default function Room() {
       setRoomLoading(true);
       
       try {
-        const rawRoomResults = await base44.entities.Room.filter({ id: roomId });
-        const rawRoom = rawRoomResults?.[0];
+        // CRITICAL: Always fetch fresh room data directly to avoid stale cached data
+         const rawRoom = (await base44.entities.Room.filter({ id: roomId }))?.[0];
 
-        if (!rawRoom) {
-          setRoomLoading(false);
-          return;
-        }
+         if (!rawRoom) {
+           setRoomLoading(false);
+           return;
+         }
 
-        // Kick off deal + agreement + invites fetch in PARALLEL (don't wait for each)
-        const dealPromise = rawRoom.deal_id 
-          ? base44.functions.invoke('getDealDetailsForUser', { dealId: rawRoom.deal_id }).catch(() => ({ data: null }))
-          : Promise.resolve({ data: null });
-        
-        const agreementPromise = rawRoom.deal_id
-          ? base44.functions.invoke('getLegalAgreement', { deal_id: rawRoom.deal_id, room_id: roomId })
-              .then(res => res)
-              .catch(async () => {
-                // Fallback: try to fetch agreement directly from entity
-                try {
-                  const agreements = await base44.entities.LegalAgreement.filter({ deal_id: rawRoom.deal_id, room_id: roomId });
-                  if (agreements[0]) return { data: { agreement: agreements[0] } };
-                  
-                  // Second fallback: try deal_id only
-                  const dealAgreements = await base44.entities.LegalAgreement.filter({ deal_id: rawRoom.deal_id });
-                  if (dealAgreements[0]) return { data: { agreement: dealAgreements[0] } };
-                } catch (_) {}
-                return { data: null };
-              })
-          : Promise.resolve({ data: null });
-        
-        const invitesPromise = profile?.user_role === 'investor' && rawRoom.deal_id
-          ? base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id }).catch(() => ({ data: null }))
-          : Promise.resolve({ data: null });
+        // MULTI-AGENT: Load invites if this is an investor viewing a deal with multiple agents
+         if (rawRoom.deal_id && profile?.user_role === 'investor') {
+           try {
+             console.log('[Room] Loading invites for deal:', rawRoom.deal_id);
+             const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: rawRoom.deal_id });
+             console.log('[Room] Raw invites response:', invitesRes);
+             let loadedInvites = [];
 
-        // Wait for all in parallel
-        const [dealRes, agRes, invitesRes] = await Promise.all([dealPromise, agreementPromise, invitesPromise]);
+             // Handle different response formats
+             if (invitesRes.data?.invites) {
+               loadedInvites = Array.isArray(invitesRes.data.invites) ? invitesRes.data.invites : [];
+             } else if (Array.isArray(invitesRes.data)) {
+               loadedInvites = invitesRes.data;
+             }
 
-        // Process agreement first (needed by AgreementPanel)
-        if (agRes?.data?.agreement) {
-          console.log('[Room] ✅ Loaded agreement on room init:', agRes.data.agreement.id);
-          setAgreement(agRes.data.agreement);
-        } else {
-          console.log('[Room] ❌ No agreement in agRes:', agRes?.data);
-        }
+             console.log('[Room] Loaded invites before filter:', loadedInvites);
 
-        // Process invites
-        if (profile?.user_role === 'investor' && rawRoom.deal_id) {
-          try {
-            let loadedInvites = [];
-            if (invitesRes?.data?.invites) {
-              loadedInvites = Array.isArray(invitesRes.data.invites) ? invitesRes.data.invites : [];
-            } else if (Array.isArray(invitesRes?.data)) {
-              loadedInvites = invitesRes.data;
-            }
+             // CRITICAL: Filter out expired, voided, and locked invites
+             // Only show active invites (pending signature)
+             loadedInvites = loadedInvites.filter(invite => {
+               const shouldShow = !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status);
+               console.log('[Room] Invite', invite.id, 'status:', invite.status, 'shouldShow:', shouldShow);
+               return shouldShow;
+             });
 
-            // Filter out expired, voided, locked
-            loadedInvites = loadedInvites.filter(invite => !['EXPIRED', 'VOIDED', 'LOCKED'].includes(invite.status));
-            
-            setInvites(loadedInvites);
-            if (loadedInvites.length === 1) {
-              setSelectedInvite(loadedInvites[0]);
-            }
-          } catch (e) {
-            console.error('[Room] Failed to process invites:', e);
-          }
-        }
+             console.log('[Room] Loaded active invites:', loadedInvites.length, loadedInvites);
+             setInvites(loadedInvites);
 
-        // Process deal
+             // Auto-select if only one invite exists
+             if (loadedInvites.length === 1) {
+               console.log('[Room] Auto-selecting single invite');
+               setSelectedInvite(loadedInvites[0]);
+             }
+           } catch (e) {
+             console.error('[Room] Failed to load invites:', e);
+           }
+         }
+
+        // Optimistic hydrate from cache (instant UI) while fetching securely
         if (rawRoom.deal_id) {
           const cached = getCachedDeal(rawRoom.deal_id);
-          const dealData = dealRes?.data || cached;
-
-          if (dealData) {
-            if (dealData.id === rawRoom.deal_id) {
-              // Only cache if IDs match
-              if (!cached) setCachedDeal(rawRoom.deal_id, dealData);
+          if (cached) {
+            // Ensure cached belongs to this deal id (guard against residual cache)
+            if (cached.id !== rawRoom.deal_id) {
+              // ignore wrong cached snapshot
+            } else if (shouldMaskAddress(profile, rawRoom, cached) && cached.property_address) {
+              setDeal({ ...cached, property_address: null });
+            } else {
+              setDeal(cached);
             }
+          }
+
+          // Use server-side access-controlled deal fetch
+          try {
+            const response = await base44.functions.invoke('getDealDetailsForUser', {
+              dealId: rawRoom.deal_id
+            });
+            const dealData = response.data;
             
-            const displayDeal = shouldMaskAddress(profile, rawRoom, dealData) && dealData.property_address 
-              ? { ...dealData, property_address: null } 
-              : dealData;
-            setDeal(displayDeal);
-            
-            const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
-              ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
-              : dealData.title;
-            
-            if (!isStale()) {
+            if (dealData) {
+              setDeal(dealData);
+              setCachedDeal(dealData.id, dealData);
+              
+              const displayTitle = profile?.user_role === 'agent' && !dealData.is_fully_signed
+                ? `${dealData.city || 'City'}, ${dealData.state || 'State'}`
+                : dealData.title;
+              
+              // Ensure we still match current selection
+              if (rid !== roomId) return;
               setCurrentRoom({
                 ...rawRoom,
                 title: displayTitle,
-                property_address: displayDeal.property_address,
+                property_address: shouldMaskAddress(profile, rawRoom, dealData) ? null : dealData.property_address,
                 city: dealData.city,
                 state: dealData.state,
                 county: dealData.county,
@@ -757,21 +745,22 @@ export default function Room() {
                 proposed_terms: dealData.proposed_terms,
                 photos: rawRoom?.photos || [],
                 files: rawRoom?.files || [],
-                counterparty_name: rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
+                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
               });
+            } else {
+              setCurrentRoom(rawRoom);
             }
-          } else if (!isStale()) {
+          } catch (error) {
+            console.error('Failed to fetch deal:', error);
             setCurrentRoom(rawRoom);
           }
-        } else if (!isStale()) {
+        } else {
           setCurrentRoom(rawRoom);
         }
       } catch (error) {
         console.error('Failed to fetch room:', error);
       } finally {
-        if (!isStale()) {
-          setRoomLoading(false);
-        }
+        setRoomLoading(false);
       }
     };
     
@@ -879,7 +868,6 @@ export default function Room() {
     };
 
     loadCounters();
-    console.log('[Room] pendingCounters loaded:', pendingCounters.length);
 
     // Subscribe to LegalAgreement for real-time signature updates
     // STRICTLY prefer room-scoped agreements for effective room
@@ -1007,9 +995,8 @@ export default function Room() {
   }, [messages, roomId, currentRoom?.id]);
 
   // Multi-agent mode: Show pending agents instead of messages for investors with any agents
-  // Exit multi-agent mode ONLY when deal is locked (an agent fully signed)
-  // Accepting a counter offer does NOT exit multi-agent mode - agent still needs to sign
-  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 0 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !deal?.locked_agent_id;
+  // Exit multi-agent mode once deal is locked or this room is fully signed
+  const isMultiAgentMode = profile?.user_role === 'investor' && invites.length > 0 && !deal?.locked_agent_profile_id && !deal?.locked_room_id && !currentRoom?.is_fully_signed;
   
   console.log('[Room] isMultiAgentMode check:', {
     isInvestor: profile?.user_role === 'investor',
@@ -1020,21 +1007,13 @@ export default function Room() {
     result: isMultiAgentMode
   });
 
-  // CRITICAL: Once fully signed (BOTH parties signed), clear invites to hide pending agents
-  // Do NOT clear invites just because investor accepted a counter - agent still needs to sign
+  // CRITICAL: Once fully signed, clear invites immediately to hide pending agents and show only messages
   useEffect(() => {
-    // Only clear invites when agreement is FULLY signed (both investor AND agent)
-    const isFullySigned = 
-      agreement?.status === 'fully_signed' ||
-      (agreement?.investor_signed_at && agreement?.agent_signed_at) ||
-      currentRoom?.agreement_status === 'fully_signed' ||
-      deal?.locked_agent_id; // Deal is locked to an agent = fully signed
-    
-    if (isFullySigned) {
+    if (currentRoom?.is_fully_signed || deal?.is_fully_signed || agreement?.status === 'fully_signed') {
       setInvites([]);
       setSelectedInvite(null);
     }
-  }, [currentRoom?.agreement_status, deal?.locked_agent_id, agreement?.status, agreement?.investor_signed_at, agreement?.agent_signed_at]);
+  }, [currentRoom?.is_fully_signed, deal?.is_fully_signed, agreement?.status]);
 
 
 
@@ -1854,26 +1833,8 @@ export default function Room() {
                                      </h4>
                                      <PendingAgentsList 
                                        invites={invites} 
-                                       onSelectAgent={async (invite) => {
+                                       onSelectAgent={(invite) => {
                                          setSelectedInvite(invite);
-                                         // Load agent-specific room and agreement
-                                         if (invite.room_id) {
-                                           const rooms = await base44.entities.Room.filter({ id: invite.room_id });
-                                           if (rooms[0]) {
-                                             setCurrentRoom(rooms[0]);
-                                           }
-                                           const agreements = await base44.entities.LegalAgreement.filter({ 
-                                             deal_id: currentRoom?.deal_id || deal?.id,
-                                             room_id: invite.room_id 
-                                           });
-                                           const activeAgreement = agreements.find(a => a.status === 'draft') || 
-                                                                   agreements.find(a => a.status === 'sent') ||
-                                                                   agreements.find(a => a.status !== 'voided') || 
-                                                                   agreements[0];
-                                           if (activeAgreement) {
-                                             setAgreement(activeAgreement);
-                                           }
-                                         }
                                          toast.success('Agent selected - you can now review and sign the agreement');
                                        }}
                                        selectedInviteId={selectedInvite?.id}
@@ -2263,113 +2224,54 @@ export default function Room() {
 
           {activeTab === 'agreement' && (
                 <div className="space-y-6">
-                  {/* Key Terms Panel - First */}
-                  {/* CRITICAL: Pass selectedAgentId when investor has selected a specific agent */}
-                  <KeyTermsPanel 
-                    deal={deal}
-                    room={currentRoom}
-                    profile={profile}
-                    agreement={agreement}
-                    selectedAgentId={selectedInvite?.agent_profile_id || currentRoom?.agent_ids?.[0]}
-                  />
-
-                  {/* Pending Counter Offers - Second */}
-                  {pendingCounters.length > 0 && (
-                    <div className="space-y-3">
-                      <h4 className="text-lg font-semibold text-[#FAFAFA]">Pending Counter Offers</h4>
-                      {pendingCounters.map(counter => {
-                        const isForMe = (profile?.user_role === 'agent' && counter.to_role === 'agent') || (profile?.user_role === 'investor' && counter.to_role === 'investor');
-
-                        return (
-                          <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
-                            <p className="text-xs text-[#E3C567] mb-3 font-semibold">
-                              {counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer
-                            </p>
-                            <div className="text-sm text-[#FAFAFA] mb-3">
-                              <p>Buyer Commission: {counter.terms_delta.buyer_commission_type === 'percentage'
-                                ? `${counter.terms_delta.buyer_commission_percentage}%`
-                                : `$${counter.terms_delta.buyer_flat_fee?.toLocaleString()}`}</p>
-                            </div>
-                            {isForMe && (
-                              <div className="flex gap-2">
-                                <Button
-                                  size="sm"
-                                  onClick={async () => {
-                                    try {
-                                      const res = await base44.functions.invoke('acceptCounterOffer', {
-                                        counter_id: counter.id
-                                      });
-                                      if (res.data?.error) {
-                                        toast.error(res.data.error);
-                                        return;
-                                      }
-                                      toast.success('Counter accepted - new agreement generated with updated terms');
-                                      setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
-                                      
-                                      // CRITICAL: Update agreement state with the new agreement from response
-                                      // This ensures KeyTermsPanel gets the updated exhibit_a_terms
-                                      if (res.data?.agreement) {
-                                        console.log('[Room] Setting new agreement from counter acceptance:', res.data.agreement.id);
-                                        setAgreement(res.data.agreement);
-                                        
-                                        // Also update room with new proposed_terms for immediate display
-                                        if (res.data?.new_terms) {
-                                          setCurrentRoom(prev => prev ? {
-                                            ...prev,
-                                            proposed_terms: res.data.new_terms,
-                                            current_legal_agreement_id: res.data.agreement.id
-                                          } : prev);
-                                        }
-                                      }
-                                      
-                                      // Trigger UI refresh
-                                      setAgreementPanelKey(prev => prev + 1);
-                                      await refreshRoomState();
-                                    } catch (e) {
-                                      toast.error('Failed to accept counter');
-                                    }
-                                  }}
-                                  className="flex-1 bg-[#10B981] hover:bg-[#059669] text-white text-xs"
-                                >
-                                  Accept
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  onClick={() => navigate(`${createPageUrl("SendCounter")}?dealId=${currentRoom?.deal_id}&roomId=${roomId}&respondingTo=${counter.id}`)}
-                                  variant="outline"
-                                  className="flex-1 border-[#E3C567] text-[#E3C567] hover:bg-[#E3C567]/10 text-xs"
-                                >
-                                  Counter Back
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-
-                  {/* Agreement Panel - Third (Last) */}
-                  {/* CRITICAL: Pass selectedAgentId to ensure agent-specific agreement is loaded */}
                   {currentRoom?.deal_id ? (
-                             <AgreementPanel
-                               dealId={currentRoom.deal_id}
-                               roomId={selectedInvite?.room_id || roomId}
-                               profile={profile}
-                               initialAgreement={agreement}
-                               selectedAgentId={selectedInvite?.agent_profile_id || currentRoom?.agent_ids?.[0]}
-                               onAgreementChange={(newAg) => {
-                                 setAgreement(newAg);
-                                 // Force key terms to reload by triggering state update
-                                 setAgreementPanelKey(prev => prev + 1);
-                               }}
-                             />
+                     <SimpleAgreementPanel
+                       dealId={currentRoom.deal_id}
+                       roomId={isMultiAgentMode && selectedInvite ? selectedInvite.room_id : roomId}
+                       agreement={isMultiAgentMode && selectedInvite ? { id: selectedInvite.legal_agreement_id } : agreement}
+                       room={currentRoom}
+                       profile={profile}
+                       deal={deal}
+                       pendingCounters={pendingCounters}
+                       setPendingCounters={setPendingCounters}
+                       onInvestorSigned={async () => {
+                         // After investor signs, create invites for all selected agents
+                         if (!currentRoom?.deal_id) return;
+                         try {
+                           console.log('[Room] Investor signed - creating invites for all agents');
+                           const res = await base44.functions.invoke('createInvitesAfterInvestorSign', {
+                             deal_id: currentRoom.deal_id
+                           });
+                           if (res.data?.ok) {
+                             console.log('[Room] Invites created successfully:', res.data.invite_ids);
+                             // Refresh invites and rooms
+                             await Promise.all([
+                               (async () => {
+                                 const invitesRes = await base44.functions.invoke('getDealInvitesForInvestor', { deal_id: currentRoom.deal_id });
+                                 const newInvites = Array.isArray(invitesRes.data?.invites) ? invitesRes.data.invites : Array.isArray(invitesRes.data) ? invitesRes.data : [];
+                                 const activeInvites = newInvites.filter(i => !['EXPIRED', 'VOIDED', 'LOCKED'].includes(i.status));
+                                 setInvites(activeInvites);
+                                 console.log('[Room] Updated invites:', activeInvites);
+                               })(),
+                               (async () => {
+                                 queryClient.invalidateQueries({ queryKey: ['rooms'] });
+                                 queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                               })()
+                             ]);
+                           } else {
+                             console.error('[Room] Invite creation failed:', res.data);
+                           }
+                         } catch (error) {
+                           console.error('[Room] Error creating invites after investor sign:', error);
+                         }
+                       }}
+                     />
                   ) : (
                     <div className="text-center py-8 text-[#808080]">No deal associated with this room</div>
                   )}
 
-                  {/* Legacy Key Terms - keeping for reference but hidden */}
-                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6 hidden">
+                  {/* Key Terms */}
+                  <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
                     <h5 className="text-md font-semibold text-[#FAFAFA] mb-4">Key Terms</h5>
                     <div className="space-y-4">
                       {/* Purchase Price */}
@@ -2423,21 +2325,18 @@ export default function Room() {
                       )}
 
                       {/* Buyer's Agent Commission - Always prefer room-scoped terms */}
-                      {(currentRoom?.proposed_terms?.buyer_commission_type || deal?.proposed_terms?.buyer_commission_type || currentRoom?.proposed_terms?.buyer_commission_percentage || currentRoom?.proposed_terms?.buyer_flat_fee || deal?.proposed_terms?.buyer_commission_percentage || deal?.proposed_terms?.buyer_flat_fee) && (
+                      {(currentRoom?.proposed_terms?.buyer_commission_type || deal?.proposed_terms?.buyer_commission_type) && (
                         <div className="flex items-start gap-3">
                           <div className="w-1.5 h-1.5 rounded-full bg-[#E3C567] mt-2 flex-shrink-0"></div>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-[#808080]">Your Agent Compensation</p>
+                            <p className="text-sm font-medium text-[#808080]">Buyer's Agent Compensation</p>
                             <p className="text-md font-semibold text-[#FAFAFA] mt-1">
-                              {currentRoom?.proposed_terms?.buyer_commission_type === 'percentage'
+                              {(currentRoom?.proposed_terms?.buyer_commission_type === 'percentage'
                                 ? `${currentRoom?.proposed_terms?.buyer_commission_percentage}% of purchase price`
-                                : currentRoom?.proposed_terms?.buyer_commission_type === 'flat_fee'
-                                ? `$${currentRoom?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`
-                                : deal?.proposed_terms?.buyer_commission_type === 'percentage'
+                                : `$${currentRoom?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`) ||
+                               (deal?.proposed_terms?.buyer_commission_type === 'percentage'
                                 ? `${deal?.proposed_terms?.buyer_commission_percentage}% of purchase price`
-                                : deal?.proposed_terms?.buyer_commission_type === 'flat_fee'
-                                ? `$${deal?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`
-                                : '—'}
+                                : `$${deal?.proposed_terms?.buyer_flat_fee?.toLocaleString()} flat fee`)}
                             </p>
                           </div>
                         </div>
@@ -3026,46 +2925,8 @@ export default function Room() {
               {isMultiAgentMode ? (
                 <PendingAgentsList 
                   invites={invites} 
-                  onSelectAgent={async (invite) => {
+                  onSelectAgent={(invite) => {
                     setSelectedInvite(invite);
-                    // CRITICAL: When investor selects an agent, load ONLY that agent's room data
-                    // We need to fully replace the room to avoid mixing data between agents
-                    if (invite.room_id) {
-                      console.log('[Room] Loading agent-specific room:', invite.room_id, 'for agent:', invite.agent_profile_id);
-                      
-                      // Load the specific room for this agent - use the deal_id from current context
-                      const dealId = currentRoom?.deal_id || deal?.id;
-                      const rooms = await base44.entities.Room.filter({ id: invite.room_id });
-                      if (rooms[0]) {
-                        const agentRoom = rooms[0];
-                        console.log('[Room] Loaded agent room - agent_terms:', JSON.stringify(agentRoom.agent_terms));
-                        
-                        // CRITICAL: Replace the current room entirely with the agent-specific room
-                        // This ensures KeyTermsPanel sees the correct agent_terms
-                        setCurrentRoom(agentRoom);
-                      }
-                      
-                      // Also load the agent-specific agreement
-                      const agreements = await base44.entities.LegalAgreement.filter({ 
-                        deal_id: dealId,
-                        room_id: invite.room_id 
-                      });
-                      // Find non-voided agreement for THIS agent
-                      const agentAgreements = agreements.filter(a => 
-                        a.agent_profile_id === invite.agent_profile_id || !a.agent_profile_id
-                      );
-                      const activeAgreement = agentAgreements.find(a => a.status === 'draft') || 
-                                              agentAgreements.find(a => a.status === 'sent') ||
-                                              agentAgreements.find(a => a.status !== 'voided') || 
-                                              agentAgreements[0];
-                      if (activeAgreement) {
-                        console.log('[Room] Loaded agent agreement:', activeAgreement.id, 'terms:', JSON.stringify(activeAgreement.exhibit_a_terms));
-                        setAgreement(activeAgreement);
-                      } else {
-                        // Clear agreement if no agent-specific agreement exists
-                        setAgreement(null);
-                      }
-                    }
                     toast.success('Agent selected - Deal Board is now available');
                   }}
                   selectedInviteId={selectedInvite?.id}

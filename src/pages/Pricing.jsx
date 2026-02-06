@@ -14,7 +14,7 @@ export default function Pricing() {
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState("starter");
   const [subscriptionStatus, setSubscriptionStatus] = useState(null);
-  const [checkingSubscription, setCheckingSubscription] = useState(false);
+  const [checkingSubscription, setCheckingSubscription] = useState(true);
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -34,68 +34,49 @@ export default function Pricing() {
   // Check subscription status when page loads
   useEffect(() => {
     const checkSubscription = async () => {
-      if (loading || !user || !profile) {
+      if (loading) {
         return;
       }
       
-      // Skip redirect for admins - let them view pricing
-      const isAdmin = profile?.role === 'admin';
-      if (isAdmin) {
-        console.log('[Pricing] Admin detected, showing pricing page');
+      if (!user) {
+        setCheckingSubscription(false);
         return;
       }
       
       try {
+        setCheckingSubscription(true);
         console.log('Checking subscription status...');
         
-        // Check profile first for subscription status (faster than API call)
-        const profileSubStatus = profile?.subscription_status;
-        if (profileSubStatus === 'active' || profileSubStatus === 'trialing') {
-          console.log('User has active subscription from profile, redirecting...');
-          if (profile?.user_role === 'agent') {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          } else if (profile?.user_role === 'investor') {
-            navigate(createPageUrl("IdentityVerification"), { replace: true });
-          } else {
-            navigate(createPageUrl("Pipeline"), { replace: true });
-          }
-          return;
-        }
+        const response = await base44.functions.invoke('stripeValidate', {});
         
-        // Only call stripeValidate if profile doesn't show active subscription
-        try {
-          const response = await base44.functions.invoke('stripeValidate', {});
+        if (response?.data?.ok) {
+          const subscription = response.data.subscription;
+          setSubscriptionStatus(subscription?.status || null);
           
-          if (response?.data?.ok) {
-            const subscription = response.data.subscription;
-            setSubscriptionStatus(subscription?.status || null);
+          console.log('Subscription status:', subscription?.status);
+          
+          // If user has active subscription, redirect to appropriate dashboard
+          if (subscription?.status === 'active' || subscription?.status === 'trialing') {
+            console.log('User has active subscription, redirecting...');
             
-            console.log('Subscription status:', subscription?.status);
-            
-            // If user has active subscription, redirect to appropriate dashboard
-            if (subscription?.status === 'active' || subscription?.status === 'trialing') {
-              console.log('User has active subscription, redirecting...');
-              
-              if (profile?.user_role === 'agent') {
-                navigate(createPageUrl("Pipeline"), { replace: true });
-              } else if (profile?.user_role === 'investor') {
-                navigate(createPageUrl("IdentityVerification"), { replace: true });
-              } else {
-                navigate(createPageUrl("Pipeline"), { replace: true });
-              }
+            if (profile?.user_role === 'agent') {
+              navigate(createPageUrl("DashboardAgent"));
+            } else if (profile?.user_role === 'investor') {
+              navigate(createPageUrl("DashboardInvestor"));
+            } else {
+              navigate(createPageUrl("IdentityVerification"));
             }
           }
-        } catch (apiError) {
-          console.warn('stripeValidate API call failed, continuing with page:', apiError.message);
-          // Don't block the page - just show pricing options
         }
       } catch (error) {
         console.error('Subscription check failed:', error);
+      } finally {
+        setCheckingSubscription(false);
       }
     };
 
     checkSubscription();
-  }, [user, profile, loading, navigate]);
+  }, [user, loading]);
 
   const handleSubscribe = async (plan) => {
     if (!user) {
@@ -190,7 +171,16 @@ export default function Pricing() {
     },
   ];
 
-  // Don't block on loading - show pricing page immediately
+  if (loading || checkingSubscription) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-[#E3C567] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-[#808080]">Checking subscription status...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-black">

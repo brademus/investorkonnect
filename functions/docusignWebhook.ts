@@ -472,25 +472,27 @@ Deno.serve(async (req) => {
             }
           }
           
-          // CRITICAL: Auto-convert draft to deal when investor signs base agreement
-          if (!agreement.room_id && agreement.signer_mode === 'investor_only') {
+          // CRITICAL: After investor signs base agreement, create Deal from DealDraft if needed
+          if (signerMode === 'investor_only' && !agreement.room_id && !agreement.deal_id) {
             try {
-              console.log('[DocuSign Webhook] Investor signed base agreement - converting draft to deal');
+              console.log('[DocuSign Webhook] Creating Deal from DealDraft after investor signature');
               
-              const draftId = agreement.deal_id;
-              const draftArr = await base44.asServiceRole.entities.DealDraft.filter({ id: draftId });
+              // Find DealDraft by investor_profile_id (most recent)
+              const drafts = await base44.asServiceRole.entities.DealDraft.filter({
+                investor_profile_id: agreement.investor_profile_id
+              });
               
-              if (draftArr && draftArr.length > 0) {
-                const draft = draftArr[0];
+              if (drafts && drafts.length > 0) {
+                const draft = drafts.sort((a, b) => new Date(b.created_date) - new Date(a.created_date))[0];
                 
-                // Create Deal
-                const dealData = {
-                  title: draft.property_address || `${draft.city}, ${draft.state}`,
+                // Create Deal from DealDraft
+                const newDeal = await base44.asServiceRole.entities.Deal.create({
+                  title: draft.property_address,
                   property_address: draft.property_address,
                   city: draft.city,
                   state: draft.state,
-                  county: draft.county,
                   zip: draft.zip,
+                  county: draft.county,
                   purchase_price: draft.purchase_price,
                   property_type: draft.property_type,
                   property_details: {
@@ -507,66 +509,39 @@ Deno.serve(async (req) => {
                     number_of_signers: draft.number_of_signers,
                     second_signer_name: draft.second_signer_name
                   },
-                  key_dates: {
-                    closing_date: draft.closing_date,
-                    contract_date: draft.contract_date
+                  proposed_terms: {
+                    buyer_commission_type: draft.buyer_commission_type,
+                    buyer_commission_percentage: draft.buyer_commission_percentage,
+                    buyer_flat_fee: draft.buyer_flat_fee,
+                    agreement_length: draft.agreement_length
                   },
-                  contract_url: draft.contract_url,
-                  special_notes: draft.special_notes,
-                  investor_id: draft.investor_profile_id,
-                  selected_agent_ids: draft.selected_agent_ids || [],
                   status: 'active',
                   pipeline_stage: 'new_deals',
+                  investor_id: draft.investor_profile_id,
+                  selected_agent_ids: draft.selected_agent_ids || [],
                   current_legal_agreement_id: agreement.id
-                };
+                });
                 
-                const newDeal = await base44.asServiceRole.entities.Deal.create(dealData);
-                console.log('[DocuSign Webhook] ✓ Deal created:', newDeal.id);
+                console.log('[DocuSign Webhook] ✓ Created Deal:', newDeal.id);
                 
-                // Update agreement to point to new deal
+                // Link agreement to deal
                 await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
                   deal_id: newDeal.id
                 });
                 
-                // Create Rooms and DealInvites for each agent
-                for (const agentId of draft.selected_agent_ids || []) {
-                  const room = await base44.asServiceRole.entities.Room.create({
-                    deal_id: newDeal.id,
-                    investorId: draft.investor_profile_id,
-                    agent_ids: [agentId],
-                    title: newDeal.title,
-                    property_address: draft.property_address,
-                    city: draft.city,
-                    state: draft.state,
-                    county: draft.county,
-                    zip: draft.zip,
-                    budget: draft.purchase_price,
-                    closing_date: draft.closing_date,
-                    contract_url: draft.contract_url,
-                    request_status: 'requested',
-                    agreement_status: 'draft',
-                    requested_at: new Date().toISOString()
-                  });
-                  
-                  await base44.asServiceRole.entities.DealInvite.create({
-                    deal_id: newDeal.id,
-                    investor_id: draft.investor_profile_id,
-                    agent_profile_id: agentId,
-                    room_id: room.id,
-                    legal_agreement_id: agreement.id,
-                    status: 'PENDING_AGENT_SIGNATURE',
-                    created_at_iso: new Date().toISOString()
-                  });
-                  
-                  console.log('[DocuSign Webhook] ✓ Created room and invite for agent:', agentId);
-                }
+                // Create rooms + invites for selected agents
+                await base44.functions.invoke('createInvitesAfterInvestorSign', {
+                  deal_id: newDeal.id
+                });
                 
-                // Delete draft
-                await base44.asServiceRole.entities.DealDraft.delete(draftId);
-                console.log('[DocuSign Webhook] ✓ Draft deleted:', draftId);
+                console.log('[DocuSign Webhook] ✓ Invites created for', draft.selected_agent_ids?.length || 0, 'agents');
+                
+                // Delete DealDraft
+                await base44.asServiceRole.entities.DealDraft.delete(draft.id);
+                console.log('[DocuSign Webhook] ✓ Deleted DealDraft');
               }
             } catch (e) {
-              console.error('[DocuSign Webhook] Error converting draft to deal:', e);
+              console.error('[DocuSign Webhook] Failed to create Deal from DealDraft:', e?.message || e);
             }
           }
         break;

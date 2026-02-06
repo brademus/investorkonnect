@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 
-// Removed useCurrentProfile to avoid rate limits - using direct API calls instead
+import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { StepGuard } from "@/components/StepGuard";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,93 +21,92 @@ import { devLog } from "@/components/devLogger";
  */
 function NDAContent() {
   const navigate = useNavigate();
-  const [loading, setLoading] = useState(true);
-  const [localProfile, setLocalProfile] = useState(null);
+  const { loading, hasNDA, refresh, profile, user, kycVerified, onboarded } = useCurrentProfile();
   const [agreed, setAgreed] = useState(false);
   const [accepting, setAccepting] = useState(false);
   const [error, setError] = useState(null);
-  const hasRedirectedRef = React.useRef(false);
 
-  // Single initialization effect - no useCurrentProfile hook
+  // ADMIN BYPASS: Auto-sign NDA for admin users
   useEffect(() => {
-    document.title = "NDA Required - Investor Konnect";
-    
-    const init = async () => {
-      try {
-        const authUser = await base44.auth.me();
-        if (!authUser) {
-          base44.auth.redirectToLogin(createPageUrl("PostAuth"));
-          return;
-        }
+    const handleAdminNDA = async () => {
+      if (!loading && user?.role === 'admin') {
+        console.log('[NDA] Admin user detected - auto-signing NDA');
         
-        // Admin bypass
-        if (authUser.role === 'admin') {
-          toast.success('Admin access granted');
-          window.location.href = createPageUrl("Pipeline");
-          return;
-        }
-        
-        // Get profile directly
-        let profile = null;
         try {
-          const profiles = await base44.entities.Profile.filter({ user_id: authUser.id });
-          profile = profiles[0];
-        } catch (e) {
-          console.warn('[NDA] Profile fetch failed:', e.message);
-        }
-        
-        if (!profile) {
-          navigate(createPageUrl("PostAuth"), { replace: true });
-          return;
-        }
-        
-        setLocalProfile(profile);
-        
-        // Check if already accepted
-        if (profile.nda_accepted) {
-          hasRedirectedRef.current = true;
-          window.location.href = createPageUrl("Pipeline");
-          return;
-        }
-        
-        // Check onboarding
-        const isOnboarded = !!(profile.onboarding_completed_at || profile.onboarding_version);
-        if (!isOnboarded) {
-          const role = profile.user_role;
-          if (role === 'investor') {
-            navigate(createPageUrl("InvestorOnboarding"), { replace: true });
-          } else if (role === 'agent') {
-            navigate(createPageUrl("AgentOnboarding"), { replace: true });
+          // Auto-sign NDA for admin if not already signed
+          if (profile && !profile.nda_accepted) {
+            await base44.entities.Profile.update(profile.id, {
+              nda_accepted: true,
+              nda_accepted_at: new Date().toISOString(),
+              nda_version: 'v1.0'
+            });
+            await refresh();
           }
-          return;
+          
+          // Redirect to Dashboard
+          toast.success('Admin access granted - NDA bypassed');
+          setTimeout(() => {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }, 500);
+        } catch (err) {
+          console.error('[NDA] Admin auto-sign error:', err);
         }
-        
-        // Check subscription for investors
-        const role = profile.user_role;
-        if (role === 'investor') {
-          const isPaid = profile.subscription_status === 'active' || profile.subscription_status === 'trialing';
-          if (!isPaid) {
-            navigate(createPageUrl("Pricing"), { replace: true });
-            return;
-          }
-        }
-        
-        // Check KYC
-        const kycVerified = profile.identity_status === 'verified' || profile.kyc_status === 'verified' || !!profile.identity_verified_at;
-        if (!kycVerified) {
-          navigate(createPageUrl("IdentityVerification"), { replace: true });
-          return;
-        }
-        
-        setLoading(false);
-      } catch (e) {
-        console.error('[NDA] Init error:', e);
-        navigate(createPageUrl("PostAuth"), { replace: true });
       }
     };
     
-    init();
-  }, [navigate]);
+    handleAdminNDA();
+  }, [loading, user, profile, navigate, refresh]);
+
+  useEffect(() => {
+    document.title = "NDA Required - Investor Konnect";
+  }, []);
+
+  // Redirect incomplete users back to proper step
+  useEffect(() => {
+    if (loading) return;
+    
+    if (!profile) {
+      navigate(createPageUrl("PostAuth"), { replace: true });
+      return;
+    }
+    
+    const role = profile.user_role;
+    
+    if (!onboarded) {
+      if (role === 'investor') {
+        navigate(createPageUrl("InvestorOnboarding"), { replace: true });
+      } else if (role === 'agent') {
+        navigate(createPageUrl("AgentOnboarding"), { replace: true });
+      }
+      return;
+    }
+    
+    // Investor-specific subscription check
+    if (role === 'investor' && !profile.subscription_status) {
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+    
+    if (role === 'investor' && profile.subscription_status !== 'active' && profile.subscription_status !== 'trialing') {
+      navigate(createPageUrl("Pricing"), { replace: true });
+      return;
+    }
+    
+    if (!kycVerified) {
+      navigate(createPageUrl("IdentityVerification"), { replace: true });
+      return;
+    }
+  }, [loading, profile, onboarded, kycVerified, navigate]);
+
+  // Redirect if already accepted (check after loading completes)
+  useEffect(() => {
+    if (!loading && hasNDA) {
+      devLog('[NDA] Already accepted, redirecting to dashboard...');
+      setTimeout(() => {
+        navigate(createPageUrl("Pipeline"), { replace: true });
+      }, 500);
+    }
+  }, [loading, hasNDA, navigate]);
 
 
   const handleAccept = async () => {
@@ -116,29 +115,38 @@ function NDAContent() {
       return;
     }
 
-    devLog('[NDA] Accepting NDA...');
+    devLog('[NDA] 🎯 Accepting NDA...');
     setAccepting(true);
     setError(null);
 
     try {
-      if (!localProfile?.id) {
+      devLog('[NDA] Updating profile directly with NDA acceptance...');
+      
+      // Get fresh profile data to ensure we have the latest
+      let currentProfile = profile;
+      if (!currentProfile?.id) {
+        const profiles = await base44.entities.Profile.filter({ user_id: user?.id });
+        currentProfile = profiles[0];
+      }
+      
+      if (!currentProfile?.id) {
         throw new Error("Profile not available");
       }
       
-      await base44.entities.Profile.update(localProfile.id, {
+      await base44.entities.Profile.update(currentProfile.id, {
         nda_accepted: true,
         nda_accepted_at: new Date().toISOString(),
         nda_version: 'v1.0'
       });
-      devLog('[NDA] Profile updated with NDA flags');
+      devLog('[NDA] ✅ Profile updated with NDA flags');
       
       toast.success("NDA accepted successfully!");
       
-      // Clear cache and navigate
-      try { sessionStorage.removeItem('profile_cache'); } catch (_) {}
+      // Hard navigate to ensure fresh page load with updated profile
+      devLog('[NDA] Navigating to Pipeline...');
       window.location.href = createPageUrl("Pipeline");
     } catch (error) {
-      devLog('[NDA] Exception:', error);
+      devLog('[NDA] ❌ Exception:', error);
       const errorMsg = error.message || "Failed to accept NDA. Please try again.";
       setError(errorMsg);
       toast.error(errorMsg);
@@ -159,7 +167,7 @@ function NDAContent() {
   }
 
   // Already accepted - show success message while redirecting
-  if (localProfile?.nda_accepted) {
+  if (hasNDA) {
     return (
       <div className="ik-shell flex items-center justify-center p-4">
         <div className="text-center max-w-md">

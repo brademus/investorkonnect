@@ -32,7 +32,7 @@ function PipelineContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { profile, loading, refresh, onboarded, user } = useCurrentProfile();
+  const { profile, loading, refresh, onboarded } = useCurrentProfile();
   const triedEnsureProfileRef = useRef(false);
   const dedupRef = useRef(false);
   const [deduplicating, setDeduplicating] = useState(false);
@@ -45,31 +45,24 @@ function PipelineContent() {
 
   // CRITICAL: Redirect to onboarding if not complete
   const hasRedirectedRef = useRef(false);
-  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
-  
   useEffect(() => {
-    if (loadingComplete || hasRedirectedRef.current) return;
+    if (loading || loadingComplete) return;
+    if (hasRedirectedRef.current) return;
     
-    // Still loading - wait
-    if (loading) return;
-
-    // Wait for profile to load - don't redirect if still loading
+    // CRITICAL: Guard against null profile first
     if (!profile) {
-      console.log('[Pipeline] No profile yet, waiting...');
+      hasRedirectedRef.current = true;
+      navigate(createPageUrl("PostAuth"), { replace: true });
       return;
     }
-
-    console.log('[Pipeline] Checking gates - isAdmin:', isAdmin, 'profile.role:', profile?.role, 'user.role:', user?.role);
-
+    
     // Skip all gating for admins
-    if (isAdmin) {
-      console.log('[Pipeline] Admin detected, bypassing all gates');
-      setLoadingComplete(true);
+    if (profile.role === 'admin') {
       return;
     }
-
+    
     if (!onboarded) {
-      const role = profile?.user_role;
+      const role = profile.user_role;
       if (role === 'investor') {
         hasRedirectedRef.current = true;
         navigate(createPageUrl("InvestorOnboarding"), { replace: true });
@@ -81,9 +74,9 @@ function PipelineContent() {
     }
 
     // Strict gating for Pipeline access
-    const role = profile?.user_role;
+    const role = profile.user_role;
 
-    // 1. Subscription (Investors only)
+    // 1. Subscription (Investors)
     const isPaidSubscriber = profile?.subscription_status === 'active' || profile?.subscription_status === 'trialing';
     if (role === 'investor' && !isPaidSubscriber) {
       hasRedirectedRef.current = true;
@@ -111,7 +104,7 @@ function PipelineContent() {
 
     // Mark loading as complete to stop flashing animation
     setLoadingComplete(true);
-  }, [loading, profile, onboarded, navigate, loadingComplete, user, isAdmin]);
+    }, [loading, profile, onboarded, navigate]);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
@@ -155,22 +148,9 @@ function PipelineContent() {
     if (!profile?.id) return;
     (async () => {
       try {
-        // CRITICAL: Only call getStripeIdentityStatus if session_id exists
-        if (profile?.identity_session_id) {
-          const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile.identity_session_id });
-          const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
-          setIdentity({ verificationStatus: status });
-        } else {
-          // No session ID - use profile data directly
-          const fallbackIdentity = {
-            verificationStatus: profile.identity_status === 'approved' || profile.identity_status === 'verified' 
-              ? 'VERIFIED' 
-              : profile.identity_status === 'pending' 
-              ? 'PROCESSING' 
-              : 'NOT_STARTED'
-          };
-          setIdentity(fallbackIdentity);
-        }
+        const { data } = await base44.functions.invoke('getStripeIdentityStatus', { session_id: profile?.identity_session_id });
+        const status = data?.status === 'verified' ? 'VERIFIED' : data?.status === 'processing' ? 'PROCESSING' : 'NOT_STARTED';
+        setIdentity({ verificationStatus: status });
       } catch (e) {
         console.warn('[Pipeline] getStripeIdentityStatus failed:', e);
         // Fallback: use profile data directly
@@ -326,8 +306,25 @@ function PipelineContent() {
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-       console.log('[Pipeline] Returning', dedupedDeals.length, 'deals after deduplication');
-       return dedupedDeals;
+       // CRITICAL: Filter out deals with no agents selected, and delete them
+       const validDeals = [];
+       for (const deal of dedupedDeals) {
+         const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
+         if (hasAgents) {
+           validDeals.push(deal);
+         } else {
+           // Orphaned deal with no agents - delete it
+           console.log('[Pipeline] Deleting orphaned deal with no agents:', deal.id);
+           try {
+             await base44.entities.Deal.delete(deal.id);
+           } catch (e) {
+             console.warn('[Pipeline] Failed to delete orphaned deal:', e);
+           }
+         }
+       }
+
+       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering orphaned deals');
+       return validDeals;
      },
      enabled: !!profile?.id,
      refetchOnWindowFocus: true,
@@ -747,8 +744,8 @@ function PipelineContent() {
         console.error('[Pipeline] Failed to fetch rooms:', e);
       }
 
-      // Fallback - should rarely happen since rooms are pre-created
-      toast.error('Failed to open deal room - no room found');
+      // No rooms found - go to MyAgreement (it will handle signing or showing existing signature)
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
       return;
     }
 
@@ -812,20 +809,17 @@ function PipelineContent() {
         return;
       }
 
-      // CRITICAL: Fetch room directly from database if not in cache yet (multi-agent support)
+      // CRITICAL: Fetch room directly from database if not in cache yet
       try {
         console.log('[Pipeline] Room not in cache, fetching from DB for deal:', deal.deal_id);
         const roomsForDeal = await base44.entities.Room.filter({ 
-          deal_id: deal.deal_id
+          deal_id: deal.deal_id, 
+          agentId: profile.id 
         });
         
-        // Find room where this agent is in the agent_ids array
-        const agentRoom = roomsForDeal.find(r => 
-          r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id)
-        );
-        
-        if (agentRoom) {
-          console.log('[Pipeline] Found room in DB:', agentRoom.id);
+        if (roomsForDeal?.length > 0) {
+          const freshRoom = roomsForDeal[0];
+          console.log('[Pipeline] Found room in DB:', freshRoom.id);
           const masked = {
             id: deal.deal_id,
             title: `${deal.city || 'City'}, ${deal.state || 'State'}`,
@@ -839,7 +833,7 @@ function PipelineContent() {
             is_fully_signed: false,
           };
           setCachedDeal(deal.deal_id, masked);
-          navigate(`${createPageUrl("Room")}?roomId=${agentRoom.id}&tab=agreement`);
+          navigate(`${createPageUrl("Room")}?roomId=${freshRoom.id}&tab=agreement`);
           return;
         }
       } catch (e) {

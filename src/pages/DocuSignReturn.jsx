@@ -1,194 +1,188 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { base44 } from '@/api/base44Client';
-import { createPageUrl } from '@/components/utils';
-import LoadingAnimation from '@/components/LoadingAnimation';
-import { CheckCircle2, XCircle } from 'lucide-react';
+import React, { useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { createPageUrl } from "@/components/utils";
+import { base44 } from "@/api/base44Client";
+import LoadingAnimation from "@/components/LoadingAnimation";
+import { CheckCircle, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DocuSignReturn() {
   const navigate = useNavigate();
-  const [params] = useSearchParams();
-  const [status, setStatus] = useState('processing');
-  const [message, setMessage] = useState('Processing signature...');
+  const [searchParams] = useSearchParams();
+  const [status, setStatus] = useState("processing");
+  const [message, setMessage] = useState("Processing your signature...");
 
   useEffect(() => {
-    const event = params.get('event');
-    const draftId = params.get('draft_id');
-    const dealId = params.get('deal_id');
-    const roomId = params.get('room_id');
-    const role = params.get('role');
-
-    (async () => {
+    const handleReturn = async () => {
       try {
-        // Handle signature events
+        const event = searchParams.get('event');
+        const dealId = searchParams.get('dealId') || searchParams.get('deal_id');
+        const roomId = searchParams.get('roomId');
+
+        console.log('[DocuSignReturn]', { event, dealId, roomId });
+
         if (event === 'signing_complete') {
-          // Investor signed - wait for webhook then convert draft
-          if (role === 'investor' && draftId) {
-            setMessage('Processing your signature...');
-            
-            // Wait for webhook to mark agreement as signed
-            let attempts = 0;
-            const maxAttempts = 15;
-            
-            while (attempts < maxAttempts) {
-              await new Promise(resolve => setTimeout(resolve, 1000));
-              
-              // Check if agreement is signed
-              const agreements = await base44.entities.LegalAgreement.filter({ 
-                deal_id: draftId 
-              });
-              
-              if (agreements.length > 0 && agreements[0].investor_signed_at) {
-                // Agreement signed - now convert draft to deal
-                setMessage('Creating your deal...');
-                
-                const res = await base44.functions.invoke('convertDraftToDeal', {
-                  draft_id: draftId
-                });
+          setMessage("Signature completed! Redirecting...");
+          setStatus("success");
 
-                if (res.status !== 200 || res.data?.error) {
-                  setStatus('error');
-                  setMessage(res.data?.error || 'Failed to create deal');
-                  console.error('[DocuSignReturn] convertDraftToDeal error:', res);
-                  return;
-                }
-
-                setStatus('success');
-                setMessage('Deal created! Agents have been notified.');
-                
-                setTimeout(() => {
-                  navigate(createPageUrl('Pipeline'), { replace: true });
-                }, 1500);
-                return;
-              }
-              
-              attempts++;
+          // Sync agreement status from DocuSign
+          try {
+            if (dealId) {
+              await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
             }
-            
-            // Timeout - webhook may be delayed, try conversion anyway
-            setMessage('Finalizing your deal...');
-            
-            try {
-              const res = await base44.functions.invoke('convertDraftToDeal', {
-                draft_id: draftId
-              });
-
-              if (res.status === 200 && !res.data?.error) {
-                setStatus('success');
-                setMessage('Deal created! Agents have been notified.');
-              } else {
-                setStatus('error');
-                setMessage('Signature confirmed, but deal creation is delayed. Check your pipeline in a moment.');
-              }
-            } catch (e) {
-              setStatus('error');
-              setMessage('Signature confirmed, but deal creation is delayed. Check your pipeline in a moment.');
-            }
-            
-            setTimeout(() => {
-              navigate(createPageUrl('Pipeline'), { replace: true });
-            }, 2000);
-            return;
+          } catch (e) {
+            console.log('[DocuSignReturn] Sync optional');
           }
 
-          // Agent signed
-          if (role === 'agent' && dealId && roomId) {
-            setMessage('Processing your signature...');
-            
-            // Get agreement
-            const agreements = await base44.entities.LegalAgreement.filter({
-              deal_id: dealId,
-              room_id: roomId
-            });
-            const agreement = agreements[0];
+          // Investor signing: wait for automation to create deal, then verify room exists
+           if (dealId && !roomId) {
+             try {
+               console.log('[DocuSignReturn] Investor signature detected - waiting for deal creation automation');
 
-            if (agreement?.agent_signed_at) {
-              // Agent has signed - check if they won
-              const res = await base44.functions.invoke('agentSignAndWinDeal', {
+               // Give the automation time to create the Deal and invites
+               // (createDealOnInvestorSignature runs on LegalAgreement update)
+               let attempts = 0;
+               const maxAttempts = 12; // ~6 seconds with 500ms intervals
+               let rooms = [];
+
+               while (attempts < maxAttempts && rooms.length === 0) {
+                 await new Promise(resolve => setTimeout(resolve, 500));
+                 try {
+                   rooms = await base44.entities.Room.filter({ deal_id: dealId });
+                 } catch (e) {
+                   // Deal might not be queryable yet
+                 }
+                 attempts++;
+               }
+
+               if (rooms?.length > 0) {
+                 console.log('[DocuSignReturn] ✓ Room found after automation, navigating to room');
+                 toast.success('Deal created and sent to agents!');
+                 sessionStorage.removeItem('selectedAgentIds');
+                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+
+                 // Navigate to first room
+                 navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
+                 return;
+               } else {
+                 throw new Error('Room was not created by automation');
+               }
+             } catch (inviteError) {
+               console.error('[DocuSignReturn] Deal creation or room lookup failed:', inviteError);
+               toast.error('Deal created but room not accessible yet. Returning to pipeline...');
+
+               // Still navigate to pipeline since the automation should have created the deal
+               await new Promise(resolve => setTimeout(resolve, 1000));
+               navigate(createPageUrl("Pipeline"), { replace: true });
+               return;
+             }
+           }
+
+          // Agent signing regenerated: void old agreement in this room only
+          if (roomId && dealId) {
+            try {
+              const latest = await base44.entities.LegalAgreement.filter({ 
                 deal_id: dealId,
                 room_id: roomId,
-                agreement_id: agreement.id
-              });
-
-              if (res.data?.locked) {
-                setStatus('error');
-                setMessage('This deal has been locked to another agent');
-                setTimeout(() => {
-                  navigate(createPageUrl('Pipeline'), { replace: true });
-                }, 3000);
-                return;
-              }
-
-              if (res.data?.error) {
-                setStatus('error');
-                setMessage(res.data.error);
-                return;
-              }
-
-              setStatus('success');
-              setMessage('You won the deal! Redirecting...');
+                status: 'fully_signed'
+              }, '-created_date', 1);
               
-              setTimeout(() => {
-                navigate(`${createPageUrl('Room')}?roomId=${roomId}`, { replace: true });
-              }, 2000);
-              return;
+              if (latest?.length > 0) {
+                await base44.functions.invoke('voidOldAgreementForRoom', {
+                  room_id: roomId,
+                  new_agreement_id: latest[0].id
+                }).catch(() => {});
+              }
+            } catch (e) {
+              console.log('[DocuSignReturn] Void skipped');
             }
           }
-        }
+          
+          // Redirect to room or pipeline
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
+          } else if (dealId) {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          } else {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }
+        } else if (event === 'decline' || event === 'cancel') {
+          setMessage("Signature cancelled");
+          setStatus("cancelled");
+          toast.info("Signing cancelled");
 
-        // Handle cancellation
-        if (event === 'cancel' || event === 'decline') {
-          setStatus('cancelled');
-          setMessage('Signing cancelled');
-          setTimeout(() => {
-            if (roomId) {
-              navigate(`${createPageUrl('Room')}?roomId=${roomId}`, { replace: true });
-            } else {
-              navigate(createPageUrl('Pipeline'), { replace: true });
-            }
-          }, 2000);
-          return;
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
+          } else if (dealId) {
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
+          } else {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }
+        } else {
+          setMessage("Redirecting...");
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          if (roomId) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement`, { replace: true });
+          } else if (dealId) {
+            navigate(`${createPageUrl("MyAgreement")}?dealId=${dealId}`, { replace: true });
+          } else {
+            navigate(createPageUrl("Pipeline"), { replace: true });
+          }
         }
-
-        // Default fallback
-        setStatus('error');
-        setMessage('Unknown signature event');
-      } catch (e) {
-        console.error('[DocuSignReturn] Error:', e);
-        setStatus('error');
-        setMessage(e.message || 'Failed to process signature');
+      } catch (error) {
+        console.error('[DocuSignReturn] Error:', error);
+        setStatus("error");
+        setMessage("Something went wrong");
+        toast.error("Failed to process signature");
+        
+        setTimeout(() => {
+          navigate(createPageUrl("Pipeline"));
+        }, 2000);
       }
-    })();
-  }, [params, navigate]);
+    };
+
+    handleReturn();
+  }, [searchParams, navigate]);
 
   return (
     <div className="min-h-screen bg-transparent flex items-center justify-center px-4">
       <div className="text-center max-w-md">
-        {status === 'processing' && (
+        {status === "processing" && (
           <>
-            <LoadingAnimation className="w-48 h-48 mx-auto mb-4" />
-            <p className="text-[#FAFAFA]">{message}</p>
+            <LoadingAnimation className="w-64 h-64 mx-auto mb-4" />
+            <p className="text-sm text-[#808080]">{message}</p>
+          </>
+        )}
+        
+        {status === "success" && (
+          <>
+            <div className="w-20 h-20 bg-[#10B981]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <CheckCircle className="w-12 h-12 text-[#10B981]" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#E3C567] mb-2">Signature Complete!</h2>
+            <p className="text-sm text-[#808080]">{message}</p>
           </>
         )}
 
-        {status === 'success' && (
+        {status === "cancelled" && (
           <>
-            <CheckCircle2 className="w-24 h-24 text-[#10B981] mx-auto mb-4" />
-            <p className="text-[#FAFAFA] text-lg font-semibold">{message}</p>
+            <div className="w-20 h-20 bg-[#808080]/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-12 h-12 text-[#808080]" />
+            </div>
+            <h2 className="text-2xl font-bold text-[#FAFAFA] mb-2">Signature Cancelled</h2>
+            <p className="text-sm text-[#808080]">{message}</p>
           </>
         )}
 
-        {status === 'cancelled' && (
+        {status === "error" && (
           <>
-            <XCircle className="w-24 h-24 text-[#808080] mx-auto mb-4" />
-            <p className="text-[#FAFAFA] text-lg">{message}</p>
-          </>
-        )}
-
-        {status === 'error' && (
-          <>
-            <XCircle className="w-24 h-24 text-red-400 mx-auto mb-4" />
-            <p className="text-red-400 text-lg font-semibold">{message}</p>
+            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-12 h-12 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-red-500 mb-2">Error</h2>
+            <p className="text-sm text-[#808080]">{message}</p>
           </>
         )}
       </div>
