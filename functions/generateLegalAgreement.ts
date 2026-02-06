@@ -379,7 +379,7 @@ Deno.serve(async (req) => {
 
     // Load deal OR build from draft params
     let deal = null;
-    if (useDraftId) {
+    if (useDraftFlow) {
       // Build minimal deal object from request body params for draft flow
       const stateParam = body.state;
       if (!stateParam) {
