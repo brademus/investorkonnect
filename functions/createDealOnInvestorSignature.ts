@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     const draft = drafts[0];
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id);
 
-    // Create the Deal entity (old flow)
+    // Create the Deal entity
     const newDeal = await base44.asServiceRole.entities.Deal.create({
       title: draft.property_address,
       description: draft.special_notes || "",
@@ -153,19 +153,21 @@ Deno.serve(async (req) => {
       pipeline_stage: "new_deals",
       investor_id: draft.investor_profile_id,
       selected_agent_ids: draft.selected_agent_ids || [],
-      pending_agreement_generation: false
+      pending_agreement_generation: false,
+      current_legal_agreement_id: agreementData.id
     });
 
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id);
 
-    // Update the LegalAgreement with the deal_id
+    // Update the LegalAgreement with the NEW deal_id
     await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
-      deal_id: newDeal.id
+      deal_id: newDeal.id,
+      status: 'investor_signed' // Ensure status is correct
     });
 
-    console.log('[createDealOnInvestorSignature] Updated LegalAgreement with deal_id');
+    console.log('[createDealOnInvestorSignature] Updated LegalAgreement with deal_id:', newDeal.id);
 
-    // Create invites for selected agents
+    // Create invites for selected agents - pass the new deal ID
     await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
       deal_id: newDeal.id
     });
