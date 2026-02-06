@@ -84,14 +84,35 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see ALL deals where they have a room (regardless of request_status, city, or address)
-      // CRITICAL: No filtering by address - each room is unique even if same city/state
+      // Agents see ALL deals where they have a room OR are in agent_ids array
+      // CRITICAL: Check BOTH agentId (legacy) AND agent_ids array (multi-agent room)
       // RETRY: Query twice in case rooms were just created and need indexing
+      
+      // Query by legacy agentId
       agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+      
+      // Also query all rooms and filter by agent_ids array (multi-agent support)
+      const allRooms = await base44.asServiceRole.entities.Room.list('-created_date', 200);
+      const roomsWithAgent = allRooms.filter(r => 
+        r.agent_ids?.includes(profile.id) || r.agentId === profile.id
+      );
+      
+      // Merge and dedupe
+      const roomMap = new Map();
+      [...agentRooms, ...roomsWithAgent].forEach(r => roomMap.set(r.id, r));
+      agentRooms = Array.from(roomMap.values());
+      
       if (agentRooms.length === 0) {
         console.log('[getPipelineDealsForUser] No rooms on first query, retrying after 500ms...');
         await new Promise(r => setTimeout(r, 500));
         agentRooms = await base44.entities.Room.filter({ agentId: profile.id });
+        const retryAllRooms = await base44.asServiceRole.entities.Room.list('-created_date', 200);
+        const retryRoomsWithAgent = retryAllRooms.filter(r => 
+          r.agent_ids?.includes(profile.id) || r.agentId === profile.id
+        );
+        const retryMap = new Map();
+        [...agentRooms, ...retryRoomsWithAgent].forEach(r => retryMap.set(r.id, r));
+        agentRooms = Array.from(retryMap.values());
       }
       console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length, 'for agent:', profile.id);
       agentRooms.forEach(r => {
