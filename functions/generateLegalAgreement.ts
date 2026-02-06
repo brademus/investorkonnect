@@ -1,9 +1,14 @@
-// v2.5 - Draft flow support with proper parameter handling
+// =================================================================
+// VERSION 2.6.0 - DRAFT FLOW SUPPORT
+// CRITICAL: Supports both draft_id (pre-signing) and deal_id flows
+// =================================================================
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
 import { fetchTemplate } from './utils/templateCache.js';
 import { getDocuSignConnection, invalidateDocuSignCache } from './utils/docusignCache.js';
 import pdfParse from 'npm:pdf-parse@1.1.1';
+
+const VERSION = '2.6.0-DRAFT-ENABLED';
 
 // State-to-template URL mapping
 const STATE_TEMPLATES = {
