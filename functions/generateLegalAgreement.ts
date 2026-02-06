@@ -330,15 +330,15 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDet
 }
 
 Deno.serve(async (req) => {
-  console.log('[generateLegalAgreement v2.6-DRAFT-FLOW] Starting request...');
+  console.log(`[generateLegalAgreement ${VERSION}] ===== NEW REQUEST =====`);
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
-    console.log('[generateLegalAgreement v2.6] Body keys:', Object.keys(body));
-    console.log('[generateLegalAgreement v2.6] Has draft_id:', !!body.draft_id, 'Has deal_id:', !!body.deal_id);
+    console.log(`[${VERSION}] Body keys:`, Object.keys(body));
+    console.log(`[${VERSION}] draft_id:`, body.draft_id, 'deal_id:', body.deal_id);
     
     const draft_id = body.draft_id || null;
     const deal_id = body.deal_id || null;
@@ -346,15 +346,15 @@ Deno.serve(async (req) => {
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    console.log('[generateLegalAgreement v2.6] Extracted params:', { deal_id, draft_id, room_id, signer_mode });
+    console.log(`[${VERSION}] Params:`, { deal_id, draft_id, room_id, signer_mode });
 
+    // CRITICAL: Accept EITHER draft_id OR deal_id
     if (!deal_id && !draft_id) {
-      console.error('[generateLegalAgreement v2.6] ERROR: Both deal_id and draft_id are missing!');
-      console.error('[generateLegalAgreement v2.6] Full body:', JSON.stringify(body));
+      console.error(`[${VERSION}] VALIDATION FAILED - Missing both IDs`);
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
     
-    console.log('[generateLegalAgreement v2.6] Validation passed - proceeding with', draft_id ? 'draft flow' : 'deal flow');
+    console.log(`[${VERSION}] ✓ Proceeding with ${draft_id ? 'DRAFT' : 'DEAL'} flow`);
     
     // Load investor profile
     let profile = null;
