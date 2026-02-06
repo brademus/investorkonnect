@@ -751,7 +751,7 @@ Deno.serve(async (req) => {
       property_type: deal.property_type || 'Single Family',
       investor_status: 'UNLICENSED',
       deal_count_last_365: 0,
-      agreement_version: '2.5-draft-flow',
+      agreement_version: VERSION,
       signer_mode: signer_mode,
       source_base_agreement_id: body.source_base_agreement_id || null,
       status: 'sent',
