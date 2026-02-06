@@ -93,13 +93,17 @@ Deno.serve(async (req) => {
     console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', gen.status);
 
     if (gen.data?.error) {
+      console.error('[regenerateActiveAgreement] Generation error:', gen.data.error);
       return Response.json({ error: gen.data.error }, { status: 400 });
     }
     
     const newAgreement = gen.data?.agreement;
     if (!newAgreement?.id) {
-      return Response.json({ error: 'Generation failed' }, { status: 500 });
+      console.error('[regenerateActiveAgreement] No agreement returned');
+      return Response.json({ error: 'Generation failed - no agreement returned' }, { status: 500 });
     }
+
+    console.log('[regenerateActiveAgreement] Agreement created:', newAgreement.id);
 
     // Clean new agreement (no signatures yet)
     await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
@@ -122,7 +126,8 @@ Deno.serve(async (req) => {
         current_legal_agreement_id: newAgreement.id
       });
     }
-    // draft_id flow: agreement is linked, will be used to create Deal on signing
+
+    console.log('[regenerateActiveAgreement] Success - returning agreement');
 
     return Response.json({ 
       success: true, 
@@ -131,7 +136,7 @@ Deno.serve(async (req) => {
     });
     
   } catch (error) {
-    console.error('[regenerateActiveAgreement] Error:', error?.message);
+    console.error('[regenerateActiveAgreement] Exception:', error?.message, error?.stack);
     return Response.json({ 
       error: error?.message || 'Failed to regenerate agreement'
     }, { status: 500 });
