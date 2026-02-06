@@ -806,8 +806,8 @@ Deno.serve(async (req) => {
     // Update pointer (don't block)
     if (room_id) {
       base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
-    } else if (deal_id) {
-      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    } else if (!useDraftFlow && effectiveId) {
+      base44.asServiceRole.entities.Deal.update(effectiveId, { current_legal_agreement_id: agreement.id }).catch(() => {});
     }
     
     return Response.json({ success: true, agreement: agreement, regenerated: true });
