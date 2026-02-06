@@ -102,17 +102,28 @@ Deno.serve(async (req) => {
        }
      }
     
-    // Get base investor-signed agreement
-    const baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+    // Get base investor-signed agreement (may have status investor_signed OR sent with investor_signed_at)
+    let baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
       deal_id: deal_id,
       room_id: null,
       status: 'investor_signed'
     }, '-created_date', 1);
     
+    // Fallback: check by investor_signed_at if status not yet updated
+    if (!baseAgreements || baseAgreements.length === 0) {
+      const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
+        deal_id: deal_id,
+        room_id: null
+      }, '-created_date', 5);
+      baseAgreements = allAgreements.filter(a => a.investor_signed_at);
+    }
+    
     const baseAgreement = baseAgreements?.[0];
     if (!baseAgreement) {
+      console.error('[createInvitesAfterInvestorSign] No base agreement found for deal:', deal_id);
       throw new Error('Base agreement not found');
     }
+    console.log('[createInvitesAfterInvestorSign] Found base agreement:', baseAgreement.id, 'status:', baseAgreement.status);
     
     // Update room to point to agreement
     await base44.asServiceRole.entities.Room.update(roomToUse.id, {
