@@ -197,10 +197,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         transaction_type: 'ASSIGNMENT'
       };
 
-      // Call generateLegalAgreement directly for draft flow
+      // CRITICAL: For draft flow, only pass draft_id (NOT deal_id) to avoid 404
+      // deal_id should only be used when an actual Deal entity exists
       const res = await base44.functions.invoke('generateLegalAgreement', {
-        draft_id: draftId,
-        deal_id: dealId,
+        draft_id: draftId || undefined,
+        deal_id: draftId ? undefined : dealId,
         signer_mode: 'investor_only',
         exhibit_a: exhibit_a,
         investor_profile_id: profile?.id,
