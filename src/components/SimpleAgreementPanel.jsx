@@ -197,17 +197,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         transaction_type: 'ASSIGNMENT'
       };
 
-      // Use draftId if deal doesn't exist yet (pre-signing flow), otherwise use dealId
-      const res = await base44.functions.invoke('regenerateActiveAgreement', {
+      // Call generateLegalAgreement directly for draft flow
+      const res = await base44.functions.invoke('generateLegalAgreement', {
         draft_id: draftId,
         deal_id: dealId,
         room_id: roomId || undefined,
+        signer_mode: 'investor_only',
         exhibit_a: exhibit_a,
         investor_profile_id: profile?.id,
         property_address: dealData?.propertyAddress,
         city: dealData?.city,
         state: dealData?.state,
-        zip: dealData?.zip
+        zip: dealData?.zip,
+        county: dealData?.county
       });
 
       toast.dismiss('gen');
