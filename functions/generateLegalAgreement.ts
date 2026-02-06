@@ -514,8 +514,8 @@ Deno.serve(async (req) => {
 
     const existing = room_id
       ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
-      : deal_id 
-        ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: deal_id }, '-created_date', 1)
+      : (!useDraftFlow && effectiveId)
+        ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 1)
         : [];
     
     if (existing.length > 0) {
