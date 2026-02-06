@@ -45,8 +45,13 @@ function PipelineContent() {
 
   // CRITICAL: Redirect to onboarding if not complete
   const hasRedirectedRef = useRef(false);
+  const isAdmin = profile?.role === 'admin' || user?.role === 'admin';
+  
   useEffect(() => {
-    if (loading || loadingComplete || hasRedirectedRef.current) return;
+    if (loadingComplete || hasRedirectedRef.current) return;
+    
+    // Still loading - wait
+    if (loading) return;
 
     // Wait for profile to load - don't redirect if still loading
     if (!profile) {
@@ -54,8 +59,11 @@ function PipelineContent() {
       return;
     }
 
+    console.log('[Pipeline] Checking gates - isAdmin:', isAdmin, 'profile.role:', profile?.role, 'user.role:', user?.role);
+
     // Skip all gating for admins
-    if (profile?.role === 'admin' || user?.role === 'admin') {
+    if (isAdmin) {
+      console.log('[Pipeline] Admin detected, bypassing all gates');
       setLoadingComplete(true);
       return;
     }
@@ -103,7 +111,7 @@ function PipelineContent() {
 
     // Mark loading as complete to stop flashing animation
     setLoadingComplete(true);
-  }, [loading, profile, onboarded, navigate, loadingComplete, user]);
+  }, [loading, profile, onboarded, navigate, loadingComplete, user, isAdmin]);
 
   // Scope caches per logged-in profile to prevent cross-account flicker
   const dealsCacheKey = profile?.id ? `pipelineDealsCache_${profile.id}` : null;
