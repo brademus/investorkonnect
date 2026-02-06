@@ -111,7 +111,18 @@ Deno.serve(async (req) => {
     }
 
     const draft = drafts[0];
-    console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id);
+    const selectedAgents = draft.selected_agent_ids || [];
+    console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
+
+    // Validate that we have agents
+    if (!selectedAgents || selectedAgents.length === 0) {
+      console.error('[createDealOnInvestorSignature] DealDraft has no selected agents!');
+      return Response.json({ 
+        status: 'error', 
+        error: 'no_agents_selected',
+        reason: 'DealDraft has no selected_agent_ids'
+      }, { status: 400 });
+    }
 
     // Create the Deal entity
     const newDeal = await base44.asServiceRole.entities.Deal.create({
@@ -159,10 +170,12 @@ Deno.serve(async (req) => {
       status: "active",
       pipeline_stage: "new_deals",
       investor_id: draft.investor_profile_id,
-      selected_agent_ids: draft.selected_agent_ids || [],
+      selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id
     });
+    
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'with selected_agent_ids:', newDeal.selected_agent_ids);
 
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id);
 
