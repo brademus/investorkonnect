@@ -743,7 +743,7 @@ Deno.serve(async (req) => {
     
     // Save agreement
     const agreementData = {
-      deal_id: deal_id || draft_id,
+      deal_id: effectiveId,
       room_id: room_id || null,
       investor_user_id: user.id,
       agent_user_id: agentProfile.user_id,
