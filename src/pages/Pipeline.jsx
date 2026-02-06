@@ -306,24 +306,16 @@ function PipelineContent() {
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-       // CRITICAL: Filter out deals with no agents selected, and delete them
-       const validDeals = [];
-       for (const deal of dedupedDeals) {
+       // Filter out deals with no agents selected (but don't delete them - let automation handle cleanup)
+       const validDeals = dedupedDeals.filter(deal => {
          const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
-         if (hasAgents) {
-           validDeals.push(deal);
-         } else {
-           // Orphaned deal with no agents - delete it
-           console.log('[Pipeline] Deleting orphaned deal with no agents:', deal.id);
-           try {
-             await base44.entities.Deal.delete(deal.id);
-           } catch (e) {
-             console.warn('[Pipeline] Failed to delete orphaned deal:', e);
-           }
+         if (!hasAgents) {
+           console.log('[Pipeline] Hiding deal with no agents (may still be processing):', deal.id);
          }
-       }
+         return hasAgents;
+       });
 
-       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering orphaned deals');
+       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering');
        return validDeals;
      },
      enabled: !!profile?.id,
