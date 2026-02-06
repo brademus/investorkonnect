@@ -348,49 +348,46 @@ Deno.serve(async (req) => {
 
     console.log(`[${VERSION}] Params:`, { deal_id, draft_id, room_id, signer_mode });
 
-    // CRITICAL: Accept EITHER draft_id OR deal_id
-    if (!deal_id && !draft_id) {
+    // CRITICAL: Accept EITHER draft_id OR deal_id (prioritize draft_id for pre-signing flow)
+    const useDraftId = draft_id && !deal_id;
+    const effectiveId = useDraftId ? draft_id : deal_id;
+
+    if (!effectiveId) {
       console.error(`[${VERSION}] VALIDATION FAILED - Missing both IDs`);
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
-    
-    console.log(`[${VERSION}] ✓ Proceeding with ${draft_id ? 'DRAFT' : 'DEAL'} flow`);
-    
+
+    console.log(`[${VERSION}] ✓ Proceeding with ${useDraftId ? 'DRAFT' : 'DEAL'} flow using ID:`, effectiveId);
+
     // Load investor profile
     let profile = null;
     const investorProfileId = body.investor_profile_id;
-    
+
     if (investorProfileId) {
       const profiles = await base44.asServiceRole.entities.Profile.filter({ id: investorProfileId });
       profile = profiles?.[0];
     }
-    
+
     if (!profile) {
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       profile = profiles?.[0];
     }
-    
+
     if (!profile) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
 
     // Load deal OR build from draft params
     let deal = null;
-    if (deal_id) {
-      const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-      if (!deals || deals.length === 0) {
-        return Response.json({ error: 'Deal not found' }, { status: 404 });
-      }
-      deal = deals[0];
-    } else if (draft_id) {
-      // Build minimal deal object from request body params
+    if (useDraftId) {
+      // Build minimal deal object from request body params for draft flow
       const stateParam = body.state;
       if (!stateParam) {
         return Response.json({ error: 'State required for draft-based generation' }, { status: 400 });
       }
-      
+
       deal = {
-        id: draft_id,
+        id: effectiveId,
         state: stateParam,
         city: body.city || 'TBD',
         county: body.county || 'TBD',
@@ -399,7 +396,14 @@ Deno.serve(async (req) => {
         property_type: body.property_type || 'Single Family',
         transaction_type: 'ASSIGNMENT'
       };
-      console.log('[generateLegalAgreement v2.5] Draft-based deal:', deal);
+      console.log(`[${VERSION}] Draft-based deal:`, deal);
+    } else {
+      // Load existing Deal entity
+      const deals = await base44.asServiceRole.entities.Deal.filter({ id: effectiveId });
+      if (!deals || deals.length === 0) {
+        return Response.json({ error: 'Deal not found' }, { status: 404 });
+      }
+      deal = deals[0];
     }
 
     // Load room if room_id provided
