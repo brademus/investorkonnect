@@ -34,17 +34,18 @@ export default function Pricing() {
   // Check subscription status when page loads
   useEffect(() => {
     const checkSubscription = async () => {
-      if (loading) {
+      if (loading || !user || !profile) {
         return;
       }
       
-      if (!user) {
-        setCheckingSubscription(false);
+      // Skip redirect for admins - let them view pricing
+      const isAdmin = profile?.role === 'admin';
+      if (isAdmin) {
+        console.log('[Pricing] Admin detected, showing pricing page');
         return;
       }
       
       try {
-        setCheckingSubscription(true);
         console.log('Checking subscription status...');
         
         // Check profile first for subscription status (faster than API call)
@@ -90,8 +91,6 @@ export default function Pricing() {
         }
       } catch (error) {
         console.error('Subscription check failed:', error);
-      } finally {
-        setCheckingSubscription(false);
       }
     };
 
