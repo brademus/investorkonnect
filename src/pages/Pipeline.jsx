@@ -744,8 +744,23 @@ function PipelineContent() {
         console.error('[Pipeline] Failed to fetch rooms:', e);
       }
 
-      // No rooms found - go to MyAgreement (it will handle signing or showing existing signature)
-      navigate(`${createPageUrl("MyAgreement")}?dealId=${deal.deal_id}`);
+      // No rooms found - the automation may still be creating the room
+      // Show a toast and wait a bit, then try again
+      toast.info('Deal created but room not accessible yet. Returning to pipeline...');
+      
+      // Wait 3 seconds and refetch
+      setTimeout(async () => {
+        try {
+          const roomsRetry = await base44.entities.Room.filter({ deal_id: deal.deal_id });
+          if (roomsRetry?.length > 0) {
+            navigate(`${createPageUrl("Room")}?roomId=${roomsRetry[0].id}`);
+          } else {
+            // Still no room - refresh queries so it appears when ready
+            queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
+            queryClient.invalidateQueries({ queryKey: ['pipelineDeals', profile?.id, profile?.user_role] });
+          }
+        } catch (_) {}
+      }, 3000);
       return;
     }
 
