@@ -130,11 +130,14 @@ Deno.serve(async (req) => {
       current_legal_agreement_id: baseAgreement.id
     });
 
-    // Update deal
+    // Update deal - ensure it's active and visible in pipeline
     await base44.asServiceRole.entities.Deal.update(deal_id, {
       status: 'active',
-      pipeline_stage: 'new_deals'
+      pipeline_stage: 'new_deals',
+      current_legal_agreement_id: baseAgreement.id
     });
+    
+    console.log('[createInvitesAfterInvestorSign] Updated deal status to active, pipeline_stage to new_deals');
 
     // Create DealInvite records for each agent (so they see it in their inbox)
     const createdInvites = [];
