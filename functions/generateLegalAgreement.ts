@@ -348,16 +348,16 @@ Deno.serve(async (req) => {
 
     console.log(`[${VERSION}] Params:`, { deal_id, draft_id, room_id, signer_mode });
 
-    // CRITICAL: Accept EITHER draft_id OR deal_id (prioritize draft_id for pre-signing flow)
-    const useDraftId = draft_id && !deal_id;
-    const effectiveId = useDraftId ? draft_id : deal_id;
+    // CRITICAL: Prioritize draft_id for pre-signing flow (draft_id means we build deal from params)
+    const useDraftFlow = !!draft_id;
+    const effectiveId = draft_id || deal_id;
 
     if (!effectiveId) {
       console.error(`[${VERSION}] VALIDATION FAILED - Missing both IDs`);
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
 
-    console.log(`[${VERSION}] ✓ Proceeding with ${useDraftId ? 'DRAFT' : 'DEAL'} flow using ID:`, effectiveId);
+    console.log(`[${VERSION}] ✓ Proceeding with ${useDraftFlow ? 'DRAFT' : 'DEAL'} flow using ID:`, effectiveId);
 
     // Load investor profile
     let profile = null;
