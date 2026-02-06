@@ -197,13 +197,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         transaction_type: 'ASSIGNMENT'
       };
 
-      // Call generateLegalAgreement directly for draft flow - use regular invoke (not asServiceRole)
-      console.log('[SimpleAgreementPanel] Calling generateLegalAgreement with params:', {
-        draft_id: draftId,
-        state: dealData?.state,
-        city: dealData?.city
-      });
-
+      // Call generateLegalAgreement directly for draft flow
       const res = await base44.functions.invoke('generateLegalAgreement', {
         draft_id: draftId,
         deal_id: dealId,
@@ -216,8 +210,6 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
         zip: dealData?.zip,
         county: dealData?.county
       });
-
-      console.log('[SimpleAgreementPanel] generateLegalAgreement response:', res.status, res.data?.error || 'success');
 
       toast.dismiss('gen');
 
