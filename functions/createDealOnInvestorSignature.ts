@@ -174,17 +174,20 @@ Deno.serve(async (req) => {
 
     console.log('[createDealOnInvestorSignature] Updated LegalAgreement with deal_id:', newDeal.id);
 
-    // Create invites for selected agents - pass the new deal ID
-    await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
-      deal_id: newDeal.id
-    });
-
-    console.log('[createDealOnInvestorSignature] Created agent invites');
-
-    // Delete the DealDraft
+    // Delete the DealDraft first (before calling invite function)
     await base44.asServiceRole.entities.DealDraft.delete(draft.id);
-
     console.log('[createDealOnInvestorSignature] Deleted DealDraft');
+
+    // Create invites for selected agents - pass the new deal ID
+    // Use try/catch so Deal creation is not rolled back if invite creation fails
+    try {
+      await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
+        deal_id: newDeal.id
+      });
+      console.log('[createDealOnInvestorSignature] Created agent invites');
+    } catch (inviteErr) {
+      console.error('[createDealOnInvestorSignature] Failed to create invites (Deal still created):', inviteErr.message);
+    }
 
     return Response.json({
       status: 'success',
