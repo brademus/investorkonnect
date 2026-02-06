@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
+  console.log('[regenerateActiveAgreement v2.0] Starting...');
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
@@ -9,11 +10,16 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip } = await req.json();
+    const body = await req.json();
+    console.log('[regenerateActiveAgreement] Body keys:', Object.keys(body));
+    
+    const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip, county } = body;
 
     if (!draft_id && !deal_id) {
       return Response.json({ error: 'draft_id or deal_id required' }, { status: 400 });
     }
+
+    console.log('[regenerateActiveAgreement] IDs:', { draft_id, deal_id, room_id });
 
     // Get profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
@@ -22,21 +28,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Profile not found' }, { status: 403 });
     }
 
-    // Load DealDraft (pre-signing flow) or Deal (post-counter flow)
+    // Load context
     let dealContext = null;
     let draftContext = null;
 
     if (draft_id) {
-      // For draft flow, use request params directly - DealDraft may or may not exist yet
-      // The generateLegalAgreement function will use these params
+      // Draft flow - use request params
       draftContext = {
         state: state,
         city: city,
+        county: county,
         zip: zip,
         property_address: property_address,
         investor_profile_id: investor_profile_id || profile?.id
       };
-      console.log('[regenerateActiveAgreement] Using draft context from request params:', draftContext);
+      console.log('[regenerateActiveAgreement] Draft context:', draftContext);
     } else if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
       dealContext = deals?.[0];
@@ -52,8 +58,8 @@ Deno.serve(async (req) => {
       room = rooms?.[0];
     }
 
-    // Build exhibit_a: prefer request param, then room terms, then deal terms
-    const effectiveTerms = exhibit_a || room?.proposed_terms || dealContext?.proposed_terms || draftContext || {};
+    // Build exhibit_a
+    const effectiveTerms = exhibit_a || room?.proposed_terms || dealContext?.proposed_terms || {};
     
     if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
@@ -61,7 +67,9 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // Call generateLegalAgreement - use regular user context for auth
+    console.log('[regenerateActiveAgreement] Calling generateLegalAgreement...');
+
+    // Call generateLegalAgreement
     const gen = await base44.functions.invoke('generateLegalAgreement', {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
@@ -71,15 +79,18 @@ Deno.serve(async (req) => {
         buyer_commission_type: effectiveTerms.buyer_commission_type,
         buyer_commission_percentage: effectiveTerms.buyer_commission_percentage || null,
         buyer_flat_fee: effectiveTerms.buyer_flat_fee || null,
-        agreement_length_days: effectiveTerms.agreement_length || 180,
-        transaction_type: 'ASSIGNMENT'
+        agreement_length_days: effectiveTerms.agreement_length || effectiveTerms.agreement_length_days || 180,
+        transaction_type: effectiveTerms.transaction_type || 'ASSIGNMENT'
       },
       investor_profile_id: investor_profile_id || profile?.id,
       property_address: property_address || draftContext?.property_address || dealContext?.property_address,
       city: city || draftContext?.city || dealContext?.city,
       state: state || draftContext?.state || dealContext?.state,
-      zip: zip || draftContext?.zip || dealContext?.zip
+      zip: zip || draftContext?.zip || dealContext?.zip,
+      county: county || draftContext?.county || dealContext?.county
     });
+    
+    console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', gen.status);
 
     if (gen.data?.error) {
       return Response.json({ error: gen.data.error }, { status: 400 });
