@@ -713,16 +713,42 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                               }
 
                               const newAgreement = genRes.data?.agreement;
-                              if (newAgreement) {
+                              if (newAgreement?.id) {
                                 setLocalAgreement(newAgreement);
-                                // Now sign the new agent_only agreement
-                                await handleSign('agent');
+                                
+                                // CRITICAL: Sign the NEW agent_only agreement directly by ID
+                                // Don't use handleSign which re-fetches and might get the old one
+                                toast.loading('Redirecting to sign...', { id: 'agent-sign2' });
+                                
+                                // Wait for DocuSign envelope to be ready
+                                await new Promise(r => setTimeout(r, 2000));
+                                
+                                const signRes = await base44.functions.invoke('docusignCreateSigningSession', {
+                                  agreement_id: newAgreement.id,
+                                  role: 'agent',
+                                  room_id: roomId,
+                                  redirect_url: window.location.href + '&signed=1'
+                                });
+                                
+                                toast.dismiss('agent-sign2');
+                                
+                                if (signRes.data?.signing_url) {
+                                  window.location.assign(signRes.data.signing_url);
+                                  return;
+                                } else if (signRes.data?.already_signed) {
+                                  toast.success('Already signed');
+                                  setBusy(false);
+                                } else {
+                                  toast.error(signRes.data?.error || 'Failed to start signing');
+                                  setBusy(false);
+                                }
                               } else {
                                 toast.error('Failed to prepare agreement');
                                 setBusy(false);
                               }
                             } catch (e) {
                               toast.dismiss('agent-sign');
+                              toast.dismiss('agent-sign2');
                               toast.error(e?.response?.data?.error || 'Failed to prepare agreement');
                               setBusy(false);
                             }
