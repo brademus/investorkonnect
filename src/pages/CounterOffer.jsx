@@ -133,11 +133,10 @@ export default function CounterOfferPage() {
            return;
          }
 
-         const res = await base44.functions.invoke('createCounterOffer', {
+         const res = await base44.functions.invoke('sendCounterOffer', {
            deal_id: dealId,
            room_id: roomId,
-           from_role: profile.user_role,
-           terms_delta: counterTerms,
+           new_terms: counterTerms,
          });
 
          if (res.data?.error) {
