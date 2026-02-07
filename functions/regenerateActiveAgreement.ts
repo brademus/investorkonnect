@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
     }
     console.log('[regenerateActiveAgreement] signer_mode:', signerMode, 'requires_regenerate:', room?.requires_regenerate);
 
-    // Call generateLegalAgreement using the user's auth context (not service role)
-    // so generateLegalAgreement can authenticate the user properly
-    const gen = await base44.functions.invoke('generateLegalAgreement', {
+    // Call generateLegalAgreement using service role since the calling user (agent)
+    // may not own the deal entity, and generateLegalAgreement uses asServiceRole internally
+    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
       room_id: room_id || null,
