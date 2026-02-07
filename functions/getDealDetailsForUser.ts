@@ -66,6 +66,9 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Close the admin bypass block
+    // (admin skips all access checks above)
+
     // Get room to check signature status
     let room = null;
     if (isAgent) {
