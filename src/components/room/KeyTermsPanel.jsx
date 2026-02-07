@@ -106,9 +106,9 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
   }, [deal?.id, room?.id, room?.deal_id, room?.current_legal_agreement_id, room?.proposed_terms, room?.agent_terms, agreement?.id, agreement?.exhibit_a_terms, selectedAgentId]);
 
   const formatComm = (type, percentage, flatFee) => {
-    if (type === 'percentage' && percentage !== undefined) {
+    if (type === 'percentage' && percentage !== undefined && percentage !== null) {
       return `${percentage}%`;
-    } else if (type === 'flat_fee' && flatFee !== undefined) {
+    } else if ((type === 'flat_fee' || type === 'flat') && flatFee !== undefined && flatFee !== null) {
       return `$${flatFee.toLocaleString()}`;
     }
     return 'Not set';
