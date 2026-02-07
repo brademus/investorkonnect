@@ -400,7 +400,7 @@ function PipelineContent() {
   // 3. Load Rooms (to link agents/status)
     const { data: rooms = [], isLoading: loadingRooms, isFetching: fetchingRooms, refetch: refetchRooms } = useQuery({
       queryKey: ['rooms', profile?.id],
-      staleTime: Infinity,
+      staleTime: 30_000,
       gcTime: 30 * 60_000,
      initialData: () => {
        try {
