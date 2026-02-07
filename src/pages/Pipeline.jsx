@@ -600,16 +600,24 @@ function PipelineContent() {
 
   // 5. Merge Data (no automatic dedup - user clicks button if needed)
   const deals = useMemo(() => {
-    // Index rooms by deal_id
+    // Index rooms by deal_id - for agents, also match by agent_ids array
     const roomMap = new Map();
     const rank = (r) => r?.request_status === 'signed' ? 3 : r?.request_status === 'accepted' ? 2 : r?.request_status === 'requested' ? 1 : r?.request_status === 'rejected' ? -1 : 0;
     rooms.forEach(r => {
       if (!r?.deal_id) return;
+      // For agents, only use rooms where they're a participant
+      if (isAgent) {
+        const isAgentInRoom = r.agentId === profile?.id || 
+                              (r.agent_ids && Array.isArray(r.agent_ids) && r.agent_ids.includes(profile?.id));
+        if (!isAgentInRoom) return;
+      }
       const current = roomMap.get(r.deal_id);
       if (!current || rank(r) > rank(current)) {
         roomMap.set(r.deal_id, r);
       }
     });
+    
+    console.log('[Pipeline] Room map has', roomMap.size, 'deals with rooms');
 
     // Index appointments by dealId
     const apptMap = new Map();
