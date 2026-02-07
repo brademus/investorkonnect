@@ -88,18 +88,18 @@ export default function MyAgreement() {
           earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
           number_of_signers: dealData.numberOfSigners,
           second_signer_name: dealData.secondSignerName,
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
+          buyer_commission_type: buyerCommType,
+          buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
           contract_url: dealData.contractUrl || null,
           special_notes: dealData.specialNotes || null,
           closing_date: dealData.closingDate,
           contract_date: dealData.contractDate,
           selected_agent_ids: agentIds,
-          seller_commission_type: dealData.sellerCommissionType,
-          seller_commission_percentage: dealData.sellerCommissionType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: dealData.sellerCommissionType === 'flat_fee' ? Number(dealData.sellerFlatFee) : null
+          seller_commission_type: sellerCommType,
+          seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+          seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null
         });
 
         console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
