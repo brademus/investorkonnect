@@ -254,9 +254,10 @@ function PipelineContent() {
     'WEST VIRGINIA', 'WISCONSIN', 'WYOMING'
   ]);
 
-  // Detect user role
-  const isAgent = profile?.user_role === 'agent';
-  const isInvestor = profile?.user_role === 'investor';
+  // Detect user role - admins are treated as investors for pipeline purposes
+  const isAdmin = profile?.role === 'admin' || profile?.user_role === 'admin';
+  const isAgent = !isAdmin && profile?.user_role === 'agent';
+  const isInvestor = profile?.user_role === 'investor' || isAdmin;
 
   // Setup completion gating (must be 4/4)
   const onboardingComplete = Boolean(profile?.onboarding_completed_at || profile?.onboarding_step === 'basic_complete' || profile?.onboarding_step === 'deep_complete' || profile?.onboarding_version);
