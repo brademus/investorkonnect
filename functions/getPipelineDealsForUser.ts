@@ -84,7 +84,7 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       console.log('[getPipelineDealsForUser] Investor deals - owned:', ownedDeals.length, 'via rooms:', byRooms.filter(Boolean).length, 'via signed agreements:', bySigned.filter(Boolean).length, 'final:', deals.length);
     } else if (isAgent) {
-      // Agents see ALL deals where they have a room OR are in agent_ids array
+      // Agents see ALL deals where they have a room OR are in agent_ids array OR have a DealInvite
       // CRITICAL: Check BOTH agentId (legacy) AND agent_ids array (multi-agent room)
       // RETRY: Query twice in case rooms were just created and need indexing
       
@@ -97,9 +97,16 @@ Deno.serve(async (req) => {
         r.agent_ids?.includes(profile.id) || r.agentId === profile.id
       );
       
+      // Also check for rooms by investorId where this agent is in agent_ids
+      // (Room.agentId might be null in multi-agent setup)
+      const multiAgentRooms = allRooms.filter(r => {
+        if (!r.agent_ids) return false;
+        return Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id);
+      });
+      
       // Merge and dedupe
       const roomMap = new Map();
-      [...agentRooms, ...roomsWithAgent].forEach(r => roomMap.set(r.id, r));
+      [...agentRooms, ...roomsWithAgent, ...multiAgentRooms].forEach(r => roomMap.set(r.id, r));
       agentRooms = Array.from(roomMap.values());
       
       if (agentRooms.length === 0) {
@@ -110,8 +117,12 @@ Deno.serve(async (req) => {
         const retryRoomsWithAgent = retryAllRooms.filter(r => 
           r.agent_ids?.includes(profile.id) || r.agentId === profile.id
         );
+        const retryMultiAgentRooms = retryAllRooms.filter(r => {
+          if (!r.agent_ids) return false;
+          return Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id);
+        });
         const retryMap = new Map();
-        [...agentRooms, ...retryRoomsWithAgent].forEach(r => retryMap.set(r.id, r));
+        [...agentRooms, ...retryRoomsWithAgent, ...retryMultiAgentRooms].forEach(r => retryMap.set(r.id, r));
         agentRooms = Array.from(retryMap.values());
       }
       console.log('[getPipelineDealsForUser] Agent rooms found:', agentRooms.length, 'for agent:', profile.id);
