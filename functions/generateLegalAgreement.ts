@@ -429,7 +429,12 @@ Deno.serve(async (req) => {
     // Resolve agent profile
     let agentProfile = null;
     if (room_id && room) {
-      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.agentId });
+      const agentId = body.agent_profile_id || room.agentId || room.agent_ids?.[0];
+      console.log(`[${VERSION}] Using agentId:`, agentId, 'from agent_profile_id:', body.agent_profile_id, 'room.agentId:', room.agentId, 'room.agent_ids:', room.agent_ids);
+      if (!agentId) {
+        return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
+      }
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
       if (!agentProfiles || agentProfiles.length === 0) {
         return Response.json({ error: 'Agent profile not found for this room' }, { status: 404 });
       }
