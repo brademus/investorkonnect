@@ -694,6 +694,12 @@ Deno.serve(async (req) => {
       });
     }
     
+    console.log(`[${VERSION}] Final signers count: ${signers.length}, signers:`, JSON.stringify(signers.map(s => ({ email: s.email, name: s.name, recipientId: s.recipientId }))));
+    
+    if (signers.length === 0) {
+      return Response.json({ error: `No signers resolved for signer_mode=${signer_mode}. Agent email: ${agentProfile.email}, Agent ID: ${agentProfile.id}` }, { status: 400 });
+    }
+
     const envelopeDefinition = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
       documents: [{ documentBase64: btoa(String.fromCharCode(...new Uint8Array(docusignPdfBytes))), name: docName, fileExtension: 'pdf', documentId: '1' }],
