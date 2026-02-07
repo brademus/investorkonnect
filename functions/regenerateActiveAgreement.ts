@@ -160,8 +160,10 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     console.error('[regenerateActiveAgreement] Exception:', error?.message, error?.stack);
+    // Extract inner error details from Axios response if available
+    const innerError = error?.response?.data?.error || error?.data?.error || error?.message || 'Failed to regenerate agreement';
     return Response.json({ 
-      error: error?.message || 'Failed to regenerate agreement'
+      error: innerError
     }, { status: 500 });
   }
 });
