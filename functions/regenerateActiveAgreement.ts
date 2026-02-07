@@ -87,9 +87,9 @@ Deno.serve(async (req) => {
     }
     console.log('[regenerateActiveAgreement] signer_mode:', signerMode, 'requires_regenerate:', room?.requires_regenerate);
 
-    // Call generateLegalAgreement using service role since the calling user (agent)
-    // may not own the deal entity, and generateLegalAgreement uses asServiceRole internally
-    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
+    // Call generateLegalAgreement - forward the ORIGINAL request headers so the inner
+    // function can authenticate with the same user context
+    const genPayload = {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
       room_id: room_id || null,
@@ -107,7 +107,9 @@ Deno.serve(async (req) => {
       state: state || draftContext?.state || dealContext?.state,
       zip: zip || draftContext?.zip || dealContext?.zip,
       county: county || draftContext?.county || dealContext?.county
-    });
+    };
+    console.log('[regenerateActiveAgreement] Calling generateLegalAgreement with payload keys:', Object.keys(genPayload));
+    const gen = await base44.functions.invoke('generateLegalAgreement', genPayload);
     
     console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', gen.status);
 
