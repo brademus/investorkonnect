@@ -150,8 +150,18 @@ Deno.serve(async (req) => {
         });
       });
 
+      // CRITICAL: Also check Deal.selected_agent_ids array for multi-agent deals
+      // This catches deals where the agent was selected but room hasn't been created yet
+      const dealsWithAgentSelected = await base44.asServiceRole.entities.Deal.list('-created_date', 100);
+      const selectedAgentDeals = dealsWithAgentSelected.filter(d => {
+        if (!d.selected_agent_ids) return false;
+        return Array.isArray(d.selected_agent_ids) && d.selected_agent_ids.includes(profile.id);
+      });
+      console.log('[getPipelineDealsForUser] Deals with this agent in selected_agent_ids:', selectedAgentDeals.length);
+
       const roomDealIds = agentRooms.map(r => r.deal_id).filter(Boolean);
       const inviteDealIds = agentInvites.map(i => i.deal_id).filter(Boolean);
+      const selectedAgentDealIds = selectedAgentDeals.map(d => d.id);
       
       // Also get deals where agent is directly assigned
       const agentDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
