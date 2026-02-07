@@ -104,11 +104,13 @@ export default function CounterOfferPage() {
 
     setBusy(true);
     try {
-      // CRITICAL: Normalize commission type to match backend expectations (percentage or flat)
+      // CRITICAL: Normalize commission type to match what agreement generation expects
+      // generateLegalAgreement checks for 'percentage' or 'flat' in exhibit_a
+      const normalizedType = commissionType === 'percentage' ? 'percentage' : 'flat';
       const counterTerms = {
-        buyer_commission_type: commissionType === 'percentage' ? 'percentage' : 'flat',
-        buyer_commission_percentage: commissionType === 'percentage' ? parseFloat(commissionAmount) : undefined,
-        buyer_flat_fee: commissionType === 'percentage' ? undefined : parseFloat(commissionAmount),
+        buyer_commission_type: normalizedType,
+        buyer_commission_percentage: normalizedType === 'percentage' ? parseFloat(commissionAmount) : null,
+        buyer_flat_fee: normalizedType !== 'percentage' ? parseFloat(commissionAmount) : null,
       };
 
       if (isResponding && respondingTo) {
