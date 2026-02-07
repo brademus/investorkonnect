@@ -288,6 +288,9 @@ function PipelineContent() {
        // PRODUCTION: Server-side access control enforces role-based redaction
        const response = await base44.functions.invoke('getPipelineDealsForUser');
        const deals = response.data?.deals || [];
+       const userRole = response.data?.role;
+       
+       console.log('[Pipeline] Backend returned', deals.length, 'deals for role:', userRole);
 
        console.log('[Pipeline] Loaded', deals.length, 'deals');
 
