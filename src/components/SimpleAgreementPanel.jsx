@@ -684,10 +684,10 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                 <div className="space-y-3">
                   {/* CRITICAL: Show sign/counter buttons when:
                       - signer_mode is 'agent_only' (agent-specific agreement), OR
-                      - signer_mode is 'investor_only' AND investor has signed (agent can now sign the same agreement)
+                      - signer_mode is 'investor_only' AND investor has signed (base agreement - agent signs same envelope)
                       - AND agent hasn't signed yet */}
                   {((localAgreement.signer_mode === 'agent_only') || 
-                    (localAgreement.signer_mode === 'investor_only' && investorSigned)) && 
+                    ((localAgreement.signer_mode === 'investor_only' || !localAgreement.signer_mode) && investorSigned)) && 
                    !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
