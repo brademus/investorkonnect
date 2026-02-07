@@ -58,12 +58,14 @@ Deno.serve(async (req) => {
       room = rooms?.[0];
     }
 
-    // Build exhibit_a
+    // Build exhibit_a - prioritize room terms (updated by counter offers) over deal terms
     const effectiveTerms = exhibit_a || room?.proposed_terms || dealContext?.proposed_terms || {};
+    
+    console.log('[regenerateActiveAgreement] Effective terms:', JSON.stringify(effectiveTerms));
     
     if (!effectiveTerms.buyer_commission_type) {
       return Response.json({ 
-        error: 'Missing buyer commission terms' 
+        error: 'Missing buyer commission terms. Room proposed_terms: ' + JSON.stringify(room?.proposed_terms) + ', Deal proposed_terms: ' + JSON.stringify(dealContext?.proposed_terms)
       }, { status: 400 });
     }
 
