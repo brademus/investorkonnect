@@ -111,7 +111,7 @@ Deno.serve(async (req) => {
         agreement_length_days: effectiveTerms.agreement_length || effectiveTerms.agreement_length_days || 180,
         transaction_type: effectiveTerms.transaction_type || 'ASSIGNMENT'
       },
-      investor_profile_id: investor_profile_id || profile?.id,
+      investor_profile_id: resolvedInvestorProfileId,
       property_address: property_address || draftContext?.property_address || dealContext?.property_address,
       city: city || draftContext?.city || dealContext?.city,
       state: state || draftContext?.state || dealContext?.state,
