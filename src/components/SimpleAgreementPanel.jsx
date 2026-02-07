@@ -171,6 +171,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
 
   // Show regenerate button ONLY when requires_regenerate is true AND investor hasn't signed the NEW agreement
   const canRegenerate = requiresRegenerate && !investorSigned;
+  
+  console.log('[SimpleAgreementPanel] Regenerate check:', {
+    requiresRegenerate,
+    investorSigned,
+    canRegenerate,
+    localRoomRequiresRegenerate: localRoom?.requires_regenerate
+  });
 
   // Show generate form only for initial agreement creation (not after counter acceptance)
   const showGenerateForm = isInvestor && (!localAgreement || localAgreement.status === 'draft') && !requiresRegenerate && !investorSigned;
