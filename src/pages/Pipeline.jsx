@@ -741,9 +741,10 @@ function PipelineContent() {
         .catch(() => {});
     }
 
-    // INVESTOR: Navigate to rooms or agreement page
+    // INVESTOR / ADMIN: Navigate to rooms or agreement page
     if (isInvestor) {
       try {
+        // Use service-level query for admins to find rooms for any deal
         const roomsForDeal = await base44.entities.Room.filter({ deal_id: deal.deal_id });
         if (roomsForDeal?.length > 0) {
           navigate(`${createPageUrl("Room")}?roomId=${roomsForDeal[0].id}`);
