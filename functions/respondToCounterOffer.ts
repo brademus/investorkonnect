@@ -44,19 +44,48 @@ Deno.serve(async (req) => {
         const room = rooms[0];
         
         if (room) {
-          // Merge counter terms into room's proposed_terms (or agent_terms for multi-agent)
+          // Merge counter terms into room's proposed_terms
           const updatedTerms = {
             ...(room.proposed_terms || {}),
             ...(counter.terms_delta || {})
           };
           
+          // Also update agent_terms for each agent in the room
+          const updatedAgentTerms = { ...(room.agent_terms || {}) };
+          for (const agentId of Object.keys(updatedAgentTerms)) {
+            updatedAgentTerms[agentId] = {
+              ...(updatedAgentTerms[agentId] || {}),
+              ...(counter.terms_delta || {})
+            };
+          }
+          
           await base44.asServiceRole.entities.Room.update(counter.room_id, {
             requires_regenerate: true,
             proposed_terms: updatedTerms,
+            agent_terms: updatedAgentTerms,
             agreement_status: 'draft' // Reset to draft since terms changed
           });
           
-          console.log('[respondToCounterOffer] Room updated with requires_regenerate=true and new terms');
+          console.log('[respondToCounterOffer] Room updated with requires_regenerate=true and new terms:', JSON.stringify(updatedTerms));
+          
+          // Also update the Deal entity's proposed_terms so all views stay in sync
+          if (counter.deal_id) {
+            try {
+              const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
+              if (deals?.[0]) {
+                const dealTerms = {
+                  ...(deals[0].proposed_terms || {}),
+                  ...(counter.terms_delta || {})
+                };
+                await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
+                  proposed_terms: dealTerms
+                });
+                console.log('[respondToCounterOffer] Deal proposed_terms synced');
+              }
+            } catch (de) {
+              console.warn('[respondToCounterOffer] Failed to sync deal terms:', de.message);
+            }
+          }
         }
       } catch (e) {
         console.error('[respondToCounterOffer] Failed to update room:', e);
