@@ -518,11 +518,18 @@ Deno.serve(async (req) => {
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
 
-    const existing = room_id
-      ? await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 1)
-      : (!useDraftFlow && effectiveId)
-        ? await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 1)
-        : [];
+    // CRITICAL: When looking for existing agreements, filter by signer_mode too
+    // to avoid returning an investor_only agreement when we need agent_only
+    let existing = [];
+    if (room_id) {
+      const allForRoom = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 5);
+      // Prefer exact signer_mode match first
+      const exactMatch = allForRoom.filter(a => a.signer_mode === signer_mode);
+      existing = exactMatch.length > 0 ? [exactMatch[0]] : (allForRoom.length > 0 ? [allForRoom[0]] : []);
+      console.log(`[${VERSION}] Found ${allForRoom.length} agreements for room, ${exactMatch.length} with matching signer_mode=${signer_mode}`);
+    } else if (!useDraftFlow && effectiveId) {
+      existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 1);
+    }
     
     if (existing.length > 0) {
       const existingAgreement = existing[0];
