@@ -529,13 +529,25 @@ Deno.serve(async (req) => {
       existingAgreementId = existingAgreement.id;
       toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
       
-      if (existingAgreement.render_input_hash === renderInputHash && 
+      // CRITICAL: Only return cached agreement if signer_mode ALSO matches
+      // Otherwise agent_only request would return investor_only agreement from cache
+      const signerModeMatches = existingAgreement.signer_mode === signer_mode;
+      
+      if (signerModeMatches &&
+          existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 
           existingAgreement.docusign_envelope_id &&
           existingAgreement.status !== 'superseded' &&
           existingAgreement.status !== 'voided') {
-        console.log('[generateLegalAgreement v2.5] Returning existing agreement');
+        console.log(`[${VERSION}] Returning existing agreement (signer_mode=${existingAgreement.signer_mode})`);
         return Response.json({ success: true, agreement: existingAgreement, regenerated: false });
+      }
+      
+      console.log(`[${VERSION}] Existing agreement signer_mode=${existingAgreement.signer_mode} vs requested=${signer_mode}, hash match=${existingAgreement.render_input_hash === renderInputHash}, will regenerate`);
+      
+      // Don't void the investor's envelope when creating agent_only agreement
+      if (existingAgreement.signer_mode !== signer_mode) {
+        toVoidEnvelopeId = null;
       }
     }
     
