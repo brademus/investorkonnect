@@ -310,11 +310,12 @@ function PipelineContent() {
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-       // For investors: filter out deals with no agents selected
+       // For investors: filter out deals with no agents selected (unless admin)
        // For agents: show ALL deals they have access to (they're already filtered by backend)
        const isAgentRole = userRole === 'agent' || profile.user_role === 'agent';
-       const validDeals = isAgentRole 
-         ? dedupedDeals // Agents see all deals returned by backend
+       const isAdminRole = userRole === 'admin' || profile.role === 'admin';
+       const validDeals = (isAgentRole || isAdminRole)
+         ? dedupedDeals // Agents and admins see all deals returned by backend
          : dedupedDeals.filter(deal => {
              const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
              if (!hasAgents) {
