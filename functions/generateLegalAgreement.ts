@@ -8,7 +8,7 @@ import { fetchTemplate } from './utils/templateCache.js';
 import { getDocuSignConnection, invalidateDocuSignCache } from './utils/docusignCache.js';
 import pdfParse from 'npm:pdf-parse@1.1.1';
 
-const VERSION = '2.6.0-DRAFT-ENABLED';
+const VERSION = '3.1.0-AGENT-SIGN-FIX';
 
 // State-to-template URL mapping
 const STATE_TEMPLATES = {
