@@ -509,7 +509,8 @@ Deno.serve(async (req) => {
       investor_fields: { full_name: profile.full_name, email: profile.email },
       agent_fields: { full_name: agentProfile.full_name, license_number: agentProfile.agent?.license_number || agentProfile.license_number, brokerage: agentProfile.agent?.brokerage || agentProfile.broker },
       exhibit_a: exhibit_a,
-      version: '2.5-draft-flow'
+      signer_mode: signer_mode,
+      version: '2.5-draft-flow-v2'
     });
     const renderInputHash = await sha256(inputData);
     
