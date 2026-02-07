@@ -132,12 +132,17 @@ Deno.serve(async (req) => {
 
     // Update pointers based on context
     if (room_id && room) {
-      // Room-scoped regenerate (after counter)
-      await base44.asServiceRole.entities.Room.update(room_id, {
+      // Room-scoped regenerate
+      const roomUpdate = {
         current_legal_agreement_id: newAgreement.id,
-        agreement_status: 'draft',
-        requires_regenerate: false
-      });
+        agreement_status: 'draft'
+      };
+      // Only clear requires_regenerate when investor is regenerating after counter acceptance
+      // When agent calls this to create their agent_only agreement, don't touch requires_regenerate
+      if (signerMode === 'investor_only' && room.requires_regenerate) {
+        roomUpdate.requires_regenerate = false;
+      }
+      await base44.asServiceRole.entities.Room.update(room_id, roomUpdate);
     } else if (deal_id && dealContext) {
       // Deal-scoped regenerate
       await base44.asServiceRole.entities.Deal.update(deal_id, {
