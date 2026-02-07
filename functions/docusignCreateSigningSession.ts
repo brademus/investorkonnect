@@ -234,11 +234,13 @@ Deno.serve(async (req) => {
       console.log('[DocuSign] ✓ Agent can sign agent_only agreement');
       
     } else if (signerMode === 'investor_only') {
-      // Only investor can sign
+      // investor_only means only investor was added as a signer in DocuSign
+      // Agents CANNOT sign this envelope - they need a separate agent_only agreement
+      // But if investor has already signed, agents should see "Sign Agreement" which creates their own agreement
       if (role === 'agent') {
-        console.error('[DocuSign] ❌ Agent trying to sign investor_only agreement');
+        console.error('[DocuSign] ❌ Agent trying to sign investor_only agreement - needs agent_only agreement');
         return Response.json({ 
-          error: 'This agreement is for investor signature only. Wait for investor to sign first.',
+          error: 'This agreement only has investor as signer. An agent-specific agreement needs to be generated.',
           code: 'WRONG_SIGNER'
         }, { status: 403 });
       }
