@@ -199,7 +199,7 @@ Deno.serve(async (req) => {
         )
       );
       
-      [...agentDeals, ...fetchedDeals.filter(Boolean), ...byCreator].forEach(d => {
+      [...agentDeals, ...fetchedDeals.filter(Boolean), ...byCreator, ...selectedAgentDeals].forEach(d => {
         if (!d?.id) return;
         const existing = dealMap.get(d.id);
         if (!existing || new Date(d.updated_date || 0) > new Date(existing.updated_date || 0)) {
@@ -209,6 +209,9 @@ Deno.serve(async (req) => {
       deals = Array.from(dealMap.values());
       
       console.log('[getPipelineDealsForUser] Final agent deals:', deals.length);
+      deals.forEach(d => {
+        console.log('[getPipelineDealsForUser] Agent deal:', { id: d.id, title: d.title, status: d.status, selected_agent_ids: d.selected_agent_ids });
+      });
     }
 
     // If no deals found, try a broad fallback: any rooms for this profile, then load those deals
