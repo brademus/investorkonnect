@@ -136,11 +136,11 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] Agreement created:', newAgreement.id);
 
-    // Clean new agreement (no signatures yet)
+    // Clean new agreement (no signatures yet) but keep status as 'sent' since DocuSign envelope is already created
     await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
       investor_signed_at: null,
       agent_signed_at: null,
-      status: 'draft'
+      status: 'sent'
     });
 
     // Update pointers based on context
