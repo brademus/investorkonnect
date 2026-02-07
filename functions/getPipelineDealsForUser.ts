@@ -185,6 +185,7 @@ Deno.serve(async (req) => {
         ...agentDeals.map(d => d.id),
         ...roomDealIds,
         ...inviteDealIds,
+        ...selectedAgentDealIds,
         ...byCreator.map(d => d.id)
       ]);
       
