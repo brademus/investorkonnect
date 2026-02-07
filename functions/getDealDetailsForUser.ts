@@ -65,11 +65,12 @@ Deno.serve(async (req) => {
     // Get room to check signature status
     let room = null;
     if (isAgent) {
-      const rooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        agentId: profile.id 
-      });
-      room = rooms[0];
+      const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+      // Find room where this agent is a participant (legacy agentId or new agent_ids array)
+      room = rooms.find(r => 
+        r.agentId === profile.id || 
+        (Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id))
+      );
     } else if (isInvestor) {
       const rooms = await base44.entities.Room.filter({ 
         deal_id: dealId,
