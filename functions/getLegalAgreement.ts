@@ -110,7 +110,36 @@ Deno.serve(async (req) => {
     });
     
     // Verify access - user must be either investor or agent on this agreement
-    if (agreement.investor_user_id !== user.id && agreement.agent_user_id !== user.id) {
+    // For multi-agent deals, also check if the user's profile is in selected_agent_ids on the deal
+    let hasAccess = agreement.investor_user_id === user.id || agreement.agent_user_id === user.id;
+    
+    if (!hasAccess) {
+      // Get user's profile to check if they're a selected agent
+      const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+      const profile = profiles?.[0];
+      
+      if (profile) {
+        // Check Deal.selected_agent_ids
+        const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+        const deal = deals?.[0];
+        if (deal?.selected_agent_ids?.includes(profile.id)) {
+          hasAccess = true;
+          console.log('[getLegalAgreement] Access granted via selected_agent_ids');
+        }
+        
+        // Also check Room.agent_ids if room_id provided
+        if (!hasAccess && room_id) {
+          const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
+          const room = rooms?.[0];
+          if (room?.agent_ids?.includes(profile.id) || room?.agentId === profile.id) {
+            hasAccess = true;
+            console.log('[getLegalAgreement] Access granted via Room.agent_ids');
+          }
+        }
+      }
+    }
+    
+    if (!hasAccess) {
       console.log('[getLegalAgreement] Access denied - user not authorized');
       return Response.json({ error: 'Not authorized to view this agreement' }, { status: 403 });
     }
