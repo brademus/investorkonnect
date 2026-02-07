@@ -21,10 +21,10 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] IDs:', { draft_id, deal_id, room_id });
 
-    // Get profile
+    // Get calling user's profile
     const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles?.[0];
-    if (!profile) {
+    const callerProfile = profiles?.[0];
+    if (!callerProfile) {
       return Response.json({ error: 'Profile not found' }, { status: 403 });
     }
 
@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
         county: county,
         zip: zip,
         property_address: property_address,
-        investor_profile_id: investor_profile_id || profile?.id
+        investor_profile_id: investor_profile_id || callerProfile?.id
       };
       console.log('[regenerateActiveAgreement] Draft context:', draftContext);
     } else if (deal_id) {
@@ -57,6 +57,16 @@ Deno.serve(async (req) => {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0];
     }
+
+    // CRITICAL: Resolve the correct investor profile ID
+    // The caller might be an agent, so we need to get the investor from the room/deal, not the caller
+    const resolvedInvestorProfileId = investor_profile_id 
+      || room?.investorId 
+      || dealContext?.investor_id 
+      || callerProfile?.id;
+    
+    console.log('[regenerateActiveAgreement] Resolved investor profile:', resolvedInvestorProfileId, 
+      'caller:', callerProfile?.id, 'callerRole:', callerProfile?.user_role);
 
     // Build exhibit_a - prioritize room terms (updated by counter offers) over deal terms
     const effectiveTerms = exhibit_a || room?.proposed_terms || dealContext?.proposed_terms || {};
