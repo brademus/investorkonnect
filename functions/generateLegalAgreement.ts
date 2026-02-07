@@ -784,7 +784,7 @@ Deno.serve(async (req) => {
       docusign_envelope_pdf_hash: docusignPdfSha256,
       docusign_last_sent_sha256: docusignPdfSha256,
       investor_recipient_id: (signer_mode === 'investor_only' || signer_mode === 'both') ? '1' : null,
-      agent_recipient_id: (signer_mode === 'both') ? '2' : null,
+      agent_recipient_id: (signer_mode === 'agent_only') ? '1' : (signer_mode === 'both') ? '2' : null,
       investor_client_user_id: investorClientUserId,
       agent_client_user_id: agentClientUserId,
       investor_signing_url: null,
