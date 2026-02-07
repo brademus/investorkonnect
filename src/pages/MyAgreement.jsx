@@ -55,10 +55,16 @@ export default function MyAgreement() {
         const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
         
         // Build proposed_terms from deal data
+        // CRITICAL: NewDeal saves commission type as 'percentage' or 'flat', normalize here
+        const buyerCommType = dealData.buyerCommissionType || 'percentage';
+        const sellerCommType = dealData.sellerCommissionType || 'percentage';
         const proposedTerms = {
-          buyer_commission_type: dealData.buyerCommissionType,
-          buyer_commission_percentage: dealData.buyerCommissionType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: dealData.buyerCommissionType === 'flat_fee' ? Number(dealData.buyerFlatFee) : null,
+          seller_commission_type: sellerCommType,
+          seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+          seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
+          buyer_commission_type: buyerCommType,
+          buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+          buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
         

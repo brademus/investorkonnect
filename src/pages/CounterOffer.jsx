@@ -112,18 +112,33 @@ export default function CounterOfferPage() {
       };
 
       if (isResponding && respondingTo) {
-        // Responding to an existing counter - use recounter action
-        const res = await base44.functions.invoke('respondToCounterOffer', {
+        // Responding to an existing counter - decline the old one and send a new counter
+        // First decline the existing counter
+        await base44.functions.invoke('respondToCounterOffer', {
           counter_offer_id: respondingTo,
-          action: 'recounter',
-          terms_delta: counterTerms,
+          action: 'decline',
+        });
+
+        // Then send a new counter offer with the new terms
+        if (!roomId) {
+          toast.error('Room ID required to send counter offer');
+          setBusy(false);
+          return;
+        }
+
+        const res = await base44.functions.invoke('sendCounterOffer', {
+          deal_id: dealId,
+          room_id: roomId,
+          new_terms: counterTerms,
         });
 
         if (res.data?.error) {
           toast.error(res.data.error);
-        } else {
+        } else if (res.data?.ok || res.data?.success) {
           toast.success('Counter offer sent');
           setTimeout(() => navigate(-1), 500);
+        } else {
+          toast.error('Failed to send counter');
         }
       } else {
          // Creating new counter - must have room_id to scope to specific agent

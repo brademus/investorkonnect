@@ -63,6 +63,7 @@ Deno.serve(async (req) => {
         investorId: profile.id,
         agent_ids: selectedAgentIds,
         agent_terms: agent_terms,
+        proposed_terms: JSON.parse(JSON.stringify(proposedTerms)),
         agent_agreement_status: selectedAgentIds.reduce((acc, id) => ({ ...acc, [id]: 'sent' }), {}),
         request_status: 'accepted',
         agreement_status: 'sent',
