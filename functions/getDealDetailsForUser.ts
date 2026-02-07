@@ -38,15 +38,19 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
 
+    const isAdmin = profile.role === 'admin' || profile.user_role === 'admin';
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
-    // Verify access rights
-    if (isInvestor && deal.investor_id !== profile.id) {
-      return Response.json({ error: 'Access denied' }, { status: 403 });
+    // Admins bypass access checks
+    if (!isAdmin) {
+      // Verify access rights
+      if (isInvestor && deal.investor_id !== profile.id) {
+        return Response.json({ error: 'Access denied' }, { status: 403 });
+      }
     }
 
-    if (isAgent && deal.agent_id !== profile.id) {
+    if (!isAdmin && isAgent && deal.agent_id !== profile.id) {
       // Check if agent has a room for this deal (legacy agentId or new agent_ids array)
       const agentRooms = await base44.entities.Room.filter({ deal_id: dealId });
       const hasAccess = agentRooms.some(r => 
