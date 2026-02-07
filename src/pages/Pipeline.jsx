@@ -311,7 +311,8 @@ function PipelineContent() {
 
        // For investors: filter out deals with no agents selected
        // For agents: show ALL deals they have access to (they're already filtered by backend)
-       const validDeals = isAgent 
+       const isAgentRole = userRole === 'agent' || profile.user_role === 'agent';
+       const validDeals = isAgentRole 
          ? dedupedDeals // Agents see all deals returned by backend
          : dedupedDeals.filter(deal => {
              const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
@@ -321,7 +322,7 @@ function PipelineContent() {
              return hasAgents;
            });
 
-       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering (role:', isAgent ? 'agent' : 'investor', ')');
+       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering (role:', isAgentRole ? 'agent' : 'investor', ')');
        return validDeals;
      },
      enabled: !!profile?.id,
