@@ -426,10 +426,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve agent profile
+    // Resolve agent profile - check multiple sources for agent ID
     let agentProfile = null;
     if (room_id && room) {
-      const agentId = body.agent_profile_id || room.agentId || room.agent_ids?.[0];
+      const agentId = body.agent_profile_id || room.agentId || (Array.isArray(room.agent_ids) ? room.agent_ids[0] : null);
       console.log(`[${VERSION}] Using agentId:`, agentId, 'from agent_profile_id:', body.agent_profile_id, 'room.agentId:', room.agentId, 'room.agent_ids:', room.agent_ids);
       if (!agentId) {
         return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
