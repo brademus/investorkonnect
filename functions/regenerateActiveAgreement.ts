@@ -21,12 +21,20 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] IDs:', { draft_id, deal_id, room_id });
 
-    // Get calling user's profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    // Get calling user's profile - use service role to avoid permission issues when agent calls
+    console.log('[regenerateActiveAgreement] Looking up caller profile for user:', user.id, user.email);
+    let profiles;
+    try {
+      profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    } catch (e) {
+      console.error('[regenerateActiveAgreement] Profile lookup error:', e?.message);
+      profiles = await base44.entities.Profile.filter({ user_id: user.id });
+    }
     const callerProfile = profiles?.[0];
     if (!callerProfile) {
-      return Response.json({ error: 'Profile not found' }, { status: 403 });
+      return Response.json({ error: 'Profile not found for user ' + user.id }, { status: 403 });
     }
+    console.log('[regenerateActiveAgreement] Caller profile:', callerProfile.id, callerProfile.full_name, callerProfile.user_role);
 
     // Load context
     let dealContext = null;
