@@ -306,16 +306,19 @@ function PipelineContent() {
        const dedupedDeals = Array.from(dealsMap.values())
          .sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
 
-       // Filter out deals with no agents selected (but don't delete them - let automation handle cleanup)
-       const validDeals = dedupedDeals.filter(deal => {
-         const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
-         if (!hasAgents) {
-           console.log('[Pipeline] Hiding deal with no agents (may still be processing):', deal.id);
-         }
-         return hasAgents;
-       });
+       // For investors: filter out deals with no agents selected
+       // For agents: show ALL deals they have access to (they're already filtered by backend)
+       const validDeals = isAgent 
+         ? dedupedDeals // Agents see all deals returned by backend
+         : dedupedDeals.filter(deal => {
+             const hasAgents = deal.selected_agent_ids && Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.length > 0;
+             if (!hasAgents) {
+               console.log('[Pipeline] Hiding deal with no agents (may still be processing):', deal.id);
+             }
+             return hasAgents;
+           });
 
-       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering');
+       console.log('[Pipeline] Returning', validDeals.length, 'deals after filtering (role:', isAgent ? 'agent' : 'investor', ')');
        return validDeals;
      },
      enabled: !!profile?.id,
