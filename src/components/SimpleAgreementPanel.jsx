@@ -683,15 +683,53 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {isAgent && !fullySigned && localAgreement && (
                 <div className="space-y-3">
                   {/* CRITICAL: Show sign/counter buttons when:
-                      - signer_mode is 'agent_only' (agent-specific agreement), OR
-                      - signer_mode is 'investor_only' AND investor has signed (base agreement - agent signs same envelope)
+                      - signer_mode is 'agent_only' (agent-specific agreement) - agent can sign directly
+                      - signer_mode is 'investor_only' AND investor has signed - agent needs to sign (backend will handle envelope routing)
+                      - signer_mode is null/undefined AND investor has signed - legacy agreements
                       - AND agent hasn't signed yet */}
                   {((localAgreement.signer_mode === 'agent_only') || 
                     ((localAgreement.signer_mode === 'investor_only' || !localAgreement.signer_mode) && investorSigned)) && 
                    !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
-                        onClick={() => handleSign('agent')}
+                        onClick={async () => {
+                          // For investor_only agreements, the agent wasn't added as a signer in DocuSign
+                          // We need to generate an agent_only agreement first, then sign it
+                          if (localAgreement.signer_mode === 'investor_only') {
+                            setBusy(true);
+                            toast.loading('Preparing agreement for signing...', { id: 'agent-sign' });
+                            try {
+                              // Generate agent-specific agreement using the same terms
+                              const genRes = await base44.functions.invoke('regenerateActiveAgreement', {
+                                deal_id: dealId,
+                                room_id: roomId
+                              });
+                              toast.dismiss('agent-sign');
+
+                              if (genRes.data?.error) {
+                                toast.error(genRes.data.error);
+                                setBusy(false);
+                                return;
+                              }
+
+                              const newAgreement = genRes.data?.agreement;
+                              if (newAgreement) {
+                                setLocalAgreement(newAgreement);
+                                // Now sign the new agent_only agreement
+                                await handleSign('agent');
+                              } else {
+                                toast.error('Failed to prepare agreement');
+                                setBusy(false);
+                              }
+                            } catch (e) {
+                              toast.dismiss('agent-sign');
+                              toast.error(e?.response?.data?.error || 'Failed to prepare agreement');
+                              setBusy(false);
+                            }
+                          } else {
+                            handleSign('agent');
+                          }
+                        }}
                         disabled={busy}
                         className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black"
                       >
