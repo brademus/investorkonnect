@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = await req.json();
+    const body = JSON.parse(rawBody);
     console.log('[regenerateActiveAgreement] Body keys:', Object.keys(body));
     
     const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip, county } = body;
