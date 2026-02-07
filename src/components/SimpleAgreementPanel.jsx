@@ -675,8 +675,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
               {/* Agent Actions - Only show if not fully signed */}
               {isAgent && !fullySigned && localAgreement && (
                 <div className="space-y-3">
-                  {/* CRITICAL: Check signer_mode to determine correct UI state */}
-                  {localAgreement.signer_mode === 'agent_only' && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
+                  {/* CRITICAL: Show sign/counter buttons when:
+                      - signer_mode is 'agent_only' (agent-specific agreement), OR
+                      - signer_mode is 'investor_only' AND investor has signed (agent can now sign the same agreement)
+                      - AND agent hasn't signed yet */}
+                  {((localAgreement.signer_mode === 'agent_only') || 
+                    (localAgreement.signer_mode === 'investor_only' && investorSigned)) && 
+                   !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
                       <Button
                         onClick={() => handleSign('agent')}
