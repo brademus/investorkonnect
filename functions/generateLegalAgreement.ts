@@ -668,12 +668,12 @@ Deno.serve(async (req) => {
       });
     }
     
-    if (signer_mode === 'both' && agentProfile.email && agentProfile.email !== 'TBD') {
+    if ((signer_mode === 'both' || signer_mode === 'agent_only') && agentProfile.email && agentProfile.email !== 'TBD') {
       signers.push({
         email: agentProfile.email,
         name: agentProfile.full_name || agentProfile.email,
-        recipientId: '2',
-        routingOrder: '2',
+        recipientId: signer_mode === 'agent_only' ? '1' : '2',
+        routingOrder: signer_mode === 'agent_only' ? '1' : '2',
         clientUserId: agentClientUserId,
         tabs: {
           signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
