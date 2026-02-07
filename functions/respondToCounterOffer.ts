@@ -36,6 +36,34 @@ Deno.serve(async (req) => {
       responded_by_role: counter.to_role
     });
     
+    // CRITICAL: When counter is accepted, update room to require regeneration
+    if (action === 'accept' && counter.room_id) {
+      try {
+        // Get the room to update proposed_terms with counter terms
+        const rooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
+        const room = rooms[0];
+        
+        if (room) {
+          // Merge counter terms into room's proposed_terms (or agent_terms for multi-agent)
+          const updatedTerms = {
+            ...(room.proposed_terms || {}),
+            ...(counter.terms_delta || {})
+          };
+          
+          await base44.asServiceRole.entities.Room.update(counter.room_id, {
+            requires_regenerate: true,
+            proposed_terms: updatedTerms,
+            agreement_status: 'draft' // Reset to draft since terms changed
+          });
+          
+          console.log('[respondToCounterOffer] Room updated with requires_regenerate=true and new terms');
+        }
+      } catch (e) {
+        console.error('[respondToCounterOffer] Failed to update room:', e);
+        // Don't fail the whole request if room update fails
+      }
+    }
+    
     return Response.json({ 
       success: true, 
       message: `Counter offer ${newStatus}`,
