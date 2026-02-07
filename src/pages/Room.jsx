@@ -745,7 +745,7 @@ export default function Room() {
                 proposed_terms: dealData.proposed_terms,
                 photos: rawRoom?.photos || [],
                 files: rawRoom?.files || [],
-                counterparty_name: enrichedRoom?.counterparty_name || rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name) : (dealData?.agent_name || dealData?.agent?.full_name))
+                counterparty_name: rawRoom.counterparty_name || (profile?.user_role === 'agent' ? (dealData?.investor_name || dealData?.investor?.full_name || dealData?.investor_full_name) : (dealData?.agent_name || dealData?.agent?.full_name || dealData?.agent_full_name))
               });
             } else {
               setCurrentRoom(rawRoom);
