@@ -808,33 +808,40 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                                 }
 
                                 console.log('[SimpleAgreementPanel] Counter accepted successfully');
-                                toast.success('Counter accepted - Regenerate agreement to continue');
+                                 toast.success('Counter accepted - Regenerate agreement to continue');
 
-                                // CRITICAL: Remove this counter AND refresh to get updated room state
-                                setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
-                                if (setIncomingCounters) setIncomingCounters(prev => prev.filter(c => c.id !== counter.id));
+                                 // CRITICAL: Remove this counter AND refresh to get updated room state
+                                 setPendingCounters(prev => prev.filter(c => c.id !== counter.id));
+                                 if (setIncomingCounters) setIncomingCounters(prev => prev.filter(c => c.id !== counter.id));
 
-                                // Refresh room and agreement to get updated requires_regenerate flag
-                                setTimeout(async () => {
-                                  try {
-                                    const roomRes = await base44.entities.Room.filter({ id: roomId });
-                                    if (roomRes?.[0]) {
-                                      setLocalRoom(roomRes[0]);
-                                      if (onRoomUpdate) onRoomUpdate(roomRes[0]);
-                                    }
+                                 // CRITICAL: Immediately set requires_regenerate locally so button shows
+                                 setLocalRoom(prev => ({ ...prev, requires_regenerate: true, agreement_status: 'draft' }));
 
-                                    // Also refresh agreement to sync new terms
-                                    const agRes = await base44.functions.invoke('getLegalAgreement', { 
-                                      deal_id: dealId, 
-                                      room_id: roomId 
-                                    });
-                                    if (agRes?.data?.agreement) {
-                                      setLocalAgreement(agRes.data.agreement);
-                                    }
-                                  } catch (_) {}
-                                }, 500);
+                                 // Refresh room and agreement to get updated requires_regenerate flag
+                                 setTimeout(async () => {
+                                   try {
+                                     const roomRes = await base44.entities.Room.filter({ id: roomId });
+                                     if (roomRes?.[0]) {
+                                       console.log('[SimpleAgreementPanel] Room after counter accept:', {
+                                         requires_regenerate: roomRes[0].requires_regenerate,
+                                         agreement_status: roomRes[0].agreement_status
+                                       });
+                                       setLocalRoom(roomRes[0]);
+                                       if (onRoomUpdate) onRoomUpdate(roomRes[0]);
+                                     }
 
-                                if (onCounterReceived) onCounterReceived();
+                                     // Also refresh agreement to sync new terms
+                                     const agRes = await base44.functions.invoke('getLegalAgreement', { 
+                                       deal_id: dealId, 
+                                       room_id: roomId 
+                                     });
+                                     if (agRes?.data?.agreement) {
+                                       setLocalAgreement(agRes.data.agreement);
+                                     }
+                                   } catch (_) {}
+                                 }, 500);
+
+                                 if (onCounterReceived) onCounterReceived();
                               } catch (e) {
                                 console.error('[SimpleAgreementPanel] Accept error:', e);
                                 const errorMsg = e?.response?.data?.error || e?.data?.error || e?.message || 'Failed to accept counter';
