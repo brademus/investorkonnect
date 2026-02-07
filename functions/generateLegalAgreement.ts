@@ -674,6 +674,7 @@ Deno.serve(async (req) => {
       });
     }
     
+    console.log(`[${VERSION}] Signer mode: ${signer_mode}, agentProfile.email: ${agentProfile.email}, agentProfile.id: ${agentProfile.id}, signers so far: ${signers.length}`);
     if ((signer_mode === 'both' || signer_mode === 'agent_only') && agentProfile.email && agentProfile.email !== 'TBD') {
       signers.push({
         email: agentProfile.email,
