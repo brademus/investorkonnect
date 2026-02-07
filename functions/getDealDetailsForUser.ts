@@ -231,8 +231,8 @@ Deno.serve(async (req) => {
     } catch (_) {}
 
 
-    // Sensitive fields - only visible to investors OR fully signed agents
-    if (isInvestor || isFullySigned) {
+    // Sensitive fields - visible to investors, admins, or fully signed agents
+    if (isAdmin || isInvestor || isFullySigned) {
       return Response.json({
         ...baseDeal,
         property_type: display_property_type,
