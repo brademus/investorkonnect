@@ -715,6 +715,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, agreement, profil
                     </div>
                   )}
 
+                  {/* For 'investor_only' mode - wait for investor to sign first (then agent can sign same agreement) */}
+                  {localAgreement.signer_mode === 'investor_only' && !investorSigned && !requiresRegenerate && (
+                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                      <p className="text-sm text-[#FAFAFA]">Waiting for investor to sign first</p>
+                    </div>
+                  )}
+
                   {/* For 'both' mode - investor signed, agent can sign */}
                   {localAgreement.signer_mode === 'both' && investorSigned && !agentSigned && !pendingCounters.some(c => c.status === 'pending') && localAgreement?.status !== 'superseded' && (
                     <>
