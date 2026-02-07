@@ -849,13 +849,14 @@ function PipelineContent() {
       // CRITICAL: Fetch room directly from database if not in cache yet
       try {
         console.log('[Pipeline] Room not in cache, fetching from DB for deal:', deal.deal_id);
-        const roomsForDeal = await base44.entities.Room.filter({ 
-          deal_id: deal.deal_id, 
-          agentId: profile.id 
-        });
-        
-        if (roomsForDeal?.length > 0) {
-          const freshRoom = roomsForDeal[0];
+        // Fetch all rooms for this deal and check both agentId and agent_ids array
+        const roomsForDeal = await base44.entities.Room.filter({ deal_id: deal.deal_id });
+        const freshRoom = roomsForDeal.find(r => 
+          r.agentId === profile.id || 
+          (Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id))
+        );
+
+        if (freshRoom) {
           console.log('[Pipeline] Found room in DB:', freshRoom.id);
           const masked = {
             id: deal.deal_id,
