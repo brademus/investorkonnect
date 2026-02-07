@@ -71,7 +71,11 @@ Deno.serve(async (req) => {
 
     // Get room to check signature status
     let room = null;
-    if (isAgent) {
+    if (isAdmin) {
+      // Admin: get first room for this deal
+      const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+      room = rooms[0];
+    } else if (isAgent) {
       const rooms = await base44.entities.Room.filter({ deal_id: dealId });
       // Find room where this agent is a participant (legacy agentId or new agent_ids array)
       room = rooms.find(r => 
