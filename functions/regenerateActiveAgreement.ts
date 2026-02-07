@@ -1,7 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  console.log('[regenerateActiveAgreement v2.0] Starting...');
+  console.log('[regenerateActiveAgreement v3.0] Starting...');
+  
+  // CRITICAL: Clone the request body and headers BEFORE consuming the body
+  const rawBody = await req.text();
+  const originalHeaders = Object.fromEntries(req.headers.entries());
+  
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
