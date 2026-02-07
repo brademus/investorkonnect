@@ -71,12 +71,28 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] Calling generateLegalAgreement...');
 
+    // Determine signer_mode:
+    // - draft flow (pre-signing): investor_only
+    // - room-scoped with requires_regenerate (counter accepted, investor must re-sign): investor_only  
+    // - room-scoped otherwise (agent signing after investor signed base): agent_only
+    // - no room: both
+    let signerMode = 'both';
+    if (draft_id) {
+      signerMode = 'investor_only';
+    } else if (room_id && room?.requires_regenerate) {
+      // Counter was accepted - investor needs to regenerate and sign with new terms
+      signerMode = 'investor_only';
+    } else if (room_id) {
+      signerMode = 'agent_only';
+    }
+    console.log('[regenerateActiveAgreement] signer_mode:', signerMode, 'requires_regenerate:', room?.requires_regenerate);
+
     // Call generateLegalAgreement using service role
     const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
       room_id: room_id || null,
-      signer_mode: draft_id ? 'investor_only' : (room_id ? 'agent_only' : 'both'),
+      signer_mode: signerMode,
       exhibit_a: {
         buyer_commission_type: effectiveTerms.buyer_commission_type,
         buyer_commission_percentage: effectiveTerms.buyer_commission_percentage || null,
