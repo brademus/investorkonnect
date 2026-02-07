@@ -204,14 +204,17 @@ export default function CounterOfferPage() {
         )}
 
         <div className="space-y-4 py-4">
-          {/* Current Terms Display */}
-          {deal?.proposed_terms && (
+          {/* Current Terms Display - prefer room terms (updated by counters) over deal */}
+          {(room?.proposed_terms || deal?.proposed_terms) && (
             <div className="bg-[#141414] rounded-lg p-4 text-sm space-y-2">
               <p className="text-[#808080]">Current Buyer Commission</p>
               <p className="text-[#FAFAFA] font-semibold">
-                {deal.proposed_terms.buyer_commission_type === 'percentage'
-                  ? `${deal.proposed_terms.buyer_commission_percentage}%`
-                  : `$${deal.proposed_terms.buyer_flat_fee?.toLocaleString()}`}
+                {(() => {
+                  const terms = room?.proposed_terms || deal?.proposed_terms;
+                  return terms?.buyer_commission_type === 'percentage'
+                    ? `${terms?.buyer_commission_percentage}%`
+                    : `$${terms?.buyer_flat_fee?.toLocaleString()}`;
+                })()}
               </p>
             </div>
           )}
