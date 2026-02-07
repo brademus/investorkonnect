@@ -127,7 +127,9 @@ Deno.serve(async (req) => {
       county: county || draftContext?.county || dealContext?.county
     };
     console.log('[regenerateActiveAgreement] Calling generateLegalAgreement with payload keys:', Object.keys(genPayload));
-    const gen = await base44.functions.invoke('generateLegalAgreement', genPayload);
+    console.log('[regenerateActiveAgreement] genPayload:', JSON.stringify(genPayload));
+    // Use asServiceRole to avoid auth forwarding issues
+    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', genPayload);
     
     console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', gen.status);
 
