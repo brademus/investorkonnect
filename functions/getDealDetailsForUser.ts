@@ -47,13 +47,17 @@ Deno.serve(async (req) => {
     }
 
     if (isAgent && deal.agent_id !== profile.id) {
-      // Check if agent has a room for this deal
-      const agentRooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        agentId: profile.id 
-      });
+      // Check if agent has a room for this deal (legacy agentId or new agent_ids array)
+      const agentRooms = await base44.entities.Room.filter({ deal_id: dealId });
+      const hasAccess = agentRooms.some(r => 
+        r.agentId === profile.id || 
+        (Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id))
+      );
       
-      if (agentRooms.length === 0) {
+      // Also check if agent is in selected_agent_ids on the Deal itself
+      const inSelectedAgents = Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.includes(profile.id);
+      
+      if (!hasAccess && !inSelectedAgents) {
         return Response.json({ error: 'Access denied' }, { status: 403 });
       }
     }
