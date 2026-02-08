@@ -38,17 +38,22 @@ Deno.serve(async (req) => {
     
     const room = rooms[0];
     
-    // Get investor and agent profiles
-    const [investorProfiles, agentProfiles] = await Promise.all([
-      base44.asServiceRole.entities.Profile.filter({ id: room.investorId }),
-      base44.asServiceRole.entities.Profile.filter({ id: room.agentId })
-    ]);
-    
-    if (investorProfiles.length === 0 || agentProfiles.length === 0) {
-      return Response.json({ error: 'Profile(s) not found' }, { status: 404 });
+    // Get investor profile
+    const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: room.investorId });
+    if (!investorProfiles?.length) {
+      return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
-    
     const investor = investorProfiles[0];
+
+    // Get winning agent (locked_agent_id on room, or first agent_id)
+    const winningAgentId = room.locked_agent_id || room.agent_ids?.[0];
+    if (!winningAgentId) {
+      return Response.json({ error: 'No agent found on room' }, { status: 404 });
+    }
+    const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: winningAgentId });
+    if (!agentProfiles?.length) {
+      return Response.json({ error: 'Agent profile not found' }, { status: 404 });
+    }
     const agent = agentProfiles[0];
     
     const dealTitle = room.title || 'Your deal';
