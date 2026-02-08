@@ -2,650 +2,154 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 async function getDocuSignConnection(base44) {
   const connections = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
-  
-  if (!connections || connections.length === 0) {
-    throw new Error('DocuSign not connected. Admin must connect DocuSign first.');
-  }
-  
-  let connection = connections[0];
-  const now = new Date();
-  const expiresAt = new Date(connection.expires_at);
-  
-  // Auto-refresh if token expired and refresh_token exists
-  if (now >= expiresAt && connection.refresh_token) {
-    console.log('[DocuSign] Token expired, refreshing...');
-    
-    const tokenUrl = connection.base_uri.includes('demo') 
-      ? 'https://account-d.docusign.com/oauth/token'
-      : 'https://account.docusign.com/oauth/token';
-    
-    const refreshResponse = await fetch(tokenUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        grant_type: 'refresh_token',
-        refresh_token: connection.refresh_token,
-        client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'),
-        client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET')
-      })
+  if (!connections?.length) throw new Error('DocuSign not connected');
+  let conn = connections[0];
+  if (conn.expires_at && new Date() >= new Date(conn.expires_at) && conn.refresh_token) {
+    const tokenUrl = conn.base_uri.includes('demo') ? 'https://account-d.docusign.com/oauth/token' : 'https://account.docusign.com/oauth/token';
+    const resp = await fetch(tokenUrl, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({ grant_type: 'refresh_token', refresh_token: conn.refresh_token, client_id: Deno.env.get('DOCUSIGN_INTEGRATION_KEY'), client_secret: Deno.env.get('DOCUSIGN_CLIENT_SECRET') })
     });
-    
-    if (!refreshResponse.ok) {
-      const error = await refreshResponse.text();
-      console.error('[DocuSign] Token refresh failed:', error);
-      throw new Error('DocuSign token expired and refresh failed. Admin must reconnect DocuSign.');
-    }
-    
-    const tokenData = await refreshResponse.json();
-    const newExpiresAt = new Date(Date.now() + (tokenData.expires_in * 1000)).toISOString();
-    
-    // Update connection with new tokens
-    await base44.asServiceRole.entities.DocuSignConnection.update(connection.id, {
-      access_token: tokenData.access_token,
-      refresh_token: tokenData.refresh_token || connection.refresh_token,
-      expires_at: newExpiresAt
-    });
-    
-    connection.access_token = tokenData.access_token;
-    connection.expires_at = newExpiresAt;
-    
-    console.log('[DocuSign] Token refreshed successfully');
-  } else if (now >= expiresAt) {
-    throw new Error('DocuSign token expired and no refresh token available. Admin must reconnect DocuSign.');
+    if (!resp.ok) throw new Error('Token refresh failed');
+    const tokens = await resp.json();
+    const exp = new Date(Date.now() + tokens.expires_in * 1000).toISOString();
+    await base44.asServiceRole.entities.DocuSignConnection.update(conn.id, { access_token: tokens.access_token, refresh_token: tokens.refresh_token || conn.refresh_token, expires_at: exp });
+    conn.access_token = tokens.access_token;
+  } else if (conn.expires_at && new Date() >= new Date(conn.expires_at)) {
+    throw new Error('DocuSign token expired');
   }
-  
-  return connection;
+  return conn;
 }
 
-async function downloadPdfAsBase64AndHash(url) {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error('Failed to download agreement PDF');
-  }
-  const buffer = await response.arrayBuffer();
-  
-  // Compute hash
-  const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
-  const hash = Array.from(new Uint8Array(hashBuffer))
-    .map(b => b.toString(16).padStart(2, '0'))
-    .join('');
-  
-  // Convert to base64
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
-  
-  return { base64, hash };
-}
-
-async function voidEnvelope(baseUri, accountId, accessToken, envelopeId, reason) {
-  try {
-    const voidUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
-    const voidResponse = await fetch(voidUrl, {
-      method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        status: 'voided',
-        voidedReason: reason
-      })
-    });
-    
-    if (!voidResponse.ok) {
-      console.warn('[DocuSign] Failed to void old envelope:', envelopeId);
-    } else {
-      console.log('[DocuSign] Successfully voided old envelope:', envelopeId);
-    }
-  } catch (error) {
-    console.warn('[DocuSign] Error voiding envelope:', error.message);
-  }
-}
-
-/**
- * POST /api/functions/docusignCreateSigningSession
- * Creates embedded signing session with hash-based envelope recreation
- */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { agreement_id, role, redirect_url, room_id } = await req.json();
-    
-    console.log('[docusignCreateSigningSession] START:', { agreement_id, role, redirect_url, room_id });
-    
-    if (!agreement_id || !role) {
-      return Response.json({ error: 'agreement_id and role required' }, { status: 400 });
-    }
-    
-    if (!['investor', 'agent'].includes(role)) {
-      return Response.json({ error: 'role must be investor or agent' }, { status: 400 });
-    }
-    
-    // Load agreement with backwards compatibility
-    let agreement = null;
-    let agreementType = null;
-    
-    // 1) Primary path: agreement_id is a LegalAgreement.id
-    const legalAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
-    if (legalAgreements && legalAgreements.length > 0) {
-      agreement = legalAgreements[0];
-      agreementType = 'LegalAgreement';
-      console.log('[DocuSign] Found LegalAgreement by ID:', {
-        id: agreement.id,
-        investor_signed_at: agreement.investor_signed_at,
-        agent_signed_at: agreement.agent_signed_at,
-        status: agreement.status
-      });
-    } else {
-      // 2) Back-compat: check if agreement_id is an AgreementVersion (legacy)
-      console.log('[DocuSign] Not found as LegalAgreement, checking legacy AgreementVersion...');
-      try {
-        const avRecords = await base44.asServiceRole.entities.AgreementVersion.filter({ id: agreement_id });
-        if (avRecords && avRecords.length > 0) {
-          const av = avRecords[0];
-          console.log('[DocuSign] Found AgreementVersion, resolving to active LegalAgreement for deal:', av.deal_id);
-          
-          // Get deal
-          const dealRecords = await base44.asServiceRole.entities.Deal.filter({ id: av.deal_id });
-          const deal = dealRecords?.[0];
-          
-          // Resolve to active LegalAgreement for this deal
-          if (deal?.current_legal_agreement_id) {
-            const currentLA = await base44.asServiceRole.entities.LegalAgreement.filter({ id: deal.current_legal_agreement_id });
-            const candidate = currentLA?.[0];
-            
-            if (candidate && (candidate.status === 'superseded' || candidate.status === 'voided')) {
-              // Fall back to latest non-superseded
-              console.log('[DocuSign] Current pointer is superseded, finding latest active');
-              const allLA = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: av.deal_id }, '-created_date', 10);
-              agreement = allLA?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
-            } else {
-              agreement = candidate;
-            }
-          } else {
-            // No pointer, find latest non-superseded
-            const allLA = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: av.deal_id }, '-created_date', 10);
-            agreement = allLA?.find(a => a.status !== 'superseded' && a.status !== 'voided') || null;
-          }
-          
-          if (agreement) {
-            agreementType = 'LegalAgreement';
-            console.log('[DocuSign] Resolved legacy AgreementVersion to LegalAgreement:', agreement.id);
-          }
-        }
-      } catch (e) {
-        console.warn('[DocuSign] Legacy resolution failed:', e?.message);
-      }
-    }
-    
-    if (!agreement) {
-      console.error('[DocuSign] Agreement not found (tried LegalAgreement and legacy paths)');
-      return Response.json({ error: 'Agreement not found. Please regenerate the agreement.' }, { status: 404 });
-    }
-    
-    // Safety: never sign a superseded/voided agreement
-    if (agreement.status === 'superseded' || agreement.status === 'voided') {
-      return Response.json({ 
-        error: 'This agreement has been superseded. Please regenerate the agreement from the Agreement tab.',
-        code: 'AGREEMENT_SUPERSEDED'
-      }, { status: 400 });
+    if (!agreement_id || !role || !['investor', 'agent'].includes(role)) {
+      return Response.json({ error: 'agreement_id and role (investor/agent) required' }, { status: 400 });
     }
 
-    // CRITICAL: ENFORCE SERVER-SIDE GATING BASED ON signer_mode
-    const signerMode = agreement.signer_mode || 'both'; // Default to both for legacy agreements
-    const effectiveRoomId = room_id || agreement.room_id;
-    
-    console.log('[DocuSign] signer_mode:', signerMode, 'role:', role);
-    
-    // CRITICAL: Only block regenerate if investor is trying to sign with requires_regenerate=true
-    // AND this is the room's current_legal_agreement_id (the one that requires regeneration)
-    // Agents can always sign their own room's agreement, even if investor regenerated elsewhere
-    if (effectiveRoomId && role === 'investor') {
-      const roomsCheck = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoomId });
-      const roomData = roomsCheck?.[0];
+    // Load agreement
+    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement_id });
+    const agreement = agreements?.[0];
+    if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
+    if (['superseded', 'voided'].includes(agreement.status)) {
+      return Response.json({ error: 'Agreement superseded. Please regenerate.' }, { status: 400 });
+    }
 
-      // Only block if requires_regenerate=true AND this agreement is the one requiring regeneration
-      if (roomData?.requires_regenerate === true && roomData?.current_legal_agreement_id === agreement.id && !agreement.investor_signed_at) {
-        console.error(`[DocuSign] ❌ BLOCKED: Investor trying to sign but requires_regenerate=true on THIS agreement`);
-        return Response.json({ 
-          ok: false,
-          code: 'REGENERATE_REQUIRED',
-          message: 'Terms have changed. Please regenerate the agreement.',
-          error: 'Agreement terms have changed. You must regenerate and sign the new document.'
-        }, { status: 400 });
+    const signerMode = agreement.signer_mode || 'both';
+
+    // Signer mode gating
+    if (signerMode === 'agent_only' && role === 'investor') return Response.json({ error: 'This is an agent-only agreement' }, { status: 403 });
+    if (signerMode === 'investor_only' && role === 'agent') return Response.json({ error: 'Agent needs a separate agreement' }, { status: 403 });
+
+    // Room regenerate check
+    const effectiveRoom = room_id || agreement.room_id;
+    if (effectiveRoom && role === 'investor') {
+      const r = await base44.asServiceRole.entities.Room.filter({ id: effectiveRoom });
+      if (r?.[0]?.requires_regenerate && r[0].current_legal_agreement_id === agreement.id && !agreement.investor_signed_at) {
+        return Response.json({ error: 'Terms changed. Regenerate agreement first.', code: 'REGENERATE_REQUIRED' }, { status: 400 });
       }
     }
 
-    // GATING LOGIC BY signer_mode
-    if (signerMode === 'agent_only') {
-      // Agent can sign immediately, investor should NOT be allowed
-      if (role === 'investor') {
-        console.error('[DocuSign] ❌ Investor trying to sign agent_only agreement');
-        return Response.json({ 
-          error: 'This agreement is for agent signature only. You have already signed.',
-          code: 'WRONG_SIGNER'
-        }, { status: 403 });
-      }
-      console.log('[DocuSign] ✓ Agent can sign agent_only agreement');
-      
-    } else if (signerMode === 'investor_only') {
-      // investor_only means only investor was added as a signer in DocuSign
-      // Agents CANNOT sign this envelope - they need a separate agent_only agreement
-      // But if investor has already signed, agents should see "Sign Agreement" which creates their own agreement
-      if (role === 'agent') {
-        console.error('[DocuSign] ❌ Agent trying to sign investor_only agreement - needs agent_only agreement');
-        return Response.json({ 
-          error: 'This agreement only has investor as signer. An agent-specific agreement needs to be generated.',
-          code: 'WRONG_SIGNER'
-        }, { status: 403 });
-      }
-      console.log('[DocuSign] ✓ Investor can sign investor_only agreement');
-      
-    } else {
-      // Default to 'both' mode if not specified (backward compatibility)
-      // Investor signs first (recipientId 1), agent signs second (recipientId 2)
-      if (role === 'agent' && !agreement.investor_signed_at) {
-        console.error('[DocuSign] ❌ Agent trying to sign before investor (both mode)');
-        return Response.json({ 
-          ok: false,
-          code: 'INVESTOR_SIGNATURE_REQUIRED',
-          error: 'The investor must sign this agreement first before you can sign it.'
-        }, { status: 400 });
-      }
-      console.log('[DocuSign] ✓ Signing allowed (both mode):', role);
+    // Deal lock check
+    const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
+    const deal = dealArr?.[0];
+    if (deal?.locked_room_id && (room_id || agreement.room_id) && deal.locked_room_id !== (room_id || agreement.room_id)) {
+      return Response.json({ error: 'Deal locked to another agent' }, { status: 403 });
     }
 
-    // PHASE 7: Enforce Deal Lock-in
-    // If deal is locked to a different room/agent, block signing
-    try {
-      const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
-      const deal = dealArr?.[0];
-      
-      if (deal?.locked_room_id) {
-        const myRoomId = room_id || agreement.room_id;
-        
-        // If we know the room context
-        if (myRoomId && myRoomId !== deal.locked_room_id) {
-          console.error(`[DocuSign] ❌ Blocked signing: Deal locked to room ${deal.locked_room_id}, attempting sign for ${myRoomId}`);
-          return Response.json({ 
-            error: 'This deal has been secured by another agent. You can no longer sign this agreement.',
-            code: 'DEAL_LOCKED_TO_OTHER'
-          }, { status: 403 });
-        }
-        
-        // If legacy agreement without room_id, check agent profile match
-        if (!myRoomId && role === 'agent') {
-          const myAgentId = agreement.agent_profile_id;
-          if (myAgentId && deal.locked_agent_id && myAgentId !== deal.locked_agent_id) {
-            console.error(`[DocuSign] ❌ Blocked signing: Deal locked to agent ${deal.locked_agent_id}, attempting sign for ${myAgentId}`);
-            return Response.json({ 
-              error: 'This deal has been secured by another agent. You can no longer sign this agreement.',
-              code: 'DEAL_LOCKED_TO_OTHER'
-            }, { status: 403 });
-          }
-        }
-      }
-    } catch (e) {
-      console.warn('[DocuSign] Failed to check lock status (continuing):', e.message);
-    }
+    // Get DocuSign connection
+    const conn = await getDocuSignConnection(base44);
 
-    // Get DocuSign connection and define vars EARLY
-    const connection = await getDocuSignConnection(base44);
-    const accessToken = connection.access_token;
-    const baseUri = connection.base_uri;
-    const accountId = connection.account_id;
-
-    // Initialize signature status variables early
-    let liveInvestorSigned = false;
-    let liveAgentSigned = false;
-
-    // Validate envelope exists
-    const envelopeId = agreement.docusign_envelope_id;
-    if (!envelopeId) {
-      return Response.json({ 
-        error: 'Agreement is missing DocuSign envelope id. Please regenerate.' 
-      }, { status: 400 });
-    }
-
-    // Validate recipient IDs exist for this signer
-    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
-    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
-    
-    if (!recipientId) {
-      console.error(`[DocuSign] ❌ Missing ${role}_recipient_id`);
-      return Response.json({ 
-        error: `Missing recipient ID for ${role}. This agreement may not support ${role} signing.`
-      }, { status: 400 });
-    }
-
-    if (!clientUserId) {
-      console.error(`[DocuSign] ❌ Missing ${role}_client_user_id`);
-      return Response.json({ 
-        error: `Missing client user ID for ${role}. Please regenerate the agreement.`
-      }, { status: 400 });
-    }
-
-    // Helper: Sync recipient status from DocuSign to DB
-    async function syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken) {
-      const envelopeId = agreement.docusign_envelope_id;
-      if (!envelopeId) return agreement;
-
-      const recipientsUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/recipients`;
-      const recipientsResponse = await fetch(recipientsUrl, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-      if (!recipientsResponse.ok) return agreement;
-
-      const recipients = await recipientsResponse.json();
-      const signers = recipients.signers || [];
-
-      const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-      const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-
-      const now = new Date().toISOString();
+    // Sync signatures from DocuSign
+    const recipUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/recipients`;
+    const recipResp = await fetch(recipUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
+    if (recipResp.ok) {
+      const recipData = await recipResp.json();
+      const signers = recipData.signers || [];
       const updates = {};
-
-      const investorCompleted = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
-      const agentCompleted = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
-
-      if (investorCompleted && !agreement.investor_signed_at) {
-        updates.investor_signed_at = investorSigner.signedDateTime || now;
-        console.log('[DocuSign] ✓ Syncing investor signature to DB');
-      }
-      if (agentCompleted && !agreement.agent_signed_at) {
-        updates.agent_signed_at = agentSigner.signedDateTime || now;
-        console.log('[DocuSign] ✓ Syncing agent signature to DB');
-      }
-
+      const inv = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
+      const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
+      if (inv?.status === 'completed' && !agreement.investor_signed_at) updates.investor_signed_at = inv.signedDateTime || new Date().toISOString();
+      if (ag?.status === 'completed' && !agreement.agent_signed_at) updates.agent_signed_at = ag.signedDateTime || new Date().toISOString();
       if (Object.keys(updates).length) {
-        const invSigned = !!(updates.investor_signed_at || agreement.investor_signed_at);
-        const agSigned = !!(updates.agent_signed_at || agreement.agent_signed_at);
-
-        updates.status = invSigned && agSigned ? 'fully_signed' : invSigned ? 'investor_signed' : 'agent_signed';
-
+        const invS = !!(updates.investor_signed_at || agreement.investor_signed_at);
+        const agS = !!(updates.agent_signed_at || agreement.agent_signed_at);
+        updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : 'agent_signed';
         await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
-        console.log('[DocuSign] ✓ DB updated with status:', updates.status);
-      }
-
-      // Return fresh agreement from DB (authoritative)
-      const fresh = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreement.id });
-      return fresh?.[0] || agreement;
-    }
-
-    // SYNC FIRST to ensure DB is up-to-date with DocuSign
-    agreement = await syncRecipientStatusToDb(base44, agreement, baseUri, accountId, accessToken);
-
-    // CRITICAL: Check DocuSign directly for live signature status (in case sync missed it)
-    liveInvestorSigned = !!agreement.investor_signed_at;
-    liveAgentSigned = !!agreement.agent_signed_at;
-    
-    const envelopeCheckUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${agreement.docusign_envelope_id}/recipients`;
-    
-    try {
-      const recipientsCheckResponse = await fetch(envelopeCheckUrl, {
-        headers: { 'Authorization': `Bearer ${accessToken}` }
-      });
-      if (recipientsCheckResponse.ok) {
-        const recipients = await recipientsCheckResponse.json();
-        const signers = recipients.signers || [];
-        const investorSigner = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
-        const agentSigner = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
-        
-        liveInvestorSigned = investorSigner && (investorSigner.status === 'completed' || investorSigner.status === 'signed');
-        liveAgentSigned = agentSigner && (agentSigner.status === 'completed' || agentSigner.status === 'signed');
-        
-        console.log('[DocuSign] Live signature check - investor:', liveInvestorSigned, 'agent:', liveAgentSigned);
-      }
-    } catch (e) {
-      console.warn('[DocuSign] Failed to check live signatures (using DB):', e.message);
-    }
-
-    // Check if already signed - use simple presence of signature date
-    const investorAlreadySigned = liveInvestorSigned || !!agreement.investor_signed_at;
-    const agentAlreadySigned = liveAgentSigned || !!agreement.agent_signed_at;
-
-    if (role === 'investor' && investorAlreadySigned) {
-      console.log('[DocuSign] Investor already signed (status:', agreement.status, ')');
-      return Response.json({ 
-        already_signed: true,
-        message: 'You have already signed this agreement'
-      }, { status: 200 });
-    }
-
-    if (role === 'agent' && agentAlreadySigned) {
-      console.log('[DocuSign] Agent already signed (status:', agreement.status, ')');
-      return Response.json({ 
-        already_signed: true,
-        message: 'You have already signed this agreement'
-      }, { status: 200 });
-    }
-
-    // Additional gating for 'both' mode only
-    if (signerMode === 'both' && role === 'agent' && !investorAlreadySigned) {
-      console.error('[DocuSign] ❌ Agent cannot sign - investor has not signed yet (both mode)');
-      return Response.json({ 
-        error: 'The investor must sign this agreement first before you can sign it.',
-        investor_signed: false
-      }, { status: 403 });
-    }
-
-    if (signerMode === 'both' && role === 'agent' && investorAlreadySigned) {
-      console.log('[DocuSign] ✓ Investor signed - agent can proceed (both mode)');
-    }
-
-    // Check envelope status for terminal states
-    const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}`;
-    const statusResponse = await fetch(statusUrl, {
-      method: 'GET',
-      headers: { 'Authorization': `Bearer ${accessToken}` }
-    });
-
-    if (statusResponse.ok) {
-      const envStatus = await statusResponse.json();
-      console.log('[DocuSign] Envelope status check:', envStatus.status);
-
-      // If envelope is completed, return 200 with already_signed flag
-      if (envStatus.status === 'completed') {
-        console.log('[DocuSign] Envelope already completed - synced above, signaling UI to refresh');
-        return Response.json({
-          already_signed: true,
-          message: 'Agreement is already completed. Refreshing status.'
-        });
-      }
-
-      // Only block voided/declined
-      if (['voided', 'declined'].includes(envStatus.status)) {
-        console.error('[DocuSign] ❌ Envelope is in terminal state:', envStatus.status);
-        return Response.json({ 
-          error: `This envelope is ${envStatus.status}. Please regenerate the agreement from the Agreement tab.`
-        }, { status: 400 });
-      }
-
-      console.log('[DocuSign] ✓ Envelope is in active state:', envStatus.status);
-    }
-    
-    // PHASE 7: Validate and enrich redirect_url - always return to deal context
-    const reqUrl = new URL(req.url);
-    const publicAppUrl = Deno.env.get('PUBLIC_APP_URL');
-    const baseAppUrl = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
-    
-    let validatedRedirect = redirect_url;
-    
-    // If no redirect or missing deal context, construct one
-    if (!validatedRedirect || (!validatedRedirect.includes('roomId=') && !validatedRedirect.includes('dealId='))) {
-      if (room_id) {
-        validatedRedirect = `${baseAppUrl}/Room?roomId=${room_id}&dealId=${agreement.deal_id}&tab=agreement&signed=1`;
-      } else if (agreement.deal_id) {
-        validatedRedirect = `${baseAppUrl}/MyAgreement?dealId=${agreement.deal_id}&tab=agreement&signed=1`;
-      } else {
-        // Last resort fallback (should never happen)
-        validatedRedirect = `${baseAppUrl}/Pipeline?signed=1`;
+        Object.assign(agreement, updates);
       }
     }
-    
-    // Ensure fully qualified URL
-    if (validatedRedirect.startsWith('/')) {
-      validatedRedirect = `${baseAppUrl}${validatedRedirect}`;
+
+    // Already signed check
+    if (role === 'investor' && agreement.investor_signed_at) return Response.json({ already_signed: true });
+    if (role === 'agent' && agreement.agent_signed_at) return Response.json({ already_signed: true });
+    if (signerMode === 'both' && role === 'agent' && !agreement.investor_signed_at) {
+      return Response.json({ error: 'Investor must sign first' }, { status: 403 });
     }
-    
-    // Ensure signed=1 is present
-    const redirectURL = new URL(validatedRedirect);
-    if (!redirectURL.searchParams.has('signed')) {
-      redirectURL.searchParams.set('signed', '1');
+
+    // Check envelope status
+    const envUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}`;
+    const envResp = await fetch(envUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
+    if (envResp.ok) {
+      const env = await envResp.json();
+      if (env.status === 'completed') return Response.json({ already_signed: true });
+      if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
     }
-    if (!redirectURL.searchParams.has('dealId') && agreement.deal_id) {
-      redirectURL.searchParams.set('dealId', agreement.deal_id);
-    }
-    if (!redirectURL.searchParams.has('tab')) {
-      redirectURL.searchParams.set('tab', 'agreement');
-    }
-    validatedRedirect = redirectURL.toString();
-    
-    console.log('[DocuSign] Redirect validation:', { 
-      redirect_url, 
-      validatedRedirect, 
-      publicAppUrl,
-      reqOrigin: reqUrl.origin 
-    });
-    
-    // Create signing token
+
+    // Build redirect URL
+    const publicUrl = Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin;
     const tokenValue = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
-    
     await base44.asServiceRole.entities.SigningToken.create({
-      token: tokenValue,
-      deal_id: agreement.deal_id,
-      agreement_id: agreement.id,
-      role: role,
-      return_to: validatedRedirect,
-      expires_at: expiresAt,
-      used: false
+      token: tokenValue, deal_id: agreement.deal_id, agreement_id: agreement.id,
+      role, return_to: redirect_url || `${publicUrl}/Room?roomId=${room_id || agreement.room_id}&signed=1`,
+      expires_at: new Date(Date.now() + 3600000).toISOString(), used: false
     });
-    
-    console.log('[DocuSign] Signing token created');
-    
-    // Build DocuSign return URL with deal context
-    const origin = publicAppUrl || `${reqUrl.protocol}//${reqUrl.host}`;
-    const returnURL = new URL(`${origin}/DocuSignReturn`);
+
+    const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
     returnURL.searchParams.set('token', tokenValue);
     if (agreement.deal_id) returnURL.searchParams.set('dealId', agreement.deal_id);
     if (room_id) returnURL.searchParams.set('roomId', room_id);
-    returnURL.searchParams.set('tab', 'agreement');
     returnURL.searchParams.set('role', role);
-    const docusignReturnUrl = returnURL.toString();
-    
-    // Get profile details based on role
+
+    // Get profile for signing
     const profileId = role === 'investor' ? agreement.investor_profile_id : agreement.agent_profile_id;
-    const profiles = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
-    const profile = profiles[0];
-    
-    // Create recipient view for embedded signing
-    // CRITICAL: Must include recipientId so DocuSign knows which recipient to show
-    const recipientViewRequest = {
-      returnUrl: docusignReturnUrl,
-      authenticationMethod: 'none',
-      email: profile?.email || user.email,
-      userName: profile?.full_name || profile?.email || user.email,
-      recipientId: String(recipientId),
-      clientUserId: String(clientUserId),
-      frameAncestors: [origin],
-      messageOrigins: [origin]
-    };
-    
-    console.log('[DocuSign] Creating recipient view with:', {
-      recipientId,
-      clientUserId,
-      email: profile?.email,
-      userName: profile?.full_name,
-      role
-    });
-    
-    const viewUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${envelopeId}/views/recipient`;
-    const viewResponse = await fetch(viewUrl, {
+    const profileArr = await base44.asServiceRole.entities.Profile.filter({ id: profileId });
+    const profile = profileArr?.[0];
+
+    const recipientId = role === 'investor' ? agreement.investor_recipient_id : agreement.agent_recipient_id;
+    const clientUserId = role === 'investor' ? agreement.investor_client_user_id : agreement.agent_client_user_id;
+    if (!recipientId || !clientUserId) return Response.json({ error: `Missing recipient data for ${role}. Regenerate.` }, { status: 400 });
+
+    // Create signing view
+    const viewResp = await fetch(`${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}/views/recipient`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(recipientViewRequest)
+      headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        returnUrl: returnURL.toString(),
+        authenticationMethod: 'none',
+        email: profile?.email || user.email,
+        userName: profile?.full_name || user.email,
+        recipientId: String(recipientId),
+        clientUserId: String(clientUserId),
+        frameAncestors: [publicUrl], messageOrigins: [publicUrl]
+      })
     });
-    
-    if (!viewResponse.ok) {
-      const errorText = await viewResponse.text();
-      let parsedError = null;
-      let errorMsg = 'Failed to create signing session';
-      
-      try {
-        parsedError = JSON.parse(errorText);
-        errorMsg = parsedError.message || parsedError.errorCode || errorMsg;
-      } catch (e) {
-        errorMsg = errorText.substring(0, 200);
-      }
-      
-      console.error('[DocuSign] Recipient view failed:', {
-        status: viewResponse.status,
-        error: parsedError || errorText,
-        envelopeId,
-        recipientId,
-        clientUserId,
-        role
-      });
-      
-      // Handle specific DocuSign errors with user-friendly messages
-      if (errorMsg.includes('out of sequence') || errorMsg.includes('OUT_OF_SEQUENCE')) {
-        return Response.json({ 
-          error: 'The investor must sign this agreement first before you can sign it. Please wait for the investor to complete their signature.'
-        }, { status: 400 });
-      }
-      
-      if (errorMsg.includes('RECIPIENT_') || errorMsg.includes('recipient')) {
-        return Response.json({ 
-          error: 'Signing session issue detected. Please regenerate the agreement from the Agreement tab.'
-        }, { status: 400 });
-      }
-      
-      return Response.json({ 
-        error: errorMsg || 'Failed to create signing session',
-        hint: 'If this persists, try regenerating the agreement.'
-      }, { status: 500 });
+
+    if (!viewResp.ok) {
+      const errText = await viewResp.text();
+      if (errText.includes('OUT_OF_SEQUENCE')) return Response.json({ error: 'Investor must sign first' }, { status: 400 });
+      return Response.json({ error: 'Signing session failed. Try regenerating.' }, { status: 500 });
     }
-    
-    const viewData = await viewResponse.json();
-    
-    // Log signing session (only update the entity type we found)
-    if (agreementType === 'LegalAgreement') {
-      try {
-        await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, {
-          audit_log: [
-            ...(agreement.audit_log || []),
-            {
-              timestamp: new Date().toISOString(),
-              actor: user.email,
-              action: 'signing_session_created',
-              details: `${role} signing session created for envelope ${envelopeId}`
-            }
-          ]
-        });
-      } catch (e) {
-        console.warn('[DocuSign] Failed to update LegalAgreement audit log (non-blocking):', e.message);
-      }
-    } else if (agreementType === 'AgreementVersion') {
-      // AgreementVersion doesn't have audit_log field, skip
-      console.log('[DocuSign] Skipping audit log for AgreementVersion');
-    }
-    
-    console.log('[DocuSign] Signing session created successfully - returning URL');
-    
-    return Response.json({ 
-      signing_url: viewData.url
-    });
+
+    const viewData = await viewResp.json();
+    return Response.json({ signing_url: viewData.url });
   } catch (error) {
-    console.error('[docusignCreateSigningSession] Error:', error);
+    console.error('[signing] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
