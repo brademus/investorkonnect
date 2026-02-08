@@ -1,394 +1,90 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Server-side enriched rooms list
- * Returns rooms with counterparty profiles and deal summaries pre-loaded
- * Eliminates client-side N+1 queries
+ * Enriched rooms list - returns rooms with counterparty names, deal summaries, and agreement status.
+ * Simplified v2: no legacy entities, no message attachment scanning, clean logic.
  */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
-    // Get user profile
     const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
+    const profile = profiles?.[0];
+    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+
+    const isInvestor = profile.user_role === 'investor';
+    const isAgent = profile.user_role === 'agent';
+
+    // Get rooms
+    let rooms = [];
+    if (isInvestor) {
+      rooms = await base44.asServiceRole.entities.Room.filter({ investorId: profile.id });
+    } else if (isAgent) {
+      const allRooms = await base44.asServiceRole.entities.Room.list('-created_date', 200);
+      rooms = allRooms.filter(r => r.agent_ids?.includes(profile.id) || r.agentId === profile.id);
     }
 
-    const userRole = profile.user_role || profile.role;
+    // Filter out expired
+    rooms = rooms.filter(r => r.request_status !== 'expired');
 
-    // Get all rooms for this user
-    let rooms = userRole === 'investor'
-      ? await base44.asServiceRole.entities.Room.filter({ investorId: profile.id })
-      : await base44.asServiceRole.entities.Room.filter({ agentId: profile.id });
-
-    // PHASE 3/7: Filter out expired rooms (agents who lost to another agent)
-    // PHASE 6/7: For agents, also exclude deals locked to a different agent
-    const isAgent = userRole === 'agent';
-    
-    rooms = (rooms || []).filter(r => {
-      // Exclude expired rooms
-      if (r.request_status === 'expired') return false;
-      return true;
-    });
-
-    // Get all unique deal IDs
+    // Batch-load deals + counterparty profiles + agreements
     const dealIds = [...new Set(rooms.map(r => r.deal_id).filter(Boolean))];
-    
-    // Get all deals at once
-    const allDeals = dealIds.length > 0
-      ? await base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds } })
-      : [];
-    
+    const counterpartyIds = [...new Set(rooms.map(r => isInvestor ? (r.agent_ids?.[0] || r.agentId) : r.investorId).filter(Boolean))];
+
+    const [allDeals, allProfiles, allAgreements, allCounters] = await Promise.all([
+      dealIds.length ? base44.asServiceRole.entities.Deal.filter({ id: { $in: dealIds } }) : [],
+      counterpartyIds.length ? base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } }) : [],
+      dealIds.length ? base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: { $in: dealIds } }) : [],
+      rooms.length ? base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: rooms.map(r => r.id) }, status: 'pending' }).catch(() => []) : []
+    ]);
+
     const dealMap = new Map(allDeals.map(d => [d.id, d]));
-
-    // Fetch negotiations for these deals to surface counter/regen state
-    let negotiations = [];
-    try {
-      if (dealIds.length > 0) {
-        negotiations = await base44.asServiceRole.entities.DealNegotiation.filter({ deal_id: { $in: dealIds } });
-      }
-    } catch (e) {
-      // DealNegotiation entity may not exist - continue without it
-      console.log('[listMyRoomsEnriched] DealNegotiation not found, continuing without negotiation data');
-    }
-
-    // Choose latest negotiation per deal
-    const negotiationMap = new Map();
-    for (const n of negotiations) {
-      const prev = negotiationMap.get(n.deal_id);
-      if (!prev) {
-        negotiationMap.set(n.deal_id, n);
-      } else {
-        const tA = new Date(n.updated_at || n.updated_date || n.created_date || 0).getTime();
-        const tB = new Date(prev.updated_at || prev.updated_date || prev.created_date || 0).getTime();
-        if (tA >= tB) negotiationMap.set(n.deal_id, n);
-      }
-    }
-
-    // Pending CounterOffers (room-scoped, not deal-scoped - avoid cross-agent leakage)
-    const roomIds = rooms.map(r => r.id).filter(Boolean);
-    const pendingOffers = roomIds.length > 0
-      ? await base44.asServiceRole.entities.CounterOffer.filter({ room_id: { $in: roomIds }, status: 'pending' })
-      : [];
-    const pendingOfferByRoomId = new Map();
-    for (const o of pendingOffers) {
-      const prev = pendingOfferByRoomId.get(o.room_id);
-      if (!prev) {
-        pendingOfferByRoomId.set(o.room_id, o);
-      } else {
-        const tA = new Date(o.updated_date || o.created_date || 0).getTime();
-        const tB = new Date(prev.updated_date || prev.created_date || 0).getTime();
-        if (tA >= tB) pendingOfferByRoomId.set(o.room_id, o);
-      }
-    }
-
-    // Get all unique counterparty profile IDs
-    const counterpartyIds = [...new Set(
-      rooms.map(r => userRole === 'investor' ? r.agentId : r.investorId).filter(Boolean)
-    )];
-    
-    // Get all counterparty profiles at once
-    const counterpartyProfiles = counterpartyIds.length > 0
-      ? await base44.asServiceRole.entities.Profile.filter({ id: { $in: counterpartyIds } })
-      : [];
-    
-    const profileMap = new Map(counterpartyProfiles.map(p => [p.id, p]));
-
-    // Fetch legal agreements for these deals (to surface Internal Agreement PDFs)
-    const legalAgreements = dealIds.length > 0
-      ? await base44.asServiceRole.entities.LegalAgreement.filter({ id: { $ne: null }, deal_id: { $in: dealIds } })
-      : [];
-    const legalMap = new Map(legalAgreements.map(a => [a.deal_id, a]));
-
-    // Collect all room IDs to fetch message-based attachments (mirrors Files tab)
-    const roomIds = rooms.map(r => r.id).filter(Boolean);
-
-    // Fetch Message entity attachments (new schema)
-    const messages = roomIds.length > 0
-      ? await base44.asServiceRole.entities.Message.filter({ room_id: { $in: roomIds } })
-      : [];
-
-    // Fetch RoomMessage entity attachments as legacy fallback
-    let roomMessages = [];
-    try {
-      if (roomIds.length > 0) {
-        roomMessages = await base44.asServiceRole.entities.RoomMessage.filter({ roomId: { $in: roomIds } });
-      }
-    } catch (e) {
-      // RoomMessage entity may not exist - continue without it
-      console.log('[listMyRoomsEnriched] RoomMessage not found, continuing without legacy message data');
-    }
-
-    // Build sender profile map for message attachments
-    const senderProfileIds = [
-      ...new Set([
-        ...messages.map(m => m.sender_profile_id).filter(Boolean),
-        ...roomMessages.map(m => m.senderUserId || m.sender_profile_id).filter(Boolean)
-      ])
-    ];
-
-    if (senderProfileIds.length) {
-      const senderProfiles = await base44.asServiceRole.entities.Profile.filter({ id: { $in: senderProfileIds } });
-      senderProfiles.forEach(p => profileMap.set(p.id, p));
-    }
-
-    // Normalize attachments from Message and RoomMessage
-    const messageAttachmentsByRoom = new Map();
-    const legacyAttachmentsByRoom = new Map();
-
-    const pushByRoom = (map, roomId, item) => {
-      if (!roomId) return;
-      if (!map.has(roomId)) map.set(roomId, []);
-      map.get(roomId).push(item);
-    };
-
-    // From Message (metadata.file_url)
-    messages.forEach(m => {
-      const meta = m.metadata || {};
-      if (!meta.file_url) return;
-      const uploader = profileMap.get(m.sender_profile_id);
-      const name = meta.file_name || (typeof meta.file_url === 'string' ? meta.file_url.split('?')[0].split('/').pop() : 'Document');
-      pushByRoom(messageAttachmentsByRoom, m.room_id, {
-        name,
-        url: meta.file_url,
-        uploaded_by: m.sender_profile_id,
-        uploaded_by_name: uploader?.full_name || 'Shared',
-        uploaded_at: m.created_date,
-        size: meta.file_size,
-        type: meta.file_type
-      });
-    });
-
-    // From RoomMessage (legacy kind="file")
-    roomMessages.forEach(m => {
-      if (m.kind !== 'file' || !m.fileUrl) return;
-      const uploader = profileMap.get(m.senderUserId || m.sender_profile_id);
-      const name = (m.text && typeof m.text === 'string' ? m.text : null) || m.fileUrl.split('?')[0].split('/').pop() || 'Document';
-      pushByRoom(legacyAttachmentsByRoom, m.roomId, {
-        name,
-        url: m.fileUrl,
-        uploaded_by: m.senderUserId || m.sender_profile_id,
-        uploaded_by_name: uploader?.full_name || 'Shared',
-        uploaded_at: m.created_date,
-        size: undefined,
-        type: undefined
-      });
-    });
+    const profileMap = new Map(allProfiles.map(p => [p.id, p]));
+    const agreementMap = new Map();
+    allAgreements.forEach(a => { if (!agreementMap.has(a.deal_id)) agreementMap.set(a.deal_id, a); });
+    const counterMap = new Map();
+    allCounters.forEach(c => { if (!counterMap.has(c.room_id)) counterMap.set(c.room_id, c); });
 
     // Enrich rooms
-    const enrichedRooms = rooms.map(room => {
+    const enriched = rooms.map(room => {
       const deal = dealMap.get(room.deal_id);
-      const counterpartyId = userRole === 'investor' ? room.agentId : room.investorId;
-      const counterpartyProfile = profileMap.get(counterpartyId);
-      const la = legalMap.get(room.deal_id);
-      
-      const isFullySigned = room.agreement_status === 'fully_signed' || 
-                           room.request_status === 'signed';
+      const cpId = isInvestor ? (room.agent_ids?.[0] || room.agentId) : room.investorId;
+      const cp = profileMap.get(cpId);
+      const ag = agreementMap.get(room.deal_id);
+      const counter = counterMap.get(room.id);
+      const isSigned = room.agreement_status === 'fully_signed' || room.request_status === 'signed' || ag?.status === 'fully_signed';
 
-      // Base room data
-      const negotiation = negotiationMap.get(room.deal_id);
-      const pending = pendingOfferByRoomId.get(room.id) || null;
-      const derivedNegotiation = negotiation || (pending ? {
-        status: pending.from_role === 'agent' ? 'COUNTERED_BY_AGENT' : 'COUNTERED_BY_INVESTOR',
-        from_role: pending.from_role,
-        last_proposed_terms: { proposed_by_role: pending.from_role }
-      } : null);
-      
-      // Mirror Files tab: combine room uploads with message attachments and system documents
-      const baseFiles = Array.isArray(room.files) ? room.files : [];
-      const basePhotos = Array.isArray(room.photos) ? room.photos : [];
-      const msgFiles = messageAttachmentsByRoom.get(room.id) || [];
-      const legacyFiles = legacyAttachmentsByRoom.get(room.id) || [];
+      // For agents: filter out deals locked to another agent
+      if (isAgent && deal?.locked_agent_id && deal.locked_agent_id !== profile.id) return null;
 
-      // Helper to normalize a document object to file item
-      const normalizeDoc = (doc, fallbackName, uploadedAtKey = 'uploaded_at') => {
-        if (!doc || !doc.url) return null;
-        return {
-          name: doc.name || fallbackName || 'Document',
-          url: doc.url,
-          uploaded_by: doc.uploaded_by,
-          uploaded_by_name: doc.uploaded_by_name || 'System',
-          uploaded_at: doc[uploadedAtKey] || doc.generated_at || room.updated_date || room.created_date,
-          size: doc.size,
-          type: doc.type || 'application/pdf'
-        };
-      };
-
-      // System docs on Room
-      const systemRoomDocs = [
-        normalizeDoc(room.contract_document, 'Purchase Contract'),
-        normalizeDoc(room.listing_agreement_document, 'Listing Agreement'),
-        normalizeDoc(room.internal_agreement_document, 'Internal Agreement', 'generated_at')
-      ].filter(Boolean);
-
-      // System docs on Deal (if available)
-      const systemDealDocs = [];
-      if (deal) {
-        if (deal.contract_document) systemDealDocs.push(normalizeDoc(deal.contract_document, 'Purchase Contract'));
-        const docs = deal.documents || {};
-        if (docs.purchase_contract && docs.purchase_contract.url) systemDealDocs.push(normalizeDoc(docs.purchase_contract, 'Purchase Contract'));
-        if (docs.listing_agreement && docs.listing_agreement.url) systemDealDocs.push(normalizeDoc(docs.listing_agreement, 'Listing Agreement'));
-        if (docs.operating_agreement && docs.operating_agreement.url) systemDealDocs.push(normalizeDoc(docs.operating_agreement, 'Operating Agreement'));
-        if (docs.buyer_contract && docs.buyer_contract.url) systemDealDocs.push(normalizeDoc(docs.buyer_contract, 'Buyer Contract'));
-      }
-
-      const legalDocs = [];
-      if (la) {
-        const laUrl = la.signed_pdf_url || la.final_pdf_url || la.docusign_pdf_url || la.pdf_file_url || la.signing_pdf_url;
-        if (laUrl) {
-          legalDocs.push({
-            name: 'Internal Agreement',
-            url: laUrl,
-            uploaded_by_name: 'System',
-            uploaded_at: la.agent_signed_at || la.investor_signed_at || la.updated_date || la.created_date,
-            type: 'application/pdf'
-          });
-        }
-      }
-
-      const all = [
-        ...baseFiles,
-        ...msgFiles,
-        ...legacyFiles,
-        ...systemRoomDocs,
-        ...systemDealDocs,
-        ...legalDocs,
-      ];
-
-      const isPhoto = (f) => {
-        const t = (f?.type || '').toString().toLowerCase();
-        if (t.startsWith('image/')) return true;
-        const n = (f?.name || '').toString().toLowerCase();
-        return /(\.png|\.jpg|\.jpeg|\.webp|\.gif)$/.test(n);
-      };
-
-      const files = all.filter(f => !isPhoto(f));
-      const photos = [...basePhotos, ...all.filter(isPhoto)];
-
-      // Sort newest first
-      const byDateDesc = (a, b) => new Date(b?.uploaded_at || 0) - new Date(a?.uploaded_at || 0);
-      files.sort(byDateDesc);
-      photos.sort(byDateDesc);
-      
-      const enriched = {
-        id: room.id,
-        deal_id: room.deal_id,
-        request_status: room.request_status,
-        agreement_status: room.agreement_status,
-        negotiation_status: derivedNegotiation?.status || null,
-        negotiation: derivedNegotiation ? {
-          status: derivedNegotiation.status,
-          last_proposed_terms: derivedNegotiation.last_proposed_terms || null,
-          current_terms: derivedNegotiation.current_terms || null
-        } : null,
-        regen_required: (() => {
-          const s = String(derivedNegotiation?.status || '').toUpperCase();
-          return Boolean(
-            s.includes('REGEN') ||
-            negotiation?.requires_regen ||
-            negotiation?.needs_regeneration ||
-            negotiation?.regeneration_required ||
-            negotiation?.last_proposed_terms?.requires_regen
-          );
-        })(),
-        last_counter_by_role: derivedNegotiation?.last_proposed_terms?.proposed_by_role || null,
-        pending_counter_offer: pending ? {
-          id: pending.id,
-          from_role: pending.from_role,
-          status: pending.status,
-          terms: pending.terms,
-          created_at: pending.created_date
-        } : null,
-        created_date: room.created_date,
-        updated_date: room.updated_date,
-        files,
-        photos,
-        
-        // Counterparty info
-        counterparty_id: counterpartyId,
-        counterparty_name: counterpartyProfile?.full_name || 'Unknown',
-        counterparty_role: userRole === 'investor' ? 'agent' : 'investor',
-        counterparty_avatar: counterpartyProfile?.headshotUrl,
-        
-        // PHASE 7: Deal summary with lock-in fields
-        deal_summary: deal ? {
-          title: deal.title,
-          city: deal.city,
-          state: deal.state,
-          budget: deal.purchase_price,
-          pipeline_stage: deal.pipeline_stage,
-          closing_date: deal.key_dates?.closing_date,
-          locked_room_id: deal.locked_room_id,
-          locked_agent_id: deal.locked_agent_id,
-          connected_at: deal.connected_at,
-          // Sensitive fields only if allowed
-          property_address: (userRole === 'investor' || isFullySigned) 
-            ? deal.property_address 
-            : null,
-          seller_name: (userRole === 'investor' || isFullySigned) 
-            ? deal.seller_info?.seller_name 
-            : null
-        } : null,
-        
-        is_fully_signed: isFullySigned,
-        
-        // Include agreement signing status for badges
-        agreement: la ? {
-          status: la.status,
-          investor_signed_at: la.investor_signed_at,
-          agent_signed_at: la.agent_signed_at,
-          docusign_status: la.docusign_status
-        } : null,
-        
-        // Legacy fields for compatibility
+      return {
+        id: room.id, deal_id: room.deal_id,
+        request_status: room.request_status, agreement_status: room.agreement_status,
+        created_date: room.created_date, updated_date: room.updated_date,
+        counterparty_id: cpId, counterparty_name: cp?.full_name || 'Unknown',
+        counterparty_role: isInvestor ? 'agent' : 'investor',
+        is_fully_signed: isSigned,
+        pending_counter_offer: counter ? { id: counter.id, from_role: counter.from_role, status: counter.status } : null,
+        // Deal fields
         title: deal?.title || room.title,
-        property_address: (userRole === 'investor' || isFullySigned) 
-          ? (deal?.property_address || room.property_address)
-          : null,
-        city: deal?.city || room.city,
-        state: deal?.state || room.state,
-        budget: deal?.purchase_price || room.budget || 0
+        property_address: (isInvestor || isSigned) ? (deal?.property_address || room.property_address) : null,
+        city: deal?.city || room.city, state: deal?.state || room.state,
+        budget: deal?.purchase_price || room.budget || 0,
+        pipeline_stage: deal?.pipeline_stage,
+        closing_date: deal?.key_dates?.closing_date,
+        proposed_terms: room.proposed_terms || deal?.proposed_terms,
+        // Agreement status for badges
+        agreement: ag ? { status: ag.status, investor_signed_at: ag.investor_signed_at, agent_signed_at: ag.agent_signed_at } : null,
+        // Files/photos from room
+        files: room.files || [], photos: room.photos || []
       };
+    }).filter(Boolean);
 
-      return enriched;
-    });
-
-    // PHASE 6/7: Filter out expired rooms AND rooms where deal is locked to a different agent
-    const validRooms = enrichedRooms.filter(r => {
-      // Exclude orphaned rooms (no counterparty)
-      if (!r.counterparty_name || r.counterparty_name === 'Unknown') return false;
-      
-      // Exclude expired rooms
-      if (r.request_status === 'expired') return false;
-      
-      // PHASE 6/7: For agents, exclude rooms where deal is locked to a different agent
-      if (isAgent) {
-        const deal = dealMap.get(r.deal_id);
-        if (deal?.locked_agent_id && deal.locked_agent_id !== profile.id) {
-          return false;
-        }
-      }
-      
-      return true;
-    });
-
-    return Response.json({ 
-      rooms: validRooms,
-      count: validRooms.length 
-    });
-
+    return Response.json({ rooms: enriched, count: enriched.length });
   } catch (error) {
-    console.error('listMyRoomsEnriched error:', error);
-    return Response.json({ 
-      error: error.message || 'Failed to list rooms' 
-    }, { status: 500 });
+    console.error('[listMyRoomsEnriched] Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
