@@ -1,6 +1,6 @@
 // =================================================================
-// VERSION 2.6.0 - DRAFT FLOW SUPPORT
-// CRITICAL: Supports both draft_id (pre-signing) and deal_id flows
+// VERSION 3.3.0 - AGENT-ONLY ENVELOPE FIX
+// CRITICAL: Strict signer_mode filtering on cache lookup
 // =================================================================
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 import { PDFDocument, rgb, StandardFonts } from 'npm:pdf-lib@1.17.1';
@@ -8,7 +8,7 @@ import { fetchTemplate } from './utils/templateCache.js';
 import { getDocuSignConnection, invalidateDocuSignCache } from './utils/docusignCache.js';
 import pdfParse from 'npm:pdf-parse@1.1.1';
 
-const VERSION = '3.1.0-AGENT-SIGN-FIX';
+const VERSION = '3.3.0-STRICT-CACHE';
 
 // State-to-template URL mapping
 const STATE_TEMPLATES = {
@@ -111,8 +111,8 @@ Date: [[AGENT_DATE]]
 
 function normalizeWinAnsi(text) {
   const map = {
-    '–': '-', '—': '-', '−': '-', '•': '*', '·': '-', '…': '...', '"': '"', '"': '"', ''': "'", ''': "'",
-    '→': '->', '←': '<-', '↔': '<->', '⇒': '=>', '≤': '<=', '≥': '>=', '©': '(c)', '®': '(r)', '™': 'TM',
+    '\u2013': '-', '\u2014': '-', '\u2212': '-', '\u2022': '*', '\u00B7': '-', '\u2026': '...', '\u201C': '"', '\u201D': '"', '\u2018': "'", '\u2019': "'",
+    '\u2192': '->', '\u2190': '<-', '\u2194': '<->', '\u21D2': '=>', '\u2264': '<=', '\u2265': '>=', '\u00A9': '(c)', '\u00AE': '(r)', '\u2122': 'TM',
     '\u00AD': '', '\u00A0': ' ', '\u2002': ' ', '\u2003': ' ', '\u202F': ' ', '\u2009': ' ', '\u200A': ' ',
     '\u200B': '', '\uFEFF': '', '\u2060': '',
     '\u2610': '[ ]', '\u2611': '[x]', '\u2612': '[x]', '\u25A1': '[ ]', '\u25A0': '[]',
@@ -150,7 +150,7 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
   const lines = text.split('\n');
   
   for (let i = 0; i < lines.length; i++) {
-    let line = lines[i];
+    const line = lines[i];
     
     if (yPosition < margin + 30) {
       page = pdfDoc.addPage([pageWidth, pageHeight]);
@@ -178,9 +178,7 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
       
       for (const part of parts) {
         if (!part) continue;
-        
         const isAnchor = /\[\[[A-Z_]+\]\]/.test(part);
-        
         if (isAnchor) {
           page.drawText(part, { x: xPos, y: yPosition, size: 1, font: font, color: rgb(1, 1, 1) });
         } else if (part.trim()) {
@@ -193,11 +191,9 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
       const cleanLine = line.replace(/\[\[[A-Z_]+\]\]/g, '');
       const words = cleanLine.split(' ');
       let currentLine = '';
-      
       for (const word of words) {
         const testLine = currentLine ? `${currentLine} ${word}` : word;
         const width = currentFont.widthOfTextAtSize(testLine, currentSize);
-        
         if (width > maxWidth && currentLine) {
           page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
           yPosition -= lineHeight;
@@ -207,7 +203,6 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
           currentLine = testLine;
         }
       }
-      
       if (currentLine.trim()) {
         page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
         yPosition -= lineHeight;
@@ -215,11 +210,9 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
     } else {
       const words = line.split(' ');
       let currentLine = '';
-      
       for (const word of words) {
         const testLine = currentLine ? `${currentLine} ${word}` : word;
         const width = currentFont.widthOfTextAtSize(testLine, currentSize);
-        
         if (width > maxWidth && currentLine) {
           page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
           yPosition -= lineHeight;
@@ -229,7 +222,6 @@ async function generatePdfFromText(text, dealId, isDocuSignVersion = false) {
           currentLine = testLine;
         }
       }
-      
       if (currentLine) {
         page.drawText(currentLine, { x: margin, y: yPosition, size: currentSize, font: currentFont, color: textColor });
         yPosition -= lineHeight;
@@ -282,19 +274,21 @@ function buildRenderContext(deal, profile, agentProfile, exhibit_a, fillAgentDet
     buyerCompValue = `${buyerCompAmount}%`;
   }
   
+  console.log(`[buildRenderContext] buyer_commission_type: ${exhibit_a.buyer_commission_type} percentage: ${exhibit_a.buyer_commission_percentage} flat_fee: ${exhibit_a.buyer_flat_fee}`);
+  console.log(`[buildRenderContext] Final BUYER_COMP_VALUE: ${buyerCompValue}`);
+  
   const agentName = fillAgentDetails ? (agentProfile.full_name || agentProfile.email || 'TBD') : 'TBD';
   const licenseNumber = fillAgentDetails ? (agentProfile.agent?.license_number || agentProfile.license_number || 'TBD') : 'TBD';
   const brokerageName = fillAgentDetails ? (agentProfile.agent?.brokerage || agentProfile.broker || 'TBD') : 'TBD';
   const agentEmail = fillAgentDetails ? (agentProfile.email || 'TBD') : 'TBD';
   const agentPhone = fillAgentDetails ? (agentProfile.phone || 'TBD') : 'TBD';
   
+  const appUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/';
+  
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0',
     PLATFORM_NAME: 'investor konnect',
-    PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-    WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-    APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-    PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
+    PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl,
     DEAL_ID: deal.id || 'N/A',
     EFFECTIVE_DATE: effectiveDate,
     INVESTOR_LEGAL_NAME: profile.full_name || profile.email || 'N/A',
@@ -337,8 +331,6 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
     
     const body = await req.json();
-    console.log(`[${VERSION}] Body keys:`, Object.keys(body));
-    console.log(`[${VERSION}] draft_id:`, body.draft_id, 'deal_id:', body.deal_id);
     
     const draft_id = body.draft_id || null;
     const deal_id = body.deal_id || null;
@@ -346,18 +338,14 @@ Deno.serve(async (req) => {
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = body.signer_mode || (room_id ? 'both' : 'investor_only');
 
-    console.log(`[${VERSION}] Params:`, { deal_id, draft_id, room_id, signer_mode });
+    console.log(`[${VERSION}] Params: deal_id=${deal_id} draft_id=${draft_id} room_id=${room_id} signer_mode=${signer_mode}`);
 
-    // CRITICAL: Prioritize draft_id for pre-signing flow (draft_id means we build deal from params)
     const useDraftFlow = !!draft_id;
     const effectiveId = draft_id || deal_id;
 
     if (!effectiveId) {
-      console.error(`[${VERSION}] VALIDATION FAILED - Missing both IDs`);
       return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     }
-
-    console.log(`[${VERSION}] ✓ Proceeding with ${useDraftFlow ? 'DRAFT' : 'DEAL'} flow using ID:`, effectiveId);
 
     // Load investor profile
     let profile = null;
@@ -367,12 +355,10 @@ Deno.serve(async (req) => {
       const profiles = await base44.asServiceRole.entities.Profile.filter({ id: investorProfileId });
       profile = profiles?.[0];
     }
-
     if (!profile) {
       const profiles = await base44.entities.Profile.filter({ user_id: user.id });
       profile = profiles?.[0];
     }
-
     if (!profile) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
@@ -380,25 +366,16 @@ Deno.serve(async (req) => {
     // Load deal OR build from draft params
     let deal = null;
     if (useDraftFlow) {
-      // Build minimal deal object from request body params for draft flow
       const stateParam = body.state;
       if (!stateParam) {
         return Response.json({ error: 'State required for draft-based generation' }, { status: 400 });
       }
-
       deal = {
-        id: effectiveId,
-        state: stateParam,
-        city: body.city || 'TBD',
-        county: body.county || 'TBD',
-        zip: body.zip || 'TBD',
-        property_address: body.property_address || 'TBD',
-        property_type: body.property_type || 'Single Family',
-        transaction_type: 'ASSIGNMENT'
+        id: effectiveId, state: stateParam, city: body.city || 'TBD', county: body.county || 'TBD',
+        zip: body.zip || 'TBD', property_address: body.property_address || 'TBD',
+        property_type: body.property_type || 'Single Family', transaction_type: 'ASSIGNMENT'
       };
-      console.log(`[${VERSION}] Draft-based deal:`, deal);
     } else {
-      // Load existing Deal entity
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: effectiveId });
       if (!deals || deals.length === 0) {
         return Response.json({ error: 'Deal not found' }, { status: 404 });
@@ -426,11 +403,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Resolve agent profile - check multiple sources for agent ID
+    // Resolve agent profile
     let agentProfile = null;
     if (room_id && room) {
       const agentId = body.agent_profile_id || room.agentId || (Array.isArray(room.agent_ids) ? room.agent_ids[0] : null);
-      console.log(`[${VERSION}] Using agentId:`, agentId, 'from agent_profile_id:', body.agent_profile_id, 'room.agentId:', room.agentId, 'room.agent_ids:', room.agent_ids);
+      console.log(`[${VERSION}] Using agentId: ${agentId}`);
       if (!agentId) {
         return Response.json({ error: 'Cannot determine agent for room-scoped agreement' }, { status: 400 });
       }
@@ -440,7 +417,6 @@ Deno.serve(async (req) => {
       }
       agentProfile = agentProfiles[0];
     } else {
-      // No room - use TBD placeholders
       agentProfile = {
         id: 'TBD', full_name: 'TBD', email: 'TBD', user_id: 'TBD',
         agent: { license_number: 'TBD', brokerage: 'TBD' }
@@ -451,39 +427,20 @@ Deno.serve(async (req) => {
     const missing = [];
     const details = [];
     
-    if (!deal.state) {
-      missing.push('deal.state');
-      details.push('Property state is required');
-    }
+    if (!deal.state) { missing.push('deal.state'); details.push('Property state is required'); }
     
     const investorName = profile.full_name || profile.email;
-    if (!investorName) {
-      missing.push('investor.full_name');
-      details.push('Investor legal name is required');
-    }
+    if (!investorName) { missing.push('investor.full_name'); details.push('Investor legal name is required'); }
     
     const fillAgentDetails = !!room_id;
     if (fillAgentDetails) {
-      if (!(agentProfile.full_name || agentProfile.email)) {
-        missing.push('agent.full_name');
-        details.push('Agent legal name is required');
-      }
-      if (!(agentProfile.agent?.license_number || agentProfile.license_number)) {
-        missing.push('agent.license_number');
-        details.push('Agent license number is required');
-      }
-      if (!(agentProfile.agent?.brokerage || agentProfile.broker)) {
-        missing.push('agent.brokerage');
-        details.push('Agent brokerage name is required');
-      }
+      if (!(agentProfile.full_name || agentProfile.email)) { missing.push('agent.full_name'); details.push('Agent legal name is required'); }
+      if (!(agentProfile.agent?.license_number || agentProfile.license_number)) { missing.push('agent.license_number'); details.push('Agent license number is required'); }
+      if (!(agentProfile.agent?.brokerage || agentProfile.broker)) { missing.push('agent.brokerage'); details.push('Agent brokerage name is required'); }
     }
     
     if (missing.length > 0) {
-      return Response.json({ 
-        error: `Missing required fields: ${details.join(', ')}`,
-        missing_fields: missing,
-        details: details
-      }, { status: 400 });
+      return Response.json({ error: `Missing required fields: ${details.join(', ')}`, missing_fields: missing, details }, { status: 400 });
     }
     
     // Get template URL
@@ -503,30 +460,29 @@ Deno.serve(async (req) => {
     }
     
     const inputData = JSON.stringify({
-      state_code: stateCode,
-      template_url: templateUrl,
+      state_code: stateCode, template_url: templateUrl,
       deal_fields: { id: deal.id, state: deal.state, city: deal.city, county: deal.county, zip: deal.zip, property_address: deal.property_address },
       investor_fields: { full_name: profile.full_name, email: profile.email },
       agent_fields: { full_name: agentProfile.full_name, license_number: agentProfile.agent?.license_number || agentProfile.license_number, brokerage: agentProfile.agent?.brokerage || agentProfile.broker },
-      exhibit_a: exhibit_a,
-      signer_mode: signer_mode,
-      version: '2.5-draft-flow-v2'
+      exhibit_a, signer_mode, version: '3.3-strict-cache'
     });
     const renderInputHash = await sha256(inputData);
     
-    // Check for existing agreement
+    // ===== CACHE LOOKUP - STRICT signer_mode filtering =====
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
-
-    // CRITICAL: Only look for existing agreements with EXACT signer_mode match
-    // Never return/reuse an investor_only agreement when agent_only is requested
     let existing = [];
+
     if (room_id) {
-      // Only search for agreements that match the requested signer_mode
       const allForRoom = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 10);
-      const exactMatch = allForRoom.filter(a => a.signer_mode === signer_mode && a.status !== 'superseded' && a.status !== 'voided');
+      // CRITICAL: Only match agreements with EXACT same signer_mode that are not dead
+      const exactMatch = allForRoom.filter(a => 
+        a.signer_mode === signer_mode && 
+        a.status !== 'superseded' && 
+        a.status !== 'voided'
+      );
       existing = exactMatch.length > 0 ? [exactMatch[0]] : [];
-      console.log(`[${VERSION}] Found ${allForRoom.length} total agreements for room, ${exactMatch.length} with exact signer_mode=${signer_mode} (non-superseded/voided)`);
+      console.log(`[${VERSION}] Cache: ${allForRoom.length} total for room, ${exactMatch.length} with signer_mode=${signer_mode} (active). All modes: ${allForRoom.map(a => a.signer_mode + ':' + a.status).join(', ')}`);
     } else if (!useDraftFlow && effectiveId) {
       existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 1);
     }
@@ -536,38 +492,30 @@ Deno.serve(async (req) => {
       existingAgreementId = existingAgreement.id;
       toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
       
-      // Return cached if hash matches and envelope exists
       if (existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 
           existingAgreement.docusign_envelope_id) {
-        console.log(`[${VERSION}] Returning existing agreement id=${existingAgreement.id} (signer_mode=${existingAgreement.signer_mode}, status=${existingAgreement.status})`);
+        console.log(`[${VERSION}] CACHE HIT: id=${existingAgreement.id} signer_mode=${existingAgreement.signer_mode} status=${existingAgreement.status}`);
         return Response.json({ success: true, agreement: existingAgreement, regenerated: false });
       }
       
-      console.log(`[${VERSION}] Existing agreement id=${existingAgreement.id} hash mismatch or missing PDF/envelope, will regenerate`);
+      console.log(`[${VERSION}] CACHE MISS: hash mismatch or missing PDF/envelope, regenerating`);
     } else {
-      console.log(`[${VERSION}] No existing agreement found for signer_mode=${signer_mode}, will create new`);
+      console.log(`[${VERSION}] NO CACHE: No existing ${signer_mode} agreement found, creating new`);
     }
     
-    // Fetch template
-    console.log('[generateLegalAgreement v2.5] Fetching template:', templateUrl);
+    // ===== GENERATE NEW AGREEMENT =====
+    console.log(`[${VERSION}] Fetching template: ${templateUrl}`);
     const templateBytes = await fetchTemplate(templateUrl);
     
-    // Extract text
     const pdfData = await pdfParse(new Uint8Array(templateBytes));
     let templateText = pdfData.text;
     
-    // Replace placeholders
     const missingTokens = new Set();
     const foundTokens = new Set();
     
-    const platformDefaults = {
-      PLATFORM_NAME: 'investor konnect',
-      PLATFORM_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-      WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-      APP_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-      PLATFORM_WEBSITE_URL: (Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/'),
-    };
+    const appUrl = Deno.env.get('PUBLIC_APP_URL') || Deno.env.get('APP_BASE_URL') || 'https://agent-vault-da3d088b.base44.app/';
+    const platformDefaults = { PLATFORM_NAME: 'investor konnect', PLATFORM_URL: appUrl, WEBSITE_URL: appUrl, APP_URL: appUrl, PLATFORM_WEBSITE_URL: appUrl };
     for (const k of Object.keys(platformDefaults)) { if (!renderContext[k]) renderContext[k] = platformDefaults[k]; }
 
     templateText = templateText.replace(/\{([A-Z0-9_]+)\}/g, (match, token) => {
@@ -586,31 +534,20 @@ Deno.serve(async (req) => {
     });
 
     if (missingTokens.size > 0) {
-      return Response.json({
-        error: `Missing required fields for contract: ${Array.from(missingTokens).join(', ')}`,
-        missing_placeholders: Array.from(missingTokens)
-      }, { status: 400 });
+      return Response.json({ error: `Missing required fields for contract: ${Array.from(missingTokens).join(', ')}`, missing_placeholders: Array.from(missingTokens) }, { status: 400 });
     }
     
     templateText = normalizeWinAnsi(templateText);
     templateText = normalizeSignatureSection(templateText);
     
-    // Verify anchors
     const requiredAnchors = ['INVESTOR_SIGN', 'INVESTOR_PRINT', 'INVESTOR_DATE', 'AGENT_SIGN', 'AGENT_PRINT', 'AGENT_LICENSE', 'AGENT_BROKERAGE', 'AGENT_DATE'];
-    const missingAnchors = [];
-    for (const anchor of requiredAnchors) {
-      const anchorString = `[[${anchor}]]`;
-      if (!templateText.includes(anchorString)) {
-        missingAnchors.push(anchor);
-      }
-    }
+    const missingAnchors = requiredAnchors.filter(a => !templateText.includes(`[[${a}]]`));
     
     if (missingAnchors.length > 0) {
       return Response.json({ error: `DocuSign anchor verification failed: Missing: ${missingAnchors.join(', ')}` }, { status: 500 });
     }
     
-    // Generate PDFs
-    console.log('[generateLegalAgreement v2.5] Generating PDFs...');
+    console.log(`[${VERSION}] Generating PDFs...`);
     const [humanPdfBytes, docusignPdfBytes] = await Promise.all([
       generatePdfFromText(templateText, deal.id, false),
       generatePdfFromText(templateText, deal.id, true)
@@ -618,11 +555,9 @@ Deno.serve(async (req) => {
     
     const humanHashBuffer = await crypto.subtle.digest('SHA-256', humanPdfBytes);
     const humanPdfSha256 = Array.from(new Uint8Array(humanHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
-    
     const docusignHashBuffer = await crypto.subtle.digest('SHA-256', docusignPdfBytes);
     const docusignPdfSha256 = Array.from(new Uint8Array(docusignHashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
     
-    // Upload PDFs
     const humanBlob = new Blob([humanPdfBytes], { type: 'application/pdf' });
     const humanFile = new File([humanBlob], `agreement_${deal.id}_human.pdf`);
     const docusignBlob = new Blob([docusignPdfBytes], { type: 'application/pdf' });
@@ -633,22 +568,20 @@ Deno.serve(async (req) => {
       base44.integrations.Core.UploadFile({ file: docusignFile })
     ]);
     
-    console.log('[generateLegalAgreement v2.5] PDFs uploaded');
+    console.log(`[${VERSION}] PDFs uploaded`);
     
     // Create DocuSign envelope
     const connection = await getDocuSignConnection(base44);
     const { access_token: accessToken, account_id: accountId, base_uri: baseUri } = connection;
     
-    // Void old envelope if exists
+    // Void old envelope if exists (only void same signer_mode envelopes)
     if (toVoidEnvelopeId) {
       try {
         const statusUrl = `${baseUri}/restapi/v2.1/accounts/${accountId}/envelopes/${toVoidEnvelopeId}`;
         const statusResp = await fetch(statusUrl, { method: 'GET', headers: { 'Authorization': `Bearer ${accessToken}` } });
-        
         if (statusResp.ok) {
           const statusData = await statusResp.json();
           const currentStatus = statusData.status?.toLowerCase();
-          
           if (['sent', 'delivered'].includes(currentStatus)) {
             await fetch(statusUrl, {
               method: 'PUT',
@@ -658,7 +591,7 @@ Deno.serve(async (req) => {
           }
         }
       } catch (e) {
-        console.warn('[generateLegalAgreement v2.5] Void failed:', e?.message);
+        console.warn(`[${VERSION}] Void failed:`, e?.message);
       }
     }
     
@@ -666,15 +599,15 @@ Deno.serve(async (req) => {
     const investorClientUserId = `investor-${deal.id}-${timestamp}`;
     const agentClientUserId = `agent-${deal.id}-${timestamp}`;
     
-    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal.id} - v2.5.pdf`;
+    const docName = `InvestorKonnect Internal Agreement - ${stateCode} - ${deal.id} - ${VERSION}.pdf`;
     const signers = [];
     
+    // CRITICAL: Build signers based on signer_mode
     if (signer_mode === 'investor_only' || signer_mode === 'both') {
       signers.push({
         email: profile.email,
         name: profile.full_name || profile.email,
-        recipientId: '1',
-        routingOrder: '1',
+        recipientId: '1', routingOrder: '1',
         clientUserId: investorClientUserId,
         tabs: {
           signHereTabs: [{ documentId: '1', anchorString: '[[INVESTOR_SIGN]]', anchorUnits: 'pixels', anchorXOffset: '0', anchorYOffset: '0', anchorIgnoreIfNotPresent: false, anchorCaseSensitive: false, anchorMatchWholeWord: true }],
@@ -684,7 +617,6 @@ Deno.serve(async (req) => {
       });
     }
     
-    console.log(`[${VERSION}] Signer mode: ${signer_mode}, agentProfile.email: ${agentProfile.email}, agentProfile.id: ${agentProfile.id}, signers so far: ${signers.length}`);
     if ((signer_mode === 'both' || signer_mode === 'agent_only') && agentProfile.email && agentProfile.email !== 'TBD') {
       signers.push({
         email: agentProfile.email,
@@ -704,7 +636,7 @@ Deno.serve(async (req) => {
       });
     }
     
-    console.log(`[${VERSION}] Final signers count: ${signers.length}, signers:`, JSON.stringify(signers.map(s => ({ email: s.email, name: s.name, recipientId: s.recipientId }))));
+    console.log(`[${VERSION}] Signers: ${signers.length} for mode=${signer_mode}, emails: ${signers.map(s => s.email).join(', ')}`);
     
     if (signers.length === 0) {
       return Response.json({ error: `No signers resolved for signer_mode=${signer_mode}. Agent email: ${agentProfile.email}, Agent ID: ${agentProfile.id}` }, { status: 400 });
@@ -762,69 +694,41 @@ Deno.serve(async (req) => {
     const envelope = await createResponse.json();
     const envelopeId = envelope.envelopeId;
     
-    console.log('[generateLegalAgreement v2.5] Envelope created:', envelopeId);
+    console.log(`[${VERSION}] Envelope created: ${envelopeId}`);
     
     // Save agreement
-    const agreementData = {
-      deal_id: effectiveId,
-      room_id: room_id || null,
-      investor_user_id: user.id,
-      agent_user_id: agentProfile.user_id,
-      investor_profile_id: profile.id,
-      agent_profile_id: agentProfile.id,
-      governing_state: deal.state,
-      property_zip: deal.zip,
+    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
+      deal_id: effectiveId, room_id: room_id || null,
+      investor_user_id: user.id, agent_user_id: agentProfile.user_id,
+      investor_profile_id: profile.id, agent_profile_id: agentProfile.id,
+      governing_state: deal.state, property_zip: deal.zip,
       transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
       property_type: deal.property_type || 'Single Family',
-      investor_status: 'UNLICENSED',
-      deal_count_last_365: 0,
-      agreement_version: VERSION,
-      signer_mode: signer_mode,
+      investor_status: 'UNLICENSED', deal_count_last_365: 0,
+      agreement_version: VERSION, signer_mode,
       source_base_agreement_id: body.source_base_agreement_id || null,
-      status: 'sent',
-      template_url: templateUrl,
-      final_pdf_url: humanUpload.file_url,
-      pdf_file_url: humanUpload.file_url,
-      pdf_sha256: humanPdfSha256,
-      docusign_pdf_url: docusignUpload.file_url,
-      docusign_pdf_sha256: docusignPdfSha256,
+      status: 'sent', template_url: templateUrl,
+      final_pdf_url: humanUpload.file_url, pdf_file_url: humanUpload.file_url, pdf_sha256: humanPdfSha256,
+      docusign_pdf_url: docusignUpload.file_url, docusign_pdf_sha256: docusignPdfSha256,
       signing_pdf_url: docusignUpload.file_url,
-      render_context_json: renderContext,
-      render_input_hash: renderInputHash,
-      selected_rule_id: stateCode + '_TEMPLATE',
-      selected_clause_ids: {},
-      deep_dive_module_ids: [],
+      render_context_json: renderContext, render_input_hash: renderInputHash,
+      selected_rule_id: stateCode + '_TEMPLATE', selected_clause_ids: {}, deep_dive_module_ids: [],
       exhibit_a_terms: { ...exhibit_a, buyer_commission_amount: buyerCompAmount },
-      rendered_markdown_full: templateText.substring(0, 10000),
-      missing_placeholders: [],
-      docusign_envelope_id: envelopeId,
-      docusign_status: 'sent',
-      docusign_envelope_pdf_hash: docusignPdfSha256,
-      docusign_last_sent_sha256: docusignPdfSha256,
+      rendered_markdown_full: templateText.substring(0, 10000), missing_placeholders: [],
+      docusign_envelope_id: envelopeId, docusign_status: 'sent',
+      docusign_envelope_pdf_hash: docusignPdfSha256, docusign_last_sent_sha256: docusignPdfSha256,
       investor_recipient_id: (signer_mode === 'investor_only' || signer_mode === 'both') ? '1' : null,
       agent_recipient_id: (signer_mode === 'agent_only') ? '1' : (signer_mode === 'both') ? '2' : null,
-      investor_client_user_id: investorClientUserId,
-      agent_client_user_id: agentClientUserId,
-      investor_signing_url: null,
-      agent_signing_url: null,
-      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `envelope_created_${signer_mode}`, details: `Created DocuSign envelope ${envelopeId}` }]
-    };
-    
-    const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
-      ...agreementData,
-      investor_signed_at: null,
-      agent_signed_at: null,
-      investor_signed: false,
-      agent_signed: false,
-      is_fully_signed: false,
-      signed_pdf_url: null,
-      signed_pdf_sha256: null,
-      investor_ip: null,
-      agent_ip: null,
+      investor_client_user_id: investorClientUserId, agent_client_user_id: agentClientUserId,
+      investor_signing_url: null, agent_signing_url: null,
+      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `envelope_created_${signer_mode}`, details: `Created DocuSign envelope ${envelopeId}` }],
+      investor_signed_at: null, agent_signed_at: null,
+      signed_pdf_url: null, signed_pdf_sha256: null,
+      investor_ip: null, agent_ip: null,
       supersedes_agreement_id: existingAgreementId || null
     });
     
-    console.log('[generateLegalAgreement v2.5] Agreement created:', agreement.id);
+    console.log(`[${VERSION}] Agreement created: ${agreement.id}`);
     
     // Update pointer (don't block)
     if (room_id) {
@@ -833,9 +737,9 @@ Deno.serve(async (req) => {
       base44.asServiceRole.entities.Deal.update(effectiveId, { current_legal_agreement_id: agreement.id }).catch(() => {});
     }
     
-    return Response.json({ success: true, agreement: agreement, regenerated: true });
+    return Response.json({ success: true, agreement, regenerated: true });
   } catch (error) {
-    console.error('[generateLegalAgreement v2.5] Error:', error);
+    console.error(`[${VERSION}] Error:`, error);
     return Response.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 });

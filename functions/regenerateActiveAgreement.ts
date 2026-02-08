@@ -1,11 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 Deno.serve(async (req) => {
-  console.log('[regenerateActiveAgreement v3.0] Starting...');
-  
-  // CRITICAL: Clone the request body and headers BEFORE consuming the body
-  const rawBody = await req.text();
-  const originalHeaders = Object.fromEntries(req.headers.entries());
+  console.log('[regenerateActiveAgreement v4.0] Starting...');
   
   try {
     const base44 = createClientFromRequest(req);
@@ -15,7 +11,7 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const body = JSON.parse(rawBody);
+    const body = await req.json();
     console.log('[regenerateActiveAgreement] Body keys:', Object.keys(body));
     
     const { draft_id, deal_id, room_id, exhibit_a, investor_profile_id, property_address, city, state, zip, county } = body;
@@ -26,7 +22,7 @@ Deno.serve(async (req) => {
 
     console.log('[regenerateActiveAgreement] IDs:', { draft_id, deal_id, room_id });
 
-    // Get calling user's profile - use service role to avoid permission issues when agent calls
+    // Get calling user's profile
     console.log('[regenerateActiveAgreement] Looking up caller profile for user:', user.id, user.email);
     let profiles;
     try {
@@ -46,16 +42,10 @@ Deno.serve(async (req) => {
     let draftContext = null;
 
     if (draft_id) {
-      // Draft flow - use request params
       draftContext = {
-        state: state,
-        city: city,
-        county: county,
-        zip: zip,
-        property_address: property_address,
+        state, city, county, zip, property_address,
         investor_profile_id: investor_profile_id || callerProfile?.id
       };
-      console.log('[regenerateActiveAgreement] Draft context:', draftContext);
     } else if (deal_id) {
       const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
       dealContext = deals?.[0];
@@ -71,8 +61,7 @@ Deno.serve(async (req) => {
       room = rooms?.[0];
     }
 
-    // CRITICAL: Resolve the correct investor profile ID
-    // The caller might be an agent, so we need to get the investor from the room/deal, not the caller
+    // CRITICAL: Resolve the correct investor profile ID from room/deal, not the caller
     const resolvedInvestorProfileId = investor_profile_id 
       || room?.investorId 
       || dealContext?.investor_id 
@@ -92,26 +81,17 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    console.log('[regenerateActiveAgreement] Calling generateLegalAgreement...');
-
-    // Determine signer_mode:
-    // - draft flow (pre-signing): investor_only
-    // - room-scoped with requires_regenerate (counter accepted, investor must re-sign): investor_only  
-    // - room-scoped otherwise (agent signing after investor signed base): agent_only
-    // - no room: both
+    // Determine signer_mode
     let signerMode = 'both';
     if (draft_id) {
       signerMode = 'investor_only';
     } else if (room_id && room?.requires_regenerate) {
-      // Counter was accepted - investor needs to regenerate and sign with new terms
       signerMode = 'investor_only';
     } else if (room_id) {
       signerMode = 'agent_only';
     }
     console.log('[regenerateActiveAgreement] signer_mode:', signerMode, 'requires_regenerate:', room?.requires_regenerate);
 
-    // Call generateLegalAgreement - forward the ORIGINAL request headers so the inner
-    // function can authenticate with the same user context
     const genPayload = {
       draft_id: draft_id || undefined,
       deal_id: deal_id || undefined,
@@ -131,29 +111,13 @@ Deno.serve(async (req) => {
       zip: zip || draftContext?.zip || dealContext?.zip,
       county: county || draftContext?.county || dealContext?.county
     };
-    console.log('[regenerateActiveAgreement] Calling generateLegalAgreement with payload keys:', Object.keys(genPayload));
     console.log('[regenerateActiveAgreement] genPayload:', JSON.stringify(genPayload));
     
-    // CRITICAL: Use direct HTTP call with original auth headers
-    // base44.asServiceRole.functions.invoke can fail with 403
-    const appId = Deno.env.get('BASE44_APP_ID');
-    const functionUrl = `https://base44.app/api/apps/${appId}/functions/generateLegalAgreement`;
-    console.log('[regenerateActiveAgreement] Calling function URL:', functionUrl);
+    // Call generateLegalAgreement using service role SDK
+    console.log('[regenerateActiveAgreement] Invoking generateLegalAgreement via service role...');
+    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', genPayload);
     
-    const genResponse = await fetch(functionUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': originalHeaders['authorization'] || '',
-        'x-base44-app-id': originalHeaders['x-base44-app-id'] || appId || '',
-        'x-base44-service-role-key': originalHeaders['x-base44-service-role-key'] || '',
-      },
-      body: JSON.stringify(genPayload)
-    });
-    
-    const genData = await genResponse.json();
-    const gen = { data: genData, status: genResponse.status };
-    console.log('[regenerateActiveAgreement] Direct call response status:', genResponse.status);
+    console.log('[regenerateActiveAgreement] Response status:', gen.status);
 
     if (gen.data?.error) {
       console.error('[regenerateActiveAgreement] Generation error:', gen.data.error);
@@ -162,13 +126,13 @@ Deno.serve(async (req) => {
     
     const newAgreement = gen.data?.agreement;
     if (!newAgreement?.id) {
-      console.error('[regenerateActiveAgreement] No agreement returned');
+      console.error('[regenerateActiveAgreement] No agreement returned. Full response:', JSON.stringify(gen.data));
       return Response.json({ error: 'Generation failed - no agreement returned' }, { status: 500 });
     }
 
-    console.log('[regenerateActiveAgreement] Agreement created:', newAgreement.id);
+    console.log('[regenerateActiveAgreement] Agreement created:', newAgreement.id, 'signer_mode:', newAgreement.signer_mode);
 
-    // Clean new agreement (no signatures yet) but keep status as 'sent' since DocuSign envelope is already created
+    // Clean new agreement - keep status as 'sent' since DocuSign envelope is already created
     await base44.asServiceRole.entities.LegalAgreement.update(newAgreement.id, {
       investor_signed_at: null,
       agent_signed_at: null,
@@ -177,19 +141,16 @@ Deno.serve(async (req) => {
 
     // Update pointers based on context
     if (room_id && room) {
-      // Room-scoped regenerate
       const roomUpdate = {
         current_legal_agreement_id: newAgreement.id,
         agreement_status: 'draft'
       };
       // Only clear requires_regenerate when investor is regenerating after counter acceptance
-      // When agent calls this to create their agent_only agreement, don't touch requires_regenerate
       if (signerMode === 'investor_only' && room.requires_regenerate) {
         roomUpdate.requires_regenerate = false;
       }
       await base44.asServiceRole.entities.Room.update(room_id, roomUpdate);
     } else if (deal_id && dealContext) {
-      // Deal-scoped regenerate
       await base44.asServiceRole.entities.Deal.update(deal_id, {
         current_legal_agreement_id: newAgreement.id
       });
@@ -205,10 +166,7 @@ Deno.serve(async (req) => {
     
   } catch (error) {
     console.error('[regenerateActiveAgreement] Exception:', error?.message, error?.stack);
-    // Extract inner error details from Axios response if available
     const innerError = error?.response?.data?.error || error?.data?.error || error?.message || 'Failed to regenerate agreement';
-    return Response.json({ 
-      error: innerError
-    }, { status: 500 });
+    return Response.json({ error: innerError }, { status: 500 });
   }
 });
