@@ -518,15 +518,15 @@ Deno.serve(async (req) => {
     let toVoidEnvelopeId = null;
     let existingAgreementId = null;
 
-    // CRITICAL: When looking for existing agreements, filter by signer_mode too
-    // to avoid returning an investor_only agreement when we need agent_only
+    // CRITICAL: Only look for existing agreements with EXACT signer_mode match
+    // Never return/reuse an investor_only agreement when agent_only is requested
     let existing = [];
     if (room_id) {
-      const allForRoom = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 5);
-      // Prefer exact signer_mode match first
-      const exactMatch = allForRoom.filter(a => a.signer_mode === signer_mode);
-      existing = exactMatch.length > 0 ? [exactMatch[0]] : (allForRoom.length > 0 ? [allForRoom[0]] : []);
-      console.log(`[${VERSION}] Found ${allForRoom.length} agreements for room, ${exactMatch.length} with matching signer_mode=${signer_mode}`);
+      // Only search for agreements that match the requested signer_mode
+      const allForRoom = await base44.asServiceRole.entities.LegalAgreement.filter({ room_id: room_id }, '-created_date', 10);
+      const exactMatch = allForRoom.filter(a => a.signer_mode === signer_mode && a.status !== 'superseded' && a.status !== 'voided');
+      existing = exactMatch.length > 0 ? [exactMatch[0]] : [];
+      console.log(`[${VERSION}] Found ${allForRoom.length} total agreements for room, ${exactMatch.length} with exact signer_mode=${signer_mode} (non-superseded/voided)`);
     } else if (!useDraftFlow && effectiveId) {
       existing = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: effectiveId }, '-created_date', 1);
     }
@@ -536,26 +536,17 @@ Deno.serve(async (req) => {
       existingAgreementId = existingAgreement.id;
       toVoidEnvelopeId = existingAgreement.docusign_envelope_id || null;
       
-      // CRITICAL: Only return cached agreement if signer_mode ALSO matches
-      // Otherwise agent_only request would return investor_only agreement from cache
-      const signerModeMatches = existingAgreement.signer_mode === signer_mode;
-      
-      if (signerModeMatches &&
-          existingAgreement.render_input_hash === renderInputHash && 
+      // Return cached if hash matches and envelope exists
+      if (existingAgreement.render_input_hash === renderInputHash && 
           existingAgreement.final_pdf_url && 
-          existingAgreement.docusign_envelope_id &&
-          existingAgreement.status !== 'superseded' &&
-          existingAgreement.status !== 'voided') {
-        console.log(`[${VERSION}] Returning existing agreement (signer_mode=${existingAgreement.signer_mode})`);
+          existingAgreement.docusign_envelope_id) {
+        console.log(`[${VERSION}] Returning existing agreement id=${existingAgreement.id} (signer_mode=${existingAgreement.signer_mode}, status=${existingAgreement.status})`);
         return Response.json({ success: true, agreement: existingAgreement, regenerated: false });
       }
       
-      console.log(`[${VERSION}] Existing agreement signer_mode=${existingAgreement.signer_mode} vs requested=${signer_mode}, hash match=${existingAgreement.render_input_hash === renderInputHash}, will regenerate`);
-      
-      // Don't void the investor's envelope when creating agent_only agreement
-      if (existingAgreement.signer_mode !== signer_mode) {
-        toVoidEnvelopeId = null;
-      }
+      console.log(`[${VERSION}] Existing agreement id=${existingAgreement.id} hash mismatch or missing PDF/envelope, will regenerate`);
+    } else {
+      console.log(`[${VERSION}] No existing agreement found for signer_mode=${signer_mode}, will create new`);
     }
     
     // Fetch template
