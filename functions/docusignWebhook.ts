@@ -1,6 +1,6 @@
 import { createClient } from 'npm:@base44/sdk@0.8.6';
 
-const VERSION = '5.0.0';
+const VERSION = '6.0.0';
 
 async function getDocuSignConnection(base44) {
   const conns = await base44.asServiceRole.entities.DocuSignConnection.list('-created_date', 1);
@@ -23,7 +23,14 @@ async function downloadAndUploadSignedPdf(base44, envelopeId, agreementId) {
   return upload.file_url;
 }
 
-async function lockDeal(base44, dealId, roomId) {
+/**
+ * FIRST-TO-SIGN lock-in logic:
+ * 1. Lock the deal to the winning agent
+ * 2. Update the room: set locked_agent_id, remove losing agents
+ * 3. Void all DealInvites for losing agents
+ * 4. Notify losing agents they were not selected
+ */
+async function lockDealToWinningAgent(base44, dealId, roomId, winningAgentProfileId) {
   const [dealArr, roomArr] = await Promise.all([
     base44.asServiceRole.entities.Deal.filter({ id: dealId }),
     base44.asServiceRole.entities.Room.filter({ id: roomId })
@@ -31,22 +38,70 @@ async function lockDeal(base44, dealId, roomId) {
   const deal = dealArr?.[0];
   const room = roomArr?.[0];
   if (!deal || !room) return;
-  if (deal.locked_room_id) return; // Already locked
+  if (deal.locked_agent_id) {
+    console.log(`[webhook] Deal ${dealId} already locked to agent ${deal.locked_agent_id}`);
+    return;
+  }
 
   const now = new Date().toISOString();
-  await base44.asServiceRole.entities.Deal.update(dealId, {
-    locked_room_id: roomId, locked_agent_id: room.agent_ids?.[0] || room.agentId,
-    agent_id: room.agent_ids?.[0] || room.agentId, connected_at: now,
-    pipeline_stage: 'connected_deals', is_fully_signed: true
-  });
-  await base44.asServiceRole.entities.Room.update(roomId, { request_status: 'locked', agreement_status: 'fully_signed' });
 
-  // Expire other rooms
-  const allRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: dealId });
-  for (const r of (allRooms || []).filter(r => r.id !== roomId)) {
-    await base44.asServiceRole.entities.Room.update(r.id, { request_status: 'expired' });
+  // Lock deal to winning agent
+  await base44.asServiceRole.entities.Deal.update(dealId, {
+    locked_room_id: roomId,
+    locked_agent_id: winningAgentProfileId,
+    agent_id: winningAgentProfileId,
+    connected_at: now,
+    pipeline_stage: 'connected_deals',
+    selected_agent_ids: [winningAgentProfileId] // Only the winner remains
+  });
+
+  // Update room: lock it, keep only the winning agent
+  await base44.asServiceRole.entities.Room.update(roomId, {
+    request_status: 'locked',
+    agreement_status: 'fully_signed',
+    locked_agent_id: winningAgentProfileId,
+    locked_at: now,
+    agent_ids: [winningAgentProfileId] // Remove losing agents from room
+  });
+
+  console.log(`[webhook] Deal ${dealId} locked to agent ${winningAgentProfileId}`);
+
+  // Void DealInvites for losing agents, keep winning agent's invite as LOCKED
+  const invites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: dealId });
+  for (const invite of invites) {
+    if (invite.agent_profile_id === winningAgentProfileId) {
+      await base44.asServiceRole.entities.DealInvite.update(invite.id, { status: 'LOCKED' });
+    } else {
+      await base44.asServiceRole.entities.DealInvite.update(invite.id, { status: 'VOIDED' });
+      console.log(`[webhook] Voided invite ${invite.id} for losing agent ${invite.agent_profile_id}`);
+    }
   }
-  console.log(`[webhook] Deal ${dealId} locked to room ${roomId}`);
+
+  // Notify losing agents via email
+  const losingAgentIds = (room.agent_ids || []).filter(id => id !== winningAgentProfileId);
+  for (const agentId of losingAgentIds) {
+    try {
+      const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
+      const agent = agentProfiles?.[0];
+      if (agent?.email) {
+        await base44.asServiceRole.integrations.Core.SendEmail({
+          to: agent.email,
+          subject: `Deal Update - ${deal.title || deal.property_address || 'Deal'}`,
+          body: `Hello ${agent.full_name || 'Agent'},\n\nAnother agent has signed the agreement first for the deal: ${deal.title || deal.property_address}.\n\nThis deal is no longer available. It will be removed from your pipeline.\n\nBest regards,\nInvestor Konnect Team`
+        });
+      }
+    } catch (emailErr) {
+      console.warn('[webhook] Failed to notify losing agent:', agentId, emailErr.message);
+    }
+  }
+
+  // Void any other room-scoped agreements for losing agents
+  const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId });
+  for (const ag of allAgreements) {
+    if (ag.status !== 'fully_signed' && ag.status !== 'voided' && ag.agent_profile_id !== winningAgentProfileId) {
+      await base44.asServiceRole.entities.LegalAgreement.update(ag.id, { status: 'voided' }).catch(() => {});
+    }
+  }
 }
 
 Deno.serve(async (req) => {
@@ -87,25 +142,38 @@ Deno.serve(async (req) => {
     const updates = { docusign_status: eventType };
 
     if (eventType === 'signing_complete' || eventType === 'completed') {
-      // Determine who signed based on signer_mode
       if (mode === 'investor_only') {
+        // Investor signing the initial base agreement
         const r = recipients.find(r => r.recipientId === '1');
         if (r?.status === 'completed' && !agreement.investor_signed_at) {
           updates.investor_signed_at = new Date().toISOString();
           updates.status = 'investor_signed';
-          // Clear regenerate flag on room
           if (agreement.room_id) {
             await base44.asServiceRole.entities.Room.update(agreement.room_id, { requires_regenerate: false, agreement_status: 'investor_signed' }).catch(() => {});
           }
         }
       } else if (mode === 'agent_only') {
+        // Agent signing - this is the FIRST-TO-SIGN race
         const r = recipients.find(r => r.recipientId === '1');
         if (r?.status === 'completed' && !agreement.agent_signed_at) {
           updates.agent_signed_at = new Date().toISOString();
           updates.status = 'fully_signed';
-          // Download signed PDF + lock deal
+
+          // Download signed PDF
           try { updates.signed_pdf_url = await downloadAndUploadSignedPdf(base44, envelopeId, agreement.id); } catch (e) { console.error('[webhook] PDF download failed:', e.message); }
-          if (agreement.room_id) await lockDeal(base44, agreement.deal_id, agreement.room_id);
+
+          // Determine winning agent
+          const winningAgentProfileId = agreement.agent_profile_id;
+          if (agreement.room_id && winningAgentProfileId) {
+            await lockDealToWinningAgent(base44, agreement.deal_id, agreement.room_id, winningAgentProfileId);
+          } else if (agreement.room_id) {
+            // Fallback: try to get agent from room
+            const roomArr = await base44.asServiceRole.entities.Room.filter({ id: agreement.room_id });
+            const fallbackAgent = roomArr?.[0]?.agent_ids?.[0];
+            if (fallbackAgent) {
+              await lockDealToWinningAgent(base44, agreement.deal_id, agreement.room_id, fallbackAgent);
+            }
+          }
         }
       } else {
         // both mode
@@ -119,7 +187,11 @@ Deno.serve(async (req) => {
         if (invSigned && agSigned) {
           updates.status = 'fully_signed';
           try { updates.signed_pdf_url = await downloadAndUploadSignedPdf(base44, envelopeId, agreement.id); } catch (e) { console.error('[webhook] PDF download failed:', e.message); }
-          if (agreement.room_id) await lockDeal(base44, agreement.deal_id, agreement.room_id);
+          
+          const winningAgent = agreement.agent_profile_id;
+          if (agreement.room_id && winningAgent) {
+            await lockDealToWinningAgent(base44, agreement.deal_id, agreement.room_id, winningAgent);
+          }
         } else if (invSigned) {
           updates.status = 'investor_signed';
         } else if (agSigned) {
@@ -147,7 +219,6 @@ Deno.serve(async (req) => {
       const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id });
       if (dealArr?.[0]) {
         await base44.asServiceRole.entities.Deal.update(agreement.deal_id, {
-          is_fully_signed: true,
           documents: { ...(dealArr[0].documents || {}), internal_agreement: { url, name: 'Internal Agreement (Signed).pdf', uploaded_at: new Date().toISOString() } }
         }).catch(() => {});
       }
