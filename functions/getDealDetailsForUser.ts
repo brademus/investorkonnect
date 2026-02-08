@@ -1,272 +1,88 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Server-Side Access Control: Get Single Deal Details
- * 
- * Enforces role-based field-level access control:
- * - Agents: Limited info until agreement fully signed
- * - Investors: Full access to their own deals
+ * Get single deal details with role-based access control.
+ * Simplified v2: clean access checks, no legacy fallbacks.
  */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
-    
-    if (!user) {
-      return Response.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { dealId } = await req.json();
-    
-    if (!dealId) {
-      return Response.json({ error: 'dealId required' }, { status: 400 });
-    }
+    if (!dealId) return Response.json({ error: 'dealId required' }, { status: 400 });
 
-    // Get user's profile
-    const profiles = await base44.entities.Profile.filter({ user_id: user.id });
-    const profile = profiles[0];
-    
-    if (!profile) {
-      return Response.json({ error: 'Profile not found' }, { status: 404 });
-    }
+    const [profileArr, dealArr] = await Promise.all([
+      base44.entities.Profile.filter({ user_id: user.id }),
+      base44.entities.Deal.filter({ id: dealId })
+    ]);
+    const profile = profileArr?.[0];
+    const deal = dealArr?.[0];
+    if (!profile) return Response.json({ error: 'Profile not found' }, { status: 404 });
+    if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
 
-    // Fetch deal
-    const deals = await base44.entities.Deal.filter({ id: dealId });
-    const deal = deals[0];
-    
-    if (!deal) {
-      return Response.json({ error: 'Deal not found' }, { status: 404 });
-    }
-
-    const isAdmin = profile.role === 'admin' || profile.user_role === 'admin';
+    const isAdmin = profile.role === 'admin' || user.role === 'admin';
     const isAgent = profile.user_role === 'agent';
     const isInvestor = profile.user_role === 'investor';
 
-    // Admins bypass access checks
+    // Access check
     if (!isAdmin) {
-      // Verify access rights
-      if (isInvestor && deal.investor_id !== profile.id) {
-        return Response.json({ error: 'Access denied' }, { status: 403 });
+      if (isInvestor && deal.investor_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
+      if (isAgent) {
+        const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+        const hasAccess = rooms.some(r => r.agentId === profile.id || r.agent_ids?.includes(profile.id));
+        const inSelected = deal.selected_agent_ids?.includes(profile.id);
+        if (!hasAccess && !inSelected && deal.agent_id !== profile.id) return Response.json({ error: 'Access denied' }, { status: 403 });
       }
     }
 
-    if (!isAdmin && isAgent && deal.agent_id !== profile.id) {
-      // Check if agent has a room for this deal (legacy agentId or new agent_ids array)
-      const agentRooms = await base44.entities.Room.filter({ deal_id: dealId });
-      const hasAccess = agentRooms.some(r => 
-        r.agentId === profile.id || 
-        (Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id))
-      );
-      
-      // Also check if agent is in selected_agent_ids on the Deal itself
-      const inSelectedAgents = Array.isArray(deal.selected_agent_ids) && deal.selected_agent_ids.includes(profile.id);
-      
-      if (!hasAccess && !inSelectedAgents) {
-        return Response.json({ error: 'Access denied' }, { status: 403 });
-      }
-    }
+    // Check signing status
+    let isSigned = false;
+    const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId });
+    if (agreements?.length) isSigned = agreements[0].status === 'fully_signed';
 
-    // Close the admin bypass block
-    // (admin skips all access checks above)
-
-    // Get room to check signature status
-    let room = null;
-    if (isAdmin) {
-      // Admin: get first room for this deal
-      const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-      room = rooms[0];
-    } else if (isAgent) {
-      const rooms = await base44.entities.Room.filter({ deal_id: dealId });
-      // Find room where this agent is a participant (legacy agentId or new agent_ids array)
-      room = rooms.find(r => 
-        r.agentId === profile.id || 
-        (Array.isArray(r.agent_ids) && r.agent_ids.includes(profile.id))
-      );
-    } else if (isInvestor) {
-      const rooms = await base44.entities.Room.filter({ 
-        deal_id: dealId,
-        investorId: profile.id 
-      });
-      room = rooms[0];
-    }
-
-    // Get LegalAgreement status (source of truth for gating)
-    let isFullySigned = false;
-    try {
-      const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId });
-      if (agreements.length > 0) {
-        const agreement = agreements[0];
-        isFullySigned = agreement.status === 'fully_signed';
-      }
-    } catch (e) {
-      // LegalAgreement may not exist yet - fallback to Room status
-      isFullySigned = room?.agreement_status === 'fully_signed' || room?.request_status === 'signed';
-    }
-
-    // Resolve counterpart full names (only exposed after full signing)
-    let investorFullName = null;
-    let agentFullName = null;
-    try {
+    // Resolve counterpart names (only after signing)
+    let investorName = null, agentName = null;
+    if (isSigned) {
       const [invP, agP] = await Promise.all([
-        deal.investor_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : Promise.resolve([]),
-        deal.agent_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : Promise.resolve([])
+        deal.investor_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : [],
+        deal.agent_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : []
       ]);
-      const i = invP?.[0];
-      const a = agP?.[0];
-      const nameOf = (p) => p?.full_name || [p?.verified_first_name || p?.onboarding_first_name, p?.verified_last_name || p?.onboarding_last_name].filter(Boolean).join(' ') || null;
-      investorFullName = nameOf(i);
-      agentFullName = nameOf(a);
-    } catch (_) {}
-
-    // Base fields everyone can see
-    const baseDeal = {
-      id: deal.id,
-      title: deal.title,
-      city: deal.city,
-      state: deal.state,
-      county: deal.county,
-      zip: deal.zip,
-      purchase_price: deal.purchase_price,
-      pipeline_stage: deal.pipeline_stage,
-      status: deal.status,
-      created_date: deal.created_date,
-      updated_date: deal.updated_date,
-      key_dates: deal.key_dates,
-      investor_id: deal.investor_id,
-      agent_id: deal.agent_id,
-      property_type: deal.property_type,
-      property_details: deal.property_details,
-      // Expose seller contract metadata so Files tab can show it even before full signing
-      contract_document: deal.contract_document,
-      contract_url: deal.contract_url,
-      is_fully_signed: isFullySigned,
-      investor_full_name: isFullySigned ? (investorFullName || null) : null,
-      agent_full_name: isFullySigned ? (agentFullName || null) : null
-      };
-
-    // Fallback: prefer investor-entered Deal.details; if empty/blank, use Room; else try contract
-    const isMeaningfulPD = (pd) => {
-      if (!pd || typeof pd !== 'object') return false;
-      const n = (v) => (v !== undefined && v !== null && !Number.isNaN(Number(v)));
-      const s = (v) => (typeof v === 'string' ? v.trim().length > 0 : false);
-      const b = (v) => (typeof v === 'boolean');
-      return (
-        n(pd.beds) || n(pd.baths) || n(pd.sqft) || n(pd.year_built) || s(pd.number_of_stories) || b(pd.has_basement)
-      );
-    };
-
-    // Legacy top-level fields -> normalized property_details
-    const legacyPD = (() => {
-      const d = deal || {};
-      const pickFirst = (...vals) => {
-        for (const v of vals) {
-          if (v === undefined || v === null) continue;
-          if (typeof v === 'string') {
-            const t = v.trim();
-            if (t.length === 0) continue;
-            return t;
-          }
-          return v;
-        }
-        return undefined;
-      };
-      const pd = {};
-      const beds = pickFirst(d.beds, d.bedrooms, d.bedrooms_total, d.bdrms);
-      if (beds !== undefined) pd.beds = Number(beds);
-      const baths = pickFirst(d.baths, d.bathrooms, d.bathrooms_total, d.bathrooms_total_integer);
-      if (baths !== undefined) pd.baths = Number(baths);
-      const sqft = pickFirst(d.sqft, d.square_feet, d.squareFeet, d.square_footage, d.living_area, d.gross_living_area);
-      if (sqft !== undefined) pd.sqft = Number(String(sqft).replace(/[^0-9.]/g, ''));
-      const yearBuilt = pickFirst(d.year_built, d.yearBuilt, d.built_year);
-      if (yearBuilt !== undefined) pd.year_built = Number(yearBuilt);
-      const stories = pickFirst(d.number_of_stories, d.stories, d.levels, d.floors);
-      if (stories !== undefined) {
-        const s = String(stories).trim();
-        pd.number_of_stories = (Number(s) >= 3 || s === '3+' ? '3+' : (s === '2' || s.toLowerCase() === 'two' ? '2' : (s === '1' || s.toLowerCase() === 'one' ? '1' : s)));
-      }
-      const basement = pickFirst(d.has_basement, d.basement, d.basement_yn);
-      if (basement !== undefined) {
-        const sv = String(basement).toLowerCase();
-        pd.has_basement = (basement === true || ['yes','y','true','t','1'].includes(sv));
-      }
-      return Object.keys(pd).length ? pd : null;
-    })();
-
-    const property_details_fallback = isMeaningfulPD(baseDeal.property_details)
-      ? baseDeal.property_details
-      : (isMeaningfulPD(legacyPD) ? legacyPD
-         : (isMeaningfulPD(room?.property_details) ? room.property_details : null));
-
-    const property_type_fallback = baseDeal.property_type || room?.property_type || null;
-
-    // If still missing, derive from seller contract for display (no DB writes)
-    let display_property_details = property_details_fallback;
-    let display_property_type = property_type_fallback || deal.property_type || deal.property_type_name || null;
-    try {
-      const needsPD = !isMeaningfulPD(display_property_details);
-      const needsType = !display_property_type;
-      if (needsPD || needsType) {
-        const sellerUrl = deal?.documents?.purchase_contract?.file_url ||
-                          deal?.documents?.purchase_contract?.url ||
-                          deal?.contract_document?.url ||
-                          deal?.contract_url;
-        if (sellerUrl) {
-          const { data: extraction } = await base44.functions.invoke('extractContractData', { fileUrl: sellerUrl });
-          const d = extraction?.data || extraction;
-          if (d) {
-            if (needsType && d.property_type) display_property_type = d.property_type;
-            if (needsPD && d.property_details) {
-              const pd = {};
-              if (d.property_details?.beds != null) pd.beds = d.property_details.beds;
-              if (d.property_details?.baths != null) pd.baths = d.property_details.baths;
-              if (d.property_details?.sqft != null) pd.sqft = d.property_details.sqft;
-              if (d.property_details?.year_built != null) pd.year_built = d.property_details.year_built;
-              if (d.property_details?.number_of_stories) pd.number_of_stories = d.property_details.number_of_stories;
-              if (typeof d.property_details?.has_basement === 'boolean') pd.has_basement = d.property_details.has_basement;
-              if (Object.keys(pd).length) display_property_details = pd;
-            }
-          }
-        }
-      }
-    } catch (_) {}
-
-
-    // Sensitive fields - visible to investors, admins, or fully signed agents
-    if (isAdmin || isInvestor || isFullySigned) {
-      return Response.json({
-        ...baseDeal,
-        property_type: display_property_type,
-        property_address: deal.property_address,
-        seller_info: deal.seller_info,
-        property_details: display_property_details,
-        documents: deal.documents,
-        notes: deal.notes,
-        special_notes: deal.special_notes,
-        audit_log: deal.audit_log,
-        // Include investor-entered terms explicitly so UI can render accurate key terms
-        proposed_terms: deal.proposed_terms || null,
-        room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
-      });
+      investorName = invP?.[0]?.full_name || null;
+      agentName = agP?.[0]?.full_name || null;
     }
 
-    // Agents see limited info until fully signed (but include non-sensitive proposed terms)
-    return Response.json({
-      ...baseDeal,
-      property_type: display_property_type,
-      property_details: display_property_details,
-      property_address: null, // Hidden
-      seller_info: null, // Hidden
-      // Expose ONLY the seller purchase contract so Files tab can render it
-      documents: deal?.documents?.purchase_contract ? { purchase_contract: deal.documents.purchase_contract } : null,
-      notes: null, // Hidden
-      special_notes: null, // Hidden
+    // Get room for proposed_terms
+    const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+    const room = rooms?.[0];
+
+    const base = {
+      id: deal.id, title: deal.title, city: deal.city, state: deal.state, county: deal.county, zip: deal.zip,
+      purchase_price: deal.purchase_price, pipeline_stage: deal.pipeline_stage, status: deal.status,
+      created_date: deal.created_date, updated_date: deal.updated_date, key_dates: deal.key_dates,
+      investor_id: deal.investor_id, agent_id: deal.agent_id,
+      property_type: deal.property_type, property_details: deal.property_details,
+      contract_document: deal.contract_document, contract_url: deal.contract_url,
+      is_fully_signed: isSigned, investor_full_name: investorName, agent_full_name: agentName,
       proposed_terms: deal.proposed_terms || null,
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
+    };
+
+    if (isAdmin || isInvestor || isSigned) {
+      return Response.json({
+        ...base, property_address: deal.property_address, seller_info: deal.seller_info,
+        documents: deal.documents, notes: deal.notes, special_notes: deal.special_notes
+      });
+    }
+
+    // Agent: limited until signed
+    return Response.json({
+      ...base, property_address: null, seller_info: null, notes: null, special_notes: null,
+      documents: deal?.documents?.purchase_contract ? { purchase_contract: deal.documents.purchase_contract } : null
     });
   } catch (error) {
-    console.error('getDealDetailsForUser error:', error);
-    return Response.json({ 
-      error: error.message 
-    }, { status: 500 });
+    console.error('[getDealDetails] Error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
 });
