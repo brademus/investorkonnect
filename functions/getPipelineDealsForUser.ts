@@ -25,18 +25,16 @@ Deno.serve(async (req) => {
     } else if (isInvestor) {
       deals = await base44.entities.Deal.filter({ investor_id: profile.id, status: { $ne: 'draft' } });
     } else if (isAgent) {
-      // Get rooms where agent is participant
-      const allRooms = await base44.asServiceRole.entities.Room.list('-created_date', 200);
-      const myRooms = allRooms.filter(r => r.agent_ids?.includes(profile.id) || r.agentId === profile.id);
-      const dealIds = [...new Set(myRooms.map(r => r.deal_id).filter(Boolean))];
+      // Only show deals where agent has an active invite (not VOIDED/EXPIRED)
+      const invites = await base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id });
+      const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+      const inviteDealIds = activeInvites.map(i => i.deal_id).filter(Boolean);
 
-      // Also check DealInvites + direct assignment
-      const [invites, directDeals] = await Promise.all([
-        base44.asServiceRole.entities.DealInvite.filter({ agent_profile_id: profile.id }),
-        base44.entities.Deal.filter({ agent_id: profile.id })
-      ]);
-      const inviteDealIds = invites.map(i => i.deal_id).filter(Boolean);
-      const allIds = [...new Set([...dealIds, ...inviteDealIds, ...directDeals.map(d => d.id)])];
+      // Also check direct assignment (legacy)
+      const directDeals = await base44.entities.Deal.filter({ agent_id: profile.id });
+      const directIds = directDeals.map(d => d.id);
+
+      const allIds = [...new Set([...inviteDealIds, ...directIds])];
 
       if (allIds.length > 0) {
         const fetched = await Promise.all(allIds.map(id => base44.entities.Deal.filter({ id }).then(a => a[0]).catch(() => null)));
