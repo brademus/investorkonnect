@@ -133,10 +133,27 @@ Deno.serve(async (req) => {
     };
     console.log('[regenerateActiveAgreement] Calling generateLegalAgreement with payload keys:', Object.keys(genPayload));
     console.log('[regenerateActiveAgreement] genPayload:', JSON.stringify(genPayload));
-    // Use service role to invoke the inner function - avoids 403 permission issues
-    const gen = await base44.asServiceRole.functions.invoke('generateLegalAgreement', genPayload);
     
-    console.log('[regenerateActiveAgreement] generateLegalAgreement response status:', gen.status);
+    // CRITICAL: Use direct HTTP call with original auth headers
+    // base44.asServiceRole.functions.invoke can fail with 403
+    const appId = Deno.env.get('BASE44_APP_ID');
+    const functionUrl = `https://base44.app/api/apps/${appId}/functions/generateLegalAgreement`;
+    console.log('[regenerateActiveAgreement] Calling function URL:', functionUrl);
+    
+    const genResponse = await fetch(functionUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': originalHeaders['authorization'] || '',
+        'x-base44-app-id': originalHeaders['x-base44-app-id'] || appId || '',
+        'x-base44-service-role-key': originalHeaders['x-base44-service-role-key'] || '',
+      },
+      body: JSON.stringify(genPayload)
+    });
+    
+    const genData = await genResponse.json();
+    const gen = { data: genData, status: genResponse.status };
+    console.log('[regenerateActiveAgreement] Direct call response status:', genResponse.status);
 
     if (gen.data?.error) {
       console.error('[regenerateActiveAgreement] Generation error:', gen.data.error);
