@@ -1,9 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
-  * After investor signs initial agreement, create ONE room with all selected agents
-  * Each agent gets their own terms copy in agent_terms
-  */
+ * After investor signs initial agreement, create ONE room with all selected agents.
+ * Each agent gets their own DealInvite so they see it in pipeline.
+ * Called by createDealOnInvestorSignature after deal is created/found.
+ */
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
@@ -14,59 +15,55 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'deal_id required' }, { status: 400 });
     }
     
-    // Get deal first (use service role as this might be called from automation)
+    // Load deal
     const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-    if (!deals || deals.length === 0) {
-      return Response.json({ error: 'Deal not found', status: 404 }, { status: 404 });
+    if (!deals?.length) {
+      return Response.json({ error: 'Deal not found' }, { status: 404 });
     }
     const deal = deals[0];
     
-    // Get investor profile using deal's investor_id
+    // Load investor profile
     const profiles = await base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id });
-    if (!profiles || profiles.length === 0) {
+    if (!profiles?.length) {
       return Response.json({ error: 'Investor profile not found' }, { status: 404 });
     }
-    const profile = profiles[0];
+    const investorProfile = profiles[0];
     
-    let selectedAgentIds = deal.selected_agent_ids || [];
-    console.log('[createInvitesAfterInvestorSign] Deal:', { 
-      id: deal.id, 
-      selected_agent_ids: selectedAgentIds,
-      agent_id: deal.agent_id 
-    });
+    const selectedAgentIds = deal.selected_agent_ids || [];
+    console.log('[createInvites] deal:', deal.id, 'agents:', selectedAgentIds);
     
     if (selectedAgentIds.length === 0) {
-      console.error('[createInvitesAfterInvestorSign] No agents selected on deal');
       return Response.json({ error: 'No agents selected for this deal' }, { status: 400 });
     }
     
-    // Ensure proposed_terms has buyer commission (set defaults if needed)
+    // Build proposed terms with defaults
     const proposedTerms = deal.proposed_terms || {};
     if (!proposedTerms.buyer_commission_type) {
       proposedTerms.buyer_commission_type = 'percentage';
       proposedTerms.buyer_commission_percentage = 0;
     }
     
-    // Check if room already exists for this deal
+    // --- ROOM: create or reuse ---
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
-    
-    let roomToUse;
+    let room;
+
     if (existingRooms.length === 0) {
-      // Create ONE room for all agents - each agent gets same initial terms
-      const agent_terms = {};
+      const agentTerms = {};
+      const agentAgreementStatus = {};
       for (const agentId of selectedAgentIds) {
-        agent_terms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
+        agentTerms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
+        agentAgreementStatus[agentId] = 'sent';
       }
 
-      roomToUse = await base44.asServiceRole.entities.Room.create({
-        deal_id: deal_id,
-        investorId: profile.id,
+      room = await base44.asServiceRole.entities.Room.create({
+        deal_id,
+        investorId: investorProfile.id,
         agent_ids: selectedAgentIds,
-        agent_terms: agent_terms,
+        agent_terms: agentTerms,
         proposed_terms: JSON.parse(JSON.stringify(proposedTerms)),
-        agent_agreement_status: selectedAgentIds.reduce((acc, id) => ({ ...acc, [id]: 'sent' }), {}),
+        agent_agreement_status: agentAgreementStatus,
         request_status: 'accepted',
-        agreement_status: 'sent',
+        agreement_status: 'investor_signed',
         title: deal.title,
         property_address: deal.property_address,
         city: deal.city,
@@ -78,89 +75,106 @@ Deno.serve(async (req) => {
         requested_at: new Date().toISOString(),
         accepted_at: new Date().toISOString()
       });
-      console.log('[createInvitesAfterInvestorSign] Created new Room:', roomToUse.id);
+      console.log('[createInvites] Created room:', room.id);
     } else {
-      // Update existing room to add any new agents
-      roomToUse = existingRooms[0];
-      const currentAgentIds = roomToUse.agent_ids || [];
+      room = existingRooms[0];
+      // Add any missing agents
+      const currentAgentIds = room.agent_ids || [];
       const newAgentIds = selectedAgentIds.filter(id => !currentAgentIds.includes(id));
-
       if (newAgentIds.length > 0) {
-         const updatedAgentTerms = roomToUse.agent_terms || {};
-         for (const agentId of newAgentIds) {
-           updatedAgentTerms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
-         }
+        const updatedTerms = { ...(room.agent_terms || {}) };
+        const updatedStatus = { ...(room.agent_agreement_status || {}) };
+        for (const agentId of newAgentIds) {
+          updatedTerms[agentId] = JSON.parse(JSON.stringify(proposedTerms));
+          updatedStatus[agentId] = 'sent';
+        }
+        await base44.asServiceRole.entities.Room.update(room.id, {
+          agent_ids: [...currentAgentIds, ...newAgentIds],
+          agent_terms: updatedTerms,
+          agent_agreement_status: updatedStatus
+        });
+      }
+      console.log('[createInvites] Reusing room:', room.id);
+    }
 
-         await base44.asServiceRole.entities.Room.update(roomToUse.id, {
-           agent_ids: [...currentAgentIds, ...newAgentIds],
-           agent_terms: updatedAgentTerms,
-           agent_agreement_status: {
-             ...roomToUse.agent_agreement_status,
-             ...newAgentIds.reduce((acc, id) => ({ ...acc, [id]: 'sent' }), {})
-           }
-         });
-         console.log('[createInvitesAfterInvestorSign] Updated existing Room:', roomToUse.id);
-       }
-     }
-    
-    // Get base investor-signed agreement (may have status investor_signed OR sent with investor_signed_at)
-    let baseAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
-      deal_id: deal_id,
-      room_id: null,
-      status: 'investor_signed'
-    }, '-created_date', 1);
-    
-    // Fallback: check by investor_signed_at if status not yet updated
-    if (!baseAgreements || baseAgreements.length === 0) {
-      const allAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ 
-        deal_id: deal_id,
-        room_id: null
-      }, '-created_date', 5);
-      baseAgreements = allAgreements.filter(a => a.investor_signed_at);
+    // --- FIND BASE AGREEMENT ---
+    // The agreement should already exist on the deal (set by createDealOnInvestorSignature)
+    const agreementId = deal.current_legal_agreement_id;
+    let baseAgreement = null;
+
+    if (agreementId) {
+      const agArr = await base44.asServiceRole.entities.LegalAgreement.filter({ id: agreementId });
+      baseAgreement = agArr?.[0] || null;
     }
-    
-    const baseAgreement = baseAgreements?.[0];
+
+    // Fallback: search by deal_id for any investor-signed agreement
     if (!baseAgreement) {
-      console.error('[createInvitesAfterInvestorSign] No base agreement found for deal:', deal_id);
-      throw new Error('Base agreement not found');
+      const allAg = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10);
+      baseAgreement = allAg.find(a => a.investor_signed_at && !a.room_id) || allAg.find(a => a.investor_signed_at) || null;
     }
-    console.log('[createInvitesAfterInvestorSign] Found base agreement:', baseAgreement.id, 'status:', baseAgreement.status);
-    
-    // Update room to point to agreement
-    await base44.asServiceRole.entities.Room.update(roomToUse.id, {
+
+    if (!baseAgreement) {
+      console.error('[createInvites] No investor-signed agreement found for deal:', deal_id);
+      return Response.json({ error: 'No investor-signed agreement found' }, { status: 404 });
+    }
+    console.log('[createInvites] Base agreement:', baseAgreement.id, 'status:', baseAgreement.status);
+
+    // Link room to agreement
+    await base44.asServiceRole.entities.Room.update(room.id, {
       current_legal_agreement_id: baseAgreement.id
     });
 
-    // Update deal - ensure it's active and visible in pipeline
+    // Ensure deal is active and visible
     await base44.asServiceRole.entities.Deal.update(deal_id, {
       status: 'active',
-      pipeline_stage: 'new_deals',
-      current_legal_agreement_id: baseAgreement.id
+      pipeline_stage: 'new_deals'
     });
-    
-    console.log('[createInvitesAfterInvestorSign] Updated deal status to active, pipeline_stage to new_deals');
 
-    // Create DealInvite records for each agent (so they see it in their inbox)
+    // --- CREATE DEAL INVITES (skip duplicates) ---
+    const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id });
+    const existingAgentIds = new Set(existingInvites.map(i => i.agent_profile_id));
+
     const createdInvites = [];
     for (const agentId of selectedAgentIds) {
+      if (existingAgentIds.has(agentId)) {
+        console.log('[createInvites] Invite already exists for agent:', agentId);
+        continue;
+      }
       const invite = await base44.asServiceRole.entities.DealInvite.create({
-        deal_id: deal_id,
-        investor_id: profile.id,
+        deal_id,
+        investor_id: investorProfile.id,
         agent_profile_id: agentId,
-        room_id: roomToUse.id,
+        room_id: room.id,
         legal_agreement_id: baseAgreement.id,
         status: 'PENDING_AGENT_SIGNATURE',
         created_at_iso: new Date().toISOString()
       });
       createdInvites.push(invite.id);
-      console.log('[createInvitesAfterInvestorSign] Created DealInvite:', invite.id, 'for agent:', agentId);
+      console.log('[createInvites] Created invite:', invite.id, 'for agent:', agentId);
     }
 
-    console.log('[createInvitesAfterInvestorSign] Success - created room:', roomToUse.id, 'and', createdInvites.length, 'invites for deal:', deal_id);
-    return Response.json({ ok: true, room_id: roomToUse.id, invite_ids: createdInvites });
+    // --- NOTIFY AGENTS via email ---
+    for (const agentId of selectedAgentIds) {
+      try {
+        const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
+        const agent = agentProfiles?.[0];
+        if (agent?.email) {
+          await base44.asServiceRole.integrations.Core.SendEmail({
+            to: agent.email,
+            subject: `New Deal Invitation - ${deal.title || deal.property_address || 'New Deal'}`,
+            body: `Hello ${agent.full_name || 'Agent'},\n\nYou have been invited to a new deal: ${deal.title || deal.property_address}.\n\nThe investor has signed the agreement. Please log in to review the deal and sign the agreement to lock in your spot.\n\nNote: The first agent to sign will be selected for this deal.\n\nBest regards,\nInvestor Konnect Team`
+          });
+          console.log('[createInvites] Notified agent:', agent.email);
+        }
+      } catch (emailErr) {
+        console.warn('[createInvites] Failed to email agent:', agentId, emailErr.message);
+      }
+    }
+
+    return Response.json({ ok: true, room_id: room.id, invite_ids: createdInvites });
     
   } catch (error) {
-    console.error('[createInvitesAfterInvestorSign] Error:', error);
+    console.error('[createInvites] Error:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 });
