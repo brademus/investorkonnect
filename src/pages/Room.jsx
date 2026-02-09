@@ -74,14 +74,15 @@ export default function Room() {
           } catch (_) {}
         }
 
+        const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
         setCurrentRoom({
           ...room,
-          title: (isAgent && !room.agreement_status?.includes('fully_signed')) ? `${room.city || dealData?.city || 'City'}, ${room.state || dealData?.state || 'State'}` : (dealData?.title || room.title),
-          property_address: (isAgent && dealData?.property_address === null) ? null : (dealData?.property_address || room.property_address),
+          title: (isAgent && !roomIsLocked) ? `${room.city || dealData?.city || 'City'}, ${room.state || dealData?.state || 'State'}` : (dealData?.title || room.title),
+          property_address: (isAgent && dealData?.property_address === null && !roomIsLocked) ? null : (dealData?.property_address || room.property_address),
           city: dealData?.city || room.city,
           state: dealData?.state || room.state,
           budget: dealData?.purchase_price || room.budget,
-          is_fully_signed: dealData?.is_fully_signed || room.agreement_status === 'fully_signed',
+          is_fully_signed: dealData?.is_fully_signed || roomIsLocked,
           counterparty_name: room.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent'))
         });
         if (dealData) setDeal(dealData);
