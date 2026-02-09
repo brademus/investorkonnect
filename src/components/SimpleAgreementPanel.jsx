@@ -133,13 +133,17 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const handleSign = async (role) => {
     setBusy(true);
     try {
-      // For agents signing an investor_only agreement, generate agent_only version first
+      // Agent signs the SAME envelope as investor — no regeneration needed.
+      // If the agent isn't yet a recipient on the envelope, the backend will add them.
       let targetId = agreement?.id;
       if (role === 'agent' && agreement?.signer_mode === 'investor_only') {
-        const genRes = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId });
-        if (genRes.data?.agreement?.id) { targetId = genRes.data.agreement.id; setAgreement(genRes.data.agreement); }
-        else { toast.error(genRes.data?.error || 'Failed to prepare agreement'); setBusy(false); return; }
-        await new Promise(r => setTimeout(r, 2000)); // Wait for envelope
+        // Need to add agent as signer to the existing envelope
+        const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
+          agreement_id: agreement.id, room_id: roomId
+        });
+        if (prepRes.data?.agreement?.id) { targetId = prepRes.data.agreement.id; setAgreement(prepRes.data.agreement); }
+        else if (prepRes.data?.error) { toast.error(prepRes.data.error); setBusy(false); return; }
+        await new Promise(r => setTimeout(r, 1500)); // Wait for DocuSign to process
       }
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: targetId, role, room_id: roomId,
