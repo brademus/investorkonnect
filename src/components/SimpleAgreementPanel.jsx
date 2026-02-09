@@ -184,19 +184,73 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const handleSign = async (role) => {
     setBusy(true);
     try {
-      // Agent signs the SAME envelope as investor — no regeneration needed.
-      // If the agent isn't yet a recipient on the envelope, the backend will add them.
+      let targetAgreement = agreement;
       let targetId = agreement?.id;
-      if (role === 'agent' && (!agreement?.agent_recipient_id || !agreement?.agent_client_user_id)) {
-        // Agent recipient data is missing — need to add agent to the existing envelope
-        console.log('[SimpleAgreementPanel] Agent missing recipient data, calling addAgentToEnvelope. signer_mode:', agreement?.signer_mode);
-        const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
-          agreement_id: agreement.id, room_id: roomId
-        });
-        if (prepRes.data?.agreement?.id) { targetId = prepRes.data.agreement.id; setAgreement(prepRes.data.agreement); }
-        else if (prepRes.data?.error) { toast.error(prepRes.data.error); setBusy(false); return; }
-        await new Promise(r => setTimeout(r, 1500)); // Wait for DocuSign to process
+
+      // AGENT FLOW: Agent must sign the SAME envelope that the investor signed.
+      // The agent's DealInvite may point to an old base agreement. We need to find
+      // the actual investor-signed agreement for this room and add the agent to it.
+      if (role === 'agent') {
+        // Step 1: Find the correct investor-signed agreement for this room
+        // The room's current_legal_agreement_id may have been overwritten, so search explicitly
+        let investorSignedAgreement = null;
+        if (agreement?.investor_signed_at && agreement?.docusign_envelope_id) {
+          // Current agreement already has investor signature — use it
+          investorSignedAgreement = agreement;
+        } else {
+          // Search for the investor-signed agreement in this room/deal
+          const allAgreements = await base44.entities.LegalAgreement.filter(
+            { deal_id: dealId, room_id: roomId }, '-created_date', 10
+          ).catch(() => []);
+          investorSignedAgreement = allAgreements.find(a =>
+            a.investor_signed_at &&
+            a.docusign_envelope_id &&
+            !['superseded', 'voided'].includes(a.status)
+          );
+          // Broader fallback: any investor-signed agreement for this deal
+          if (!investorSignedAgreement) {
+            const dealAgreements = await base44.entities.LegalAgreement.filter(
+              { deal_id: dealId }, '-created_date', 10
+            ).catch(() => []);
+            investorSignedAgreement = dealAgreements.find(a =>
+              a.investor_signed_at &&
+              a.docusign_envelope_id &&
+              !['superseded', 'voided'].includes(a.status)
+            );
+          }
+        }
+
+        if (!investorSignedAgreement) {
+          toast.error('Investor must sign first');
+          setBusy(false);
+          return;
+        }
+
+        targetAgreement = investorSignedAgreement;
+        targetId = investorSignedAgreement.id;
+
+        // Step 2: If agent isn't on this envelope yet, add them
+        if (!investorSignedAgreement.agent_recipient_id || !investorSignedAgreement.agent_client_user_id) {
+          console.log('[SimpleAgreementPanel] Adding agent to investor-signed envelope:', targetId);
+          const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
+            agreement_id: targetId, room_id: roomId
+          });
+          if (prepRes.data?.agreement?.id) {
+            targetId = prepRes.data.agreement.id;
+            targetAgreement = prepRes.data.agreement;
+            setAgreement(prepRes.data.agreement);
+          } else if (prepRes.data?.error) {
+            toast.error(prepRes.data.error);
+            setBusy(false);
+            return;
+          }
+          await new Promise(r => setTimeout(r, 1500)); // Wait for DocuSign to process
+        } else {
+          // Agent is already on the envelope — just use it
+          setAgreement(investorSignedAgreement);
+        }
       }
+
       const res = await base44.functions.invoke('docusignCreateSigningSession', {
         agreement_id: targetId, role, room_id: roomId,
         redirect_url: window.location.href.split('&signed')[0] + '&signed=1'
