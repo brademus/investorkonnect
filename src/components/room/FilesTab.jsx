@@ -160,7 +160,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
   addShared(agreementLabel.includes('Signed') ? 'Internal Agreement (Signed)' : 'Internal Agreement', internalAgreementUrl, 'system');
   addShared("Seller's Contract", sellerContractUrl, 'system');
   (localRoom?.files || []).forEach(f => addShared(f.name, f.url, f.uploaded_by_name || 'User'));
-  messageFiles.forEach(f => addShared(f.name, f.url, 'Message'));
+  messageFiles.filter(f => !(f.type || '').startsWith('image/')).forEach(f => addShared(f.name, f.url, 'Message'));
 
   return (
     <div className="space-y-6">
