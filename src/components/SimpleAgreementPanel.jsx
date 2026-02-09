@@ -19,8 +19,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
-  const isInvestor = profile?.user_role === 'investor';
-  const isAgent = profile?.user_role === 'agent';
+  const isInvestor = profile?.user_role === 'investor' || profile?.role === 'admin' || profile?.user_type === 'investor';
+  const isAgent = profile?.user_role === 'agent' || profile?.user_type === 'agent';
 
   // Sync external agreement/room props when they change
   useEffect(() => {
