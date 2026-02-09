@@ -90,8 +90,7 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         }
         
         // Priority 4: use deal.proposed_terms (original deal terms - same for all agents initially)
-        // DO NOT use room.proposed_terms as it may have been updated by another agent's counter
-        if (!terms && deal?.proposed_terms) {
+        if (!terms && deal?.proposed_terms && deal.proposed_terms.buyer_commission_type) {
           terms = deal.proposed_terms;
           console.log('[KeyTermsPanel] Fallback to deal.proposed_terms:', terms);
         }
