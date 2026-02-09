@@ -62,7 +62,16 @@ Deno.serve(async (req) => {
     if (room?.requires_regenerate) signerMode = 'investor_only';
     else if (room_id) signerMode = 'agent_only';
 
+    // CRITICAL: Always resolve the correct investor profile ID from the room/deal, NOT from the caller.
+    // When an agent triggers regeneration, caller.id would be the agent — that's wrong for investor_profile_id.
     const investorId = room?.investorId || deal?.investor_id || caller.id;
+
+    // Also resolve the correct investor user_id for the agreement record
+    let investorUserId = null;
+    if (investorId) {
+      const investorProfiles = await base44.asServiceRole.entities.Profile.filter({ id: investorId });
+      investorUserId = investorProfiles?.[0]?.user_id || null;
+    }
 
     const payload = {
       deal_id, room_id: room_id || null,
@@ -75,6 +84,7 @@ Deno.serve(async (req) => {
         transaction_type: terms.transaction_type || 'ASSIGNMENT'
       },
       investor_profile_id: investorId,
+      investor_user_id: investorUserId, // Pass explicit investor user_id
       property_address: deal.property_address, city: deal.city, state: deal.state, zip: deal.zip, county: deal.county
     };
 
