@@ -121,7 +121,7 @@ function PipelineContent() {
         id: deal.id, deal_id: deal.id, room_id: room?.id || null,
         title: deal.title, property_address: deal.property_address,
         city: deal.city, state: deal.state, budget: deal.purchase_price,
-        pipeline_stage: isSigned ? 'connected_deals' : normalizeStage(deal.pipeline_stage || 'new_deals'),
+        pipeline_stage: isSigned ? normalizeStage(deal.pipeline_stage || 'connected_deals') : normalizeStage(deal.pipeline_stage || 'new_deals'),
         customer_name: counterparty,
         agent_request_status: room?.request_status,
         agreement_status: room?.agreement_status,
