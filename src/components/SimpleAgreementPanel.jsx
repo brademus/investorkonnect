@@ -107,6 +107,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   // For agents, only show regen if it's THEIR counter that was accepted
   const needsRegen = isInvestor ? (room?.requires_regenerate === true) : agentSpecificRegen;
   
+  // For agents who DIDN'T counter: they see the original agreement which IS investor-signed
+  // needsRegen should be false for them, so investorSigned will correctly be true
   const investorSigned = !needsRegen && (
     !!agreement?.investor_signed_at ||
     agreement?.status === 'investor_signed' ||
