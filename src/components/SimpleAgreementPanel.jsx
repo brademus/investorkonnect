@@ -202,7 +202,13 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         redirect_url: window.location.href.split('&signed')[0] + '&signed=1'
       });
       if (res.data?.signing_url) window.location.assign(res.data.signing_url);
-      else if (res.data?.already_signed) { toast.success('Already signed'); if (role === 'investor' && onInvestorSigned) onInvestorSigned(); }
+      else if (res.data?.already_signed) {
+        toast.success('Already signed');
+        // Refresh agreement to show latest signed status
+        const refreshRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
+        if (refreshRes.data?.agreement) setAgreement(refreshRes.data.agreement);
+        if (role === 'investor' && onInvestorSigned) onInvestorSigned();
+      }
       else toast.error(res.data?.error || 'Failed to start signing');
     } catch (e) { toast.error(e?.response?.data?.error || 'Signing failed'); }
     finally { setBusy(false); }
