@@ -184,8 +184,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       // Agent signs the SAME envelope as investor — no regeneration needed.
       // If the agent isn't yet a recipient on the envelope, the backend will add them.
       let targetId = agreement?.id;
-      if (role === 'agent' && agreement?.signer_mode === 'investor_only') {
-        // Need to add agent as signer to the existing envelope
+      if (role === 'agent' && (!agreement?.agent_recipient_id || !agreement?.agent_client_user_id)) {
+        // Agent recipient data is missing — need to add agent to the existing envelope
+        console.log('[SimpleAgreementPanel] Agent missing recipient data, calling addAgentToEnvelope. signer_mode:', agreement?.signer_mode);
         const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
           agreement_id: agreement.id, room_id: roomId
         });
