@@ -36,12 +36,20 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'No agents selected for this deal' }, { status: 400 });
     }
     
-    // Build proposed terms with defaults
-    const proposedTerms = deal.proposed_terms || {};
-    if (!proposedTerms.buyer_commission_type) {
-      proposedTerms.buyer_commission_type = 'percentage';
-      proposedTerms.buyer_commission_percentage = 0;
-    }
+    // Build proposed terms from deal - normalize field names
+    const rawTerms = deal.proposed_terms || {};
+    const proposedTerms = {
+      buyer_commission_type: rawTerms.buyer_commission_type || 'percentage',
+      buyer_commission_percentage: rawTerms.buyer_commission_percentage ?? null,
+      buyer_flat_fee: rawTerms.buyer_flat_fee ?? null,
+      seller_commission_type: rawTerms.seller_commission_type || null,
+      seller_commission_percentage: rawTerms.seller_commission_percentage ?? null,
+      seller_flat_fee: rawTerms.seller_flat_fee ?? null,
+      // Normalize: deal stores "agreement_length", exhibit_a uses "agreement_length_days"
+      agreement_length_days: rawTerms.agreement_length_days || rawTerms.agreement_length || null,
+      agreement_length: rawTerms.agreement_length || rawTerms.agreement_length_days || null,
+    };
+    console.log('[createInvites] proposedTerms built from deal:', JSON.stringify(proposedTerms));
     
     // --- ROOM: create or reuse ---
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
