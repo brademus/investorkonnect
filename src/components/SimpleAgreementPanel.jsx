@@ -287,8 +287,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
               </>
             )}
 
-            {/* Pending counter offers */}
-            {pendingCounters.map(counter => (
+            {/* Pending counter offers — filtered to relevant agent */}
+            {relevantCounters.map(counter => (
               <div key={counter.id} className="bg-[#E3C567]/10 border border-[#E3C567]/30 rounded-xl p-4">
                 <p className="text-xs text-[#E3C567] mb-2 font-semibold">{counter.from_role === 'investor' ? 'Investor' : 'Agent'} Counter Offer</p>
                 <div className="text-sm text-[#FAFAFA] mb-3">
