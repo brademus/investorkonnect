@@ -603,6 +603,12 @@ export default function NewDeal() {
     } else {
       navigate(createPageUrl("ContractVerify"));
     }
+    } catch (e) {
+      console.error('[NewDeal] handleContinue error:', e);
+      toast.error("Something went wrong. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
