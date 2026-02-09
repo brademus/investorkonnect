@@ -19,7 +19,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
-  const isSigned = room?.is_fully_signed || room?.agreement_status === 'fully_signed' || deal?.is_fully_signed;
+  const isSigned = room?.is_fully_signed || room?.agreement_status === 'fully_signed' || room?.request_status === 'locked' || deal?.is_fully_signed;
   const maskAddr = isAgent && !isSigned;
 
   const tabs = isSigned
