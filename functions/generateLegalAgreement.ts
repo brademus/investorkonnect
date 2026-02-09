@@ -348,9 +348,12 @@ Deno.serve(async (req) => {
     }
 
     // Agent signer — ALWAYS included as routingOrder 2 so envelope stays open after investor signs.
-    // If no real agent yet, use a placeholder (investor email with unique clientUserId).
+    // If no real agent yet, use a DIFFERENT placeholder email so DocuSign does NOT auto-complete
+    // the envelope when the investor signs (if we used investor's email, DocuSign would treat
+    // both recipients as the same person and mark the envelope completed after signer 1 finishes).
     // addAgentToEnvelope will later swap the placeholder with the real agent's details.
-    const agentSignerEmail = hasRealAgent ? agent.email : investor.email;
+    const placeholderAgentEmail = `pending-agent-${Date.now()}@placeholder.investorkonnect.com`;
+    const agentSignerEmail = hasRealAgent ? agent.email : placeholderAgentEmail;
     const agentSignerName = hasRealAgent ? (agent.full_name || agent.email) : 'Agent (Pending)';
     
     const agentTabs = {
