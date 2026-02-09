@@ -27,23 +27,73 @@ export default function MyAgreement() {
   const [draft, setDraft] = useState(null);
   const loadedRef = useRef(false);
 
-  // Load deal data from sessionStorage and create DealDraft
+  // Load deal data from sessionStorage OR database if editing
   useEffect(() => {
     if (!profile || loadedRef.current) return;
     loadedRef.current = true;
 
     (async () => {
       try {
-        // Load deal data from sessionStorage
-        const draftData = sessionStorage.getItem('newDealDraft');
-        if (!draftData) {
-          toast.error('No deal data found. Please start over.');
-          navigate(createPageUrl('Pipeline'), { replace: true });
-          return;
+        let dealData;
+        let agentIds = [];
+        
+        // EDITING EXISTING DEAL: Load from database
+        if (dealId) {
+          const deals = await base44.entities.Deal.filter({ id: dealId });
+          if (!deals?.length) {
+            toast.error('Deal not found');
+            navigate(createPageUrl('Pipeline'), { replace: true });
+            return;
+          }
+          const deal = deals[0];
+          
+          // Convert Deal entity to dealData format for agreement generation
+          dealData = {
+            dealId: deal.id,
+            propertyAddress: deal.property_address,
+            city: deal.city,
+            state: deal.state,
+            zip: deal.zip,
+            county: deal.county,
+            purchasePrice: deal.purchase_price,
+            closingDate: deal.key_dates?.closing_date,
+            contractDate: deal.key_dates?.contract_date,
+            propertyType: deal.property_type,
+            beds: deal.property_details?.beds,
+            baths: deal.property_details?.baths,
+            sqft: deal.property_details?.sqft,
+            yearBuilt: deal.property_details?.year_built,
+            numberOfStories: deal.property_details?.number_of_stories,
+            hasBasement: deal.property_details?.has_basement,
+            sellerName: deal.seller_info?.seller_name,
+            earnestMoney: deal.seller_info?.earnest_money,
+            numberOfSigners: deal.seller_info?.number_of_signers,
+            secondSignerName: deal.seller_info?.second_signer_name,
+            specialNotes: deal.special_notes,
+            contractUrl: deal.contract_document?.url,
+            // Load terms from deal.proposed_terms
+            sellerCommissionType: deal.proposed_terms?.seller_commission_type === 'flat_fee' ? 'flat' : (deal.proposed_terms?.seller_commission_type || 'percentage'),
+            sellerCommissionPercentage: deal.proposed_terms?.seller_commission_percentage,
+            sellerFlatFee: deal.proposed_terms?.seller_flat_fee,
+            buyerCommissionType: deal.proposed_terms?.buyer_commission_type === 'flat_fee' ? 'flat' : (deal.proposed_terms?.buyer_commission_type || 'percentage'),
+            buyerCommissionPercentage: deal.proposed_terms?.buyer_commission_percentage,
+            buyerFlatFee: deal.proposed_terms?.buyer_flat_fee,
+            agreementLength: deal.proposed_terms?.agreement_length
+          };
+          agentIds = deal.selected_agent_ids || [];
+          
+          console.log('[MyAgreement] Loaded existing deal:', deal.id, 'terms:', deal.proposed_terms);
+        } else {
+          // NEW DEAL: Load from sessionStorage
+          const draftData = sessionStorage.getItem('newDealDraft');
+          if (!draftData) {
+            toast.error('No deal data found. Please start over.');
+            navigate(createPageUrl('Pipeline'), { replace: true });
+            return;
+          }
+          dealData = JSON.parse(draftData);
+          agentIds = dealData.selectedAgentIds || [];
         }
-
-        const dealData = JSON.parse(draftData);
-        const agentIds = dealData.selectedAgentIds || [];
 
         if (agentIds.length === 0) {
           toast.error('No agents selected. Please start over.');
@@ -51,9 +101,6 @@ export default function MyAgreement() {
           return;
         }
 
-        // Create Deal entity with proposed_terms (buyer commission) for agreement generation
-        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-        
         // Build proposed_terms from deal data
         // CRITICAL: NewDeal saves commission type as 'percentage' or 'flat', normalize here
         const buyerCommType = dealData.buyerCommissionType || 'percentage';
@@ -68,8 +115,12 @@ export default function MyAgreement() {
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
         
-        // Create DealDraft so automation can find it after investor signs
-        const draftCreated = await base44.entities.DealDraft.create({
+        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+        
+        // Create DealDraft (for new deals) or skip if editing existing
+        let draftCreated;
+        if (!dealId) {
+          draftCreated = await base44.entities.DealDraft.create({
           investor_profile_id: profile.id,
           property_address: dealData.propertyAddress,
           city: dealData.city,
@@ -100,17 +151,20 @@ export default function MyAgreement() {
           seller_commission_type: sellerCommType,
           seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
           seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null
-        });
+          });
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+        } else {
+          console.log('[MyAgreement] Editing existing deal, no draft needed');
+        }
 
-        console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
-
-        // Store deal data in state with draft reference
-        setDraft(draftCreated);
+        // Store deal data in state with draft reference (if new) or dealId (if editing)
+        setDraft(draftCreated || null);
         setDeal({ 
           ...dealData, 
           proposed_terms: proposedTerms,
           investor_id: profile.id,
-          draft_id: draftCreated.id
+          draft_id: draftCreated?.id || null,
+          id: dealId || null
         });
         setSelectedAgentIds(agentIds);
 
@@ -130,7 +184,7 @@ export default function MyAgreement() {
         setLoading(false);
       }
     })();
-  }, [navigate, profile]);
+  }, [navigate, profile, dealId]);
 
   // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
   useEffect(() => {
@@ -286,7 +340,7 @@ export default function MyAgreement() {
 
 
         <SimpleAgreementPanel 
-          dealId={draft?.id}
+          dealId={dealId || draft?.id}
           dealData={deal}
           draftId={draft?.id}
           roomId={room?.id}
