@@ -124,6 +124,27 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // CRITICAL: Use agreement exhibit_a_terms as source of truth for commission terms
+    // The agreement was generated with correct values; the draft may have stale/wrong values
+    const exhibitTerms = agreementData.exhibit_a_terms || {};
+    const draftBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
+    const draftSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
+    
+    // Prefer agreement exhibit_a_terms over draft for buyer commission (agreement is authoritative)
+    const finalBuyerCommType = exhibitTerms.buyer_commission_type || draftBuyerType;
+    const finalBuyerCommPct = exhibitTerms.buyer_commission_percentage ?? draft.buyer_commission_percentage ?? null;
+    const finalBuyerFlatFee = exhibitTerms.buyer_flat_fee ?? draft.buyer_flat_fee ?? null;
+    const finalAgreementLength = exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draft.agreement_length || null;
+
+    console.log('[createDealOnInvestorSignature] Terms resolution:', {
+      draft_buyer_pct: draft.buyer_commission_percentage,
+      exhibit_buyer_pct: exhibitTerms.buyer_commission_percentage,
+      final_buyer_pct: finalBuyerCommPct,
+      draft_agreement_length: draft.agreement_length,
+      exhibit_agreement_length_days: exhibitTerms.agreement_length_days,
+      final_agreement_length: finalAgreementLength,
+    });
+
     // Create the Deal entity
     const newDeal = await base44.asServiceRole.entities.Deal.create({
       title: draft.property_address,
@@ -154,13 +175,13 @@ Deno.serve(async (req) => {
         second_signer_name: draft.second_signer_name,
       },
       proposed_terms: {
-        seller_commission_type: draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage'),
+        seller_commission_type: draftSellerType,
         seller_commission_percentage: draft.seller_commission_percentage ?? null,
         seller_flat_fee: draft.seller_flat_fee ?? null,
-        buyer_commission_type: draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage'),
-        buyer_commission_percentage: draft.buyer_commission_percentage ?? null,
-        buyer_flat_fee: draft.buyer_flat_fee ?? null,
-        agreement_length: draft.agreement_length ?? null,
+        buyer_commission_type: finalBuyerCommType,
+        buyer_commission_percentage: finalBuyerCommPct,
+        buyer_flat_fee: finalBuyerFlatFee,
+        agreement_length: finalAgreementLength,
       },
       contract_document: draft.contract_url ? {
         url: draft.contract_url,
