@@ -317,7 +317,9 @@ Deno.serve(async (req) => {
       investor_id: draft.investor_profile_id,
       selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
-      current_legal_agreement_id: agreementData.id
+      current_legal_agreement_id: agreementData.id,
+      walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
+      walkthrough_datetime: draft.walkthrough_datetime || null
     });
     
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'with selected_agent_ids:', newDeal.selected_agent_ids);
