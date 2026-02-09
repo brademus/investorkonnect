@@ -177,8 +177,8 @@ Deno.serve(async (req) => {
         }
       } else {
         // both mode
-        const inv = recipients.find(r => r.recipientId === '1');
-        const ag = recipients.find(r => r.recipientId === '2');
+        const inv = recipients.find(r => String(r.recipientId) === String(agreement.investor_recipient_id || '1'));
+        const ag = recipients.find(r => String(r.recipientId) === String(agreement.agent_recipient_id || '2'));
         if (inv?.status === 'completed' && !agreement.investor_signed_at) updates.investor_signed_at = new Date().toISOString();
         if (ag?.status === 'completed' && !agreement.agent_signed_at) updates.agent_signed_at = new Date().toISOString();
 
