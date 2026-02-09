@@ -53,6 +53,8 @@ export default function NewDeal() {
   const [numberOfStories, setNumberOfStories] = useState("");
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
+  const [walkthroughScheduled, setWalkthroughScheduled] = useState(null); // null = not answered, true/false
+  const [walkthroughDateTime, setWalkthroughDateTime] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when returning from verification or navigating back (NOT for fresh edits from pipeline)
