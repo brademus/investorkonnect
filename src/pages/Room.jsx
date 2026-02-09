@@ -246,12 +246,23 @@ export default function Room() {
               room={currentRoom}
               profile={profile}
               roomId={roomId}
+              selectedAgentProfileId={selectedInvite?.agent_profile_id}
               onInvestorSigned={async () => {
                 if (!currentRoom?.deal_id) return;
                 try {
                   await base44.functions.invoke('createInvitesAfterInvestorSign', { deal_id: currentRoom.deal_id });
                   queryClient.invalidateQueries({ queryKey: ['rooms'] });
                 } catch (e) { console.error('[Room] Invite creation failed:', e); }
+              }}
+            />
+          ) : isInvestor && showPendingAgents && pendingInvites.length > 0 && !isSigned ? (
+            <PendingAgentsList
+              invites={pendingInvites}
+              selectedInviteId={selectedInvite?.id}
+              onSelectAgent={(invite) => {
+                setSelectedInvite(invite);
+                setShowBoard(true);
+                setShowPendingAgents(false);
               }}
             />
           ) : (
