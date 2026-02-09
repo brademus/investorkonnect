@@ -50,6 +50,13 @@ Deno.serve(async (req) => {
     const envelopeId = agreement.docusign_envelope_id;
     if (!envelopeId) return Response.json({ error: 'No DocuSign envelope on this agreement' }, { status: 400 });
 
+    // Check if agent already exists on the envelope (might have been added during generation)
+    // If signer_mode is 'both' and agent_recipient_id is set, agent is already on the envelope
+    if (agreement.signer_mode === 'both' && agreement.agent_recipient_id && agreement.agent_client_user_id) {
+      console.log('[addAgentToEnvelope] Agreement already in both mode with agent recipient data, skipping');
+      return Response.json({ agreement });
+    }
+
     // Resolve agent from room
     const effectiveRoomId = room_id || agreement.room_id;
     if (!effectiveRoomId) return Response.json({ error: 'room_id required to identify agent' }, { status: 400 });
