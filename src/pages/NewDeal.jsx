@@ -338,6 +338,17 @@ export default function NewDeal() {
               }
             }
 
+            // Hydrate walkthrough fields from deal
+            if (deal.walkthrough_scheduled !== undefined && deal.walkthrough_scheduled !== null) {
+              setWalkthroughScheduled(deal.walkthrough_scheduled);
+            }
+            if (deal.walkthrough_datetime) {
+              // Convert ISO to datetime-local format
+              const dt = new Date(deal.walkthrough_datetime);
+              const local = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + 'T' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
+              setWalkthroughDateTime(local);
+            }
+
             // Fallback: if property details are still empty, try server-normalized details
             const detailsEmpty = !propertyType && !beds && !baths && !sqft && !yearBuilt && !numberOfStories && !hasBasement;
             if (detailsEmpty) {
