@@ -188,7 +188,15 @@ export default function MyAgreement() {
             selected_agent_ids: agentIds,
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-            seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null
+            seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
+            walkthrough_scheduled: dealData.walkthroughScheduled === true ? true : false,
+            walkthrough_datetime: (() => {
+              if (dealData.walkthroughScheduled !== true || !dealData.walkthroughDate) return null;
+              try {
+                const d = new Date(dealData.walkthroughDate + ' ' + (dealData.walkthroughTime || '12:00 PM'));
+                return isNaN(d.getTime()) ? null : d.toISOString();
+              } catch { return null; }
+            })()
           });
           console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
           setDraft(draftCreated);
