@@ -82,14 +82,12 @@ Deno.serve(async (req) => {
       const inv = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id));
       const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id));
       if (inv?.status === 'completed' && !agreement.investor_signed_at) updates.investor_signed_at = inv.signedDateTime || new Date().toISOString();
-      if (ag?.status === 'completed' && !agreement.agent_signed_at) updates.agent_signed_at = ag.signedDateTime || new Date().toISOString();
-      if (Object.keys(updates).length) {
-        const invS = !!(updates.investor_signed_at || agreement.investor_signed_at);
-        const agS = !!(updates.agent_signed_at || agreement.agent_signed_at);
-        // Only mark fully_signed when BOTH parties have actually signed
-        updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : agS ? 'agent_signed' : agreement.status;
-        // Don't set docusign_status to completed until both sign
-        updates.docusign_status = (invS && agS) ? 'completed' : 'delivered';
+          if (ag?.status === 'completed' && !agreement.agent_signed_at) updates.agent_signed_at = ag.signedDateTime || new Date().toISOString();
+          if (Object.keys(updates).length) {
+            const invS = !!(updates.investor_signed_at || agreement.investor_signed_at);
+            const agS = !!(updates.agent_signed_at || agreement.agent_signed_at);
+            updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : agS ? 'agent_signed' : agreement.status;
+            updates.docusign_status = (invS && agS) ? 'completed' : 'sent';
         await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
         Object.assign(agreement, updates);
         // Also sync room agreement_status
