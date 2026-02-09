@@ -15,7 +15,26 @@ import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const [activeTab, setActiveTab] = useState('details');
   const [localRoom, setLocalRoom] = useState(room);
+  const [messagePhotos, setMessagePhotos] = useState([]);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
+
+  // Load photos shared via chat messages
+  useEffect(() => {
+    if (!roomId) return;
+    (async () => {
+      const msgs = await base44.entities.Message.filter({ room_id: roomId }, "created_date");
+      const photos = (msgs || [])
+        .filter(m => m?.metadata?.file_url && (m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/')))
+        .map(m => ({
+          name: m.metadata.file_name || 'Photo',
+          url: m.metadata.file_url,
+          uploaded_by: m.sender_profile_id,
+          uploaded_at: m.created_date,
+          source: 'message'
+        }));
+      setMessagePhotos(photos);
+    })();
+  }, [roomId]);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
@@ -136,18 +155,25 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             <h4 className="text-lg font-semibold text-[#FAFAFA]">Photos</h4>
             <Button onClick={() => uploadToRoom('photo')} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"><Plus className="w-4 h-4 mr-2" />Upload</Button>
           </div>
-          {(localRoom?.photos || []).length === 0 ? <p className="text-sm text-[#808080] text-center py-12">No photos yet</p> : (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {(localRoom?.photos || []).map((p, i) => (
-                <div key={i} className="group relative aspect-square rounded-lg overflow-hidden bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567]/30">
-                  <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <a href={p.url} target="_blank" rel="noopener noreferrer" className="bg-[#E3C567] text-black px-4 py-2 rounded-full text-sm font-medium">View</a>
+          {(() => {
+            // Merge room.photos + message photos, dedupe by URL
+            const seenUrls = new Set();
+            const allPhotos = [];
+            for (const p of (localRoom?.photos || [])) { if (p?.url && !seenUrls.has(p.url)) { seenUrls.add(p.url); allPhotos.push(p); } }
+            for (const p of messagePhotos) { if (p?.url && !seenUrls.has(p.url)) { seenUrls.add(p.url); allPhotos.push(p); } }
+            return allPhotos.length === 0 ? <p className="text-sm text-[#808080] text-center py-12">No photos yet</p> : (
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {allPhotos.map((p, i) => (
+                  <div key={i} className="group relative aspect-square rounded-lg overflow-hidden bg-[#141414] border border-[#1F1F1F] hover:border-[#E3C567]/30">
+                    <img src={p.url} alt={p.name} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <a href={p.url} target="_blank" rel="noopener noreferrer" className="bg-[#E3C567] text-black px-4 py-2 rounded-full text-sm font-medium">View</a>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
+                ))}
+              </div>
+            );
+          })()}
         </div>
       )}
 
