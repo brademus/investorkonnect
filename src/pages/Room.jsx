@@ -46,7 +46,7 @@ export default function Room() {
 
   const isAgent = profile?.user_role === 'agent';
   const isInvestor = profile?.user_role === 'investor';
-  const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || deal?.is_fully_signed;
+  const isSigned = currentRoom?.is_fully_signed || currentRoom?.agreement_status === 'fully_signed' || currentRoom?.request_status === 'locked' || deal?.is_fully_signed;
   const isChatEnabled = isSigned;
 
   // Load room + deal when roomId changes
@@ -208,15 +208,14 @@ export default function Room() {
                 <Button onClick={() => { setShowBoard(true); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                {isInvestor && pendingInvites.length > 0 && !isSigned ? (
+                {isInvestor && pendingInvites.length > 0 && !isSigned && (
                   <Button onClick={() => { setShowBoard(false); setShowPendingAgents(true); }} className={`rounded-full font-semibold ${showPendingAgents && !showBoard ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                     <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
                   </Button>
-                ) : (
-                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
-                    <Send className="w-4 h-4 mr-2" />Messages
-                  </Button>
                 )}
+                <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                  <Send className="w-4 h-4 mr-2" />Messages
+                </Button>
               </>
             )}
           </div>
