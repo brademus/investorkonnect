@@ -106,11 +106,37 @@ Deno.serve(async (req) => {
     const agreement = data?.agreement;
     if (!agreement?.id) return Response.json({ error: 'No agreement returned' }, { status: 500 });
 
-    // Update room pointer + clear regenerate flag
+    // Update room + clear regenerate flag
+    // CRITICAL: Do NOT update room.current_legal_agreement_id to the regenerated agreement.
+    // The room pointer should stay on the original investor-signed agreement so other agents
+    // who didn't counter-offer still see (and can sign) the original agreement.
+    // Instead, update the specific agent's DealInvite.legal_agreement_id.
     if (room_id && room) {
-      const update = { current_legal_agreement_id: agreement.id, agreement_status: 'draft' };
+      const update = { agreement_status: 'draft' };
       if (room.requires_regenerate) update.requires_regenerate = false;
+      
+      // Update agent-specific agreement status
+      if (targetAgentId) {
+        const updatedStatus = { ...(room.agent_agreement_status || {}) };
+        updatedStatus[targetAgentId] = 'draft';
+        update.agent_agreement_status = updatedStatus;
+      }
+      
       await base44.asServiceRole.entities.Room.update(room_id, update);
+      
+      // Update the specific agent's DealInvite to point to the new agreement
+      if (targetAgentId) {
+        const agentInvites = await base44.asServiceRole.entities.DealInvite.filter({
+          deal_id: deal_id,
+          agent_profile_id: targetAgentId
+        });
+        if (agentInvites?.[0]) {
+          await base44.asServiceRole.entities.DealInvite.update(agentInvites[0].id, {
+            legal_agreement_id: agreement.id
+          });
+          console.log('[regenerate] Updated DealInvite', agentInvites[0].id, 'legal_agreement_id to', agreement.id);
+        }
+      }
     }
 
     return Response.json({ success: true, agreement });
