@@ -21,7 +21,8 @@ export default function DocuSignReturn() {
 
         console.log('[DocuSignReturn]', { event, dealId, roomId });
 
-        if (event === 'signing_complete') {
+        // DocuSign returns various event types for signing completion
+        if (event === 'signing_complete' || event === 'completed') {
           setMessage("Signature completed! Processing...");
           setStatus("success");
 
