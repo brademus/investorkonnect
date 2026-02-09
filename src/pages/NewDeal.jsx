@@ -94,6 +94,8 @@ export default function NewDeal() {
       setYearBuilt(d.yearBuilt || "");
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
+      if (d.walkthroughScheduled !== undefined && d.walkthroughScheduled !== null) setWalkthroughScheduled(d.walkthroughScheduled);
+      if (d.walkthroughDateTime) setWalkthroughDateTime(d.walkthroughDateTime);
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
@@ -129,7 +131,9 @@ export default function NewDeal() {
       notes,
       yearBuilt,
       numberOfStories,
-      hasBasement
+      hasBasement,
+      walkthroughScheduled,
+      walkthroughDateTime
     };
     // For brand new deals (no dealId), only persist if the user actually typed something meaningful
     const isEditing = !!dealId;
@@ -137,7 +141,7 @@ export default function NewDeal() {
     if ((isEditing && hydrated) || hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
-  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, walkthroughScheduled, walkthroughDateTime]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
