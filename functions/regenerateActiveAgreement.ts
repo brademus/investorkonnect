@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = JSON.parse(rawBody);
-    const { deal_id, room_id } = body;
+    const { deal_id, room_id, target_agent_id: explicitTargetAgentId } = body;
     if (!deal_id) return Response.json({ error: 'deal_id required' }, { status: 400 });
 
     // Load room + deal
