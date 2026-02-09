@@ -260,7 +260,10 @@ export default function Room() {
             </div>
             {isSigned && (
               <CounterpartyInfoBar
-                counterparty={isInvestor ? deal?.agent_contact : deal?.investor_contact}
+                counterparty={isInvestor
+                  ? { ...deal?.agent_contact, name: deal?.agent_full_name }
+                  : { ...deal?.investor_contact, name: deal?.investor_full_name }
+                }
               />
             )}
           </>
