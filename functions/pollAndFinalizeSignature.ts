@@ -65,14 +65,19 @@ Deno.serve(async (req) => {
           if (inv?.status === 'completed') {
             signed = true;
             console.log('[pollAndFinalize] Investor signature confirmed on attempt', i + 1);
-            
-            // Update LegalAgreement with signature
-            // Do NOT set docusign_status to 'completed' — the envelope stays open for the agent
+
+            // Check if agent also signed already (unlikely but possible)
+            const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id || '2'));
+            const agentAlsoSigned = ag?.status === 'completed';
+
             const updates = {
               investor_signed_at: inv.signedDateTime || new Date().toISOString(),
-              status: 'investor_signed',
-              docusign_status: 'delivered'
+              status: agentAlsoSigned ? 'fully_signed' : 'investor_signed',
+              docusign_status: agentAlsoSigned ? 'completed' : 'sent'
             };
+            if (agentAlsoSigned && !agreement.agent_signed_at) {
+              updates.agent_signed_at = ag.signedDateTime || new Date().toISOString();
+            }
             await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
             Object.assign(agreement, updates);
             break;
