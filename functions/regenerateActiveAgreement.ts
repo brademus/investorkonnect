@@ -34,17 +34,28 @@ Deno.serve(async (req) => {
 
     // Resolve terms: prefer agent-specific terms over room.proposed_terms
     // Determine which agent this regeneration is for
-    let targetAgentId = null;
-    if (room_id && room) {
-      // Find the DealInvite for this room to get the specific agent
-      const invites = await base44.asServiceRole.entities.DealInvite.filter({
-        deal_id: deal_id,
-        room_id: room_id
-      });
-      if (invites?.[0]) targetAgentId = invites[0].agent_profile_id;
+    let targetAgentId = explicitTargetAgentId || null;
+    if (!targetAgentId && room_id && room) {
+      // Find agents whose counter was accepted (requires_regenerate flag in agent_terms)
+      const agTerms = room.agent_terms || {};
+      for (const [agId, terms] of Object.entries(agTerms)) {
+        if (terms?.requires_regenerate) {
+          targetAgentId = agId;
+          break;
+        }
+      }
+      // Fallback: Find the DealInvite for this room to get the specific agent
+      if (!targetAgentId) {
+        const invites = await base44.asServiceRole.entities.DealInvite.filter({
+          deal_id: deal_id,
+          room_id: room_id
+        });
+        if (invites?.length === 1) targetAgentId = invites[0].agent_profile_id;
+      }
       // Fallback: single agent in room
       if (!targetAgentId && room.agent_ids?.length === 1) targetAgentId = room.agent_ids[0];
     }
+    console.log('[regenerate] targetAgentId:', targetAgentId);
 
     // Priority: agent-specific terms > room.proposed_terms > deal.proposed_terms
     let terms = {};
