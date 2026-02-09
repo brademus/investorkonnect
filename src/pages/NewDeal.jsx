@@ -384,10 +384,6 @@ export default function NewDeal() {
       toast.error("Please enter a ZIP code");
       return;
     }
-    if (!county.trim()) {
-      toast.error("Please enter a county");
-      return;
-    }
     
     const cleanedPrice = String(purchasePrice || '').replace(/[$,\s]/g, '').trim();
     if (!cleanedPrice || isNaN(Number(cleanedPrice)) || Number(cleanedPrice) <= 0) {
@@ -617,7 +613,7 @@ export default function NewDeal() {
               />
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               <div className="col-span-2 md:col-span-1">
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">City *</label>
                 <Input
@@ -634,15 +630,6 @@ export default function NewDeal() {
                   onChange={(e) => setState(e.target.value)}
                   placeholder="AZ"
                   maxLength={2}
-                  className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-[#FAFAFA] mb-2">County *</label>
-                <Input
-                  value={county}
-                  onChange={(e) => setCounty(e.target.value)}
-                  placeholder="Maricopa"
                   className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                 />
               </div>

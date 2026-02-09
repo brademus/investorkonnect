@@ -30,8 +30,7 @@ Deno.serve(async (req) => {
         1. Full property address
         2. City
         3. State (2-letter uppercase code, e.g. TX, FL, NY)
-        4. County
-        5. Zip Code
+        4. Zip Code
         
         Financial Terms:
         6. Purchase Price (exact dollar amount as number)
@@ -73,7 +72,6 @@ Deno.serve(async (req) => {
           address: { type: "string" },
           city: { type: "string" },
           state: { type: "string" },
-          county: { type: "string" },
           zip: { type: "string" },
           buyer_name: { type: "string" },
           buyer_name_raw: { type: "string" },
