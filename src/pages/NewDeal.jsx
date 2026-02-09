@@ -274,8 +274,11 @@ export default function NewDeal() {
             
             // Populate form fields if terms exist
             if (terms) {
+              // Normalize DB value 'flat_fee' back to form value 'flat'
+              const normType = (t) => t === 'flat_fee' ? 'flat' : (t || 'percentage');
+              
               if (terms.seller_commission_type) {
-                setSellerCommissionType(terms.seller_commission_type);
+                setSellerCommissionType(normType(terms.seller_commission_type));
               }
               if (terms.seller_commission_percentage !== null && terms.seller_commission_percentage !== undefined) {
                 setSellerCommissionPercentage((terms.seller_commission_percentage ?? "").toString());
@@ -285,7 +288,7 @@ export default function NewDeal() {
               }
               
               if (terms.buyer_commission_type) {
-                setBuyerCommissionType(terms.buyer_commission_type);
+                setBuyerCommissionType(normType(terms.buyer_commission_type));
               }
               if (terms.buyer_commission_percentage !== null && terms.buyer_commission_percentage !== undefined) {
                 setBuyerCommissionPercentage((terms.buyer_commission_percentage ?? "").toString());
