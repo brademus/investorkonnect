@@ -114,22 +114,21 @@ Deno.serve(async (req) => {
     const envUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${agreement.docusign_envelope_id}`;
     const envResp = await fetch(envUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
     if (envResp.ok) {
-      const env = await envResp.json();
-      // Only treat as fully complete if BOTH parties have signed.
-      // An envelope can be 'completed' when the investor was the only signer,
-      // but we may have just added the agent as a new recipient — recheck.
-      if (env.status === 'completed') {
-        // If the CURRENT role hasn't signed yet, the envelope was reopened by adding them
-        const currentRoleSigned = role === 'investor' ? agreement.investor_signed_at : agreement.agent_signed_at;
-        if (currentRoleSigned) {
-          return Response.json({ already_signed: true });
+        const env = await envResp.json();
+        // An envelope can show 'completed' when investor was the only signer in the original envelope.
+        // That doesn't mean the agreement is fully signed — the agent still needs to sign.
+        // Only treat as "already signed" if THIS specific role has already signed.
+        if (env.status === 'completed') {
+          const currentRoleSigned = role === 'investor' ? agreement.investor_signed_at : agreement.agent_signed_at;
+          if (currentRoleSigned) {
+            return Response.json({ already_signed: true });
+          }
+          // This role hasn't signed yet — the envelope needs to be reopened or a new one created
+          // (handled by addAgentToEnvelope). Log and continue to create signing session.
+          console.log('[signing] Envelope shows completed but', role, 'has not signed yet. Will attempt signing view...');
         }
-        // Otherwise, the agent was just added — envelope should have been re-opened.
-        // Re-fetch envelope status after a short delay to let DocuSign process
-        console.log('[signing] Envelope shows completed but', role, 'has not signed. Checking recipients...');
+        if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
       }
-      if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
-    }
 
     // Build redirect URL
     const publicUrl = Deno.env.get('PUBLIC_APP_URL') || new URL(req.url).origin;
