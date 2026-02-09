@@ -260,16 +260,23 @@ export default function Room() {
                   {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
                 </div>
               </div>
-              {isInvestor && isSigned && deal && normalizeStage(deal.pipeline_stage) !== 'active_listings' && (
+              {isInvestor && isSigned && deal?.id && normalizeStage(deal.pipeline_stage) !== 'active_listings' && (
                   <button
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
-                    onClick={async () => {
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const dealId = deal.id;
+                      // Optimistic UI update first
+                      setDeal(prev => prev ? { ...prev, pipeline_stage: 'active_listings' } : prev);
                       try {
-                        await base44.entities.Deal.update(deal.id, { pipeline_stage: 'active_listings' });
-                        setDeal(prev => ({ ...prev, pipeline_stage: 'active_listings' }));
+                        await base44.entities.Deal.update(dealId, { pipeline_stage: 'active_listings' });
                         queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
                         toast.success('Moved to Active Listings');
-                      } catch (e) { toast.error("Failed to update stage"); }
+                      } catch (e) {
+                        // Revert on failure
+                        setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
+                        toast.error("Failed to update stage");
+                      }
                     }}
                   >
                     Has this agreement been listed?
