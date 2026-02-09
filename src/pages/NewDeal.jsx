@@ -689,9 +689,10 @@ export default function NewDeal() {
               <div>
                 <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Target Closing Date *</label>
                 <Input
-                  type="date"
+                  type="text"
                   value={closingDate}
                   onChange={(e) => setClosingDate(e.target.value)}
+                  placeholder="MM/DD/YYYY"
                   className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
                 />
               </div>
@@ -1042,9 +1043,10 @@ export default function NewDeal() {
                 <div className="mt-4">
                   <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Walk-through Date & Time</label>
                   <Input
-                    type="datetime-local"
+                    type="text"
                     value={walkthroughDateTime}
                     onChange={(e) => setWalkthroughDateTime(e.target.value)}
+                    placeholder="MM/DD/YYYY HH:MM AM/PM"
                     className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] max-w-sm"
                   />
                 </div>
