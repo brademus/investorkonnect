@@ -378,6 +378,29 @@ Deno.serve(async (req) => {
     
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'with selected_agent_ids:', newDeal.selected_agent_ids);
 
+    // Create DealAppointments record if walkthrough was scheduled
+    if (draft.walkthrough_scheduled === true && draft.walkthrough_datetime) {
+      try {
+        await base44.asServiceRole.entities.DealAppointments.create({
+          dealId: newDeal.id,
+          walkthrough: {
+            status: 'PROPOSED',
+            datetime: draft.walkthrough_datetime,
+            timezone: null,
+            locationType: 'ON_SITE',
+            notes: null,
+            updatedByUserId: draft.investor_profile_id || null,
+            updatedAt: new Date().toISOString()
+          },
+          inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+          rescheduleRequests: []
+        });
+        console.log('[createDealOnInvestorSignature] Created DealAppointments for walkthrough');
+      } catch (apptErr) {
+        console.warn('[createDealOnInvestorSignature] Failed to create DealAppointments (non-fatal):', apptErr.message);
+      }
+    }
+
     // Update the LegalAgreement with the NEW deal_id
     await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
       deal_id: newDeal.id,
