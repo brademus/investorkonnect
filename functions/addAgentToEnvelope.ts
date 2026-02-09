@@ -93,61 +93,91 @@ Deno.serve(async (req) => {
     }
 
     // Get the current placeholder agent recipient
+    const agentRecipientId = String(agreement.agent_recipient_id || '2');
     const recipResp = await fetch(recipientsUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
     const recipData = recipResp.ok ? await recipResp.json() : {};
-    const existingAgentSigner = (recipData.signers || []).find(s => String(s.recipientId) === String(agreement.agent_recipient_id || '2'));
+    const existingAgentSigner = (recipData.signers || []).find(s => String(s.recipientId) === agentRecipientId);
 
-    if (existingAgentSigner) {
-      // Delete the placeholder
-      console.log('[addAgentToEnvelope] Removing placeholder agent signer:', existingAgentSigner.email);
-      const deleteResp = await fetch(recipientsUrl, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ signers: [{ recipientId: String(agreement.agent_recipient_id || '2') }] })
-      });
-      if (!deleteResp.ok) {
-        const delErr = await deleteResp.text();
-        console.error('[addAgentToEnvelope] Failed to delete placeholder:', delErr);
-        // If delete fails, try to just add — DocuSign may allow updating in place
+    console.log('[addAgentToEnvelope] Existing agent signer:', existingAgentSigner?.email, 'status:', existingAgentSigner?.status);
+
+    const agentSignerPayload = {
+      email: agent.email,
+      name: agent.full_name || agent.email,
+      recipientId: agentRecipientId,
+      routingOrder: agentRecipientId,
+      clientUserId: agentClientId,
+      tabs: {
+        signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
+        dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
+        fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
+        textTabs: [
+          { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: true, tabLabel: 'agentLicense' },
+          { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: true, tabLabel: 'agentBrokerage' }
+        ]
       }
-    }
-
-    // Add the real agent as a new signer with the same recipientId
-    const agentRecipientId = String(agreement.agent_recipient_id || '2');
-    const addPayload = {
-      signers: [{
-        email: agent.email,
-        name: agent.full_name || agent.email,
-        recipientId: agentRecipientId,
-        routingOrder: agentRecipientId,
-        clientUserId: agentClientId,
-        tabs: {
-          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
-          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
-          fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
-          textTabs: [
-            { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: true, tabLabel: 'agentLicense' },
-            { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: true, tabLabel: 'agentBrokerage' }
-          ]
-        }
-      }]
     };
 
-    console.log('[addAgentToEnvelope] Adding real agent', agent.email, 'as recipientId', agentRecipientId);
-    const addResp = await fetch(recipientsUrl, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(addPayload)
-    });
+    let success = false;
 
-    if (!addResp.ok) {
-      const errText = await addResp.text();
-      console.error('[addAgentToEnvelope] DocuSign add error:', errText);
-      return Response.json({ error: 'Failed to add agent to envelope: ' + errText }, { status: 500 });
+    if (existingAgentSigner) {
+      // Strategy 1: Use PUT to update the placeholder recipient in-place (preferred — no edit lock issues)
+      console.log('[addAgentToEnvelope] Updating placeholder agent in-place via PUT:', existingAgentSigner.email, '->', agent.email);
+      const putResp = await fetch(recipientsUrl, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signers: [agentSignerPayload] })
+      });
+
+      if (putResp.ok) {
+        const putResult = await putResp.json();
+        console.log('[addAgentToEnvelope] PUT result:', JSON.stringify(putResult));
+        success = true;
+      } else {
+        const putErr = await putResp.text();
+        console.warn('[addAgentToEnvelope] PUT failed, trying DELETE+POST fallback:', putErr);
+
+        // Strategy 2: DELETE then POST (fallback)
+        const deleteResp = await fetch(recipientsUrl, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signers: [{ recipientId: agentRecipientId }] })
+        });
+        if (!deleteResp.ok) {
+          console.error('[addAgentToEnvelope] DELETE also failed:', await deleteResp.text());
+        }
+
+        const postResp = await fetch(recipientsUrl, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ signers: [agentSignerPayload] })
+        });
+        if (postResp.ok) {
+          const postResult = await postResp.json();
+          console.log('[addAgentToEnvelope] POST result:', JSON.stringify(postResult));
+          success = true;
+        } else {
+          const postErr = await postResp.text();
+          console.error('[addAgentToEnvelope] POST also failed:', postErr);
+          return Response.json({ error: 'Failed to add agent to envelope: ' + postErr }, { status: 500 });
+        }
+      }
+    } else {
+      // No existing placeholder — just POST the new signer
+      console.log('[addAgentToEnvelope] No existing placeholder, adding agent via POST:', agent.email);
+      const postResp = await fetch(recipientsUrl, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signers: [agentSignerPayload] })
+      });
+      if (!postResp.ok) {
+        const postErr = await postResp.text();
+        console.error('[addAgentToEnvelope] POST error:', postErr);
+        return Response.json({ error: 'Failed to add agent to envelope: ' + postErr }, { status: 500 });
+      }
+      const postResult = await postResp.json();
+      console.log('[addAgentToEnvelope] POST result:', JSON.stringify(postResult));
+      success = true;
     }
-
-    const addResult = await addResp.json();
-    console.log('[addAgentToEnvelope] Add result:', JSON.stringify(addResult));
 
     // Update agreement — same envelope ID, just updated agent details
     const updates = {
