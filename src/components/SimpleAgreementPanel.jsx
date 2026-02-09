@@ -256,12 +256,12 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             {/* Investor actions */}
             {isInvestor && !fullySigned && (
               <>
-                {needsRegen && !investorSigned && (
+                {needsRegen && !isAgentOnlyMode && (
                   <Button onClick={handleRegenAndSign} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                     {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Regenerate & Sign
                   </Button>
                 )}
-                {!investorSigned && !needsRegen && agreement.status !== 'superseded' && (
+                {!investorSigned && !needsRegen && !isAgentOnlyMode && agreement.status !== 'superseded' && (
                   <Button onClick={() => handleSign('investor')} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                     {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign Agreement
                   </Button>
