@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Send, Image as ImageIcon, FileText } from "lucide-react";
 import { toast } from "sonner";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
+import WalkthroughMessageCard from "@/components/room/WalkthroughMessageCard";
 
 function isFromMe(m, user, profile) {
   if (m?._isMe) return true;
@@ -116,6 +117,17 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           const isMe = m._isMe || isFromMe(m, user, profile);
           const isPhoto = m?.metadata?.type === 'photo' || (m?.metadata?.file_type || '').startsWith('image/');
           const isFile = m?.metadata?.type === 'file' && !(m?.metadata?.file_type || '').startsWith('image/');
+          const isWalkthroughRequest = m?.metadata?.type === 'walkthrough_request';
+          const isAgent = profile?.user_role === 'agent';
+
+          if (isWalkthroughRequest) {
+            return (
+              <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
+                <WalkthroughMessageCard message={m} isAgent={isAgent} roomId={roomId} profile={profile} />
+              </div>
+            );
+          }
+
           return (
             <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
               <div className={"px-4 py-2 rounded-2xl max-w-[70%] " + (isMe ? "bg-[#E3C567] text-black rounded-br-md" : "bg-[#0D0D0D] text-[#FAFAFA] border border-[#1F1F1F] rounded-bl-md")}>
