@@ -13,6 +13,7 @@ export default function WalkthroughPanel({ deal }) {
     (async () => {
       try {
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+        console.log('[WalkthroughPanel] DealAppointments rows for deal', deal.id, ':', rows?.length, rows?.[0]?.walkthrough);
         if (rows?.[0]?.walkthrough) {
           setApptData(rows[0].walkthrough);
         }
@@ -22,6 +23,18 @@ export default function WalkthroughPanel({ deal }) {
         setLoadingAppt(false);
       }
     })();
+  }, [deal?.id, deal?.walkthrough_scheduled, deal?.walkthrough_datetime]);
+
+  // Subscribe to real-time DealAppointments updates
+  useEffect(() => {
+    if (!deal?.id) return;
+    const unsub = base44.entities.DealAppointments.subscribe((event) => {
+      if (event?.data?.dealId === deal.id && event.data.walkthrough) {
+        console.log('[WalkthroughPanel] Real-time DealAppointments update:', event.data.walkthrough);
+        setApptData(event.data.walkthrough);
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
   // Use DealAppointments data first, fallback to deal entity fields
@@ -30,6 +43,8 @@ export default function WalkthroughPanel({ deal }) {
   const hasWalkthroughFromAppt = apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED';
   const hasWalkthroughFromDeal = deal?.walkthrough_scheduled === true || deal?.walkthrough_scheduled === 'true';
   const hasWalkthrough = hasWalkthroughFromAppt || hasWalkthroughFromDeal;
+
+  console.log('[WalkthroughPanel] State:', { dealId: deal?.id, hasWalkthroughFromAppt, hasWalkthroughFromDeal, hasWalkthrough, apptStatus, apptDatetime, dealWtSched: deal?.walkthrough_scheduled, dealWtDt: deal?.walkthrough_datetime });
 
   const rawDatetime = apptDatetime || deal?.walkthrough_datetime;
   const dt = rawDatetime ? new Date(rawDatetime) : null;
