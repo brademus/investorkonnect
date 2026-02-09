@@ -205,12 +205,18 @@ export default function Room() {
           <div className="flex items-center gap-3">
             {roomId && (
               <>
-                <Button onClick={() => { setShowBoard(true); }} className={`rounded-full font-semibold ${showBoard ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                <Button onClick={() => { setShowBoard(true); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
                   <FileText className="w-4 h-4 mr-2" />Deal Board
                 </Button>
-                <Button onClick={() => setShowBoard(false)} className={`rounded-full font-semibold ${!showBoard ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
-                  <Send className="w-4 h-4 mr-2" />Messages
-                </Button>
+                {isInvestor && pendingInvites.length > 0 && !isSigned ? (
+                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(true); }} className={`rounded-full font-semibold ${showPendingAgents && !showBoard ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                    <Users className="w-4 h-4 mr-2" />Pending Agents ({pendingInvites.length})
+                  </Button>
+                ) : (
+                  <Button onClick={() => { setShowBoard(false); setShowPendingAgents(false); }} className={`rounded-full font-semibold ${!showBoard && !showPendingAgents ? "bg-[#E3C567] text-black" : "bg-[#1F1F1F] text-[#FAFAFA]"}`}>
+                    <Send className="w-4 h-4 mr-2" />Messages
+                  </Button>
+                )}
               </>
             )}
           </div>
