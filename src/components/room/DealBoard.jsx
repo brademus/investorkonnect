@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
-import { Info, Shield, FileText, Image, User, Plus, Download } from "lucide-react";
+import { Info, Shield, FileText, Image, User, Plus, Download, Activity } from "lucide-react";
 import { toast } from "sonner";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import KeyTermsPanel from "@/components/room/KeyTermsPanel";
@@ -10,6 +10,7 @@ import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
+import DealActivityTab from "@/components/room/DealActivityTab";
 
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const [activeTab, setActiveTab] = useState('details');
@@ -22,7 +23,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
   const maskAddr = isAgent && !isSigned;
 
   const tabs = isSigned
-    ? [{ id: 'details', label: 'Details', icon: Info }, { id: 'agreement', label: 'Agreement', icon: Shield }, { id: 'files', label: 'Files', icon: FileText }, { id: 'photos', label: 'Photos', icon: Image }]
+    ? [{ id: 'details', label: 'Details', icon: Info }, { id: 'agreement', label: 'Agreement', icon: Shield }, { id: 'files', label: 'Files', icon: FileText }, { id: 'photos', label: 'Photos', icon: Image }, { id: 'activity', label: 'Activity', icon: Activity }]
     : [{ id: 'details', label: 'Details', icon: Info }, { id: 'agreement', label: 'Agreement', icon: Shield }];
 
   // Open agreement tab if URL param
@@ -160,6 +161,11 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
             </div>
           )}
         </div>
+      )}
+
+      {/* Activity Tab */}
+      {activeTab === 'activity' && (
+        <DealActivityTab dealId={deal?.id} roomId={roomId} />
       )}
     </div>
   );
