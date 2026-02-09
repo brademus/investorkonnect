@@ -54,7 +54,8 @@ export default function NewDeal() {
   const [hasBasement, setHasBasement] = useState("");
   const [county, setCounty] = useState("");
   const [walkthroughScheduled, setWalkthroughScheduled] = useState(null); // null = not answered, true/false
-  const [walkthroughDateTime, setWalkthroughDateTime] = useState("");
+  const [walkthroughDate, setWalkthroughDate] = useState("");
+  const [walkthroughTime, setWalkthroughTime] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
   // Load draft from sessionStorage when returning from verification or navigating back (NOT for fresh edits from pipeline)
@@ -95,7 +96,8 @@ export default function NewDeal() {
       setNumberOfStories(d.numberOfStories || "");
       setHasBasement(d.hasBasement || "");
       if (d.walkthroughScheduled !== undefined && d.walkthroughScheduled !== null) setWalkthroughScheduled(d.walkthroughScheduled);
-      if (d.walkthroughDateTime) setWalkthroughDateTime(d.walkthroughDateTime);
+      if (d.walkthroughDate) setWalkthroughDate(d.walkthroughDate);
+      if (d.walkthroughTime) setWalkthroughTime(d.walkthroughTime);
       setHydrated(true);
     } catch (_) {}
   }, [dealId, fromVerify]);
@@ -133,7 +135,8 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled,
-      walkthroughDateTime
+      walkthroughDate,
+      walkthroughTime
     };
     // For brand new deals (no dealId), only persist if the user actually typed something meaningful
     const isEditing = !!dealId;
@@ -141,7 +144,7 @@ export default function NewDeal() {
     if ((isEditing && hydrated) || hasUserInput) {
       sessionStorage.setItem('newDealDraft', JSON.stringify(draft));
     }
-  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, walkthroughScheduled, walkthroughDateTime]);
+  }, [dealId, hydrated, propertyAddress, city, state, zip, county, purchasePrice, closingDate, contractDate, specialNotes, sellerName, earnestMoney, numberOfSigners, secondSignerName, sellerCommissionType, sellerCommissionPercentage, sellerFlatFee, buyerCommissionType, buyerCommissionPercentage, buyerFlatFee, agreementLength, beds, baths, sqft, propertyType, notes, yearBuilt, numberOfStories, hasBasement, walkthroughScheduled, walkthroughDate, walkthroughTime]);
 
   // Load existing deal data if editing (only if no draft present)
   useEffect(() => {
@@ -343,10 +346,13 @@ export default function NewDeal() {
               setWalkthroughScheduled(deal.walkthrough_scheduled);
             }
             if (deal.walkthrough_datetime) {
-              // Convert ISO to datetime-local format
               const dt = new Date(deal.walkthrough_datetime);
-              const local = dt.getFullYear() + '-' + String(dt.getMonth()+1).padStart(2,'0') + '-' + String(dt.getDate()).padStart(2,'0') + 'T' + String(dt.getHours()).padStart(2,'0') + ':' + String(dt.getMinutes()).padStart(2,'0');
-              setWalkthroughDateTime(local);
+              setWalkthroughDate(String(dt.getMonth()+1).padStart(2,'0') + '/' + String(dt.getDate()).padStart(2,'0') + '/' + dt.getFullYear());
+              const hrs = dt.getHours();
+              const mins = String(dt.getMinutes()).padStart(2,'0');
+              const ampm = hrs >= 12 ? 'PM' : 'AM';
+              const h12 = hrs % 12 || 12;
+              setWalkthroughTime(String(h12).padStart(2,'0') + ':' + mins + ' ' + ampm);
             }
 
             // Fallback: if property details are still empty, try server-normalized details
@@ -487,7 +493,7 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
-          walkthrough_datetime: walkthroughScheduled === true && walkthroughDateTime ? new Date(walkthroughDateTime).toISOString() : null
+          walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM')).toISOString() : null
         });
         
         // Also update Room agent_terms if it exists
@@ -575,13 +581,14 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled,
-      walkthroughDateTime
+      walkthroughDate,
+      walkthroughTime
     }));
 
     // For new deals, also save walkthrough info to sessionStorage so ContractVerify can use it
     sessionStorage.setItem('newDealWalkthrough', JSON.stringify({
       walkthrough_scheduled: walkthroughScheduled === true,
-      walkthrough_datetime: walkthroughScheduled === true && walkthroughDateTime ? new Date(walkthroughDateTime).toISOString() : null
+      walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM')).toISOString() : null
     }));
 
     // Navigate with dealId if editing
@@ -1029,7 +1036,7 @@ export default function NewDeal() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDateTime(""); }}
+                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDate(""); setWalkthroughTime(""); }}
                   className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
                     walkthroughScheduled === false
                       ? "bg-[#F59E0B] text-black"
@@ -1041,14 +1048,28 @@ export default function NewDeal() {
               </div>
               {walkthroughScheduled === true && (
                 <div className="mt-4">
-                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Walk-through Date & Time</label>
-                  <Input
-                    type="text"
-                    value={walkthroughDateTime}
-                    onChange={(e) => setWalkthroughDateTime(e.target.value)}
-                    placeholder="MM/DD/YYYY HH:MM AM/PM"
-                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] max-w-sm"
-                  />
+                  <div className="grid grid-cols-2 gap-4 max-w-sm">
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Date</label>
+                      <Input
+                        type="text"
+                        value={walkthroughDate}
+                        onChange={(e) => setWalkthroughDate(e.target.value)}
+                        placeholder="MM/DD/YYYY"
+                        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Time</label>
+                      <Input
+                        type="text"
+                        value={walkthroughTime}
+                        onChange={(e) => setWalkthroughTime(e.target.value)}
+                        placeholder="00:00 AM/PM"
+                        className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
