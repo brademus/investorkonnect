@@ -115,17 +115,10 @@ Deno.serve(async (req) => {
     const envResp = await fetch(envUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
     if (envResp.ok) {
         const env = await envResp.json();
-        // An envelope can show 'completed' when investor was the only signer in the original envelope.
-        // That doesn't mean the agreement is fully signed — the agent still needs to sign.
-        // Only treat as "already signed" if THIS specific role has already signed.
+        console.log('[signing] Envelope status:', env.status, 'for role:', role);
         if (env.status === 'completed') {
-          const currentRoleSigned = role === 'investor' ? agreement.investor_signed_at : agreement.agent_signed_at;
-          if (currentRoleSigned) {
-            return Response.json({ already_signed: true });
-          }
-          // This role hasn't signed yet — the envelope needs to be reopened or a new one created
-          // (handled by addAgentToEnvelope). Log and continue to create signing session.
-          console.log('[signing] Envelope shows completed but', role, 'has not signed yet. Will attempt signing view...');
+          // Envelope has both signers. If completed, both must have signed.
+          return Response.json({ already_signed: true, agreement });
         }
         if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
       }
