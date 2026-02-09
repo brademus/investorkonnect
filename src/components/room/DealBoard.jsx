@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
 import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
-import WalkthroughPanel from "@/components/room/WalkthroughPanel";
+import WalkthroughPanel from "@/components/room/WalkthroughPanel.jsx";
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
 import FilesTab from "@/components/room/FilesTab.jsx";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
