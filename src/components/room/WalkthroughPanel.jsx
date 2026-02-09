@@ -1,10 +1,50 @@
-import React from "react";
-import { Calendar, Clock, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
 export default function WalkthroughPanel({ deal }) {
-  const hasWalkthrough = deal?.walkthrough_scheduled === true;
-  const dt = deal?.walkthrough_datetime ? new Date(deal.walkthrough_datetime) : null;
+  const [apptData, setApptData] = useState(null);
+  const [loadingAppt, setLoadingAppt] = useState(false);
+
+  // Fetch DealAppointments as the authoritative source for walkthrough info
+  useEffect(() => {
+    if (!deal?.id) return;
+    setLoadingAppt(true);
+    (async () => {
+      try {
+        const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+        if (rows?.[0]?.walkthrough) {
+          setApptData(rows[0].walkthrough);
+        }
+      } catch (e) {
+        console.warn('[WalkthroughPanel] Failed to load DealAppointments:', e);
+      } finally {
+        setLoadingAppt(false);
+      }
+    })();
+  }, [deal?.id]);
+
+  // Use DealAppointments data first, fallback to deal entity fields
+  const apptDatetime = apptData?.datetime;
+  const apptStatus = apptData?.status;
+  const hasWalkthroughFromAppt = apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED';
+  const hasWalkthroughFromDeal = deal?.walkthrough_scheduled === true || deal?.walkthrough_scheduled === 'true';
+  const hasWalkthrough = hasWalkthroughFromAppt || hasWalkthroughFromDeal;
+
+  const rawDatetime = apptDatetime || deal?.walkthrough_datetime;
+  const dt = rawDatetime ? new Date(rawDatetime) : null;
   const isValidDate = dt && !isNaN(dt.getTime());
+
+  if (loadingAppt) {
+    return (
+      <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
+        <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Walk-through</h4>
+        <div className="text-center py-6">
+          <Loader2 className="w-6 h-6 text-[#808080] mx-auto animate-spin" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
@@ -24,7 +64,9 @@ export default function WalkthroughPanel({ deal }) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs font-medium text-[#10B981]">Confirmed</span>
+            <span className="text-xs font-medium text-[#10B981]">
+              {apptStatus === 'COMPLETED' ? 'Completed' : apptStatus === 'SCHEDULED' ? 'Scheduled' : 'Proposed'}
+            </span>
           </div>
 
           <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
