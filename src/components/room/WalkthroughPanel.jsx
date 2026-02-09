@@ -73,7 +73,8 @@ export default function WalkthroughPanel({ deal }) {
   const apptStatus = apptData?.status;
   const hasWalkthroughFromAppt = apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED';
   const wtSched = deal?.walkthrough_scheduled;
-  const hasWalkthroughFromDeal = (wtSched === true || wtSched === 'true') && deal?.walkthrough_datetime;
+  // Also treat having a walkthrough_datetime as evidence of scheduling (even if boolean flag is missing/null)
+  const hasWalkthroughFromDeal = wtSched === true || wtSched === 'true' || !!deal?.walkthrough_datetime;
   const hasWalkthrough = hasWalkthroughFromAppt || hasWalkthroughFromDeal;
 
   const rawDatetime = apptDatetime || deal?.walkthrough_datetime;
