@@ -68,10 +68,9 @@ Deno.serve(async (req) => {
     }
     if (!terms.buyer_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
 
-    // Determine signer mode
-    let signerMode = 'both';
-    if (room?.requires_regenerate) signerMode = 'investor_only';
-    else if (room_id) signerMode = 'agent_only';
+    // Determine signer mode — always 'both' so investor and agent sign the SAME envelope.
+    // The agent is added as routingOrder 2, so they can only sign after the investor.
+    const signerMode = 'both';
 
     // CRITICAL: Always resolve the correct investor profile ID from the room/deal, NOT from the caller.
     // When an agent triggers regeneration, caller.id would be the agent — that's wrong for investor_profile_id.
