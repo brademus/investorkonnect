@@ -103,7 +103,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
           <X className="w-3 h-3" /> Declined
         </div>
       )}
-      {status === 'pending' && !isAgent && (
+      {status === 'pending' && !isRecipient && (
         <div className="mt-2 text-xs text-[#F59E0B]">Awaiting agent response</div>
       )}
     </div>
