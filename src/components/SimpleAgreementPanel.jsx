@@ -80,8 +80,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
         agreement_length_days: dealData?.agreementLength ? Number(dealData.agreementLength) : 180,
         transaction_type: 'ASSIGNMENT'
       };
+      // If dealData.dealId exists, this is an edit of an existing deal — use deal_id directly
+      const isEditingExistingDeal = !!dealData?.dealId;
       const res = await base44.functions.invoke('generateLegalAgreement', {
-        draft_id: draftId || undefined, deal_id: draftId ? undefined : dealId,
+        draft_id: isEditingExistingDeal ? undefined : (draftId || undefined),
+        deal_id: isEditingExistingDeal ? dealData.dealId : (draftId ? undefined : dealId),
         signer_mode: 'investor_only', exhibit_a, investor_profile_id: profile?.id,
         property_address: dealData?.propertyAddress, city: dealData?.city,
         state: dealData?.state, zip: dealData?.zip, county: dealData?.county
