@@ -287,11 +287,11 @@ Deno.serve(async (req) => {
           }
         }
         // Clean up the draft
-        try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (_) {}
+        try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (e) { console.warn('Failed to delete draft:', e.message); }
         // Create invites if needed
         try {
           await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', { deal_id: activeDupe.id });
-        } catch (_) {}
+        } catch (e) { console.warn('Failed to create invites:', e.message); }
         return Response.json({ status: 'success', deal_id: activeDupe.id, reason: 'linked_to_existing_deal_duplicate_prevented' });
       }
     }
