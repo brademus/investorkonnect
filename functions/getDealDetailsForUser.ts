@@ -86,6 +86,8 @@ Deno.serve(async (req) => {
       is_fully_signed: isSigned, investor_full_name: investorName, agent_full_name: agentName,
       investor_contact: investorContact, agent_contact: agentContact,
       proposed_terms: deal.proposed_terms || null,
+      walkthrough_scheduled: deal.walkthrough_scheduled ?? null,
+      walkthrough_datetime: deal.walkthrough_datetime || null,
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
     };
 
