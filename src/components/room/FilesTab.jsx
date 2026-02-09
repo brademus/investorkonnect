@@ -60,7 +60,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
 
   const resolved = resolveDealDocuments({ deal: deal || {}, room: localRoom || {} });
 
-  // Fetch the agreement's signed/final PDF URL
+  // Fetch the agreement's signed/final PDF URL — show immediately, upgrade in background
   const [agreementUrl, setAgreementUrl] = useState(null);
   const [agreementLabel, setAgreementLabel] = useState('Legal Agreement');
   useEffect(() => {
@@ -71,27 +71,26 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       const agrs = await base44.entities.LegalAgreement.filter(
         rid ? { room_id: rid } : { deal_id: did }, '-created_date', 5
       );
-      // Prefer the fully_signed agreement, then fall back to any active one
       const fullySigned = (agrs || []).find(a => a.status === 'fully_signed');
       const active = fullySigned || (agrs || []).find(a => a.status !== 'voided' && a.status !== 'superseded');
-      if (active) {
-        if (active.signed_pdf_url) {
-          setAgreementUrl(active.signed_pdf_url);
-          setAgreementLabel('Legal Agreement (Signed)');
-        } else if (active.status === 'fully_signed' && active.docusign_envelope_id) {
-          // Agreement is fully signed but signed PDF wasn't saved — try to fetch it
-          try {
-            const res = await base44.functions.invoke('downloadSignedPdf', { agreement_id: active.id });
+      if (!active) return;
+
+      // Immediately show whatever PDF we have
+      const fallbackUrl = active.signed_pdf_url || active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url;
+      const isSigned = !!active.signed_pdf_url;
+      setAgreementUrl(fallbackUrl);
+      setAgreementLabel(isSigned ? 'Legal Agreement (Signed)' : 'Legal Agreement');
+
+      // If fully signed but no cached signed PDF, fetch in background
+      if (active.status === 'fully_signed' && !active.signed_pdf_url && active.docusign_envelope_id) {
+        base44.functions.invoke('downloadSignedPdf', { agreement_id: active.id })
+          .then(res => {
             if (res?.data?.signed_pdf_url) {
               setAgreementUrl(res.data.signed_pdf_url);
               setAgreementLabel('Legal Agreement (Signed)');
-              return;
             }
-          } catch (_) { /* fallback below */ }
-          setAgreementUrl(active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
-        } else {
-          setAgreementUrl(active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
-        }
+          })
+          .catch(() => { /* keep fallback */ });
       }
     })();
   }, [roomId, localRoom?.id, deal?.id]);
