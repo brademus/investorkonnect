@@ -240,21 +240,7 @@ export default function Room() {
           </div>
         </div>
 
-        {/* Deal Summary Bar (messages view only) */}
-        {!showBoard && currentRoom && !roomLoading && (
-          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center flex-shrink-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
-              <span className="font-bold text-[#FAFAFA] text-sm">
-                {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
-              </span>
-            </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
-              {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
-            </div>
-          </div>
-        )}
+
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
@@ -298,16 +284,7 @@ export default function Room() {
                   <Button onClick={() => setShowBoard(true)} className="bg-[#E3C567] text-black rounded-full font-semibold">My Agreement</Button>
                 </div>
               )}
-              {/* Deal summary card */}
-              {currentRoom && !roomLoading && (
-                <div className="mb-4 bg-[#0D0D0D] border border-[#E3C567]/30 rounded-2xl p-5 shadow-lg flex-shrink-0">
-                  <h3 className="text-lg font-bold text-[#E3C567] mb-1">{isAgent && !isSigned ? `Deal in ${[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}` : (currentRoom.property_address || currentRoom.title || 'Deal')}</h3>
-                  <div className="space-y-1 text-sm">
-                    {currentRoom.budget > 0 && <p className="text-[#34D399] font-semibold">${currentRoom.budget.toLocaleString()}</p>}
-                    {(currentRoom.city || currentRoom.state) && <p className="text-[#808080]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</p>}
-                  </div>
-                </div>
-              )}
+
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
             </div>
           )}
