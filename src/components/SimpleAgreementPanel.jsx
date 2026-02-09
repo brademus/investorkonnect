@@ -148,6 +148,8 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     agreement?.status === 'fully_signed' ||
     isAgentOnlyMode // agent_only means investor already signed the base agreement
   );
+  // Debug: log agreement state for troubleshooting signing issues
+  console.log('[SimpleAgreementPanel] agreement:', agreement?.id, 'signer_mode:', agreement?.signer_mode, 'investor_signed_at:', agreement?.investor_signed_at, 'agent_recipient_id:', agreement?.agent_recipient_id, 'agent_client_user_id:', agreement?.agent_client_user_id, 'needsRegen:', needsRegen, 'investorSigned:', investorSigned);
   const agentSigned = !needsRegen && (!!agreement?.agent_signed_at || agreement?.status === 'agent_signed' || agreement?.status === 'fully_signed');
   const fullySigned = investorSigned && agentSigned;
 
