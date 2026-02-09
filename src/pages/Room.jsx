@@ -79,6 +79,9 @@ export default function Room() {
         }
 
         const roomIsLocked = room.agreement_status === 'fully_signed' || room.request_status === 'locked' || !!room.locked_agent_id;
+        // Find enriched room from useRooms for counterparty headshot
+        const enrichedRoom = rooms?.find(r => r.id === roomId);
+
         setCurrentRoom({
           ...room,
           title: (isAgent && !roomIsLocked) ? `${room.city || dealData?.city || 'City'}, ${room.state || dealData?.state || 'State'}` : (dealData?.title || room.title),
@@ -87,7 +90,8 @@ export default function Room() {
           state: dealData?.state || room.state,
           budget: dealData?.purchase_price || room.budget,
           is_fully_signed: dealData?.is_fully_signed || roomIsLocked,
-          counterparty_name: room.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent'))
+          counterparty_name: room.counterparty_name || enrichedRoom?.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
+          counterparty_headshot: enrichedRoom?.counterparty_headshot || null
         });
         if (dealData) setDeal(dealData);
 
