@@ -22,103 +22,76 @@ export default function DocuSignReturn() {
         console.log('[DocuSignReturn]', { event, dealId, roomId });
 
         if (event === 'signing_complete') {
-          setMessage("Signature completed! Redirecting...");
+          setMessage("Signature completed! Processing...");
           setStatus("success");
 
-          // Sync agreement status from DocuSign
-          try {
-            if (dealId) {
-              await base44.functions.invoke('docusignSyncEnvelope', { deal_id: dealId });
-            }
-          } catch (e) {
-            console.log('[DocuSignReturn] Sync optional');
+          // Find the agreement to get agreement_id
+          const signingRole = searchParams.get('role') || 'investor';
+          const token = searchParams.get('token');
+          
+          // Get agreement_id from SigningToken or from LegalAgreement lookup
+          let agreementId = null;
+          if (token) {
+            try {
+              const tokens = await base44.entities.SigningToken.filter({ token });
+              if (tokens?.[0]) agreementId = tokens[0].agreement_id;
+            } catch (_) {}
+          }
+          if (!agreementId && dealId) {
+            try {
+              const agreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId }, '-created_date', 1);
+              if (agreements?.[0]) agreementId = agreements[0].id;
+            } catch (_) {}
           }
 
-          // Investor signing: wait for automation to create deal, then verify room exists
-           if (dealId && !roomId) {
-             try {
-               console.log('[DocuSignReturn] Investor signature detected - waiting for deal creation automation');
-               console.log('[DocuSignReturn] Initial dealId from URL (may be DealDraft ID):', dealId);
+          // Investor signing: use pollAndFinalizeSignature to confirm + create deal
+          if (dealId && !roomId && agreementId) {
+            try {
+              console.log('[DocuSignReturn] Calling pollAndFinalizeSignature for agreement:', agreementId);
+              setMessage("Confirming signature and creating deal...");
+              
+              const result = await base44.functions.invoke('pollAndFinalizeSignature', {
+                agreement_id: agreementId,
+                role: signingRole
+              });
+              
+              console.log('[DocuSignReturn] pollAndFinalize result:', result.data);
 
-               // Give the automation time to create the Deal and invites
-               // (createDealOnInvestorSignature runs on LegalAgreement update)
-               let attempts = 0;
-               const maxAttempts = 15; // ~7.5 seconds with 500ms intervals
-               let rooms = [];
-               let actualDealId = dealId;
+              const roomId_result = result.data?.room_id;
+              const dealId_result = result.data?.deal_id;
 
-               while (attempts < maxAttempts && rooms.length === 0) {
-                 await new Promise(resolve => setTimeout(resolve, 500));
-                 attempts++;
-                 
-                 try {
-                   // First try to find room by the dealId from URL
-                   rooms = await base44.entities.Room.filter({ deal_id: dealId });
-                   
-                   // If no room found, the dealId might be a DealDraft ID
-                   // Try to find room via LegalAgreement which has the correct deal_id
-                   if (rooms.length === 0) {
-                     const agreements = await base44.entities.LegalAgreement.filter({ 
-                       deal_id: dealId 
-                     }, '-created_date', 1);
-                     
-                     if (agreements?.length > 0 && agreements[0].deal_id) {
-                       actualDealId = agreements[0].deal_id;
-                       console.log('[DocuSignReturn] Found actual deal_id from agreement:', actualDealId);
-                       rooms = await base44.entities.Room.filter({ deal_id: actualDealId });
-                     }
-                   }
-                   
-                   // Also try looking up by investor profile if still no room
-                   if (rooms.length === 0) {
-                     try {
-                       const user = await base44.auth.me();
-                       const profiles = await base44.entities.Profile.filter({ email: user.email });
-                       if (profiles?.length > 0) {
-                         const investorRooms = await base44.entities.Room.filter({ 
-                           investorId: profiles[0].id 
-                         }, '-created_date', 5);
-                         // Take the most recent room
-                         if (investorRooms?.length > 0) {
-                           rooms = [investorRooms[0]];
-                           actualDealId = investorRooms[0].deal_id;
-                           console.log('[DocuSignReturn] Found room via investor profile:', rooms[0].id);
-                         }
-                       }
-                     } catch (_) {}
-                   }
-                 } catch (e) {
-                   console.log('[DocuSignReturn] Room lookup attempt', attempts, 'failed:', e.message);
-                 }
-               }
-
-               if (rooms?.length > 0) {
-                 console.log('[DocuSignReturn] ✓ Room found after automation, navigating to room:', rooms[0].id);
-                 toast.success('Deal created and sent to agents!');
-                 sessionStorage.removeItem('selectedAgentIds');
-                 sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                 sessionStorage.removeItem('newDealDraft');
-
-                 // Navigate to first room
-                 navigate(`${createPageUrl("Room")}?roomId=${rooms[0].id}`, { replace: true });
-                 return;
-               } else {
-                 throw new Error('Room was not created by automation');
-               }
-             } catch (inviteError) {
-               console.error('[DocuSignReturn] Deal creation or room lookup failed:', inviteError);
-               toast.success('Agreement signed! Redirecting to pipeline...');
-
-               // Clear session storage
-               sessionStorage.removeItem('newDealDraft');
-               sessionStorage.removeItem('selectedAgentIds');
-
-               // Still navigate to pipeline since the automation should have created the deal
-               await new Promise(resolve => setTimeout(resolve, 1500));
-               navigate(createPageUrl("Pipeline"), { replace: true });
-               return;
-             }
-           }
+              if (roomId_result) {
+                toast.success('Deal created and sent to agents!');
+                sessionStorage.removeItem('selectedAgentIds');
+                sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+                sessionStorage.removeItem('newDealDraft');
+                navigate(`${createPageUrl("Room")}?roomId=${roomId_result}`, { replace: true });
+                return;
+              } else if (dealId_result) {
+                toast.success('Deal created! Redirecting...');
+                sessionStorage.removeItem('newDealDraft');
+                sessionStorage.removeItem('selectedAgentIds');
+                navigate(createPageUrl("Pipeline"), { replace: true });
+                return;
+              } else {
+                // Pending - webhook will handle, redirect to pipeline
+                toast.success('Agreement signed! Processing...');
+                sessionStorage.removeItem('newDealDraft');
+                sessionStorage.removeItem('selectedAgentIds');
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                navigate(createPageUrl("Pipeline"), { replace: true });
+                return;
+              }
+            } catch (pollError) {
+              console.error('[DocuSignReturn] pollAndFinalize failed:', pollError);
+              toast.success('Agreement signed! Redirecting to pipeline...');
+              sessionStorage.removeItem('newDealDraft');
+              sessionStorage.removeItem('selectedAgentIds');
+              await new Promise(resolve => setTimeout(resolve, 1500));
+              navigate(createPageUrl("Pipeline"), { replace: true });
+              return;
+            }
+          }
 
           // Agent signing regenerated: void old agreement in this room only
           if (roomId && dealId) {
