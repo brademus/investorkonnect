@@ -72,17 +72,31 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
               </div>
 
               {/* Actions */}
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  navigate(`${createPageUrl('AgentProfile')}?profileId=${agent.id}`);
-                }}
-                variant="outline"
-                size="sm"
-                className="w-full border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] hover:border-[#E3C567] rounded-full"
-              >
-                View Profile
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectAgent(invite);
+                  }}
+                  size="sm"
+                  className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                  Deal Board
+                </Button>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`${createPageUrl('AgentProfile')}?profileId=${agent.id}`);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] hover:border-[#E3C567] rounded-full"
+                >
+                  <User className="w-3.5 h-3.5 mr-1" />
+                  Profile
+                </Button>
+              </div>
             </div>
           );
         })}
