@@ -178,6 +178,17 @@ export default function Room() {
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
+  // Real-time deal updates (e.g. walkthrough confirmed in chat)
+  useEffect(() => {
+    if (!deal?.id) return;
+    const unsub = base44.entities.Deal.subscribe(e => {
+      if (e?.data?.id === deal.id) {
+        setDeal(prev => prev ? { ...prev, ...e.data } : e.data);
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [deal?.id]);
+
   const counterpartName = useMemo(() => {
     if (isSigned) return isInvestor ? (deal?.agent_full_name || currentRoom?.counterparty_name || 'Agent') : (deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor');
     return isInvestor ? 'Agent' : 'Investor';
