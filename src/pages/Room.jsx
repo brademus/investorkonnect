@@ -242,6 +242,22 @@ export default function Room() {
 
 
 
+        {/* Deal Summary Bar (messages view only) */}
+        {!showBoard && currentRoom && !roomLoading && (
+          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center flex-shrink-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
+              <span className="font-bold text-[#FAFAFA] text-sm">
+                {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
+              </span>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
+              {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
+            </div>
+          </div>
+        )}
+
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-6 py-6 min-h-0">
           {showBoard ? (
