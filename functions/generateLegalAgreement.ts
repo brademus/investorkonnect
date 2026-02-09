@@ -364,9 +364,19 @@ Deno.serve(async (req) => {
     if (!signers.length) return Response.json({ error: `No signers for mode=${signer_mode}` }, { status: 400 });
     console.log(`[genAgreement] Signers: ${signers.length}, hasRealAgent=${hasRealAgent}, mode=${signer_mode}`);
 
+    // Convert PDF to base64 in chunks to avoid max call stack with spread operator
+    const dsPdfBytes = new Uint8Array(dsPdf);
+    let dsBinary = '';
+    const dsChunkSize = 8192;
+    for (let i = 0; i < dsPdfBytes.length; i += dsChunkSize) {
+      const chunk = dsPdfBytes.subarray(i, i + dsChunkSize);
+      dsBinary += String.fromCharCode.apply(null, chunk);
+    }
+    const dsBase64 = btoa(dsBinary);
+
     const envDef = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
-      documents: [{ documentBase64: btoa(String.fromCharCode(...new Uint8Array(dsPdf))), name: `Agreement-${stateCode}-${deal.id}.pdf`, fileExtension: 'pdf', documentId: '1' }],
+      documents: [{ documentBase64: dsBase64, name: `Agreement-${stateCode}-${deal.id}.pdf`, fileExtension: 'pdf', documentId: '1' }],
       recipients: { signers },
       status: 'sent'
     };
