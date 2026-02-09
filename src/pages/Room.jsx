@@ -260,6 +260,14 @@ export default function Room() {
         {/* Deal Summary Bar (messages view only) */}
         {!showBoard && currentRoom && !roomLoading && (
           <>
+            {isSigned && (
+              <CounterpartyInfoBar
+                counterparty={isInvestor
+                  ? { ...deal?.agent_contact, name: deal?.agent_full_name }
+                  : { ...deal?.investor_contact, name: deal?.investor_full_name }
+                }
+              />
+            )}
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
               {isInvestor && isSigned && deal?.id && !deal?.walkthrough_scheduled && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
                 <button
@@ -304,14 +312,6 @@ export default function Room() {
                 </button>
               )}
             </div>
-            {isSigned && (
-              <CounterpartyInfoBar
-                counterparty={isInvestor
-                  ? { ...deal?.agent_contact, name: deal?.agent_full_name }
-                  : { ...deal?.investor_contact, name: deal?.investor_full_name }
-                }
-              />
-            )}
           </>
         )}
 
