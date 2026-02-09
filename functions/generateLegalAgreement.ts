@@ -201,7 +201,7 @@ Deno.serve(async (req) => {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { draft_id, deal_id, room_id, signer_mode: requestedMode, investor_profile_id } = body;
+    const { draft_id, deal_id, room_id, signer_mode: requestedMode, investor_profile_id, investor_user_id: explicitInvestorUserId } = body;
     let exhibit_a = body.exhibit_a || {};
     const signer_mode = requestedMode || (room_id ? 'both' : 'investor_only');
     const effectiveId = draft_id || deal_id;
@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
     if (!effectiveId) return Response.json({ error: 'deal_id or draft_id required' }, { status: 400 });
     console.log(`[genAgreement] ids: deal=${deal_id} draft=${draft_id} room=${room_id} mode=${signer_mode}`);
 
-    // Load investor profile
+    // Load investor profile — CRITICAL: use investor_profile_id when provided (e.g. agent triggering regen)
     let investor = null;
     if (investor_profile_id) {
       const p = await base44.asServiceRole.entities.Profile.filter({ id: investor_profile_id });
@@ -220,6 +220,9 @@ Deno.serve(async (req) => {
       investor = p?.[0];
     }
     if (!investor) return Response.json({ error: 'Investor profile not found' }, { status: 404 });
+
+    // Resolve the authoritative investor user_id — use explicit if provided, or from the profile
+    const resolvedInvestorUserId = explicitInvestorUserId || investor.user_id || user.id;
 
     // Load deal context
     let deal;
