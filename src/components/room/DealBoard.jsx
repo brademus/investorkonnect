@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Info, Shield, FileText, Image, User, Plus, Download } from "lucide-react";
 import { toast } from "sonner";
 import SimpleAgreementPanel from "@/components/SimpleAgreementPanel";
+import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
 import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard";
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
