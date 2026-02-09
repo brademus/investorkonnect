@@ -44,12 +44,27 @@ Deno.serve(async (req) => {
       deals = deals.filter(d => !d.locked_agent_id || d.locked_agent_id === profile.id);
     }
 
-    // Deduplicate
+    // Deduplicate by ID
     const map = new Map();
     deals.filter(d => d?.id && d.status !== 'archived').forEach(d => {
       const prev = map.get(d.id);
       if (!prev || new Date(d.updated_date || 0) > new Date(prev.updated_date || 0)) map.set(d.id, d);
     });
+
+    // Deduplicate by investor_id + normalized property_address (keep most recently updated)
+    const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+    const addrMap = new Map();
+    for (const [id, deal] of map) {
+      const key = `${deal.investor_id || ''}|${normAddr(deal.property_address)}`;
+      if (!key || key === '|') continue;
+      const prev = addrMap.get(key);
+      if (!prev || new Date(deal.updated_date || 0) > new Date(prev.updated_date || 0)) {
+        if (prev) map.delete(prev.id); // remove older duplicate
+        addrMap.set(key, deal);
+      } else {
+        map.delete(id); // this one is older, remove it
+      }
+    }
 
     // Load agreements for signing status
     const dealIds = [...map.keys()];

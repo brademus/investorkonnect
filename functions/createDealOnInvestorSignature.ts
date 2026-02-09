@@ -201,12 +201,16 @@ Deno.serve(async (req) => {
     }
 
     // DUPLICATE CHECK: Prevent creating a second Deal for the same investor + property address
+    // Use broad search by investor_id, then normalize addresses for comparison
     if (draft.investor_profile_id && draft.property_address) {
-      const dupeCheck = await base44.asServiceRole.entities.Deal.filter({
-        investor_id: draft.investor_profile_id,
-        property_address: draft.property_address
+      const allInvestorDeals = await base44.asServiceRole.entities.Deal.filter({
+        investor_id: draft.investor_profile_id
       });
-      const activeDupe = dupeCheck.find(d => d.status !== 'archived' && d.status !== 'closed');
+      const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+      const draftAddr = normAddr(draft.property_address);
+      const activeDupe = allInvestorDeals.find(d => 
+        d.status !== 'archived' && d.status !== 'closed' && normAddr(d.property_address) === draftAddr
+      );
       if (activeDupe) {
         console.log('[createDealOnInvestorSignature] DUPLICATE detected! Existing deal:', activeDupe.id, 'for address:', draft.property_address);
         // Update existing deal's agreement pointer instead of creating a new one
@@ -216,6 +220,18 @@ Deno.serve(async (req) => {
         await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
           deal_id: activeDupe.id
         });
+        // Update room if exists
+        const dupeRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: activeDupe.id });
+        if (dupeRooms?.length) {
+          await base44.asServiceRole.entities.Room.update(dupeRooms[0].id, {
+            current_legal_agreement_id: agreementData.id,
+            agreement_status: 'investor_signed',
+            requires_regenerate: false
+          });
+          if (!agreementData.room_id) {
+            await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: dupeRooms[0].id });
+          }
+        }
         // Clean up the draft
         try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (_) {}
         // Create invites if needed
