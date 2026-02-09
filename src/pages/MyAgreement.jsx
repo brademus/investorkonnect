@@ -217,7 +217,7 @@ export default function MyAgreement() {
               } catch { return null; }
             })()
           });
-          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough:', dealData.walkthroughScheduled, dealData.walkthroughDate, dealData.walkthroughTime);
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime, 'from dealData:', dealData.walkthroughScheduled, dealData.walkthroughDate, dealData.walkthroughTime);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
