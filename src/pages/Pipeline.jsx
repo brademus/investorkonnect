@@ -225,7 +225,7 @@ function PipelineContent() {
                                     </div>
                                     <div className="flex gap-2 mt-3 pt-3 border-t border-[#1F1F1F]">
                                       <Button onClick={e => { e.stopPropagation(); handleDealClick(deal); }} size="sm" className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full text-xs py-1.5 h-auto">Open Deal Room</Button>
-                                      {isInvestor && <Button onClick={e => { e.stopPropagation(); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
+                                      {isInvestor && <Button onClick={e => { e.stopPropagation(); sessionStorage.removeItem('newDealDraft'); navigate(`${createPageUrl("NewDeal")}?dealId=${deal.deal_id}`); }} size="sm" className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#1F1F1F] rounded-full text-xs py-1.5 h-auto">Edit</Button>}
                                     </div>
                                   </div>
                                 )}

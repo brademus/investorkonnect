@@ -194,7 +194,12 @@ export default function ContractVerify() {
   };
 
   const handleProceed = () => {
-    navigate(createPageUrl("SelectAgent"));
+    // If editing an existing deal, skip agent selection — agents are already assigned
+    if (dealData?.dealId) {
+      navigate(`${createPageUrl("MyAgreement")}?dealId=${dealData.dealId}`);
+    } else {
+      navigate(createPageUrl("SelectAgent"));
+    }
   };
 
   const handleFixDeal = () => {
