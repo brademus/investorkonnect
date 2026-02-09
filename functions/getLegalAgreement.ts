@@ -25,8 +25,30 @@ Deno.serve(async (req) => {
 
     let agreement = null;
 
-    // 1. Try room pointer first
-    if (room_id) {
+    // Resolve the caller's profile to check if they're an agent with a specific invite
+    const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
+    const callerProfile = profiles?.[0];
+    const callerIsAgent = callerProfile?.user_role === 'agent';
+
+    // 1. For AGENTS: use the DealInvite.legal_agreement_id as source of truth.
+    //    Each agent may have their own agreement (e.g. after counter offer regeneration).
+    //    Agents who didn't counter should still see the original investor-signed agreement.
+    if (callerIsAgent && callerProfile && room_id) {
+      const invites = await base44.asServiceRole.entities.DealInvite.filter({
+        deal_id, agent_profile_id: callerProfile.id
+      });
+      const myInvite = invites?.[0];
+      if (myInvite?.legal_agreement_id) {
+        const arr = await base44.asServiceRole.entities.LegalAgreement.filter({ id: myInvite.legal_agreement_id });
+        if (arr?.[0] && !['superseded', 'voided'].includes(arr[0].status)) {
+          agreement = arr[0];
+          console.log('[getLegalAgreement] Agent-specific agreement from invite:', agreement.id, 'status:', agreement.status);
+        }
+      }
+    }
+
+    // 2. Try room pointer (for investors or if agent invite didn't yield a result)
+    if (!agreement && room_id) {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       const room = rooms?.[0];
       if (room?.current_legal_agreement_id) {
@@ -35,7 +57,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // 2. Fallback: search by room_id or deal_id
+    // 3. Fallback: search by room_id or deal_id
     if (!agreement) {
       let list = [];
       if (room_id) {
