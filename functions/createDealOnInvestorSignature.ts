@@ -166,6 +166,32 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
+    // DUPLICATE CHECK: Prevent creating a second Deal for the same investor + property address
+    if (draft.investor_profile_id && draft.property_address) {
+      const dupeCheck = await base44.asServiceRole.entities.Deal.filter({
+        investor_id: draft.investor_profile_id,
+        property_address: draft.property_address
+      });
+      const activeDupe = dupeCheck.find(d => d.status !== 'archived' && d.status !== 'closed');
+      if (activeDupe) {
+        console.log('[createDealOnInvestorSignature] DUPLICATE detected! Existing deal:', activeDupe.id, 'for address:', draft.property_address);
+        // Update existing deal's agreement pointer instead of creating a new one
+        await base44.asServiceRole.entities.Deal.update(activeDupe.id, {
+          current_legal_agreement_id: agreementData.id
+        });
+        await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
+          deal_id: activeDupe.id
+        });
+        // Clean up the draft
+        try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (_) {}
+        // Create invites if needed
+        try {
+          await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', { deal_id: activeDupe.id });
+        } catch (_) {}
+        return Response.json({ status: 'success', deal_id: activeDupe.id, reason: 'linked_to_existing_deal_duplicate_prevented' });
+      }
+    }
+
     // CRITICAL: Use agreement exhibit_a_terms as source of truth for ALL commission terms
     // The agreement was generated with correct values; the draft may have stale/wrong values
     const exhibitTerms = agreementData.exhibit_a_terms || {};
