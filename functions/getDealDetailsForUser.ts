@@ -42,15 +42,34 @@ Deno.serve(async (req) => {
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId });
     if (agreements?.length) isSigned = agreements[0].status === 'fully_signed';
 
-    // Resolve counterpart names (only after signing)
+    // Resolve counterpart names and contact info (only after signing)
     let investorName = null, agentName = null;
+    let investorContact = null, agentContact = null;
     if (isSigned) {
       const [invP, agP] = await Promise.all([
         deal.investor_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : [],
         deal.agent_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : []
       ]);
-      investorName = invP?.[0]?.full_name || null;
-      agentName = agP?.[0]?.full_name || null;
+      const inv = invP?.[0];
+      const ag = agP?.[0];
+      investorName = inv?.full_name || null;
+      agentName = ag?.full_name || null;
+      if (inv) {
+        investorContact = {
+          email: inv.email || null,
+          phone: inv.phone || null,
+          company: inv.company || inv.investor?.company_name || null,
+          company_address: inv.company_address || null
+        };
+      }
+      if (ag) {
+        agentContact = {
+          email: ag.email || null,
+          phone: ag.phone || null,
+          company: ag.agent?.brokerage || ag.broker || ag.company || null,
+          company_address: ag.company_address || null
+        };
+      }
     }
 
     // Get room for proposed_terms
@@ -65,6 +84,7 @@ Deno.serve(async (req) => {
       property_type: deal.property_type, property_details: deal.property_details,
       contract_document: deal.contract_document, contract_url: deal.contract_url,
       is_fully_signed: isSigned, investor_full_name: investorName, agent_full_name: agentName,
+      investor_contact: investorContact, agent_contact: agentContact,
       proposed_terms: deal.proposed_terms || null,
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
     };
