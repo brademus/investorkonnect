@@ -213,7 +213,7 @@ export default function Room() {
           search={search}
           onSearchChange={setSearch}
           onRoomClick={(r) => {
-            setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed });
+            setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, counterparty_headshot: r.counterparty_headshot });
             setDeal(null);
             navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
             setDrawer(false);
