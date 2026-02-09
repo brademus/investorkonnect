@@ -229,7 +229,13 @@ export default function Room() {
           <Button onClick={() => { queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] }); navigate(createPageUrl("Pipeline")); }} variant="outline" className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] text-[#FAFAFA] rounded-full">
             <ArrowLeft className="w-4 h-4" /><span className="hidden md:inline ml-2">Pipeline</span>
           </Button>
-          <div className="w-12 h-12 bg-[#E3C567]/20 rounded-full flex items-center justify-center mr-4"><User className="w-6 h-6 text-[#E3C567]" /></div>
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center mr-4">
+            {currentRoom?.counterparty_headshot ? (
+              <img src={currentRoom.counterparty_headshot} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <User className="w-6 h-6 text-[#E3C567]" />
+            )}
+          </div>
           <div className="flex-1">
             <h2 className="text-lg font-semibold text-[#FAFAFA]">{isSigned ? counterpartName : (isInvestor ? 'Agent' : 'Investor')}</h2>
             <div className="flex items-center gap-3">
