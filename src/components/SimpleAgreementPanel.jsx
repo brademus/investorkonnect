@@ -115,6 +115,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   // When an agent's counter offer was accepted, only THAT agent sees requires_regenerate.
   // Other agents should still see the original agreement as signable.
   const isAgentOnlyMode = agreement?.signer_mode === 'agent_only';
+  const isBothMode = agreement?.signer_mode === 'both';
   
   // Determine if THIS specific agent has a pending regeneration
   const agentSpecificRegen = (() => {
