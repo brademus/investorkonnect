@@ -19,8 +19,16 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
 
   // Extract current buyer commission terms - ALWAYS fetch fresh from agreement
   useEffect(() => {
-    if (!room?.id) {
+    if (!room?.id && !deal?.proposed_terms) {
       setDisplayTerms(null);
+      setLoading(false);
+      return;
+    }
+    
+    // If no room yet but deal has proposed_terms, use those directly
+    if (!room?.id && deal?.proposed_terms) {
+      console.log('[KeyTermsPanel] No room yet, using deal.proposed_terms:', deal.proposed_terms);
+      setDisplayTerms(deal.proposed_terms);
       setLoading(false);
       return;
     }
