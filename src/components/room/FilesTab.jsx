@@ -70,8 +70,11 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       const agrs = await base44.entities.LegalAgreement.filter(
         rid ? { room_id: rid } : { deal_id: did }, '-created_date', 5
       );
-      const active = (agrs || []).find(a => a.status !== 'voided' && a.status !== 'superseded');
+      // Prefer the fully_signed agreement, then fall back to any active one
+      const fullySigned = (agrs || []).find(a => a.status === 'fully_signed');
+      const active = fullySigned || (agrs || []).find(a => a.status !== 'voided' && a.status !== 'superseded');
       if (active) {
+        // Prioritize signed PDF (from DocuSign completion) over the generated/draft PDF
         setAgreementUrl(active.signed_pdf_url || active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
       }
     })();
