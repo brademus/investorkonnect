@@ -141,15 +141,18 @@ Deno.serve(async (req) => {
 
     console.log(`[webhook ${VERSION}] ${eventType} for agreement ${agreement.id} mode=${mode}`);
 
+    // Don't blindly trust envelope-level 'completed' — only mark our agreement completed when both sign
     const updates = { docusign_status: eventType };
 
     if (eventType === 'signing_complete' || eventType === 'completed' || eventType === 'recipient-completed' || eventType === 'envelope-completed') {
       if (mode === 'investor_only') {
-        // Investor signing the initial base agreement
+        // Investor signing the initial base agreement — NOT fully done, agent still needs to sign
         const r = recipients.find(r => String(r.recipientId) === String(agreement.investor_recipient_id || '1'));
         if (r?.status === 'completed' && !agreement.investor_signed_at) {
           updates.investor_signed_at = new Date().toISOString();
           updates.status = 'investor_signed';
+          // Override docusign_status: envelope may say 'completed' but WE know agent hasn't signed yet
+          updates.docusign_status = 'delivered';
           if (agreement.room_id) {
             await base44.asServiceRole.entities.Room.update(agreement.room_id, { requires_regenerate: false, agreement_status: 'investor_signed' }).catch(() => {});
           }
