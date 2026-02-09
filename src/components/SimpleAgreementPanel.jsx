@@ -12,15 +12,23 @@ import { toast } from 'sonner';
  * - Generate / Sign / Counter actions
  * - Real-time subscription for updates
  */
-export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, onInvestorSigned, draftId, dealData, selectedAgentProfileId }) {
-  const [agreement, setAgreement] = useState(null);
-  const [room, setRoom] = useState(null);
+export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, onInvestorSigned, draftId, dealData, selectedAgentProfileId, agreement: externalAgreement, room: externalRoom }) {
+  const [agreement, setAgreement] = useState(externalAgreement || null);
+  const [room, setRoom] = useState(externalRoom || null);
   const [pendingCounters, setPendingCounters] = useState([]);
   const [busy, setBusy] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   const isInvestor = profile?.user_role === 'investor';
   const isAgent = profile?.user_role === 'agent';
+
+  // Sync external agreement/room props when they change
+  useEffect(() => {
+    if (externalAgreement) setAgreement(externalAgreement);
+  }, [externalAgreement]);
+  useEffect(() => {
+    if (externalRoom) setRoom(externalRoom);
+  }, [externalRoom]);
 
   // Load agreement + room + counters on mount
   useEffect(() => {

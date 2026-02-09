@@ -220,7 +220,8 @@ export default function MyAgreement() {
     })();
   }, [navigate, profile]);
 
-  // Subscribe to real-time agreement updates (ONLY base agreement, not room-scoped)
+  // Subscribe to real-time agreement updates for this deal
+  // Accept agreements with or without room_id — the automation links room_id after signing
   useEffect(() => {
     if (!dealId) return;
 
@@ -228,7 +229,8 @@ export default function MyAgreement() {
       const a = event?.data;
       if (!a) return;
       if (a.deal_id !== dealId) return;
-      if (a.room_id != null) return; // ONLY base agreement updates
+      // Skip voided/superseded — only track the active agreement
+      if (a.status === 'voided' || a.status === 'superseded') return;
       setAgreement(a);
     });
 
