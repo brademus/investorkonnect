@@ -10,7 +10,7 @@ import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipeli
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 
-export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned }) {
+export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const [activeTab, setActiveTab] = useState('details');
   const [localRoom, setLocalRoom] = useState(room);
   useEffect(() => { if (room) setLocalRoom(room); }, [room]);
@@ -116,7 +116,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
       {/* Agreement Tab */}
       {activeTab === 'agreement' && (
-        <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} />
+        <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
       )}
 
       {/* Files Tab */}
