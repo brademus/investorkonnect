@@ -130,7 +130,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               })}
             </div>
           </div>
-          <DealAppointmentsCard dealId={deal?.id} userRole={profile?.user_role} />
+          <WalkthroughPanel deal={deal} />
           <PropertyDetailsCard deal={deal || {}} />
         </div>
       )}
