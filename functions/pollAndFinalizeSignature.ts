@@ -114,6 +114,45 @@ Deno.serve(async (req) => {
       return await ensureDealCreated(base44, agreement);
     }
 
+    // For agent signatures: update room/invite status and trigger lock-in if fully signed
+    if (role === 'agent' && agreement.status === 'fully_signed') {
+      console.log('[pollAndFinalize] Agent signature makes it fully_signed, updating room & deal');
+      const roomId = agreement.room_id;
+      if (roomId) {
+        // Update room agreement_status
+        await base44.asServiceRole.entities.Room.update(roomId, {
+          agreement_status: 'fully_signed',
+          request_status: 'signed'
+        }).catch(e => console.error('[pollAndFinalize] Room update error:', e.message));
+
+        // Update DealInvite status
+        if (agreement.agent_profile_id) {
+          const invites = await base44.asServiceRole.entities.DealInvite.filter({
+            deal_id: agreement.deal_id, agent_profile_id: agreement.agent_profile_id
+          }).catch(() => []);
+          if (invites?.[0]) {
+            await base44.asServiceRole.entities.DealInvite.update(invites[0].id, { status: 'LOCKED' }).catch(() => {});
+          }
+        }
+
+        // Lock deal to winning agent
+        const dealArr = await base44.asServiceRole.entities.Deal.filter({ id: agreement.deal_id }).catch(() => []);
+        const deal = dealArr?.[0];
+        if (deal && !deal.locked_agent_id && agreement.agent_profile_id) {
+          const now = new Date().toISOString();
+          await base44.asServiceRole.entities.Deal.update(deal.id, {
+            locked_room_id: roomId,
+            locked_agent_id: agreement.agent_profile_id,
+            agent_id: agreement.agent_profile_id,
+            connected_at: now,
+            pipeline_stage: 'connected_deals',
+            selected_agent_ids: [agreement.agent_profile_id]
+          }).catch(e => console.error('[pollAndFinalize] Deal lock error:', e.message));
+          console.log('[pollAndFinalize] Deal locked to agent', agreement.agent_profile_id);
+        }
+      }
+    }
+
     return Response.json({ status: 'signed', agreement_id: agreement.id });
   } catch (error) {
     console.error('[pollAndFinalize] Error:', error);
