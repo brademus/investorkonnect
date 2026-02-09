@@ -8,35 +8,51 @@ export default function WalkthroughPanel({ deal, roomId }) {
   const dealDt = deal?.walkthrough_datetime ? new Date(deal.walkthrough_datetime) : null;
   const dealDateValid = dealDt && !isNaN(dealDt.getTime());
 
-  // Secondary source: confirmed walkthrough messages in chat
-  const [msgWalkthrough, setMsgWalkthrough] = useState(null);
+  // Secondary sources
+  const [fallbackWalkthrough, setFallbackWalkthrough] = useState(null);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (dealHasWalkthrough && dealDateValid) return; // already have good data from deal
-    if (!roomId) return;
     setLoading(true);
     (async () => {
       try {
-        const msgs = await base44.entities.Message.filter({ room_id: roomId }, "-created_date", 200);
-        const confirmed = msgs.find(m =>
-          m?.metadata?.type === 'walkthrough' && m?.metadata?.status === 'confirmed' && m?.metadata?.walkthrough_datetime
-        );
-        if (confirmed) {
-          setMsgWalkthrough({
-            datetime: confirmed.metadata.walkthrough_datetime,
-            status: confirmed.metadata.status
-          });
+        // Check DealAppointments entity
+        if (deal?.id) {
+          const appts = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+          const appt = appts?.[0];
+          if (appt?.walkthrough && appt.walkthrough.status !== 'NOT_SET' && appt.walkthrough.datetime) {
+            setFallbackWalkthrough({
+              datetime: appt.walkthrough.datetime,
+              status: appt.walkthrough.status === 'SCHEDULED' ? 'scheduled' : appt.walkthrough.status?.toLowerCase()
+            });
+            setLoading(false);
+            return;
+          }
+        }
+        // Check confirmed walkthrough messages in chat
+        if (roomId) {
+          const msgs = await base44.entities.Message.filter({ room_id: roomId }, "-created_date", 200);
+          const confirmed = msgs.find(m =>
+            m?.metadata?.type === 'walkthrough' && m?.metadata?.status === 'confirmed' && m?.metadata?.walkthrough_datetime
+          );
+          if (confirmed) {
+            setFallbackWalkthrough({
+              datetime: confirmed.metadata.walkthrough_datetime,
+              status: 'confirmed'
+            });
+          }
         }
       } catch (_) {}
       setLoading(false);
     })();
-  }, [roomId, dealHasWalkthrough, dealDateValid]);
+  }, [roomId, deal?.id, dealHasWalkthrough, dealDateValid]);
 
-  // Merge: prefer deal entity, fall back to confirmed message
-  const hasWalkthrough = dealHasWalkthrough || !!msgWalkthrough;
-  const dt = dealDateValid ? dealDt : (msgWalkthrough?.datetime ? new Date(msgWalkthrough.datetime) : null);
+  // Merge: prefer deal entity, fall back to DealAppointments, then chat messages
+  const hasWalkthrough = dealHasWalkthrough || !!fallbackWalkthrough;
+  const dt = dealDateValid ? dealDt : (fallbackWalkthrough?.datetime ? new Date(fallbackWalkthrough.datetime) : null);
   const isValidDate = dt && !isNaN(dt.getTime());
+  const statusLabel = dealHasWalkthrough ? 'Scheduled' : (fallbackWalkthrough?.status === 'confirmed' ? 'Confirmed' : 'Scheduled');
 
   return (
     <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
