@@ -59,7 +59,8 @@ Deno.serve(async (req) => {
           email: inv.email || null,
           phone: inv.phone || null,
           company: inv.company || inv.investor?.company_name || null,
-          company_address: inv.company_address || null
+          company_address: inv.company_address || null,
+          headshotUrl: inv.headshotUrl || null
         };
       }
       if (ag) {
@@ -67,7 +68,8 @@ Deno.serve(async (req) => {
           email: ag.email || null,
           phone: ag.phone || null,
           company: ag.agent?.brokerage || ag.broker || ag.company || null,
-          company_address: ag.company_address || null
+          company_address: ag.company_address || null,
+          headshotUrl: ag.headshotUrl || null
         };
       }
     }
