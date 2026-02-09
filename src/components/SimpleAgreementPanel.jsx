@@ -276,17 +276,22 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             {/* Investor actions */}
             {isInvestor && !fullySigned && (
               <>
-                {needsRegen && !isAgentOnlyMode && (
+                {needsRegen && !isAgentOnlyMode && selectedAgentProfileId && (
                   <Button onClick={handleRegenAndSign} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
-                    {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Regenerate & Sign
+                    {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Regenerate & Sign (Updated Terms)
                   </Button>
+                )}
+                {needsRegen && !isAgentOnlyMode && !selectedAgentProfileId && (
+                  <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-4 text-center">
+                    <p className="text-sm text-[#FAFAFA]">A counter offer was accepted. Select the agent to regenerate their agreement.</p>
+                  </div>
                 )}
                 {!investorSigned && !needsRegen && !isAgentOnlyMode && agreement.status !== 'superseded' && (
                   <Button onClick={() => handleSign('investor')} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                     {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign Agreement
                   </Button>
                 )}
-                {investorSigned && !agentSigned && (
+                {investorSigned && !agentSigned && !needsRegen && (
                   <div className="bg-[#60A5FA]/10 border border-[#60A5FA]/30 rounded-xl p-4 text-center"><p className="text-sm text-[#FAFAFA]">Waiting for agent to sign</p></div>
                 )}
               </>
