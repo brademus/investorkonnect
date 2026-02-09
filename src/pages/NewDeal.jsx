@@ -391,6 +391,8 @@ export default function NewDeal() {
   }, [dealId, profile?.id]);
 
   const handleContinue = async () => {
+    if (submitting) return;
+    
     // Validation - All fields required except special notes and county
     if (!propertyAddress.trim()) {
       toast.error("Please enter a property address");
@@ -452,6 +454,9 @@ export default function NewDeal() {
       return;
     }
 
+    setSubmitting(true);
+
+    try {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
       try {
