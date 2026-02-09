@@ -44,7 +44,14 @@ Deno.serve(async (req) => {
 
     // Signer mode gating
     if (signerMode === 'agent_only' && role === 'investor') return Response.json({ error: 'This is an agent-only agreement' }, { status: 403 });
-    if (signerMode === 'investor_only' && role === 'agent') return Response.json({ error: 'Agent needs a separate agreement' }, { status: 403 });
+    // Note: investor_only agreements get upgraded to 'both' via addAgentToEnvelope before agent signs
+    // Only block if agent has no recipient data yet (they should call addAgentToEnvelope first)
+    if (signerMode === 'investor_only' && role === 'agent') {
+      if (!agreement.agent_recipient_id || !agreement.agent_client_user_id) {
+        return Response.json({ error: 'Agent must be added to envelope first. Please try again.' }, { status: 403 });
+      }
+      // Agent was added but signer_mode wasn't updated yet — treat as 'both'
+    }
 
     // Room regenerate check
     const effectiveRoom = room_id || agreement.room_id;
