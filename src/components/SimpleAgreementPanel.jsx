@@ -157,10 +157,15 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const handleGenerate = async () => {
     setBusy(true);
     try {
+      const sellerCommType = dealData?.sellerCommissionType || 'percentage';
+      const buyerCommType = dealData?.buyerCommissionType || 'percentage';
       const exhibit_a = {
-        buyer_commission_type: dealData?.buyerCommissionType || 'percentage',
-        buyer_commission_percentage: dealData?.buyerCommissionPercentage ? Number(dealData.buyerCommissionPercentage) : null,
-        buyer_flat_fee: dealData?.buyerFlatFee ? Number(dealData.buyerFlatFee) : null,
+        seller_commission_type: sellerCommType === 'flat' ? 'flat_fee' : sellerCommType,
+        seller_commission_percentage: (sellerCommType === 'percentage' && dealData?.sellerCommissionPercentage) ? Number(dealData.sellerCommissionPercentage) : null,
+        seller_flat_fee: ((sellerCommType === 'flat' || sellerCommType === 'flat_fee') && dealData?.sellerFlatFee) ? Number(dealData.sellerFlatFee) : null,
+        buyer_commission_type: buyerCommType === 'flat' ? 'flat_fee' : buyerCommType,
+        buyer_commission_percentage: (buyerCommType === 'percentage' && dealData?.buyerCommissionPercentage) ? Number(dealData.buyerCommissionPercentage) : null,
+        buyer_flat_fee: ((buyerCommType === 'flat' || buyerCommType === 'flat_fee') && dealData?.buyerFlatFee) ? Number(dealData.buyerFlatFee) : null,
         agreement_length_days: dealData?.agreementLength ? Number(dealData.agreementLength) : 180,
         transaction_type: 'ASSIGNMENT'
       };
