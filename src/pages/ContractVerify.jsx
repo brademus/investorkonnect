@@ -385,7 +385,7 @@ export default function ContractVerify() {
                   onClick={handleProceed}
                   className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black font-semibold h-11 rounded-lg"
                 >
-                  Continue to Agent Selection
+                  {dealData?.dealId ? "Continue to Agreement" : "Continue to Agent Selection"}
                 </Button>
               )}
               </div>
