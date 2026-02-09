@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, CalendarCheck } from 'lucide-react';
 
 /**
  * KEY TERMS PANEL for Room Page
@@ -201,6 +201,28 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               <p className="text-xs text-[#808080] mb-1">Agreement Length</p>
               <p className="text-sm font-semibold text-[#FAFAFA]">{agreementLength}</p>
             </div>
+
+            {/* Walk-through Status */}
+            {deal?.walkthrough_scheduled !== null && deal?.walkthrough_scheduled !== undefined && (
+              <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-[#808080] mb-1">Walk-through</p>
+                  {deal.walkthrough_scheduled && deal.walkthrough_datetime ? (
+                    <p className="text-sm font-semibold text-[#FAFAFA]">
+                      {new Date(deal.walkthrough_datetime).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} at {new Date(deal.walkthrough_datetime).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}
+                    </p>
+                  ) : deal.walkthrough_scheduled ? (
+                    <p className="text-sm font-semibold text-[#FAFAFA]">Scheduled (no date set)</p>
+                  ) : (
+                    <p className="text-sm font-semibold text-[#808080]">Not scheduled</p>
+                  )}
+                </div>
+                <Badge className={deal.walkthrough_scheduled ? "bg-[#10B981]/20 text-[#10B981] border-[#10B981]/30" : "bg-[#1F1F1F] text-[#808080] border-[#333]"}>
+                  <CalendarCheck className="w-3 h-3 mr-1" />
+                  {deal.walkthrough_scheduled ? 'Yes' : 'No'}
+                </Badge>
+              </div>
+            )}
 
             {/* Last Updated */}
             {displayTerms && (
