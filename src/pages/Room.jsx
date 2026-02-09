@@ -260,28 +260,22 @@ export default function Room() {
                   {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
                 </div>
               </div>
-              {isInvestor && isSigned && deal && (() => {
-                const currentStage = normalizeStage(deal.pipeline_stage);
-                const idx = PIPELINE_STAGES.findIndex(s => s.id === currentStage);
-                const nextStage = idx >= 0 && idx < PIPELINE_STAGES.length - 2 ? PIPELINE_STAGES[idx + 1] : null;
-                if (!nextStage) return null;
-                return (
+              {isInvestor && isSigned && deal && normalizeStage(deal.pipeline_stage) !== 'active_listings' && (
                   <button
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
                     onClick={async () => {
                       try {
-                        await base44.entities.Deal.update(deal.id, { pipeline_stage: nextStage.id });
-                        setDeal(prev => ({ ...prev, pipeline_stage: nextStage.id }));
+                        await base44.entities.Deal.update(deal.id, { pipeline_stage: 'active_listings' });
+                        setDeal(prev => ({ ...prev, pipeline_stage: 'active_listings' }));
                         queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                        toast.success(`Moved to ${nextStage.label}`);
+                        toast.success('Moved to Active Listings');
                       } catch (e) { toast.error("Failed to update stage"); }
                     }}
                   >
                     Has this agreement been listed?
                     <CheckCircle2 className="w-4 h-4 group-hover:scale-125 transition-transform" />
                   </button>
-                );
-              })()}
+              )}
             </div>
             {isSigned && (
               <CounterpartyInfoBar
