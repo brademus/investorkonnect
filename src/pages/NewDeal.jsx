@@ -470,7 +470,9 @@ export default function NewDeal() {
             buyer_commission_percentage: buyerCommissionPercentage ? Number(buyerCommissionPercentage) : null,
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
-          }
+          },
+          walkthrough_scheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
+          walkthrough_datetime: walkthroughScheduled === true && walkthroughDateTime ? new Date(walkthroughDateTime).toISOString() : null
         });
         
         // Also update Room agent_terms if it exists
@@ -556,7 +558,9 @@ export default function NewDeal() {
       notes,
       yearBuilt,
       numberOfStories,
-      hasBasement
+      hasBasement,
+      walkthroughScheduled,
+      walkthroughDateTime
     }));
 
     // Navigate with dealId if editing
