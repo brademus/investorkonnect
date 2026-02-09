@@ -184,6 +184,8 @@ function AccountProfileContent() {
                         try {
                           const { file_url } = await base44.integrations.Core.UploadFile({ file });
                           setHeadshotUrl(file_url);
+                          // Save immediately to profile so it persists
+                          await base44.entities.Profile.update(profile.id, { headshotUrl: file_url });
                           toast.success("Photo uploaded!");
                         } catch (err) {
                           console.error("Upload error:", err);
