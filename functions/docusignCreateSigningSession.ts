@@ -89,6 +89,13 @@ Deno.serve(async (req) => {
         updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : 'agent_signed';
         await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
         Object.assign(agreement, updates);
+        // Also sync room agreement_status
+        const agRoom = agreement.room_id || room_id;
+        if (agRoom && updates.status) {
+          const roomUpd = { agreement_status: updates.status };
+          if (updates.status === 'fully_signed') roomUpd.request_status = 'signed';
+          await base44.asServiceRole.entities.Room.update(agRoom, roomUpd).catch(() => {});
+        }
       }
     }
 
