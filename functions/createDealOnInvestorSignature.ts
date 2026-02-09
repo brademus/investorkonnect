@@ -123,6 +123,37 @@ Deno.serve(async (req) => {
       // Update Deal
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
+      // Sync DealAppointments if walkthrough data changed
+      if (dealUpdate.walkthrough_scheduled === true && dealUpdate.walkthrough_datetime) {
+        try {
+          const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
+          const apptPatch = {
+            walkthrough: {
+              status: 'PROPOSED',
+              datetime: dealUpdate.walkthrough_datetime,
+              timezone: null,
+              locationType: 'ON_SITE',
+              notes: null,
+              updatedByUserId: agreementData.investor_profile_id || null,
+              updatedAt: new Date().toISOString()
+            }
+          };
+          if (apptRows?.[0]) {
+            await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+          } else {
+            await base44.asServiceRole.entities.DealAppointments.create({
+              dealId: existingDeal.id,
+              ...apptPatch,
+              inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+              rescheduleRequests: []
+            });
+          }
+          console.log('[createDealOnInvestorSignature] Synced DealAppointments for existing deal');
+        } catch (apptErr) {
+          console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments:', apptErr.message);
+        }
+      }
+
       // Update existing Room agreement pointer and status
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
       if (existingRooms?.length) {
