@@ -81,10 +81,47 @@ Deno.serve(async (req) => {
     if (existingDeal) {
       console.log('[createDealOnInvestorSignature] Deal already exists:', existingDeal.id, '- updating agreement links');
       
-      // Update Deal's current agreement pointer
-      await base44.asServiceRole.entities.Deal.update(existingDeal.id, {
+      // Try to find the DealDraft to pull latest walkthrough + terms data
+      let draftForUpdate = null;
+      if (agreementData.deal_id) {
+        const draftById = await base44.asServiceRole.entities.DealDraft.filter({ id: agreementData.deal_id });
+        if (draftById?.length) draftForUpdate = draftById[0];
+      }
+      if (!draftForUpdate && agreementData.investor_profile_id) {
+        const draftsByInv = await base44.asServiceRole.entities.DealDraft.filter({ investor_profile_id: agreementData.investor_profile_id });
+        if (draftsByInv?.length) {
+          draftsByInv.sort((a, b) => new Date(b.created_date) - new Date(a.created_date));
+          draftForUpdate = draftsByInv[0];
+        }
+      }
+
+      // Build update payload - always update agreement pointer, conditionally update walkthrough + terms from draft
+      const dealUpdate = {
         current_legal_agreement_id: agreementData.id
-      });
+      };
+      if (draftForUpdate) {
+        if (draftForUpdate.walkthrough_scheduled !== undefined && draftForUpdate.walkthrough_scheduled !== null) {
+          dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
+          dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
+        }
+        // Also update proposed_terms from draft if available
+        const exhibitTerms = agreementData.exhibit_a_terms || {};
+        const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
+        const dSellerType = draftForUpdate.seller_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.seller_commission_type || 'percentage');
+        dealUpdate.proposed_terms = {
+          seller_commission_type: exhibitTerms.seller_commission_type || dSellerType,
+          seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? draftForUpdate.seller_commission_percentage ?? null,
+          seller_flat_fee: exhibitTerms.seller_flat_fee ?? draftForUpdate.seller_flat_fee ?? null,
+          buyer_commission_type: exhibitTerms.buyer_commission_type || dBuyerType,
+          buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? draftForUpdate.buyer_commission_percentage ?? null,
+          buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? draftForUpdate.buyer_flat_fee ?? null,
+          agreement_length: exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draftForUpdate.agreement_length || null,
+        };
+        console.log('[createDealOnInvestorSignature] Updating existing deal with draft data:', { walkthrough: dealUpdate.walkthrough_scheduled, terms: dealUpdate.proposed_terms });
+      }
+
+      // Update Deal
+      await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
       // Update existing Room agreement pointer and status
       const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
