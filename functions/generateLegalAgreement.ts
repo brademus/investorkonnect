@@ -370,8 +370,13 @@ Deno.serve(async (req) => {
     });
 
     // Update pointers
-    if (room_id) base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
-    else if (!draft_id) base44.asServiceRole.entities.Deal.update(effectiveId, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    if (room_id) {
+      base44.asServiceRole.entities.Room.update(room_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    }
+    // Always update Deal pointer if deal_id is a real Deal (not a draft)
+    if (deal_id) {
+      base44.asServiceRole.entities.Deal.update(deal_id, { current_legal_agreement_id: agreement.id }).catch(() => {});
+    }
 
     console.log(`[genAgreement] Created: ${agreement.id}`);
     return Response.json({ success: true, agreement, regenerated: true });
