@@ -8,7 +8,7 @@ import { toast } from "sonner";
  * Renders inline in the message list for walkthrough_request messages.
  * Agents see Confirm/Deny buttons. Investors see the status.
  */
-export default function WalkthroughMessageCard({ message, isAgent, roomId, profile }) {
+export default function WalkthroughMessageCard({ message, isAgent, isRecipient, roomId, profile }) {
   const [responding, setResponding] = useState(false);
   const meta = message?.metadata || {};
   const status = meta.status || 'pending'; // pending | confirmed | denied
