@@ -1,9 +1,41 @@
-import React from "react";
-import { Calendar, Clock, CheckCircle2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Calendar, Clock, CheckCircle2, Loader2 } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 
-export default function WalkthroughPanel({ deal }) {
-  const hasWalkthrough = deal?.walkthrough_scheduled === true;
-  const dt = deal?.walkthrough_datetime ? new Date(deal.walkthrough_datetime) : null;
+export default function WalkthroughPanel({ deal, roomId }) {
+  // Primary source: Deal entity walkthrough fields
+  const dealHasWalkthrough = deal?.walkthrough_scheduled === true;
+  const dealDt = deal?.walkthrough_datetime ? new Date(deal.walkthrough_datetime) : null;
+  const dealDateValid = dealDt && !isNaN(dealDt.getTime());
+
+  // Secondary source: confirmed walkthrough messages in chat
+  const [msgWalkthrough, setMsgWalkthrough] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (dealHasWalkthrough && dealDateValid) return; // already have good data from deal
+    if (!roomId) return;
+    setLoading(true);
+    (async () => {
+      try {
+        const msgs = await base44.entities.Message.filter({ room_id: roomId }, "-created_date", 200);
+        const confirmed = msgs.find(m =>
+          m?.metadata?.type === 'walkthrough' && m?.metadata?.status === 'confirmed' && m?.metadata?.walkthrough_datetime
+        );
+        if (confirmed) {
+          setMsgWalkthrough({
+            datetime: confirmed.metadata.walkthrough_datetime,
+            status: confirmed.metadata.status
+          });
+        }
+      } catch (_) {}
+      setLoading(false);
+    })();
+  }, [roomId, dealHasWalkthrough, dealDateValid]);
+
+  // Merge: prefer deal entity, fall back to confirmed message
+  const hasWalkthrough = dealHasWalkthrough || !!msgWalkthrough;
+  const dt = dealDateValid ? dealDt : (msgWalkthrough?.datetime ? new Date(msgWalkthrough.datetime) : null);
   const isValidDate = dt && !isNaN(dt.getTime());
 
   return (
