@@ -6,7 +6,7 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useRooms } from "@/components/useRooms";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2 } from "lucide-react";
+import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 import { PIPELINE_STAGES, normalizeStage } from "@/components/pipelineStages";
@@ -15,6 +15,7 @@ import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import PendingAgentsList from "@/components/PendingAgentsList";
 import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
+import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 
 export default function Room() {
   const navigate = useNavigate();
@@ -34,6 +35,7 @@ export default function Room() {
   const [pendingInvites, setPendingInvites] = useState([]);
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [showPendingAgents, setShowPendingAgents] = useState(true); // default to showing agents for investor
+  const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
