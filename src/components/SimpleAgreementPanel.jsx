@@ -268,7 +268,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
             {/* Agent actions */}
             {isAgent && !fullySigned && (
               <>
-                {investorSigned && !agentSigned && pendingCounters.length === 0 && (
+                {investorSigned && !agentSigned && relevantCounters.length === 0 && (
                   <div className="space-y-2">
                     <Button onClick={() => handleSign('agent')} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                       {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign Agreement
