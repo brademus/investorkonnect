@@ -193,12 +193,30 @@ export default function MyAgreement() {
             walkthrough_datetime: (() => {
               if (dealData.walkthroughScheduled !== true || !dealData.walkthroughDate) return null;
               try {
-                const d = new Date(dealData.walkthroughDate + ' ' + (dealData.walkthroughTime || '12:00 PM'));
+                // Parse MM/DD/YYYY date + HH:MM AM/PM time robustly
+                const dateStr = dealData.walkthroughDate;
+                const timeStr = dealData.walkthroughTime || '12:00 PM';
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                  const [mm, dd, yyyy] = parts;
+                  const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                  let hours = 12, mins = 0;
+                  if (timeMatch) {
+                    hours = parseInt(timeMatch[1]);
+                    mins = parseInt(timeMatch[2]);
+                    const isPM = timeMatch[3].toUpperCase() === 'PM';
+                    if (isPM && hours !== 12) hours += 12;
+                    if (!isPM && hours === 12) hours = 0;
+                  }
+                  const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
+                  return isNaN(d.getTime()) ? null : d.toISOString();
+                }
+                const d = new Date(dateStr + ' ' + timeStr);
                 return isNaN(d.getTime()) ? null : d.toISOString();
               } catch { return null; }
             })()
           });
-          console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough:', dealData.walkthroughScheduled, dealData.walkthroughDate, dealData.walkthroughTime);
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
