@@ -89,9 +89,16 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     return true;
   });
 
-  // Derived state
+  // Derived state — handle the investor_only → agent_only chain
+  // When the current agreement is agent_only mode, investor already signed (the previous investor_only agreement)
   const needsRegen = room?.requires_regenerate === true;
-  const investorSigned = !needsRegen && (!!agreement?.investor_signed_at || agreement?.status === 'investor_signed' || agreement?.status === 'fully_signed');
+  const isAgentOnlyMode = agreement?.signer_mode === 'agent_only';
+  const investorSigned = !needsRegen && (
+    !!agreement?.investor_signed_at ||
+    agreement?.status === 'investor_signed' ||
+    agreement?.status === 'fully_signed' ||
+    isAgentOnlyMode // agent_only means investor already signed the base agreement
+  );
   const agentSigned = !needsRegen && (!!agreement?.agent_signed_at || agreement?.status === 'agent_signed' || agreement?.status === 'fully_signed');
   const fullySigned = investorSigned && agentSigned;
 
