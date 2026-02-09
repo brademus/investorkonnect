@@ -396,7 +396,8 @@ Deno.serve(async (req) => {
       docusign_envelope_id: envelope.envelopeId, docusign_status: 'sent',
       investor_recipient_id: actualInvestorRecipientId,
       agent_recipient_id: actualAgentRecipientId,
-      investor_client_user_id: investorClientId, agent_client_user_id: agentClientId,
+      investor_client_user_id: investorClientId,
+      agent_client_user_id: hasRealAgent ? agentClientId : null,
       audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `created_${effectiveSignerMode}` }]
     });
 
