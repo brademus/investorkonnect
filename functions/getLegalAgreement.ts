@@ -44,8 +44,8 @@ Deno.serve(async (req) => {
       } else {
         list = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 5);
       }
-      // Pick the active one (not superseded/voided)
-      agreement = list.find(a => !['superseded', 'voided'].includes(a.status)) || list[0] || null;
+      // Pick the active one (not superseded/voided) — NEVER return voided agreements
+      agreement = list.find(a => !['superseded', 'voided'].includes(a.status)) || null;
     }
 
     if (!agreement) return Response.json({ agreement: null });
