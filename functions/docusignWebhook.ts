@@ -156,7 +156,7 @@ Deno.serve(async (req) => {
         }
       } else if (mode === 'agent_only') {
         // Agent signing - this is the FIRST-TO-SIGN race
-        const r = recipients.find(r => r.recipientId === '1');
+        const r = recipients.find(r => String(r.recipientId) === String(agreement.agent_recipient_id || '1'));
         if (r?.status === 'completed' && !agreement.agent_signed_at) {
           updates.agent_signed_at = new Date().toISOString();
           updates.status = 'fully_signed';
