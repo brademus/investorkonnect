@@ -15,7 +15,7 @@ import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import PendingAgentsList from "@/components/PendingAgentsList";
 import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
-import WalkthroughInlineScheduler from "@/components/room/WalkthroughInlineScheduler";
+import WalkthroughScheduleModal from "@/components/room/WalkthroughScheduleModal";
 
 export default function Room() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export default function Room() {
   const [pendingInvites, setPendingInvites] = useState([]);
   const [selectedInvite, setSelectedInvite] = useState(null);
   const [showPendingAgents, setShowPendingAgents] = useState(true); // default to showing agents for investor
-  const [walkthroughExpanded, setWalkthroughExpanded] = useState(false);
+  const [walkthroughModalOpen, setWalkthroughModalOpen] = useState(false);
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
@@ -251,23 +251,13 @@ export default function Room() {
           <>
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
               {isInvestor && isSigned && deal?.id && !deal?.walkthrough_scheduled && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
-                walkthroughExpanded ? (
-                  <WalkthroughInlineScheduler
-                    deal={deal}
-                    roomId={roomId}
-                    profile={profile}
-                    onScheduled={(updates) => { setDeal(prev => prev ? { ...prev, ...updates } : prev); setWalkthroughExpanded(false); }}
-                    onCancel={() => setWalkthroughExpanded(false)}
-                  />
-                ) : (
-                  <button
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
-                    onClick={(e) => { e.stopPropagation(); setWalkthroughExpanded(true); }}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    Schedule Walk-through
-                  </button>
-                )
+                <button
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
+                  onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Schedule Walk-through
+                </button>
               )}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-2 mb-1">
@@ -358,7 +348,14 @@ export default function Room() {
               )}
 
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
-
+            <WalkthroughScheduleModal
+              open={walkthroughModalOpen}
+              onOpenChange={setWalkthroughModalOpen}
+              deal={deal}
+              roomId={roomId}
+              profile={profile}
+              onScheduled={(updates) => setDeal(prev => prev ? { ...prev, ...updates } : prev)}
+            />
             </div>
           )}
         </div>
