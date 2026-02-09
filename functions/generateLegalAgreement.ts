@@ -309,11 +309,12 @@ Deno.serve(async (req) => {
     const investorClientId = `inv-${deal.id}-${ts}`;
     const agentClientId = `ag-${deal.id}-${ts}`;
 
-    // ALWAYS include both signers in the envelope so agent signs the SAME document.
-    // investor_only: investor signs first (routingOrder 1), agent placeholder added as routingOrder 2
-    // agent_only: used when adding agent to an existing envelope — should NOT happen anymore
-    // both: both signers active
+    // ALWAYS include both signers in the envelope so the envelope stays OPEN after investor signs.
+    // This guarantees the agent signs the SAME envelope/document the investor signed.
+    // investor_only (no real agent): investor = routingOrder 1, placeholder agent = routingOrder 2
+    // both (real agent known):       investor = routingOrder 1, real agent = routingOrder 2
     const signers = [];
+    const hasRealAgent = agent.email && agent.email !== 'TBD';
     
     // Investor signer — always included (routingOrder 1)
     if (signer_mode !== 'agent_only') {
@@ -328,36 +329,40 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Agent signer — always included as routingOrder 2 so they sign the SAME envelope after investor
-    // For investor_only mode with no real agent yet, use a placeholder email that will be updated later
-    const hasRealAgent = agent.email && agent.email !== 'TBD';
-    if (hasRealAgent) {
+    // Agent signer — ALWAYS included as routingOrder 2 so envelope stays open after investor signs.
+    // If no real agent yet, use a placeholder (investor email with unique clientUserId).
+    // addAgentToEnvelope will later swap the placeholder with the real agent's details.
+    const agentSignerEmail = hasRealAgent ? agent.email : investor.email;
+    const agentSignerName = hasRealAgent ? (agent.full_name || agent.email) : 'Agent (Pending)';
+    
+    const agentTabs = {
+      signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
+      dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
+      fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agentSignerName, locked: true, required: true, tabLabel: 'agentFullName' }],
+      textTabs: [
+        { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: hasRealAgent ? (agent.agent?.license_number || agent.license_number || '') : '', required: true, tabLabel: 'agentLicense' },
+        { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: hasRealAgent ? (agent.agent?.brokerage || agent.broker || '') : '', required: true, tabLabel: 'agentBrokerage' }
+      ]
+    };
+
+    if (signer_mode === 'agent_only') {
+      // Legacy agent_only — agent is the only signer
       signers.push({
-        email: agent.email, name: agent.full_name || agent.email,
-        recipientId: '2', routingOrder: '2', clientUserId: agentClientId,
-        tabs: {
-          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
-          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
-          fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
-          textTabs: [
-            { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: true, tabLabel: 'agentLicense' },
-            { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: true, tabLabel: 'agentBrokerage' }
-          ]
-        }
-      });
-    } else if (signer_mode === 'agent_only') {
-      // Legacy agent_only — should not happen in new flow
-      signers.push({
-        email: investor.email, name: 'Agent Placeholder',
+        email: agentSignerEmail, name: agentSignerName,
         recipientId: '1', routingOrder: '1', clientUserId: agentClientId,
-        tabs: {
-          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
-          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }]
-        }
+        tabs: agentTabs
+      });
+    } else {
+      // Normal flow: agent is always recipientId 2, routingOrder 2
+      signers.push({
+        email: agentSignerEmail, name: agentSignerName,
+        recipientId: '2', routingOrder: '2', clientUserId: agentClientId,
+        tabs: agentTabs
       });
     }
 
     if (!signers.length) return Response.json({ error: `No signers for mode=${signer_mode}` }, { status: 400 });
+    console.log(`[genAgreement] Signers: ${signers.length}, hasRealAgent=${hasRealAgent}, mode=${signer_mode}`);
 
     const envDef = {
       emailSubject: `Sign Agreement - ${stateCode} Deal`,
