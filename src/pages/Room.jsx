@@ -250,6 +250,15 @@ export default function Room() {
         {!showBoard && currentRoom && !roomLoading && (
           <>
             <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex items-center justify-center gap-4 flex-shrink-0">
+              {isInvestor && isSigned && deal?.id && !deal?.walkthrough_scheduled && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
+                <button
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
+                  onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
+                >
+                  <Calendar className="w-3.5 h-3.5" />
+                  Schedule Walk-through
+                </button>
+              )}
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-2 mb-1">
                   <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
@@ -262,38 +271,27 @@ export default function Room() {
                   {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {isInvestor && isSigned && deal?.id && !deal?.walkthrough_scheduled && normalizeStage(deal?.pipeline_stage) === 'connected_deals' && (
-                  <button
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#E3C567] hover:text-[#EDD89F] transition-colors group border border-[#E3C567]/30 rounded-full px-3 py-1.5"
-                    onClick={(e) => { e.stopPropagation(); setWalkthroughModalOpen(true); }}
-                  >
-                    <Calendar className="w-3.5 h-3.5" />
-                    Schedule Walk-through
-                  </button>
-                )}
-                {isInvestor && isSigned && deal?.id && !['active_listings', 'in_closing', 'completed'].includes(normalizeStage(deal.pipeline_stage)) && (
-                  <button
-                    className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const dealId = deal.id;
-                      setDeal(prev => prev ? { ...prev, pipeline_stage: 'active_listings' } : prev);
-                      try {
-                        await base44.entities.Deal.update(dealId, { pipeline_stage: 'active_listings' });
-                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
-                        toast.success('Moved to Active Listings');
-                      } catch (e) {
-                        setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
-                        toast.error("Failed to update stage");
-                      }
-                    }}
-                  >
-                    Has this agreement been listed?
-                    <CheckCircle2 className="w-4 h-4 group-hover:scale-125 transition-transform" />
-                  </button>
-                )}
-              </div>
+              {isInvestor && isSigned && deal?.id && !['active_listings', 'in_closing', 'completed'].includes(normalizeStage(deal.pipeline_stage)) && (
+                <button
+                  className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const dealId = deal.id;
+                    setDeal(prev => prev ? { ...prev, pipeline_stage: 'active_listings' } : prev);
+                    try {
+                      await base44.entities.Deal.update(dealId, { pipeline_stage: 'active_listings' });
+                      queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                      toast.success('Moved to Active Listings');
+                    } catch (e) {
+                      setDeal(prev => prev ? { ...prev, pipeline_stage: deal.pipeline_stage } : prev);
+                      toast.error("Failed to update stage");
+                    }
+                  }}
+                >
+                  Has this agreement been listed?
+                  <CheckCircle2 className="w-4 h-4 group-hover:scale-125 transition-transform" />
+                </button>
+              )}
             </div>
             {isSigned && (
               <CounterpartyInfoBar
