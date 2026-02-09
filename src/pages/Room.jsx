@@ -29,6 +29,9 @@ export default function Room() {
   const [currentRoom, setCurrentRoom] = useState(null);
   const [deal, setDeal] = useState(null);
   const [roomLoading, setRoomLoading] = useState(true);
+  const [pendingInvites, setPendingInvites] = useState([]);
+  const [selectedInvite, setSelectedInvite] = useState(null);
+  const [showPendingAgents, setShowPendingAgents] = useState(true); // default to showing agents for investor
 
   // Gating - redirect if not setup
   const gateChecked = useRef(false);
