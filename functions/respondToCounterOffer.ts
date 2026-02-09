@@ -44,22 +44,29 @@ Deno.serve(async (req) => {
         
         if (room) {
           // Determine which agent this counter is for
-          // If the counter is from_role=agent, the agent sent it — find which agent via DealInvite
-          // If the counter is from_role=investor, the investor sent it to a specific agent
           let targetAgentId = null;
 
-          // Find the DealInvite for this room to identify the specific agent
-          if (counter.deal_id) {
+          // Priority 1: Use from_profile_id if agent sent the counter
+          if (counter.from_role === 'agent' && counter.from_profile_id) {
+            targetAgentId = counter.from_profile_id;
+          }
+          // Priority 2: Use to_profile_id if investor sent the counter to a specific agent
+          else if (counter.from_role === 'investor' && counter.to_profile_id) {
+            targetAgentId = counter.to_profile_id;
+          }
+
+          // Priority 3: Find the DealInvite for this room to identify the specific agent
+          if (!targetAgentId && counter.deal_id) {
             const invites = await base44.asServiceRole.entities.DealInvite.filter({
               deal_id: counter.deal_id,
               room_id: counter.room_id
             });
-            if (invites?.[0]) {
+            if (invites?.length === 1) {
               targetAgentId = invites[0].agent_profile_id;
             }
           }
 
-          // Fallback: if room only has one agent, use that
+          // Priority 4: if room only has one agent, use that
           if (!targetAgentId && room.agent_ids?.length === 1) {
             targetAgentId = room.agent_ids[0];
           }
