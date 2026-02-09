@@ -8,7 +8,7 @@ import KeyTermsPanel from "@/components/room/KeyTermsPanel";
 import PropertyDetailsCard from "@/components/PropertyDetailsCard";
 import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard";
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
-import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
+import FilesTab from "@/components/room/FilesTab.jsx";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
 import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 
@@ -126,19 +126,7 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
       {/* Files Tab */}
       {activeTab === 'files' && (
-        <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h4 className="text-lg font-semibold text-[#FAFAFA]">Files</h4>
-            <Button onClick={() => uploadToRoom('file')} className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full"><Plus className="w-4 h-4 mr-2" />Upload</Button>
-          </div>
-          {(localRoom?.files || []).length === 0 ? <p className="text-sm text-[#808080] text-center py-8">No files yet</p> : (localRoom?.files || []).map((f, i) => (
-            <div key={i} className="flex items-center gap-3 p-3 bg-[#141414] rounded-lg border border-[#1F1F1F] mb-2">
-              <FileText className="w-5 h-5 text-[#E3C567]" />
-              <div className="flex-1 min-w-0"><p className="text-sm text-[#FAFAFA] truncate">{f.name}</p><p className="text-xs text-[#808080]">{f.uploaded_by_name || 'User'}</p></div>
-              <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-xs bg-[#E3C567] text-black px-3 py-1.5 rounded-full"><Download className="w-3 h-3 inline mr-1" />Download</a>
-            </div>
-          ))}
-        </div>
+        <FilesTab deal={deal} room={localRoom} roomId={roomId} profile={profile} />
       )}
 
       {/* Photos Tab */}
