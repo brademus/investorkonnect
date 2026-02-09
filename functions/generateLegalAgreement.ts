@@ -304,8 +304,14 @@ Deno.serve(async (req) => {
     const investorClientId = `inv-${deal.id}-${ts}`;
     const agentClientId = `ag-${deal.id}-${ts}`;
 
+    // ALWAYS include both signers in the envelope so agent signs the SAME document.
+    // investor_only: investor signs first (routingOrder 1), agent placeholder added as routingOrder 2
+    // agent_only: used when adding agent to an existing envelope — should NOT happen anymore
+    // both: both signers active
     const signers = [];
-    if (signer_mode === 'investor_only' || signer_mode === 'both') {
+    
+    // Investor signer — always included (routingOrder 1)
+    if (signer_mode !== 'agent_only') {
       signers.push({
         email: investor.email, name: investor.full_name || investor.email,
         recipientId: '1', routingOrder: '1', clientUserId: investorClientId,
@@ -316,11 +322,14 @@ Deno.serve(async (req) => {
         }
       });
     }
-    if ((signer_mode === 'agent_only' || signer_mode === 'both') && agent.email && agent.email !== 'TBD') {
-      const rid = signer_mode === 'agent_only' ? '1' : '2';
+
+    // Agent signer — always included as routingOrder 2 so they sign the SAME envelope after investor
+    // For investor_only mode with no real agent yet, use a placeholder email that will be updated later
+    const hasRealAgent = agent.email && agent.email !== 'TBD';
+    if (hasRealAgent) {
       signers.push({
         email: agent.email, name: agent.full_name || agent.email,
-        recipientId: rid, routingOrder: rid, clientUserId: agentClientId,
+        recipientId: '2', routingOrder: '2', clientUserId: agentClientId,
         tabs: {
           signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
           dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
@@ -329,6 +338,16 @@ Deno.serve(async (req) => {
             { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: true, tabLabel: 'agentLicense' },
             { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: true, tabLabel: 'agentBrokerage' }
           ]
+        }
+      });
+    } else if (signer_mode === 'agent_only') {
+      // Legacy agent_only — should not happen in new flow
+      signers.push({
+        email: investor.email, name: 'Agent Placeholder',
+        recipientId: '1', routingOrder: '1', clientUserId: agentClientId,
+        tabs: {
+          signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
+          dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }]
         }
       });
     }
