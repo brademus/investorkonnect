@@ -155,12 +155,12 @@ Deno.serve(async (req) => {
       },
       proposed_terms: {
         seller_commission_type: draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage'),
-        seller_commission_percentage: draft.seller_commission_percentage || null,
-        seller_flat_fee: draft.seller_flat_fee || null,
+        seller_commission_percentage: draft.seller_commission_percentage ?? null,
+        seller_flat_fee: draft.seller_flat_fee ?? null,
         buyer_commission_type: draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage'),
-        buyer_commission_percentage: draft.buyer_commission_percentage || null,
-        buyer_flat_fee: draft.buyer_flat_fee || null,
-        agreement_length: draft.agreement_length || null,
+        buyer_commission_percentage: draft.buyer_commission_percentage ?? null,
+        buyer_flat_fee: draft.buyer_flat_fee ?? null,
+        agreement_length: draft.agreement_length ?? null,
       },
       contract_document: draft.contract_url ? {
         url: draft.contract_url,
