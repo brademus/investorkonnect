@@ -125,9 +125,19 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     return false;
   })();
   
-  // For investors, use room-level requires_regenerate
-  // For agents, only show regen if it's THEIR counter that was accepted
-  const needsRegen = isInvestor ? (room?.requires_regenerate === true) : agentSpecificRegen;
+  // For investors viewing a specific agent: check that specific agent's requires_regenerate
+  // For investors with no agent selected: use room-level requires_regenerate
+  // For agents: only show regen if it's THEIR counter that was accepted
+  const needsRegen = (() => {
+    if (isAgent) return agentSpecificRegen;
+    if (isInvestor && selectedAgentProfileId) {
+      // Check if this specific agent has requires_regenerate
+      const agentTerms = room?.agent_terms?.[selectedAgentProfileId];
+      return agentTerms?.requires_regenerate === true;
+    }
+    // Investor with no specific agent — show room-level flag
+    return room?.requires_regenerate === true;
+  })();
   
   // For agents who DIDN'T counter: they see the original agreement which IS investor-signed
   // needsRegen should be false for them, so investorSigned will correctly be true
