@@ -412,12 +412,29 @@ export default function MyAgreement() {
                  <p className="text-[#808080]">Price</p>
                  <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || deal.purchasePrice || 0).toLocaleString()}</p>
                </div>
-               <div className="col-span-2">
-                 <p className="text-[#808080]">Buyer Commission</p>
+               <div>
+                 <p className="text-[#808080]">Buyer's Agent Compensation</p>
                  <p className="text-[#FAFAFA] font-semibold">
-                   {deal.buyerCommissionType === 'percentage'
-                     ? `${deal.buyerCommissionPercentage}%`
-                     : `$${(deal.buyerFlatFee || 0).toLocaleString()}`}
+                   {(() => {
+                     const terms = deal.proposed_terms || {};
+                     const type = terms.buyer_commission_type || deal.buyerCommissionType || 'percentage';
+                     const pct = terms.buyer_commission_percentage ?? deal.buyerCommissionPercentage;
+                     const flat = terms.buyer_flat_fee ?? deal.buyerFlatFee;
+                     if (type === 'flat_fee' || type === 'flat') {
+                       return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
+                     }
+                     return pct != null ? `${pct}%` : '—';
+                   })()}
+                 </p>
+               </div>
+               <div>
+                 <p className="text-[#808080]">Agreement Length</p>
+                 <p className="text-[#FAFAFA] font-semibold">
+                   {(() => {
+                     const terms = deal.proposed_terms || {};
+                     const len = terms.agreement_length ?? deal.agreementLength;
+                     return len != null ? `${len} days` : '—';
+                   })()}
                  </p>
                </div>
              </div>
