@@ -498,7 +498,13 @@ export default function NewDeal() {
             agreement_length: agreementLength ? Number(agreementLength) : null
           },
           walkthrough_scheduled: walkthroughScheduled === true ? true : walkthroughScheduled === false ? false : null,
-          walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM')).toISOString() : null
+          walkthrough_datetime: (() => {
+            if (walkthroughScheduled !== true || !walkthroughDate) return null;
+            try {
+              const d = new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM'));
+              return isNaN(d.getTime()) ? null : d.toISOString();
+            } catch { return null; }
+          })()
         });
         
         // Also update Room agent_terms if it exists
