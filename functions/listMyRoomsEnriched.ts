@@ -64,6 +64,7 @@ Deno.serve(async (req) => {
         request_status: room.request_status, agreement_status: room.agreement_status,
         created_date: room.created_date, updated_date: room.updated_date,
         counterparty_id: cpId, counterparty_name: cp?.full_name || 'Unknown',
+        counterparty_headshot: cp?.headshotUrl || null,
         counterparty_role: isInvestor ? 'agent' : 'investor',
         is_fully_signed: isSigned,
         pending_counter_offer: counter ? { id: counter.id, from_role: counter.from_role, status: counter.status } : null,
