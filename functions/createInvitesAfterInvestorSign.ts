@@ -51,14 +51,14 @@ Deno.serve(async (req) => {
       }
     }
     
-    // Prefer exhibit_a_terms (agreement is authoritative) over deal.proposed_terms for key fields
+    // Prefer exhibit_a_terms (agreement is authoritative) over deal.proposed_terms for ALL fields
     const proposedTerms = {
       buyer_commission_type: exhibitTerms.buyer_commission_type || rawTerms.buyer_commission_type || 'percentage',
       buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? rawTerms.buyer_commission_percentage ?? null,
       buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? rawTerms.buyer_flat_fee ?? null,
-      seller_commission_type: rawTerms.seller_commission_type || null,
-      seller_commission_percentage: rawTerms.seller_commission_percentage ?? null,
-      seller_flat_fee: rawTerms.seller_flat_fee ?? null,
+      seller_commission_type: exhibitTerms.seller_commission_type || rawTerms.seller_commission_type || null,
+      seller_commission_percentage: exhibitTerms.seller_commission_percentage ?? rawTerms.seller_commission_percentage ?? null,
+      seller_flat_fee: exhibitTerms.seller_flat_fee ?? rawTerms.seller_flat_fee ?? null,
       // Normalize: exhibit uses "agreement_length_days", deal stores "agreement_length"
       agreement_length_days: exhibitTerms.agreement_length_days || rawTerms.agreement_length_days || rawTerms.agreement_length || null,
       agreement_length: exhibitTerms.agreement_length_days || rawTerms.agreement_length || rawTerms.agreement_length_days || null,
