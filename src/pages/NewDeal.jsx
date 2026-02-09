@@ -525,9 +525,6 @@ export default function NewDeal() {
             agent_terms: updatedAgentTerms
           });
         }
-      } catch (e) {
-        console.error("Failed to save proposed terms:", e);
-      }
     }
 
     // Check for duplicate deal (same investor + property address) for NEW deals only
