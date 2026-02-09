@@ -86,11 +86,12 @@ export default function Room() {
         });
         if (dealData) setDeal(dealData);
 
-        // For investors: load pending agent invites
-        if (isInvestor && room.deal_id) {
+        // For investors: load pending agent invites (only if deal not locked)
+        const isLocked = room.locked_agent_id || room.agreement_status === 'fully_signed' || room.request_status === 'locked';
+        if (isInvestor && room.deal_id && !isLocked) {
           try {
             const invites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id });
-            const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+            const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED' && i.status !== 'LOCKED');
             // Load agent profiles for each invite
             const enriched = await Promise.all(activeInvites.map(async (inv) => {
               try {
