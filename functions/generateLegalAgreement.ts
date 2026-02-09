@@ -137,12 +137,29 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
   const venue = deal.county && deal.state ? `${deal.county} County, ${deal.state}` : deal.state || 'N/A';
   const appUrl = Deno.env.get('PUBLIC_APP_URL') || 'https://agent-vault-da3d088b.base44.app/';
 
-  let buyerCompValue = '3%';
-  if (exhibit_a.buyer_commission_type === 'flat') {
-    buyerCompValue = `$${(exhibit_a.buyer_flat_fee || 5000).toLocaleString()}`;
+  // Buyer comp
+  let buyerCompValue = 'Not set';
+  const buyerType = (exhibit_a.buyer_commission_type || '').toLowerCase();
+  if (buyerType === 'flat' || buyerType === 'flat_fee') {
+    buyerCompValue = `$${(exhibit_a.buyer_flat_fee || 0).toLocaleString()}`;
   } else {
-    buyerCompValue = `${exhibit_a.buyer_commission_percentage || 3}%`;
+    buyerCompValue = `${exhibit_a.buyer_commission_percentage || 0}%`;
   }
+
+  // Seller comp — read from exhibit_a (which includes seller fields now)
+  let sellerCompValue = 'Not set';
+  const sellerType = (exhibit_a.seller_commission_type || '').toLowerCase();
+  if (sellerType === 'flat' || sellerType === 'flat_fee') {
+    sellerCompValue = `$${(exhibit_a.seller_flat_fee || 0).toLocaleString()}`;
+  } else {
+    sellerCompValue = `${exhibit_a.seller_commission_percentage || 0}%`;
+  }
+
+  // Compensation model tokens (legacy template compatibility)
+  const isBuyerFlat = buyerType === 'flat' || buyerType === 'flat_fee';
+  const compensationModel = isBuyerFlat ? 'FLAT_FEE' : 'COMMISSION';
+  const flatFeeAmount = isBuyerFlat ? buyerCompValue : '$0';
+  const commissionPercentage = !isBuyerFlat ? buyerCompValue : '0%';
 
   return {
     AGREEMENT_VERSION: 'InvestorKonnect v2.0', PLATFORM_NAME: 'investor konnect',
@@ -158,13 +175,14 @@ function buildContext(deal, investor, agent, exhibit_a, fillAgent) {
     PROPERTY_ADDRESS: deal.property_address || 'TBD', CITY: deal.city || 'TBD',
     STATE: deal.state || 'N/A', ZIP: deal.zip || 'N/A', COUNTY: deal.county || 'N/A', VENUE: venue,
     TRANSACTION_TYPE: exhibit_a.transaction_type || 'ASSIGNMENT',
-    BUYER_COMP_TYPE: exhibit_a.buyer_commission_type === 'flat' ? 'Flat Fee' : 'Commission Percentage',
+    BUYER_COMP_TYPE: isBuyerFlat ? 'Flat Fee' : 'Commission Percentage',
     BUYER_COMP_VALUE: buyerCompValue,
-    AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
-    TERM_DAYS: (exhibit_a.agreement_length_days || 180).toString(),
+    SELLER_COMP_TYPE: (sellerType === 'flat' || sellerType === 'flat_fee') ? 'Flat Fee' : 'Commission Percentage',
+    SELLER_COMP_VALUE: sellerCompValue,
+    AGREEMENT_LENGTH_DAYS: (exhibit_a.agreement_length_days || exhibit_a.agreement_length || 180).toString(),
+    TERM_DAYS: (exhibit_a.agreement_length_days || exhibit_a.agreement_length || 180).toString(),
     TERMINATION_NOTICE_DAYS: '30', EXCLUSIVITY_ON_OFF: 'OFF', ROFR_ON_OFF: 'OFF', ROFR_PERIOD_DAYS: '0',
-    COMPENSATION_MODEL: 'FLAT_FEE', FLAT_FEE_AMOUNT: '$5,000', COMMISSION_PERCENTAGE: '3%',
-    SELLER_COMP_TYPE: 'Flat Fee', SELLER_COMP_VALUE: '$5,000'
+    COMPENSATION_MODEL: compensationModel, FLAT_FEE_AMOUNT: flatFeeAmount, COMMISSION_PERCENTAGE: commissionPercentage
   };
 }
 
