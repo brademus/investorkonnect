@@ -1092,10 +1092,11 @@ export default function NewDeal() {
         <div className="flex justify-end">
           <Button
             onClick={handleContinue}
+            disabled={submitting}
             className="bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full px-8 font-semibold"
           >
-            Continue to Contract Verification
-            <ArrowRight className="w-4 h-4 ml-2" />
+            {submitting ? "Saving..." : "Continue to Contract Verification"}
+            {!submitting && <ArrowRight className="w-4 h-4 ml-2" />}
           </Button>
         </div>
       </div>
