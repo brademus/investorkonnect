@@ -385,6 +385,7 @@ export default function MyAgreement() {
 
 
         <SimpleAgreementPanel 
+          key={`${draft?.id}-${room?.id}`}
           dealId={draft?.id}
           dealData={deal}
           draftId={draft?.id}
