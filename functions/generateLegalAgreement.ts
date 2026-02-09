@@ -203,6 +203,9 @@ Deno.serve(async (req) => {
     const body = await req.json();
     const { draft_id, deal_id, room_id, signer_mode: requestedMode, investor_profile_id, investor_user_id: explicitInvestorUserId } = body;
     let exhibit_a = body.exhibit_a || {};
+    // When a room_id is provided, ALWAYS use 'both' mode so both investor and agent
+    // are included in the same DocuSign envelope. The agent is routingOrder 2 and signs
+    // the same document the investor signed — seeing the investor's signature.
     const signer_mode = requestedMode || (room_id ? 'both' : 'investor_only');
     const effectiveId = draft_id || deal_id;
 
