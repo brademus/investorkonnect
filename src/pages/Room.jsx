@@ -13,6 +13,7 @@ import RoomSidebar from "@/components/room/RoomSidebar";
 import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
 import PendingAgentsList from "@/components/PendingAgentsList";
+import CounterpartyInfoBar from "@/components/room/CounterpartyInfoBar";
 
 export default function Room() {
   const navigate = useNavigate();
@@ -244,18 +245,25 @@ export default function Room() {
 
         {/* Deal Summary Bar (messages view only) */}
         {!showBoard && currentRoom && !roomLoading && (
-          <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center flex-shrink-0">
-            <div className="flex items-center gap-2 mb-1">
-              <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
-              <span className="font-bold text-[#FAFAFA] text-sm">
-                {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
-              </span>
+          <>
+            <div className="bg-[#111111] border-b border-[#1F1F1F] py-3 px-6 flex flex-col items-center flex-shrink-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`w-2 h-2 rounded-full ${isSigned ? 'bg-[#10B981]' : 'bg-[#F59E0B]'}`} />
+                <span className="font-bold text-[#FAFAFA] text-sm">
+                  {isAgent && !isSigned ? `${currentRoom.city || 'City'}, ${currentRoom.state || 'State'}` : (currentRoom.title || currentRoom.property_address || 'Deal')}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 text-xs">
+                <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
+                {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
+              </div>
             </div>
-            <div className="flex items-center gap-3 text-xs">
-              <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
-              {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
-            </div>
-          </div>
+            {isSigned && (
+              <CounterpartyInfoBar
+                counterparty={isInvestor ? deal?.agent_contact : deal?.investor_contact}
+              />
+            )}
+          </>
         )}
 
         {/* Content */}

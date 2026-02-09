@@ -29,6 +29,7 @@ function AccountProfileContent() {
     full_name: "",
     role: "",
     company: "",
+    company_address: "",
     markets: "",
     phone: "",
     accreditation: "",
@@ -45,6 +46,7 @@ function AccountProfileContent() {
         full_name: profile.full_name || "",
         role: profile.user_role || profile.user_type || "",
         company: profile.company || "",
+        company_address: profile.company_address || "",
         markets: Array.isArray(profile.markets) ? profile.markets.join(", ") : "",
         phone: profile.phone || "",
         accreditation: profile.accreditation || "",
@@ -73,6 +75,7 @@ function AccountProfileContent() {
       const updateData = {
         full_name: formData.full_name.trim(),
         company: formData.company.trim(),
+        company_address: formData.company_address.trim(),
         markets: formData.markets.split(",").map(s => s.trim()).filter(Boolean),
         phone: formData.phone.trim(),
         accreditation: formData.accreditation.trim(),
@@ -190,6 +193,20 @@ function AccountProfileContent() {
                 disabled={saving}
                 className="bg-[#141414] border-[#333] text-[#FAFAFA]"
               />
+            </div>
+
+            {/* Company Address */}
+            <div>
+              <Label htmlFor="company_address" className="text-[#FAFAFA]">Company Address</Label>
+              <Input
+                id="company_address"
+                value={formData.company_address}
+                onChange={(e) => setFormData({...formData, company_address: e.target.value})}
+                placeholder="123 Main St, Suite 100, City, State ZIP"
+                disabled={saving}
+                className="bg-[#141414] border-[#333] text-[#FAFAFA]"
+              />
+              <p className="text-xs text-[#808080] mt-1">Visible to your counterparty after agreement is signed</p>
             </div>
 
             {/* Markets */}
