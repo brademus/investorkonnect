@@ -369,6 +369,15 @@ Deno.serve(async (req) => {
     const envelope = await envResp.json();
     console.log(`[genAgreement] Envelope: ${envelope.envelopeId}`);
 
+    // Determine actual recipient IDs based on who was included in the envelope
+    // If we have a real agent, they were added as recipientId 2 regardless of signer_mode
+    const actualAgentRecipientId = hasRealAgent ? '2' : ((signer_mode === 'agent_only') ? '1' : null);
+    const actualInvestorRecipientId = (signer_mode !== 'agent_only') ? '1' : null;
+    // If real agent was included, the effective mode is 'both' in the envelope even if signer_mode says investor_only
+    const effectiveSignerMode = (signer_mode === 'investor_only' && hasRealAgent) ? 'both' : signer_mode;
+
+    console.log(`[genAgreement] Storing: signer_mode=${effectiveSignerMode} inv_recip=${actualInvestorRecipientId} ag_recip=${actualAgentRecipientId} hasRealAgent=${hasRealAgent}`);
+
     // Save agreement — use resolved investor user_id (not calling user, who may be an agent)
     const agreement = await base44.asServiceRole.entities.LegalAgreement.create({
       deal_id: effectiveId, room_id: room_id || null,
@@ -377,7 +386,7 @@ Deno.serve(async (req) => {
       governing_state: deal.state, property_zip: deal.zip,
       transaction_type: exhibit_a.transaction_type || 'ASSIGNMENT',
       property_type: deal.property_type || 'Single Family',
-      agreement_version: VERSION, signer_mode, status: 'sent',
+      agreement_version: VERSION, signer_mode: effectiveSignerMode, status: 'sent',
       template_url: templateUrl,
       final_pdf_url: humanUpload.file_url, pdf_file_url: humanUpload.file_url, pdf_sha256: await sha256Hex(humanPdf),
       docusign_pdf_url: dsUpload.file_url, docusign_pdf_sha256: await sha256Hex(dsPdf),
@@ -385,10 +394,10 @@ Deno.serve(async (req) => {
       render_input_hash: inputHash, render_context_json: ctx,
       exhibit_a_terms: exhibit_a,
       docusign_envelope_id: envelope.envelopeId, docusign_status: 'sent',
-      investor_recipient_id: (signer_mode !== 'agent_only') ? '1' : null,
-      agent_recipient_id: (signer_mode === 'agent_only') ? '1' : (signer_mode === 'both') ? '2' : null,
+      investor_recipient_id: actualInvestorRecipientId,
+      agent_recipient_id: actualAgentRecipientId,
       investor_client_user_id: investorClientId, agent_client_user_id: agentClientId,
-      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `created_${signer_mode}` }]
+      audit_log: [{ timestamp: new Date().toISOString(), actor: user.email, action: `created_${effectiveSignerMode}` }]
     });
 
     // Update pointers
