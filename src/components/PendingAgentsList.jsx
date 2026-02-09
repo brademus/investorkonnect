@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { User, Star, CheckCircle, Clock, Shield } from 'lucide-react';
+import { User, Star, CheckCircle, Clock, Shield, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { createPageUrl } from '@/components/utils';
 
