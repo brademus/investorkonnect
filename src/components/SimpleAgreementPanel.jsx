@@ -194,10 +194,11 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     finally { setBusy(false); }
   };
 
-  // Regenerate + sign (after counter accepted)
+  // Regenerate + sign (after counter accepted) — generates a NEW agreement for the specific agent
   const handleRegenAndSign = async () => {
     setBusy(true);
     try {
+      // The regenerate function will look up the target agent from DealInvite in the room
       const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId });
       if (res.data?.error) { toast.error(res.data.error); setBusy(false); return; }
       if (res.data?.agreement) {
