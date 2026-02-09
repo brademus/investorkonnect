@@ -129,9 +129,10 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
 
   const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
-  const agreementLength = (displayTerms?.agreement_length_days || displayTerms?.agreement_length || deal?.agreement_length)
-    ? `${displayTerms?.agreement_length_days || displayTerms?.agreement_length || deal?.agreement_length} days`
-    : 'Not set';
+  const rawLength = displayTerms?.agreement_length_days || displayTerms?.agreement_length 
+    || deal?.proposed_terms?.agreement_length_days || deal?.proposed_terms?.agreement_length 
+    || deal?.agreement_length;
+  const agreementLength = rawLength ? `${rawLength} days` : 'Not set';
 
   return (
     <Card className="bg-[#0D0D0D] border-[#1F1F1F]">
