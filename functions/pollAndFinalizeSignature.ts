@@ -67,10 +67,11 @@ Deno.serve(async (req) => {
             console.log('[pollAndFinalize] Investor signature confirmed on attempt', i + 1);
             
             // Update LegalAgreement with signature
+            // Do NOT set docusign_status to 'completed' — the envelope stays open for the agent
             const updates = {
               investor_signed_at: inv.signedDateTime || new Date().toISOString(),
               status: 'investor_signed',
-              docusign_status: 'completed'
+              docusign_status: 'delivered'
             };
             await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
             Object.assign(agreement, updates);
