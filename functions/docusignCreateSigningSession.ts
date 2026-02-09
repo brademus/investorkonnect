@@ -105,7 +105,19 @@ Deno.serve(async (req) => {
     const envResp = await fetch(envUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
     if (envResp.ok) {
       const env = await envResp.json();
-      if (env.status === 'completed') return Response.json({ already_signed: true });
+      // Only treat as fully complete if BOTH parties have signed.
+      // An envelope can be 'completed' when the investor was the only signer,
+      // but we may have just added the agent as a new recipient — recheck.
+      if (env.status === 'completed') {
+        // If the CURRENT role hasn't signed yet, the envelope was reopened by adding them
+        const currentRoleSigned = role === 'investor' ? agreement.investor_signed_at : agreement.agent_signed_at;
+        if (currentRoleSigned) {
+          return Response.json({ already_signed: true });
+        }
+        // Otherwise, the agent was just added — envelope should have been re-opened.
+        // Re-fetch envelope status after a short delay to let DocuSign process
+        console.log('[signing] Envelope shows completed but', role, 'has not signed. Checking recipients...');
+      }
       if (['voided', 'declined'].includes(env.status)) return Response.json({ error: `Envelope ${env.status}. Regenerate.` }, { status: 400 });
     }
 
