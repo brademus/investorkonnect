@@ -123,7 +123,7 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           if (isWalkthroughRequest) {
             return (
               <div key={m.id} className={"flex px-4 " + (isMe ? "justify-end" : "justify-start")}>
-                <WalkthroughMessageCard message={m} isAgent={isAgent} roomId={roomId} profile={profile} />
+                <WalkthroughMessageCard message={m} isAgent={isAgent} isRecipient={!isMe} roomId={roomId} profile={profile} />
               </div>
             );
           }
