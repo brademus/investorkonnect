@@ -251,9 +251,26 @@ Deno.serve(async (req) => {
       if (activeDupe) {
         console.log('[createDealOnInvestorSignature] DUPLICATE detected! Existing deal:', activeDupe.id, 'for address:', draft.property_address);
         // Update existing deal's agreement pointer instead of creating a new one
-        await base44.asServiceRole.entities.Deal.update(activeDupe.id, {
-          current_legal_agreement_id: agreementData.id
-        });
+        // Build update for the duplicate deal - include walkthrough and terms from draft
+        const dupeExhibitTerms = agreementData.exhibit_a_terms || {};
+        const dupeBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
+        const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
+        const dupeUpdate = {
+          current_legal_agreement_id: agreementData.id,
+          walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
+          walkthrough_datetime: draft.walkthrough_datetime || null,
+          proposed_terms: {
+            seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
+            seller_commission_percentage: dupeExhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null,
+            seller_flat_fee: dupeExhibitTerms.seller_flat_fee ?? draft.seller_flat_fee ?? null,
+            buyer_commission_type: dupeExhibitTerms.buyer_commission_type || dupeBuyerType,
+            buyer_commission_percentage: dupeExhibitTerms.buyer_commission_percentage ?? draft.buyer_commission_percentage ?? null,
+            buyer_flat_fee: dupeExhibitTerms.buyer_flat_fee ?? draft.buyer_flat_fee ?? null,
+            agreement_length: dupeExhibitTerms.agreement_length_days || dupeExhibitTerms.agreement_length || draft.agreement_length || null,
+          }
+        };
+        console.log('[createDealOnInvestorSignature] Updating duplicate deal with draft data:', { walkthrough: dupeUpdate.walkthrough_scheduled, terms: dupeUpdate.proposed_terms });
+        await base44.asServiceRole.entities.Deal.update(activeDupe.id, dupeUpdate);
         await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
           deal_id: activeDupe.id
         });
