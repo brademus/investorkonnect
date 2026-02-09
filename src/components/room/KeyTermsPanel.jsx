@@ -129,6 +129,14 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
       )
     : 'Not set';
 
+  const sellerComm = displayTerms?.seller_commission_type
+    ? formatComm(
+        displayTerms.seller_commission_type,
+        displayTerms.seller_commission_percentage,
+        displayTerms.seller_flat_fee
+      )
+    : 'Not set';
+
   const purchasePrice = (deal?.purchase_price || currentRoom?.budget || 0).toLocaleString();
 
   const rawLength = displayTerms?.agreement_length_days || displayTerms?.agreement_length 
@@ -161,10 +169,23 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
               <p className="text-sm font-semibold text-[#34D399]">${purchasePrice}</p>
             </div>
 
+            {/* Seller Commission */}
+            <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#808080] mb-1">Seller's Agent Commission</p>
+                <p className="text-sm font-semibold text-[#FAFAFA]">{sellerComm}</p>
+              </div>
+              {displayTerms.seller_commission_type && (
+                <Badge className="bg-[#60A5FA]/20 text-[#60A5FA] border-[#60A5FA]/30">
+                  {(displayTerms.seller_commission_type === 'percentage') ? 'Percentage' : 'Flat Fee'}
+                </Badge>
+              )}
+            </div>
+
             {/* Buyer Commission */}
             <div className="bg-[#141414] rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p className="text-xs text-[#808080] mb-1">Buyer Commission</p>
+                <p className="text-xs text-[#808080] mb-1">Buyer's Agent Commission</p>
                 <p className="text-sm font-semibold text-[#FAFAFA]">{buyerComm}</p>
               </div>
               <Badge className="bg-[#E3C567]/20 text-[#E3C567] border-[#E3C567]/30">

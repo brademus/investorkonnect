@@ -416,6 +416,21 @@ export default function MyAgreement() {
                  <p className="text-[#FAFAFA] font-semibold">${(deal.purchase_price || deal.purchasePrice || 0).toLocaleString()}</p>
                </div>
                <div>
+                 <p className="text-[#808080]">Seller's Agent Compensation</p>
+                 <p className="text-[#FAFAFA] font-semibold">
+                   {(() => {
+                     const terms = deal.proposed_terms || {};
+                     const type = terms.seller_commission_type || deal.sellerCommissionType || 'percentage';
+                     const pct = terms.seller_commission_percentage ?? deal.sellerCommissionPercentage;
+                     const flat = terms.seller_flat_fee ?? deal.sellerFlatFee;
+                     if (type === 'flat_fee' || type === 'flat') {
+                       return flat != null ? `$${Number(flat).toLocaleString()}` : '—';
+                     }
+                     return pct != null ? `${pct}%` : '—';
+                   })()}
+                 </p>
+               </div>
+               <div>
                  <p className="text-[#808080]">Buyer's Agent Compensation</p>
                  <p className="text-[#FAFAFA] font-semibold">
                    {(() => {
