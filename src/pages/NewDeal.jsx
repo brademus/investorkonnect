@@ -459,7 +459,6 @@ export default function NewDeal() {
     try {
     // If editing existing deal, save all data to Deal entity immediately
     if (dealId) {
-      try {
         console.log('[NewDeal] Saving county to deal:', county);
         
         await base44.entities.Deal.update(dealId, {
