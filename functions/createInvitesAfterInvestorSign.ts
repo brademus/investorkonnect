@@ -37,19 +37,33 @@ Deno.serve(async (req) => {
     }
     
     // Build proposed terms from deal - normalize field names
+    // CRITICAL: Also check the base agreement's exhibit_a_terms as source of truth
     const rawTerms = deal.proposed_terms || {};
+    
+    // Load the base agreement to get authoritative exhibit_a_terms
+    let exhibitTerms = {};
+    const baseAgreementId = deal.current_legal_agreement_id;
+    if (baseAgreementId) {
+      const agArr = await base44.asServiceRole.entities.LegalAgreement.filter({ id: baseAgreementId });
+      if (agArr?.[0]?.exhibit_a_terms) {
+        exhibitTerms = agArr[0].exhibit_a_terms;
+        console.log('[createInvites] Found exhibit_a_terms from base agreement:', JSON.stringify(exhibitTerms));
+      }
+    }
+    
+    // Prefer exhibit_a_terms (agreement is authoritative) over deal.proposed_terms for key fields
     const proposedTerms = {
-      buyer_commission_type: rawTerms.buyer_commission_type || 'percentage',
-      buyer_commission_percentage: rawTerms.buyer_commission_percentage ?? null,
-      buyer_flat_fee: rawTerms.buyer_flat_fee ?? null,
+      buyer_commission_type: exhibitTerms.buyer_commission_type || rawTerms.buyer_commission_type || 'percentage',
+      buyer_commission_percentage: exhibitTerms.buyer_commission_percentage ?? rawTerms.buyer_commission_percentage ?? null,
+      buyer_flat_fee: exhibitTerms.buyer_flat_fee ?? rawTerms.buyer_flat_fee ?? null,
       seller_commission_type: rawTerms.seller_commission_type || null,
       seller_commission_percentage: rawTerms.seller_commission_percentage ?? null,
       seller_flat_fee: rawTerms.seller_flat_fee ?? null,
-      // Normalize: deal stores "agreement_length", exhibit_a uses "agreement_length_days"
-      agreement_length_days: rawTerms.agreement_length_days || rawTerms.agreement_length || null,
-      agreement_length: rawTerms.agreement_length || rawTerms.agreement_length_days || null,
+      // Normalize: exhibit uses "agreement_length_days", deal stores "agreement_length"
+      agreement_length_days: exhibitTerms.agreement_length_days || rawTerms.agreement_length_days || rawTerms.agreement_length || null,
+      agreement_length: exhibitTerms.agreement_length_days || rawTerms.agreement_length || rawTerms.agreement_length_days || null,
     };
-    console.log('[createInvites] proposedTerms built from deal:', JSON.stringify(proposedTerms));
+    console.log('[createInvites] proposedTerms built from deal+agreement:', JSON.stringify(proposedTerms));
     
     // --- ROOM: create or reuse ---
     const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id });
