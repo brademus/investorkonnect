@@ -71,6 +71,24 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     return () => unsubs.forEach(u => { try { u(); } catch (_) {} });
   }, [dealId, roomId]);
 
+  // Filter counters to only show those relevant to the current agent context
+  const relevantCounters = pendingCounters.filter(c => {
+    // If we have a selectedAgentProfileId (investor viewing a specific agent), show only that agent's counters
+    if (selectedAgentProfileId) {
+      return c.from_profile_id === selectedAgentProfileId || c.to_profile_id === selectedAgentProfileId ||
+        // Legacy counters without profile IDs: show if from agent role (could be any agent)
+        (!c.from_profile_id && !c.to_profile_id);
+    }
+    // If current user is an agent, show only their own counters or counters sent to them
+    if (isAgent && profile?.id) {
+      return c.from_profile_id === profile.id || c.to_profile_id === profile.id ||
+        // Legacy counters without profile IDs
+        (!c.from_profile_id && !c.to_profile_id);
+    }
+    // Default: show all (investor with no specific agent selected)
+    return true;
+  });
+
   // Derived state
   const needsRegen = room?.requires_regenerate === true;
   const investorSigned = !needsRegen && (!!agreement?.investor_signed_at || agreement?.status === 'investor_signed' || agreement?.status === 'fully_signed');
