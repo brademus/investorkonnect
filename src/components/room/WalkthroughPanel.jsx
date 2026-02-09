@@ -72,7 +72,7 @@ export default function WalkthroughPanel({ deal, roomId }) {
         <div className="space-y-3">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="w-4 h-4 text-[#10B981]" />
-            <span className="text-xs font-medium text-[#10B981]">Confirmed</span>
+            <span className="text-xs font-medium text-[#10B981]">{statusLabel}</span>
           </div>
 
           <div className="flex items-center gap-3 p-3 bg-[#141414] rounded-xl border border-[#1F1F1F]">
