@@ -33,22 +33,48 @@ Deno.serve(async (req) => {
     // The agreement's deal_id might point to a DealDraft ID in the new flow
     let existingDeal = null;
     
-    // Check by current_legal_agreement_id first (most reliable)
-    const dealsByAgreement = await base44.asServiceRole.entities.Deal.filter({
-      current_legal_agreement_id: agreementData.id
-    });
-    existingDeal = dealsByAgreement?.[0] || null;
-    
-    // Also try by deal_id if it's a real Deal (not a DealDraft)
-    if (!existingDeal && agreementData.deal_id) {
+    // PRIMARY: Try by deal_id first — when editing, the agreement's deal_id IS the real Deal ID
+    if (agreementData.deal_id) {
       try {
         const deals = await base44.asServiceRole.entities.Deal.filter({ id: agreementData.deal_id });
         if (deals && deals.length > 0) {
           existingDeal = deals[0];
+          console.log('[createDealOnInvestorSignature] Found existing deal by deal_id:', existingDeal.id);
         }
       } catch (e) {
         // deal_id might be a DealDraft ID, not a Deal - that's expected
         console.log('[createDealOnInvestorSignature] deal_id is not a Deal entity (likely DealDraft):', agreementData.deal_id);
+      }
+    }
+    
+    // FALLBACK: Check by current_legal_agreement_id
+    if (!existingDeal) {
+      const dealsByAgreement = await base44.asServiceRole.entities.Deal.filter({
+        current_legal_agreement_id: agreementData.id
+      });
+      existingDeal = dealsByAgreement?.[0] || null;
+      if (existingDeal) {
+        console.log('[createDealOnInvestorSignature] Found existing deal by current_legal_agreement_id:', existingDeal.id);
+      }
+    }
+    
+    // FALLBACK 2: Check by investor + property_address to catch edits where pointers were cleared
+    if (!existingDeal && agreementData.investor_profile_id) {
+      // Load the agreement's deal context to get property address
+      let propAddr = null;
+      if (agreementData.render_context_json?.PROPERTY_ADDRESS) {
+        propAddr = agreementData.render_context_json.PROPERTY_ADDRESS;
+      }
+      if (propAddr && propAddr !== 'TBD') {
+        const dealsByAddr = await base44.asServiceRole.entities.Deal.filter({
+          investor_id: agreementData.investor_profile_id,
+          property_address: propAddr
+        });
+        const activeDeal = dealsByAddr?.find(d => d.status !== 'archived' && d.status !== 'closed');
+        if (activeDeal) {
+          existingDeal = activeDeal;
+          console.log('[createDealOnInvestorSignature] Found existing deal by investor+address:', existingDeal.id);
+        }
       }
     }
 
