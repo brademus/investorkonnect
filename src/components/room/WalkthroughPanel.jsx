@@ -6,19 +6,34 @@ export default function WalkthroughPanel({ deal }) {
   const [apptData, setApptData] = useState(null);
   const [loadingAppt, setLoadingAppt] = useState(false);
 
-  // Fetch DealAppointments as the authoritative source for walkthrough info
+  // Fetch DealAppointments AND re-check Deal entity as authoritative sources
   useEffect(() => {
     if (!deal?.id) return;
     setLoadingAppt(true);
     (async () => {
       try {
+        // Fetch DealAppointments
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
-        console.log('[WalkthroughPanel] DealAppointments rows for deal', deal.id, ':', rows?.length, rows?.[0]?.walkthrough);
-        if (rows?.[0]?.walkthrough) {
+        if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
           setApptData(rows[0].walkthrough);
+        } else {
+          // No DealAppointments — check Deal entity directly for walkthrough fields
+          // (the deal prop may come from getDealDetailsForUser which has the correct data)
+          const dealRows = await base44.entities.Deal.filter({ id: deal.id });
+          const liveDeal = dealRows?.[0];
+          if (liveDeal?.walkthrough_scheduled === true && liveDeal?.walkthrough_datetime) {
+            // Create a synthetic appt-like object from deal fields
+            setApptData({
+              status: 'PROPOSED',
+              datetime: liveDeal.walkthrough_datetime,
+              timezone: null,
+              locationType: 'ON_SITE',
+              notes: null
+            });
+          }
         }
       } catch (e) {
-        console.warn('[WalkthroughPanel] Failed to load DealAppointments:', e);
+        console.warn('[WalkthroughPanel] Failed to load walkthrough data:', e);
       } finally {
         setLoadingAppt(false);
       }
@@ -30,23 +45,36 @@ export default function WalkthroughPanel({ deal }) {
     if (!deal?.id) return;
     const unsub = base44.entities.DealAppointments.subscribe((event) => {
       if (event?.data?.dealId === deal.id && event.data.walkthrough) {
-        console.log('[WalkthroughPanel] Real-time DealAppointments update:', event.data.walkthrough);
         setApptData(event.data.walkthrough);
       }
     });
     return () => { try { unsub(); } catch (_) {} };
   }, [deal?.id]);
 
-  // Use DealAppointments data first, fallback to deal entity fields
+  // Subscribe to real-time Deal updates for walkthrough fields
+  useEffect(() => {
+    if (!deal?.id) return;
+    const unsub = base44.entities.Deal.subscribe((event) => {
+      if (event?.data?.id === deal.id && event.data.walkthrough_scheduled === true && event.data.walkthrough_datetime) {
+        setApptData({
+          status: 'PROPOSED',
+          datetime: event.data.walkthrough_datetime,
+          timezone: null,
+          locationType: 'ON_SITE',
+          notes: null
+        });
+      }
+    });
+    return () => { try { unsub(); } catch (_) {} };
+  }, [deal?.id]);
+
+  // Use DealAppointments/apptData first, fallback to deal entity fields passed as props
   const apptDatetime = apptData?.datetime;
   const apptStatus = apptData?.status;
   const hasWalkthroughFromAppt = apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED';
-  // Check deal entity fields as fallback — handle boolean, string, and truthy checks
   const wtSched = deal?.walkthrough_scheduled;
-  const hasWalkthroughFromDeal = wtSched === true || wtSched === 'true' || (wtSched && deal?.walkthrough_datetime);
+  const hasWalkthroughFromDeal = (wtSched === true || wtSched === 'true') && deal?.walkthrough_datetime;
   const hasWalkthrough = hasWalkthroughFromAppt || hasWalkthroughFromDeal;
-
-  console.log('[WalkthroughPanel] State:', { dealId: deal?.id, hasWalkthroughFromAppt, hasWalkthroughFromDeal, hasWalkthrough, apptStatus, apptDatetime, dealWtSched: deal?.walkthrough_scheduled, dealWtDt: deal?.walkthrough_datetime });
 
   const rawDatetime = apptDatetime || deal?.walkthrough_datetime;
   const dt = rawDatetime ? new Date(rawDatetime) : null;
