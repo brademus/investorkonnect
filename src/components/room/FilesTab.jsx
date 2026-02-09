@@ -62,6 +62,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
 
   // Fetch the agreement's signed/final PDF URL
   const [agreementUrl, setAgreementUrl] = useState(null);
+  const [agreementLabel, setAgreementLabel] = useState('Legal Agreement');
   useEffect(() => {
     const rid = roomId || localRoom?.id;
     const did = deal?.id || localRoom?.deal_id;
@@ -74,8 +75,23 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       const fullySigned = (agrs || []).find(a => a.status === 'fully_signed');
       const active = fullySigned || (agrs || []).find(a => a.status !== 'voided' && a.status !== 'superseded');
       if (active) {
-        // Prioritize signed PDF (from DocuSign completion) over the generated/draft PDF
-        setAgreementUrl(active.signed_pdf_url || active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
+        if (active.signed_pdf_url) {
+          setAgreementUrl(active.signed_pdf_url);
+          setAgreementLabel('Legal Agreement (Signed)');
+        } else if (active.status === 'fully_signed' && active.docusign_envelope_id) {
+          // Agreement is fully signed but signed PDF wasn't saved — try to fetch it
+          try {
+            const res = await base44.functions.invoke('downloadSignedPdf', { agreement_id: active.id });
+            if (res?.data?.signed_pdf_url) {
+              setAgreementUrl(res.data.signed_pdf_url);
+              setAgreementLabel('Legal Agreement (Signed)');
+              return;
+            }
+          } catch (_) { /* fallback below */ }
+          setAgreementUrl(active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
+        } else {
+          setAgreementUrl(active.final_pdf_url || active.pdf_file_url || active.docusign_pdf_url);
+        }
       }
     })();
   }, [roomId, localRoom?.id, deal?.id]);
