@@ -91,7 +91,7 @@ export default function Room() {
           budget: dealData?.purchase_price || room.budget,
           is_fully_signed: dealData?.is_fully_signed || roomIsLocked,
           counterparty_name: room.counterparty_name || enrichedRoom?.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
-          counterparty_headshot: enrichedRoom?.counterparty_headshot || null
+          counterparty_headshot: enrichedRoom?.counterparty_headshot || (isAgent ? dealData?.investor_contact?.headshotUrl : dealData?.agent_contact?.headshotUrl) || null
         });
         if (dealData) setDeal(dealData);
 
