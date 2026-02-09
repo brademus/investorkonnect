@@ -198,8 +198,9 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   const handleRegenAndSign = async () => {
     setBusy(true);
     try {
-      // The regenerate function will look up the target agent from DealInvite in the room
-      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId });
+      // Pass the specific agent whose counter was accepted so regeneration targets the right agent
+      const targetAgent = selectedAgentProfileId || null;
+      const res = await base44.functions.invoke('regenerateActiveAgreement', { deal_id: dealId, room_id: roomId, target_agent_id: targetAgent });
       if (res.data?.error) { toast.error(res.data.error); setBusy(false); return; }
       if (res.data?.agreement) {
         setAgreement(res.data.agreement);
