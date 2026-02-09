@@ -31,24 +31,46 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
   }, [externalRoom]);
 
   // Load agreement + room + counters on mount
+  // If investor is viewing a specific agent (selectedAgentProfileId), load that agent's agreement
   useEffect(() => {
     if (!dealId) return;
     let cancelled = false;
     const load = async () => {
-      const [agRes, roomRes, counterRes] = await Promise.all([
-        base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} })),
+      let agResult = null;
+      
+      // If investor is viewing a specific agent, try to load that agent's DealInvite agreement
+      if (selectedAgentProfileId && roomId) {
+        const invites = await base44.entities.DealInvite.filter({
+          deal_id: dealId, agent_profile_id: selectedAgentProfileId
+        }).catch(() => []);
+        const invite = invites?.[0];
+        if (invite?.legal_agreement_id) {
+          const agArr = await base44.entities.LegalAgreement.filter({ id: invite.legal_agreement_id }).catch(() => []);
+          if (agArr?.[0] && !['superseded', 'voided'].includes(agArr[0].status)) {
+            agResult = agArr[0];
+          }
+        }
+      }
+      
+      // Fallback to regular getLegalAgreement
+      if (!agResult) {
+        const agRes = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
+        agResult = agRes?.data?.agreement || null;
+      }
+      
+      const [roomRes, counterRes] = await Promise.all([
         roomId ? base44.entities.Room.filter({ id: roomId }).catch(() => []) : Promise.resolve([]),
         roomId ? base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50).catch(() => []) : Promise.resolve([])
       ]);
       if (cancelled) return;
-      if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
+      if (agResult) setAgreement(agResult);
       if (roomRes?.[0]) setRoom(roomRes[0]);
       setPendingCounters(counterRes || []);
       setLoaded(true);
     };
     load();
     return () => { cancelled = true; };
-  }, [dealId, roomId]);
+  }, [dealId, roomId, selectedAgentProfileId]);
 
   // Real-time subscriptions
   useEffect(() => {
