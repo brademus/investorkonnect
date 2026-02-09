@@ -504,6 +504,21 @@ export default function NewDeal() {
       }
     }
 
+    // Check for duplicate deal (same investor + property address) for NEW deals only
+    if (!dealId && profile?.id) {
+      try {
+        const existingDeals = await base44.entities.Deal.filter({ 
+          investor_id: profile.id, 
+          property_address: propertyAddress.trim() 
+        });
+        const activeDup = existingDeals.find(d => d.status !== 'archived' && d.status !== 'closed');
+        if (activeDup) {
+          toast.error("You already have an active deal for this property address. Please edit the existing deal instead.");
+          return;
+        }
+      } catch (_) {}
+    }
+
     // Immediately create a room request so the agent sees it right away (if agent already selected)
   try {
     if (dealId) {
