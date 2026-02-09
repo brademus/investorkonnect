@@ -57,6 +57,7 @@ export default function NewDeal() {
   const [walkthroughDate, setWalkthroughDate] = useState("");
   const [walkthroughTime, setWalkthroughTime] = useState("");
   const [hydrated, setHydrated] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Load draft from sessionStorage when returning from verification or navigating back (NOT for fresh edits from pipeline)
   useEffect(() => {
