@@ -78,6 +78,44 @@ Deno.serve(async (req) => {
     const rooms = await base44.entities.Room.filter({ deal_id: dealId });
     const room = rooms?.[0];
 
+    // Resolve proposed_terms: deal > room > agreement exhibit_a_terms
+    let resolvedTerms = deal.proposed_terms || null;
+    const termsHaveValues = resolvedTerms && Object.values(resolvedTerms).some(v => v !== null && v !== undefined);
+    if (!termsHaveValues && room?.proposed_terms) {
+      const roomHasValues = Object.values(room.proposed_terms).some(v => v !== null && v !== undefined);
+      if (roomHasValues) resolvedTerms = room.proposed_terms;
+    }
+    if (!resolvedTerms || !Object.values(resolvedTerms).some(v => v !== null && v !== undefined)) {
+      // Last resort: check agreement exhibit_a_terms
+      const activeAg = agreements?.find(a => a.status !== 'voided' && a.status !== 'superseded' && a.exhibit_a_terms);
+      if (activeAg?.exhibit_a_terms) {
+        const ex = activeAg.exhibit_a_terms;
+        resolvedTerms = {
+          seller_commission_type: ex.seller_commission_type || null,
+          seller_commission_percentage: ex.seller_commission_percentage ?? null,
+          seller_flat_fee: ex.seller_flat_fee ?? null,
+          buyer_commission_type: ex.buyer_commission_type || null,
+          buyer_commission_percentage: ex.buyer_commission_percentage ?? null,
+          buyer_flat_fee: ex.buyer_flat_fee ?? null,
+          agreement_length: ex.agreement_length_days || ex.agreement_length || null,
+        };
+      }
+    }
+
+    // Resolve walkthrough: deal > DealAppointments
+    let walkthroughScheduled = deal.walkthrough_scheduled ?? null;
+    let walkthroughDatetime = deal.walkthrough_datetime || null;
+    if (!walkthroughScheduled && !walkthroughDatetime) {
+      try {
+        const appts = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: dealId });
+        const appt = appts?.[0];
+        if (appt?.walkthrough && appt.walkthrough.status !== 'NOT_SET' && appt.walkthrough.datetime) {
+          walkthroughScheduled = true;
+          walkthroughDatetime = appt.walkthrough.datetime;
+        }
+      } catch (_) {}
+    }
+
     const base = {
       id: deal.id, title: deal.title, city: deal.city, state: deal.state, county: deal.county, zip: deal.zip,
       purchase_price: deal.purchase_price, pipeline_stage: deal.pipeline_stage, status: deal.status,
@@ -87,9 +125,9 @@ Deno.serve(async (req) => {
       contract_document: deal.contract_document, contract_url: deal.contract_url,
       is_fully_signed: isSigned, investor_full_name: investorName, agent_full_name: agentName,
       investor_contact: investorContact, agent_contact: agentContact,
-      proposed_terms: deal.proposed_terms || null,
-      walkthrough_scheduled: deal.walkthrough_scheduled ?? null,
-      walkthrough_datetime: deal.walkthrough_datetime || null,
+      proposed_terms: resolvedTerms,
+      walkthrough_scheduled: walkthroughScheduled,
+      walkthrough_datetime: walkthroughDatetime,
       room: room ? { id: room.id, proposed_terms: room.proposed_terms || null } : null
     };
 
