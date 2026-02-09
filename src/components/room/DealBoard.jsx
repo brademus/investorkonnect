@@ -117,7 +117,10 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
 
       {/* Agreement Tab */}
       {activeTab === 'agreement' && (
-        <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
+        <div className="space-y-6">
+          <SimpleAgreementPanel dealId={deal?.id || room?.deal_id} roomId={roomId} profile={profile} deal={deal} onInvestorSigned={onInvestorSigned} selectedAgentProfileId={selectedAgentProfileId} />
+          <KeyTermsPanel deal={deal} room={localRoom} profile={profile} selectedAgentId={selectedAgentProfileId} />
+        </div>
       )}
 
       {/* Files Tab */}
