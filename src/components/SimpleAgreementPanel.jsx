@@ -243,30 +243,27 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     } catch (e) { toast.error('Failed to respond'); }
   };
 
-  // Handle post-signing redirect — poll a few times to catch async automation updates
+  // Handle post-signing redirect — immediately fetch latest agreement to show signed status
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1' && dealId) {
-      let attempts = 0;
-      const poll = async () => {
-        attempts++;
-        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
+      const refresh = async () => {
+        // Immediately fetch latest agreement state (pollAndFinalize already confirmed it in DocuSignReturn)
+        const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} }));
         const ag = res?.data?.agreement;
         if (ag) {
           setAgreement(ag);
-          // If investor signed, trigger callback
-          if (ag.investor_signed_at && onInvestorSigned) {
-            onInvestorSigned();
-            return;
-          }
+          if (ag.investor_signed_at && onInvestorSigned) onInvestorSigned();
         }
-        if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }); if (r?.[0]) setRoom(r[0]); }
-        // Retry up to 4 times (total ~10s) since automation may still be processing
-        if (attempts < 4 && (!ag?.investor_signed_at)) {
-          setTimeout(poll, 2500);
-        }
+        if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }).catch(() => []); if (r?.[0]) setRoom(r[0]); }
+
+        // Clean up URL param so it doesn't re-trigger
+        const url = new URL(window.location.href);
+        url.searchParams.delete('signed');
+        window.history.replaceState({}, '', url.toString());
       };
-      setTimeout(poll, 1500);
+      // Small delay to let any final DB writes settle
+      setTimeout(refresh, 500);
     }
   }, [dealId, roomId]);
 
