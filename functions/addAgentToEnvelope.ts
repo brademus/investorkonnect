@@ -129,8 +129,15 @@ Deno.serve(async (req) => {
         console.error('[addAgentToEnvelope] Failed to download signed PDF:', pdfErr);
         return Response.json({ error: 'Failed to download signed document' }, { status: 500 });
       }
-      const pdfBytes = await pdfResp.arrayBuffer();
-      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBytes)));
+      const pdfBytes = new Uint8Array(await pdfResp.arrayBuffer());
+      // Convert to base64 in chunks to avoid max call stack with spread operator
+      let binary = '';
+      const chunkSize = 8192;
+      for (let i = 0; i < pdfBytes.length; i += chunkSize) {
+        const chunk = pdfBytes.subarray(i, i + chunkSize);
+        binary += String.fromCharCode.apply(null, chunk);
+      }
+      const pdfBase64 = btoa(binary);
 
       // Load investor profile for the new envelope
       const invProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agreement.investor_profile_id });
