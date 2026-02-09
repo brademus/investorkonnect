@@ -307,10 +307,8 @@ export default function MyAgreement() {
     );
   }
 
-  // After investor signs, automation will handle deal creation + invites
+  // After investor signs, handle differently for new vs editing deals
   const handlePostSigningNavigation = async () => {
-    console.log('[MyAgreement] Investor signed - automation will create deal and invites');
-
     // Clear sessionStorage
     sessionStorage.removeItem('newDealDraft');
     sessionStorage.removeItem('selectedAgentIds');
@@ -319,13 +317,24 @@ export default function MyAgreement() {
     queryClient.invalidateQueries({ queryKey: ['rooms', profile?.id] });
     queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
 
-    // Show success message
-    toast.success('Agreement signed! Your deal is being created and sent to agents...');
+    if (dealId) {
+      // EDITING: Deal and room already exist. Update the agreement reference.
+      console.log('[MyAgreement] Investor re-signed edited deal - updating agreement links');
+      toast.success('Agreement signed! Sending updated agreement to agents...');
 
-    // Wait for automation to complete, then navigate
-    setTimeout(() => {
-      navigate(createPageUrl('Pipeline'), { replace: true });
-    }, 2000);
+      // Wait briefly for the automation to link things, then navigate
+      setTimeout(() => {
+        navigate(createPageUrl('Pipeline'), { replace: true });
+      }, 2000);
+    } else {
+      // NEW DEAL: automation will create deal and invites
+      console.log('[MyAgreement] Investor signed - automation will create deal and invites');
+      toast.success('Agreement signed! Your deal is being created and sent to agents...');
+
+      setTimeout(() => {
+        navigate(createPageUrl('Pipeline'), { replace: true });
+      }, 2000);
+    }
   };
 
 
