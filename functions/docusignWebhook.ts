@@ -146,7 +146,7 @@ Deno.serve(async (req) => {
     if (eventType === 'signing_complete' || eventType === 'completed' || eventType === 'recipient-completed' || eventType === 'envelope-completed') {
       if (mode === 'investor_only') {
         // Investor signing the initial base agreement
-        const r = recipients.find(r => r.recipientId === '1');
+        const r = recipients.find(r => String(r.recipientId) === String(agreement.investor_recipient_id || '1'));
         if (r?.status === 'completed' && !agreement.investor_signed_at) {
           updates.investor_signed_at = new Date().toISOString();
           updates.status = 'investor_signed';
