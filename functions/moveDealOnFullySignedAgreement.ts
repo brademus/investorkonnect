@@ -26,8 +26,10 @@ Deno.serve(async (req) => {
     const deal = deals?.[0];
     if (!deal) return Response.json({ ok: true });
 
-    // Only move if not already in connected_deals or later
-    if (deal.pipeline_stage === 'connected_deals' || deal.pipeline_stage === 'in_closing' || deal.pipeline_stage === 'completed') {
+    // Only move if still in an early stage (new_deals / new_listings)
+    // Skip if already at connected_deals or any later stage
+    const laterStages = ['connected_deals', 'active_listings', 'ready_to_close', 'in_closing', 'completed', 'canceled'];
+    if (laterStages.includes(deal.pipeline_stage)) {
       console.log('[moveDeal] Deal already in', deal.pipeline_stage, '- skipping');
       return Response.json({ ok: true });
     }
