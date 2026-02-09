@@ -253,20 +253,50 @@ export default function NewDeal() {
             // Load terms from Deal entity first, fallback to Room for backward compatibility
             let terms = deal.proposed_terms;
             
-            // If not on Deal, try loading from Room (backward compatibility)
-            if (!terms) {
+            // If not on Deal (or all values null), try loading from Room
+            const termsHaveValues = terms && Object.values(terms).some(v => v !== null && v !== undefined && v !== '');
+            if (!termsHaveValues) {
               try {
                 const rooms = await base44.entities.Room.filter({ deal_id: dealId });
                 if (rooms.length > 0 && rooms[0].proposed_terms) {
-                  terms = rooms[0].proposed_terms;
-                  console.log('[NewDeal] Loaded terms from Room (backward compatibility):', terms);
-                  
-                  // Migrate: Save to Deal entity for future use
-                  await base44.entities.Deal.update(dealId, { proposed_terms: terms });
-                  console.log('[NewDeal] Migrated terms to Deal entity');
+                  const roomTerms = rooms[0].proposed_terms;
+                  const roomHasValues = Object.values(roomTerms).some(v => v !== null && v !== undefined && v !== '');
+                  if (roomHasValues) {
+                    terms = roomTerms;
+                    console.log('[NewDeal] Loaded terms from Room:', terms);
+                  }
+                }
+                
+                // Last resort: check the LegalAgreement's exhibit_a_terms (authoritative source)
+                const roomTermsHaveValues = terms && Object.values(terms).some(v => v !== null && v !== undefined && v !== '');
+                if (!roomTermsHaveValues) {
+                  const agreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId });
+                  const activeAgreement = agreements.find(a => a.status !== 'voided' && a.status !== 'superseded');
+                  if (activeAgreement?.exhibit_a_terms) {
+                    const ex = activeAgreement.exhibit_a_terms;
+                    terms = {
+                      seller_commission_type: ex.seller_commission_type || null,
+                      seller_commission_percentage: ex.seller_commission_percentage ?? null,
+                      seller_flat_fee: ex.seller_flat_fee ?? null,
+                      buyer_commission_type: ex.buyer_commission_type || null,
+                      buyer_commission_percentage: ex.buyer_commission_percentage ?? null,
+                      buyer_flat_fee: ex.buyer_flat_fee ?? null,
+                      agreement_length: ex.agreement_length_days || ex.agreement_length || null,
+                    };
+                    console.log('[NewDeal] Loaded terms from LegalAgreement exhibit_a_terms:', terms);
+                  }
+                }
+                
+                // Migrate terms to Deal entity for future use
+                if (terms) {
+                  const finalHasValues = Object.values(terms).some(v => v !== null && v !== undefined && v !== '');
+                  if (finalHasValues) {
+                    await base44.entities.Deal.update(dealId, { proposed_terms: terms });
+                    console.log('[NewDeal] Migrated terms to Deal entity');
+                  }
                 }
               } catch (e) {
-                console.error("Failed to load terms from Room:", e);
+                console.error("Failed to load terms from Room/Agreement:", e);
               }
             } else {
               console.log('[NewDeal] Loaded terms from Deal entity:', terms);
