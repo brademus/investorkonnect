@@ -34,40 +34,42 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
         const targetAgentId = selectedAgentId || room.agent_ids?.[0];
         console.log('[KeyTermsPanel] Loading terms for agent:', targetAgentId, 'room:', room?.id);
         
-        // Priority 1: deal.proposed_terms (ALWAYS check this first - authoritative source)
-        if (deal?.proposed_terms && deal.proposed_terms.buyer_commission_type) {
-          terms = deal.proposed_terms;
-          console.log('[KeyTermsPanel] Using deal.proposed_terms (authoritative):', terms);
-        }
-        
-        // Priority 2: AGENT-SPECIFIC terms from room.agent_terms[agentId] (set by counter offer acceptance)
-        if (!terms && room?.agent_terms && typeof room.agent_terms === 'object' && targetAgentId) {
-          if (room.agent_terms[targetAgentId] && room.agent_terms[targetAgentId].buyer_commission_type) {
-            terms = room.agent_terms[targetAgentId];
-            console.log('[KeyTermsPanel] Using room.agent_terms for specific agent:', targetAgentId, terms);
+        // Helper: merge multiple term sources, preferring the first non-null value for each field
+        const mergeTerms = (...sources) => {
+          const fields = ['buyer_commission_type','buyer_commission_percentage','buyer_flat_fee',
+                          'seller_commission_type','seller_commission_percentage','seller_flat_fee',
+                          'agreement_length_days','agreement_length'];
+          const merged = {};
+          let hasAny = false;
+          for (const f of fields) {
+            for (const s of sources) {
+              if (s && s[f] !== null && s[f] !== undefined && s[f] !== '') {
+                merged[f] = s[f];
+                hasAny = true;
+                break;
+              }
+            }
+            if (!merged[f]) merged[f] = null;
           }
-        }
+          return hasAny ? merged : null;
+        };
+
+        // Collect all available term sources in priority order
+        const agentSpecificTerms = (room?.agent_terms && targetAgentId) ? room.agent_terms[targetAgentId] : null;
+        const roomTerms = room?.proposed_terms || null;
+        const dealTerms = deal?.proposed_terms || null;
+        const agreementTerms = agreement?.exhibit_a_terms && (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId)
+          ? agreement.exhibit_a_terms : null;
+
+        // Merge: agent-specific > room > deal > agreement (fills in any null fields from lower-priority sources)
+        terms = mergeTerms(agentSpecificTerms, roomTerms, dealTerms, agreementTerms);
+        console.log('[KeyTermsPanel] Merged terms from all sources:', terms);
         
-        // Priority 3: Room.proposed_terms (original deal terms shared by all agents)
-        if (!terms && room?.proposed_terms && room.proposed_terms.buyer_commission_type) {
-          terms = room.proposed_terms;
-          console.log('[KeyTermsPanel] Using room.proposed_terms (original terms):', terms);
-        }
+        // If still missing seller commission, try fetching from the latest agreement
+        const hasBuyerTerms = terms && terms.buyer_commission_type;
+        const hasSellerTerms = terms && terms.seller_commission_type;
         
-        // Priority 4: Use passed agreement prop IF it's for the selected agent
-        // Only use if we don't already have agent-specific terms
-        if (!terms && agreement?.exhibit_a_terms) {
-          // Verify this agreement is for the correct agent
-          if (!agreement.agent_profile_id || agreement.agent_profile_id === targetAgentId) {
-            terms = agreement.exhibit_a_terms;
-            console.log('[KeyTermsPanel] Using agreement prop exhibit_a_terms:', terms);
-          } else {
-            console.log('[KeyTermsPanel] Skipping agreement - wrong agent:', agreement.agent_profile_id, 'vs', targetAgentId);
-          }
-        }
-        
-        // Priority 5: Fetch the latest non-voided agreement for this SPECIFIC agent's room
-        if (!terms) {
+        if (!terms || (!hasBuyerTerms && !hasSellerTerms)) {
           const dealId = deal?.id || room?.deal_id;
           
           if (dealId && room?.id) {
@@ -89,8 +91,9 @@ export default function KeyTermsPanel({ deal, room, profile, onTermsChange, agre
             const latestAgreement = draftAgreement || sentAgreement || nonVoidedAgreement || agentAgreements[0];
             
             if (latestAgreement?.exhibit_a_terms) {
-              terms = latestAgreement.exhibit_a_terms;
-              console.log('[KeyTermsPanel] Using agreement exhibit_a_terms:', latestAgreement.id, terms);
+              // Merge fetched agreement terms with existing terms (fill gaps)
+              terms = mergeTerms(terms, latestAgreement.exhibit_a_terms);
+              console.log('[KeyTermsPanel] Merged with agreement exhibit_a_terms:', latestAgreement.id, terms);
             }
           }
         }
