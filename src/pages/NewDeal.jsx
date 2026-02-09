@@ -529,16 +529,15 @@ export default function NewDeal() {
 
     // Check for duplicate deal (same investor + property address) for NEW deals only
     if (!dealId && profile?.id) {
-      try {
-        const allMyDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
-        const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
-        const targetAddr = normAddr(propertyAddress);
-        const activeDup = allMyDeals.find(d => d.status !== 'archived' && d.status !== 'closed' && normAddr(d.property_address) === targetAddr);
-        if (activeDup) {
-          toast.error("You already have an active deal for this property address. Please edit the existing deal instead.");
-          return;
-        }
-      } catch (_) {}
+      const allMyDeals = await base44.entities.Deal.filter({ investor_id: profile.id });
+      const normAddr = (s) => (s || '').toLowerCase().trim().replace(/\s+/g, ' ');
+      const targetAddr = normAddr(propertyAddress);
+      const activeDup = allMyDeals.find(d => d.status !== 'archived' && d.status !== 'closed' && normAddr(d.property_address) === targetAddr);
+      if (activeDup) {
+        toast.error("You already have an active deal for this property address. Please edit the existing deal instead.");
+        setSubmitting(false);
+        return;
+      }
     }
 
     // Immediately create a room request so the agent sees it right away (if agent already selected)
