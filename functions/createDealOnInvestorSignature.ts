@@ -124,24 +124,30 @@ Deno.serve(async (req) => {
       }, { status: 400 });
     }
 
-    // CRITICAL: Use agreement exhibit_a_terms as source of truth for commission terms
+    // CRITICAL: Use agreement exhibit_a_terms as source of truth for ALL commission terms
     // The agreement was generated with correct values; the draft may have stale/wrong values
     const exhibitTerms = agreementData.exhibit_a_terms || {};
+    
+    // Normalize draft types (form uses 'flat', DB uses 'flat_fee')
     const draftBuyerType = draft.buyer_commission_type === 'flat' ? 'flat_fee' : (draft.buyer_commission_type || 'percentage');
     const draftSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
     
-    // Prefer agreement exhibit_a_terms over draft for buyer commission (agreement is authoritative)
+    // ALWAYS prefer agreement exhibit_a_terms (source of truth) over draft
     const finalBuyerCommType = exhibitTerms.buyer_commission_type || draftBuyerType;
     const finalBuyerCommPct = exhibitTerms.buyer_commission_percentage ?? draft.buyer_commission_percentage ?? null;
     const finalBuyerFlatFee = exhibitTerms.buyer_flat_fee ?? draft.buyer_flat_fee ?? null;
-    const finalAgreementLength = exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draft.agreement_length || null;
+    const finalSellerCommType = exhibitTerms.seller_commission_type || draftSellerType;
+    const finalSellerCommPct = exhibitTerms.seller_commission_percentage ?? draft.seller_commission_percentage ?? null;
+    const finalSellerFlatFee = exhibitTerms.seller_flat_fee ?? draft.seller_flat_fee ?? null;
+    const finalAgreementLength = exhibitTerms.agreement_length_days || exhibitTerms.agreement_length || draft.agreement_length || 180;
 
     console.log('[createDealOnInvestorSignature] Terms resolution:', {
+      exhibit_terms: exhibitTerms,
+      draft_buyer_type: draft.buyer_commission_type,
       draft_buyer_pct: draft.buyer_commission_percentage,
-      exhibit_buyer_pct: exhibitTerms.buyer_commission_percentage,
-      final_buyer_pct: finalBuyerCommPct,
       draft_agreement_length: draft.agreement_length,
-      exhibit_agreement_length_days: exhibitTerms.agreement_length_days,
+      final_buyer_type: finalBuyerCommType,
+      final_buyer_pct: finalBuyerCommPct,
       final_agreement_length: finalAgreementLength,
     });
 
@@ -175,9 +181,9 @@ Deno.serve(async (req) => {
         second_signer_name: draft.second_signer_name,
       },
       proposed_terms: {
-        seller_commission_type: draftSellerType,
-        seller_commission_percentage: draft.seller_commission_percentage ?? null,
-        seller_flat_fee: draft.seller_flat_fee ?? null,
+        seller_commission_type: finalSellerCommType,
+        seller_commission_percentage: finalSellerCommPct,
+        seller_flat_fee: finalSellerFlatFee,
         buyer_commission_type: finalBuyerCommType,
         buyer_commission_percentage: finalBuyerCommPct,
         buyer_flat_fee: finalBuyerFlatFee,
