@@ -141,7 +141,7 @@ Deno.serve(async (req) => {
 
     const updates = { docusign_status: eventType };
 
-    if (eventType === 'signing_complete' || eventType === 'completed') {
+    if (eventType === 'signing_complete' || eventType === 'completed' || eventType === 'recipient-completed' || eventType === 'envelope-completed') {
       if (mode === 'investor_only') {
         // Investor signing the initial base agreement
         const r = recipients.find(r => r.recipientId === '1');
