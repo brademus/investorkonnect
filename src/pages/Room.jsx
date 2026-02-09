@@ -260,7 +260,7 @@ export default function Room() {
                   {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
                 </div>
               </div>
-              {isInvestor && isSigned && deal?.id && normalizeStage(deal.pipeline_stage) !== 'active_listings' && (
+              {isInvestor && isSigned && deal?.id && !['active_listings', 'in_closing', 'completed'].includes(normalizeStage(deal.pipeline_stage)) && (
                   <button
                     className="inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group border border-[#10B981]/30 rounded-full px-3 py-1.5"
                     onClick={async (e) => {
