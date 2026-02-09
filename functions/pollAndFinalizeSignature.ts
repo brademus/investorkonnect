@@ -77,16 +77,25 @@ Deno.serve(async (req) => {
             break;
           }
         } else if (role === 'agent') {
-          const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id || '1'));
+          const ag = signers.find(s => String(s.recipientId) === String(agreement.agent_recipient_id || '2'));
           if (ag?.status === 'completed') {
             signed = true;
             console.log('[pollAndFinalize] Agent signature confirmed on attempt', i + 1);
             
+            // Check if investor also signed to determine final status
+            const inv = signers.find(s => String(s.recipientId) === String(agreement.investor_recipient_id || '1'));
+            const investorAlsoSigned = inv?.status === 'completed' || !!agreement.investor_signed_at;
+            const finalStatus = investorAlsoSigned ? 'fully_signed' : 'agent_signed';
+            
             const updates = {
               agent_signed_at: ag.signedDateTime || new Date().toISOString(),
-              status: 'fully_signed',
-              docusign_status: 'completed'
+              status: finalStatus,
+              docusign_status: investorAlsoSigned ? 'completed' : 'delivered'
             };
+            // Also capture investor_signed_at if not yet recorded
+            if (inv?.status === 'completed' && !agreement.investor_signed_at) {
+              updates.investor_signed_at = inv.signedDateTime || new Date().toISOString();
+            }
             await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
             Object.assign(agreement, updates);
             break;
