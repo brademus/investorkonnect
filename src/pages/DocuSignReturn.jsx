@@ -44,11 +44,13 @@ export default function DocuSignReturn() {
             } catch (_) {}
           }
 
-          // Investor signing: use pollAndFinalizeSignature to confirm + create deal
-          if (dealId && !roomId && agreementId) {
+          // ALWAYS call pollAndFinalizeSignature to confirm the signature immediately
+          // This ensures the agreement record is updated before we redirect,
+          // so the UI shows the correct signed status right away.
+          if (agreementId) {
             try {
-              console.log('[DocuSignReturn] Calling pollAndFinalizeSignature for agreement:', agreementId);
-              setMessage("Confirming signature and creating deal...");
+              console.log('[DocuSignReturn] Calling pollAndFinalizeSignature for agreement:', agreementId, 'role:', signingRole);
+              setMessage("Confirming signature...");
               
               const result = await base44.functions.invoke('pollAndFinalizeSignature', {
                 agreement_id: agreementId,
@@ -57,43 +59,47 @@ export default function DocuSignReturn() {
               
               console.log('[DocuSignReturn] pollAndFinalize result:', result.data);
 
-              const roomId_result = result.data?.room_id;
-              const dealId_result = result.data?.deal_id;
+              // For investor signing without a room: handle deal creation flow
+              if (signingRole === 'investor' && !roomId) {
+                const roomId_result = result.data?.room_id;
+                const dealId_result = result.data?.deal_id;
 
-              if (roomId_result) {
-                toast.success('Deal created and sent to agents!');
-                sessionStorage.removeItem('selectedAgentIds');
-                sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
-                sessionStorage.removeItem('newDealDraft');
-                navigate(`${createPageUrl("Room")}?roomId=${roomId_result}`, { replace: true });
-                return;
-              } else if (dealId_result) {
-                toast.success('Deal created! Redirecting...');
-                sessionStorage.removeItem('newDealDraft');
-                sessionStorage.removeItem('selectedAgentIds');
-                navigate(createPageUrl("Pipeline"), { replace: true });
-                return;
-              } else {
-                // Pending - webhook will handle, redirect to pipeline
-                toast.success('Agreement signed! Processing...');
-                sessionStorage.removeItem('newDealDraft');
-                sessionStorage.removeItem('selectedAgentIds');
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                navigate(createPageUrl("Pipeline"), { replace: true });
+                if (roomId_result) {
+                  toast.success('Deal created and sent to agents!');
+                  sessionStorage.removeItem('selectedAgentIds');
+                  sessionStorage.removeItem(`selectedAgentIds_${dealId}`);
+                  sessionStorage.removeItem('newDealDraft');
+                  navigate(`${createPageUrl("Room")}?roomId=${roomId_result}`, { replace: true });
+                  return;
+                } else if (dealId_result) {
+                  toast.success('Deal created! Redirecting...');
+                  sessionStorage.removeItem('newDealDraft');
+                  sessionStorage.removeItem('selectedAgentIds');
+                  navigate(createPageUrl("Pipeline"), { replace: true });
+                  return;
+                } else {
+                  toast.success('Agreement signed! Processing...');
+                  sessionStorage.removeItem('newDealDraft');
+                  sessionStorage.removeItem('selectedAgentIds');
+                  await new Promise(resolve => setTimeout(resolve, 2000));
+                  navigate(createPageUrl("Pipeline"), { replace: true });
+                  return;
+                }
+              }
+
+              // For agent signing: signature is now confirmed in the DB
+              if (signingRole === 'agent' && roomId) {
+                toast.success('Agreement signed successfully!');
+                navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
                 return;
               }
             } catch (pollError) {
               console.error('[DocuSignReturn] pollAndFinalize failed:', pollError);
-              toast.success('Agreement signed! Redirecting to pipeline...');
-              sessionStorage.removeItem('newDealDraft');
-              sessionStorage.removeItem('selectedAgentIds');
-              await new Promise(resolve => setTimeout(resolve, 1500));
-              navigate(createPageUrl("Pipeline"), { replace: true });
-              return;
+              // Continue to fallback redirect below
             }
           }
 
-          // Agent signing regenerated: void old agreement in this room only
+          // Fallback: void old agreements if applicable
           if (roomId && dealId) {
             try {
               const latest = await base44.entities.LegalAgreement.filter({ 
@@ -113,7 +119,8 @@ export default function DocuSignReturn() {
             }
           }
           
-          // Redirect to room or pipeline
+          // Fallback redirect to room or pipeline
+          toast.success('Agreement signed!');
           await new Promise(resolve => setTimeout(resolve, 1000));
           if (roomId) {
             navigate(`${createPageUrl("Room")}?roomId=${roomId}&dealId=${dealId || ''}&tab=agreement&signed=1`, { replace: true });
