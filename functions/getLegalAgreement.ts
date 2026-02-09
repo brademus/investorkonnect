@@ -30,19 +30,40 @@ Deno.serve(async (req) => {
     const callerProfile = profiles?.[0];
     const callerIsAgent = callerProfile?.user_role === 'agent';
 
-    // 1. For AGENTS: use the DealInvite.legal_agreement_id as source of truth.
-    //    Each agent may have their own agreement (e.g. after counter offer regeneration).
-    //    Agents who didn't counter should still see the original investor-signed agreement.
+    // 1. For AGENTS: prefer the investor-signed agreement so the agent signs the SAME envelope.
+    //    If the agent has a regenerated agreement (after counter-offer), use that instead.
+    //    But never use an agent_only agreement that has no investor signature.
     if (callerIsAgent && callerProfile && room_id) {
+      // First check for agent-specific regenerated agreement (counter-offer flow)
       const invites = await base44.asServiceRole.entities.DealInvite.filter({
         deal_id, agent_profile_id: callerProfile.id
       });
       const myInvite = invites?.[0];
       if (myInvite?.legal_agreement_id) {
         const arr = await base44.asServiceRole.entities.LegalAgreement.filter({ id: myInvite.legal_agreement_id });
-        if (arr?.[0] && !['superseded', 'voided'].includes(arr[0].status)) {
-          agreement = arr[0];
-          console.log('[getLegalAgreement] Agent-specific agreement from invite:', agreement.id, 'status:', agreement.status);
+        const inviteAgreement = arr?.[0];
+        if (inviteAgreement && !['superseded', 'voided'].includes(inviteAgreement.status)) {
+          // Only use this if it has investor signature or is mode 'both' — never use stale agent_only
+          if (inviteAgreement.investor_signed_at || inviteAgreement.signer_mode === 'both') {
+            agreement = inviteAgreement;
+            console.log('[getLegalAgreement] Agent-specific agreement from invite:', agreement.id, 'status:', agreement.status);
+          } else {
+            console.log('[getLegalAgreement] Invite agreement', inviteAgreement.id, 'is', inviteAgreement.signer_mode, 'without investor sig — skipping, will find investor-signed one');
+          }
+        }
+      }
+
+      // If no valid agent-specific agreement, find the investor-signed agreement for this deal/room
+      if (!agreement) {
+        const allAg = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id }, '-created_date', 10);
+        const investorSigned = allAg.find(a =>
+          a.investor_signed_at &&
+          a.docusign_envelope_id &&
+          !['superseded', 'voided'].includes(a.status)
+        );
+        if (investorSigned) {
+          agreement = investorSigned;
+          console.log('[getLegalAgreement] Using investor-signed agreement for agent:', agreement.id);
         }
       }
     }
