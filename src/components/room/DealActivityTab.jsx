@@ -100,8 +100,8 @@ export default function DealActivityTab({ dealId, roomId }) {
       });
     }
 
-    // Sort oldest first (chronological order)
-    events.sort((a, b) => new Date(a.date) - new Date(b.date));
+    // Sort newest first (reverse chronological order)
+    events.sort((a, b) => new Date(b.date) - new Date(a.date));
     const seen = new Set();
     const deduped = events.filter(e => {
       if (!e.date) return false;
