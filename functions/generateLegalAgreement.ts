@@ -241,8 +241,10 @@ Deno.serve(async (req) => {
       const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
       room = rooms?.[0];
       if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
+      // Use explicit agent_profile_id if provided (e.g. regeneration for a specific agent)
       const agentId = body.agent_profile_id || room.agent_ids?.[0];
       if (!agentId) return Response.json({ error: 'No agent in room' }, { status: 400 });
+      console.log(`[genAgreement] Resolved agentId: ${agentId} (explicit: ${!!body.agent_profile_id})`);
       // Merge room terms
       const agentTerms = room.agent_terms?.[agentId];
       if (agentTerms) exhibit_a = { ...exhibit_a, ...agentTerms };
