@@ -189,9 +189,10 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: dealData.walkthroughScheduled === true ? true : false,
+            walkthrough_scheduled: !!(dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true),
             walkthrough_datetime: (() => {
-              if (dealData.walkthroughScheduled !== true || !dealData.walkthroughDate) return null;
+              const wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true;
+              if (!wtScheduled || (!dealData.walkthroughDate && !dealData.walkthrough_datetime)) return dealData.walkthrough_datetime || null;
               try {
                 // Parse MM/DD/YYYY date + HH:MM AM/PM time robustly
                 const dateStr = dealData.walkthroughDate;
