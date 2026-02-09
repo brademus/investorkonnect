@@ -277,8 +277,8 @@ export default function Room() {
                       } catch (e) { toast.error("Failed to update stage"); }
                     }}
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
-                    Agreement Listed
+                    Has this agreement been listed?
+                    <CheckCircle2 className="w-4 h-4 group-hover:scale-125 transition-transform" />
                   </button>
                 );
               })()}
