@@ -7,14 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 
 export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roomId, profile, onScheduled }) {
-  const [datetime, setDatetime] = useState("");
+  const [date, setDate] = useState("");
+  const [time, setTime] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleSubmit = async () => {
-    if (!datetime) { toast.error("Please select a date and time"); return; }
+    if (!date) { toast.error("Please enter a date"); return; }
     setSaving(true);
     try {
-      const isoDatetime = new Date(datetime).toISOString();
+      const isoDatetime = new Date(date + ' ' + (time || '12:00 PM')).toISOString();
 
       // Update the deal
       await base44.entities.Deal.update(deal.id, {
@@ -23,7 +24,7 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
       });
 
       // Send a system-style message to the room so the agent sees it
-      const formatted = new Date(datetime).toLocaleString('en-US', {
+      const formatted = new Date(date + ' ' + (time || '12:00 PM')).toLocaleString('en-US', {
         weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
         hour: 'numeric', minute: '2-digit'
       });
@@ -41,7 +42,8 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
       toast.success("Walk-through request sent!");
       onScheduled?.({ walkthrough_scheduled: true, walkthrough_datetime: isoDatetime });
       onOpenChange(false);
-      setDatetime("");
+      setDate("");
+      setTime("");
     } catch (e) {
       toast.error("Failed to schedule walk-through");
     } finally {
@@ -62,14 +64,27 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
           <p className="text-sm text-[#808080]">
             Select your preferred date and time. The agent will be notified and can confirm or suggest an alternative.
           </p>
-          <div>
-            <label className="text-xs text-[#808080] mb-1 block">Date & Time</label>
-            <Input
-              type="datetime-local"
-              value={datetime}
-              onChange={e => setDatetime(e.target.value)}
-              className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-xs text-[#808080] mb-1 block">Date</label>
+              <Input
+                type="text"
+                value={date}
+                onChange={e => setDate(e.target.value)}
+                placeholder="MM/DD/YYYY"
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-[#808080] mb-1 block">Time</label>
+              <Input
+                type="text"
+                value={time}
+                onChange={e => setTime(e.target.value)}
+                placeholder="00:00 AM/PM"
+                className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] focus:border-[#E3C567]"
+              />
+            </div>
           </div>
           <div className="flex gap-3 pt-2">
             <Button
@@ -81,7 +96,7 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={saving || !datetime}
+              disabled={saving || !date}
               className="flex-1 bg-[#E3C567] hover:bg-[#EDD89F] text-black rounded-full font-semibold"
             >
               {saving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
