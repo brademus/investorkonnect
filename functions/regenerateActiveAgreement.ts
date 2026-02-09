@@ -86,6 +86,7 @@ Deno.serve(async (req) => {
     const payload = {
       deal_id, room_id: room_id || null,
       signer_mode: signerMode,
+      agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
       exhibit_a: {
         buyer_commission_type: terms.buyer_commission_type,
         buyer_commission_percentage: terms.buyer_commission_percentage || null,
