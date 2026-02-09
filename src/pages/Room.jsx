@@ -6,9 +6,10 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useRooms } from "@/components/useRooms";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Menu, Send, ArrowLeft, FileText, Shield, User, Users } from "lucide-react";
+import { Menu, Send, ArrowLeft, FileText, Shield, User, Users, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 
+import { PIPELINE_STAGES, normalizeStage } from "@/components/pipelineStages";
 import RoomSidebar from "@/components/room/RoomSidebar";
 import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
@@ -257,6 +258,28 @@ export default function Room() {
                 <span className="text-[#CCC]">{[currentRoom.city, currentRoom.state].filter(Boolean).join(', ')}</span>
                 {currentRoom.budget > 0 && <><span className="text-[#333]">|</span><span className="text-[#34D399] font-mono">${currentRoom.budget.toLocaleString()}</span></>}
               </div>
+              {isInvestor && isSigned && deal && (() => {
+                const currentStage = normalizeStage(deal.pipeline_stage);
+                const idx = PIPELINE_STAGES.findIndex(s => s.id === currentStage);
+                const nextStage = idx >= 0 && idx < PIPELINE_STAGES.length - 2 ? PIPELINE_STAGES[idx + 1] : null;
+                if (!nextStage) return null;
+                return (
+                  <button
+                    className="mt-2 inline-flex items-center gap-1.5 text-xs font-medium text-[#10B981] hover:text-[#34D399] transition-colors group"
+                    onClick={async () => {
+                      try {
+                        await base44.entities.Deal.update(deal.id, { pipeline_stage: nextStage.id });
+                        setDeal(prev => ({ ...prev, pipeline_stage: nextStage.id }));
+                        queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] });
+                        toast.success(`Moved to ${nextStage.label}`);
+                      } catch (e) { toast.error("Failed to update stage"); }
+                    }}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                    Agreement Listed — Move to {nextStage.label}
+                  </button>
+                );
+              })()}
             </div>
             {isSigned && (
               <CounterpartyInfoBar
