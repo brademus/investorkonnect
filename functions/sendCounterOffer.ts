@@ -40,23 +40,28 @@ Deno.serve(async (req) => {
     const fromRole = isInvestor ? 'investor' : 'agent';
     const toRole = isInvestor ? 'agent' : 'investor';
 
-    // Supersede any existing pending counters in this room
+    // Supersede any existing pending counters in this room FROM this specific profile
+    // (not all pending counters — other agents may have their own pending counters)
     const existingCounters = await base44.asServiceRole.entities.CounterOffer.filter({
       room_id: room_id,
       status: 'pending'
     });
     for (const counter of existingCounters) {
-      await base44.asServiceRole.entities.CounterOffer.update(counter.id, {
-        status: 'superseded'
-      });
+      // Only supersede counters from the same profile (agent-specific)
+      if (counter.from_profile_id === profile.id || (!counter.from_profile_id && counter.from_role === fromRole)) {
+        await base44.asServiceRole.entities.CounterOffer.update(counter.id, {
+          status: 'superseded'
+        });
+      }
     }
 
-    // Create new counter offer
+    // Create new counter offer with profile IDs for agent-specific tracking
     const counter = await base44.asServiceRole.entities.CounterOffer.create({
       deal_id,
       room_id,
       from_role: fromRole,
       to_role: toRole,
+      from_profile_id: profile.id,
       status: 'pending',
       terms_delta: new_terms
     });
