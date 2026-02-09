@@ -36,60 +36,59 @@ Deno.serve(async (req) => {
       responded_by_role: counter.to_role
     });
     
-    // CRITICAL: When counter is accepted, update room to require regeneration
+    // CRITICAL: When counter is accepted, update ONLY the specific agent's terms (not all agents)
     if (action === 'accept' && counter.room_id) {
       try {
-        // Get the room to update proposed_terms with counter terms
         const rooms = await base44.asServiceRole.entities.Room.filter({ id: counter.room_id });
         const room = rooms[0];
         
         if (room) {
-          // Merge counter terms into room's proposed_terms
-          const updatedTerms = {
-            ...(room.proposed_terms || {}),
-            ...(counter.terms_delta || {})
-          };
-          
-          // Also update agent_terms for each agent in the room
+          // Determine which agent this counter is for
+          // If the counter is from_role=agent, the agent sent it — find which agent via DealInvite
+          // If the counter is from_role=investor, the investor sent it to a specific agent
+          let targetAgentId = null;
+
+          // Find the DealInvite for this room to identify the specific agent
+          if (counter.deal_id) {
+            const invites = await base44.asServiceRole.entities.DealInvite.filter({
+              deal_id: counter.deal_id,
+              room_id: counter.room_id
+            });
+            if (invites?.[0]) {
+              targetAgentId = invites[0].agent_profile_id;
+            }
+          }
+
+          // Fallback: if room only has one agent, use that
+          if (!targetAgentId && room.agent_ids?.length === 1) {
+            targetAgentId = room.agent_ids[0];
+          }
+
+          console.log('[respondToCounterOffer] Target agent for counter:', targetAgentId);
+
+          // Only update agent_terms for THIS specific agent, leave others untouched
           const updatedAgentTerms = { ...(room.agent_terms || {}) };
-          for (const agentId of Object.keys(updatedAgentTerms)) {
-            updatedAgentTerms[agentId] = {
-              ...(updatedAgentTerms[agentId] || {}),
+          if (targetAgentId) {
+            updatedAgentTerms[targetAgentId] = {
+              ...(updatedAgentTerms[targetAgentId] || room.proposed_terms || {}),
               ...(counter.terms_delta || {})
             };
           }
           
+          // Update room: set requires_regenerate and agent-specific terms
+          // DO NOT update room.proposed_terms — that stays as the original deal terms for other agents
           await base44.asServiceRole.entities.Room.update(counter.room_id, {
             requires_regenerate: true,
-            proposed_terms: updatedTerms,
             agent_terms: updatedAgentTerms,
             agreement_status: 'draft' // Reset to draft since terms changed
           });
           
-          console.log('[respondToCounterOffer] Room updated with requires_regenerate=true and new terms:', JSON.stringify(updatedTerms));
+          console.log('[respondToCounterOffer] Room updated — only agent', targetAgentId, 'terms changed:', JSON.stringify(updatedAgentTerms[targetAgentId]));
           
-          // Also update the Deal entity's proposed_terms so all views stay in sync
-          if (counter.deal_id) {
-            try {
-              const deals = await base44.asServiceRole.entities.Deal.filter({ id: counter.deal_id });
-              if (deals?.[0]) {
-                const dealTerms = {
-                  ...(deals[0].proposed_terms || {}),
-                  ...(counter.terms_delta || {})
-                };
-                await base44.asServiceRole.entities.Deal.update(counter.deal_id, {
-                  proposed_terms: dealTerms
-                });
-                console.log('[respondToCounterOffer] Deal proposed_terms synced');
-              }
-            } catch (de) {
-              console.warn('[respondToCounterOffer] Failed to sync deal terms:', de.message);
-            }
-          }
+          // DO NOT update Deal.proposed_terms — those are the original terms shared by all agents
         }
       } catch (e) {
         console.error('[respondToCounterOffer] Failed to update room:', e);
-        // Don't fail the whole request if room update fails
       }
     }
     

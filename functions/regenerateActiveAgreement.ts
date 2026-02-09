@@ -32,8 +32,29 @@ Deno.serve(async (req) => {
     if (!deal) return Response.json({ error: 'Deal not found' }, { status: 404 });
     if (!caller) return Response.json({ error: 'Profile not found' }, { status: 403 });
 
-    // Resolve terms from room or deal
-    const terms = room?.proposed_terms || deal?.proposed_terms || {};
+    // Resolve terms: prefer agent-specific terms over room.proposed_terms
+    // Determine which agent this regeneration is for
+    let targetAgentId = null;
+    if (room_id && room) {
+      // Find the DealInvite for this room to get the specific agent
+      const invites = await base44.asServiceRole.entities.DealInvite.filter({
+        deal_id: deal_id,
+        room_id: room_id
+      });
+      if (invites?.[0]) targetAgentId = invites[0].agent_profile_id;
+      // Fallback: single agent in room
+      if (!targetAgentId && room.agent_ids?.length === 1) targetAgentId = room.agent_ids[0];
+    }
+
+    // Priority: agent-specific terms > room.proposed_terms > deal.proposed_terms
+    let terms = {};
+    if (targetAgentId && room?.agent_terms?.[targetAgentId]?.buyer_commission_type) {
+      terms = room.agent_terms[targetAgentId];
+      console.log('[regenerate] Using agent-specific terms for', targetAgentId, ':', JSON.stringify(terms));
+    } else {
+      terms = room?.proposed_terms || deal?.proposed_terms || {};
+      console.log('[regenerate] Using room/deal proposed_terms:', JSON.stringify(terms));
+    }
     if (!terms.buyer_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
 
     // Determine signer mode
