@@ -157,7 +157,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
       sharedFiles.push({ name, url, source });
     }
   };
-  addShared('Internal Agreement', internalAgreementUrl, 'system');
+  addShared(agreementLabel.includes('Signed') ? 'Internal Agreement (Signed)' : 'Internal Agreement', internalAgreementUrl, 'system');
   addShared("Seller's Contract", sellerContractUrl, 'system');
   (localRoom?.files || []).forEach(f => addShared(f.name, f.url, f.uploaded_by_name || 'User'));
   messageFiles.forEach(f => addShared(f.name, f.url, 'Message'));
@@ -178,7 +178,7 @@ export default function FilesTab({ deal, room, roomId, profile }) {
           <DocRow
             label="Internal Agreement (IOA)"
             url={internalAgreementUrl}
-            filename={resolved.internalAgreement?.filename || 'Legal Agreement'}
+            filename={agreementLabel}
             verified={true}
             available={!!internalAgreementUrl}
           />
