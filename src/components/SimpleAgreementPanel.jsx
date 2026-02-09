@@ -38,7 +38,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       const [agRes, roomRes, counterRes] = await Promise.all([
         base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId }).catch(() => ({ data: {} })),
         roomId ? base44.entities.Room.filter({ id: roomId }).catch(() => []) : Promise.resolve([]),
-        roomId ? base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }).catch(() => []) : Promise.resolve([])
+        roomId ? base44.entities.CounterOffer.filter({ room_id: roomId, status: 'pending' }, '-created_date', 50).catch(() => []) : Promise.resolve([])
       ]);
       if (cancelled) return;
       if (agRes?.data?.agreement) setAgreement(agRes.data.agreement);
