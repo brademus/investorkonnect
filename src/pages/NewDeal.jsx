@@ -595,7 +595,13 @@ export default function NewDeal() {
     // For new deals, also save walkthrough info to sessionStorage so ContractVerify can use it
     sessionStorage.setItem('newDealWalkthrough', JSON.stringify({
       walkthrough_scheduled: walkthroughScheduled === true,
-      walkthrough_datetime: walkthroughScheduled === true && walkthroughDate ? new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM')).toISOString() : null
+      walkthrough_datetime: (() => {
+        if (walkthroughScheduled !== true || !walkthroughDate) return null;
+        try {
+          const d = new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM'));
+          return isNaN(d.getTime()) ? null : d.toISOString();
+        } catch { return null; }
+      })()
     }));
 
     // Navigate with dealId if editing
