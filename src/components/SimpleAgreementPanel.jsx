@@ -220,20 +220,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
           const prepRes = await base44.functions.invoke('addAgentToEnvelope', {
             agreement_id: targetId, room_id: roomId
           });
-          // If envelope is completed/locked, regenerate a new one for the agent
-          if (prepRes.data?.code === 'ENVELOPE_COMPLETED_REGEN_REQUIRED' || prepRes.status === 409) {
-            console.log('[SimpleAgreementPanel] Envelope locked, regenerating for agent');
-            toast.info('Regenerating agreement for your signature...');
-            const regenRes = await base44.functions.invoke('regenerateActiveAgreement', {
-              deal_id: dealId, room_id: roomId
-            });
-            if (regenRes.data?.error) { toast.error(regenRes.data.error); setBusy(false); return; }
-            if (regenRes.data?.agreement) {
-              targetId = regenRes.data.agreement.id;
-              setAgreement(regenRes.data.agreement);
-              await new Promise(r => setTimeout(r, 2000));
-            }
-          } else if (prepRes.data?.error) {
+          if (prepRes.data?.error) {
             toast.error(prepRes.data.error);
             setBusy(false);
             return;
