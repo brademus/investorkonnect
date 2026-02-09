@@ -160,17 +160,30 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     } catch (e) { toast.error('Failed to respond'); }
   };
 
-  // Handle post-signing redirect
+  // Handle post-signing redirect — poll a few times to catch async automation updates
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('signed') === '1' && dealId) {
-      const refresh = async () => {
-        await new Promise(r => setTimeout(r, 1500));
+      let attempts = 0;
+      const poll = async () => {
+        attempts++;
         const res = await base44.functions.invoke('getLegalAgreement', { deal_id: dealId, room_id: roomId });
-        if (res?.data?.agreement) setAgreement(res.data.agreement);
+        const ag = res?.data?.agreement;
+        if (ag) {
+          setAgreement(ag);
+          // If investor signed, trigger callback
+          if (ag.investor_signed_at && onInvestorSigned) {
+            onInvestorSigned();
+            return;
+          }
+        }
         if (roomId) { const r = await base44.entities.Room.filter({ id: roomId }); if (r?.[0]) setRoom(r[0]); }
+        // Retry up to 4 times (total ~10s) since automation may still be processing
+        if (attempts < 4 && (!ag?.investor_signed_at)) {
+          setTimeout(poll, 2500);
+        }
       };
-      refresh();
+      setTimeout(poll, 1500);
     }
   }, [dealId, roomId]);
 
