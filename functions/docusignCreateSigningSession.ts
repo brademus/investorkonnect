@@ -86,7 +86,10 @@ Deno.serve(async (req) => {
       if (Object.keys(updates).length) {
         const invS = !!(updates.investor_signed_at || agreement.investor_signed_at);
         const agS = !!(updates.agent_signed_at || agreement.agent_signed_at);
-        updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : 'agent_signed';
+        // Only mark fully_signed when BOTH parties have actually signed
+        updates.status = invS && agS ? 'fully_signed' : invS ? 'investor_signed' : agS ? 'agent_signed' : agreement.status;
+        // Don't set docusign_status to completed until both sign
+        updates.docusign_status = (invS && agS) ? 'completed' : 'delivered';
         await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
         Object.assign(agreement, updates);
         // Also sync room agreement_status
