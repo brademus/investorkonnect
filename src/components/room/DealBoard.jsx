@@ -10,7 +10,7 @@ import DealAppointmentsCard from "@/components/appointments/DealAppointmentsCard
 import { PIPELINE_STAGES, normalizeStage, stageOrder } from "@/components/pipelineStages";
 import { buildUnifiedFilesList } from "@/components/utils/dealDocuments";
 import { validateImage, validateSafeDocument } from "@/components/utils/fileValidation";
-import DealActivityTab from "@/components/room/DealActivityTab";
+import DealActivityTab from "@/components/room/DealActivityTab.jsx";
 
 export default function DealBoard({ deal, room, profile, roomId, onInvestorSigned, selectedAgentProfileId }) {
   const [activeTab, setActiveTab] = useState('details');
