@@ -36,9 +36,11 @@ export default function MyAgreement() {
       try {
         let dealData = null;
         let agentIds = [];
+        let existingRoom = null;
+        const isEditingExistingDeal = !!dealId;
 
         // If editing existing deal, load from database
-        if (dealId) {
+        if (isEditingExistingDeal) {
           console.log('[MyAgreement] Loading existing deal from database:', dealId);
           const deals = await base44.entities.Deal.filter({ id: dealId });
           if (!deals?.length) {
@@ -84,6 +86,34 @@ export default function MyAgreement() {
           };
           agentIds = dealData.selectedAgentIds;
           console.log('[MyAgreement] Loaded deal data:', { buyerCommissionPercentage: dealData.buyerCommissionPercentage, agreementLength: dealData.agreementLength });
+
+          // Load existing room for this deal
+          const rooms = await base44.entities.Room.filter({ deal_id: dealId });
+          if (rooms?.length) {
+            existingRoom = rooms[0];
+            setRoom(existingRoom);
+            console.log('[MyAgreement] Found existing room:', existingRoom.id);
+          }
+
+          // Void all old non-voided agreements for this deal
+          const oldAgreements = await base44.entities.LegalAgreement.filter({ deal_id: dealId });
+          for (const ag of oldAgreements) {
+            if (ag.status !== 'voided' && ag.status !== 'superseded') {
+              await base44.entities.LegalAgreement.update(ag.id, { status: 'voided' });
+              console.log('[MyAgreement] Voided old agreement:', ag.id);
+            }
+          }
+
+          // Clear deal's current_legal_agreement_id since we'll generate a new one
+          await base44.entities.Deal.update(dealId, { current_legal_agreement_id: null });
+          if (existingRoom) {
+            await base44.entities.Room.update(existingRoom.id, { 
+              current_legal_agreement_id: null,
+              agreement_status: 'draft',
+              requires_regenerate: false
+            });
+          }
+
         } else {
           // New deal - load from sessionStorage
           const draftData = sessionStorage.getItem('newDealDraft');
@@ -102,11 +132,7 @@ export default function MyAgreement() {
           return;
         }
 
-        // Create Deal entity with proposed_terms (buyer commission) for agreement generation
-        const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
-        
         // Build proposed_terms from deal data
-        // CRITICAL: NewDeal saves commission type as 'percentage' or 'flat', normalize here
         const buyerCommType = dealData.buyerCommissionType || 'percentage';
         const sellerCommType = dealData.sellerCommissionType || 'percentage';
         const proposedTerms = {
@@ -118,51 +144,62 @@ export default function MyAgreement() {
           buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
           agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null
         };
-        
-        // Create DealDraft so automation can find it after investor signs
-        const draftCreated = await base44.entities.DealDraft.create({
-          investor_profile_id: profile.id,
-          property_address: dealData.propertyAddress,
-          city: dealData.city,
-          state: dealData.state,
-          zip: dealData.zip,
-          county: dealData.county,
-          purchase_price: Number(cleanedPrice),
-          property_type: dealData.propertyType || null,
-          beds: dealData.beds ? Number(dealData.beds) : null,
-          baths: dealData.baths ? Number(dealData.baths) : null,
-          sqft: dealData.sqft ? Number(dealData.sqft) : null,
-          year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
-          number_of_stories: dealData.numberOfStories || null,
-          has_basement: dealData.hasBasement || null,
-          seller_name: dealData.sellerName,
-          earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
-          number_of_signers: dealData.numberOfSigners,
-          second_signer_name: dealData.secondSignerName,
-          buyer_commission_type: buyerCommType,
-          buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
-          buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
-          agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
-          contract_url: dealData.contractUrl || null,
-          special_notes: dealData.specialNotes || null,
-          closing_date: dealData.closingDate,
-          contract_date: dealData.contractDate,
-          selected_agent_ids: agentIds,
-          seller_commission_type: sellerCommType,
-          seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
-          seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null
-        });
 
-        console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+        if (isEditingExistingDeal) {
+          // EDITING: Don't create DealDraft. Use existing deal ID directly.
+          // The SimpleAgreementPanel will generate a new agreement linked to this deal.
+          setDraft({ id: dealId }); // Use deal ID as the "draft" reference for agreement generation
+          setDeal({ 
+            ...dealData, 
+            proposed_terms: proposedTerms,
+            investor_id: profile.id,
+            draft_id: dealId
+          });
+        } else {
+          // NEW DEAL: Create DealDraft so automation can find it after investor signs
+          const cleanedPrice = String(dealData.purchasePrice || "").replace(/[$,\s]/g, "").trim();
+          const draftCreated = await base44.entities.DealDraft.create({
+            investor_profile_id: profile.id,
+            property_address: dealData.propertyAddress,
+            city: dealData.city,
+            state: dealData.state,
+            zip: dealData.zip,
+            county: dealData.county,
+            purchase_price: Number(cleanedPrice),
+            property_type: dealData.propertyType || null,
+            beds: dealData.beds ? Number(dealData.beds) : null,
+            baths: dealData.baths ? Number(dealData.baths) : null,
+            sqft: dealData.sqft ? Number(dealData.sqft) : null,
+            year_built: dealData.yearBuilt ? Number(dealData.yearBuilt) : null,
+            number_of_stories: dealData.numberOfStories || null,
+            has_basement: dealData.hasBasement || null,
+            seller_name: dealData.sellerName,
+            earnest_money: dealData.earnestMoney ? Number(dealData.earnestMoney) : null,
+            number_of_signers: dealData.numberOfSigners,
+            second_signer_name: dealData.secondSignerName,
+            buyer_commission_type: buyerCommType,
+            buyer_commission_percentage: buyerCommType === 'percentage' ? Number(dealData.buyerCommissionPercentage) : null,
+            buyer_flat_fee: (buyerCommType === 'flat' || buyerCommType === 'flat_fee') ? Number(dealData.buyerFlatFee) : null,
+            agreement_length: dealData.agreementLength ? Number(dealData.agreementLength) : null,
+            contract_url: dealData.contractUrl || null,
+            special_notes: dealData.specialNotes || null,
+            closing_date: dealData.closingDate,
+            contract_date: dealData.contractDate,
+            selected_agent_ids: agentIds,
+            seller_commission_type: sellerCommType,
+            seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
+            seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null
+          });
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+          setDraft(draftCreated);
+          setDeal({ 
+            ...dealData, 
+            proposed_terms: proposedTerms,
+            investor_id: profile.id,
+            draft_id: draftCreated.id
+          });
+        }
 
-        // Store deal data in state with draft reference
-        setDraft(draftCreated);
-        setDeal({ 
-          ...dealData, 
-          proposed_terms: proposedTerms,
-          investor_id: profile.id,
-          draft_id: draftCreated.id
-        });
         setSelectedAgentIds(agentIds);
 
         // Load agent profiles
