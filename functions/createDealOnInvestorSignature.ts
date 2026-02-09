@@ -103,6 +103,14 @@ Deno.serve(async (req) => {
         });
         console.log('[createDealOnInvestorSignature] Updated room:', room.id, 'with new agreement');
 
+        // CRITICAL: Link the agreement to the room so Room-page subscriptions can find it
+        if (!agreementData.room_id) {
+          await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, {
+            room_id: room.id
+          });
+          console.log('[createDealOnInvestorSignature] Linked agreement', agreementData.id, 'to room', room.id);
+        }
+
         // Update existing DealInvites to point to the new agreement and reset status
         const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: existingDeal.id });
         for (const invite of existingInvites) {
