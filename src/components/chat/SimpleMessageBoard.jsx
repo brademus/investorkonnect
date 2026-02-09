@@ -88,6 +88,21 @@ export default function SimpleMessageBoard({ roomId, profile, user, isChatEnable
           body: `${type === 'photo' ? '📷' : '📎'} ${file.name}`,
           metadata: { type, file_url, file_name: file.name, file_type: file.type, file_size: file.size }
         });
+        // Also save photos to room.photos so they appear in the Photos tab
+        if (type === 'photo') {
+          try {
+            const roomArr = await base44.entities.Room.filter({ id: roomId });
+            const rm = roomArr?.[0];
+            if (rm) {
+              const existing = rm.photos || [];
+              if (!existing.some(p => p.url === file_url)) {
+                await base44.entities.Room.update(roomId, {
+                  photos: [...existing, { name: file.name, url: file_url, uploaded_by: profile?.id, uploaded_by_name: profile?.full_name || profile?.email, uploaded_at: new Date().toISOString() }]
+                });
+              }
+            }
+          } catch (_) { /* non-critical */ }
+        }
         toast.success('Uploaded');
       } catch (_) { toast.error('Upload failed'); }
     };
