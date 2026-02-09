@@ -69,7 +69,7 @@ export default function WalkthroughMessageCard({ message, isAgent, isRecipient, 
         <span className="text-[#808080]">Proposed:</span> {formatted}
       </p>
 
-      {status === 'pending' && isAgent && (
+      {status === 'pending' && isRecipient && (
         <div className="flex gap-2 mt-3">
           <Button
             onClick={() => respond('confirmed')}
