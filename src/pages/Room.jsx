@@ -91,7 +91,7 @@ export default function Room() {
           budget: dealData?.purchase_price || room.budget,
           is_fully_signed: dealData?.is_fully_signed || roomIsLocked,
           counterparty_name: room.counterparty_name || enrichedRoom?.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent')),
-          counterparty_headshot: enrichedRoom?.counterparty_headshot || (isAgent ? dealData?.investor_contact?.headshotUrl : dealData?.agent_contact?.headshotUrl) || null
+          counterparty_headshot: enrichedRoom?.counterparty_headshot || null
         });
         if (dealData) setDeal(dealData);
 
@@ -213,7 +213,7 @@ export default function Room() {
           search={search}
           onSearchChange={setSearch}
           onRoomClick={(r) => {
-            setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed, counterparty_headshot: r.counterparty_headshot });
+            setCurrentRoom({ id: r.id, city: r.city, state: r.state, budget: r.budget, is_fully_signed: r.is_fully_signed });
             setDeal(null);
             navigate(`${createPageUrl("Room")}?roomId=${r.id}`);
             setDrawer(false);
