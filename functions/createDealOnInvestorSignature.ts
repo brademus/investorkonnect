@@ -317,6 +317,35 @@ Deno.serve(async (req) => {
             await base44.asServiceRole.entities.LegalAgreement.update(agreementData.id, { room_id: dupeRooms[0].id });
           }
         }
+        // Sync DealAppointments for the duplicate deal
+        if (draft.walkthrough_scheduled === true && draft.walkthrough_datetime) {
+          try {
+            const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
+            const apptPatch = {
+              walkthrough: {
+                status: 'PROPOSED',
+                datetime: draft.walkthrough_datetime,
+                timezone: null,
+                locationType: 'ON_SITE',
+                notes: null,
+                updatedByUserId: draft.investor_profile_id || null,
+                updatedAt: new Date().toISOString()
+              }
+            };
+            if (apptRows?.[0]) {
+              await base44.asServiceRole.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+            } else {
+              await base44.asServiceRole.entities.DealAppointments.create({
+                dealId: activeDupe.id,
+                ...apptPatch,
+                inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+                rescheduleRequests: []
+              });
+            }
+          } catch (apptErr) {
+            console.warn('[createDealOnInvestorSignature] Failed to sync DealAppointments for dupe:', apptErr.message);
+          }
+        }
         // Clean up the draft
         try { await base44.asServiceRole.entities.DealDraft.delete(draft.id); } catch (e) { console.warn('Failed to delete draft:', e.message); }
         // Create invites if needed
