@@ -82,10 +82,15 @@ Deno.serve(async (req) => {
             };
           }
           
-          // Update room: set requires_regenerate and agent-specific terms
+          // Update room: set per-agent requires_regenerate flag and agent-specific terms
           // DO NOT update room.proposed_terms — that stays as the original deal terms for other agents
+          // DO NOT set room-level requires_regenerate — use agent_terms[agentId].requires_regenerate instead
+          const agentTermsEntry = updatedAgentTerms[targetAgentId] || {};
+          agentTermsEntry.requires_regenerate = true;
+          updatedAgentTerms[targetAgentId] = agentTermsEntry;
+          
           await base44.asServiceRole.entities.Room.update(counter.room_id, {
-            requires_regenerate: true,
+            requires_regenerate: true, // Keep room-level for backward compat / investor UI
             agent_terms: updatedAgentTerms,
             agreement_status: 'draft' // Reset to draft since terms changed
           });
