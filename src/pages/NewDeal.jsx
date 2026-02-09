@@ -523,6 +523,58 @@ export default function NewDeal() {
           })()
         });
         
+        // Sync DealAppointments so the Appointments tab reflects walkthrough from New Deal form
+        if (walkthroughScheduled === true) {
+          try {
+            const wtIso = (() => {
+              if (!walkthroughDate) return null;
+              const parts = walkthroughDate.split('/');
+              if (parts.length === 3) {
+                const [mm, dd, yyyy] = parts;
+                const timeStr = walkthroughTime || '12:00 PM';
+                const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+                let hours = 12, mins = 0;
+                if (timeMatch) {
+                  hours = parseInt(timeMatch[1]);
+                  mins = parseInt(timeMatch[2]);
+                  const isPM = timeMatch[3].toUpperCase() === 'PM';
+                  if (isPM && hours !== 12) hours += 12;
+                  if (!isPM && hours === 12) hours = 0;
+                }
+                const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
+                return isNaN(d.getTime()) ? null : d.toISOString();
+              }
+              return null;
+            })();
+            if (wtIso) {
+              const apptRows = await base44.entities.DealAppointments.filter({ dealId });
+              const apptPatch = {
+                walkthrough: {
+                  status: 'PROPOSED',
+                  datetime: wtIso,
+                  timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                  locationType: 'ON_SITE',
+                  notes: null,
+                  updatedByUserId: profile?.id || null,
+                  updatedAt: new Date().toISOString()
+                }
+              };
+              if (apptRows?.[0]) {
+                await base44.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+              } else {
+                await base44.entities.DealAppointments.create({
+                  dealId,
+                  ...apptPatch,
+                  inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+                  rescheduleRequests: []
+                });
+              }
+            }
+          } catch (apptErr) {
+            console.warn('[NewDeal] Failed to sync DealAppointments:', apptErr);
+          }
+        }
+
         // Also update Room agent_terms if it exists
         const rooms = await base44.entities.Room.filter({ deal_id: dealId });
         if (rooms.length > 0) {
