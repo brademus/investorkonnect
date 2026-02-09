@@ -350,6 +350,14 @@ export default function Room() {
               )}
 
               <SimpleMessageBoard roomId={roomId} profile={profile} user={user} isChatEnabled={isChatEnabled} />
+            <WalkthroughScheduleModal
+              open={walkthroughModalOpen}
+              onOpenChange={setWalkthroughModalOpen}
+              deal={deal}
+              roomId={roomId}
+              profile={profile}
+              onScheduled={(updates) => setDeal(prev => prev ? { ...prev, ...updates } : prev)}
+            />
             </div>
           )}
         </div>
