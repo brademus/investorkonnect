@@ -89,10 +89,24 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
     return true;
   });
 
-  // Derived state — handle the investor_only → agent_only chain
-  // When the current agreement is agent_only mode, investor already signed (the previous investor_only agreement)
-  const needsRegen = room?.requires_regenerate === true;
+  // Derived state — handle per-agent regeneration awareness
+  // When an agent's counter offer was accepted, only THAT agent sees requires_regenerate.
+  // Other agents should still see the original agreement as signable.
   const isAgentOnlyMode = agreement?.signer_mode === 'agent_only';
+  
+  // Determine if THIS specific agent has a pending regeneration
+  const agentSpecificRegen = (() => {
+    if (!isAgent || !profile?.id || !room) return false;
+    // Check agent_terms for this agent's requires_regenerate flag
+    const myTerms = room?.agent_terms?.[profile.id];
+    if (myTerms?.requires_regenerate) return true;
+    return false;
+  })();
+  
+  // For investors, use room-level requires_regenerate
+  // For agents, only show regen if it's THEIR counter that was accepted
+  const needsRegen = isInvestor ? (room?.requires_regenerate === true) : agentSpecificRegen;
+  
   const investorSigned = !needsRegen && (
     !!agreement?.investor_signed_at ||
     agreement?.status === 'investor_signed' ||
