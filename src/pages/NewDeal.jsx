@@ -974,7 +974,7 @@ export default function NewDeal() {
             </div>
 
             {/* Agreement Length */}
-            <div>
+            <div className="border-b border-[#1F1F1F] pb-6">
               <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Agreement Length (Days) *</label>
               <Input
                 type="number"
@@ -984,6 +984,46 @@ export default function NewDeal() {
                 className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA]"
               />
               <p className="text-xs text-[#808080] mt-2">How long will this agreement remain active?</p>
+            </div>
+
+            {/* Walk-through Scheduled */}
+            <div>
+              <label className="block text-sm font-medium text-[#FAFAFA] mb-3">Has a walk-through already been scheduled?</label>
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setWalkthroughScheduled(true)}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                    walkthroughScheduled === true
+                      ? "bg-[#10B981] text-black"
+                      : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#10B981]/50"
+                  }`}
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setWalkthroughScheduled(false); setWalkthroughDateTime(""); }}
+                  className={`px-6 py-2.5 rounded-full text-sm font-semibold transition-all ${
+                    walkthroughScheduled === false
+                      ? "bg-[#F59E0B] text-black"
+                      : "bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] hover:border-[#F59E0B]/50"
+                  }`}
+                >
+                  No
+                </button>
+              </div>
+              {walkthroughScheduled === true && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-[#FAFAFA] mb-2">Walk-through Date & Time</label>
+                  <Input
+                    type="datetime-local"
+                    value={walkthroughDateTime}
+                    onChange={(e) => setWalkthroughDateTime(e.target.value)}
+                    className="bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] max-w-sm"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
