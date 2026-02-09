@@ -41,7 +41,9 @@ export default function WalkthroughPanel({ deal }) {
   const apptDatetime = apptData?.datetime;
   const apptStatus = apptData?.status;
   const hasWalkthroughFromAppt = apptStatus && apptStatus !== 'NOT_SET' && apptStatus !== 'CANCELED';
-  const hasWalkthroughFromDeal = deal?.walkthrough_scheduled === true || deal?.walkthrough_scheduled === 'true';
+  // Check deal entity fields as fallback — handle boolean, string, and truthy checks
+  const wtSched = deal?.walkthrough_scheduled;
+  const hasWalkthroughFromDeal = wtSched === true || wtSched === 'true' || (wtSched && deal?.walkthrough_datetime);
   const hasWalkthrough = hasWalkthroughFromAppt || hasWalkthroughFromDeal;
 
   console.log('[WalkthroughPanel] State:', { dealId: deal?.id, hasWalkthroughFromAppt, hasWalkthroughFromDeal, hasWalkthrough, apptStatus, apptDatetime, dealWtSched: deal?.walkthrough_scheduled, dealWtDt: deal?.walkthrough_datetime });
