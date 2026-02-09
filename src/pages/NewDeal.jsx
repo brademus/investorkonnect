@@ -600,7 +600,7 @@ export default function NewDeal() {
     }
     } catch (e) {
       console.error('[NewDeal] handleContinue error:', e);
-      toast.error("Something went wrong. Please try again.");
+      toast.error(e?.message || "Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
     }
