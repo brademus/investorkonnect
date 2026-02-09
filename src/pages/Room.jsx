@@ -152,7 +152,24 @@ export default function Room() {
   // Real-time room updates
   useEffect(() => {
     if (!roomId) return;
-    const unsub = base44.entities.Room.subscribe(e => { if (e?.data?.id === roomId) setCurrentRoom(prev => prev ? { ...prev, ...e.data } : e.data); });
+    const unsub = base44.entities.Room.subscribe(e => {
+      if (e?.data?.id === roomId) {
+        const updated = e.data;
+        setCurrentRoom(prev => {
+          const merged = prev ? { ...prev, ...updated } : updated;
+          // Derive is_fully_signed from real-time data
+          if (updated.agreement_status === 'fully_signed' || updated.request_status === 'locked') {
+            merged.is_fully_signed = true;
+          }
+          return merged;
+        });
+        // If room just became locked, clear pending agents
+        if (updated.request_status === 'locked' || updated.agreement_status === 'fully_signed') {
+          setPendingInvites([]);
+          setShowPendingAgents(false);
+        }
+      }
+    });
     return () => { try { unsub(); } catch (_) {} };
   }, [roomId]);
 
