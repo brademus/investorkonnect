@@ -432,10 +432,10 @@ export default function NewDeal() {
             second_signer_name: secondSignerName
           },
           proposed_terms: {
-            seller_commission_type: sellerCommissionType,
+            seller_commission_type: sellerCommissionType === 'flat' ? 'flat_fee' : sellerCommissionType,
             seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
             seller_flat_fee: sellerFlatFee ? Number(sellerFlatFee) : null,
-            buyer_commission_type: buyerCommissionType,
+            buyer_commission_type: buyerCommissionType === 'flat' ? 'flat_fee' : buyerCommissionType,
             buyer_commission_percentage: buyerCommissionPercentage ? Number(buyerCommissionPercentage) : null,
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
@@ -447,10 +447,10 @@ export default function NewDeal() {
         if (rooms.length > 0) {
           const room = rooms[0];
           const newTerms = {
-            seller_commission_type: sellerCommissionType,
+            seller_commission_type: sellerCommissionType === 'flat' ? 'flat_fee' : sellerCommissionType,
             seller_commission_percentage: sellerCommissionPercentage ? Number(sellerCommissionPercentage) : null,
             seller_flat_fee: sellerFlatFee ? Number(sellerFlatFee) : null,
-            buyer_commission_type: buyerCommissionType,
+            buyer_commission_type: buyerCommissionType === 'flat' ? 'flat_fee' : buyerCommissionType,
             buyer_commission_percentage: buyerCommissionPercentage ? Number(buyerCommissionPercentage) : null,
             buyer_flat_fee: buyerFlatFee ? Number(buyerFlatFee) : null,
             agreement_length: agreementLength ? Number(agreementLength) : null
