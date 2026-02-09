@@ -56,6 +56,9 @@ export default function Room() {
     setDeal(null);
     setCurrentRoom(null);
     setRoomLoading(true);
+    setPendingInvites([]);
+    setSelectedInvite(null);
+    setShowPendingAgents(true);
 
     const load = async () => {
       try {
@@ -82,6 +85,39 @@ export default function Room() {
           counterparty_name: room.counterparty_name || (isAgent ? (dealData?.investor_full_name || 'Investor') : (dealData?.agent_full_name || 'Agent'))
         });
         if (dealData) setDeal(dealData);
+
+        // For investors: load pending agent invites
+        if (isInvestor && room.deal_id) {
+          try {
+            const invites = await base44.entities.DealInvite.filter({ deal_id: room.deal_id });
+            const activeInvites = invites.filter(i => i.status !== 'VOIDED' && i.status !== 'EXPIRED');
+            // Load agent profiles for each invite
+            const enriched = await Promise.all(activeInvites.map(async (inv) => {
+              try {
+                const agentProfiles = await base44.entities.Profile.filter({ id: inv.agent_profile_id });
+                const agent = agentProfiles?.[0];
+                return {
+                  ...inv,
+                  agent: agent ? {
+                    id: agent.id,
+                    full_name: agent.full_name,
+                    brokerage: agent.agent?.brokerage,
+                    rating: null,
+                    completed_deals: agent.agent?.investment_deals_last_12m
+                  } : { id: inv.agent_profile_id, full_name: 'Agent' },
+                  agreement_status: room.agent_agreement_status?.[inv.agent_profile_id] || 'sent'
+                };
+              } catch (_) {
+                return { ...inv, agent: { id: inv.agent_profile_id, full_name: 'Agent' }, agreement_status: 'sent' };
+              }
+            }));
+            setPendingInvites(enriched);
+            // If deal is locked (has a winning agent), auto-select that agent and go to messages
+            if (room.locked_agent_id || room.agreement_status === 'fully_signed') {
+              setShowPendingAgents(false);
+            }
+          } catch (e) { console.error('[Room] Failed to load invites:', e); }
+        }
       } catch (e) { console.error('[Room] Load error:', e); }
       finally { setRoomLoading(false); }
     };
