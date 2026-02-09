@@ -228,26 +228,24 @@ export default function CounterOfferPage() {
         )}
 
         <div className="space-y-4 py-4">
-          {/* Current Terms Display - use agent-specific terms if available, then original deal terms */}
-          {(room?.proposed_terms || deal?.proposed_terms || room?.agent_terms) && (
-            <div className="bg-[#141414] rounded-lg p-4 text-sm space-y-2">
-              <p className="text-[#808080]">Current Buyer Commission</p>
-              <p className="text-[#FAFAFA] font-semibold">
-                {(() => {
-                  // For agents: show their specific terms if they have them
-                  // For investors: show the original deal terms (agent-specific terms only apply per-agent)
-                  let terms = deal?.proposed_terms || room?.proposed_terms;
-                  if (isAgent && profile?.id && room?.agent_terms?.[profile.id]?.buyer_commission_type) {
-                    terms = room.agent_terms[profile.id];
-                  }
-                  if (!terms) return 'Not set';
-                  return terms?.buyer_commission_type === 'percentage'
-                    ? `${terms?.buyer_commission_percentage}%`
-                    : `$${terms?.buyer_flat_fee?.toLocaleString()}`;
-                })()}
-              </p>
-            </div>
-          )}
+          {/* Current Terms Display - resolve from best source */}
+          {(() => {
+            const agentId = isAgent ? profile?.id : null;
+            const agentTerms = agentId && room?.agent_terms?.[agentId];
+            const terms = agentTerms?.buyer_commission_type ? agentTerms 
+              : (room?.proposed_terms?.buyer_commission_type ? room.proposed_terms 
+              : deal?.proposed_terms);
+            if (!terms?.buyer_commission_type) return null;
+            const commDisplay = terms.buyer_commission_type === 'percentage'
+              ? `${terms.buyer_commission_percentage ?? 0}%`
+              : `$${(terms.buyer_flat_fee ?? 0).toLocaleString()}`;
+            return (
+              <div className="bg-[#141414] rounded-lg p-4 text-sm space-y-2">
+                <p className="text-[#808080]">Current Buyer Commission</p>
+                <p className="text-[#FAFAFA] font-semibold">{commDisplay}</p>
+              </div>
+            );
+          })()}
 
           {/* Commission Type Selector */}
           <div>
