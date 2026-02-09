@@ -85,11 +85,15 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Envelope is voided/declined. Please regenerate.' }, { status: 400 });
     }
 
-    // The envelope should NEVER be completed at this point because the placeholder agent
-    // uses a unique fake email, so DocuSign keeps the envelope open after investor signs.
+    // If the envelope is already completed (legacy envelopes that used investor's email as
+    // placeholder agent, causing DocuSign to auto-complete), we need to regenerate.
+    // Return a special code so the frontend can trigger regeneration automatically.
     if (envData.status === 'completed') {
-      console.error('[addAgentToEnvelope] Envelope unexpectedly completed — both signers already signed?');
-      return Response.json({ error: 'Envelope already completed. Please regenerate.' }, { status: 400 });
+      console.log('[addAgentToEnvelope] Envelope completed (legacy placeholder issue). Returning regen code.');
+      return Response.json({ 
+        code: 'ENVELOPE_COMPLETED_REGEN_REQUIRED',
+        error: 'Envelope already completed — regenerating for agent signing.'
+      }, { status: 409 });
     }
 
     // Get the current placeholder agent recipient
