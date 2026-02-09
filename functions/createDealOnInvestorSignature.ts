@@ -53,22 +53,64 @@ Deno.serve(async (req) => {
     }
 
     if (existingDeal) {
-      console.log('[createDealOnInvestorSignature] Deal already exists:', existingDeal.id, '- creating invites');
+      console.log('[createDealOnInvestorSignature] Deal already exists:', existingDeal.id, '- updating agreement links');
       
-      // Deal was created previously - just create invites
-      try {
-        await base44.asServiceRole.functions.invoke('createInvitesAfterInvestorSign', {
-          deal_id: existingDeal.id
+      // Update Deal's current agreement pointer
+      await base44.asServiceRole.entities.Deal.update(existingDeal.id, {
+        current_legal_agreement_id: agreementData.id
+      });
+
+      // Update existing Room agreement pointer and status
+      const existingRooms = await base44.asServiceRole.entities.Room.filter({ deal_id: existingDeal.id });
+      if (existingRooms?.length) {
+        const room = existingRooms[0];
+        // Reset agent agreement statuses to 'sent' for all agents
+        const updatedAgentStatus = {};
+        for (const agentId of (room.agent_ids || [])) {
+          updatedAgentStatus[agentId] = 'sent';
+        }
+        await base44.asServiceRole.entities.Room.update(room.id, {
+          current_legal_agreement_id: agreementData.id,
+          agreement_status: 'investor_signed',
+          requires_regenerate: false,
+          agent_agreement_status: updatedAgentStatus
         });
-        console.log('[createDealOnInvestorSignature] Created agent invites');
-      } catch (e) {
-        console.error('[createDealOnInvestorSignature] Failed to create invites:', e.message);
+        console.log('[createDealOnInvestorSignature] Updated room:', room.id, 'with new agreement');
+
+        // Update existing DealInvites to point to the new agreement and reset status
+        const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id: existingDeal.id });
+        for (const invite of existingInvites) {
+          if (invite.status !== 'LOCKED') {
+            await base44.asServiceRole.entities.DealInvite.update(invite.id, {
+              legal_agreement_id: agreementData.id,
+              status: 'PENDING_AGENT_SIGNATURE'
+            });
+            console.log('[createDealOnInvestorSignature] Updated invite:', invite.id);
+          }
+        }
+
+        // Notify agents about updated agreement
+        for (const agentId of (room.agent_ids || [])) {
+          try {
+            const agentProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agentId });
+            const agent = agentProfiles?.[0];
+            if (agent?.email) {
+              await base44.asServiceRole.integrations.Core.SendEmail({
+                to: agent.email,
+                subject: `Updated Agreement - ${existingDeal.title || existingDeal.property_address || 'Deal'}`,
+                body: `Hello ${agent.full_name || 'Agent'},\n\nThe investor has updated the agreement for deal: ${existingDeal.title || existingDeal.property_address}.\n\nPlease log in to review the updated terms and sign the new agreement.\n\nBest regards,\nInvestor Konnect Team`
+              });
+            }
+          } catch (emailErr) {
+            console.warn('[createDealOnInvestorSignature] Failed to email agent:', agentId, emailErr.message);
+          }
+        }
       }
 
       return Response.json({
         status: 'success',
         deal_id: existingDeal.id,
-        reason: 'invites_created_for_existing_deal'
+        reason: 'agreement_updated_for_existing_deal'
       });
     }
 
