@@ -111,8 +111,6 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               {deal?.pipeline_stage ? deal.pipeline_stage.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'New Deal'}
             </span>
           </div>
-          <PropertyDetailsCard deal={deal || {}} />
-          <DealAppointmentsCard dealId={deal?.id} userRole={profile?.user_role} />
           {/* Deal Progress */}
           <div className="bg-[#0D0D0D] border border-[#1F1F1F] rounded-2xl p-6">
             <h4 className="text-lg font-semibold text-[#FAFAFA] mb-4">Deal Progress</h4>
@@ -132,6 +130,8 @@ export default function DealBoard({ deal, room, profile, roomId, onInvestorSigne
               })}
             </div>
           </div>
+          <DealAppointmentsCard dealId={deal?.id} userRole={profile?.user_role} />
+          <PropertyDetailsCard deal={deal || {}} />
         </div>
       )}
 
