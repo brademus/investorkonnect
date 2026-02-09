@@ -389,12 +389,11 @@ Deno.serve(async (req) => {
     const envelope = await envResp.json();
     console.log(`[genAgreement] Envelope: ${envelope.envelopeId}`);
 
-    // Determine actual recipient IDs based on who was included in the envelope
-    // If we have a real agent, they were added as recipientId 2 regardless of signer_mode
-    const actualAgentRecipientId = hasRealAgent ? '2' : ((signer_mode === 'agent_only') ? '1' : null);
+    // Both signers are ALWAYS in the envelope now — envelope won't complete until both sign
     const actualInvestorRecipientId = (signer_mode !== 'agent_only') ? '1' : null;
-    // If real agent was included, the effective mode is 'both' in the envelope even if signer_mode says investor_only
-    const effectiveSignerMode = (signer_mode === 'investor_only' && hasRealAgent) ? 'both' : signer_mode;
+    const actualAgentRecipientId = (signer_mode === 'agent_only') ? '1' : '2';
+    // Always store 'both' when both signers are in the envelope (which is always now, except agent_only)
+    const effectiveSignerMode = (signer_mode === 'agent_only') ? 'agent_only' : 'both';
 
     console.log(`[genAgreement] Storing: signer_mode=${effectiveSignerMode} inv_recip=${actualInvestorRecipientId} ag_recip=${actualAgentRecipientId} hasRealAgent=${hasRealAgent}`);
 
