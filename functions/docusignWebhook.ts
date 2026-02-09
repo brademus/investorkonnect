@@ -134,8 +134,10 @@ Deno.serve(async (req) => {
     }
     const agreement = agreements[0];
     const eventType = event.event || event.data?.envelopeStatus;
-    const recipients = event.data?.envelopeRecipients || [];
+    // Recipients can be in different locations depending on the webhook event type
+    const recipients = event.data?.envelopeRecipients?.signers || event.data?.envelopeRecipients || [];
     const mode = agreement.signer_mode || 'both';
+    console.log(`[webhook ${VERSION}] Recipients found:`, recipients.length, 'raw keys:', Object.keys(event.data?.envelopeRecipients || {}));
 
     console.log(`[webhook ${VERSION}] ${eventType} for agreement ${agreement.id} mode=${mode}`);
 
