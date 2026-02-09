@@ -76,8 +76,7 @@ Deno.serve(async (req) => {
     // may have investor_user_id set to investor, not the agent who is viewing)
     let hasAccess = agreement.investor_user_id === user.id || agreement.agent_user_id === user.id;
     if (!hasAccess) {
-      const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
-      const p = profiles?.[0];
+      const p = callerProfile;
       if (p) {
         // Check profile ID matches
         if (agreement.investor_profile_id === p.id || agreement.agent_profile_id === p.id) hasAccess = true;
