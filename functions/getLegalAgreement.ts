@@ -50,20 +50,30 @@ Deno.serve(async (req) => {
 
     if (!agreement) return Response.json({ agreement: null });
 
-    // Access check
+    // Access check — also check profile IDs (not just user IDs, since agent_only agreements
+    // may have investor_user_id set to investor, not the agent who is viewing)
     let hasAccess = agreement.investor_user_id === user.id || agreement.agent_user_id === user.id;
     if (!hasAccess) {
       const profiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
       const p = profiles?.[0];
       if (p) {
-        const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
-        if (deals?.[0]?.selected_agent_ids?.includes(p.id)) hasAccess = true;
+        // Check profile ID matches
+        if (agreement.investor_profile_id === p.id || agreement.agent_profile_id === p.id) hasAccess = true;
+        // Check deal participants
+        if (!hasAccess) {
+          const deals = await base44.asServiceRole.entities.Deal.filter({ id: deal_id });
+          if (deals?.[0]?.selected_agent_ids?.includes(p.id)) hasAccess = true;
+          if (deals?.[0]?.investor_id === p.id) hasAccess = true;
+        }
         if (!hasAccess && room_id) {
           const rooms = await base44.asServiceRole.entities.Room.filter({ id: room_id });
           if (rooms?.[0]?.agent_ids?.includes(p.id)) hasAccess = true;
+          if (rooms?.[0]?.investorId === p.id) hasAccess = true;
         }
       }
     }
+    // Admin users always have access
+    if (!hasAccess && user.role === 'admin') hasAccess = true;
     if (!hasAccess) return Response.json({ error: 'Not authorized' }, { status: 403 });
 
     return Response.json({ agreement });
