@@ -92,9 +92,9 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Already signed check
-    if (role === 'investor' && agreement.investor_signed_at) return Response.json({ already_signed: true });
-    if (role === 'agent' && agreement.agent_signed_at) return Response.json({ already_signed: true });
+    // Already signed check — also update room status if fully signed
+    if (role === 'investor' && agreement.investor_signed_at) return Response.json({ already_signed: true, agreement });
+    if (role === 'agent' && agreement.agent_signed_at) return Response.json({ already_signed: true, agreement });
     // Agent waits for investor to sign first (except agent_only mode which is legacy).
     if (role === 'agent' && !agreement.investor_signed_at && signerMode !== 'agent_only') {
       return Response.json({ error: 'Investor must sign first' }, { status: 403 });
