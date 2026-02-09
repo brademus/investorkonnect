@@ -85,6 +85,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
       const res = await base44.functions.invoke('generateLegalAgreement', {
         draft_id: isEditingExistingDeal ? undefined : (draftId || undefined),
         deal_id: isEditingExistingDeal ? dealData.dealId : (draftId ? undefined : dealId),
+        room_id: isEditingExistingDeal ? roomId : undefined,
         signer_mode: 'investor_only', exhibit_a, investor_profile_id: profile?.id,
         property_address: dealData?.propertyAddress, city: dealData?.city,
         state: dealData?.state, zip: dealData?.zip, county: dealData?.county
