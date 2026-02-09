@@ -115,8 +115,14 @@ Deno.serve(async (req) => {
       const update = { agreement_status: 'draft' };
       if (room.requires_regenerate) update.requires_regenerate = false;
       
-      // Update agent-specific agreement status
+      // Clear per-agent requires_regenerate flag and update agreement status
       if (targetAgentId) {
+        const updatedTerms = { ...(room.agent_terms || {}) };
+        if (updatedTerms[targetAgentId]) {
+          updatedTerms[targetAgentId] = { ...updatedTerms[targetAgentId], requires_regenerate: false };
+        }
+        update.agent_terms = updatedTerms;
+        
         const updatedStatus = { ...(room.agent_agreement_status || {}) };
         updatedStatus[targetAgentId] = 'draft';
         update.agent_agreement_status = updatedStatus;
