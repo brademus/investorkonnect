@@ -23,6 +23,34 @@ export default function WalkthroughScheduleModal({ open, onOpenChange, deal, roo
         walkthrough_datetime: isoDatetime
       });
 
+      // Upsert DealAppointments so the Appointments tab stays in sync
+      try {
+        const apptRows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+        const apptPatch = {
+          walkthrough: {
+            status: 'PROPOSED',
+            datetime: isoDatetime,
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+            locationType: 'ON_SITE',
+            notes: null,
+            updatedByUserId: profile?.id || null,
+            updatedAt: new Date().toISOString()
+          }
+        };
+        if (apptRows?.[0]) {
+          await base44.entities.DealAppointments.update(apptRows[0].id, apptPatch);
+        } else {
+          await base44.entities.DealAppointments.create({
+            dealId: deal.id,
+            ...apptPatch,
+            inspection: { status: 'NOT_SET', datetime: null, timezone: null, locationType: null, notes: null, updatedByUserId: null, updatedAt: null },
+            rescheduleRequests: []
+          });
+        }
+      } catch (e) {
+        console.warn('[WalkthroughScheduleModal] Failed to upsert DealAppointments:', e);
+      }
+
       // Send a system-style message to the room so the agent sees it
       const formatted = new Date(date + ' ' + (time || '12:00 PM')).toLocaleString('en-US', {
         weekday: 'long', month: 'long', day: 'numeric', year: 'numeric',
