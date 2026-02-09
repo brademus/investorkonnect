@@ -50,20 +50,44 @@ export default function CounterOfferPage() {
       }
 
       try {
+        let loadedDeal = null;
+        let loadedRoom = null;
+        
         if (dealId) {
           const d = await base44.entities.Deal.filter({ id: dealId });
-          setDeal(d[0] || null);
+          loadedDeal = d[0] || null;
+          setDeal(loadedDeal);
         }
         if (roomId) {
           const r = await base44.entities.Room.filter({ id: roomId });
-          setRoom(r[0] || null);
-          if (r[0]?.current_legal_agreement_id) {
+          loadedRoom = r[0] || null;
+          setRoom(loadedRoom);
+          if (loadedRoom?.current_legal_agreement_id) {
             const a = await base44.entities.LegalAgreement.filter({ 
-              id: r[0].current_legal_agreement_id 
+              id: loadedRoom.current_legal_agreement_id 
             });
             setAgreement(a[0] || null);
           }
         }
+        
+        // Pre-fill commission from current terms (agent-specific > room > deal > agreement)
+        if (!respondingTo) {
+          const agentId = isAgent ? profile?.id : null;
+          const agentTerms = agentId && loadedRoom?.agent_terms?.[agentId];
+          const terms = agentTerms?.buyer_commission_type ? agentTerms 
+            : (loadedRoom?.proposed_terms?.buyer_commission_type ? loadedRoom.proposed_terms 
+            : loadedDeal?.proposed_terms);
+          if (terms?.buyer_commission_type) {
+            const normalizedType = terms.buyer_commission_type === 'percentage' ? 'percentage' : 'flat_fee';
+            setCommissionType(normalizedType);
+            if (terms.buyer_commission_type === 'percentage' && terms.buyer_commission_percentage) {
+              setCommissionAmount(String(terms.buyer_commission_percentage));
+            } else if (terms.buyer_flat_fee) {
+              setCommissionAmount(String(terms.buyer_flat_fee));
+            }
+          }
+        }
+        
         if (respondingTo) {
           const c = await base44.entities.CounterOffer.filter({ id: respondingTo });
           if (c[0]) {
