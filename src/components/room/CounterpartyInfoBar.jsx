@@ -16,7 +16,7 @@ function getSignatureStyle(name) {
     "'Snell Roundhand', 'Palace Script MT', cursive",
   ];
   const slants = [-4, -2, 0, 2, 3];
-  const sizes = ["1.35rem", "1.5rem", "1.25rem", "1.4rem", "1.6rem"];
+  const sizes = ["1.6rem", "1.75rem", "1.5rem", "1.65rem", "1.85rem"];
   const weights = [400, 500, 600, 400, 500];
   const spacings = ["0.02em", "0.04em", "0.01em", "0.06em", "0.03em"];
 
