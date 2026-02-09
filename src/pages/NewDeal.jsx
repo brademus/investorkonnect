@@ -55,15 +55,15 @@ export default function NewDeal() {
   const [county, setCounty] = useState("");
   const [hydrated, setHydrated] = useState(false);
 
-  // Load draft from sessionStorage when editing, returning from verification, or navigating back
+  // Load draft from sessionStorage when returning from verification or navigating back (NOT for fresh edits from pipeline)
   useEffect(() => {
-    const isEditing = !!dealId;
-    const shouldLoad = isEditing || fromVerify || true; // Always try to load draft
     const raw = sessionStorage.getItem('newDealDraft');
     if (!raw) return;
     try {
       const d = JSON.parse(raw);
       if (dealId && d.dealId && d.dealId !== dealId) return; // don't mix drafts between different deals
+      // If editing a deal and there's no meaningful draft, skip — let DB load handle it
+      if (dealId && !fromVerify) return;
       setPropertyAddress(d.propertyAddress || "");
       setCity(d.city || "");
       setState(d.state || "");
