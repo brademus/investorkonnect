@@ -133,7 +133,7 @@ Deno.serve(async (req) => {
     const returnURL = new URL(`${publicUrl}/DocuSignReturn`);
     returnURL.searchParams.set('token', tokenValue);
     if (agreement.deal_id) returnURL.searchParams.set('dealId', agreement.deal_id);
-    if (room_id) returnURL.searchParams.set('roomId', room_id);
+    if (room_id || agreement.room_id) returnURL.searchParams.set('roomId', room_id || agreement.room_id);
     returnURL.searchParams.set('role', role);
 
     // Get profile for signing
