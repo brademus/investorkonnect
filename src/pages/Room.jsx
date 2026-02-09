@@ -6,12 +6,13 @@ import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { useRooms } from "@/components/useRooms";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Menu, Send, ArrowLeft, FileText, Shield, User } from "lucide-react";
+import { Menu, Send, ArrowLeft, FileText, Shield, User, Users } from "lucide-react";
 import { toast } from "sonner";
 
 import RoomSidebar from "@/components/room/RoomSidebar";
 import DealBoard from "@/components/room/DealBoard";
 import SimpleMessageBoard from "@/components/chat/SimpleMessageBoard";
+import PendingAgentsList from "@/components/PendingAgentsList";
 
 export default function Room() {
   const navigate = useNavigate();
