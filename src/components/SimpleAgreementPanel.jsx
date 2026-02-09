@@ -12,7 +12,7 @@ import { toast } from 'sonner';
  * - Generate / Sign / Counter actions
  * - Real-time subscription for updates
  */
-export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, onInvestorSigned, draftId, dealData, selectedAgentProfileId, agreement: externalAgreement, room: externalRoom }) {
+export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, onInvestorSigned, draftId, dealData, selectedAgentProfileId, agreement: externalAgreement, room: externalRoom, pendingCounters: externalPendingCounters, setPendingCounters: externalSetPendingCounters }) {
   const [agreement, setAgreement] = useState(externalAgreement || null);
   const [room, setRoom] = useState(externalRoom || null);
   const [pendingCounters, setPendingCounters] = useState([]);
