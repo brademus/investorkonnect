@@ -1,9 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.6';
 
 /**
- * Adds the agent as a signer (recipientId=2) to the investor's existing DocuSign envelope.
- * This way agent signs the SAME document / envelope the investor already signed.
- * Updates the LegalAgreement record with agent recipient info.
+ * Replaces the placeholder agent signer (recipientId=2) on the investor's existing
+ * DocuSign envelope with the real agent's details.
+ * The envelope ALWAYS has both signers from generation — this just swaps the placeholder.
  */
 
 async function getDocuSignConnection(base44) {
@@ -41,21 +41,8 @@ Deno.serve(async (req) => {
     const agreement = agreements?.[0];
     if (!agreement) return Response.json({ error: 'Agreement not found' }, { status: 404 });
 
-    // If agent is already a recipient, just return the agreement as-is
-    if (agreement.agent_recipient_id && agreement.agent_client_user_id) {
-      console.log('[addAgentToEnvelope] Agent already has recipient data, skipping');
-      return Response.json({ agreement });
-    }
-
     const envelopeId = agreement.docusign_envelope_id;
     if (!envelopeId) return Response.json({ error: 'No DocuSign envelope on this agreement' }, { status: 400 });
-
-    // Check if agent already exists on the envelope (might have been added during generation)
-    // If signer_mode is 'both' and agent_recipient_id is set, agent is already on the envelope
-    if (agreement.signer_mode === 'both' && agreement.agent_recipient_id && agreement.agent_client_user_id) {
-      console.log('[addAgentToEnvelope] Agreement already in both mode with agent recipient data, skipping');
-      return Response.json({ agreement });
-    }
 
     // Resolve agent from room
     const effectiveRoomId = room_id || agreement.room_id;
@@ -65,31 +52,74 @@ Deno.serve(async (req) => {
     const room = rooms?.[0];
     if (!room) return Response.json({ error: 'Room not found' }, { status: 404 });
 
-    // Find which agent is calling (from DealInvite or room.agent_ids)
+    // Find which agent is calling
     const callerProfiles = await base44.asServiceRole.entities.Profile.filter({ user_id: user.id });
     const callerProfile = callerProfiles?.[0];
     if (!callerProfile) return Response.json({ error: 'Profile not found' }, { status: 403 });
 
-    // Confirm caller is one of the agents in the room
     const agentId = callerProfile.id;
     if (!room.agent_ids?.includes(agentId)) return Response.json({ error: 'You are not an agent in this room' }, { status: 403 });
 
-    // Load agent profile for signing details
     const agent = callerProfile;
-    const conn = await getDocuSignConnection(base44);
 
-    // Generate a unique client user ID for the agent
+    // If this agent is ALREADY the real recipient on the envelope, skip
+    if (agreement.agent_profile_id === agentId && agreement.agent_client_user_id && agreement.agent_recipient_id) {
+      console.log('[addAgentToEnvelope] Agent already set on this agreement, skipping');
+      return Response.json({ agreement });
+    }
+
+    const conn = await getDocuSignConnection(base44);
     const agentClientId = `ag-${agreement.deal_id}-${Date.now()}`;
 
-    // Add agent as a new recipient to the existing envelope via DocuSign API
-    const addRecipientUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}/recipients`;
-    
-    const recipientPayload = {
+    // The envelope was generated with a placeholder agent at recipientId=2.
+    // Strategy: DELETE the placeholder recipient, then ADD the real agent with the same recipientId.
+    const recipientsUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}/recipients`;
+
+    // Check current envelope status
+    const envStatusUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}`;
+    const envResp = await fetch(envStatusUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
+    const envData = envResp.ok ? await envResp.json() : {};
+    console.log('[addAgentToEnvelope] Envelope status:', envData.status);
+
+    if (['voided', 'declined'].includes(envData.status)) {
+      return Response.json({ error: 'Envelope is voided/declined. Please regenerate.' }, { status: 400 });
+    }
+
+    // The envelope should NEVER be completed at this point because it has 2 signers
+    // and the agent (routingOrder 2) hasn't signed yet. But handle edge case.
+    if (envData.status === 'completed') {
+      console.error('[addAgentToEnvelope] Envelope unexpectedly completed — both signers already signed?');
+      return Response.json({ error: 'Envelope already completed' }, { status: 400 });
+    }
+
+    // Get the current placeholder agent recipient
+    const recipResp = await fetch(recipientsUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
+    const recipData = recipResp.ok ? await recipResp.json() : {};
+    const existingAgentSigner = (recipData.signers || []).find(s => String(s.recipientId) === String(agreement.agent_recipient_id || '2'));
+
+    if (existingAgentSigner) {
+      // Delete the placeholder
+      console.log('[addAgentToEnvelope] Removing placeholder agent signer:', existingAgentSigner.email);
+      const deleteResp = await fetch(recipientsUrl, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ signers: [{ recipientId: String(agreement.agent_recipient_id || '2') }] })
+      });
+      if (!deleteResp.ok) {
+        const delErr = await deleteResp.text();
+        console.error('[addAgentToEnvelope] Failed to delete placeholder:', delErr);
+        // If delete fails, try to just add — DocuSign may allow updating in place
+      }
+    }
+
+    // Add the real agent as a new signer with the same recipientId
+    const agentRecipientId = String(agreement.agent_recipient_id || '2');
+    const addPayload = {
       signers: [{
         email: agent.email,
         name: agent.full_name || agent.email,
-        recipientId: '2',
-        routingOrder: '2',
+        recipientId: agentRecipientId,
+        routingOrder: agentRecipientId,
         clientUserId: agentClientId,
         tabs: {
           signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
@@ -103,125 +133,35 @@ Deno.serve(async (req) => {
       }]
     };
 
-    console.log('[addAgentToEnvelope] Adding agent', agent.email, 'to envelope', envelopeId);
+    console.log('[addAgentToEnvelope] Adding real agent', agent.email, 'as recipientId', agentRecipientId);
+    const addResp = await fetch(recipientsUrl, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(addPayload)
+    });
 
-    // First check envelope status — if completed, we can't add recipients; need a new envelope
-    const envStatusUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}`;
-    const envStatusResp = await fetch(envStatusUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
-    const envData = envStatusResp.ok ? await envStatusResp.json() : {};
-    const envelopeStatus = envData.status || '';
-    console.log('[addAgentToEnvelope] Current envelope status:', envelopeStatus);
-
-    let newEnvelopeId = envelopeId;
-    let agentRecipientId = '2';
-
-    if (envelopeStatus === 'completed') {
-      // Envelope is completed (investor was the only signer and finished).
-      // DocuSign won't allow adding recipients to a completed envelope.
-      // Strategy: download the signed PDF, create a NEW envelope with just the agent as signer.
-      console.log('[addAgentToEnvelope] Envelope completed — creating new envelope with signed PDF for agent');
-
-      // Download the combined (signed) PDF from the completed envelope
-      const pdfUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes/${envelopeId}/documents/combined`;
-      const pdfResp = await fetch(pdfUrl, { headers: { 'Authorization': `Bearer ${conn.access_token}` } });
-      if (!pdfResp.ok) {
-        const pdfErr = await pdfResp.text();
-        console.error('[addAgentToEnvelope] Failed to download signed PDF:', pdfErr);
-        return Response.json({ error: 'Failed to download signed document' }, { status: 500 });
-      }
-      const pdfBytes = new Uint8Array(await pdfResp.arrayBuffer());
-      // Convert to base64 in chunks to avoid max call stack with spread operator
-      let binary = '';
-      const chunkSize = 8192;
-      for (let i = 0; i < pdfBytes.length; i += chunkSize) {
-        const chunk = pdfBytes.subarray(i, i + chunkSize);
-        binary += String.fromCharCode.apply(null, chunk);
-      }
-      const pdfBase64 = btoa(binary);
-
-      // Load investor profile for the new envelope
-      const invProfiles = await base44.asServiceRole.entities.Profile.filter({ id: agreement.investor_profile_id });
-      const investor = invProfiles?.[0];
-      const investorClientId = agreement.investor_client_user_id || `inv-${agreement.deal_id}-${Date.now()}`;
-
-      // Create new envelope with the signed PDF, investor as CC (already signed), agent as signer
-      const createEnvUrl = `${conn.base_uri}/restapi/v2.1/accounts/${conn.account_id}/envelopes`;
-      const newEnvPayload = {
-        emailSubject: `Agreement - Agent Countersignature Required`,
-        status: 'sent',
-        documents: [{
-          documentId: '1',
-          name: 'Agreement.pdf',
-          documentBase64: pdfBase64
-        }],
-        recipients: {
-          signers: [{
-            email: agent.email,
-            name: agent.full_name || agent.email,
-            recipientId: '1',
-            routingOrder: '1',
-            clientUserId: agentClientId,
-            tabs: {
-              signHereTabs: [{ documentId: '1', anchorString: '[[AGENT_SIGN]]', anchorUnits: 'pixels' }],
-              dateSignedTabs: [{ documentId: '1', anchorString: '[[AGENT_DATE]]', anchorUnits: 'pixels' }],
-              fullNameTabs: [{ documentId: '1', anchorString: '[[AGENT_PRINT]]', anchorUnits: 'pixels', value: agent.full_name || agent.email, locked: true, required: true, tabLabel: 'agentFullName' }],
-              textTabs: [
-                { documentId: '1', anchorString: '[[AGENT_LICENSE]]', anchorUnits: 'pixels', value: agent.agent?.license_number || agent.license_number || '', required: true, tabLabel: 'agentLicense' },
-                { documentId: '1', anchorString: '[[AGENT_BROKERAGE]]', anchorUnits: 'pixels', value: agent.agent?.brokerage || agent.broker || '', required: true, tabLabel: 'agentBrokerage' }
-              ]
-            }
-          }]
-        }
-      };
-
-      const createResp = await fetch(createEnvUrl, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(newEnvPayload)
-      });
-
-      if (!createResp.ok) {
-        const createErr = await createResp.text();
-        console.error('[addAgentToEnvelope] Failed to create new envelope:', createErr);
-        return Response.json({ error: 'Failed to create agent signing envelope' }, { status: 500 });
-      }
-
-      const createResult = await createResp.json();
-      newEnvelopeId = createResult.envelopeId;
-      agentRecipientId = '1'; // Agent is recipient 1 in the new envelope
-      console.log('[addAgentToEnvelope] Created new envelope:', newEnvelopeId, 'for agent signing');
-    } else {
-      // Envelope is still open (sent/delivered) — add agent as a new recipient
-      const addResp = await fetch(addRecipientUrl, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${conn.access_token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify(recipientPayload)
-      });
-
-      if (!addResp.ok) {
-        const errText = await addResp.text();
-        console.error('[addAgentToEnvelope] DocuSign error:', errText);
-        return Response.json({ error: 'Failed to add agent to envelope: ' + errText }, { status: 500 });
-      }
-
-      const addResult = await addResp.json();
-      console.log('[addAgentToEnvelope] DocuSign add recipient result:', JSON.stringify(addResult));
+    if (!addResp.ok) {
+      const errText = await addResp.text();
+      console.error('[addAgentToEnvelope] DocuSign add error:', errText);
+      return Response.json({ error: 'Failed to add agent to envelope: ' + errText }, { status: 500 });
     }
 
-    // Update the agreement with agent recipient info
+    const addResult = await addResp.json();
+    console.log('[addAgentToEnvelope] Add result:', JSON.stringify(addResult));
+
+    // Update agreement — same envelope ID, just updated agent details
     const updates = {
-      docusign_envelope_id: newEnvelopeId,
       agent_recipient_id: agentRecipientId,
       agent_client_user_id: agentClientId,
       agent_profile_id: agent.id,
       agent_user_id: agent.user_id,
-      signer_mode: 'both' // Now it's a both-signer agreement
+      signer_mode: 'both'
     };
 
     await base44.asServiceRole.entities.LegalAgreement.update(agreement.id, updates);
     const updatedAgreement = { ...agreement, ...updates };
 
-    console.log('[addAgentToEnvelope] Updated agreement', agreement.id, 'with agent recipient data, envelope:', newEnvelopeId);
+    console.log('[addAgentToEnvelope] Updated agreement', agreement.id, 'with real agent data on SAME envelope:', envelopeId);
 
     return Response.json({ agreement: updatedAgreement });
   } catch (error) {
