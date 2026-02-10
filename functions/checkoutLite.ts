@@ -29,16 +29,10 @@ Deno.serve(async (req) => {
       console.log('📦 Received plan from URL:', plan);
     }
     
-    // Map plan to price ID from environment variables
-    const priceMap = {
-      "starter": Deno.env.get('STRIPE_PRICE_STARTER'),
-      "pro": Deno.env.get('STRIPE_PRICE_PRO'),
-      "enterprise": Deno.env.get('STRIPE_PRICE_ENTERPRISE')
-    };
+    // Single membership plan
+    const price = Deno.env.get('STRIPE_PRICE_MEMBERSHIP');
     
-    const price = plan ? priceMap[plan] : null;
-    
-    console.log('Plan:', plan, '→ Price:', price);
+    console.log('Membership price:', price);
     
     const STRIPE_SECRET_KEY = Deno.env.get('STRIPE_SECRET_KEY');
     if (!STRIPE_SECRET_KEY) {
