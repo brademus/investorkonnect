@@ -257,6 +257,12 @@ Deno.serve(async (req) => {
     const draft = drafts[0];
     const selectedAgents = draft.selected_agent_ids || [];
     console.log('[createDealOnInvestorSignature] Found DealDraft:', draft.id, 'with selected_agent_ids:', selectedAgents);
+    console.log('[createDealOnInvestorSignature] DealDraft walkthrough fields:', {
+      walkthrough_scheduled: draft.walkthrough_scheduled,
+      walkthrough_scheduled_type: typeof draft.walkthrough_scheduled,
+      walkthrough_datetime: draft.walkthrough_datetime,
+      walkthrough_datetime_type: typeof draft.walkthrough_datetime
+    });
 
     // Validate that we have agents
     if (!selectedAgents || selectedAgents.length === 0) {
