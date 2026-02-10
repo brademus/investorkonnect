@@ -103,8 +103,31 @@ export default function NewDeal() {
     } catch (_) {}
   }, [dealId, fromVerify]);
 
+  // Helper: compute walkthrough ISO from date+time strings
+  const computeWalkthroughIso = (scheduled, dateStr, timeStr) => {
+    if (scheduled !== true || !dateStr) return null;
+    try {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+        const [mm, dd, yyyy] = parts;
+        const ts = timeStr || '12:00 PM';
+        const tm = ts.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+        let h = 12, m = 0;
+        if (tm) {
+          h = parseInt(tm[1]); m = parseInt(tm[2]);
+          if (tm[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+          if (tm[3].toUpperCase() === 'AM' && h === 12) h = 0;
+        }
+        const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), h, m);
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      }
+    } catch {}
+    return null;
+  };
+
   // Auto-save draft on every change so nothing is lost (only when editing or user has typed)
   useEffect(() => {
+    const wtIso = computeWalkthroughIso(walkthroughScheduled, walkthroughDate, walkthroughTime);
     const draft = {
       dealId: dealId || null,
       propertyAddress,
@@ -136,8 +159,10 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled,
+      walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
-      walkthroughTime
+      walkthroughTime,
+      walkthrough_datetime: wtIso
     };
     // For brand new deals (no dealId), only persist if the user actually typed something meaningful
     const isEditing = !!dealId;
