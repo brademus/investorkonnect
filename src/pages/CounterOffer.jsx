@@ -289,8 +289,7 @@ export default function CounterOfferPage() {
         {/* Actions */}
         <div className="flex gap-2">
           <Button
-            variant="outline"
-            className="flex-1 border-[#1F1F1F] text-[#FAFAFA]"
+            className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567]"
             onClick={() => navigate(-1)}
             disabled={busy}
           >
