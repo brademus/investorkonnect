@@ -65,7 +65,7 @@ export default function Pricing() {
     checkSubscription();
   }, [user, loading]);
 
-  const handleSubscribe = async (plan) => {
+  const handleSubscribe = async () => {
     if (!user) {
       navigate(createPageUrl("Login"));
       return;
@@ -73,12 +73,9 @@ export default function Pricing() {
 
     setCheckoutLoading(true);
     try {
-      console.log(`Starting checkout for plan: ${plan}`);
-      
-      const response = await base44.functions.invoke('checkoutLite', { plan });
+      const response = await base44.functions.invoke('checkoutLite', { plan: 'membership' });
       
       if (response?.data?.ok && response.data.url) {
-        console.log('Redirecting to Stripe checkout:', response.data.url);
         window.location.href = response.data.url;
       } else {
         throw new Error(response?.data?.message || response?.data?.error || "Failed to create checkout session");
