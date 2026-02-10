@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
       await base44.asServiceRole.entities.Deal.update(existingDeal.id, dealUpdate);
 
       // Sync DealAppointments if walkthrough data changed
-      if (dealUpdate.walkthrough_scheduled === true && dealUpdate.walkthrough_datetime) {
+      if (dealUpdate.walkthrough_scheduled && dealUpdate.walkthrough_datetime) {
         try {
           const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: existingDeal.id });
           const apptPatch = {
@@ -325,7 +325,7 @@ Deno.serve(async (req) => {
           }
         }
         // Sync DealAppointments for the duplicate deal
-        if (draft.walkthrough_scheduled === true && draft.walkthrough_datetime) {
+        if (draft.walkthrough_scheduled && draft.walkthrough_datetime) {
           try {
             const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
             const apptPatch = {
