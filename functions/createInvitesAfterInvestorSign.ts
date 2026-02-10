@@ -146,10 +146,16 @@ Deno.serve(async (req) => {
       current_legal_agreement_id: baseAgreement.id
     });
 
-    // Ensure deal is active and visible — ONLY update status fields, do NOT overwrite walkthrough/terms
+    // Ensure deal is active and visible — ONLY update status fields
+    // ALSO: backfill proposed_terms from exhibit_a_terms if missing on the deal
     const dealStatusUpdate = { status: 'active' };
     if (!deal.pipeline_stage || deal.pipeline_stage === 'draft') {
       dealStatusUpdate.pipeline_stage = 'new_deals';
+    }
+    const dealHasTerms = deal.proposed_terms && Object.values(deal.proposed_terms).some(v => v !== null && v !== undefined);
+    if (!dealHasTerms && Object.keys(exhibitTerms).length > 0) {
+      dealStatusUpdate.proposed_terms = proposedTerms;
+      console.log('[createInvites] Backfilling deal proposed_terms from exhibit_a_terms');
     }
     await base44.asServiceRole.entities.Deal.update(deal_id, dealStatusUpdate);
 
