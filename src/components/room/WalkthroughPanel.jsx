@@ -6,22 +6,28 @@ export default function WalkthroughPanel({ deal }) {
   const [apptData, setApptData] = useState(null);
   const [loadingAppt, setLoadingAppt] = useState(false);
 
+  // Helper to check if walkthrough is scheduled from various data shapes
+  const isWalkthroughSet = (d) => {
+    if (!d) return false;
+    const ws = d.walkthrough_scheduled;
+    return ws === true || ws === 'true' || ws === 1;
+  };
+
   // Fetch DealAppointments AND re-check Deal entity as authoritative sources
   useEffect(() => {
     if (!deal?.id) return;
     setLoadingAppt(true);
+    console.log('[WalkthroughPanel] Loading for deal:', deal.id, 'walkthrough_scheduled:', deal.walkthrough_scheduled, 'walkthrough_datetime:', deal.walkthrough_datetime);
     (async () => {
       try {
-        // FIRST: Use deal prop's walkthrough fields immediately (from getDealDetailsForUser or Room state)
-        // This ensures walkthrough shows even if DealAppointments doesn't exist yet
-        const dealHasWalkthrough = (deal.walkthrough_scheduled === true || deal.walkthrough_scheduled === 'true') && deal.walkthrough_datetime;
+        const dealHasWalkthrough = isWalkthroughSet(deal) && deal.walkthrough_datetime;
         
         // Fetch DealAppointments
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
+        console.log('[WalkthroughPanel] DealAppointments found:', rows?.length, rows?.[0]?.walkthrough?.status);
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
           setApptData(rows[0].walkthrough);
         } else if (dealHasWalkthrough) {
-          // Use walkthrough from the deal prop directly (fastest path)
           setApptData({
             status: 'PROPOSED',
             datetime: deal.walkthrough_datetime,
@@ -30,10 +36,11 @@ export default function WalkthroughPanel({ deal }) {
             notes: null
           });
         } else {
-          // No DealAppointments and deal prop has no walkthrough — re-fetch Deal entity as last resort
+          // Re-fetch Deal entity from DB as last resort
           const dealRows = await base44.entities.Deal.filter({ id: deal.id });
           const liveDeal = dealRows?.[0];
-          if ((liveDeal?.walkthrough_scheduled === true) && liveDeal?.walkthrough_datetime) {
+          console.log('[WalkthroughPanel] Re-fetched Deal:', liveDeal?.walkthrough_scheduled, liveDeal?.walkthrough_datetime);
+          if (isWalkthroughSet(liveDeal) && liveDeal?.walkthrough_datetime) {
             setApptData({
               status: 'PROPOSED',
               datetime: liveDeal.walkthrough_datetime,
@@ -45,8 +52,7 @@ export default function WalkthroughPanel({ deal }) {
         }
       } catch (e) {
         console.warn('[WalkthroughPanel] Failed to load walkthrough data:', e);
-        // Even on error, try to use deal prop data
-        if ((deal.walkthrough_scheduled === true || deal.walkthrough_scheduled === 'true') && deal.walkthrough_datetime) {
+        if (isWalkthroughSet(deal) && deal.walkthrough_datetime) {
           setApptData({
             status: 'PROPOSED',
             datetime: deal.walkthrough_datetime,
