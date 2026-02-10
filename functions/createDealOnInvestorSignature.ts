@@ -101,8 +101,9 @@ Deno.serve(async (req) => {
       };
       if (draftForUpdate) {
         if (draftForUpdate.walkthrough_scheduled !== undefined && draftForUpdate.walkthrough_scheduled !== null) {
-          dealUpdate.walkthrough_scheduled = draftForUpdate.walkthrough_scheduled === true;
+          dealUpdate.walkthrough_scheduled = !!(draftForUpdate.walkthrough_scheduled);
           dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
+          console.log('[createDealOnInvestorSignature] Draft walkthrough data for update:', { raw: draftForUpdate.walkthrough_scheduled, resolved: dealUpdate.walkthrough_scheduled, datetime: dealUpdate.walkthrough_datetime });
         }
         // Also update proposed_terms from draft if available
         const exhibitTerms = agreementData.exhibit_a_terms || {};
@@ -294,7 +295,7 @@ Deno.serve(async (req) => {
         const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
         const dupeUpdate = {
           current_legal_agreement_id: agreementData.id,
-          walkthrough_scheduled: draft.walkthrough_scheduled === true ? true : false,
+          walkthrough_scheduled: !!(draft.walkthrough_scheduled),
           walkthrough_datetime: draft.walkthrough_datetime || null,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
