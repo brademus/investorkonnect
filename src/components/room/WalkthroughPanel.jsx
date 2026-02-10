@@ -12,17 +12,28 @@ export default function WalkthroughPanel({ deal }) {
     setLoadingAppt(true);
     (async () => {
       try {
+        // FIRST: Use deal prop's walkthrough fields immediately (from getDealDetailsForUser or Room state)
+        // This ensures walkthrough shows even if DealAppointments doesn't exist yet
+        const dealHasWalkthrough = (deal.walkthrough_scheduled === true || deal.walkthrough_scheduled === 'true') && deal.walkthrough_datetime;
+        
         // Fetch DealAppointments
         const rows = await base44.entities.DealAppointments.filter({ dealId: deal.id });
         if (rows?.[0]?.walkthrough && rows[0].walkthrough.status !== 'NOT_SET') {
           setApptData(rows[0].walkthrough);
+        } else if (dealHasWalkthrough) {
+          // Use walkthrough from the deal prop directly (fastest path)
+          setApptData({
+            status: 'PROPOSED',
+            datetime: deal.walkthrough_datetime,
+            timezone: null,
+            locationType: 'ON_SITE',
+            notes: null
+          });
         } else {
-          // No DealAppointments — check Deal entity directly for walkthrough fields
-          // (the deal prop may come from getDealDetailsForUser which has the correct data)
+          // No DealAppointments and deal prop has no walkthrough — re-fetch Deal entity as last resort
           const dealRows = await base44.entities.Deal.filter({ id: deal.id });
           const liveDeal = dealRows?.[0];
-          if (liveDeal?.walkthrough_scheduled === true && liveDeal?.walkthrough_datetime) {
-            // Create a synthetic appt-like object from deal fields
+          if ((liveDeal?.walkthrough_scheduled === true) && liveDeal?.walkthrough_datetime) {
             setApptData({
               status: 'PROPOSED',
               datetime: liveDeal.walkthrough_datetime,
@@ -34,6 +45,16 @@ export default function WalkthroughPanel({ deal }) {
         }
       } catch (e) {
         console.warn('[WalkthroughPanel] Failed to load walkthrough data:', e);
+        // Even on error, try to use deal prop data
+        if ((deal.walkthrough_scheduled === true || deal.walkthrough_scheduled === 'true') && deal.walkthrough_datetime) {
+          setApptData({
+            status: 'PROPOSED',
+            datetime: deal.walkthrough_datetime,
+            timezone: null,
+            locationType: 'ON_SITE',
+            notes: null
+          });
+        }
       } finally {
         setLoadingAppt(false);
       }
