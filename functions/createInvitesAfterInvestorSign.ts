@@ -146,11 +146,12 @@ Deno.serve(async (req) => {
       current_legal_agreement_id: baseAgreement.id
     });
 
-    // Ensure deal is active and visible
-    await base44.asServiceRole.entities.Deal.update(deal_id, {
-      status: 'active',
-      pipeline_stage: 'new_deals'
-    });
+    // Ensure deal is active and visible — ONLY update status fields, do NOT overwrite walkthrough/terms
+    const dealStatusUpdate = { status: 'active' };
+    if (!deal.pipeline_stage || deal.pipeline_stage === 'draft') {
+      dealStatusUpdate.pipeline_stage = 'new_deals';
+    }
+    await base44.asServiceRole.entities.Deal.update(deal_id, dealStatusUpdate);
 
     // --- CREATE DEAL INVITES (skip duplicates) ---
     const existingInvites = await base44.asServiceRole.entities.DealInvite.filter({ deal_id });
