@@ -89,9 +89,8 @@ export default function PendingAgentsList({ invites, onSelectAgent, selectedInvi
                     e.stopPropagation();
                     navigate(`${createPageUrl('AgentProfile')}?profileId=${agent.id}`);
                   }}
-                  variant="outline"
                   size="sm"
-                  className="flex-1 border-[#1F1F1F] text-[#FAFAFA] hover:bg-[#141414] hover:border-[#E3C567] rounded-full"
+                  className="flex-1 bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567] rounded-full"
                 >
                   <User className="w-3.5 h-3.5 mr-1" />
                   Profile

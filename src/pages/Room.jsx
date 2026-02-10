@@ -226,7 +226,7 @@ export default function Room() {
         {/* Header */}
         <div className="h-18 border-b border-[#1F1F1F] flex items-center px-5 bg-[#0D0D0D] shadow-sm flex-shrink-0 z-10">
           <button className="mr-4 md:hidden text-[#808080]" onClick={() => setDrawer(s => !s)}><Menu className="w-6 h-6" /></button>
-          <Button onClick={() => { queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] }); navigate(createPageUrl("Pipeline")); }} variant="outline" className="mr-4 bg-[#0D0D0D] border-[#1F1F1F] hover:border-[#E3C567] text-[#FAFAFA] rounded-full">
+          <Button onClick={() => { queryClient.invalidateQueries({ queryKey: ['pipelineDeals'] }); navigate(createPageUrl("Pipeline")); }} className="mr-4 bg-[#0D0D0D] border border-[#1F1F1F] hover:border-[#E3C567] hover:bg-[#0D0D0D] text-[#FAFAFA] rounded-full">
             <ArrowLeft className="w-4 h-4" /><span className="hidden md:inline ml-2">Pipeline</span>
           </Button>
           <div className="w-12 h-12 rounded-full overflow-hidden bg-[#E3C567]/20 flex items-center justify-center mr-4">

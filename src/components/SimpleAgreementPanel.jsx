@@ -395,7 +395,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
                     <Button onClick={() => handleSign('agent')} disabled={busy} className="w-full bg-[#E3C567] hover:bg-[#EDD89F] text-black">
                       {busy && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}Sign Agreement
                     </Button>
-                    <Button onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}`} variant="outline" className="w-full border-[#1F1F1F] text-[#FAFAFA]">
+                    <Button onClick={() => window.location.href = `/CounterOffer?dealId=${dealId}&roomId=${roomId}`} className="w-full bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567]">
                       Make Counter Offer
                     </Button>
                   </div>
