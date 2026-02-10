@@ -46,10 +46,37 @@ export default function AgentOnboarding() {
     main_county: '',
     markets: [],
     experience_years: '',
+    deals_closed: '',
+    investment_strategies: [],
+    specialties: [],
+    typical_response_time: '',
     bio: ''
   });
 
-  const TOTAL_STEPS = 3;
+  const TOTAL_STEPS = 4;
+
+  const STRATEGY_OPTIONS = [
+    'Fix & Flip', 'Buy & Hold', 'BRRRR', 'Wholesale', 
+    'Short-Term Rental / Airbnb', 'Commercial', 'Multi-Family', 'New Construction', 'Land'
+  ];
+
+  const SPECIALTY_OPTIONS = [
+    'Single Family', 'Multi-Family', 'Condos/Townhomes', 'Commercial', 
+    'Land/Lots', 'Foreclosures/REO', 'Off-Market Deals', 'New Construction', '1031 Exchange'
+  ];
+
+  const RESPONSE_TIME_OPTIONS = [
+    'Within 1 hour', 'Within a few hours', 'Same day', 'Within 24 hours'
+  ];
+
+  const toggleArrayItem = (field, item) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: prev[field].includes(item)
+        ? prev[field].filter(i => i !== item)
+        : [...prev[field], item]
+    }));
+  };
 
   // Check access
   useEffect(() => {
@@ -107,6 +134,10 @@ export default function AgentOnboarding() {
         main_county: agent.main_county || '',
         markets: agent.markets || profile.markets || [],
         experience_years: agent.experience_years || '',
+        deals_closed: agent.investment_deals_last_12m || '',
+        investment_strategies: agent.investment_strategies || [],
+        specialties: agent.specialties || [],
+        typical_response_time: agent.typical_response_time || '',
         bio: agent.bio || ''
       }));
     }
@@ -204,6 +235,10 @@ export default function AgentOnboarding() {
             main_county: formData.main_county,
             markets: licensedStates,
             experience_years: parseInt(formData.experience_years) || 0,
+            investment_deals_last_12m: parseInt(formData.deals_closed) || 0,
+            investment_strategies: formData.investment_strategies,
+            specialties: formData.specialties,
+            typical_response_time: formData.typical_response_time,
             bio: formData.bio,
             investor_friendly: true,
             brokerage: formData.brokerage
@@ -275,6 +310,18 @@ export default function AgentOnboarding() {
             className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
           />
         </div>
+        <div>
+          <Label htmlFor="deals_closed" className="text-[#FAFAFA] text-[19px] font-medium">Deals Closed (Last 12 Months)</Label>
+          <Input 
+            id="deals_closed" 
+            type="number"
+            min="0"
+            value={formData.deals_closed} 
+            onChange={(e) => updateField('deals_closed', e.target.value)} 
+            placeholder="e.g., 12" 
+            className="h-16 text-[19px] mt-3 bg-[#141414] border-[#1F1F1F] text-[#FAFAFA] placeholder:text-[#666666] focus:border-[#E3C567] focus:ring-2 focus:ring-[#E3C567]/30" 
+          />
+        </div>
       </div>
     </div>
   );
@@ -332,6 +379,71 @@ export default function AgentOnboarding() {
   );
 
   const renderStep3 = () => (
+    <div>
+      <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Investor Experience</h3>
+      <p className="text-[18px] text-[#808080] mb-10">Help investors understand what you bring to the table</p>
+      
+      <div className="space-y-7">
+        <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Investment Strategies You Support</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
+          <div className="grid grid-cols-2 gap-3">
+            {STRATEGY_OPTIONS.map((strategy) => (
+              <div key={strategy} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`strategy-${strategy}`} 
+                  checked={formData.investment_strategies.includes(strategy)} 
+                  onCheckedChange={() => toggleArrayItem('investment_strategies', strategy)} 
+                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
+                />
+                <Label htmlFor={`strategy-${strategy}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{strategy}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Property Specialties</Label>
+          <p className="text-sm text-[#808080] mt-1 mb-3">Select all that apply</p>
+          <div className="grid grid-cols-2 gap-3">
+            {SPECIALTY_OPTIONS.map((specialty) => (
+              <div key={specialty} className="flex items-center gap-3">
+                <Checkbox 
+                  id={`specialty-${specialty}`} 
+                  checked={formData.specialties.includes(specialty)} 
+                  onCheckedChange={() => toggleArrayItem('specialties', specialty)} 
+                  className="border-[#E3C567] data-[state=checked]:bg-[#E3C567] data-[state=checked]:border-[#E3C567] w-5 h-5"
+                />
+                <Label htmlFor={`specialty-${specialty}`} className="text-[16px] font-normal cursor-pointer text-[#FAFAFA]">{specialty}</Label>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <Label className="text-[#FAFAFA] text-[19px] font-medium">Typical Response Time</Label>
+          <div className="grid grid-cols-2 gap-3 mt-3">
+            {RESPONSE_TIME_OPTIONS.map((option) => (
+              <button
+                key={option}
+                type="button"
+                onClick={() => updateField('typical_response_time', option)}
+                className={`px-4 py-3 rounded-lg border text-left text-[16px] transition-all ${
+                  formData.typical_response_time === option
+                    ? 'border-[#E3C567] bg-[#E3C567]/20 text-[#E3C567]'
+                    : 'border-[#1F1F1F] bg-[#141414] text-[#FAFAFA] hover:border-[#E3C567]/50'
+                }`}
+              >
+                {option}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderStep4 = () => (
     <div>
       <h3 className="text-[32px] font-bold text-[#E3C567] mb-3">Markets & Bio</h3>
       <p className="text-[18px] text-[#808080] mb-10">Service areas and professional background</p>
@@ -414,6 +526,7 @@ export default function AgentOnboarding() {
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderStep3()}
+          {step === 4 && renderStep4()}
 
           <div className="flex items-center justify-between mt-8 pt-6 border-t border-[#1F1F1F]">
             {step > 1 ? (
@@ -423,7 +536,7 @@ export default function AgentOnboarding() {
             ) : <div />}
             <button
               onClick={handleNext}
-              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.brokerage || !formData.license_state || !formData.main_county))}
+              disabled={saving || (step === 1 && !formData.full_name) || (step === 2 && (!formData.license_number || !formData.brokerage || !formData.license_state || !formData.main_county)) || (step === 4 && formData.markets.length === 0)}
               className="h-12 px-8 rounded-lg bg-[#E3C567] hover:bg-[#EDD89F] text-black font-bold transition-all duration-200 disabled:bg-[#1F1F1F] disabled:text-[#666666]"
             >
               {saving ? (
