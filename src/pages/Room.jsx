@@ -205,9 +205,10 @@ export default function Room() {
   }, [deal?.id]);
 
   const counterpartName = useMemo(() => {
-    if (isSigned) return isInvestor ? (deal?.agent_full_name || currentRoom?.counterparty_name || 'Agent') : (deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor');
-    return isInvestor ? 'Agent' : 'Investor';
-  }, [isSigned, isInvestor, deal, currentRoom]);
+    if (isAgent) return deal?.investor_full_name || currentRoom?.counterparty_name || 'Investor';
+    if (isSigned) return deal?.agent_full_name || currentRoom?.counterparty_name || 'Agent';
+    return 'Agent';
+  }, [isSigned, isAgent, deal, currentRoom]);
 
   const filteredRooms = useMemo(() => {
     return (rooms || []).filter(r => r?.deal_id);
