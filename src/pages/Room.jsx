@@ -249,7 +249,7 @@ export default function Room() {
             )}
           </div>
           <div className="flex-1">
-            <h2 className="text-lg font-semibold text-[#FAFAFA]">{isSigned ? counterpartName : (isInvestor ? 'Agent' : 'Investor')}</h2>
+            <h2 className="text-lg font-semibold text-[#FAFAFA]">{(isSigned || isAgent) ? counterpartName : 'Agent'}</h2>
             <div className="flex items-center gap-3">
               {isSigned ? (
                 <span className="bg-[#10B981]/20 text-[#10B981] border border-[#10B981]/30 px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5">✓ Working Together</span>
