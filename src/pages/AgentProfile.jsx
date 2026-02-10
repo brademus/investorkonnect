@@ -4,7 +4,7 @@ import { createPageUrl } from "@/components/utils";
 import { base44 } from "@/api/base44Client";
 import { useCurrentProfile } from "@/components/useCurrentProfile";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Loader2, MapPin, Award, Briefcase, Star, ExternalLink } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Award, Briefcase, Star, ExternalLink, Clock, TrendingUp, Home } from "lucide-react";
 
 export default function AgentProfile() {
   const navigate = useNavigate();
@@ -103,6 +103,9 @@ export default function AgentProfile() {
   const markets = agent.markets || agentProfile.markets || [];
   const specialties = agent.specialties || [];
   const experienceYears = agent.experience_years || agent.investor_experience_years;
+  const dealsLast12m = agent.investment_deals_last_12m;
+  const investmentStrategies = agent.investment_strategies || [];
+  const responseTime = agent.typical_response_time;
 
   return (
     <div className="min-h-screen bg-transparent py-8 px-6">
@@ -146,27 +149,36 @@ export default function AgentProfile() {
                 </p>
               )}
 
-              {/* Rating & Stats */}
-              <div className="flex items-center gap-6 mb-4">
+              {/* Stats Grid */}
+              <div className="flex flex-wrap items-center gap-4 mb-4">
                 {averageRating && (
-                  <div className="flex items-center gap-2">
-                    <Star className="w-5 h-5 text-[#E3C567] fill-[#E3C567]" />
-                    <span className="text-lg font-semibold text-[#FAFAFA]">{averageRating}</span>
-                    <span className="text-sm text-[#808080]">({reviews.length} reviews)</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#141414] border border-[#1F1F1F] rounded-full">
+                    <Star className="w-4 h-4 text-[#E3C567] fill-[#E3C567]" />
+                    <span className="text-sm font-semibold text-[#FAFAFA]">{averageRating}</span>
+                    <span className="text-xs text-[#808080]">({reviews.length})</span>
                   </div>
                 )}
                 
-                {dealsCompleted !== null && (
-                  <div className="flex items-center gap-2">
-                    <Briefcase className="w-5 h-5 text-[#E3C567]" />
-                    <span className="text-sm text-[#FAFAFA]">{dealsCompleted} deals completed</span>
+                {(dealsCompleted !== null || dealsLast12m) && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#141414] border border-[#1F1F1F] rounded-full">
+                    <Briefcase className="w-4 h-4 text-[#E3C567]" />
+                    <span className="text-sm text-[#FAFAFA]">
+                      {dealsLast12m ? `${dealsLast12m} deals (12mo)` : `${dealsCompleted} on platform`}
+                    </span>
                   </div>
                 )}
 
                 {experienceYears && (
-                  <div className="flex items-center gap-2">
-                    <Award className="w-5 h-5 text-[#E3C567]" />
-                    <span className="text-sm text-[#FAFAFA]">{experienceYears}+ years experience</span>
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#141414] border border-[#1F1F1F] rounded-full">
+                    <Award className="w-4 h-4 text-[#E3C567]" />
+                    <span className="text-sm text-[#FAFAFA]">{experienceYears}+ years</span>
+                  </div>
+                )}
+
+                {responseTime && (
+                  <div className="flex items-center gap-2 px-3 py-1.5 bg-[#141414] border border-[#1F1F1F] rounded-full">
+                    <Clock className="w-4 h-4 text-[#E3C567]" />
+                    <span className="text-sm text-[#FAFAFA]">{responseTime}</span>
                   </div>
                 )}
               </div>
@@ -193,15 +205,38 @@ export default function AgentProfile() {
             </div>
           )}
 
-          {/* Specialties */}
+          {/* Investment Strategies */}
+          {investmentStrategies.length > 0 && (
+            <div className="pt-6 border-t border-[#1F1F1F]">
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2">
+                <TrendingUp className="w-5 h-5 text-[#E3C567]" />
+                Investment Strategies
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {investmentStrategies.map((strategy, idx) => (
+                  <span 
+                    key={idx}
+                    className="px-3 py-1.5 rounded-full bg-[#E3C567]/10 border border-[#E3C567]/30 text-[#E3C567] text-xs font-medium"
+                  >
+                    {strategy}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Property Specialties */}
           {specialties.length > 0 && (
             <div className="pt-6 border-t border-[#1F1F1F]">
-              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3">Specialties</h3>
+              <h3 className="text-lg font-semibold text-[#FAFAFA] mb-3 flex items-center gap-2">
+                <Home className="w-5 h-5 text-[#E3C567]" />
+                Property Specialties
+              </h3>
               <div className="flex flex-wrap gap-2">
                 {specialties.map((specialty, idx) => (
                   <span 
                     key={idx}
-                    className="px-3 py-1 rounded-full bg-[#E3C567]/20 text-[#E3C567] text-xs font-medium"
+                    className="px-3 py-1.5 rounded-full bg-[#141414] border border-[#1F1F1F] text-[#FAFAFA] text-xs font-medium"
                   >
                     {specialty}
                   </span>
