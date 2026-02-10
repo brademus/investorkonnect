@@ -42,36 +42,38 @@ Deno.serve(async (req) => {
     const agreements = await base44.asServiceRole.entities.LegalAgreement.filter({ deal_id: dealId });
     if (agreements?.length) isSigned = agreements[0].status === 'fully_signed';
 
-    // Resolve counterpart names and contact info (only after signing)
+    // Resolve counterpart names and contact info
+    // Agents can always see investor info; investors see agent info only after signing
     let investorName = null, agentName = null;
     let investorContact = null, agentContact = null;
-    if (isSigned) {
-      const [invP, agP] = await Promise.all([
-        deal.investor_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : [],
-        deal.agent_id ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : []
-      ]);
-      const inv = invP?.[0];
-      const ag = agP?.[0];
-      investorName = inv?.full_name || null;
-      agentName = ag?.full_name || null;
-      if (inv) {
-        investorContact = {
-          email: inv.email || null,
-          phone: inv.phone || null,
-          company: inv.company || inv.investor?.company_name || null,
-          company_address: inv.company_address || null,
-          headshotUrl: inv.headshotUrl || null
-        };
-      }
-      if (ag) {
-        agentContact = {
-          email: ag.email || null,
-          phone: ag.phone || null,
-          company: ag.agent?.brokerage || ag.broker || ag.company || null,
-          company_address: ag.company_address || null,
-          headshotUrl: ag.headshotUrl || null
-        };
-      }
+    const showInvestorInfo = isSigned || isAgent || isAdmin;
+    const showAgentInfo = isSigned || isInvestor || isAdmin;
+
+    const [invP, agP] = await Promise.all([
+      (showInvestorInfo && deal.investor_id) ? base44.asServiceRole.entities.Profile.filter({ id: deal.investor_id }) : Promise.resolve([]),
+      (showAgentInfo && deal.agent_id) ? base44.asServiceRole.entities.Profile.filter({ id: deal.agent_id }) : Promise.resolve([])
+    ]);
+    const inv = invP?.[0];
+    const ag = agP?.[0];
+    if (inv) {
+      investorName = inv.full_name || null;
+      investorContact = {
+        email: inv.email || null,
+        phone: inv.phone || null,
+        company: inv.company || inv.investor?.company_name || null,
+        company_address: inv.company_address || null,
+        headshotUrl: inv.headshotUrl || null
+      };
+    }
+    if (ag) {
+      agentName = ag.full_name || null;
+      agentContact = {
+        email: ag.email || null,
+        phone: ag.phone || null,
+        company: ag.agent?.brokerage || ag.broker || ag.company || null,
+        company_address: ag.company_address || null,
+        headshotUrl: ag.headshotUrl || null
+      };
     }
 
     // Get room for proposed_terms
