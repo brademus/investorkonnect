@@ -158,6 +158,15 @@ export default function Room() {
     }
   }, [location.search, roomId]);
 
+  // Sync counterparty headshot from enriched rooms when they load
+  useEffect(() => {
+    if (!roomId || !rooms?.length) return;
+    const enriched = rooms.find(r => r.id === roomId);
+    if (enriched?.counterparty_headshot) {
+      setCurrentRoom(prev => prev ? { ...prev, counterparty_headshot: enriched.counterparty_headshot, counterparty_name: enriched.counterparty_name || prev.counterparty_name } : prev);
+    }
+  }, [roomId, rooms]);
+
   // Real-time room updates
   useEffect(() => {
     if (!roomId) return;
