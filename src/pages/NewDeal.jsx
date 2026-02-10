@@ -624,7 +624,35 @@ export default function NewDeal() {
     }
   } catch (_) {}
 
-  // Save to sessionStorage - include dealId if editing
+  // Build walkthrough ISO datetime once for reuse
+    const walkthroughIso = (() => {
+      if (walkthroughScheduled !== true || !walkthroughDate) return null;
+      try {
+        const parts = walkthroughDate.split('/');
+        if (parts.length === 3) {
+          const [mm, dd, yyyy] = parts;
+          const timeStr = walkthroughTime || '12:00 PM';
+          const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+          let hours = 12, mins = 0;
+          if (timeMatch) {
+            hours = parseInt(timeMatch[1]);
+            mins = parseInt(timeMatch[2]);
+            const isPM = timeMatch[3].toUpperCase() === 'PM';
+            if (isPM && hours !== 12) hours += 12;
+            if (!isPM && hours === 12) hours = 0;
+          }
+          const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
+          return isNaN(d.getTime()) ? null : d.toISOString();
+        }
+        const d = new Date(walkthroughDate + ' ' + (walkthroughTime || '12:00 PM'));
+        return isNaN(d.getTime()) ? null : d.toISOString();
+      } catch { return null; }
+    })();
+
+    console.log('[NewDeal] handleContinue saving walkthrough:', { walkthroughScheduled, walkthroughDate, walkthroughTime, walkthroughIso });
+
+    // Save to sessionStorage - include dealId if editing
+    // CRITICAL: Include BOTH camelCase and snake_case walkthrough keys so downstream consumers always find them
     sessionStorage.setItem('newDealDraft', JSON.stringify({
       dealId: dealId || null,
       propertyAddress,
@@ -656,8 +684,10 @@ export default function NewDeal() {
       numberOfStories,
       hasBasement,
       walkthroughScheduled,
+      walkthrough_scheduled: walkthroughScheduled === true,
       walkthroughDate,
-      walkthroughTime
+      walkthroughTime,
+      walkthrough_datetime: walkthroughIso
     }));
 
     // For new deals, also save walkthrough info to sessionStorage so ContractVerify can use it
