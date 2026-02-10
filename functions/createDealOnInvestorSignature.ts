@@ -5,21 +5,38 @@ Deno.serve(async (req) => {
     const base44 = createClientFromRequest(req);
     const body = await req.json();
 
-    console.log('[createDealOnInvestorSignature] Received event:', JSON.stringify(body, null, 2));
+    console.log('[createDealOnInvestorSignature] Received event type:', body?.event?.type, 'entity_id:', body?.event?.entity_id, 'payload_too_large:', body?.payload_too_large);
 
-    const { event, data: agreementData, old_data: oldAgreementData } = body;
+    let { event, data: agreementData, old_data: oldAgreementData, payload_too_large } = body;
 
     // Only process update events where investor just signed
     if (event?.type !== 'update') {
       return Response.json({ status: 'ignored', reason: 'not_update_event' });
     }
 
-    // Check if investor_signed_at was just set (wasn't set before, is set now)
-    const wasNotSigned = !oldAgreementData?.investor_signed_at;
-    const isNowSigned = !!agreementData?.investor_signed_at;
+    // CRITICAL: If payload was too large, fetch the full agreement data from DB
+    if (payload_too_large || !agreementData) {
+      console.log('[createDealOnInvestorSignature] Payload too large or missing data — fetching agreement from DB');
+      const fullAgreements = await base44.asServiceRole.entities.LegalAgreement.filter({ id: event.entity_id });
+      if (!fullAgreements?.length) {
+        return Response.json({ status: 'error', reason: 'agreement_not_found_after_payload_too_large' }, { status: 404 });
+      }
+      agreementData = fullAgreements[0];
+      // We can't reliably check old_data, but if the agreement has investor_signed_at, proceed
+      if (!agreementData.investor_signed_at) {
+        return Response.json({ status: 'ignored', reason: 'no_investor_signature_after_refetch' });
+      }
+      // Since we can't check old_data, skip the wasNotSigned check — the automation
+      // is idempotent (duplicate check + existing deal check prevent double creation)
+      console.log('[createDealOnInvestorSignature] Refetched agreement:', agreementData.id, 'investor_signed_at:', agreementData.investor_signed_at);
+    } else {
+      // Check if investor_signed_at was just set (wasn't set before, is set now)
+      const wasNotSigned = !oldAgreementData?.investor_signed_at;
+      const isNowSigned = !!agreementData?.investor_signed_at;
 
-    if (!(wasNotSigned && isNowSigned)) {
-      return Response.json({ status: 'ignored', reason: 'not_new_investor_signature' });
+      if (!(wasNotSigned && isNowSigned)) {
+        return Response.json({ status: 'ignored', reason: 'not_new_investor_signature' });
+      }
     }
 
     // Only process base agreements (no room_id)
