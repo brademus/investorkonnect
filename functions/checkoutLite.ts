@@ -183,15 +183,14 @@ Deno.serve(async (req) => {
       cancel_url: cancel,
       allow_promotion_codes: true,
       subscription_data: {
-        trial_period_days: 14,
         metadata: {
           user_id: userId || 'unknown',
-          plan: plan
+          plan: 'membership'
         }
       },
       metadata: {
         user_id: userId || 'unknown',
-        plan: plan
+        plan: 'membership'
       }
     });
 
