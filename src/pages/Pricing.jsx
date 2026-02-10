@@ -59,13 +59,7 @@ export default function Pricing() {
           if (subscription?.status === 'active' || subscription?.status === 'trialing') {
             console.log('User has active subscription, redirecting...');
             
-            if (profile?.user_role === 'agent') {
-              navigate(createPageUrl("DashboardAgent"));
-            } else if (profile?.user_role === 'investor') {
-              navigate(createPageUrl("DashboardInvestor"));
-            } else {
-              navigate(createPageUrl("IdentityVerification"));
-            }
+            navigate(createPageUrl("Pipeline"));
           }
         }
       } catch (error) {
