@@ -279,7 +279,7 @@ export default function Room() {
         {/* Deal Summary Bar (messages view only) */}
         {!showBoard && currentRoom && !roomLoading && (
           <>
-            {isSigned && (
+            {(isSigned || isAgent) && (
               <CounterpartyInfoBar
                 counterparty={isInvestor
                   ? { ...deal?.agent_contact, name: deal?.agent_full_name }
