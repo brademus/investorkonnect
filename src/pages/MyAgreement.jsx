@@ -217,7 +217,17 @@ export default function MyAgreement() {
               } catch { return null; }
             })()
           });
-          console.log('[MyAgreement] Created DealDraft:', draftCreated.id, 'walkthrough_scheduled:', draftCreated.walkthrough_scheduled, 'walkthrough_datetime:', draftCreated.walkthrough_datetime, 'from dealData:', dealData.walkthroughScheduled, dealData.walkthroughDate, dealData.walkthroughTime);
+          console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
+          console.log('[MyAgreement] DealDraft walkthrough:', { walkthrough_scheduled: draftCreated.walkthrough_scheduled, walkthrough_datetime: draftCreated.walkthrough_datetime });
+          console.log('[MyAgreement] Source dealData:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthroughScheduledType: typeof dealData.walkthroughScheduled, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
+          
+          // VERIFY: Read back the DealDraft to confirm data was persisted
+          try {
+            const verifyDrafts = await base44.entities.DealDraft.filter({ id: draftCreated.id });
+            if (verifyDrafts?.[0]) {
+              console.log('[MyAgreement] VERIFY DealDraft read-back:', { walkthrough_scheduled: verifyDrafts[0].walkthrough_scheduled, walkthrough_datetime: verifyDrafts[0].walkthrough_datetime, buyer_commission_percentage: verifyDrafts[0].buyer_commission_percentage, agreement_length: verifyDrafts[0].agreement_length });
+            }
+          } catch (verifyErr) { console.warn('[MyAgreement] Verify read-back failed:', verifyErr); }
           setDraft(draftCreated);
           setDeal({ 
             ...dealData, 
