@@ -178,6 +178,12 @@ function LayoutContent({ children }) {
                       <User className="w-4 h-4 mr-2" />
                       Account
                     </DropdownMenuItem>
+                    {role === 'investor' && (
+                      <DropdownMenuItem onClick={() => navigate(createPageUrl("Pricing"))} className="text-[#FAFAFA] cursor-pointer">
+                        <FileText className="w-4 h-4 mr-2" />
+                        Subscription
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => navigate(createPageUrl("Logout"))} className="text-[#FAFAFA] cursor-pointer">
                       <LogOut className="w-4 h-4 mr-2" />
                       Logout
