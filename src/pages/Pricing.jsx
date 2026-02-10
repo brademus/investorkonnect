@@ -111,53 +111,6 @@ export default function Pricing() {
     },
   ];
 
-  const plans = [
-    {
-      id: "starter",
-      name: "Starter",
-      price: "$29",
-      period: "/month",
-      description: "Perfect for getting started",
-      features: [
-        "Access to all deal rooms",
-        "Unlimited agent matching",
-        "Basic contract generation",
-        "Standard support",
-      ],
-      popular: true,
-    },
-    {
-      id: "pro",
-      name: "Pro",
-      price: "$79",
-      period: "/month",
-      description: "For serious investors",
-      features: [
-        "Everything in Starter",
-        "Advanced contract features",
-        "Priority support",
-        "Deal analytics",
-        "Custom deal templates",
-      ],
-      popular: false,
-    },
-    {
-      id: "enterprise",
-      name: "Enterprise",
-      price: "$199",
-      period: "/month",
-      description: "For teams and institutions",
-      features: [
-        "Everything in Pro",
-        "Team collaboration",
-        "Dedicated account manager",
-        "Custom integrations",
-        "White-label options",
-      ],
-      popular: false,
-    },
-  ];
-
   if (loading || checkingSubscription) {
     return (
       <div className="min-h-screen bg-black flex items-center justify-center">
