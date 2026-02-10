@@ -54,13 +54,6 @@ export default function Pricing() {
           setSubscriptionStatus(subscription?.status || null);
           
           console.log('Subscription status:', subscription?.status);
-          
-          // If user has active subscription, redirect to appropriate dashboard
-          if (subscription?.status === 'active' || subscription?.status === 'trialing') {
-            console.log('User has active subscription, redirecting...');
-            
-            navigate(createPageUrl("Pipeline"));
-          }
         }
       } catch (error) {
         console.error('Subscription check failed:', error);
