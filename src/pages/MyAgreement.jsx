@@ -124,6 +124,25 @@ export default function MyAgreement() {
           }
           dealData = JSON.parse(draftData);
           agentIds = dealData.selectedAgentIds || [];
+          
+          // Ensure walkthrough data from newDealWalkthrough sessionStorage is merged
+          // This is critical because the walkthrough might get lost in the multi-page flow
+          try {
+            const wtJson = sessionStorage.getItem('newDealWalkthrough');
+            if (wtJson) {
+              const wt = JSON.parse(wtJson);
+              console.log('[MyAgreement] newDealWalkthrough from sessionStorage:', wt);
+              if (wt.walkthrough_scheduled === true && !dealData.walkthroughScheduled && !dealData.walkthrough_scheduled) {
+                dealData.walkthroughScheduled = true;
+                dealData.walkthrough_scheduled = true;
+              }
+              if (wt.walkthrough_datetime && !dealData.walkthrough_datetime) {
+                dealData.walkthrough_datetime = wt.walkthrough_datetime;
+              }
+            }
+          } catch (_) {}
+          
+          console.log('[MyAgreement] Final dealData walkthrough:', { walkthroughScheduled: dealData.walkthroughScheduled, walkthrough_scheduled: dealData.walkthrough_scheduled, walkthrough_datetime: dealData.walkthrough_datetime, walkthroughDate: dealData.walkthroughDate, walkthroughTime: dealData.walkthroughTime });
         }
 
         if (agentIds.length === 0) {
