@@ -208,43 +208,15 @@ export default function MyAgreement() {
             seller_commission_type: sellerCommType,
             seller_commission_percentage: sellerCommType === 'percentage' ? Number(dealData.sellerCommissionPercentage) : null,
             seller_flat_fee: (sellerCommType === 'flat' || sellerCommType === 'flat_fee') ? Number(dealData.sellerFlatFee) : null,
-            walkthrough_scheduled: (() => {
-              // Check multiple sources for walkthrough data
-              if (dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true) return true;
-              // Also check the separate newDealWalkthrough key from sessionStorage
+            walkthrough_scheduled: !!(dealData.walkthroughScheduled === true || dealData.walkthrough_scheduled === true),
+            walkthrough_datetime: dealData.walkthrough_datetime || (() => {
+              // Parse from date/time strings if ISO not already set
+              if (!dealData.walkthroughDate) return null;
               try {
-                const wtJson = sessionStorage.getItem('newDealWalkthrough');
-                if (wtJson) {
-                  const wt = JSON.parse(wtJson);
-                  if (wt.walkthrough_scheduled === true) return true;
-                }
-              } catch (_) {}
-              return false;
-            })(),
-            walkthrough_datetime: (() => {
-              // Try parsing from dealData first
-              const wtScheduled = dealData.walkthroughScheduled === true || dealData.walkthroughScheduled === 'true' || dealData.walkthrough_scheduled === true;
-              
-              // Check separate sessionStorage key as fallback
-              let fallbackDatetime = null;
-              try {
-                const wtJson = sessionStorage.getItem('newDealWalkthrough');
-                if (wtJson) {
-                  const wt = JSON.parse(wtJson);
-                  if (wt.walkthrough_datetime) fallbackDatetime = wt.walkthrough_datetime;
-                }
-              } catch (_) {}
-              
-              if (!wtScheduled && !fallbackDatetime) return dealData.walkthrough_datetime || null;
-              if (dealData.walkthrough_datetime) return dealData.walkthrough_datetime;
-              if (!dealData.walkthroughDate && !fallbackDatetime) return fallbackDatetime || null;
-              if (!dealData.walkthroughDate) return fallbackDatetime;
-              try {
-                const dateStr = dealData.walkthroughDate;
-                const timeStr = dealData.walkthroughTime || '12:00 PM';
-                const parts = dateStr.split('/');
+                const parts = dealData.walkthroughDate.split('/');
                 if (parts.length === 3) {
                   const [mm, dd, yyyy] = parts;
+                  const timeStr = dealData.walkthroughTime || '12:00 PM';
                   const timeMatch = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
                   let hours = 12, mins = 0;
                   if (timeMatch) {
@@ -257,9 +229,8 @@ export default function MyAgreement() {
                   const d = new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), hours, mins);
                   return isNaN(d.getTime()) ? null : d.toISOString();
                 }
-                const d = new Date(dateStr + ' ' + timeStr);
-                return isNaN(d.getTime()) ? null : d.toISOString();
-              } catch { return fallbackDatetime || null; }
+                return null;
+              } catch { return null; }
             })()
           });
           console.log('[MyAgreement] Created DealDraft:', draftCreated.id);
