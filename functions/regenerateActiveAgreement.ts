@@ -58,15 +58,21 @@ Deno.serve(async (req) => {
     console.log('[regenerate] targetAgentId:', targetAgentId);
 
     // Priority: agent-specific terms > room.proposed_terms > deal.proposed_terms
+    // Merge agent-specific counter terms (seller commission) with base terms (buyer commission)
     let terms = {};
-    if (targetAgentId && room?.agent_terms?.[targetAgentId]?.buyer_commission_type) {
-      terms = room.agent_terms[targetAgentId];
-      console.log('[regenerate] Using agent-specific terms for', targetAgentId, ':', JSON.stringify(terms));
+    const baseTerms = room?.proposed_terms || deal?.proposed_terms || {};
+    if (targetAgentId && room?.agent_terms?.[targetAgentId]) {
+      const agentSpecific = room.agent_terms[targetAgentId];
+      // Merge: agent counter terms override base terms, but keep buyer commission from base if not in counter
+      terms = { ...baseTerms, ...agentSpecific };
+      console.log('[regenerate] Using merged agent-specific + base terms for', targetAgentId, ':', JSON.stringify(terms));
     } else {
-      terms = room?.proposed_terms || deal?.proposed_terms || {};
+      terms = baseTerms;
       console.log('[regenerate] Using room/deal proposed_terms:', JSON.stringify(terms));
     }
-    if (!terms.buyer_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
+    if (!terms.buyer_commission_type && !terms.seller_commission_type) return Response.json({ error: 'Missing commission terms' }, { status: 400 });
+    // Ensure buyer_commission_type exists (may come from base terms)
+    if (!terms.buyer_commission_type) terms.buyer_commission_type = 'percentage';
 
     // Determine signer mode — always 'both' so investor and agent sign the SAME envelope.
     // The agent is added as routingOrder 2, so they can only sign after the investor.
@@ -88,9 +94,12 @@ Deno.serve(async (req) => {
       signer_mode: signerMode,
       agent_profile_id: targetAgentId || null, // Ensure the correct agent is included in the envelope
       exhibit_a: {
-        buyer_commission_type: terms.buyer_commission_type,
-        buyer_commission_percentage: terms.buyer_commission_percentage || null,
-        buyer_flat_fee: terms.buyer_flat_fee || null,
+        seller_commission_type: terms.seller_commission_type || 'percentage',
+        seller_commission_percentage: terms.seller_commission_percentage ?? null,
+        seller_flat_fee: terms.seller_flat_fee ?? null,
+        buyer_commission_type: terms.buyer_commission_type || 'percentage',
+        buyer_commission_percentage: terms.buyer_commission_percentage ?? null,
+        buyer_flat_fee: terms.buyer_flat_fee ?? null,
         agreement_length_days: terms.agreement_length || terms.agreement_length_days || 180,
         transaction_type: terms.transaction_type || 'ASSIGNMENT'
       },
