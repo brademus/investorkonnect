@@ -446,7 +446,7 @@ export default function SimpleAgreementPanel({ dealId, roomId, profile, deal, on
 
             {/* Download */}
             {agreement?.signed_pdf_url && (
-              <Button onClick={() => window.open(agreement.signed_pdf_url, '_blank')} variant="outline" className="w-full"><Download className="w-4 h-4 mr-2" />Download PDF</Button>
+              <Button onClick={() => window.open(agreement.signed_pdf_url, '_blank')} className="w-full bg-[#1A1A1A] hover:bg-[#222] text-[#FAFAFA] border border-[#E3C567]/40 hover:border-[#E3C567]"><Download className="w-4 h-4 mr-2" />Download PDF</Button>
             )}
           </div>
         )}
