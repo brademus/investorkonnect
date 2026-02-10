@@ -123,9 +123,9 @@ Deno.serve(async (req) => {
 
       if (draftForUpdate) {
         if (draftForUpdate.walkthrough_scheduled !== undefined && draftForUpdate.walkthrough_scheduled !== null) {
-          dealUpdate.walkthrough_scheduled = !!(draftForUpdate.walkthrough_scheduled);
+          dealUpdate.walkthrough_scheduled = (draftForUpdate.walkthrough_scheduled === true || draftForUpdate.walkthrough_scheduled === 'true' || draftForUpdate.walkthrough_scheduled === 1) ? true : false;
           dealUpdate.walkthrough_datetime = draftForUpdate.walkthrough_datetime || null;
-          console.log('[createDealOnInvestorSignature] Draft walkthrough data for update:', { raw: draftForUpdate.walkthrough_scheduled, resolved: dealUpdate.walkthrough_scheduled, datetime: dealUpdate.walkthrough_datetime });
+          console.log('[createDealOnInvestorSignature] Draft walkthrough data for update:', { raw: draftForUpdate.walkthrough_scheduled, type: typeof draftForUpdate.walkthrough_scheduled, resolved: dealUpdate.walkthrough_scheduled, datetime: dealUpdate.walkthrough_datetime });
         }
         // Also update proposed_terms from draft + exhibit_a_terms
         const dBuyerType = draftForUpdate.buyer_commission_type === 'flat' ? 'flat_fee' : (draftForUpdate.buyer_commission_type || 'percentage');
@@ -335,7 +335,7 @@ Deno.serve(async (req) => {
         const dupeSellerType = draft.seller_commission_type === 'flat' ? 'flat_fee' : (draft.seller_commission_type || 'percentage');
         const dupeUpdate = {
           current_legal_agreement_id: agreementData.id,
-          walkthrough_scheduled: !!(draft.walkthrough_scheduled),
+          walkthrough_scheduled: (draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1) ? true : false,
           walkthrough_datetime: draft.walkthrough_datetime || null,
           proposed_terms: {
             seller_commission_type: dupeExhibitTerms.seller_commission_type || dupeSellerType,
@@ -479,11 +479,11 @@ Deno.serve(async (req) => {
       selected_agent_ids: selectedAgents,
       pending_agreement_generation: false,
       current_legal_agreement_id: agreementData.id,
-      walkthrough_scheduled: !!(draft.walkthrough_scheduled),
+      walkthrough_scheduled: (draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1) ? true : false,
       walkthrough_datetime: draft.walkthrough_datetime || null
     });
     
-    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime);
+    console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime, 'draft_wt_raw:', draft.walkthrough_scheduled, 'draft_wt_type:', typeof draft.walkthrough_scheduled);
 
     // Create DealAppointments record if walkthrough was scheduled
     if (draft.walkthrough_scheduled && draft.walkthrough_datetime) {
