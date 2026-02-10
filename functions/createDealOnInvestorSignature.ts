@@ -365,7 +365,8 @@ Deno.serve(async (req) => {
           }
         }
         // Sync DealAppointments for the duplicate deal
-        if (draft.walkthrough_scheduled && draft.walkthrough_datetime) {
+        const dupeWtScheduled = draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1;
+        if (dupeWtScheduled && draft.walkthrough_datetime) {
           try {
             const apptRows = await base44.asServiceRole.entities.DealAppointments.filter({ dealId: activeDupe.id });
             const apptPatch = {
@@ -486,7 +487,8 @@ Deno.serve(async (req) => {
     console.log('[createDealOnInvestorSignature] Created Deal:', newDeal.id, 'walkthrough_scheduled:', newDeal.walkthrough_scheduled, 'walkthrough_datetime:', newDeal.walkthrough_datetime, 'draft_wt_raw:', draft.walkthrough_scheduled, 'draft_wt_type:', typeof draft.walkthrough_scheduled);
 
     // Create DealAppointments record if walkthrough was scheduled
-    if (draft.walkthrough_scheduled && draft.walkthrough_datetime) {
+    const draftWtScheduled = draft.walkthrough_scheduled === true || draft.walkthrough_scheduled === 'true' || draft.walkthrough_scheduled === 1;
+    if (draftWtScheduled && draft.walkthrough_datetime) {
       try {
         await base44.asServiceRole.entities.DealAppointments.create({
           dealId: newDeal.id,
