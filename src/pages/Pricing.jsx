@@ -133,7 +133,7 @@ export default function Pricing() {
             </p>
             <div className="inline-flex items-center px-4 py-2 bg-[#0D0D0D] border border-[#1F1F1F] rounded-full">
               <CreditCard className="w-4 h-4 text-[#E3C567] mr-2" />
-              <span className="text-sm text-[#808080]">14-day free trial • Cancel anytime</span>
+              <span className="text-sm text-[#808080]">Cancel anytime</span>
             </div>
           </div>
         </div>
